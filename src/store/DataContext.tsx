@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { BtcLocation, CashAccount, DcaPlan, Holding, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
-import { seedData } from '../lib/seed'
 
 const STORAGE_KEY = 'spendiary.data.v1'
 
@@ -94,7 +93,7 @@ function load(): SpendiaryData {
   } catch {
     /* ignore corrupt storage */
   }
-  return seedData
+  return emptyData
 }
 
 /** Insert (when no id) or replace (when id matches) an item in a list. */
@@ -172,7 +171,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     () => ({
       data,
       setData: setDataState,
-      loadSample: () => setDataState(seedData),
+      loadSample: () => {},
       clearAll: () => setDataState(emptyData),
       syncStatus,
       usdThb,

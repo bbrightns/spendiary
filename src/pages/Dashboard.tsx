@@ -29,7 +29,7 @@ import {
 import { daysUntil, formatDateShort, pct, thb, thbCompact } from '../lib/format'
 
 export function Dashboard() {
-  const { data, loadSample } = useData()
+  const { data } = useData()
   const [cashOpen, setCashOpen] = useState(false)
   const hasAnything =
     data.holdings.length > 0 || data.dcaPlans.length > 0 || data.transfers.length > 0
@@ -65,15 +65,6 @@ export function Dashboard() {
             icon={<SparkleIcon className="h-7 w-7" />}
             title="Welcome to Spendiary"
             description="Your private cockpit for investments, DCA plans, and transfer schedules — all in Thai Baht."
-            action={
-              <button
-                onClick={loadSample}
-                className="inline-flex h-11 items-center gap-2 rounded-full bg-ink px-5 text-sm font-semibold text-white shadow-[var(--shadow-soft)] transition-transform active:scale-95"
-              >
-                <SparkleIcon className="h-4 w-4" />
-                Load sample portfolio
-              </button>
-            }
           />
         </Card>
       </>
