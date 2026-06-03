@@ -12,7 +12,7 @@ import { BuyMoreForm } from '../components/forms/BuyMoreForm'
 import { Modal } from '../components/ui/Modal'
 import { NumberField, TextField } from '../components/ui/Field'
 import { Button } from '../components/ui/Button'
-import { CoinsIcon, PlusIcon, PortfolioIcon, SparkleIcon, TrashIcon, PencilIcon } from '../components/icons'
+import { CoinsIcon, PlusIcon, PortfolioIcon, TrashIcon, PencilIcon } from '../components/icons'
 import {
   ASSET_META,
   allocations,
@@ -32,7 +32,7 @@ const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
 const SATS_PER_BTC = 100_000_000
 
 export function Portfolio() {
-  const { data, loadSample, upsertBtcLocation, removeBtcLocation } = useData()
+  const { data, upsertBtcLocation, removeBtcLocation } = useData()
   const { status: priceStatus, lastUpdated, usdThb, errorMsg, refresh: refreshPrices } = useLivePrices()
   const [filter, setFilter] = useState<AssetClass | 'all'>('all')
   const [formOpen, setFormOpen] = useState(false)
@@ -92,16 +92,7 @@ export function Portfolio() {
             description="Add your mutual funds, US stocks, and Bitcoin to see allocation, value, and profit/loss at a glance."
             accent="var(--color-funds)"
             action={
-              <div className="flex flex-col items-center gap-3">
-                <AddButton onClick={openAdd} label="Add holding" />
-                <button
-                  onClick={loadSample}
-                  className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-muted transition-colors hover:text-ink"
-                >
-                  <SparkleIcon className="h-4 w-4" />
-                  or load sample portfolio
-                </button>
-              </div>
+              <AddButton onClick={openAdd} label="Add holding" />
             }
           />
         </Card>

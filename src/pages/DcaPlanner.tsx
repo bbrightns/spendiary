@@ -6,13 +6,13 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { AddButton } from '../components/ui/AddButton'
 import { DcaForm } from '../components/forms/DcaForm'
-import { CheckIcon, DcaIcon, PencilIcon, SparkleIcon } from '../components/icons'
+import { CheckIcon, DcaIcon, PencilIcon } from '../components/icons'
 import { ASSET_META, dcaThisMonth, nextBuyDate, planBoughtThisMonth } from '../lib/calc'
 import type { DcaPlan } from '../lib/types'
 import { daysUntil, ordinal, pct, thb } from '../lib/format'
 
 export function DcaPlanner() {
-  const { data, loadSample, setMonthlyIncome } = useData()
+  const { data, setMonthlyIncome } = useData()
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<DcaPlan | null>(null)
   const [editingSalary, setEditingSalary] = useState(false)
@@ -54,16 +54,7 @@ export function DcaPlanner() {
             description="Add your recurring monthly buys to see everything you're dollar-cost-averaging into, and the total per month."
             accent="var(--color-brand)"
             action={
-              <div className="flex flex-col items-center gap-3">
-                <AddButton onClick={openAdd} label="Add DCA plan" />
-                <button
-                  onClick={loadSample}
-                  className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-muted transition-colors hover:text-ink"
-                >
-                  <SparkleIcon className="h-4 w-4" />
-                  or load sample plan
-                </button>
-              </div>
+              <AddButton onClick={openAdd} label="Add DCA plan" />
             }
           />
         </Card>

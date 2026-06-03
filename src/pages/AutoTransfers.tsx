@@ -7,7 +7,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { AddButton } from '../components/ui/AddButton'
 import { TransferForm } from '../components/forms/TransferForm'
-import { AlertIcon, CheckIcon, SparkleIcon, TransferIcon } from '../components/icons'
+import { AlertIcon, CheckIcon, TransferIcon } from '../components/icons'
 import { FREQUENCY_LABEL, remainingTransfers, transferProgress } from '../lib/calc'
 import { daysUntil, formatDate, thb } from '../lib/format'
 import type { Transfer } from '../lib/types'
@@ -15,7 +15,7 @@ import type { Transfer } from '../lib/types'
 const SOON_THRESHOLD = 14
 
 export function AutoTransfers() {
-  const { data, loadSample } = useData()
+  const { data } = useData()
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Transfer | null>(null)
 
@@ -39,16 +39,7 @@ export function AutoTransfers() {
             description="Track recurring bank transfers, allowances, savings, and premiums. Get a heads-up before each schedule expires."
             accent="var(--color-stocks)"
             action={
-              <div className="flex flex-col items-center gap-3">
-                <AddButton onClick={openAdd} label="Add transfer" />
-                <button
-                  onClick={loadSample}
-                  className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-muted transition-colors hover:text-ink"
-                >
-                  <SparkleIcon className="h-4 w-4" />
-                  or load sample schedules
-                </button>
-              </div>
+              <AddButton onClick={openAdd} label="Add transfer" />
             }
           />
         </Card>
