@@ -181,8 +181,8 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
 
   function save() {
     if (!valid) { setShowErrors(true); return }
-    const next = applyBuy(holding, Number(units), priceInThb)
-    upsertHolding({ ...holding, ...next })
+    const next = applyBuy(holding!, Number(units), priceInThb)
+    upsertHolding({ ...holding!, ...next })
     onClose()
   }
 
