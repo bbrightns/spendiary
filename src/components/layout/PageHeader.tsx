@@ -16,7 +16,7 @@ export function PageHeader({ eyebrow, title, subtitle, action }: PageHeaderProps
             {eyebrow}
           </p>
         )}
-        <h1 className="font-display text-[27px] font-extrabold leading-none tracking-tight text-ink sm:text-[34px]">
+        <h1 className="font-display text-[27px] font-extrabold leading-none tracking-tight text-ink sm:text-[34px] [text-wrap:balance]">
           {title}
         </h1>
         {subtitle && <p className="mt-2 text-[14.5px] text-ink-muted">{subtitle}</p>}

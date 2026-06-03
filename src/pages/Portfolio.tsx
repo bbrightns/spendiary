@@ -150,7 +150,7 @@ export function Portfolio() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
         {/* Allocation chart */}
         <Card className="lg:col-span-2 animate-rise">
-          <h2 className="font-display text-[17px] font-bold text-ink">Asset Allocation</h2>
+          <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">Asset Allocation</h2>
           <div className="mt-5 flex flex-col items-center gap-6">
             <DonutChart
               segments={segments}
@@ -289,8 +289,8 @@ export function Portfolio() {
                     {/* BTC sub-breakdown panel */}
                     {isBtc && isExpanded && (
                       <div className="border-t border-line bg-surface-muted px-4 pb-3 pt-2">
-                        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
-                          Breakdown by location
+                        <p className="mb-2 text-[12px] font-semibold text-ink-muted">
+                          Locations
                         </p>
                         {(h.btcLocations ?? []).length === 0 ? (
                           <p className="text-[13px] text-ink-muted py-1">No locations yet. Use "Buy more" to add.</p>

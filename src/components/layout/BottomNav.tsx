@@ -12,7 +12,7 @@ export function BottomNav() {
             end={item.to === '/'}
             className={({ isActive }) =>
               [
-                'group relative flex flex-1 flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-[10.5px] font-semibold transition-colors duration-200',
+                'group relative flex flex-1 flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-[10.5px] font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
                 isActive ? 'text-brand-ink' : 'text-ink-muted',
               ].join(' ')
             }
@@ -21,7 +21,7 @@ export function BottomNav() {
               <>
                 <span
                   className={[
-                    'flex h-8 w-12 items-center justify-center rounded-full transition-all duration-200',
+                    'flex h-9 w-12 items-center justify-center rounded-full transition-all duration-200',
                     isActive ? 'bg-brand-soft' : 'bg-transparent',
                   ].join(' ')}
                 >

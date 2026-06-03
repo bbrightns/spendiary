@@ -7,6 +7,14 @@ import { SettingsIcon, SparkleIcon } from '../icons'
 export function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh bg-canvas">
+      {/* Skip to main content (keyboard / screen reader) */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-ink focus:px-4 focus:py-2 focus:text-[14px] focus:font-semibold focus:text-white focus:shadow-[var(--shadow-lift)] focus:outline-none"
+      >
+        Skip to content
+      </a>
+
       <Sidebar />
 
       {/* Mobile top brand bar */}
@@ -19,7 +27,7 @@ export function Layout({ children }: { children: ReactNode }) {
           to="/settings"
           aria-label="Settings"
           className={({ isActive }) =>
-            `grid h-9 w-9 place-items-center rounded-xl transition-colors ${
+            `grid h-11 w-11 place-items-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
               isActive ? 'bg-brand-soft text-brand-ink' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'
             }`
           }
@@ -28,7 +36,7 @@ export function Layout({ children }: { children: ReactNode }) {
         </NavLink>
       </div>
 
-      <main className="lg:pl-[252px]">
+      <main id="main-content" className="lg:pl-[252px]">
         <div className="mx-auto w-full max-w-[1080px] px-5 pb-28 pt-6 sm:px-8 sm:pt-10 lg:pb-14">
           {children}
         </div>

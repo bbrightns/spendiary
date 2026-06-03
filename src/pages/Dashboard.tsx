@@ -192,7 +192,7 @@ export function Dashboard() {
         {/* DCA progress */}
         <Card className="lg:col-span-2 animate-rise">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-[17px] font-bold text-ink">This Month's DCA</h2>
+            <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">This Month's DCA</h2>
             <Link to="/dca" className="text-[13px] font-semibold text-brand hover:underline" aria-label="View DCA planner">
               DCA planner
             </Link>
@@ -223,7 +223,7 @@ export function Dashboard() {
         <Card className="lg:col-span-3 animate-rise" padded={false}>
           <div className="flex items-center justify-between px-5 pt-5 sm:px-6 sm:pt-6">
             <div>
-              <h2 className="font-display text-[17px] font-bold text-ink">Upcoming Expirations</h2>
+              <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">Upcoming Expirations</h2>
               <p className="text-[13px] text-ink-muted">Transfer schedules ending soon</p>
             </div>
             <Link to="/transfers" className="text-[13px] font-semibold text-brand hover:underline" aria-label="View all transfers">

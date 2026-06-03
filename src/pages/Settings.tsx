@@ -121,8 +121,8 @@ export function Settings() {
 
       {/* Data & Backup */}
       <Card className="animate-rise">
-        <h2 className="font-display text-[17px] font-bold text-ink">Data &amp; Backup</h2>
-        <p className="mt-1 text-[13.5px] text-ink-muted">
+        <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">Data &amp; Backup</h2>
+        <p className="mt-1 text-[13.5px] text-ink-muted [text-wrap:pretty]">
           All data is stored on this device: {dataSummary(data)}. Export a backup before clearing or switching browsers.
         </p>
 
@@ -185,7 +185,7 @@ export function Settings() {
 
       {/* Danger zone */}
       <Card className="mt-4 animate-rise border-loss/20 bg-loss-soft/20">
-        <h2 className="font-display text-[17px] font-bold text-ink">Danger zone</h2>
+        <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">Danger zone</h2>
         <div className="mt-4 flex items-center justify-between">
           <div>
             <p className="text-[14px] font-semibold text-ink">Reset all data</p>

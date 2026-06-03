@@ -210,7 +210,7 @@ export function Retirement() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Inputs */}
         <Card className="animate-rise">
-          <h2 className="font-display text-[17px] font-bold text-ink mb-5">Your Plan</h2>
+          <h2 className="font-display text-[17px] font-bold text-ink mb-5 [text-wrap:balance]">Your Plan</h2>
           <div className="space-y-4">
             <NumberField
               label="Monthly spend after retirement (THB)"
@@ -268,7 +268,7 @@ export function Retirement() {
         <Card className="lg:col-span-2 animate-rise">
           <div className="flex items-start justify-between gap-4 mb-5">
             <div>
-              <h2 className="font-display text-[17px] font-bold text-ink">Growth Projection</h2>
+              <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">Growth Projection</h2>
               <p className="text-[13px] text-ink-muted mt-0.5">From today to retire age {Number(retireAge) || 40}</p>
             </div>
             <div

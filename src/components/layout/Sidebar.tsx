@@ -23,7 +23,7 @@ export function Sidebar() {
             end={item.to === '/'}
             className={({ isActive }) =>
               [
-                'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14.5px] font-medium transition-all duration-200',
+                'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14.5px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-1',
                 isActive
                   ? 'bg-brand-soft text-brand-ink'
                   : 'text-ink-soft hover:bg-surface-muted hover:text-ink',
@@ -47,7 +47,7 @@ export function Sidebar() {
         to={settingsItem.to}
         className={({ isActive }) =>
           [
-            'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14.5px] font-medium transition-all duration-200',
+            'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14.5px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-1',
             isActive
               ? 'bg-brand-soft text-brand-ink'
               : 'text-ink-soft hover:bg-surface-muted hover:text-ink',
