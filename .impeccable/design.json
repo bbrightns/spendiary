@@ -1,0 +1,303 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-03T00:00:00Z",
+  "title": "Design System: Spendiary",
+  "extensions": {
+    "colorMeta": {
+      "brand": {
+        "role": "primary",
+        "displayName": "Precision Indigo",
+        "canonical": "oklch(50% 0.23 265)",
+        "tonalRamp": [
+          "oklch(15% 0.22 265)",
+          "oklch(25% 0.22 265)",
+          "oklch(35% 0.22 265)",
+          "oklch(43% 0.22 265)",
+          "oklch(50% 0.23 265)",
+          "oklch(62% 0.18 265)",
+          "oklch(76% 0.12 265)",
+          "oklch(93% 0.04 265)"
+        ]
+      },
+      "brand-soft": {
+        "role": "primary-tint",
+        "displayName": "Indigo Tint",
+        "canonical": "oklch(93% 0.04 265)",
+        "tonalRamp": []
+      },
+      "brand-ink": {
+        "role": "primary-dark",
+        "displayName": "Indigo Deep",
+        "canonical": "oklch(43% 0.22 265)",
+        "tonalRamp": []
+      },
+      "gain": {
+        "role": "semantic-positive",
+        "displayName": "Gain Emerald",
+        "canonical": "oklch(58% 0.14 162)",
+        "tonalRamp": [
+          "oklch(15% 0.13 162)",
+          "oklch(25% 0.13 162)",
+          "oklch(36% 0.13 162)",
+          "oklch(46% 0.13 162)",
+          "oklch(58% 0.14 162)",
+          "oklch(70% 0.11 162)",
+          "oklch(82% 0.07 162)",
+          "oklch(93% 0.03 162)"
+        ]
+      },
+      "loss": {
+        "role": "semantic-negative",
+        "displayName": "Loss Rose",
+        "canonical": "oklch(60% 0.17 12)",
+        "tonalRamp": [
+          "oklch(15% 0.16 12)",
+          "oklch(25% 0.16 12)",
+          "oklch(36% 0.16 12)",
+          "oklch(47% 0.16 12)",
+          "oklch(60% 0.17 12)",
+          "oklch(71% 0.13 12)",
+          "oklch(82% 0.09 12)",
+          "oklch(94% 0.03 12)"
+        ]
+      },
+      "warn": {
+        "role": "semantic-caution",
+        "displayName": "Warn Amber",
+        "canonical": "oklch(63% 0.16 60)",
+        "tonalRamp": [
+          "oklch(15% 0.15 60)",
+          "oklch(26% 0.15 60)",
+          "oklch(38% 0.16 60)",
+          "oklch(50% 0.16 60)",
+          "oklch(63% 0.16 60)",
+          "oklch(73% 0.13 60)",
+          "oklch(83% 0.09 60)",
+          "oklch(95% 0.04 60)"
+        ]
+      },
+      "ink": {
+        "role": "neutral-text",
+        "displayName": "Deep Slate",
+        "canonical": "oklch(10% 0.01 240)",
+        "tonalRamp": [
+          "oklch(10% 0.01 240)",
+          "oklch(22% 0.01 240)",
+          "oklch(34% 0.01 240)",
+          "oklch(47% 0.01 240)",
+          "oklch(56% 0.01 240)",
+          "oklch(68% 0.01 240)",
+          "oklch(75% 0.005 240)",
+          "oklch(96% 0.005 240)"
+        ]
+      },
+      "canvas": {
+        "role": "neutral-background",
+        "displayName": "Cool Canvas",
+        "canonical": "oklch(97% 0.005 240)",
+        "tonalRamp": [
+          "oklch(10% 0.01 240)",
+          "oklch(25% 0.01 240)",
+          "oklch(40% 0.01 240)",
+          "oklch(55% 0.01 240)",
+          "oklch(70% 0.005 240)",
+          "oklch(82% 0.005 240)",
+          "oklch(92% 0.005 240)",
+          "oklch(97% 0.005 240)"
+        ]
+      },
+      "funds": {
+        "role": "asset-accent",
+        "displayName": "Fund Indigo",
+        "canonical": "oklch(52% 0.22 270)",
+        "tonalRamp": []
+      },
+      "stocks": {
+        "role": "asset-accent",
+        "displayName": "Stock Sky",
+        "canonical": "oklch(62% 0.20 220)",
+        "tonalRamp": []
+      },
+      "crypto": {
+        "role": "asset-accent",
+        "displayName": "Crypto Amber",
+        "canonical": "oklch(75% 0.17 75)",
+        "tonalRamp": []
+      },
+      "cash": {
+        "role": "asset-accent",
+        "displayName": "Cash Emerald",
+        "canonical": "oklch(66% 0.15 162)",
+        "tonalRamp": []
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Hero Display",
+        "purpose": "Net worth, DCA monthly total. Financial hero figures only. Always tabular-nums."
+      },
+      "headline": {
+        "displayName": "Section Headline",
+        "purpose": "Page-level section totals. One level below the hero figure."
+      },
+      "title": {
+        "displayName": "Card Title",
+        "purpose": "Section headings, modal titles, medium-scale card values (17–22px)."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "List row text, descriptions, form values. Inter only."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Captions, chip text, metadata below values, nav labels. Never all-caps."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow-soft",
+        "value": "0 1px 2px rgba(16,18,27,0.04), 0 8px 24px -12px rgba(16,18,27,0.12)",
+        "purpose": "Default card resting state. Ambient presence without drama."
+      },
+      {
+        "name": "shadow-lift",
+        "value": "0 2px 4px rgba(16,18,27,0.04), 0 18px 40px -20px rgba(16,18,27,0.22)",
+        "purpose": "Hover card state, open modal panel. Affordance signal for interactive surfaces."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-spring",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Card reveal (rise) and modal sheet (sheetUp). Decelerates fast — feels responsive, not bouncy."
+      },
+      {
+        "name": "ease-fade",
+        "value": "ease",
+        "purpose": "Modal backdrop fadeIn. Simple opacity transition."
+      },
+      {
+        "name": "rise",
+        "value": "opacity 0→1, translateY 10px→0, 500ms ease-spring",
+        "purpose": "Page card entrance animation on mount. Add reduced-motion override: instant show."
+      },
+      {
+        "name": "sheetUp",
+        "value": "opacity 0→1, translateY 24px→0, scale 0.98→1, 320ms ease-spring",
+        "purpose": "Modal panel entrance. Reduced-motion override: instant show."
+      },
+      {
+        "name": "fadeIn",
+        "value": "opacity 0→1, 200ms ease",
+        "purpose": "Modal backdrop. Reduced-motion override: instant show."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px", "description": "Modal switches from bottom sheet to centered dialog." },
+      { "name": "lg", "value": "1024px", "description": "Bottom nav hides; fixed sidebar appears." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action across all pages. Dark ink pill, not brand-colored.",
+      "html": "<button class=\"ds-btn-primary\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg> Add holding</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 16px; background: #0b0d12; color: #fff; border: none; border-radius: 9999px; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s ease, transform 0.1s ease; box-shadow: 0 1px 2px rgba(16,18,27,.04), 0 8px 24px -12px rgba(16,18,27,.12); } .ds-btn-primary:hover { background: #1d2230; } .ds-btn-primary:active { transform: scale(0.95); } .ds-btn-primary:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }"
+    },
+    {
+      "name": "Brand Icon Button",
+      "kind": "button",
+      "refersTo": "button-brand-icon",
+      "description": "Per-row action for Buy More on holdings. Resting: indigo tint. Hover: full indigo fill.",
+      "html": "<button class=\"ds-btn-brand-icon\" aria-label=\"Buy more\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg></button>",
+      "css": ".ds-btn-brand-icon { display: grid; place-items: center; width: 36px; height: 36px; border: none; border-radius: 9999px; background: #eef0ff; color: #4f46e5; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; } .ds-btn-brand-icon:hover { background: #4f46e5; color: #fff; } .ds-btn-brand-icon:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "stat-card",
+      "description": "Base surface unit. White, 24px radius, hairline border + ambient shadow.",
+      "html": "<div class=\"ds-card\"><p class=\"ds-card-label\">Portfolio Value</p><p class=\"ds-card-value\">฿ 1,973,895</p><p class=\"ds-card-sub\">+฿ 156,045 unrealised</p></div>",
+      "css": ".ds-card { background: #fff; border-radius: 24px; border: 1px solid #ecedf1; box-shadow: 0 1px 2px rgba(16,18,27,.04), 0 8px 24px -12px rgba(16,18,27,.12); padding: 20px; font-family: 'Inter', sans-serif; transition: box-shadow 0.3s ease; } .ds-card:hover { box-shadow: 0 2px 4px rgba(16,18,27,.04), 0 18px 40px -20px rgba(16,18,27,.22); } .ds-card-label { margin: 0 0 16px; font-size: 13px; font-weight: 500; color: #8a909c; } .ds-card-value { margin: 0 0 6px; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 27px; font-weight: 800; letter-spacing: -0.025em; color: #0b0d12; font-variant-numeric: tabular-nums; } .ds-card-sub { margin: 0; font-size: 12.5px; font-weight: 600; color: #8a909c; }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Text and number inputs across all forms. Rounded 12px, brand focus ring.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Asset Name</span><input class=\"ds-field-input\" type=\"text\" placeholder=\"e.g. SCB US Index Fund\"></label>",
+      "css": ".ds-field { display: block; font-family: 'Inter', sans-serif; } .ds-field-label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: #3d424d; } .ds-field-input { width: 100%; height: 44px; padding: 0 14px; border: 1px solid #e2e4ea; border-radius: 12px; background: #fff; color: #0b0d12; font-family: 'Inter', sans-serif; font-size: 15px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; box-sizing: border-box; } .ds-field-input::placeholder { color: #b7bcc6; } .ds-field-input:focus { border-color: #4f46e5; box-shadow: 0 0 0 2px color-mix(in srgb, #4f46e5 15%, transparent); }"
+    },
+    {
+      "name": "Filter Chips",
+      "kind": "chip",
+      "refersTo": "chip-filter",
+      "description": "Asset-class filter tabs on the Portfolio page. Active: ink fill. Inactive: muted surface.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip ds-chip--active\">All</button><button class=\"ds-chip\">Mutual Funds</button><button class=\"ds-chip\">US Stocks</button><button class=\"ds-chip\">Bitcoin</button></div>",
+      "css": ".ds-chips { display: flex; gap: 8px; flex-wrap: wrap; font-family: 'Inter', sans-serif; } .ds-chip { display: inline-flex; align-items: center; padding: 6px 14px; border: none; border-radius: 9999px; background: #f3f4f6; color: #3d424d; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s, color 0.15s; } .ds-chip:hover:not(.ds-chip--active) { color: #0b0d12; } .ds-chip--active { background: #0b0d12; color: #fff; }"
+    },
+    {
+      "name": "PnL Chips",
+      "kind": "chip",
+      "refersTo": "chip-gain",
+      "description": "Financial performance signals. Gain/loss/warn pill badges. Tabular numerals.",
+      "html": "<div style=\"display:flex;gap:8px;align-items:center;font-family:'Inter',sans-serif\"><span class=\"ds-pnl ds-pnl--gain\">+8.7%</span><span class=\"ds-pnl ds-pnl--loss\">−3.2%</span><span class=\"ds-pnl ds-pnl--warn\">Expires 14d</span></div>",
+      "css": ".ds-pnl { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; } .ds-pnl--gain { background: #e4f7ef; color: #0a9d68; } .ds-pnl--loss { background: #fdebef; color: #e0506a; } .ds-pnl--warn { background: #fdf3e2; color: #c9821a; }"
+    },
+    {
+      "name": "Stat Card",
+      "kind": "card",
+      "refersTo": "stat-card",
+      "description": "Metric tile from the Dashboard grid. Icon tinted to the metric's accent color.",
+      "html": "<div class=\"ds-stat\"><div class=\"ds-stat-header\"><span class=\"ds-stat-label\">Cash Available</span><span class=\"ds-stat-icon\" style=\"--accent:#10b981\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12V7H5a2 2 0 0 1 0-4h14v4\"/><path d=\"M3 5v14a2 2 0 0 0 2 2h16v-5\"/><path d=\"M18 12a2 2 0 0 0 0 4h4v-4Z\"/></svg></span></div><p class=\"ds-stat-value\">฿ 285,000</p><div class=\"ds-stat-footer\"><span class=\"ds-stat-chip\">KBank ฿145K</span><span class=\"ds-stat-chip\">SCB ฿92K</span></div></div>",
+      "css": ".ds-stat { background: #fff; border-radius: 24px; border: 1px solid #ecedf1; box-shadow: 0 1px 2px rgba(16,18,27,.04), 0 8px 24px -12px rgba(16,18,27,.12); padding: 20px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: box-shadow 0.3s; font-family: 'Inter', sans-serif; } .ds-stat:hover { box-shadow: 0 2px 4px rgba(16,18,27,.04), 0 18px 40px -20px rgba(16,18,27,.22); } .ds-stat-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; } .ds-stat-label { font-size: 13px; font-weight: 500; color: #8a909c; } .ds-stat-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; color: var(--accent, #4f46e5); background: color-mix(in srgb, var(--accent, #4f46e5) 11%, white); flex-shrink: 0; } .ds-stat-value { margin: 0 0 10px; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 27px; font-weight: 800; letter-spacing: -0.025em; color: #0b0d12; font-variant-numeric: tabular-nums; } .ds-stat-footer { display: flex; flex-wrap: wrap; gap: 6px; } .ds-stat-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; background: #f3f4f6; color: #8a909c; font-size: 11.5px; font-weight: 500; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Bottom Nav",
+      "kind": "nav",
+      "refersTo": "button-primary",
+      "description": "Frosted glass mobile bottom nav. Active tab shows brand-soft pill behind icon.",
+      "html": "<nav class=\"ds-bottom-nav\"><a class=\"ds-nav-item ds-nav-item--active\" href=\"#\"><span class=\"ds-nav-pill\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"9\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"5\"/><rect x=\"14\" y=\"12\" width=\"7\" height=\"9\"/><rect x=\"3\" y=\"16\" width=\"7\" height=\"5\"/></svg></span>Home</a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-nav-pill\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"22 12 18 12 15 21 9 3 6 12 2 12\"/></svg></span>Portfolio</a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-nav-pill\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><polyline points=\"12 6 12 12 16 14\"/></svg></span>DCA</a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-nav-pill\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12H19M12 5l7 7-7 7\"/></svg></span>Transfers</a></nav>",
+      "css": ".ds-bottom-nav { display: flex; justify-content: space-around; align-items: stretch; background: rgba(255,255,255,0.85); backdrop-filter: blur(24px); border-top: 1px solid #ecedf1; padding: 0 8px; font-family: 'Inter', sans-serif; } .ds-nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px 8px; flex: 1; font-size: 10.5px; font-weight: 600; color: #8a909c; text-decoration: none; transition: color 0.2s; } .ds-nav-item--active { color: #3730a3; } .ds-nav-pill { display: flex; align-items: center; justify-content: center; width: 48px; height: 32px; border-radius: 9999px; transition: background 0.2s; } .ds-nav-item--active .ds-nav-pill { background: #eef0ff; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Control Room",
+    "overview": "Spendiary is a one-user, private financial cockpit. The interface speaks with quiet authority: every readout is calibrated, every element earns its presence. There is no decoration for its own sake. The design feels less like a consumer app and more like a well-engineered instrument — the kind that rewards repeated use and never demands attention it hasn't earned.\n\nThe density is deliberate but not punishing. The system surfaces real financial data on a calm, light-toned surface without the Bloomberg wall-of-numbers assault. Color is reserved exclusively for signal: emerald for gain, rose for loss, amber for expiring, indigo for act here. When those colors appear they carry weight precisely because they're absent everywhere else.\n\nThis is not a social product and not a motivational tool. No sharing affordances, no streak counters, no animated celebrations. The emotional register is composed, not congratulatory.",
+    "keyCharacteristics": [
+      "Ink-on-white surfaces with a cool barely-tinted canvas; card-first page composition",
+      "Plus Jakarta Sans extrabold for all financial figures and section titles; Inter for everything else",
+      "Semantic-only color — the neutral ink family carries 90% of the text surface",
+      "Ambient two-layer shadow separates surfaces; cards use hairline border + soft diffuse shadow as the base register",
+      "Mobile-first: frosted-glass bottom nav; fixed sidebar on desktop"
+    ],
+    "rules": [
+      { "name": "The One Voice Rule", "body": "Precision Indigo appears on ≤10% of any given screen. Its scarcity is the signal. No indigo surface fills, no gradients, no large indigo text blocks.", "section": "colors" },
+      { "name": "The Earned Color Rule", "body": "Gain, loss, and warn are financial semantics, not UI semantics. Do not use them for generic success/caution states.", "section": "colors" },
+      { "name": "The Asset Accent Rule", "body": "Asset accent colors are chart and icon colors only. Tint at 11% via color-mix for icon containers. Never as dominant surface fills.", "section": "colors" },
+      { "name": "The Tabular Rule", "body": "Every number that might change uses font-variant-numeric: tabular-nums via .tnum. No exceptions on financial data.", "section": "typography" },
+      { "name": "The Two-Family Rule", "body": "Plus Jakarta Sans for scale (display, headlines, titles). Inter for everything else. No third typeface.", "section": "typography" },
+      { "name": "The Contained Lift Rule", "body": "shadow-lift is an affordance signal, not decoration. Interactive cards hover with the heavier shadow. Non-interactive surfaces stay at shadow-soft.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use tabular-nums (.tnum) on every number that could change — balances, percentages, counts.",
+      "Do keep Precision Indigo to ≤10% of any screen surface.",
+      "Do use shadow-soft as the default card state and shadow-lift only in response to user interaction.",
+      "Do add @media (prefers-reduced-motion: reduce) to every keyframe animation.",
+      "Do scope asset accent colors to icon backgrounds and chart segments only, tinted at 11% via color-mix.",
+      "Do use Plus Jakarta Sans for hero and section titles, and Inter for body, label, and metadata text."
+    ],
+    "donts": [
+      "Don't use Precision Indigo as a surface fill, gradient, or large text block.",
+      "Don't introduce the Robinhood / crypto-app pattern: no price tickers, no dopamine flashes, no confetti on portfolio gains.",
+      "Don't add a third typeface. Plus Jakarta Sans + Inter is the complete vocabulary.",
+      "Don't use border-left/right greater than 1px as a colored accent stripe on cards or list items.",
+      "Don't apply gradient text (background-clip: text with a gradient fill).",
+      "Don't place a card inside another card.",
+      "Don't use gain/loss/warn semantic colors outside their financial contexts.",
+      "Don't round cards, modals, or inputs beyond their defined radii (cards 24px, modals 28px, inputs 12px)."
+    ]
+  }
+}
