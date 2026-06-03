@@ -114,6 +114,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const syncReady = useRef(!API_ENABLED)
   // Last data string we synced to the API — avoids redundant PUTs.
   const lastSynced = useRef('')
+  // Snapshot of data at mount — used to detect local changes made before
+  // the initial GET completes (race condition guard).
+  const mountSnapshot = useRef(JSON.stringify(load()))
+  // Mirror of current data as a ref so GET callback can read it without
+  // capturing a stale closure.
+  const dataRef = useRef(data)
+  dataRef.current = data
 
   // ── Persist to localStorage ──────────────────────────────────
   useEffect(() => {
@@ -132,8 +139,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
       .then((remote) => {
         if (remote && typeof remote === 'object' && !Array.isArray(remote)) {
           const migrated = migrate(remote as SpendiaryData)
-          lastSynced.current = JSON.stringify(migrated)
-          setDataState(migrated)
+          const migratedStr = JSON.stringify(migrated)
+          const currentStr = JSON.stringify(dataRef.current)
+          // If user made local changes before GET completed, keep their
+          // changes and let the debounced PUT sync them to cloud instead.
+          if (currentStr !== mountSnapshot.current) {
+            // Local data was modified — don't overwrite; will sync up.
+            lastSynced.current = ''
+          } else {
+            // No local changes — safe to load cloud data.
+            lastSynced.current = migratedStr
+            setDataState(migrated)
+          }
         }
       })
       .catch(() => { /* network error — keep localStorage data */ })

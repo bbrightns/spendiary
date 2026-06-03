@@ -11,6 +11,7 @@ interface StatCardProps {
   emphasis?: boolean
   onClick?: () => void
   editable?: boolean
+  className?: string
 }
 
 export function StatCard({
@@ -22,14 +23,13 @@ export function StatCard({
   emphasis = false,
   onClick,
   editable = false,
+  className = '',
 }: StatCardProps) {
   return (
     <Card
       hover
       onClick={onClick}
-      className={`group flex flex-col justify-between animate-rise ${
-        onClick ? 'cursor-pointer' : ''
-      }`}
+      className={`group flex flex-col justify-between animate-rise ${onClick ? 'cursor-pointer' : ''} ${className}`}
     >
       <div className="flex items-start justify-between">
         <p className="flex items-center gap-1.5 text-[13px] font-medium text-ink-muted">

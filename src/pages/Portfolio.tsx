@@ -250,7 +250,21 @@ export function Portfolio() {
                         )}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14px] font-semibold text-ink">{h.name}</p>
+                        <div className="flex items-center gap-1">
+                          <p className="truncate text-[14px] font-semibold text-ink">{h.name}</p>
+                          {isBtc && (
+                            <svg
+                              aria-hidden="true"
+                              width={14}
+                              height={14}
+                              viewBox="0 0 14 14"
+                              fill="none"
+                              className={`shrink-0 text-ink-muted transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                            >
+                              <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </div>
                         <p className="text-[12px] text-ink-muted">
                           {isBtc
                             ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats (${h.units.toFixed(8)} BTC)`
@@ -264,18 +278,6 @@ export function Portfolio() {
                           <PnLPill value={h.pnlPct} asPct />
                         </div>
                       </div>
-                      {isBtc && (
-                        <svg
-                          aria-hidden="true"
-                          width={14}
-                          height={14}
-                          viewBox="0 0 14 14"
-                          fill="none"
-                          className={`ml-1 shrink-0 text-ink-muted transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-                        >
-                          <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
                       <button
                         onClick={(e) => { e.stopPropagation(); openBuy(h) }}
                         title="Buy more"

@@ -28,6 +28,18 @@ import {
 } from '../lib/calc'
 import { daysUntil, formatDateShort, pct, thb, thbCompact } from '../lib/format'
 
+// Distinct colors for cash account segments — cycles if >8 accounts
+const CASH_COLORS = [
+  'var(--color-cash)',      // emerald
+  'var(--color-brand)',     // indigo
+  'var(--color-crypto)',    // amber
+  'var(--color-stocks)',    // sky
+  'var(--color-funds)',     // violet
+  '#f472b6',               // pink
+  '#fb923c',               // orange
+  '#a78bfa',               // purple
+]
+
 export function Dashboard() {
   const { data } = useData()
   const [cashOpen, setCashOpen] = useState(false)
@@ -77,9 +89,6 @@ export function Dashboard() {
 
       {/* Net worth hero */}
       <Card className="relative overflow-hidden bg-gradient-to-br from-ink to-ink-deep text-white animate-rise">
-        <span className="absolute right-5 top-5 z-10 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[11.5px] font-semibold text-white/70 ring-1 ring-white/10">
-          Auto-calculated
-        </span>
         <div className="relative flex flex-wrap items-end justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 text-white/60">
@@ -94,7 +103,11 @@ export function Dashboard() {
               <span className="text-[13px] text-white/55">unrealised across portfolio</span>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+          <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+            <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/60 ring-1 ring-white/10">
+              Auto-calculated
+            </p>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-3">
             <div>
               <p className="text-[12px] text-white/55">Invested</p>
               <p className="mt-0.5 font-display text-lg font-bold tnum">{thbCompact(portfolio.value)}</p>
@@ -132,6 +145,7 @@ export function Dashboard() {
                 </div>
               </div>
             )}
+            </div>
           </div>
         </div>
       </Card>
@@ -151,31 +165,6 @@ export function Dashboard() {
           }
         />
         <StatCard
-          label="Cash Available"
-          value={thb(cash)}
-          icon={<WalletIcon className="h-[18px] w-[18px]" />}
-          accent="var(--color-cash)"
-          editable
-          onClick={() => setCashOpen(true)}
-          footer={
-            data.cashAccounts.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5">
-                {data.cashAccounts.map((a) => (
-                  <span
-                    key={a.id}
-                    className="inline-flex items-center gap-1 rounded-full bg-surface-muted px-2 py-0.5 text-[11.5px] font-medium text-ink-soft"
-                  >
-                    {a.name}
-                    <span className="tnum text-ink-muted">{thbCompact(a.balance)}</span>
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <span className="text-[12.5px] font-medium text-brand">Tap to add accounts</span>
-            )
-          }
-        />
-        <StatCard
           label="Monthly DCA"
           value={thb(dca.invested)}
           icon={<ClockIcon className="h-[18px] w-[18px]" />}
@@ -184,6 +173,47 @@ export function Dashboard() {
             <span className="text-[12.5px] text-ink-muted">
               of {thb(dca.total)} this month · {pct(dca.pct, 0)}
             </span>
+          }
+        />
+        <StatCard
+          label="Cash Available"
+          value={thb(cash)}
+          icon={<WalletIcon className="h-[18px] w-[18px]" />}
+          accent="var(--color-cash)"
+          editable
+          onClick={() => setCashOpen(true)}
+          className="sm:col-span-2 xl:col-span-3"
+          footer={
+            data.cashAccounts.length > 0 ? (
+              <div className="space-y-2.5">
+                {/* Stacked proportion bar */}
+                <div className="flex h-1.5 overflow-hidden rounded-full">
+                  {data.cashAccounts.map((a, i) => (
+                    <div
+                      key={a.id}
+                      style={{
+                        width: `${(a.balance / cash) * 100}%`,
+                        background: CASH_COLORS[i % CASH_COLORS.length],
+                      }}
+                    />
+                  ))}
+                </div>
+                {/* Legend */}
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  {data.cashAccounts.map((a, i) => (
+                    <span key={a.id} className="flex items-center gap-1 text-[11.5px] text-ink-muted">
+                      <span
+                        className="h-1.5 w-1.5 shrink-0 rounded-full"
+                        style={{ background: CASH_COLORS[i % CASH_COLORS.length] }}
+                      />
+                      {a.name} {thbCompact(a.balance)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <span className="text-[12.5px] font-medium text-brand">Tap to add accounts</span>
+            )
           }
         />
       </div>
