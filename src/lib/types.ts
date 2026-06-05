@@ -122,6 +122,13 @@ export interface FixedCostItem {
   amount: number
 }
 
+export interface NetWorthSnapshot {
+  /** YYYY-MM-DD in local timezone */
+  date: string
+  /** Total net worth in THB at this point */
+  value: number
+}
+
 export interface SpendiaryData {
   /** Display name shown in the Dashboard greeting */
   userName?: string
@@ -135,6 +142,8 @@ export interface SpendiaryData {
   monthlyFixedCost?: number
   /** Monthly personal / wants budget in THB (shopping, travel, fun) */
   monthlyPersonal?: number
+  /** Daily net worth snapshots — one per day, auto-recorded, last 365 */
+  netWorthHistory?: NetWorthSnapshot[]
   holdings: Holding[]
   holdingLogs?: HoldingLog[]
   dcaPlans: DcaPlan[]

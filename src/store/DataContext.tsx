@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import type { BtcLocation, CashAccount, DcaPlan, FixedCostItem, GoldLocation, Holding, HoldingLog, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
+import type { BtcLocation, CashAccount, DcaPlan, FixedCostItem, GoldLocation, Holding, HoldingLog, NetWorthSnapshot, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
+import { localDateStr } from '../lib/format'
 
 const STORAGE_KEY = 'spendiary.data.v1'
 
@@ -63,6 +64,9 @@ interface DataContextValue {
   removeTransfer: (id: string) => void
 
   setRetirement: (settings: RetirementSettings) => void
+  recordNetWorthSnapshot: (value: number) => void
+  /** ISO timestamp of the last successful cloud sync, or null */
+  lastSyncedAt: Date | null
   upsertBtcLocation: (holdingId: string, loc: Omit<BtcLocation, 'id'> & { id?: string }) => void
   removeBtcLocation: (holdingId: string, locId: string) => void
   upsertGoldLocation: (holdingId: string, loc: Omit<GoldLocation, 'id'> & { id?: string }) => void
@@ -127,6 +131,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [data, setDataState] = useState<SpendiaryData>(load)
   const [usdThb, setUsdThb] = useState<number | null>(null)
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle')
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null)
 
   // Tracks whether the initial API load has completed (prevents syncing
   // back immediately after we receive data from the server).
@@ -194,6 +199,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           if (r.ok) {
             lastSynced.current = serialised
             setSyncStatus('synced')
+            setLastSyncedAt(new Date())
           } else {
             setSyncStatus('error')
           }
@@ -210,6 +216,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       loadSample: () => {},
       clearAll: () => setDataState(emptyData),
       syncStatus,
+      lastSyncedAt,
       usdThb,
       setUsdThb,
       setCashAccounts: (cashAccounts) => setDataState((prev) => ({ ...prev, cashAccounts })),
@@ -318,6 +325,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setRetirement: (retirement) =>
         setDataState((prev) => ({ ...prev, retirement })),
 
+      recordNetWorthSnapshot: (value) =>
+        setDataState((prev) => {
+          if (value <= 0) return prev
+          const today = localDateStr()
+          const existing = prev.netWorthHistory ?? []
+          // Replace today's entry (prices may have updated) and keep last 365
+          const updated = [...existing.filter((s: NetWorthSnapshot) => s.date !== today), { date: today, value }]
+            .sort((a: NetWorthSnapshot, b: NetWorthSnapshot) => a.date.localeCompare(b.date))
+            .slice(-365)
+          return { ...prev, netWorthHistory: updated }
+        }),
+
       upsertBtcLocation: (holdingId, loc) =>
         setDataState((prev) => ({
           ...prev,
@@ -372,7 +391,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }),
         })),
     }),
-    [data, syncStatus],
+    [data, syncStatus, lastSyncedAt],
   )
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>

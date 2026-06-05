@@ -55,6 +55,7 @@ export function Portfolio() {
   const [filter, setFilter] = useState<AssetClass | 'all'>('all')
   const [sortBy, setSortBy] = useState<'none' | 'value' | 'pnl' | 'type'>('none')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [search, setSearch] = useState('')
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -137,9 +138,15 @@ export function Portfolio() {
 
   const TYPE_ORDER: Record<AssetClass, number> = { crypto: 0, gold: 1, stock: 2, fund: 3 }
 
+  const searchLower = search.toLowerCase()
   const rows = data.holdings
     .map(holdingMetrics)
     .filter((h) => filter === 'all' || h.assetClass === filter)
+    .filter((h) =>
+      !search ||
+      h.name.toLowerCase().includes(searchLower) ||
+      h.ticker.toLowerCase().includes(searchLower),
+    )
     .sort((a, b) => {
       if (sortBy === 'none') return 0   // preserve stored order (drag order)
       const dir = sortDir === 'desc' ? -1 : 1
@@ -249,6 +256,34 @@ export function Portfolio() {
           </div>
 
           <div className="mt-6 border-t border-line pt-5">
+            {/* Search bar */}
+            <div className="relative mb-3">
+              <svg
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
+                viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8}
+              >
+                <circle cx={6.5} cy={6.5} r={4.5} />
+                <path d="M10.5 10.5l3 3" strokeLinecap="round" />
+              </svg>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by name or ticker…"
+                className="w-full rounded-xl border border-line bg-surface-muted py-2 pl-9 pr-8 text-[13.5px] text-ink outline-none placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/20"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-ink-faint hover:text-ink"
+                >
+                  <svg viewBox="0 0 12 12" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                    <path d="M2 2l8 8M10 2l-8 8" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
             {/* Filter pills */}
             <div className="mb-2 flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
               {FILTERS.map((f) => (
@@ -344,8 +379,14 @@ export function Portfolio() {
                         )}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5">
                           <p className="truncate text-[14px] font-semibold text-ink">{h.name}</p>
+                          {isPriceStale(h.updatedAt) && (
+                            <span
+                              title={`Price not updated in 7+ days${h.updatedAt ? ` (last: ${h.updatedAt})` : ''}`}
+                              className="h-2 w-2 shrink-0 rounded-full bg-warn"
+                            />
+                          )}
                           {isExpandable && (
                             <svg
                               aria-hidden="true"
@@ -560,6 +601,14 @@ function SortableRow({ id, children }: { id: string; children: (handle: React.Re
       {children(handle)}
     </li>
   )
+}
+
+function isPriceStale(updatedAt?: string): boolean {
+  if (!updatedAt) return false
+  const [y, m, d] = updatedAt.split('-').map(Number)
+  const updated = new Date(y, m - 1, d)
+  const daysSince = (Date.now() - updated.getTime()) / 86_400_000
+  return daysSince >= 7
 }
 
 function unitLabel(assetClass: AssetClass): string {

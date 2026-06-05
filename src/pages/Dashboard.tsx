@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { PageHeader } from '../components/layout/PageHeader'
@@ -28,6 +28,7 @@ import {
   FREQUENCY_LABEL,
 } from '../lib/calc'
 import { daysUntil, formatDateShort, pct, thb, thbCompact } from '../lib/format'
+import type { NetWorthSnapshot } from '../lib/types'
 
 // Distinct colors for cash account segments — cycles if >8 accounts
 const CASH_COLORS = [
@@ -42,7 +43,7 @@ const CASH_COLORS = [
 ]
 
 export function Dashboard() {
-  const { data } = useData()
+  const { data, recordNetWorthSnapshot } = useData()
   const navigate = useNavigate()
   const [cashOpen, setCashOpen] = useState(false)
   const hasAnything =
@@ -69,6 +70,12 @@ export function Dashboard() {
     day: 'numeric',
     month: 'long',
   })
+
+  // Record today's net worth snapshot whenever nw updates
+  useEffect(() => {
+    if (nw > 0) recordNetWorthSnapshot(nw)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nw])
 
   const dcaActions = useMemo(
     () => data.dcaPlans.filter((p) => shouldConfirmBuy(p)),
@@ -192,6 +199,11 @@ export function Dashboard() {
           </div>
         </div>
       </Card>
+
+      {/* Net worth history chart */}
+      {(data.netWorthHistory?.length ?? 0) >= 2 && (
+        <NetWorthChart history={data.netWorthHistory!} />
+      )}
 
       {/* Metric tiles */}
       <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -334,6 +346,74 @@ export function Dashboard() {
 
       <CashAccountsForm open={cashOpen} onClose={() => setCashOpen(false)} />
     </>
+  )
+}
+
+// ── Net Worth History Chart ───────────────────────────────────────────────────
+
+function NetWorthChart({ history }: { history: NetWorthSnapshot[] }) {
+  const W = 600, H = 96
+  const PAD_X = 2, PAD_Y = 10
+  const iW = W - PAD_X * 2
+  const iH = H - PAD_Y * 2
+
+  const vals = history.map((s) => s.value)
+  const minV = Math.min(...vals)
+  const maxV = Math.max(...vals)
+  const range = maxV - minV || 1
+
+  const pts = history.map((s, i) => ({
+    x: PAD_X + (i / (history.length - 1)) * iW,
+    y: PAD_Y + (1 - (s.value - minV) / range) * iH,
+    ...s,
+  }))
+
+  const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
+  const areaPath = `${linePath} L${pts[pts.length - 1].x},${H} L${pts[0].x},${H}Z`
+
+  const first = history[0]
+  const last = history[history.length - 1]
+  const change = last.value - first.value
+  const changePct = Math.abs((change / first.value) * 100)
+  const isUp = change >= 0
+  const color = isUp ? '#10b981' : '#c03252'
+
+  // Show last 90 days label, or actual range
+  const [y0, mo0, d0] = first.date.split('-').map(Number)
+  const startDate = new Date(y0, mo0 - 1, d0).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  const todayLabel = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  return (
+    <Card className="mt-5 animate-rise overflow-hidden" padded={false}>
+      <div className="flex items-center justify-between px-5 pt-5 sm:px-6 sm:pt-5">
+        <div>
+          <h2 className="font-display text-[15px] font-bold text-ink">Net Worth History</h2>
+          <p className="text-[12.5px] text-ink-muted">{history.length} snapshots · since {startDate}</p>
+        </div>
+        <div className={`flex items-baseline gap-1 rounded-full px-3 py-1 text-[13px] font-bold ${isUp ? 'bg-gain-soft text-gain' : 'bg-loss-soft text-loss'}`}>
+          {isUp ? '▲' : '▼'} {changePct.toFixed(1)}%
+          <span className="text-[11px] font-medium opacity-70">from start</span>
+        </div>
+      </div>
+      <div className="relative px-5 pb-4 pt-3 sm:px-6">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 88, display: 'block' }} aria-hidden>
+          <defs>
+            <linearGradient id="nwg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+              <stop offset="100%" stopColor={color} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d={areaPath} fill="url(#nwg)" />
+          <path d={linePath} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="4" fill={color} />
+        </svg>
+        {/* Date axis */}
+        <div className="flex justify-between">
+          <span className="text-[11px] text-ink-faint">{startDate}</span>
+          <span className="text-[11px] font-semibold text-ink-muted">{thb(last.value)} today</span>
+          <span className="text-[11px] text-ink-faint">{todayLabel}</span>
+        </div>
+      </div>
+    </Card>
   )
 }
 

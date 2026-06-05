@@ -52,7 +52,7 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
         )}
         {savingsPct > 0 && (
           <div className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${savingsPct}%`, background: 'var(--color-gain)' }} />
+            style={{ width: `${savingsPct}%`, background: 'var(--color-cash)' }} />
         )}
         {freePct > 0 && (
           <div className="h-full rounded-full transition-all duration-500"
@@ -61,7 +61,7 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
       </div>
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
         <BudgetLegend color="var(--color-loss)" label="Fixed"   amount={fixed}     total={total} />
-        <BudgetLegend color="var(--color-gain)" label="Savings" amount={savings}   total={total} />
+        <BudgetLegend color="var(--color-cash)" label="Savings" amount={savings}   total={total} />
         <BudgetLegend color="#9ca3af"           label="Free"    amount={remaining} total={total} dim={fixed + savings > total} />
       </div>
     </div>

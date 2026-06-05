@@ -1,8 +1,22 @@
 import { NavLink } from 'react-router-dom'
 import { navItems, settingsItem } from './nav'
 import { SparkleIcon } from '../icons'
+import { useData } from '../../store/DataContext'
+
+function useSyncLabel(lastSyncedAt: Date | null, syncStatus: string): string | null {
+  if (!lastSyncedAt && syncStatus !== 'error') return null
+  if (syncStatus === 'syncing') return 'Syncing…'
+  if (syncStatus === 'error') return 'Sync failed'
+  if (!lastSyncedAt) return null
+  const mins = Math.floor((Date.now() - lastSyncedAt.getTime()) / 60_000)
+  if (mins < 1) return 'Synced just now'
+  if (mins < 60) return `Synced ${mins}m ago`
+  return `Synced ${Math.floor(mins / 60)}h ago`
+}
 
 export function Sidebar() {
+  const { syncStatus, lastSyncedAt } = useData()
+  const syncLabel = useSyncLabel(lastSyncedAt, syncStatus)
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-[252px] flex-col border-r border-line bg-surface/80 px-4 py-6 backdrop-blur-xl lg:flex">
       <div className="flex items-center gap-2.5 px-3">
@@ -14,6 +28,11 @@ export function Sidebar() {
           <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-muted">
             {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
           </p>
+          {syncLabel && (
+            <p className={`text-[10px] font-medium leading-none ${syncStatus === 'error' ? 'text-loss' : syncStatus === 'syncing' ? 'text-warn' : 'text-ink-faint'}`}>
+              {syncLabel}
+            </p>
+          )}
         </div>
       </div>
 
