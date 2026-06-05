@@ -11,7 +11,7 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { to: '/', label: 'Dashboard', short: 'Home', icon: DashboardIcon },
   { to: '/portfolio', label: 'Portfolio', short: 'Portfolio', icon: PortfolioIcon },
-  { to: '/dca', label: 'DCA Planner', short: 'DCA', icon: DcaIcon },
+  { to: '/dca', label: 'Planner', short: 'Plan', icon: DcaIcon },
   { to: '/transfers', label: 'Auto Transfers', short: 'Transfers', icon: TransferIcon },
   { to: '/retirement', label: 'Retirement', short: 'Retire', icon: RetirementIcon },
 ]

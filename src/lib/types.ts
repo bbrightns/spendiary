@@ -104,13 +104,25 @@ export interface HoldingLog {
   note: string             // human-readable detail line
 }
 
+export interface FixedCostItem {
+  id: string
+  /** Label, e.g. "Rent", "Mom + Dad" */
+  name: string
+  /** Amount in THB */
+  amount: number
+}
+
 export interface SpendiaryData {
   /** Liquid cash, broken down by where it's stored. Total cash = sum of balances. */
   cashAccounts: CashAccount[]
   /** Monthly take-home salary in THB, used to compute the savings/invest rate. */
   monthlyIncome: number
-  /** Monthly fixed costs in THB (rent, bills, subscriptions, etc.) */
+  /** Monthly fixed costs broken down by category */
+  fixedCostItems?: FixedCostItem[]
+  /** Legacy single fixed-cost number — migrated to fixedCostItems on load */
   monthlyFixedCost?: number
+  /** Monthly personal / wants budget in THB (shopping, travel, fun) */
+  monthlyPersonal?: number
   holdings: Holding[]
   holdingLogs?: HoldingLog[]
   dcaPlans: DcaPlan[]

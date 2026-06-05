@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import type { BtcLocation, CashAccount, DcaPlan, GoldLocation, Holding, HoldingLog, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
+import type { BtcLocation, CashAccount, DcaPlan, FixedCostItem, GoldLocation, Holding, HoldingLog, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
 
 const STORAGE_KEY = 'spendiary.data.v1'
 
@@ -41,6 +41,9 @@ interface DataContextValue {
   setCashAccounts: (accounts: CashAccount[]) => void
   setMonthlyIncome: (income: number) => void
   setMonthlyFixedCost: (cost: number) => void
+  upsertFixedCostItem: (item: Omit<FixedCostItem, 'id'> & { id?: string }) => void
+  removeFixedCostItem: (id: string) => void
+  setMonthlyPersonal: (amount: number) => void
   /** Live USD/THB rate — set by useLivePrices, used by forms to convert USD inputs */
   usdThb: number | null
   setUsdThb: (rate: number) => void
@@ -88,6 +91,14 @@ function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
       dayOfMonth: lp.dayOfMonth ?? 1,
     }
   })
+  // Migrate legacy single monthlyFixedCost → fixedCostItems array
+  if (!Array.isArray(merged.fixedCostItems) || merged.fixedCostItems.length === 0) {
+    if (typeof merged.monthlyFixedCost === 'number' && merged.monthlyFixedCost > 0) {
+      merged.fixedCostItems = [{ id: newId(), name: 'Fixed Cost', amount: merged.monthlyFixedCost }]
+    } else {
+      merged.fixedCostItems = []
+    }
+  }
   delete (merged as { cash?: number }).cash
   return merged
 }
@@ -202,6 +213,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setCashAccounts: (cashAccounts) => setDataState((prev) => ({ ...prev, cashAccounts })),
       setMonthlyIncome: (monthlyIncome) => setDataState((prev) => ({ ...prev, monthlyIncome })),
       setMonthlyFixedCost: (monthlyFixedCost) => setDataState((prev) => ({ ...prev, monthlyFixedCost })),
+      upsertFixedCostItem: (item) =>
+        setDataState((prev) => ({ ...prev, fixedCostItems: upsert(prev.fixedCostItems ?? [], item) })),
+      removeFixedCostItem: (id) =>
+        setDataState((prev) => ({ ...prev, fixedCostItems: (prev.fixedCostItems ?? []).filter((x) => x.id !== id) })),
+      setMonthlyPersonal: (monthlyPersonal) => setDataState((prev) => ({ ...prev, monthlyPersonal })),
 
       upsertHolding: (holding) =>
         setDataState((prev) => ({ ...prev, holdings: upsert(prev.holdings, holding) })),
