@@ -40,6 +40,7 @@ interface DataContextValue {
   syncStatus: SyncStatus
   setCashAccounts: (accounts: CashAccount[]) => void
   setMonthlyIncome: (income: number) => void
+  setMonthlyFixedCost: (cost: number) => void
   /** Live USD/THB rate — set by useLivePrices, used by forms to convert USD inputs */
   usdThb: number | null
   setUsdThb: (rate: number) => void
@@ -51,6 +52,7 @@ interface DataContextValue {
 
   upsertPlan: (plan: Omit<DcaPlan, 'id'> & { id?: string }) => void
   removePlan: (id: string) => void
+  confirmDcaBuy: (planId: string, pricePerUnit: number, date: string) => void
 
   upsertTransfer: (transfer: Omit<Transfer, 'id'> & { id?: string }) => void
   removeTransfer: (id: string) => void
@@ -199,6 +201,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setUsdThb,
       setCashAccounts: (cashAccounts) => setDataState((prev) => ({ ...prev, cashAccounts })),
       setMonthlyIncome: (monthlyIncome) => setDataState((prev) => ({ ...prev, monthlyIncome })),
+      setMonthlyFixedCost: (monthlyFixedCost) => setDataState((prev) => ({ ...prev, monthlyFixedCost })),
 
       upsertHolding: (holding) =>
         setDataState((prev) => ({ ...prev, holdings: upsert(prev.holdings, holding) })),
@@ -224,6 +227,58 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setDataState((prev) => ({ ...prev, dcaPlans: upsert(prev.dcaPlans, plan) })),
       removePlan: (id) =>
         setDataState((prev) => ({ ...prev, dcaPlans: prev.dcaPlans.filter((p) => p.id !== id) })),
+
+      confirmDcaBuy: (planId, pricePerUnit, date) =>
+        setDataState((prev) => {
+          const plan = prev.dcaPlans.find((p) => p.id === planId)
+          if (!plan) return prev
+
+          // 1. Mark date as confirmed on the plan
+          const updatedPlans = prev.dcaPlans.map((p) =>
+            p.id !== planId ? p : {
+              ...p,
+              confirmedDates: [date, ...(p.confirmedDates ?? [])],
+            }
+          )
+
+          // 2. If plan is linked to a holding, apply the buy
+          if (!plan.holdingId || pricePerUnit <= 0) {
+            return { ...prev, dcaPlans: updatedPlans }
+          }
+          const holding = prev.holdings.find((h) => h.id === plan.holdingId)
+          if (!holding) return { ...prev, dcaPlans: updatedPlans }
+
+          const units = plan.monthlyAmount / pricePerUnit
+          const newUnits = holding.units + units
+          const newAvgCost = (holding.units * holding.avgCost + units * pricePerUnit) / newUnits
+          const updatedHoldings = prev.holdings.map((h) =>
+            h.id !== plan.holdingId ? h : {
+              ...h,
+              units: newUnits,
+              avgCost: newAvgCost,
+              price: pricePerUnit,
+              updatedAt: date,
+            }
+          )
+
+          // 3. Add to holding log
+          const logEntry: import('../lib/types').HoldingLog = {
+            id: newId(),
+            timestamp: new Date().toISOString(),
+            action: 'buy_more',
+            holdingName: holding.name,
+            ticker: holding.ticker,
+            assetClass: holding.assetClass,
+            note: `DCA · ${units.toFixed(4)} units @ ฿${pricePerUnit.toLocaleString()}/unit · ฿${plan.monthlyAmount.toLocaleString()} total`,
+          }
+
+          return {
+            ...prev,
+            dcaPlans: updatedPlans,
+            holdings: updatedHoldings,
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+          }
+        }),
 
       upsertTransfer: (transfer) =>
         setDataState((prev) => ({ ...prev, transfers: upsert(prev.transfers, transfer) })),

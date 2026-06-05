@@ -148,6 +148,31 @@ export function planTotalExecutionsInMonth(plan: DcaPlan, now = new Date()): num
   return 1
 }
 
+/** Has the user already confirmed a buy for the current period? */
+export function isConfirmedForPeriod(plan: DcaPlan, now = new Date()): boolean {
+  const dates = plan.confirmedDates ?? []
+  if (dates.length === 0) return false
+  const freq = plan.frequency ?? 'monthly'
+  if (freq === 'daily') {
+    const today = now.toISOString().slice(0, 10)
+    return dates.includes(today)
+  }
+  if (freq === 'weekly') {
+    const weekStart = new Date(now)
+    weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7))
+    weekStart.setHours(0, 0, 0, 0)
+    return dates.some((d) => new Date(d) >= weekStart)
+  }
+  // monthly
+  const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  return dates.some((d) => d.startsWith(ym))
+}
+
+/** Should the "Confirm buy" button be shown? Buy day passed + not yet confirmed this period. */
+export function shouldConfirmBuy(plan: DcaPlan, now = new Date()): boolean {
+  return planExecutionsThisMonth(plan, now) > 0 && !isConfirmedForPeriod(plan, now)
+}
+
 /** @deprecated use planExecutionsThisMonth — kept for compatibility */
 export function planBoughtThisMonth(plan: DcaPlan, now = new Date()): boolean {
   return planExecutionsThisMonth(plan, now) > 0

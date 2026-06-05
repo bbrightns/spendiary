@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { useData } from '../store/DataContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
@@ -6,18 +6,24 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { AddButton } from '../components/ui/AddButton'
 import { DcaForm } from '../components/forms/DcaForm'
+import { ConfirmDcaBuyForm } from '../components/forms/ConfirmDcaBuyForm'
 import { CheckIcon, DcaIcon, PencilIcon } from '../components/icons'
-import { ASSET_META, dcaThisMonth, nextBuyDate, planBoughtThisMonth, planExecutionsThisMonth } from '../lib/calc'
+import { ASSET_META, dcaThisMonth, isConfirmedForPeriod, nextBuyDate, planBoughtThisMonth, planExecutionsThisMonth, shouldConfirmBuy } from '../lib/calc'
 import type { DcaPlan } from '../lib/types'
 import { daysUntil, ordinal, pct, thb } from '../lib/format'
 
 export function DcaPlanner() {
-  const { data, setMonthlyIncome } = useData()
+  const { data, setMonthlyIncome, setMonthlyFixedCost } = useData()
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<DcaPlan | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirming, setConfirming] = useState<DcaPlan | null>(null)
   const [editingSalary, setEditingSalary] = useState(false)
   const [salaryDraft, setSalaryDraft] = useState('')
   const salaryInputRef = useRef<HTMLInputElement>(null)
+  const [editingFixed, setEditingFixed] = useState(false)
+  const [fixedDraft, setFixedDraft] = useState('')
+  const fixedInputRef = useRef<HTMLInputElement>(null)
 
   const openAdd = () => {
     setEditing(null)
@@ -29,7 +35,10 @@ export function DcaPlanner() {
   }
 
   const month = dcaThisMonth(data.dcaPlans)
-  const savingsRate = data.monthlyIncome > 0 ? (month.total / data.monthlyIncome) * 100 : null
+  const fixedCost = data.monthlyFixedCost ?? 0
+  const disposable = data.monthlyIncome > 0 ? data.monthlyIncome - fixedCost : 0
+  const savingsRate = disposable > 0 ? (month.total / disposable) * 100 : null
+  const remaining = data.monthlyIncome > 0 ? Math.max(0, data.monthlyIncome - fixedCost - month.total) : null
 
   function openSalaryEdit() {
     setSalaryDraft(data.monthlyIncome > 0 ? String(data.monthlyIncome) : '')
@@ -41,6 +50,18 @@ export function DcaPlanner() {
     const v = parseFloat(salaryDraft.replace(/,/g, ''))
     if (!isNaN(v) && v >= 0) setMonthlyIncome(v)
     setEditingSalary(false)
+  }
+
+  function openFixedEdit() {
+    setFixedDraft(fixedCost > 0 ? String(fixedCost) : '')
+    setEditingFixed(true)
+    setTimeout(() => fixedInputRef.current?.select(), 0)
+  }
+
+  function commitFixed() {
+    const v = parseFloat(fixedDraft.replace(/,/g, ''))
+    if (!isNaN(v) && v >= 0) setMonthlyFixedCost(v)
+    setEditingFixed(false)
   }
 
   if (data.dcaPlans.length === 0) {
@@ -106,44 +127,36 @@ export function DcaPlanner() {
           </div>
         </div>
 
-        {/* Salary + savings-rate strip */}
+        {/* Salary + fixed cost + savings-rate strip */}
         <div className="mt-5 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-line pt-5">
           {/* Salary */}
-          <div className="flex items-center gap-2">
-            <p className="text-[12.5px] font-medium text-ink-muted">Monthly Salary</p>
-            {editingSalary ? (
-              <div className="flex items-center gap-1.5">
-                <span className="text-[13px] font-semibold text-ink-muted">฿</span>
-                <input
-                  ref={salaryInputRef}
-                  type="number"
-                  min="0"
-                  aria-label="Monthly salary in THB"
-                  value={salaryDraft}
-                  onChange={(e) => setSalaryDraft(e.target.value)}
-                  onBlur={commitSalary}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') commitSalary()
-                    if (e.key === 'Escape') setEditingSalary(false)
-                  }}
-                  className="w-32 rounded-lg border border-brand bg-white px-2.5 py-1 text-[14px] font-bold tnum text-ink outline-none focus:ring-2 focus:ring-brand/30"
-                />
-              </div>
-            ) : (
-              <button
-                onClick={openSalaryEdit}
-                className="group flex items-center gap-1.5 rounded-lg px-2 py-0.5 transition-colors hover:bg-surface-muted"
-              >
-                <span className="font-display text-[16px] font-bold tnum text-ink">
-                  {data.monthlyIncome > 0 ? thb(data.monthlyIncome) : '—'}
-                </span>
-                <PencilIcon className="h-3.5 w-3.5 text-ink-muted opacity-0 transition-opacity group-hover:opacity-100" />
-              </button>
-            )}
-          </div>
+          <InlineEditStat
+            label="Monthly Salary"
+            value={data.monthlyIncome > 0 ? thb(data.monthlyIncome) : '—'}
+            editing={editingSalary}
+            draft={salaryDraft}
+            inputRef={salaryInputRef}
+            onOpen={openSalaryEdit}
+            onDraftChange={setSalaryDraft}
+            onCommit={commitSalary}
+            onCancel={() => setEditingSalary(false)}
+          />
 
-          {/* Savings rate */}
-          {savingsRate !== null && (
+          {/* Fixed cost */}
+          <InlineEditStat
+            label="Fixed Cost"
+            value={fixedCost > 0 ? thb(fixedCost) : '—'}
+            editing={editingFixed}
+            draft={fixedDraft}
+            inputRef={fixedInputRef}
+            onOpen={openFixedEdit}
+            onDraftChange={setFixedDraft}
+            onCommit={commitFixed}
+            onCancel={() => setEditingFixed(false)}
+          />
+
+          {/* Invest rate + remaining */}
+          {savingsRate !== null && remaining !== null && (
             <div className="flex items-center gap-3">
               <div>
                 <p className="text-[12.5px] font-medium text-ink-muted">Invest Rate</p>
@@ -155,7 +168,7 @@ export function DcaPlanner() {
               <div>
                 <p className="text-[12.5px] font-medium text-ink-muted">Remaining</p>
                 <p className="mt-0.5 font-display text-[22px] font-extrabold tnum text-ink-soft leading-none">
-                  {thb(Math.max(0, data.monthlyIncome - month.total))}
+                  {thb(remaining)}
                 </p>
               </div>
             </div>
@@ -206,21 +219,35 @@ export function DcaPlanner() {
                     {meta.label} · {freqLabel(p)}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="font-display text-[16px] font-bold tnum text-ink">
-                    {thb(p.monthlyAmount)}
-                    <span className="ml-1 text-[11px] font-medium text-ink-faint">
-                      /{(p.frequency ?? 'monthly') === 'daily' ? 'day' : (p.frequency ?? 'monthly') === 'weekly' ? 'wk' : 'mo'}
-                    </span>
-                  </p>
-                  {bought ? (
-                    <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-[11.5px] font-semibold text-gain">
-                      <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Bought
-                    </span>
-                  ) : (
-                    <span className="mt-0.5 inline-block text-[11.5px] font-semibold text-ink-muted">
-                      {days <= 0 ? 'Today' : `in ${days}d`}
-                    </span>
+                <div className="flex items-center gap-2">
+                  <div className="text-right">
+                    <p className="font-display text-[16px] font-bold tnum text-ink">
+                      {thb(p.monthlyAmount)}
+                      <span className="ml-1 text-[11px] font-medium text-ink-faint">
+                        /{(p.frequency ?? 'monthly') === 'daily' ? 'day' : (p.frequency ?? 'monthly') === 'weekly' ? 'wk' : 'mo'}
+                      </span>
+                    </p>
+                    {isConfirmedForPeriod(p) ? (
+                      <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-[11.5px] font-semibold text-gain">
+                        <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Confirmed
+                      </span>
+                    ) : bought ? (
+                      <span className="mt-0.5 inline-block text-[11.5px] font-semibold text-ink-muted">
+                        Due now
+                      </span>
+                    ) : (
+                      <span className="mt-0.5 inline-block text-[11.5px] font-semibold text-ink-muted">
+                        {days <= 0 ? 'Today' : `in ${days}d`}
+                      </span>
+                    )}
+                  </div>
+                  {shouldConfirmBuy(p) && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
+                      className="shrink-0 rounded-xl bg-brand px-3 py-2 text-[12px] font-bold text-white transition-colors hover:bg-brand-ink active:scale-95"
+                    >
+                      Confirm buy
+                    </button>
                   )}
                 </div>
               </li>
@@ -237,6 +264,7 @@ export function DcaPlanner() {
       </Card>
 
       <DcaForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
+      <ConfirmDcaBuyForm open={confirmOpen} plan={confirming} onClose={() => setConfirmOpen(false)} />
     </>
   )
 }
@@ -248,4 +276,50 @@ function freqLabel(p: { frequency?: string; dayOfMonth: number }): string {
   if (freq === 'daily')   return 'Every day'
   if (freq === 'weekly')  return `Every ${WEEKDAY_NAMES[p.dayOfMonth] ?? 'week'}`
   return `Buys on the ${ordinal(p.dayOfMonth)}`
+}
+
+function InlineEditStat({
+  label, value, editing, draft, inputRef, onOpen, onDraftChange, onCommit, onCancel,
+}: {
+  label: string
+  value: string
+  editing: boolean
+  draft: string
+  inputRef: React.RefObject<HTMLInputElement>
+  onOpen: () => void
+  onDraftChange: (v: string) => void
+  onCommit: () => void
+  onCancel: () => void
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <p className="text-[12.5px] font-medium text-ink-muted">{label}</p>
+      {editing ? (
+        <div className="flex items-center gap-1.5">
+          <span className="text-[13px] font-semibold text-ink-muted">฿</span>
+          <input
+            ref={inputRef}
+            type="number"
+            min="0"
+            value={draft}
+            onChange={(e) => onDraftChange(e.target.value)}
+            onBlur={onCommit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') onCommit()
+              if (e.key === 'Escape') onCancel()
+            }}
+            className="w-32 rounded-lg border border-brand bg-white px-2.5 py-1 text-[14px] font-bold tnum text-ink outline-none focus:ring-2 focus:ring-brand/30"
+          />
+        </div>
+      ) : (
+        <button
+          onClick={onOpen}
+          className="group flex items-center gap-1.5 rounded-lg px-2 py-0.5 transition-colors hover:bg-surface-muted"
+        >
+          <span className="font-display text-[16px] font-bold tnum text-ink">{value}</span>
+          <PencilIcon className="h-3.5 w-3.5 text-ink-muted opacity-0 transition-opacity group-hover:opacity-100" />
+        </button>
+      )}
+    </div>
+  )
 }

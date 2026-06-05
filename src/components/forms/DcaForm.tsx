@@ -109,6 +109,8 @@ export function DcaForm({ open, editing, onClose }: Props) {
       frequency: freq,
       monthlyAmount: Number(form.monthlyAmount),
       dayOfMonth,
+      holdingId: form.source === 'portfolio' ? form.holdingId : editing?.holdingId,
+      confirmedDates: editing?.confirmedDates,
     })
     onClose()
   }

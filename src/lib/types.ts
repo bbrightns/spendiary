@@ -63,6 +63,10 @@ export interface DcaPlan {
    * Daily:   unused
    */
   dayOfMonth: number
+  /** Linked portfolio holding id — set when created from "From my portfolio" */
+  holdingId?: string
+  /** ISO date strings of confirmed buys, newest first */
+  confirmedDates?: string[]
 }
 
 export type Frequency = 'weekly' | 'biweekly' | 'monthly' | 'quarterly'
@@ -105,6 +109,8 @@ export interface SpendiaryData {
   cashAccounts: CashAccount[]
   /** Monthly take-home salary in THB, used to compute the savings/invest rate. */
   monthlyIncome: number
+  /** Monthly fixed costs in THB (rent, bills, subscriptions, etc.) */
+  monthlyFixedCost?: number
   holdings: Holding[]
   holdingLogs?: HoldingLog[]
   dcaPlans: DcaPlan[]
