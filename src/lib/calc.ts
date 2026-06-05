@@ -43,6 +43,7 @@ export const ASSET_META: Record<
   fund: { label: 'Mutual Fund', plural: 'Mutual Funds', color: '#6366f1', cssVar: 'var(--color-funds)' },
   stock: { label: 'US Stock', plural: 'US Stocks', color: '#0ea5e9', cssVar: 'var(--color-stocks)' },
   crypto: { label: 'Bitcoin', plural: 'Bitcoin', color: '#f59e0b', cssVar: 'var(--color-crypto)' },
+  gold: { label: 'Gold', plural: 'Gold', color: '#ca8a04', cssVar: 'var(--color-gold)' },
 }
 
 export interface Allocation {
@@ -90,23 +91,88 @@ export function portfolioSummary(holdings: Holding[]): PortfolioSummary {
 
 /* ----------------------------- DCA ----------------------------- */
 
-/** Total amount you DCA every month, across all plans. */
-export function dcaPerMonth(plans: DcaPlan[]): number {
-  return plans.reduce((s, p) => s + p.monthlyAmount, 0)
+/** Normalise a plan's per-period amount to a monthly equivalent for summary stats. */
+export function planMonthlyEquivalent(plan: DcaPlan, now = new Date()): number {
+  const freq = plan.frequency ?? 'monthly'
+  if (freq === 'monthly') return plan.monthlyAmount
+  if (freq === 'daily') {
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+    return plan.monthlyAmount * daysInMonth
+  }
+  // weekly — ~4.33 weeks per month
+  return plan.monthlyAmount * 4.33
 }
 
-/** Has this plan's buy day already passed this calendar month? */
+/** Total monthly-equivalent DCA across all plans. */
+export function dcaPerMonth(plans: DcaPlan[], now = new Date()): number {
+  return plans.reduce((s, p) => s + planMonthlyEquivalent(p, now), 0)
+}
+
+/** How many times this plan has executed so far this calendar month. */
+export function planExecutionsThisMonth(plan: DcaPlan, now = new Date()): number {
+  const freq = plan.frequency ?? 'monthly'
+  const today = now.getDate()
+
+  if (freq === 'daily') return today  // once per day
+
+  if (freq === 'weekly') {
+    // dayOfMonth stores 1=Mon…7=Sun; count occurrences in month so far
+    const targetDow = plan.dayOfMonth % 7  // convert to JS 0=Sun…6=Sat (7→0)
+    let count = 0
+    for (let d = 1; d <= today; d++) {
+      const dow = new Date(now.getFullYear(), now.getMonth(), d).getDay()
+      if (dow === targetDow) count++
+    }
+    return count
+  }
+
+  // monthly — 1 if buy day has passed
+  return plan.dayOfMonth <= today ? 1 : 0
+}
+
+/** Total executions planned for the full calendar month. */
+export function planTotalExecutionsInMonth(plan: DcaPlan, now = new Date()): number {
+  const freq = plan.frequency ?? 'monthly'
+  if (freq === 'daily') {
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  }
+  if (freq === 'weekly') {
+    const targetDow = plan.dayOfMonth % 7
+    const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+    let count = 0
+    for (let d = 1; d <= days; d++) {
+      if (new Date(now.getFullYear(), now.getMonth(), d).getDay() === targetDow) count++
+    }
+    return count
+  }
+  return 1
+}
+
+/** @deprecated use planExecutionsThisMonth — kept for compatibility */
 export function planBoughtThisMonth(plan: DcaPlan, now = new Date()): boolean {
-  return plan.dayOfMonth <= now.getDate()
+  return planExecutionsThisMonth(plan, now) > 0
 }
 
-/** The next date this plan will execute, given today. */
+/** Next date this plan will execute. */
 export function nextBuyDate(plan: DcaPlan, now = new Date()): Date {
+  const freq = plan.frequency ?? 'monthly'
+  if (freq === 'daily') {
+    const tomorrow = new Date(now)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    return tomorrow
+  }
+  if (freq === 'weekly') {
+    const targetDow = plan.dayOfMonth % 7
+    const d = new Date(now)
+    d.setDate(d.getDate() + 1)
+    while (d.getDay() !== targetDow) d.setDate(d.getDate() + 1)
+    return d
+  }
+  // monthly
   const day = Math.min(Math.max(plan.dayOfMonth, 1), 28)
   const next = new Date(now.getFullYear(), now.getMonth(), day)
-  if (next.getTime() < new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) {
-    next.setMonth(next.getMonth() + 1)
-  }
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  if (next.getTime() <= today.getTime()) next.setMonth(next.getMonth() + 1)
   return next
 }
 
@@ -122,11 +188,13 @@ export interface DcaMonth {
 
 /** Date-aware view of the current month's DCA progress. */
 export function dcaThisMonth(plans: DcaPlan[], now = new Date()): DcaMonth {
-  const total = dcaPerMonth(plans)
-  const invested = plans.reduce(
-    (s, p) => s + (planBoughtThisMonth(p, now) ? p.monthlyAmount : 0),
-    0,
-  )
+  let total = 0, invested = 0
+  for (const p of plans) {
+    const execTotal = planTotalExecutionsInMonth(p, now)
+    const execDone  = planExecutionsThisMonth(p, now)
+    total    += p.monthlyAmount * execTotal
+    invested += p.monthlyAmount * execDone
+  }
   return {
     total,
     invested,

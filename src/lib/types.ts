@@ -1,4 +1,4 @@
-export type AssetClass = 'fund' | 'stock' | 'crypto'
+export type AssetClass = 'fund' | 'stock' | 'crypto' | 'gold'
 
 export interface BtcLocation {
   id: string
@@ -6,6 +6,15 @@ export interface BtcLocation {
   name: string
   /** Satoshi held at this location */
   satoshi: number
+  /** Total THB spent at this location */
+  thbSpent: number
+}
+
+export interface GoldLocation {
+  id: string
+  name: string
+  /** Grams held at this location */
+  grams: number
   /** Total THB spent at this location */
   thbSpent: number
 }
@@ -25,6 +34,8 @@ export interface Holding {
   updatedAt?: string
   /** BTC sub-breakdown by location (only for assetClass === 'crypto') */
   btcLocations?: BtcLocation[]
+  /** Gold sub-breakdown by location (only for assetClass === 'gold') */
+  goldLocations?: GoldLocation[]
 }
 
 export interface RetirementSettings {
@@ -36,13 +47,21 @@ export interface RetirementSettings {
   deadAge: number
 }
 
+export type DcaFrequency = 'daily' | 'weekly' | 'monthly'
+
 export interface DcaPlan {
   id: string
   name: string
   assetClass: AssetClass
-  /** Amount bought every month, in THB */
+  /** How often the buy executes */
+  frequency?: DcaFrequency   // defaults to 'monthly' for legacy plans
+  /** Amount per frequency period, in THB */
   monthlyAmount: number
-  /** Day of month the buy executes (1–28) */
+  /**
+   * Monthly: day of month (1–28)
+   * Weekly:  day of week (1=Mon … 7=Sun)
+   * Daily:   unused
+   */
   dayOfMonth: number
 }
 
@@ -71,12 +90,23 @@ export interface CashAccount {
   balance: number
 }
 
+export interface HoldingLog {
+  id: string
+  timestamp: string        // ISO datetime
+  action: 'add' | 'buy_more' | 'edit'
+  holdingName: string
+  ticker: string
+  assetClass: AssetClass
+  note: string             // human-readable detail line
+}
+
 export interface SpendiaryData {
   /** Liquid cash, broken down by where it's stored. Total cash = sum of balances. */
   cashAccounts: CashAccount[]
   /** Monthly take-home salary in THB, used to compute the savings/invest rate. */
   monthlyIncome: number
   holdings: Holding[]
+  holdingLogs?: HoldingLog[]
   dcaPlans: DcaPlan[]
   transfers: Transfer[]
   retirement?: RetirementSettings

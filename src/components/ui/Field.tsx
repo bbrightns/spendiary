@@ -40,11 +40,12 @@ interface TextFieldProps {
   error?: string
   value: string
   onChange: (v: string) => void
+  onBlur?: () => void
   placeholder?: string
   type?: 'text' | 'date'
 }
 
-export function TextField({ label, hint, error, value, onChange, placeholder, type = 'text' }: TextFieldProps) {
+export function TextField({ label, hint, error, value, onChange, onBlur, placeholder, type = 'text' }: TextFieldProps) {
   return (
     <LabelWrap label={label} hint={hint} error={error}>
       <input
@@ -53,6 +54,7 @@ export function TextField({ label, hint, error, value, onChange, placeholder, ty
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
       />
     </LabelWrap>
   )

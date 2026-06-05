@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import type { BtcLocation, CashAccount, DcaPlan, Holding, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
+import type { BtcLocation, CashAccount, DcaPlan, GoldLocation, Holding, HoldingLog, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
 
 const STORAGE_KEY = 'spendiary.data.v1'
 
@@ -46,6 +46,8 @@ interface DataContextValue {
 
   upsertHolding: (holding: Omit<Holding, 'id'> & { id?: string }) => void
   removeHolding: (id: string) => void
+  reorderHoldings: (ids: string[]) => void
+  addHoldingLog: (log: Omit<HoldingLog, 'id' | 'timestamp'>) => void
 
   upsertPlan: (plan: Omit<DcaPlan, 'id'> & { id?: string }) => void
   removePlan: (id: string) => void
@@ -56,6 +58,8 @@ interface DataContextValue {
   setRetirement: (settings: RetirementSettings) => void
   upsertBtcLocation: (holdingId: string, loc: Omit<BtcLocation, 'id'> & { id?: string }) => void
   removeBtcLocation: (holdingId: string, locId: string) => void
+  upsertGoldLocation: (holdingId: string, loc: Omit<GoldLocation, 'id'> & { id?: string }) => void
+  removeGoldLocation: (holdingId: string, locId: string) => void
 }
 
 const DataContext = createContext<DataContextValue | null>(null)
@@ -201,6 +205,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
       removeHolding: (id) =>
         setDataState((prev) => ({ ...prev, holdings: prev.holdings.filter((h) => h.id !== id) })),
 
+      reorderHoldings: (ids) =>
+        setDataState((prev) => ({
+          ...prev,
+          holdings: ids.map((id) => prev.holdings.find((h) => h.id === id)!).filter(Boolean),
+        })),
+
+      addHoldingLog: (log) =>
+        setDataState((prev) => ({
+          ...prev,
+          holdingLogs: [
+            { ...log, id: newId(), timestamp: new Date().toISOString() },
+            ...(prev.holdingLogs ?? []),
+          ].slice(0, 200),  // keep last 200 entries
+        })),
+
       upsertPlan: (plan) =>
         setDataState((prev) => ({ ...prev, dcaPlans: upsert(prev.dcaPlans, plan) })),
       removePlan: (id) =>
@@ -239,6 +258,32 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const units = totalSats / 100_000_000
             const avgCost = units > 0 ? totalThb / units : h.avgCost
             return { ...h, btcLocations: locations, units, avgCost }
+          }),
+        })),
+
+      upsertGoldLocation: (holdingId, loc) =>
+        setDataState((prev) => ({
+          ...prev,
+          holdings: prev.holdings.map((h) => {
+            if (h.id !== holdingId) return h
+            const locations = upsert(h.goldLocations ?? [], loc)
+            const totalGrams = locations.reduce((s, l) => s + l.grams, 0)
+            const totalThb = locations.reduce((s, l) => s + l.thbSpent, 0)
+            const avgCost = totalGrams > 0 ? totalThb / totalGrams : h.avgCost
+            return { ...h, goldLocations: locations, units: totalGrams, avgCost }
+          }),
+        })),
+
+      removeGoldLocation: (holdingId, locId) =>
+        setDataState((prev) => ({
+          ...prev,
+          holdings: prev.holdings.map((h) => {
+            if (h.id !== holdingId) return h
+            const locations = (h.goldLocations ?? []).filter((l) => l.id !== locId)
+            const totalGrams = locations.reduce((s, l) => s + l.grams, 0)
+            const totalThb = locations.reduce((s, l) => s + l.thbSpent, 0)
+            const avgCost = totalGrams > 0 ? totalThb / totalGrams : h.avgCost
+            return { ...h, goldLocations: locations, units: totalGrams, avgCost }
           }),
         })),
     }),

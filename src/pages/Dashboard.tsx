@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
@@ -42,6 +42,7 @@ const CASH_COLORS = [
 
 export function Dashboard() {
   const { data } = useData()
+  const navigate = useNavigate()
   const [cashOpen, setCashOpen] = useState(false)
   const hasAnything =
     data.holdings.length > 0 || data.dcaPlans.length > 0 || data.transfers.length > 0
@@ -157,6 +158,7 @@ export function Dashboard() {
           value={thb(portfolio.value)}
           icon={<PortfolioIcon className="h-[18px] w-[18px]" />}
           accent="var(--color-funds)"
+          onClick={() => navigate('/portfolio')}
           footer={
             <div className="flex items-center gap-2">
               <PnLPill value={portfolio.pnlPct} asPct />
@@ -169,6 +171,7 @@ export function Dashboard() {
           value={thb(dca.invested)}
           icon={<ClockIcon className="h-[18px] w-[18px]" />}
           accent="var(--color-brand)"
+          onClick={() => navigate('/dca')}
           footer={
             <span className="text-[12.5px] text-ink-muted">
               of {thb(dca.total)} this month · {pct(dca.pct, 0)}

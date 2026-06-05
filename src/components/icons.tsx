@@ -102,6 +102,14 @@ export function PlusIcon(p: IconProps) {
   )
 }
 
+export function MinusIcon(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M5 12h14" />
+    </svg>
+  )
+}
+
 export function SparkleIcon(p: IconProps) {
   return (
     <svg {...base} {...p}>

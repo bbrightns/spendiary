@@ -6,7 +6,7 @@ function cx(...parts: (string | false | undefined)[]) {
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode
-  variant?: 'primary' | 'secondary' | 'ghost'
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
   size?: 'sm' | 'md'
 }
 
@@ -23,6 +23,7 @@ export function Button({
     secondary:
       'bg-surface text-ink border border-line-strong hover:bg-surface-muted active:scale-[0.98]',
     ghost: 'text-ink-soft hover:bg-surface-muted',
+    danger: 'bg-loss text-white hover:bg-loss/90 active:scale-[0.98]',
   }
   const sizes = {
     sm: 'h-9 px-3.5 text-sm gap-1.5',

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { NumberField, TextField, SelectField } from '../ui/Field'
 import { Button } from '../ui/Button'
@@ -16,7 +16,7 @@ interface Props {
 const SATS_PER_BTC = 100_000_000
 
 export function BuyMoreForm({ open, holding, onClose }: Props) {
-  const { upsertHolding, upsertBtcLocation, usdThb } = useData()
+  const { upsertHolding, upsertBtcLocation, upsertGoldLocation, addHoldingLog, usdThb } = useData()
 
   // Shared state
   const [units, setUnits] = useState<number | ''>('')
@@ -29,20 +29,37 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
   const [locationId, setLocationId] = useState('')
   const [newLocationName, setNewLocationName] = useState('')
 
+  // Gold-specific state
+  const [goldGrams, setGoldGrams] = useState<number | ''>('')
+  const [goldThbSpent, setGoldThbSpent] = useState<number | ''>('')
+  const [goldLocationId, setGoldLocationId] = useState('')
+  const [goldNewLocationName, setGoldNewLocationName] = useState('')
+
   const isBtc = holding?.assetClass === 'crypto'
+  const isGold = holding?.assetClass === 'gold'
   const isStock = holding?.assetClass === 'stock'
   const rate = usdThb && usdThb > 1 ? usdThb : 1
   const existingLocations = holding?.btcLocations ?? []
 
+  // Guard: only reset form when modal *freshly opens* (false→true),
+  // not when holding changes mid-session due to live price ticks.
+  const wasOpen = useRef(false)
+
   // ALL useEffects at top level — no hooks after conditional returns
   useEffect(() => {
-    if (!open || !holding) return
+    const justOpened = !wasOpen.current && open
+    wasOpen.current = open
+    if (!justOpened || !holding) return
     setUnits('')
     setShowErrors(false)
     setSatoshi('')
     setThbSpent('')
     setLocationId((holding.btcLocations ?? [])[0]?.id ?? '__new__')
     setNewLocationName('')
+    setGoldGrams('')
+    setGoldThbSpent('')
+    setGoldLocationId((holding.goldLocations ?? [])[0]?.id ?? '__new__')
+    setGoldNewLocationName('')
     // Pre-fill price: USD for stocks, THB for funds, not used for BTC
     if (!isBtc) {
       if (isStock && rate > 1) {
@@ -54,6 +71,130 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
   }, [open, holding])
 
   if (!holding) return null
+
+  // ── Gold path ──
+  if (isGold) {
+    const goldExistingLocations = holding.goldLocations ?? []
+    const isNewGoldLoc = goldLocationId === '__new__'
+    const goldLocName = isNewGoldLoc
+      ? goldNewLocationName.trim()
+      : (goldExistingLocations.find((l) => l.id === goldLocationId)?.name ?? '')
+    const goldValid =
+      goldGrams !== '' && Number(goldGrams) > 0 &&
+      goldThbSpent !== '' && Number(goldThbSpent) > 0 &&
+      goldLocName.length > 0
+    const g = Number(goldGrams)
+    const spent = Number(goldThbSpent)
+    const impliedPrice = g > 0 ? spent / g : 0
+    const totalGrams = goldExistingLocations.reduce((s, l) => s + l.grams, 0)
+
+    const goldLocOptions = [
+      ...goldExistingLocations.map((l) => ({ value: l.id, label: l.name })),
+      { value: '__new__', label: '+ New location…' },
+    ]
+
+    function saveGold() {
+      if (!goldValid) { setShowErrors(true); return }
+      const existingLoc = isNewGoldLoc ? null : goldExistingLocations.find((l) => l.id === goldLocationId)
+      if (existingLoc) {
+        upsertGoldLocation(holding!.id, {
+          id: existingLoc.id,
+          name: existingLoc.name,
+          grams: existingLoc.grams + g,
+          thbSpent: existingLoc.thbSpent + spent,
+        })
+      } else {
+        upsertGoldLocation(holding!.id, { name: goldLocName, grams: g, thbSpent: spent })
+      }
+      addHoldingLog({
+        action: 'buy_more',
+        holdingName: holding!.name,
+        ticker: holding!.ticker,
+        assetClass: 'gold',
+        note: `+${g.toFixed(2)} g · ฿${spent.toLocaleString()} spent · ${goldLocName}`,
+      })
+      onClose()
+    }
+
+    return (
+      <Modal
+        open={open}
+        onClose={onClose}
+        title={`Buy more · ${holding.name}`}
+        description="Log a purchase in grams. Choose or create a location."
+      >
+        <div className="space-y-5">
+          <div className="rounded-2xl bg-surface-muted px-4 py-3">
+            <div className="flex items-center justify-between text-[13px]">
+              <span className="text-ink-muted">Currently holding</span>
+              <span className="font-semibold tnum text-ink">
+                {totalGrams.toFixed(2)} g
+              </span>
+            </div>
+          </div>
+
+          <SelectField
+            label="Location"
+            value={goldLocationId}
+            onChange={setGoldLocationId}
+            options={goldLocOptions}
+          />
+
+          {goldLocationId === '__new__' && (
+            <TextField
+              label="Location name"
+              value={goldNewLocationName}
+              onChange={setGoldNewLocationName}
+              placeholder="e.g. Home safe, Bank vault, Hua Seng Heng"
+              error={showErrors && !goldNewLocationName.trim() ? 'Required' : undefined}
+            />
+          )}
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <NumberField
+              label="Grams bought"
+              value={goldGrams}
+              error={showErrors && (goldGrams === '' || Number(goldGrams) <= 0) ? 'Required (> 0)' : undefined}
+              onChange={setGoldGrams}
+              placeholder="e.g. 5.0"
+              step={0.01}
+            />
+            <NumberField
+              label="THB spent"
+              prefix="฿"
+              value={goldThbSpent}
+              error={showErrors && (goldThbSpent === '' || Number(goldThbSpent) <= 0) ? 'Required (> 0)' : undefined}
+              onChange={setGoldThbSpent}
+              placeholder="0"
+            />
+          </div>
+
+          {g > 0 && spent > 0 && (
+            <div
+              className="rounded-2xl border px-4 py-3"
+              style={{
+                borderColor: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 35%, transparent)`,
+                background: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 7%, white)`,
+              }}
+            >
+              <div className="flex items-center justify-between text-[13px]">
+                <span className="text-ink-soft">Implied price / gram</span>
+                <span className="font-semibold tnum text-ink">{thb(impliedPrice)}</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between text-[13px]">
+                <span className="text-ink-soft">Gold amount</span>
+                <span className="font-semibold tnum text-ink">{g.toFixed(2)} g</span>
+              </div>
+            </div>
+          )}
+
+          <div className="pt-3">
+            <Button onClick={saveGold} className="w-full">Add to holding</Button>
+          </div>
+        </div>
+      </Modal>
+    )
+  }
 
   // ── BTC path ──
   if (isBtc) {
@@ -89,6 +230,13 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
       } else {
         upsertBtcLocation(holding!.id, { name: locName, satoshi: sats, thbSpent: spent })
       }
+      addHoldingLog({
+        action: 'buy_more',
+        holdingName: holding!.name,
+        ticker: holding!.ticker,
+        assetClass: 'crypto',
+        note: `+${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} spent · ${locName}`,
+      })
       onClose()
     }
 
@@ -183,6 +331,13 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
     if (!valid) { setShowErrors(true); return }
     const next = applyBuy(holding!, Number(units), priceInThb)
     upsertHolding({ ...holding!, ...next })
+    addHoldingLog({
+      action: 'buy_more',
+      holdingName: holding!.name,
+      ticker: holding!.ticker,
+      assetClass: holding!.assetClass,
+      note: `+${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${label} @ ${isStock ? `$${Number(price).toFixed(2)}` : `฿${Number(price).toLocaleString()}`}/unit`,
+    })
     onClose()
   }
 

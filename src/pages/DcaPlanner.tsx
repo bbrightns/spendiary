@@ -7,7 +7,7 @@ import { ProgressBar } from '../components/ui/ProgressBar'
 import { AddButton } from '../components/ui/AddButton'
 import { DcaForm } from '../components/forms/DcaForm'
 import { CheckIcon, DcaIcon, PencilIcon } from '../components/icons'
-import { ASSET_META, dcaThisMonth, nextBuyDate, planBoughtThisMonth } from '../lib/calc'
+import { ASSET_META, dcaThisMonth, nextBuyDate, planBoughtThisMonth, planExecutionsThisMonth } from '../lib/calc'
 import type { DcaPlan } from '../lib/types'
 import { daysUntil, ordinal, pct, thb } from '../lib/format'
 
@@ -65,9 +65,10 @@ export function DcaPlanner() {
 
   // Sort: upcoming buys first (by next date), then already-bought.
   const plans = [...data.dcaPlans].sort((a, b) => {
-    const aDone = planBoughtThisMonth(a)
-    const bDone = planBoughtThisMonth(b)
-    if (aDone !== bDone) return aDone ? 1 : -1
+    const aExec = planExecutionsThisMonth(a)
+    const bExec = planExecutionsThisMonth(b)
+    // Put plans with 0 executions (upcoming) first
+    if ((aExec === 0) !== (bExec === 0)) return aExec === 0 ? -1 : 1
     return a.dayOfMonth - b.dayOfMonth
   })
 
@@ -202,11 +203,16 @@ export function DcaPlanner() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[15px] font-semibold text-ink">{p.name}</p>
                   <p className="text-[12.5px] text-ink-muted">
-                    {meta.label} · buys on the {ordinal(p.dayOfMonth)}
+                    {meta.label} · {freqLabel(p)}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-display text-[16px] font-bold tnum text-ink">{thb(p.monthlyAmount)}</p>
+                  <p className="font-display text-[16px] font-bold tnum text-ink">
+                    {thb(p.monthlyAmount)}
+                    <span className="ml-1 text-[11px] font-medium text-ink-faint">
+                      /{(p.frequency ?? 'monthly') === 'daily' ? 'day' : (p.frequency ?? 'monthly') === 'weekly' ? 'wk' : 'mo'}
+                    </span>
+                  </p>
                   {bought ? (
                     <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-[11.5px] font-semibold text-gain">
                       <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Bought
@@ -233,4 +239,13 @@ export function DcaPlanner() {
       <DcaForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
     </>
   )
+}
+
+const WEEKDAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+function freqLabel(p: { frequency?: string; dayOfMonth: number }): string {
+  const freq = p.frequency ?? 'monthly'
+  if (freq === 'daily')   return 'Every day'
+  if (freq === 'weekly')  return `Every ${WEEKDAY_NAMES[p.dayOfMonth] ?? 'week'}`
+  return `Buys on the ${ordinal(p.dayOfMonth)}`
 }

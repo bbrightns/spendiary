@@ -7,6 +7,7 @@ import { DcaPlanner } from './pages/DcaPlanner'
 import { AutoTransfers } from './pages/AutoTransfers'
 import { Retirement } from './pages/Retirement'
 import { Settings } from './pages/Settings'
+import { HoldingLogs } from './pages/HoldingLogs'
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/transfers" element={<AutoTransfers />} />
           <Route path="/retirement" element={<Retirement />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/logs" element={<HoldingLogs />} />
           <Route path="*" element={<Dashboard />} />
         </Routes>
       </Layout>
