@@ -348,11 +348,18 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
       title={`Buy more · ${holding.name}`}
       description={
         isStock
-          ? `Price in USD — converted at ฿${rate.toFixed(2)}/USD.`
+          ? usdThb
+            ? `Price in USD — converted at ฿${rate.toFixed(2)}/USD.`
+            : 'USD/THB rate loading…'
           : 'Log a purchase. Units grow and your average cost is recalculated.'
       }
     >
       <div className="space-y-5">
+        {isStock && !usdThb && (
+          <div className="rounded-xl bg-warn-soft px-4 py-3 text-[13px] font-medium text-warn">
+            USD/THB rate is loading — please wait before saving to avoid wrong values.
+          </div>
+        )}
         <div className="rounded-2xl bg-surface-muted px-4 py-3">
           <div className="flex items-center justify-between text-[13px]">
             <span className="text-ink-muted">Currently holding</span>
@@ -420,7 +427,9 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         )}
 
         <div className="pt-3">
-          <Button onClick={save} className="w-full">Add to holding</Button>
+          <Button onClick={save} className="w-full" disabled={isStock && !usdThb}>
+            Add to holding
+          </Button>
         </div>
       </div>
     </Modal>

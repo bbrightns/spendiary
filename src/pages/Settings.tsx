@@ -3,6 +3,7 @@ import { useData } from '../store/DataContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Modal } from '../components/ui/Modal'
+import { TextField } from '../components/ui/Field'
 import { DownloadIcon, TrashIcon, UploadIcon } from '../components/icons'
 import type { SpendiaryData } from '../lib/types'
 
@@ -41,8 +42,9 @@ function dataSummary(data: SpendiaryData): string {
 }
 
 export function Settings() {
-  const { data, setData, clearAll } = useData()
+  const { data, setData, clearAll, setUserName } = useData()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [nameDraft, setNameDraft] = useState(data.userName ?? '')
 
   const [resetOpen, setResetOpen] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
@@ -118,6 +120,21 @@ export function Settings() {
   return (
     <>
       <PageHeader eyebrow="App" title="Settings" />
+
+      {/* Profile */}
+      <Card className="animate-rise">
+        <h2 className="font-display text-[17px] font-bold text-ink mb-1">Profile</h2>
+        <p className="text-[13px] text-ink-muted mb-4">Used in the Dashboard greeting.</p>
+        <TextField
+          label="Your name"
+          value={nameDraft}
+          onChange={(v) => {
+            setNameDraft(v)
+            setUserName(v)
+          }}
+          placeholder="e.g. Praween"
+        />
+      </Card>
 
       {/* Data & Backup */}
       <Card className="animate-rise">

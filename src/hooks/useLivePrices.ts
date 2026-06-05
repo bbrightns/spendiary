@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useData } from '../store/DataContext'
 import { fetchBtcThb, fetchStockPricesUsd, fetchUsdThb } from '../lib/prices'
+import { localDateStr } from '../lib/format'
 
 const REFRESH_MS = 60_000
 
@@ -22,7 +23,7 @@ export function useLivePrices() {
     const holdings = dataRef.current.holdings
     const stockHoldings = holdings.filter((h) => h.assetClass === 'stock')
     const cryptoHoldings = holdings.filter((h) => h.assetClass === 'crypto')
-    const today = new Date().toISOString().slice(0, 10)
+    const today = localDateStr()
 
     let btcOk = false
     let stocksOk = false

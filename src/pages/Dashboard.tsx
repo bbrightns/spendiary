@@ -23,6 +23,7 @@ import {
   netWorth,
   portfolioSummary,
   remainingTransfers,
+  shouldConfirmBuy,
   totalCash,
   FREQUENCY_LABEL,
 } from '../lib/calc'
@@ -69,6 +70,15 @@ export function Dashboard() {
     month: 'long',
   })
 
+  const dcaActions = useMemo(
+    () => data.dcaPlans.filter((p) => shouldConfirmBuy(p)),
+    [data.dcaPlans],
+  )
+  const expiringTransfers = useMemo(
+    () => data.transfers.filter((t) => daysUntil(t.expiryDate) <= 7 && remainingTransfers(t) > 0),
+    [data.transfers],
+  )
+
   if (!hasAnything) {
     return (
       <>
@@ -86,7 +96,39 @@ export function Dashboard() {
 
   return (
     <>
-      <PageHeader eyebrow={today} title="Good day, Praween" subtitle="Here's where your money stands." />
+      <PageHeader
+        eyebrow={today}
+        title={`Good day${data.userName ? `, ${data.userName}` : ''}`}
+        subtitle="Here's where your money stands."
+      />
+
+      {/* Today's actions strip */}
+      {(dcaActions.length > 0 || expiringTransfers.length > 0) && (
+        <div className="mb-5 flex flex-wrap gap-2">
+          {dcaActions.length > 0 && (
+            <button
+              onClick={() => navigate('/dca')}
+              className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand-soft px-3.5 py-2 text-[13px] font-semibold text-brand-ink transition-colors hover:bg-brand hover:text-white active:scale-95"
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[11px] font-bold text-white">
+                {dcaActions.length}
+              </span>
+              DCA {dcaActions.length === 1 ? 'plan needs' : 'plans need'} confirmation
+            </button>
+          )}
+          {expiringTransfers.length > 0 && (
+            <button
+              onClick={() => navigate('/transfers')}
+              className="inline-flex items-center gap-2 rounded-full border border-warn/25 bg-warn-soft px-3.5 py-2 text-[13px] font-semibold text-warn transition-colors hover:bg-warn hover:text-white active:scale-95"
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-warn text-[11px] font-bold text-white">
+                {expiringTransfers.length}
+              </span>
+              Transfer {expiringTransfers.length === 1 ? 'schedule expires' : 'schedules expire'} this week
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Net worth hero */}
       <Card className="relative overflow-hidden bg-gradient-to-br from-ink to-ink-deep text-white animate-rise">
@@ -189,7 +231,6 @@ export function Dashboard() {
           footer={
             data.cashAccounts.length > 0 ? (
               <div className="space-y-2.5">
-                {/* Stacked proportion bar */}
                 <div className="flex h-1.5 overflow-hidden rounded-full">
                   {data.cashAccounts.map((a, i) => (
                     <div
@@ -201,7 +242,6 @@ export function Dashboard() {
                     />
                   ))}
                 </div>
-                {/* Legend */}
                 <div className="flex flex-wrap gap-x-4 gap-y-1">
                   {data.cashAccounts.map((a, i) => (
                     <span key={a.id} className="flex items-center gap-1 text-[11.5px] text-ink-muted">
@@ -223,7 +263,7 @@ export function Dashboard() {
 
       <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-5">
         {/* DCA progress */}
-        <Card className="lg:col-span-2 animate-rise">
+        <Card className={`animate-rise ${upcoming.length > 0 ? 'lg:col-span-2' : 'lg:col-span-5'}`}>
           <div className="flex items-center justify-between">
             <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">This Month's DCA</h2>
             <Link to="/dca" className="text-[13px] font-semibold text-brand hover:underline" aria-label="View DCA planner">
@@ -252,39 +292,24 @@ export function Dashboard() {
           </div>
         </Card>
 
-        {/* Upcoming expirations */}
-        <Card className="lg:col-span-3 animate-rise" padded={false}>
-          <div className="flex items-center justify-between px-5 pt-5 sm:px-6 sm:pt-6">
-            <div>
-              <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">Upcoming Expirations</h2>
-              <p className="text-[13px] text-ink-muted">Transfer schedules ending soon</p>
+        {/* Upcoming expirations — hidden entirely when empty */}
+        {upcoming.length > 0 && (
+          <Card className="lg:col-span-3 animate-rise" padded={false}>
+            <div className="flex items-center justify-between px-5 pt-5 sm:px-6 sm:pt-6">
+              <div>
+                <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">Upcoming Expirations</h2>
+                <p className="text-[13px] text-ink-muted">Transfer schedules ending soon</p>
+              </div>
+              <Link to="/transfers" className="text-[13px] font-semibold text-brand hover:underline" aria-label="View all transfers">
+                All transfers
+              </Link>
             </div>
-            <Link to="/transfers" className="text-[13px] font-semibold text-brand hover:underline" aria-label="View all transfers">
-              All transfers
-            </Link>
-          </div>
-
-          {upcoming.length === 0 ? (
-            <EmptyState
-              icon={<TransferIcon className="h-6 w-6" />}
-              title="Nothing expiring"
-              description="Active transfer schedules will appear here as they approach their end date."
-              accent="var(--color-cash)"
-            />
-          ) : (
             <ul className="mt-3 divide-y divide-line">
               {upcoming.map((t) => {
                 const soon = t.days <= 14
                 return (
-                  <li
-                    key={t.id}
-                    className="flex items-center gap-3 px-5 py-3.5 sm:px-6"
-                  >
-                    <span
-                      className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${
-                        soon ? 'bg-warn-soft text-warn' : 'bg-surface-muted text-ink-soft'
-                      }`}
-                    >
+                  <li key={t.id} className="flex items-center gap-3 px-5 py-3.5 sm:px-6">
+                    <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${soon ? 'bg-warn-soft text-warn' : 'bg-surface-muted text-ink-soft'}`}>
                       {soon ? <AlertIcon className="h-[18px] w-[18px]" /> : <ClockIcon className="h-[18px] w-[18px]" />}
                     </span>
                     <div className="min-w-0 flex-1">
@@ -294,9 +319,7 @@ export function Dashboard() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p
-                        className={`text-[13px] font-bold ${soon ? 'text-warn' : 'text-ink'}`}
-                      >
+                      <p className={`text-[13px] font-bold ${soon ? 'text-warn' : 'text-ink'}`}>
                         {t.days <= 0 ? 'Due' : `${t.days}d`}
                       </p>
                       <p className="text-[11.5px] text-ink-muted">{formatDateShort(t.expiryDate)}</p>
@@ -305,8 +328,8 @@ export function Dashboard() {
                 )
               })}
             </ul>
-          )}
-        </Card>
+          </Card>
+        )}
       </div>
 
       <CashAccountsForm open={cashOpen} onClose={() => setCashOpen(false)} />

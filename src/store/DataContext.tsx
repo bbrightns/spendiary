@@ -40,6 +40,7 @@ interface DataContextValue {
   syncStatus: SyncStatus
   setCashAccounts: (accounts: CashAccount[]) => void
   setMonthlyIncome: (income: number) => void
+  setUserName: (name: string) => void
   setMonthlyFixedCost: (cost: number) => void
   upsertFixedCostItem: (item: Omit<FixedCostItem, 'id'> & { id?: string }) => void
   removeFixedCostItem: (id: string) => void
@@ -213,6 +214,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setUsdThb,
       setCashAccounts: (cashAccounts) => setDataState((prev) => ({ ...prev, cashAccounts })),
       setMonthlyIncome: (monthlyIncome) => setDataState((prev) => ({ ...prev, monthlyIncome })),
+      setUserName: (userName) => setDataState((prev) => ({ ...prev, userName })),
       setMonthlyFixedCost: (monthlyFixedCost) => setDataState((prev) => ({ ...prev, monthlyFixedCost })),
       upsertFixedCostItem: (item) =>
         setDataState((prev) => ({ ...prev, fixedCostItems: upsert(prev.fixedCostItems ?? [], item) })),

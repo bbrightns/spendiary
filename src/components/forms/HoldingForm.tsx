@@ -60,7 +60,8 @@ export function HoldingForm({ open, editing, onClose }: Props) {
     wasOpen.current = open
     if (!justOpened) return
     if (editing) {
-      const divisor = (editing.assetClass === 'stock' || editing.assetClass === 'crypto') ? rate : 1
+      // Only stocks are USD-denominated — BTC and Gold are priced in THB directly
+      const divisor = editing.assetClass === 'stock' && rate > 1 ? rate : 1
       setForm({
         name: editing.name,
         ticker: editing.ticker,
@@ -444,6 +445,11 @@ export function HoldingForm({ open, editing, onClose }: Props) {
         {/* ── Fund / Stock: new + edit ── */}
         {!isBtc && !isGold && (
           <>
+            {isUsd && !usdThb && (
+              <div className="rounded-xl bg-warn-soft px-4 py-3 text-[13px] font-medium text-warn">
+                USD/THB rate is loading — please wait before saving to avoid wrong values.
+              </div>
+            )}
             <NumberField
               label="Units held"
               value={form.units}
@@ -492,7 +498,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
             )}
             <FormActions
               editing={!!editing}
-              canSave={true}
+              canSave={!isUsd || !!usdThb}
               onSave={save}
               onDelete={
                 editing

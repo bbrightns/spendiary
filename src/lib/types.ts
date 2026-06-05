@@ -123,6 +123,8 @@ export interface FixedCostItem {
 }
 
 export interface SpendiaryData {
+  /** Display name shown in the Dashboard greeting */
+  userName?: string
   /** Liquid cash, broken down by where it's stored. Total cash = sum of balances. */
   cashAccounts: CashAccount[]
   /** Monthly take-home salary in THB, used to compute the savings/invest rate. */
