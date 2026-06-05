@@ -47,6 +47,12 @@ export interface RetirementSettings {
   deadAge: number
   /** Expected annual inflation rate, e.g. 0.03 for 3% */
   inflationRate?: number
+  /** Expected annual portfolio return, e.g. 0.08 for 8% */
+  expectedReturn?: number
+  /** Date of birth, YYYY-MM-DD */
+  birthDate?: string
+  /** Monthly investment override — defaults to sum of DCA plans if not set */
+  monthlyInvest?: number
 }
 
 export type DcaFrequency = 'daily' | 'weekly' | 'monthly'

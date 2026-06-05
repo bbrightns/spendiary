@@ -3,57 +3,58 @@ import { Link } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
-import { NumberField } from '../components/ui/Field'
-import { portfolioSummary, dcaPerMonth } from '../lib/calc'
+import { NumberField, TextField } from '../components/ui/Field'
+import { dcaPerMonth, portfolioSummary } from '../lib/calc'
 import { thbCompact } from '../lib/format'
 
-// CSS var strings work in SVG stroke/fill attributes and inline style={{ background }}
-// in all modern browsers (SVG 2.0). Using token vars keeps these in sync with
-// the design system; if a token changes in index.css it propagates here automatically.
-const C_INVEST = 'var(--color-crypto)'
+const C_INVEST  = 'var(--color-crypto)'
 const C_SAVINGS = 'var(--color-stocks)'
-const C_TARGET = 'var(--color-funds)'
+const C_TARGET  = 'var(--color-funds)'
 
-const DOB = new Date('1996-10-16')
-const TODAY = new Date()
+// ── Math helpers ──────────────────────────────────────────────────────────────
 
-function ageNow(): number {
-  let age = TODAY.getFullYear() - DOB.getFullYear()
-  const m = TODAY.getMonth() - DOB.getMonth()
-  if (m < 0 || (m === 0 && TODAY.getDate() < DOB.getDate())) age--
+function ageFromBirth(birthDate: string): number {
+  const dob = new Date(birthDate)
+  const now = new Date()
+  let age = now.getFullYear() - dob.getFullYear()
+  const m = now.getMonth() - dob.getMonth()
+  if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age--
   return age
 }
 
-function yearsUntilAge(targetAge: number): number {
-  return Math.max(targetAge - ageNow(), 0)
+function yearsUntilAge(currentAge: number, targetAge: number): number {
+  return Math.max(targetAge - currentAge, 0)
 }
 
 function compoundGrow(principal: number, monthly: number, annualRate: number, years: number): number[] {
-  const monthlyRate = annualRate / 12
+  const r = annualRate / 12
   const points: number[] = []
   let val = principal
   for (let y = 0; y <= years; y++) {
     points.push(val)
-    for (let m = 0; m < 12; m++) {
-      val = val * (1 + monthlyRate) + monthly
-    }
+    for (let m = 0; m < 12; m++) val = val * (1 + r) + monthly
   }
   return points
 }
 
 function linearGrow(monthly: number, years: number): number[] {
-  const points: number[] = []
-  for (let y = 0; y <= years; y++) {
-    points.push(monthly * 12 * y)
-  }
-  return points
+  const pts: number[] = []
+  for (let y = 0; y <= years; y++) pts.push(monthly * 12 * y)
+  return pts
 }
 
-/** Binary-search for the minimum annual return rate needed to reach `target`. Returns null if unreachable even at 500%. */
+/** Minimum annual return rate to reach target — binary search. */
 function solveMinRate(pv: number, monthly: number, years: number, target: number): number | null {
   if (target <= 0 || years <= 0) return null
   if (compoundGrow(pv, monthly, 5.0, years)[years] < target) return null
   let lo = 0, hi = 5.0
+  for (let i = 0; i < 80; i++) {
+    const mid = (lo + hi) / 2
+    if (compoundGrow(pv, mid, mid, years)[years] < target) lo = mid
+    else hi = mid
+  }
+  // Re-do correctly
+  lo = 0; hi = 5.0
   for (let i = 0; i < 80; i++) {
     const mid = (lo + hi) / 2
     if (compoundGrow(pv, monthly, mid, years)[years] < target) lo = mid
@@ -62,20 +63,67 @@ function solveMinRate(pv: number, monthly: number, years: number, target: number
   return (lo + hi) / 2
 }
 
-// ── Mobile bar visualization ───────────────────────────────────────────────
-function MobileProjection({ projectedInvestment, projectedSavings, corpusNeeded, maxY }: {
-  projectedInvestment: number
-  projectedSavings: number
-  corpusNeeded: number
-  maxY: number
+/**
+ * Earliest retire age where the plan becomes viable, given fixed monthly DCA.
+ * Both yearsLeft and retirementYears (and thus corpusNeeded) shift with each candidate age.
+ */
+function solveMinRetireAge(
+  pv: number, monthly: number, annualRate: number, inflation: number,
+  currentAge: number, currentRetireAge: number, planUntilAge: number,
+  monthlySpendToday: number,
+): number | null {
+  for (let age = currentRetireAge + 1; age <= Math.min(planUntilAge - 1, currentRetireAge + 30); age++) {
+    const yrs     = age - currentAge
+    const retYrs  = Math.max(planUntilAge - age, 0)
+    const futureSpend  = monthlySpendToday * Math.pow(1 + inflation, yrs)
+    const corpus  = futureSpend * 12 * retYrs
+    if (corpus <= 0) return age
+    const projected = compoundGrow(pv, monthly, annualRate, yrs)[yrs]
+    if (projected >= corpus) return age
+  }
+  return null
+}
+
+/** How much MORE monthly investment closes the shortfall — binary search. */
+function solveMonthlyGap(pv: number, currentMonthly: number, annualRate: number, years: number, target: number): number | null {
+  if (target <= 0 || years <= 0) return null
+  const maxMonthly = target / Math.max(years * 12, 1)
+  if (compoundGrow(pv, currentMonthly + maxMonthly * 10, annualRate, years)[years] < target) return null
+  let lo = 0, hi = maxMonthly * 10
+  for (let i = 0; i < 80; i++) {
+    const mid = (lo + hi) / 2
+    if (compoundGrow(pv, currentMonthly + mid, annualRate, years)[years] < target) lo = mid
+    else hi = mid
+  }
+  return (lo + hi) / 2
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function HeroStat({ label, value, sub, color }: {
+  label: string; value: string; sub?: string; color?: 'gain' | 'loss' | 'neutral'
 }) {
-  const investPct = Math.min((projectedInvestment / maxY) * 100, 100)
-  const savingsPct = Math.min((projectedSavings / maxY) * 100, 100)
-  const targetPct = corpusNeeded > 0 ? Math.min((corpusNeeded / maxY) * 100, 100) : null
+  return (
+    <div>
+      <p className="text-[12px] font-medium text-ink-muted">{label}</p>
+      <p className={`mt-0.5 font-display text-[22px] font-extrabold tnum leading-none ${
+        color === 'gain' ? 'text-gain' : color === 'loss' ? 'text-loss' : 'text-ink'
+      }`}>{value}</p>
+      {sub && <p className="mt-0.5 text-[11px] text-ink-faint">{sub}</p>}
+    </div>
+  )
+}
+
+function MobileProjection({ projectedInvestment, projectedSavings, corpusNeeded, maxY }: {
+  projectedInvestment: number; projectedSavings: number; corpusNeeded: number; maxY: number
+}) {
+  const investPct  = Math.min((projectedInvestment / maxY) * 100, 100)
+  const savingsPct = Math.min((projectedSavings    / maxY) * 100, 100)
+  const targetPct  = corpusNeeded > 0 ? Math.min((corpusNeeded / maxY) * 100, 100) : null
   return (
     <div className="space-y-4 py-1">
-      <BarRow color={C_INVEST} label="With returns" value={thbCompact(projectedInvestment)} pct={investPct} targetPct={targetPct} />
-      <BarRow color={C_SAVINGS} label="Contributions only" value={thbCompact(projectedSavings)} pct={savingsPct} targetPct={targetPct} />
+      <BarRow color={C_INVEST}  label="With returns"       value={thbCompact(projectedInvestment)} pct={investPct}  targetPct={targetPct} />
+      <BarRow color={C_SAVINGS} label="Contributions only" value={thbCompact(projectedSavings)}    pct={savingsPct} targetPct={targetPct} />
       {corpusNeeded > 0 && (
         <div className="flex items-center justify-between text-[12px] pt-1 border-t border-line">
           <span className="flex items-center gap-1.5 text-ink-muted">
@@ -96,7 +144,7 @@ function BarRow({ color, label, value, pct, targetPct }: {
     <div>
       <div className="flex items-center justify-between text-[12px] mb-1.5">
         <span className="flex items-center gap-1.5 text-ink-muted">
-          <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: color }} aria-hidden="true" />
+          <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: color }} />
           {label}
         </span>
         <span className="tnum font-semibold text-ink">{value}</span>
@@ -104,369 +152,20 @@ function BarRow({ color, label, value, pct, targetPct }: {
       <div className="relative h-2 rounded-full bg-surface-muted overflow-hidden">
         <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color, opacity: 0.85 }} />
         {targetPct !== null && targetPct <= 100 && (
-          <div className="absolute top-0 bottom-0 w-px" style={{ left: `${targetPct}%`, background: C_TARGET, opacity: 0.7 }} aria-hidden="true" />
+          <div className="absolute top-0 bottom-0 w-px" style={{ left: `${targetPct}%`, background: C_TARGET, opacity: 0.7 }} />
         )}
       </div>
     </div>
   )
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────
-export function Retirement() {
-  const { data, setRetirement } = useData()
-  const saved = data.retirement
-
-  const [monthlySpend, setMonthlySpend] = useState<number | ''>(saved?.monthlySpend ?? '')
-  const [retireAge, setRetireAge] = useState<number | ''>(saved?.retireAge ?? 40)
-  const [planUntilAge, setPlanUntilAge] = useState<number | ''>(saved?.deadAge ?? 85)
-  const [inflationRate, setInflationRate] = useState<number | ''>((saved?.inflationRate ?? 0.03) * 100)
-  const [mobileView, setMobileView] = useState<'chart' | 'bars'>('chart')
-
-  const summary = useMemo(() => portfolioSummary(data.holdings), [data.holdings])
-  const investMonthly = useMemo(() => dcaPerMonth(data.dcaPlans), [data.dcaPlans])
-
-  const annualRate = useMemo(() => {
-    const ret = summary.cost > 0 ? summary.pnl / summary.cost : 0.12
-    return ret > 0 ? Math.min(ret, 0.5) : 0.12
-  }, [summary.cost, summary.pnl])
-
-  const currentAge = ageNow()
-  const yearsLeft = yearsUntilAge(Number(retireAge) || 40)
-  const retirementYears = Math.max((Number(planUntilAge) || 85) - (Number(retireAge) || 40), 0)
-  const inflation = (Number(inflationRate) || 0) / 100
-  // Monthly spend in future money at retirement date
-  const futureMonthlySpend = (Number(monthlySpend) || 0) * Math.pow(1 + inflation, yearsLeft)
-  // Corpus needed: inflation-adjusted spending × retirement duration
-  const corpusNeeded = futureMonthlySpend * 12 * retirementYears
-
-  const investLine = useMemo(
-    () => compoundGrow(summary.value, investMonthly, annualRate, yearsLeft),
-    [summary.value, investMonthly, annualRate, yearsLeft],
-  )
-  const savingsLine = useMemo(
-    () => linearGrow(investMonthly, yearsLeft),
-    [investMonthly, yearsLeft],
-  )
-
-  const projectedInvestment = investLine[investLine.length - 1] ?? 0
-  const projectedSavings = savingsLine[savingsLine.length - 1] ?? 0
-  const onTrack = projectedInvestment >= corpusNeeded
-
-  const minRate = useMemo(
-    () => corpusNeeded > 0 && yearsLeft > 0
-      ? solveMinRate(summary.value, investMonthly, yearsLeft, corpusNeeded)
-      : null,
-    [summary.value, investMonthly, yearsLeft, corpusNeeded],
-  )
-  const rateGap = minRate !== null ? annualRate - minRate : null
-
-  useEffect(() => {
-    if (monthlySpend !== '' && retireAge !== '' && planUntilAge !== '') {
-      setRetirement({
-        monthlySpend: Number(monthlySpend),
-        retireAge: Number(retireAge),
-        deadAge: Number(planUntilAge),
-        inflationRate: (Number(inflationRate) || 0) / 100,
-      })
-    }
-  // setRetirement is intentionally omitted: it is defined inside useMemo([data])
-  // in DataContext and gets a new identity on every data write, which would cause
-  // an infinite loop. The user-input deps are the correct trigger boundary.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monthlySpend, retireAge, planUntilAge, inflationRate])
-
-  const maxY = Math.max(corpusNeeded * 1.1, projectedInvestment * 1.05, projectedSavings * 1.05, 1)
-
-  // SVG chart geometry — only used on sm+
-  const chartH = 220
-  const chartW = 560
-  const padL = 60
-  const padR = 16
-  const padT = 16
-  const padB = 36
-  const innerW = chartW - padL - padR
-  const innerH = chartH - padT - padB
-
-  function toX(i: number, total: number) {
-    return padL + (i / Math.max(total - 1, 1)) * innerW
-  }
-  function toY(v: number) {
-    return padT + innerH - (v / maxY) * innerH
-  }
-  function makePath(points: number[]) {
-    return points
-      .map((v, i) => `${i === 0 ? 'M' : 'L'} ${toX(i, points.length).toFixed(1)} ${toY(v).toFixed(1)}`)
-      .join(' ')
-  }
-
-  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((r) => ({ v: maxY * r, y: toY(maxY * r) }))
-
-  const srSummary = corpusNeeded > 0
-    ? `Projected portfolio at retirement: ${thbCompact(projectedInvestment)}. Target corpus: ${thbCompact(corpusNeeded)}. Status: ${onTrack ? 'On Track' : 'Shortfall'}.`
-    : `Projected portfolio at retirement: ${thbCompact(projectedInvestment)}.`
-
-  return (
-    <>
-      <PageHeader
-        eyebrow="Planning"
-        title="Retirement"
-        subtitle={`Age ${currentAge} · ${yearsLeft} year${yearsLeft !== 1 ? 's' : ''} to retirement`}
-      />
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Inputs */}
-        <Card className="animate-rise">
-          <h2 className="font-display text-[17px] font-bold text-ink mb-5 [text-wrap:balance]">Your Plan</h2>
-          <div className="space-y-4">
-            <NumberField
-              label="Monthly spend after retirement (THB)"
-              prefix="฿"
-              value={monthlySpend}
-              onChange={setMonthlySpend}
-              placeholder="e.g. 50000"
-            />
-            <NumberField
-              label="Retire at age"
-              value={retireAge}
-              onChange={setRetireAge}
-              placeholder="40"
-              min={currentAge + 1}
-            />
-            <NumberField
-              label="Plan until age"
-              value={planUntilAge}
-              onChange={setPlanUntilAge}
-              placeholder="85"
-              min={Number(retireAge) + 1}
-            />
-            <NumberField
-              label="Expected inflation rate"
-              suffix="%"
-              value={inflationRate}
-              onChange={setInflationRate}
-              placeholder="3"
-              hint="Annual % — Thai average ~3–4%"
-              min={0}
-            />
-          </div>
-
-          <div className="mt-5 rounded-2xl bg-surface-muted px-4 py-3 space-y-1.5">
-            <Row label="Years to retirement" value={`${yearsLeft} year${yearsLeft !== 1 ? 's' : ''}`} />
-            <Row label="Years in retirement" value={`${retirementYears} year${retirementYears !== 1 ? 's' : ''}`} />
-            {inflation > 0 && Number(monthlySpend) > 0 && (
-              <Row
-                label="Monthly spend at retirement"
-                value={`${thbCompact(futureMonthlySpend)}/mo`}
-                hint="in future money"
-              />
-            )}
-            <Row label="Total corpus needed" value={thbCompact(corpusNeeded)} bold />
-            <Row
-              label={
-                <span className="flex items-center gap-1">
-                  Monthly DCA
-                  <Link to="/dca" className="text-brand underline text-[11px]" aria-label="Edit in DCA planner">
-                    Edit
-                  </Link>
-                </span>
-              }
-              value={thbCompact(investMonthly)}
-            />
-            <Row label="Inflation rate" value={`${(inflation * 100).toFixed(1)}% p.a.`} />
-            <Row label="Portfolio return" value={`${(annualRate * 100).toFixed(1)}% p.a.`} />
-            {minRate !== null && (
-              <Row
-                label="Min. return to meet target"
-                value={`${(minRate * 100).toFixed(1)}% p.a.`}
-                highlight={rateGap !== null ? (rateGap >= 0 ? 'gain' : 'loss') : undefined}
-              />
-            )}
-            {minRate === null && corpusNeeded > 0 && (
-              <Row label="Min. return to meet target" value="Unreachable" highlight="loss" />
-            )}
-          </div>
-        </Card>
-
-        {/* Chart + status */}
-        <Card className="lg:col-span-2 animate-rise">
-          <div className="flex items-start justify-between gap-4 mb-5">
-            <div>
-              <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">Growth Projection</h2>
-              <p className="text-[13px] text-ink-muted mt-0.5">From today to retire age {Number(retireAge) || 40}</p>
-            </div>
-            <div
-              role="status"
-              aria-live="polite"
-              className={`rounded-full px-3.5 py-1.5 text-[13px] font-bold flex items-center gap-1.5 shrink-0 ${
-                onTrack ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'
-              }`}
-            >
-              {onTrack ? (
-                <>
-                  <svg aria-hidden="true" width={12} height={12} viewBox="0 0 12 12" fill="none">
-                    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  On Track
-                </>
-              ) : (
-                <>
-                  <svg aria-hidden="true" width={12} height={12} viewBox="0 0 12 12" fill="none">
-                    <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
-                  </svg>
-                  Shortfall
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Screen-reader summary (all viewports) */}
-          <p className="sr-only">{srSummary}</p>
-
-          {/* Mobile view toggle — hidden on sm+ */}
-          <div className="sm:hidden flex gap-1 mb-4">
-            {(['chart', 'bars'] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => setMobileView(v)}
-                className={`px-3 py-1 rounded-full text-[12px] font-semibold transition-colors ${
-                  mobileView === v
-                    ? 'bg-ink text-surface'
-                    : 'bg-surface-muted text-ink-soft'
-                }`}
-              >
-                {v === 'chart' ? 'Line chart' : 'Bars'}
-              </button>
-            ))}
-          </div>
-
-          {/* Mobile: bar view */}
-          {mobileView === 'bars' && (
-            <div className="sm:hidden mb-3">
-              <MobileProjection
-                projectedInvestment={projectedInvestment}
-                projectedSavings={projectedSavings}
-                corpusNeeded={corpusNeeded}
-                maxY={maxY}
-              />
-            </div>
-          )}
-
-          {/* SVG line chart — always on sm+, conditionally on mobile */}
-          <div className={`overflow-x-auto ${mobileView === 'bars' ? 'hidden sm:block' : ''}`}>
-            <svg
-              style={{ minWidth: 320 }}
-              role="img"
-              aria-label="Retirement growth projection chart"
-              viewBox={`0 0 ${chartW} ${chartH}`}
-              className="w-full"
-            >
-              <title>Retirement growth projection</title>
-
-              {yTicks.map(({ v, y }) => (
-                <g key={v}>
-                  <line x1={padL} y1={y} x2={chartW - padR} y2={y} stroke="var(--color-line)" strokeWidth={1} />
-                  <text x={padL - 6} y={y + 4} textAnchor="end" fontSize={11} fill="var(--color-ink-muted)">
-                    {thbCompact(v)}
-                  </text>
-                </g>
-              ))}
-
-              {investLine.map((_, i) => {
-                if (i % Math.max(Math.floor(yearsLeft / 5), 1) !== 0 && i !== yearsLeft) return null
-                return (
-                  <text
-                    key={i}
-                    x={toX(i, investLine.length)}
-                    y={chartH - padB + 16}
-                    textAnchor="middle"
-                    fontSize={11}
-                    fill="var(--color-ink-muted)"
-                  >
-                    {currentAge + i}
-                  </text>
-                )
-              })}
-
-              {corpusNeeded > 0 && corpusNeeded <= maxY && (
-                <>
-                  <line
-                    x1={padL} y1={toY(corpusNeeded)}
-                    x2={chartW - padR} y2={toY(corpusNeeded)}
-                    stroke={C_TARGET} strokeWidth={1.5} strokeDasharray="5 4" opacity={0.6}
-                  />
-                  <text
-                    x={chartW - padR - 2} y={toY(corpusNeeded) - 4}
-                    textAnchor="end" fontSize={11} fill={C_TARGET} opacity={0.8}
-                  >
-                    Target {thbCompact(corpusNeeded)}
-                  </text>
-                </>
-              )}
-
-              <path d={makePath(savingsLine)} fill="none" stroke={C_SAVINGS} strokeWidth={2} strokeLinejoin="round" />
-              <path d={makePath(investLine)} fill="none" stroke={C_INVEST} strokeWidth={2.5} strokeLinejoin="round" />
-
-              <circle cx={toX(investLine.length - 1, investLine.length)} cy={toY(projectedInvestment)} r={4} fill={C_INVEST} />
-              <circle cx={toX(savingsLine.length - 1, savingsLine.length)} cy={toY(projectedSavings)} r={4} fill={C_SAVINGS} />
-            </svg>
-          </div>
-
-          {/* Legend — hide on mobile when showing bars (bars have inline labels) */}
-          <div className={`mt-3 flex flex-wrap gap-4 ${mobileView === 'bars' ? 'hidden sm:flex' : ''}`}>
-            <LegendItem color={C_INVEST} label={`With returns (${thbCompact(projectedInvestment)} projected)`} />
-            <LegendItem color={C_SAVINGS} label={`Contributions only (${thbCompact(projectedSavings)} projected)`} />
-            <LegendItem color={C_TARGET} label={`Target corpus (${thbCompact(corpusNeeded)})`} dashed />
-          </div>
-
-          {/* Gap summary */}
-          {corpusNeeded > 0 && (
-            <div className="mt-4 rounded-2xl bg-surface-muted px-4 py-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <div>
-                <p className="text-[12px] text-ink-muted">Projected (with returns)</p>
-                <p className="font-display text-[18px] font-extrabold tnum text-ink">{thbCompact(projectedInvestment)}</p>
-              </div>
-              <div>
-                <p className="text-[12px] text-ink-muted">{onTrack ? 'Surplus' : 'Shortfall'}</p>
-                <p className={`font-display text-[18px] font-extrabold tnum ${onTrack ? 'text-gain' : 'text-loss'}`}>
-                  {thbCompact(Math.abs(projectedInvestment - corpusNeeded))}
-                </p>
-              </div>
-              {minRate !== null && (
-                <div>
-                  <p className="text-[12px] text-ink-muted">Min. return needed</p>
-                  <p className={`font-display text-[18px] font-extrabold tnum ${rateGap !== null && rateGap >= 0 ? 'text-gain' : 'text-loss'}`}>
-                    {(minRate * 100).toFixed(1)}% p.a.
-                  </p>
-                  <p className="text-[11px] mt-0.5 text-ink-muted">
-                    Current: {(annualRate * 100).toFixed(1)}% p.a.
-                    {rateGap !== null && (
-                      <span className={rateGap >= 0 ? 'text-gain' : 'text-loss'}>
-                        {' '}({rateGap >= 0 ? '+' : ''}{(rateGap * 100).toFixed(1)}% buffer)
-                      </span>
-                    )}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </Card>
-      </div>
-    </>
-  )
-}
-
-function Row({
-  label, value, bold, highlight, hint,
-}: {
-  label: React.ReactNode
-  value: string
-  bold?: boolean
-  highlight?: 'gain' | 'loss'
-  hint?: string
+function Row({ label, value, bold, highlight, hint }: {
+  label: React.ReactNode; value: string; bold?: boolean
+  highlight?: 'gain' | 'loss'; hint?: string
 }) {
   return (
     <div className="flex items-start justify-between gap-2 text-[13px]">
-      <span className="text-ink-muted">{label}</span>
+      <span className="text-ink-muted shrink-0">{label}</span>
       <div className="text-right">
         <span className={`tnum font-semibold ${
           highlight === 'gain' ? 'text-gain' :
@@ -483,14 +182,405 @@ function LegendItem({ color, label, dashed }: { color: string; label: string; da
   return (
     <div className="flex items-center gap-2 text-[12px] text-ink-muted">
       <svg width={20} height={10} aria-hidden="true">
-        <line
-          x1={0} y1={5} x2={20} y2={5}
-          stroke={color}
-          strokeWidth={dashed ? 1.5 : 2.5}
-          strokeDasharray={dashed ? '4 3' : undefined}
-        />
+        <line x1={0} y1={5} x2={20} y2={5} stroke={color} strokeWidth={dashed ? 1.5 : 2.5} strokeDasharray={dashed ? '4 3' : undefined} />
       </svg>
       {label}
     </div>
+  )
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
+const DEFAULT_BIRTH = '1996-10-16'
+
+export function Retirement() {
+  const { data, setRetirement } = useData()
+  const saved = data.retirement
+
+  const [birthDate,      setBirthDate]      = useState(saved?.birthDate      ?? DEFAULT_BIRTH)
+  const [monthlySpend,   setMonthlySpend]   = useState<number | ''>(saved?.monthlySpend   ?? '')
+  const [retireAge,      setRetireAge]      = useState<number | ''>(saved?.retireAge      ?? 40)
+  const [planUntilAge,   setPlanUntilAge]   = useState<number | ''>(saved?.deadAge        ?? 85)
+  const [expectedReturn, setExpectedReturn] = useState<number | ''>((saved?.expectedReturn ?? 0.08) * 100)
+  const [inflationRate,  setInflationRate]  = useState<number | ''>((saved?.inflationRate  ?? 0.03) * 100)
+  const [mobileView,     setMobileView]     = useState<'chart' | 'bars'>('chart')
+
+  const summary          = useMemo(() => portfolioSummary(data.holdings), [data.holdings])
+  const dcaMonthly       = useMemo(() => dcaPerMonth(data.dcaPlans),      [data.dcaPlans])
+  const [monthlyInvestField, setMonthlyInvestField] = useState<number | ''>(saved?.monthlyInvest ?? '')
+
+  // Use the field value if set, otherwise fall back to live DCA total
+  const investMonthly = Number(monthlyInvestField) > 0 ? Number(monthlyInvestField) : dcaMonthly
+
+  // Sync field when dcaPlans change and user hasn't overridden
+  useEffect(() => {
+    if (!saved?.monthlyInvest) setMonthlyInvestField(dcaMonthly > 0 ? dcaMonthly : '')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dcaMonthly])
+
+  // ── Core derived values ──
+  const currentAge      = ageFromBirth(birthDate)
+  const yearsLeft       = yearsUntilAge(currentAge, Number(retireAge) || 40)
+  const retirementYears = Math.max((Number(planUntilAge) || 85) - (Number(retireAge) || 40), 0)
+  const inflation       = (Number(inflationRate)  || 0) / 100
+  const annualRate      = (Number(expectedReturn) || 8) / 100
+  const realReturn      = annualRate - inflation
+
+  const futureMonthlySpend = (Number(monthlySpend) || 0) * Math.pow(1 + inflation, yearsLeft)
+  const corpusNeeded       = futureMonthlySpend * 12 * retirementYears
+
+  const investLine  = useMemo(() => compoundGrow(summary.value, investMonthly, annualRate, yearsLeft),  [summary.value, investMonthly, annualRate, yearsLeft])
+  const savingsLine = useMemo(() => linearGrow(investMonthly, yearsLeft), [investMonthly, yearsLeft])
+
+  const projectedInvestment = investLine[investLine.length - 1] ?? 0
+  const projectedSavings    = savingsLine[savingsLine.length - 1] ?? 0
+  const gap                 = projectedInvestment - corpusNeeded
+  const onTrack             = gap >= 0
+
+  const minRate = useMemo(
+    () => corpusNeeded > 0 && yearsLeft > 0 ? solveMinRate(summary.value, investMonthly, yearsLeft, corpusNeeded) : null,
+    [summary.value, investMonthly, yearsLeft, corpusNeeded],
+  )
+  const rateGap = minRate !== null ? annualRate - minRate : null
+
+  const monthlyGap = useMemo(
+    () => !onTrack && corpusNeeded > 0 && yearsLeft > 0
+      ? solveMonthlyGap(summary.value, investMonthly, annualRate, yearsLeft, corpusNeeded)
+      : null,
+    [onTrack, summary.value, investMonthly, annualRate, yearsLeft, corpusNeeded],
+  )
+
+  const minRetireAge = useMemo(
+    () => !onTrack && corpusNeeded > 0
+      ? solveMinRetireAge(
+          summary.value, investMonthly, annualRate, inflation,
+          currentAge, Number(retireAge) || 40, Number(planUntilAge) || 85,
+          Number(monthlySpend) || 0,
+        )
+      : null,
+    [onTrack, summary.value, investMonthly, annualRate, inflation, currentAge, retireAge, planUntilAge, monthlySpend],
+  )
+
+  // ── Persist settings ──
+  useEffect(() => {
+    if (monthlySpend !== '' && retireAge !== '' && planUntilAge !== '') {
+      setRetirement({
+        monthlySpend:   Number(monthlySpend),
+        retireAge:      Number(retireAge),
+        deadAge:        Number(planUntilAge),
+        inflationRate:  inflation,
+        expectedReturn: annualRate,
+        birthDate,
+        monthlyInvest:  Number(monthlyInvestField) > 0 ? Number(monthlyInvestField) : undefined,
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [monthlySpend, retireAge, planUntilAge, inflationRate, expectedReturn, birthDate, monthlyInvestField])
+
+  // ── SVG chart ──
+  const maxY  = Math.max(corpusNeeded * 1.1, projectedInvestment * 1.05, projectedSavings * 1.05, 1)
+  const chartH = 220, chartW = 560
+  const padL = 60, padR = 16, padT = 16, padB = 36
+  const innerW = chartW - padL - padR
+  const innerH = chartH - padT - padB
+
+  const toX = (i: number, total: number) => padL + (i / Math.max(total - 1, 1)) * innerW
+  const toY = (v: number) => padT + innerH - (v / maxY) * innerH
+  function makePath(pts: number[]) {
+    return pts.map((v, i) => `${i === 0 ? 'M' : 'L'} ${toX(i, pts.length).toFixed(1)} ${toY(v).toFixed(1)}`).join(' ')
+  }
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((r) => ({ v: maxY * r, y: toY(maxY * r) }))
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="Planning"
+        title="Retirement"
+        subtitle={`Age ${currentAge} · ${yearsLeft} year${yearsLeft !== 1 ? 's' : ''} to retirement`}
+      />
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+
+        {/* ── Left: Inputs ── */}
+        <Card className="animate-rise">
+          <h2 className="font-display text-[17px] font-bold text-ink mb-5">Your Plan</h2>
+          <div className="space-y-4">
+            <TextField
+              label="Date of birth"
+              type="date"
+              value={birthDate}
+              onChange={setBirthDate}
+            />
+            <NumberField
+              label="Monthly spend in retirement"
+              prefix="฿"
+              hint="In today's money"
+              value={monthlySpend}
+              onChange={setMonthlySpend}
+              placeholder="50,000"
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <NumberField
+                label="Retire at age"
+                value={retireAge}
+                onChange={setRetireAge}
+                placeholder="40"
+                min={currentAge + 1}
+              />
+              <NumberField
+                label="Plan until age"
+                value={planUntilAge}
+                onChange={setPlanUntilAge}
+                placeholder="85"
+                min={Number(retireAge) + 1}
+              />
+            </div>
+            <NumberField
+              label="Monthly investment"
+              prefix="฿"
+              hint={dcaMonthly > 0 ? `Auto from DCA plans: ฿${dcaMonthly.toLocaleString()}` : 'From your DCA plans'}
+              value={monthlyInvestField}
+              onChange={setMonthlyInvestField}
+              placeholder={dcaMonthly > 0 ? String(dcaMonthly) : '0'}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <NumberField
+                label="Expected return"
+                suffix="%"
+                hint="Long-term annual"
+                value={expectedReturn}
+                onChange={setExpectedReturn}
+                placeholder="8"
+                min={0}
+              />
+              <NumberField
+                label="Inflation"
+                suffix="%"
+                hint="Thai avg ~3–4%"
+                value={inflationRate}
+                onChange={setInflationRate}
+                placeholder="3"
+                min={0}
+              />
+            </div>
+          </div>
+
+          {/* Summary */}
+          <div className="mt-5 rounded-2xl bg-surface-muted px-4 py-3 space-y-2">
+            <Row label="Years to retirement"  value={`${yearsLeft} yr${yearsLeft !== 1 ? 's' : ''}`} />
+            <Row label="Years in retirement"  value={`${retirementYears} yr${retirementYears !== 1 ? 's' : ''}`} />
+            {inflation > 0 && Number(monthlySpend) > 0 && (
+              <Row
+                label="Spend at retirement"
+                value={`${thbCompact(futureMonthlySpend)}/mo`}
+                hint="in future money"
+              />
+            )}
+            <Row label="Target corpus" value={thbCompact(corpusNeeded)} bold />
+            <Row label="Monthly investment" value={thbCompact(investMonthly)} />
+            <div className="border-t border-line/60 pt-2 space-y-2">
+              <Row label="Return rate"   value={`${(annualRate  * 100).toFixed(1)}% p.a.`} />
+              <Row label="Inflation"     value={`${(inflation   * 100).toFixed(1)}% p.a.`} />
+              <Row
+                label="Real return"
+                value={`${(realReturn * 100).toFixed(1)}% p.a.`}
+                highlight={realReturn >= 0 ? 'gain' : 'loss'}
+                hint="return − inflation"
+              />
+              {minRate !== null && (
+                <Row
+                  label="Min. return needed"
+                  value={`${(minRate * 100).toFixed(1)}% p.a.`}
+                  highlight={rateGap !== null ? (rateGap >= 0 ? 'gain' : 'loss') : undefined}
+                />
+              )}
+            </div>
+          </div>
+        </Card>
+
+        {/* ── Right: Chart ── */}
+        <Card className="lg:col-span-2 animate-rise">
+
+          {/* Hero stats row */}
+          <div className="mb-5">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <p className="text-[12px] font-medium text-ink-muted">Projected at retirement</p>
+                <p className="mt-0.5 font-display text-[32px] font-extrabold tnum text-ink leading-none">
+                  {thbCompact(projectedInvestment)}
+                </p>
+              </div>
+              <div
+                role="status"
+                aria-live="polite"
+                className={`rounded-full px-3.5 py-1.5 text-[13px] font-bold flex items-center gap-1.5 shrink-0 ${
+                  onTrack ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'
+                }`}
+              >
+                {onTrack ? (
+                  <>
+                    <svg aria-hidden="true" width={12} height={12} viewBox="0 0 12 12" fill="none">
+                      <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    On Track
+                  </>
+                ) : (
+                  <>
+                    <svg aria-hidden="true" width={12} height={12} viewBox="0 0 12 12" fill="none">
+                      <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
+                    </svg>
+                    Shortfall
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Secondary hero stats */}
+            {corpusNeeded > 0 && (
+              <div className="mt-4 grid grid-cols-3 gap-3 rounded-2xl bg-surface-muted px-4 py-3">
+                <HeroStat
+                  label={onTrack ? 'Surplus' : 'Shortfall'}
+                  value={thbCompact(Math.abs(gap))}
+                  color={onTrack ? 'gain' : 'loss'}
+                />
+                <HeroStat
+                  label="Real return"
+                  value={`${(realReturn * 100).toFixed(1)}%`}
+                  sub="after inflation"
+                  color={realReturn >= 0 ? 'gain' : 'loss'}
+                />
+                {minRate !== null ? (
+                  <HeroStat
+                    label="Min. return"
+                    value={`${(minRate * 100).toFixed(1)}%`}
+                    sub={rateGap !== null ? `${rateGap >= 0 ? '+' : ''}${(rateGap * 100).toFixed(1)}% buffer` : undefined}
+                    color={rateGap !== null ? (rateGap >= 0 ? 'gain' : 'loss') : 'neutral'}
+                  />
+                ) : (
+                  <HeroStat label="Min. return" value="Unreachable" color="loss" />
+                )}
+              </div>
+            )}
+
+            {/* Shortfall callout — two paths to close the gap */}
+            {!onTrack && (monthlyGap !== null || minRetireAge !== null) && (
+              <div className="mt-3 rounded-2xl border border-loss/20 bg-loss-soft px-4 py-3 space-y-3">
+                <div className="flex items-center gap-2">
+                  <svg className="h-4 w-4 shrink-0 text-loss" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                    <path d="M8 6v3M8 11.5v.5" strokeLinecap="round" />
+                    <circle cx={8} cy={8} r={6.5} />
+                  </svg>
+                  <p className="text-[13px] font-bold text-loss">To close the gap — pick a path:</p>
+                </div>
+                <div className="space-y-2 pl-1">
+                  {monthlyGap !== null && monthlyGap > 0 && (
+                    <div className="flex items-start gap-2 text-[12.5px] text-loss/90">
+                      <span className="mt-px font-bold shrink-0">①</span>
+                      <span>
+                        Invest <span className="font-bold">{thbCompact(monthlyGap)}</span> more per month
+                        {' '}<span className="text-loss/60">(total: {thbCompact(investMonthly + monthlyGap)}/mo)</span>
+                      </span>
+                    </div>
+                  )}
+                  {minRetireAge !== null ? (
+                    <div className="flex items-start gap-2 text-[12.5px] text-loss/90">
+                      <span className="mt-px font-bold shrink-0">②</span>
+                      <span>
+                        Retire at age <span className="font-bold">{minRetireAge}</span> instead of{' '}
+                        {Number(retireAge) || 40}
+                        {' '}<span className="text-loss/60">({minRetireAge - (Number(retireAge) || 40)} more year{minRetireAge - (Number(retireAge) || 40) !== 1 ? 's' : ''} of compounding)</span>
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2 text-[12.5px] text-loss/60">
+                      <span className="mt-px font-bold shrink-0">②</span>
+                      <span>Retiring later won't close the gap — increase your monthly investment instead.</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile view toggle */}
+          <div className="sm:hidden flex gap-1 mb-4">
+            {(['chart', 'bars'] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setMobileView(v)}
+                className={`px-3 py-1 rounded-full text-[12px] font-semibold transition-colors ${
+                  mobileView === v ? 'bg-ink text-surface' : 'bg-surface-muted text-ink-soft'
+                }`}
+              >
+                {v === 'chart' ? 'Line chart' : 'Bars'}
+              </button>
+            ))}
+          </div>
+
+          {/* Mobile bars */}
+          {mobileView === 'bars' && (
+            <div className="sm:hidden mb-3">
+              <MobileProjection
+                projectedInvestment={projectedInvestment}
+                projectedSavings={projectedSavings}
+                corpusNeeded={corpusNeeded}
+                maxY={maxY}
+              />
+            </div>
+          )}
+
+          {/* SVG line chart */}
+          <div className={`overflow-x-auto ${mobileView === 'bars' ? 'hidden sm:block' : ''}`}>
+            <svg
+              style={{ minWidth: 320 }}
+              role="img"
+              aria-label="Retirement growth projection chart"
+              viewBox={`0 0 ${chartW} ${chartH}`}
+              className="w-full"
+            >
+              <title>Retirement growth projection</title>
+              {yTicks.map(({ v, y }) => (
+                <g key={v}>
+                  <line x1={padL} y1={y} x2={chartW - padR} y2={y} stroke="var(--color-line)" strokeWidth={1} />
+                  <text x={padL - 6} y={y + 4} textAnchor="end" fontSize={11} fill="var(--color-ink-muted)">
+                    {thbCompact(v)}
+                  </text>
+                </g>
+              ))}
+              {investLine.map((_, i) => {
+                if (i % Math.max(Math.floor(yearsLeft / 5), 1) !== 0 && i !== yearsLeft) return null
+                return (
+                  <text key={i} x={toX(i, investLine.length)} y={chartH - padB + 16}
+                    textAnchor="middle" fontSize={11} fill="var(--color-ink-muted)">
+                    {currentAge + i}
+                  </text>
+                )
+              })}
+              {corpusNeeded > 0 && corpusNeeded <= maxY && (
+                <>
+                  <line x1={padL} y1={toY(corpusNeeded)} x2={chartW - padR} y2={toY(corpusNeeded)}
+                    stroke={C_TARGET} strokeWidth={1.5} strokeDasharray="5 4" opacity={0.6} />
+                  <text x={chartW - padR - 2} y={toY(corpusNeeded) - 4}
+                    textAnchor="end" fontSize={11} fill={C_TARGET} opacity={0.8}>
+                    Target {thbCompact(corpusNeeded)}
+                  </text>
+                </>
+              )}
+              <path d={makePath(savingsLine)} fill="none" stroke={C_SAVINGS} strokeWidth={2}   strokeLinejoin="round" />
+              <path d={makePath(investLine)}  fill="none" stroke={C_INVEST}  strokeWidth={2.5} strokeLinejoin="round" />
+              <circle cx={toX(investLine.length  - 1, investLine.length)}  cy={toY(projectedInvestment)} r={4} fill={C_INVEST}  />
+              <circle cx={toX(savingsLine.length - 1, savingsLine.length)} cy={toY(projectedSavings)}    r={4} fill={C_SAVINGS} />
+            </svg>
+          </div>
+
+          {/* Legend */}
+          <div className={`mt-3 flex flex-wrap gap-4 ${mobileView === 'bars' ? 'hidden sm:flex' : ''}`}>
+            <LegendItem color={C_INVEST}  label={`With returns (${thbCompact(projectedInvestment)} projected)`} />
+            <LegendItem color={C_SAVINGS} label={`Contributions only (${thbCompact(projectedSavings)} projected)`} />
+            {corpusNeeded > 0 && <LegendItem color={C_TARGET} label={`Target corpus (${thbCompact(corpusNeeded)})`} dashed />}
+          </div>
+        </Card>
+      </div>
+    </>
   )
 }
