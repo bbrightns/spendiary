@@ -55,11 +55,24 @@ export function formatDateShort(iso: string): string {
   })
 }
 
+/**
+ * Returns "YYYY-MM-DD" in the user's LOCAL timezone.
+ * Never use toISOString() for date storage/comparison — it returns UTC,
+ * which shifts the date by one day for UTC+ timezones like Thailand (UTC+7).
+ */
+export function localDateStr(d = new Date()): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export function daysUntil(iso: string): number {
   const now = new Date()
   now.setHours(0, 0, 0, 0)
-  const target = new Date(iso)
-  target.setHours(0, 0, 0, 0)
+  // Parse YYYY-MM-DD as local midnight (not UTC) to avoid timezone shift
+  const [y, mo, d] = iso.split('-').map(Number)
+  const target = new Date(y, mo - 1, d)
   return Math.round((target.getTime() - now.getTime()) / 86_400_000)
 }
 

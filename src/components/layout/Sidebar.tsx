@@ -11,7 +11,9 @@ export function Sidebar() {
         </div>
         <div className="leading-tight">
           <p className="font-display text-[17px] font-extrabold tracking-tight text-ink">Spendiary</p>
-          <p className="text-[11px] font-medium text-ink-muted">Personal Finance</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-muted">
+            {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+          </p>
         </div>
       </div>
 
@@ -62,12 +64,6 @@ export function Sidebar() {
         )}
       </NavLink>
 
-      <div className="mt-3 rounded-2xl border border-line bg-canvas/60 p-4">
-        <p className="text-[13px] font-semibold text-ink">Tracking in THB</p>
-        <p className="mt-0.5 text-[12px] leading-relaxed text-ink-muted">
-          All balances shown in Thai Baht. Data stays on this device.
-        </p>
-      </div>
     </aside>
   )
 }

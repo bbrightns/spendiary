@@ -56,6 +56,7 @@ interface DataContextValue {
   upsertPlan: (plan: Omit<DcaPlan, 'id'> & { id?: string }) => void
   removePlan: (id: string) => void
   confirmDcaBuy: (planId: string, pricePerUnit: number, date: string) => void
+  skipDcaBuy: (planId: string, date: string) => void
 
   upsertTransfer: (transfer: Omit<Transfer, 'id'> & { id?: string }) => void
   removeTransfer: (id: string) => void
@@ -81,12 +82,12 @@ function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
     merged.cashAccounts = [{ id: newId(), name: 'Cash', balance: raw.cash }]
   }
   // Old DCA plans used `monthlyTarget` + `contributed`.
+  // Spread first to preserve ALL fields (frequency, holdingId, confirmedDates, skippedDates, etc.)
   merged.dcaPlans = (merged.dcaPlans ?? []).map((p) => {
     const lp = p as LegacyPlan
     return {
+      ...lp,
       id: lp.id ?? newId(),
-      name: lp.name,
-      assetClass: lp.assetClass,
       monthlyAmount: lp.monthlyAmount ?? lp.monthlyTarget ?? 0,
       dayOfMonth: lp.dayOfMonth ?? 1,
     }
@@ -295,6 +296,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
             holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
           }
         }),
+
+      skipDcaBuy: (planId, date) =>
+        setDataState((prev) => ({
+          ...prev,
+          dcaPlans: prev.dcaPlans.map((p) =>
+            p.id !== planId ? p : {
+              ...p,
+              skippedDates: [date, ...(p.skippedDates ?? [])],
+            }
+          ),
+        })),
 
       upsertTransfer: (transfer) =>
         setDataState((prev) => ({ ...prev, transfers: upsert(prev.transfers, transfer) })),

@@ -1,4 +1,5 @@
 import type { AssetClass, DcaPlan, Holding, SpendiaryData, Transfer } from './types'
+import { localDateStr } from './format'
 
 export interface HoldingMetrics extends Holding {
   marketValue: number
@@ -24,7 +25,7 @@ export function applyBuy(
     units: newUnits,
     avgCost: newUnits > 0 ? newBasis / newUnits : pricePerUnit,
     price: pricePerUnit,
-    updatedAt: on.toISOString().slice(0, 10),
+    updatedAt: localDateStr(on),
   }
 }
 
@@ -148,14 +149,32 @@ export function planTotalExecutionsInMonth(plan: DcaPlan, now = new Date()): num
   return 1
 }
 
-/** Has the user already confirmed a buy for the current period? */
+/** Has the user already confirmed OR skipped a buy for the current period? */
 export function isConfirmedForPeriod(plan: DcaPlan, now = new Date()): boolean {
-  const dates = plan.confirmedDates ?? []
+  const allDates = [...(plan.confirmedDates ?? []), ...(plan.skippedDates ?? [])]
+  if (allDates.length === 0) return false
+  const freq = plan.frequency ?? 'monthly'
+  if (freq === 'daily') {
+    return allDates.includes(localDateStr(now))
+  }
+  if (freq === 'weekly') {
+    const weekStart = new Date(now)
+    weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7))
+    weekStart.setHours(0, 0, 0, 0)
+    return allDates.some((d) => new Date(d) >= weekStart)
+  }
+  // monthly
+  const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  return allDates.some((d) => d.startsWith(ym))
+}
+
+/** Was this period explicitly skipped (not confirmed)? */
+export function isSkippedForPeriod(plan: DcaPlan, now = new Date()): boolean {
+  const dates = plan.skippedDates ?? []
   if (dates.length === 0) return false
   const freq = plan.frequency ?? 'monthly'
   if (freq === 'daily') {
-    const today = now.toISOString().slice(0, 10)
-    return dates.includes(today)
+    return dates.includes(localDateStr(now))
   }
   if (freq === 'weekly') {
     const weekStart = new Date(now)
@@ -163,14 +182,32 @@ export function isConfirmedForPeriod(plan: DcaPlan, now = new Date()): boolean {
     weekStart.setHours(0, 0, 0, 0)
     return dates.some((d) => new Date(d) >= weekStart)
   }
-  // monthly
   const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   return dates.some((d) => d.startsWith(ym))
 }
 
-/** Should the "Confirm buy" button be shown? Buy day passed + not yet confirmed this period. */
+/**
+ * Has the current period's buy day actually arrived yet?
+ * - daily:   always true
+ * - weekly:  today's DOW >= target DOW within the current Mon–Sun week
+ * - monthly: today's date >= dayOfMonth
+ */
+export function buyDayPassedThisPeriod(plan: DcaPlan, now = new Date()): boolean {
+  const freq = plan.frequency ?? 'monthly'
+  if (freq === 'daily') return true
+  if (freq === 'weekly') {
+    const targetDow = plan.dayOfMonth % 7   // 0=Sun … 6=Sat (JS convention)
+    const todayDow  = now.getDay()
+    // Convert both to Mon=0 scale so Mon<Tue<…<Sun
+    const toMonScale = (d: number) => (d + 6) % 7
+    return toMonScale(todayDow) >= toMonScale(targetDow)
+  }
+  return plan.dayOfMonth <= now.getDate()
+}
+
+/** Should the "Confirm buy" button be shown? Buy day passed THIS period + not yet confirmed/skipped. */
 export function shouldConfirmBuy(plan: DcaPlan, now = new Date()): boolean {
-  return planExecutionsThisMonth(plan, now) > 0 && !isConfirmedForPeriod(plan, now)
+  return buyDayPassedThisPeriod(plan, now) && !isConfirmedForPeriod(plan, now)
 }
 
 /** @deprecated use planExecutionsThisMonth — kept for compatibility */

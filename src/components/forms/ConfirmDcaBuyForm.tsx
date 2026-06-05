@@ -5,7 +5,7 @@ import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import { ASSET_META } from '../../lib/calc'
 import type { DcaPlan } from '../../lib/types'
-import { thb } from '../../lib/format'
+import { localDateStr, thb } from '../../lib/format'
 
 interface Props {
   open: boolean
@@ -68,7 +68,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
 
   function confirm() {
     if (!valid) { setShowErrors(true); return }
-    const today = new Date().toISOString().slice(0, 10)
+    const today = localDateStr()
     confirmDcaBuy(plan!.id, priceInThb, today)
     onClose()
   }

@@ -7,9 +7,30 @@ import { AddButton } from '../components/ui/AddButton'
 import { DcaForm } from '../components/forms/DcaForm'
 import { ConfirmDcaBuyForm } from '../components/forms/ConfirmDcaBuyForm'
 import { CheckIcon, DcaIcon, PencilIcon, TrashIcon } from '../components/icons'
-import { ASSET_META, dcaThisMonth, isConfirmedForPeriod, nextBuyDate, planBoughtThisMonth, planExecutionsThisMonth, shouldConfirmBuy } from '../lib/calc'
+import {
+  ASSET_META, buyDayPassedThisPeriod, dcaThisMonth, isConfirmedForPeriod, isSkippedForPeriod,
+  nextBuyDate, planExecutionsThisMonth, shouldConfirmBuy,
+} from '../lib/calc'
 import type { DcaPlan, FixedCostItem } from '../lib/types'
-import { daysUntil, ordinal, thb } from '../lib/format'
+import { daysUntil, localDateStr, ordinal, thb } from '../lib/format'
+
+// ─── Chevron icon ─────────────────────────────────────────────────────────────
+
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`h-4 w-4 text-ink-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+    >
+      <path d="M4 6l4 4 4-4" />
+    </svg>
+  )
+}
 
 // ─── Budget Bar ──────────────────────────────────────────────────────────────
 
@@ -17,7 +38,6 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
   if (salary <= 0) return null
   const total = salary
   const remaining = Math.max(0, total - fixed - savings)
-  const overspent = fixed + savings > total
 
   const fixedPct   = Math.min((fixed   / total) * 100, 100)
   const savingsPct = Math.min((savings / total) * 100, Math.max(0, 100 - fixedPct))
@@ -25,41 +45,32 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
 
   return (
     <div className="mt-5">
-      {/* Bar */}
       <div className="flex h-4 overflow-hidden rounded-full bg-surface-muted gap-0.5">
         {fixedPct > 0 && (
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${fixedPct}%`, background: 'var(--color-loss)' }}
-          />
+          <div className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${fixedPct}%`, background: 'var(--color-loss)' }} />
         )}
         {savingsPct > 0 && (
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${savingsPct}%`, background: 'var(--color-gain)' }}
-          />
+          <div className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${savingsPct}%`, background: 'var(--color-gain)' }} />
         )}
         {freePct > 0 && (
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${freePct}%`, background: '#d1d5db' }}
-          />
+          <div className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${freePct}%`, background: '#d1d5db' }} />
         )}
       </div>
-
-      {/* Legend */}
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
-        <BudgetLegend color="var(--color-loss)"  label="Fixed"   amount={fixed}     total={total} />
-        <BudgetLegend color="var(--color-gain)"  label="Savings" amount={savings}   total={total} />
-        <BudgetLegend color="#9ca3af"            label="Free"    amount={remaining} total={total} dim={overspent} />
+        <BudgetLegend color="var(--color-loss)" label="Fixed"   amount={fixed}     total={total} />
+        <BudgetLegend color="var(--color-gain)" label="Savings" amount={savings}   total={total} />
+        <BudgetLegend color="#9ca3af"           label="Free"    amount={remaining} total={total} dim={fixed + savings > total} />
       </div>
     </div>
   )
 }
 
-function BudgetLegend({
-  color, label, amount, total, dim,
-}: { color: string; label: string; amount: number; total: number; dim?: boolean }) {
+function BudgetLegend({ color, label, amount, total, dim }: {
+  color: string; label: string; amount: number; total: number; dim?: boolean
+}) {
   const pct = total > 0 ? Math.round((amount / total) * 100) : 0
   return (
     <div className="flex items-center gap-2">
@@ -73,11 +84,9 @@ function BudgetLegend({
   )
 }
 
-// ─── Inline edit stat (salary / personal) ────────────────────────────────────
+// ─── Inline edit stat (salary) ────────────────────────────────────────────────
 
-function InlineEditStat({
-  label, value, editing, draft, inputRef, onOpen, onDraftChange, onCommit, onCancel, hint,
-}: {
+function InlineEditStat({ label, value, editing, draft, inputRef, onOpen, onDraftChange, onCommit, onCancel, hint }: {
   label: string; value: string; editing: boolean; draft: string
   inputRef: React.RefObject<HTMLInputElement>
   onOpen: () => void; onDraftChange: (v: string) => void
@@ -90,10 +99,7 @@ function InlineEditStat({
         <div className="mt-1 flex items-center gap-1.5">
           <span className="text-[13px] font-semibold text-ink-muted">฿</span>
           <input
-            ref={inputRef}
-            type="number"
-            min="0"
-            value={draft}
+            ref={inputRef} type="number" min="0" value={draft}
             onChange={(e) => onDraftChange(e.target.value)}
             onBlur={onCommit}
             onKeyDown={(e) => { if (e.key === 'Enter') onCommit(); if (e.key === 'Escape') onCancel() }}
@@ -101,13 +107,8 @@ function InlineEditStat({
           />
         </div>
       ) : (
-        <button
-          onClick={onOpen}
-          className="group mt-1 flex items-center gap-1.5 rounded-lg px-0 py-0.5 transition-colors hover:bg-surface-muted"
-        >
-          <span className="font-display text-[22px] font-extrabold tnum text-ink leading-none">
-            {value}
-          </span>
+        <button onClick={onOpen} className="group mt-1 flex items-center gap-1.5 rounded-lg px-0 py-0.5 transition-colors hover:bg-surface-muted">
+          <span className="font-display text-[22px] font-extrabold tnum text-ink leading-none">{value}</span>
           <PencilIcon className="h-3.5 w-3.5 text-ink-muted opacity-0 transition-opacity group-hover:opacity-100" />
         </button>
       )}
@@ -116,11 +117,22 @@ function InlineEditStat({
   )
 }
 
+// ─── Summary pill ─────────────────────────────────────────────────────────────
+
+function SummaryPill({ label, amount, color, bg }: { label: string; amount: number; color: string; bg: string }) {
+  return (
+    <div className="rounded-xl px-3 py-2 text-center" style={{ background: bg }}>
+      <p className="text-[11px] font-semibold" style={{ color }}>{label}</p>
+      <p className="mt-0.5 font-display text-[14px] font-extrabold tnum" style={{ color }}>{thb(amount)}</p>
+    </div>
+  )
+}
+
 // ─── Fixed cost item row ──────────────────────────────────────────────────────
 
-function FixedCostRow({
-  item, onEdit, onDelete,
-}: { item: FixedCostItem; onEdit: (item: FixedCostItem) => void; onDelete: (id: string) => void }) {
+function FixedCostRow({ item, onEdit, onDelete }: {
+  item: FixedCostItem; onEdit: (item: FixedCostItem) => void; onDelete: (id: string) => void
+}) {
   return (
     <div className="group flex items-center gap-3 py-2.5">
       <div className="min-w-0 flex-1">
@@ -128,16 +140,12 @@ function FixedCostRow({
       </div>
       <span className="font-display text-[14px] font-bold tnum text-ink">{thb(item.amount)}</span>
       <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <button
-          onClick={() => onEdit(item)}
-          className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
-        >
+        <button onClick={() => onEdit(item)}
+          className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink">
           <PencilIcon className="h-3.5 w-3.5" />
         </button>
-        <button
-          onClick={() => onDelete(item.id)}
-          className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-loss-soft hover:text-loss"
-        >
+        <button onClick={() => onDelete(item.id)}
+          className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-loss-soft hover:text-loss">
           <TrashIcon className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -147,13 +155,12 @@ function FixedCostRow({
 
 // ─── Fixed cost inline form ───────────────────────────────────────────────────
 
-function FixedCostForm({
-  initial, onSave, onCancel,
-}: { initial?: FixedCostItem; onSave: (name: string, amount: number) => void; onCancel: () => void }) {
+function FixedCostForm({ initial, onSave, onCancel }: {
+  initial?: FixedCostItem; onSave: (name: string, amount: number) => void; onCancel: () => void
+}) {
   const [name, setName] = useState(initial?.name ?? '')
   const [amount, setAmount] = useState(initial?.amount ? String(initial.amount) : '')
   const nameRef = useRef<HTMLInputElement>(null)
-
   React.useEffect(() => { nameRef.current?.focus() }, [])
 
   function submit() {
@@ -165,9 +172,7 @@ function FixedCostForm({
   return (
     <div className="flex items-center gap-2 rounded-xl bg-surface-muted px-3 py-2.5">
       <input
-        ref={nameRef}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
+        ref={nameRef} value={name} onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') onCancel() }}
         placeholder="Name (e.g. Rent)"
         className="min-w-0 flex-1 bg-transparent text-[13px] font-medium text-ink outline-none placeholder:text-ink-faint"
@@ -175,27 +180,41 @@ function FixedCostForm({
       <div className="flex items-center gap-1">
         <span className="text-[12px] text-ink-muted">฿</span>
         <input
-          type="number"
-          min="0"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
+          type="number" min="0" value={amount} onChange={(e) => setAmount(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') onCancel() }}
           placeholder="0"
           className="w-24 bg-transparent text-right text-[13px] font-bold tnum text-ink outline-none placeholder:text-ink-faint"
         />
       </div>
-      <button
-        onClick={submit}
-        className="shrink-0 rounded-lg bg-brand px-3 py-1.5 text-[12px] font-bold text-white transition-colors hover:bg-brand-ink active:scale-95"
-      >
+      <button onClick={submit}
+        className="shrink-0 rounded-lg bg-brand px-3 py-1.5 text-[12px] font-bold text-white transition-colors hover:bg-brand-ink active:scale-95">
         Save
       </button>
-      <button
-        onClick={onCancel}
-        className="shrink-0 rounded-lg px-2 py-1.5 text-[12px] font-medium text-ink-muted transition-colors hover:bg-line"
-      >
+      <button onClick={onCancel}
+        className="shrink-0 rounded-lg px-2 py-1.5 text-[12px] font-medium text-ink-muted transition-colors hover:bg-line">
         Cancel
       </button>
+    </div>
+  )
+}
+
+// ─── Section header with toggle ───────────────────────────────────────────────
+
+function SectionHeader({ label, total, open, onToggle, action }: {
+  label: string; total: number; open: boolean; onToggle: () => void; action?: React.ReactNode
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <button onClick={onToggle} className="flex items-center gap-2 group">
+        <div className="text-left">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-faint">{label}</p>
+          <p className="mt-0.5 font-display text-[20px] font-extrabold tnum text-ink leading-none">
+            {thb(total)}
+          </p>
+        </div>
+        <ChevronIcon open={open} />
+      </button>
+      {action}
     </div>
   )
 }
@@ -204,8 +223,9 @@ function FixedCostForm({
 
 export function DcaPlanner() {
   const {
-    data, setMonthlyIncome, setMonthlyPersonal,
+    data, setMonthlyIncome,
     upsertFixedCostItem, removeFixedCostItem,
+    skipDcaBuy,
   } = useData()
 
   // Salary edit
@@ -213,10 +233,9 @@ export function DcaPlanner() {
   const [salaryDraft, setSalaryDraft] = useState('')
   const salaryRef = useRef<HTMLInputElement>(null)
 
-  // Personal edit
-  const [editingPersonal, setEditingPersonal] = useState(false)
-  const [personalDraft, setPersonalDraft] = useState('')
-  const personalRef = useRef<HTMLInputElement>(null)
+  // Section expand state — default collapsed
+  const [fixedOpen, setFixedOpen] = useState(false)
+  const [savingsOpen, setSavingsOpen] = useState(false)
 
   // Fixed cost item editing
   const [editingItem, setEditingItem] = useState<FixedCostItem | null>(null)
@@ -231,12 +250,14 @@ export function DcaPlanner() {
   const [confirming, setConfirming] = useState<DcaPlan | null>(null)
 
   // ── Derived numbers ──
-  const fixedItems = data.fixedCostItems ?? []
+  const fixedItems = [...(data.fixedCostItems ?? [])].sort((a, b) => b.amount - a.amount)
   const fixedTotal = fixedItems.reduce((s, x) => s + x.amount, 0)
-  const personal = data.monthlyPersonal ?? 0
-  const dcaMonth  = dcaThisMonth(data.dcaPlans)
-  const savingsTotal = dcaMonth.total + personal
+  const dcaMonth   = dcaThisMonth(data.dcaPlans)
+  const savingsTotal = dcaMonth.total
   const salary = data.monthlyIncome
+
+  // DCA plans sorted by amount desc
+  const plans = [...data.dcaPlans].sort((a, b) => b.monthlyAmount - a.monthlyAmount)
 
   // ── Salary handlers ──
   function openSalaryEdit() {
@@ -250,41 +271,16 @@ export function DcaPlanner() {
     setEditingSalary(false)
   }
 
-  // ── Personal handlers ──
-  function openPersonalEdit() {
-    setPersonalDraft(personal > 0 ? String(personal) : '')
-    setEditingPersonal(true)
-    setTimeout(() => personalRef.current?.select(), 0)
-  }
-  function commitPersonal() {
-    const v = parseFloat(personalDraft.replace(/,/g, ''))
-    if (!isNaN(v) && v >= 0) setMonthlyPersonal(v)
-    setEditingPersonal(false)
-  }
-
-  // ── DCA plan helpers ──
-  const plans = [...data.dcaPlans].sort((a, b) => {
-    const aExec = planExecutionsThisMonth(a)
-    const bExec = planExecutionsThisMonth(b)
-    if ((aExec === 0) !== (bExec === 0)) return aExec === 0 ? -1 : 1
-    return a.dayOfMonth - b.dayOfMonth
-  })
-
   const openAdd = () => { setEditing(null); setFormOpen(true) }
   const openEdit = (p: DcaPlan) => { setEditing(p); setFormOpen(true) }
 
   return (
     <>
-      <PageHeader
-        eyebrow="Strategy"
-        title="Planner"
-        subtitle="Your monthly money breakdown."
-      />
+      <PageHeader eyebrow="Strategy" title="Planner" subtitle="Your monthly money breakdown." />
 
       {/* ── Income + Budget Bar ── */}
       <Card className="animate-rise">
         <div className="flex flex-wrap items-start justify-between gap-6">
-          {/* Salary */}
           <InlineEditStat
             label="Monthly Salary"
             value={salary > 0 ? thb(salary) : '—'}
@@ -297,42 +293,17 @@ export function DcaPlanner() {
             onCancel={() => setEditingSalary(false)}
             hint={salary <= 0 ? 'Tap to set your salary' : undefined}
           />
-
-          {/* Quick summary pills */}
           {salary > 0 && (
             <div className="flex flex-wrap gap-3">
-              <SummaryPill
-                label="Fixed"
-                amount={fixedTotal}
-                color="var(--color-loss)"
-                bg="var(--color-loss-soft)"
-              />
-              <SummaryPill
-                label="Savings"
-                amount={savingsTotal}
-                color="var(--color-gain)"
-                bg="var(--color-gain-soft)"
-              />
-              <SummaryPill
-                label="Free"
-                amount={Math.max(0, salary - fixedTotal - savingsTotal)}
-                color="#6b7280"
-                bg="#f3f4f6"
-              />
+              <SummaryPill label="Fixed"   amount={fixedTotal}   color="var(--color-loss)" bg="var(--color-loss-soft)" />
+              <SummaryPill label="Savings" amount={savingsTotal} color="var(--color-gain)" bg="var(--color-gain-soft)" />
+              <SummaryPill label="Free"    amount={Math.max(0, salary - fixedTotal - savingsTotal)} color="#6b7280" bg="#f3f4f6" />
             </div>
           )}
         </div>
-
-        {/* Budget bar */}
-        {salary > 0 && (
-          <BudgetBar salary={salary} fixed={fixedTotal} savings={savingsTotal} />
-        )}
-
+        {salary > 0 && <BudgetBar salary={salary} fixed={fixedTotal} savings={savingsTotal} />}
         {salary <= 0 && (
-          <button
-            onClick={openSalaryEdit}
-            className="mt-4 text-[13px] font-semibold text-brand hover:underline"
-          >
+          <button onClick={openSalaryEdit} className="mt-4 text-[13px] font-semibold text-brand hover:underline">
             + Add monthly salary to see breakdown
           </button>
         )}
@@ -340,221 +311,228 @@ export function DcaPlanner() {
 
       {/* ── Fixed Costs ── */}
       <Card className="mt-4 animate-rise">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-faint">Fixed Costs</p>
-            <p className="mt-0.5 font-display text-[20px] font-extrabold tnum text-ink leading-none">
-              {thb(fixedTotal)}
-            </p>
-          </div>
-          {!addingItem && !editingItem && (
-            <button
-              onClick={() => setAddingItem(true)}
-              className="flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-2 text-[12.5px] font-semibold text-ink-muted transition-colors hover:border-brand/40 hover:text-brand active:scale-95"
-            >
-              + Add expense
-            </button>
-          )}
-        </div>
+        <SectionHeader
+          label="Fixed Costs"
+          total={fixedTotal}
+          open={fixedOpen}
+          onToggle={() => setFixedOpen((v) => !v)}
+          action={
+            fixedOpen && !addingItem && !editingItem ? (
+              <button
+                onClick={() => setAddingItem(true)}
+                className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12.5px] font-semibold transition-colors active:scale-95"
+                style={{
+                  borderColor: 'color-mix(in srgb, var(--color-loss) 35%, transparent)',
+                  color: 'var(--color-loss)',
+                  background: 'var(--color-loss-soft)',
+                }}
+              >
+                + Add expense
+              </button>
+            ) : null
+          }
+        />
 
-        {fixedItems.length === 0 && !addingItem && (
-          <p className="mt-3 text-[13px] text-ink-muted">
-            No fixed costs yet. Add things like rent, bills, or family support.
-          </p>
-        )}
-
-        {fixedItems.length > 0 && (
-          <div className="mt-3 divide-y divide-line">
-            {fixedItems.map((item) =>
-              editingItem?.id === item.id ? (
-                <div key={item.id} className="py-2">
-                  <FixedCostForm
-                    initial={item}
-                    onSave={(name, amount) => {
-                      upsertFixedCostItem({ id: item.id, name, amount })
-                      setEditingItem(null)
-                    }}
-                    onCancel={() => setEditingItem(null)}
-                  />
-                </div>
-              ) : (
-                <FixedCostRow
-                  key={item.id}
-                  item={item}
-                  onEdit={setEditingItem}
-                  onDelete={removeFixedCostItem}
-                />
-              )
+        {fixedOpen && (
+          <div className="mt-4">
+            {fixedItems.length === 0 && !addingItem && (
+              <p className="text-[13px] text-ink-muted">No fixed costs yet. Add things like rent, bills, or family support.</p>
             )}
-          </div>
-        )}
 
-        {addingItem && (
-          <div className="mt-3">
-            <FixedCostForm
-              onSave={(name, amount) => {
-                upsertFixedCostItem({ name, amount })
-                setAddingItem(false)
-              }}
-              onCancel={() => setAddingItem(false)}
-            />
-          </div>
-        )}
+            {fixedItems.length > 0 && (
+              <div className="divide-y divide-line">
+                {fixedItems.map((item) =>
+                  editingItem?.id === item.id ? (
+                    <div key={item.id} className="py-2">
+                      <FixedCostForm
+                        initial={item}
+                        onSave={(name, amount) => { upsertFixedCostItem({ id: item.id, name, amount }); setEditingItem(null) }}
+                        onCancel={() => setEditingItem(null)}
+                      />
+                    </div>
+                  ) : (
+                    <FixedCostRow key={item.id} item={item} onEdit={setEditingItem} onDelete={removeFixedCostItem} />
+                  )
+                )}
+              </div>
+            )}
 
-        {fixedItems.length > 0 && (
-          <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
-            <span className="text-[12.5px] font-semibold text-ink-muted">Total fixed</span>
-            <span className="font-display text-[15px] font-extrabold tnum text-ink">{thb(fixedTotal)}</span>
+            {addingItem && (
+              <div className="mt-3">
+                <FixedCostForm
+                  onSave={(name, amount) => { upsertFixedCostItem({ name, amount }); setAddingItem(false) }}
+                  onCancel={() => setAddingItem(false)}
+                />
+              </div>
+            )}
+
+            {fixedItems.length > 0 && (
+              <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
+                <span className="text-[12.5px] font-semibold text-ink-muted">Total fixed</span>
+                <span className="font-display text-[15px] font-extrabold tnum text-ink">{thb(fixedTotal)}</span>
+              </div>
+            )}
           </div>
         )}
       </Card>
 
       {/* ── Savings & Invest ── */}
       <Card className="mt-4 animate-rise">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-faint">Savings & Invest</p>
-            <p className="mt-0.5 font-display text-[20px] font-extrabold tnum text-ink leading-none">
-              {thb(savingsTotal)}
-            </p>
-          </div>
-          <AddButton onClick={openAdd} label="Add plan" />
-        </div>
+        <SectionHeader
+          label="Savings & Invest"
+          total={savingsTotal}
+          open={savingsOpen}
+          onToggle={() => setSavingsOpen((v) => !v)}
+          action={
+            savingsOpen ? (
+              <button
+                onClick={openAdd}
+                className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12.5px] font-semibold transition-colors active:scale-95"
+                style={{
+                  borderColor: 'color-mix(in srgb, var(--color-gain) 35%, transparent)',
+                  color: 'var(--color-gain)',
+                  background: 'var(--color-gain-soft)',
+                }}
+              >
+                + Add plan
+              </button>
+            ) : null
+          }
+        />
 
-        {/* Personal budget line */}
-        <div className="mt-4 flex items-center justify-between rounded-xl bg-surface-muted px-4 py-3">
-          <div>
-            <p className="text-[13px] font-semibold text-ink">Personal / Wants</p>
-            <p className="text-[11.5px] text-ink-muted">Shopping, travel, fun</p>
-          </div>
-          {editingPersonal ? (
-            <div className="flex items-center gap-1.5">
-              <span className="text-[13px] text-ink-muted">฿</span>
-              <input
-                ref={personalRef}
-                type="number"
-                min="0"
-                value={personalDraft}
-                onChange={(e) => setPersonalDraft(e.target.value)}
-                onBlur={commitPersonal}
-                onKeyDown={(e) => { if (e.key === 'Enter') commitPersonal(); if (e.key === 'Escape') setEditingPersonal(false) }}
-                className="w-28 rounded-lg border border-brand bg-white px-2.5 py-1 text-[14px] font-bold tnum text-ink outline-none focus:ring-2 focus:ring-brand/30"
-              />
-            </div>
-          ) : (
-            <button
-              onClick={openPersonalEdit}
-              className="group flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-line"
-            >
-              <span className="font-display text-[16px] font-bold tnum text-ink">
-                {personal > 0 ? thb(personal) : '—'}
-              </span>
-              <PencilIcon className="h-3.5 w-3.5 text-ink-muted opacity-0 transition-opacity group-hover:opacity-100" />
-            </button>
-          )}
-        </div>
-
-        {/* DCA plans */}
-        {plans.length === 0 ? (
+        {savingsOpen && (
           <div className="mt-4">
-            <EmptyState
-              icon={<DcaIcon className="h-6 w-6" />}
-              title="No invest plans yet"
-              description="Add recurring buys to track your dollar-cost averaging."
-              accent="var(--color-brand)"
-              action={<AddButton onClick={openAdd} label="Add DCA plan" />}
-            />
-          </div>
-        ) : (
-          <ul className="mt-3 divide-y divide-line rounded-xl border border-line overflow-hidden">
-            {plans.map((p) => {
-              const meta = ASSET_META[p.assetClass]
-              const bought = planBoughtThisMonth(p)
-              const next = nextBuyDate(p)
-              const days = daysUntil(next.toISOString().slice(0, 10))
-              return (
-                <li
-                  key={p.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => openEdit(p)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(p) } }}
-                  className="flex cursor-pointer items-center gap-3 px-4 py-3.5 transition-colors hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                >
-                  <span
-                    className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
-                    style={{ color: meta.color, background: `color-mix(in srgb, ${meta.color} 12%, white)` }}
+            {plans.length === 0 ? (
+              <EmptyState
+                icon={<DcaIcon className="h-6 w-6" />}
+                title="No invest plans yet"
+                description="Add recurring buys to track your dollar-cost averaging."
+                accent="var(--color-brand)"
+                action={
+                  <button
+                    onClick={openAdd}
+                    className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12.5px] font-semibold transition-colors"
+                    style={{
+                      borderColor: 'color-mix(in srgb, var(--color-gain) 35%, transparent)',
+                      color: 'var(--color-gain)',
+                      background: 'var(--color-gain-soft)',
+                    }}
                   >
-                    <DcaIcon className="h-[17px] w-[17px]" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[14px] font-semibold text-ink">{p.name}</p>
-                    <p className="text-[12px] text-ink-muted">
-                      {meta.label} · {freqLabel(p)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      <p className="font-display text-[15px] font-bold tnum text-ink">
-                        {thb(p.monthlyAmount)}
-                        <span className="ml-1 text-[11px] font-medium text-ink-faint">
-                          /{(p.frequency ?? 'monthly') === 'daily' ? 'day' : (p.frequency ?? 'monthly') === 'weekly' ? 'wk' : 'mo'}
-                        </span>
-                      </p>
-                      {isConfirmedForPeriod(p) ? (
-                        <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-[11px] font-semibold text-gain">
-                          <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Confirmed
-                        </span>
-                      ) : bought ? (
-                        <span className="mt-0.5 inline-block text-[11px] font-semibold text-ink-muted">Due now</span>
-                      ) : (
-                        <span className="mt-0.5 inline-block text-[11px] font-semibold text-ink-muted">
-                          {days <= 0 ? 'Today' : `in ${days}d`}
-                        </span>
-                      )}
-                    </div>
-                    {shouldConfirmBuy(p) && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
-                        className="shrink-0 rounded-xl bg-brand px-3 py-2 text-[12px] font-bold text-white transition-colors hover:bg-brand-ink active:scale-95"
-                      >
-                        Confirm
-                      </button>
-                    )}
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        )}
+                    + Add plan
+                  </button>
+                }
+              />
+            ) : (
+              <ul className="divide-y divide-line rounded-xl border border-line overflow-hidden">
+                {plans.map((p) => {
+                  const meta = ASSET_META[p.assetClass]
+                  const bought = buyDayPassedThisPeriod(p)
+                  const confirmed = isConfirmedForPeriod(p)
+                  const skipped = isSkippedForPeriod(p)
+                  const needsAction = shouldConfirmBuy(p)
+                  const next = nextBuyDate(p)
+                  const days = daysUntil(localDateStr(next))
 
-        {/* Savings total footer */}
-        {(plans.length > 0 || personal > 0) && (
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-            <div className="flex items-center gap-4">
-              <div>
-                <p className="text-[12px] text-ink-muted">Total savings</p>
-                <p className="font-display text-[18px] font-extrabold tnum text-ink">{thb(savingsTotal)}</p>
+                  return (
+                    <li
+                      key={p.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => openEdit(p)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(p) } }}
+                      className="flex cursor-pointer items-center gap-3 px-4 py-3.5 transition-colors hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                    >
+                      <span
+                        className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
+                        style={{ color: meta.color, background: `color-mix(in srgb, ${meta.color} 12%, white)` }}
+                      >
+                        <DcaIcon className="h-[17px] w-[17px]" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[14px] font-semibold text-ink">{p.name}</p>
+                        <p className="text-[12px] text-ink-muted">{meta.label} · {freqLabel(p)}</p>
+                      </div>
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <div className="text-right">
+                          <p className="font-display text-[15px] font-bold tnum text-ink">
+                            {thb(p.monthlyAmount)}
+                            <span className="ml-1 text-[11px] font-medium text-ink-faint">
+                              /{(p.frequency ?? 'monthly') === 'daily' ? 'day' : (p.frequency ?? 'monthly') === 'weekly' ? 'wk' : 'mo'}
+                            </span>
+                          </p>
+                          {confirmed && !skipped ? (
+                            <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-[11px] font-semibold text-gain">
+                              <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Confirmed
+                            </span>
+                          ) : bought && !skipped ? (
+                            <span className="mt-0.5 inline-block text-[11px] font-bold text-loss">
+                              Overdue
+                            </span>
+                          ) : days < 3 ? (
+                            <span className="mt-0.5 inline-block text-[11px] font-semibold text-warn">
+                              {days <= 0 ? 'Today' : days === 1 ? 'Tomorrow' : `in ${days} days`}
+                            </span>
+                          ) : (
+                            <span className="mt-0.5 inline-block text-[11px] font-semibold text-[#0ea5e9]">
+                              in {days} days
+                            </span>
+                          )}
+                        </div>
+                        {needsAction && (
+                          <div className="flex flex-col gap-1.5">
+                            <button
+                              onClick={() => { setConfirming(p); setConfirmOpen(true) }}
+                              className="shrink-0 rounded-xl px-3 py-1.5 text-[12px] font-bold text-white transition-colors active:scale-95"
+                              style={{ background: 'var(--color-gain)' }}
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              onClick={() => { skipDcaBuy(p.id, localDateStr()) }}
+                              className="shrink-0 rounded-xl border px-3 py-1.5 text-[12px] font-semibold transition-colors active:scale-95"
+                              style={{
+                                borderColor: 'color-mix(in srgb, var(--color-ink-muted) 30%, transparent)',
+                                color: 'var(--color-ink-muted)',
+                              }}
+                            >
+                              Skip
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+
+            {/* Footer */}
+            {plans.length > 0 && (
+              <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-line pt-4">
+                <div>
+                  <p className="text-[12px] text-ink-muted">Total savings</p>
+                  <p className="font-display text-[18px] font-extrabold tnum text-ink">{thb(savingsTotal)}</p>
+                </div>
+                {salary > 0 && (
+                  <>
+                    <div className="h-8 w-px bg-line" />
+                    <div>
+                      <p className="text-[12px] text-ink-muted">Invest rate</p>
+                      <p className="font-display text-[18px] font-extrabold tnum text-gain">
+                        {Math.round((savingsTotal / salary) * 100)}%
+                      </p>
+                    </div>
+                    <div className="h-8 w-px bg-line" />
+                    <div>
+                      <p className="text-[12px] text-ink-muted">Progress this month</p>
+                      <p className="font-display text-[18px] font-extrabold tnum text-ink">
+                        {Math.round(dcaMonth.pct)}%
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
-              {salary > 0 && (
-                <>
-                  <div className="h-8 w-px bg-line" />
-                  <div>
-                    <p className="text-[12px] text-ink-muted">Invest rate</p>
-                    <p className="font-display text-[18px] font-extrabold tnum text-gain">
-                      {salary > 0 ? `${Math.round((savingsTotal / salary) * 100)}%` : '—'}
-                    </p>
-                  </div>
-                  <div className="h-8 w-px bg-line" />
-                  <div>
-                    <p className="text-[12px] text-ink-muted">Progress this month</p>
-                    <p className="font-display text-[18px] font-extrabold tnum text-ink">
-                      {Math.round(dcaMonth.pct)}%
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
+            )}
           </div>
         )}
       </Card>
@@ -562,22 +540,6 @@ export function DcaPlanner() {
       <DcaForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
       <ConfirmDcaBuyForm open={confirmOpen} plan={confirming} onClose={() => setConfirmOpen(false)} />
     </>
-  )
-}
-
-// ─── Summary pill ─────────────────────────────────────────────────────────────
-
-function SummaryPill({ label, amount, color, bg }: { label: string; amount: number; color: string; bg: string }) {
-  return (
-    <div
-      className="rounded-xl px-3 py-2 text-center"
-      style={{ background: bg }}
-    >
-      <p className="text-[11px] font-semibold" style={{ color }}>{label}</p>
-      <p className="mt-0.5 font-display text-[14px] font-extrabold tnum" style={{ color }}>
-        {thb(amount)}
-      </p>
-    </div>
   )
 }
 

@@ -22,7 +22,10 @@ export function Layout({ children }: { children: ReactNode }) {
         <div className="grid h-8 w-8 place-items-center rounded-lg bg-ink text-white">
           <SparkleIcon className="h-[18px] w-[18px]" strokeWidth={1.8} />
         </div>
-        <p className="flex-1 font-display text-[17px] font-extrabold tracking-tight text-ink">Spendiary</p>
+        <p className="font-display text-[17px] font-extrabold tracking-tight text-ink">Spendiary</p>
+        <p className="flex-1 text-right text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
+          {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+        </p>
         <NavLink
           to="/settings"
           aria-label="Settings"

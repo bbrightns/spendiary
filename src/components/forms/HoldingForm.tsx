@@ -6,7 +6,7 @@ import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import { ASSET_META } from '../../lib/calc'
 import type { AssetClass, Holding } from '../../lib/types'
-import { thb } from '../../lib/format'
+import { localDateStr, thb } from '../../lib/format'
 import { searchSecurities, type Security } from '../../lib/securities'
 
 interface Props {
@@ -97,7 +97,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       units: btcUnits,
       avgCost: avgCostThb,
       price: editing?.price ?? avgCostThb,
-      updatedAt: new Date().toISOString().slice(0, 10),
+      updatedAt: localDateStr(),
     })
     addHoldingLog({
       action: 'add',
@@ -124,7 +124,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       units: g,
       avgCost: avgCostThb,
       price: avgCostThb,
-      updatedAt: new Date().toISOString().slice(0, 10),
+      updatedAt: localDateStr(),
     })
     addHoldingLog({
       action: 'add',
@@ -157,7 +157,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       units: Number(form.units),
       avgCost: Number(form.avgCost) * multiplier,
       price: useLivePrice ? livePrice! : Number(form.price) * multiplier,
-      updatedAt: new Date().toISOString().slice(0, 10),
+      updatedAt: localDateStr(),
     })
     addHoldingLog({
       action: editing ? 'edit' : 'add',
