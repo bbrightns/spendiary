@@ -119,6 +119,7 @@ export function Retirement() {
   const [monthlySpend, setMonthlySpend] = useState<number | ''>(saved?.monthlySpend ?? '')
   const [retireAge, setRetireAge] = useState<number | ''>(saved?.retireAge ?? 40)
   const [planUntilAge, setPlanUntilAge] = useState<number | ''>(saved?.deadAge ?? 85)
+  const [inflationRate, setInflationRate] = useState<number | ''>((saved?.inflationRate ?? 0.03) * 100)
   const [mobileView, setMobileView] = useState<'chart' | 'bars'>('chart')
 
   const summary = useMemo(() => portfolioSummary(data.holdings), [data.holdings])
@@ -132,7 +133,11 @@ export function Retirement() {
   const currentAge = ageNow()
   const yearsLeft = yearsUntilAge(Number(retireAge) || 40)
   const retirementYears = Math.max((Number(planUntilAge) || 85) - (Number(retireAge) || 40), 0)
-  const corpusNeeded = (Number(monthlySpend) || 0) * 12 * retirementYears
+  const inflation = (Number(inflationRate) || 0) / 100
+  // Monthly spend in future money at retirement date
+  const futureMonthlySpend = (Number(monthlySpend) || 0) * Math.pow(1 + inflation, yearsLeft)
+  // Corpus needed: inflation-adjusted spending × retirement duration
+  const corpusNeeded = futureMonthlySpend * 12 * retirementYears
 
   const investLine = useMemo(
     () => compoundGrow(summary.value, investMonthly, annualRate, yearsLeft),
@@ -161,13 +166,14 @@ export function Retirement() {
         monthlySpend: Number(monthlySpend),
         retireAge: Number(retireAge),
         deadAge: Number(planUntilAge),
+        inflationRate: (Number(inflationRate) || 0) / 100,
       })
     }
   // setRetirement is intentionally omitted: it is defined inside useMemo([data])
   // in DataContext and gets a new identity on every data write, which would cause
-  // an infinite loop. The three user-input deps are the correct trigger boundary.
+  // an infinite loop. The user-input deps are the correct trigger boundary.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monthlySpend, retireAge, planUntilAge])
+  }, [monthlySpend, retireAge, planUntilAge, inflationRate])
 
   const maxY = Math.max(corpusNeeded * 1.1, projectedInvestment * 1.05, projectedSavings * 1.05, 1)
 
@@ -233,11 +239,27 @@ export function Retirement() {
               placeholder="85"
               min={Number(retireAge) + 1}
             />
+            <NumberField
+              label="Expected inflation rate"
+              suffix="%"
+              value={inflationRate}
+              onChange={setInflationRate}
+              placeholder="3"
+              hint="Annual % — Thai average ~3–4%"
+              min={0}
+            />
           </div>
 
           <div className="mt-5 rounded-2xl bg-surface-muted px-4 py-3 space-y-1.5">
             <Row label="Years to retirement" value={`${yearsLeft} year${yearsLeft !== 1 ? 's' : ''}`} />
             <Row label="Years in retirement" value={`${retirementYears} year${retirementYears !== 1 ? 's' : ''}`} />
+            {inflation > 0 && Number(monthlySpend) > 0 && (
+              <Row
+                label="Monthly spend at retirement"
+                value={`${thbCompact(futureMonthlySpend)}/mo`}
+                hint="in future money"
+              />
+            )}
             <Row label="Total corpus needed" value={thbCompact(corpusNeeded)} bold />
             <Row
               label={
@@ -250,6 +272,7 @@ export function Retirement() {
               }
               value={thbCompact(investMonthly)}
             />
+            <Row label="Inflation rate" value={`${(inflation * 100).toFixed(1)}% p.a.`} />
             <Row label="Portfolio return" value={`${(annualRate * 100).toFixed(1)}% p.a.`} />
             {minRate !== null && (
               <Row
@@ -433,21 +456,25 @@ export function Retirement() {
 }
 
 function Row({
-  label, value, bold, highlight,
+  label, value, bold, highlight, hint,
 }: {
   label: React.ReactNode
   value: string
   bold?: boolean
   highlight?: 'gain' | 'loss'
+  hint?: string
 }) {
   return (
-    <div className="flex items-center justify-between text-[13px]">
+    <div className="flex items-start justify-between gap-2 text-[13px]">
       <span className="text-ink-muted">{label}</span>
-      <span className={`tnum font-semibold ${
-        highlight === 'gain' ? 'text-gain' :
-        highlight === 'loss' ? 'text-loss' :
-        bold ? 'font-bold text-ink' : 'text-ink-soft'
-      }`}>{value}</span>
+      <div className="text-right">
+        <span className={`tnum font-semibold ${
+          highlight === 'gain' ? 'text-gain' :
+          highlight === 'loss' ? 'text-loss' :
+          bold ? 'font-bold text-ink' : 'text-ink-soft'
+        }`}>{value}</span>
+        {hint && <p className="text-[11px] text-ink-faint">{hint}</p>}
+      </div>
     </div>
   )
 }

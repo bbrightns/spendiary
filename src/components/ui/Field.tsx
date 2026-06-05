@@ -68,6 +68,7 @@ interface NumberFieldProps {
   onChange: (v: number | '') => void
   placeholder?: string
   prefix?: string
+  suffix?: string
   min?: number
   step?: number
 }
@@ -80,6 +81,7 @@ export function NumberField({
   onChange,
   placeholder,
   prefix,
+  suffix,
   min = 0,
   step,
 }: NumberFieldProps) {
@@ -91,12 +93,17 @@ export function NumberField({
             {prefix}
           </span>
         )}
+        {suffix && (
+          <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[15px] font-medium text-ink-muted">
+            {suffix}
+          </span>
+        )}
         <input
           type="number"
           inputMode="decimal"
           min={min}
           step={step}
-          className={`${getFieldClass(!!error)} tnum ${prefix ? 'pl-8' : ''}`}
+          className={`${getFieldClass(!!error)} tnum ${prefix ? 'pl-8' : ''} ${suffix ? 'pr-8' : ''}`}
           value={value}
           placeholder={placeholder}
           onChange={(e) => {

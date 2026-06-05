@@ -39,12 +39,14 @@ export interface Holding {
 }
 
 export interface RetirementSettings {
-  /** Monthly spend after retirement, in THB */
+  /** Monthly spend after retirement, in THB (in today's money) */
   monthlySpend: number
   /** Target age to retire */
   retireAge: number
   /** Age at which you expect to die */
   deadAge: number
+  /** Expected annual inflation rate, e.g. 0.03 for 3% */
+  inflationRate?: number
 }
 
 export type DcaFrequency = 'daily' | 'weekly' | 'monthly'
