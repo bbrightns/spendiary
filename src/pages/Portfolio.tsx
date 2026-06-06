@@ -1,21 +1,5 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  DndContext,
-  PointerSensor,
-  TouchSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core'
-import {
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-  arrayMove,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { useData } from '../store/DataContext'
 import { useLivePrices } from '../hooks/useLivePrices'
 import { PageHeader } from '../components/layout/PageHeader'
@@ -50,31 +34,24 @@ const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
 const SATS_PER_BTC = 100_000_000
 
 export function Portfolio() {
-  const { data, removeHolding, reorderHoldings, upsertBtcLocation, removeBtcLocation, removeGoldLocation } = useData()
+  const { data, removeHolding, upsertBtcLocation, removeBtcLocation, removeGoldLocation } = useData()
   const { status: priceStatus, lastUpdated, usdThb, errorMsg, refresh: refreshPrices } = useLivePrices()
   const [filter, setFilter] = useState<AssetClass | 'all'>('all')
   const [sortBy, setSortBy] = useState<'none' | 'value' | 'pnl' | 'type'>('none')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [search, setSearch] = useState('')
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor,   { activationConstraint: { delay: 200, tolerance: 5 } }),
-  )
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event
-    if (!over || active.id === over.id) return
-    const oldIds = data.holdings.map((h) => h.id)
-    const oldIdx = oldIds.indexOf(active.id as string)
-    const newIdx = oldIds.indexOf(over.id as string)
-    reorderHoldings(arrayMove(oldIds, oldIdx, newIdx))
-    setSortBy('none')   // clear auto-sort when user manually reorders
-  }
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Holding | null>(null)
   const [buyOpen, setBuyOpen] = useState(false)
   const [buying, setBuying] = useState<Holding | null>(null)
+
+  // Swipe-to-reveal actions
+  const [swipedId, setSwipedId] = useState<string | null>(null)
+
+  // Remove confirmation
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false)
+  const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null)
 
   // BTC / Gold location expansion
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -90,8 +67,14 @@ export function Portfolio() {
   const alloc = allocations(data.holdings)
 
   const openAdd = () => { setEditing(null); setFormOpen(true) }
-  const openEdit = (h: Holding) => { setEditing(h); setFormOpen(true) }
-  const openBuy = (h: Holding) => { setBuying(h); setBuyOpen(true) }
+  const openEdit = (h: Holding) => { setSwipedId(null); setEditing(h); setFormOpen(true) }
+  const openBuy = (h: Holding) => { setSwipedId(null); setBuying(h); setBuyOpen(true) }
+  const confirmRemove = (id: string, name: string) => {
+    setSwipedId(null)
+    setRemoveTarget({ id, name })
+    setRemoveConfirmOpen(true)
+  }
+
   function openLocEdit(holdingId: string, loc: BtcLocation) {
     setLocEditHoldingId(holdingId)
     setLocEditing(loc)
@@ -148,7 +131,7 @@ export function Portfolio() {
       h.ticker.toLowerCase().includes(searchLower),
     )
     .sort((a, b) => {
-      if (sortBy === 'none') return 0   // preserve stored order (drag order)
+      if (sortBy === 'none') return 0
       const dir = sortDir === 'desc' ? -1 : 1
       if (sortBy === 'value') return dir * (a.marketValue - b.marketValue)
       if (sortBy === 'pnl')   return dir * (a.pnlPct - b.pnlPct)
@@ -168,20 +151,24 @@ export function Portfolio() {
         eyebrow="Holdings"
         title="Portfolio"
         subtitle={
-          <span className="flex items-center gap-2 flex-wrap text-[14.5px] text-ink-muted">
+          <span
+            role="status"
+            aria-live="polite"
+            className="flex items-center gap-2 flex-wrap text-[14.5px] text-ink-muted"
+          >
             {priceStatus === 'loading' && 'Fetching live prices…'}
             {priceStatus === 'ok' && lastUpdated && (
               <>
                 <span className="inline-block h-2 w-2 rounded-full bg-gain animate-pulse" />
                 Live · updated {lastUpdated.toLocaleTimeString()}
-                {usdThb && <span className="text-ink-faint">· USD/THB {usdThb.toFixed(2)}</span>}
+                {usdThb && <span className="text-ink-soft">· USD/THB {usdThb.toFixed(2)}</span>}
               </>
             )}
             {priceStatus === 'partial' && lastUpdated && (
               <>
                 <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
                 Partial update · {lastUpdated.toLocaleTimeString()}
-                {usdThb && <span className="text-ink-faint">· USD/THB {usdThb.toFixed(2)}</span>}
+                {usdThb && <span className="text-ink-soft">· USD/THB {usdThb.toFixed(2)}</span>}
                 <span className="text-loss text-[12px]">{errorMsg}</span>
               </>
             )}
@@ -243,11 +230,12 @@ export function Portfolio() {
           </div>
         </Card>
 
-        {/* Performance summary */}
+        {/* Performance summary + holdings list */}
         <Card className="lg:col-span-3 animate-rise">
+          {/* ── Summary metrics ── */}
           <div className="grid grid-cols-2 gap-5 sm:grid-cols-3">
             <Metric label="Current Value" value={thb(summary.value)} />
-            <Metric label="Cost Basis" value={thb(summary.cost)} muted />
+            <Metric label="Amount Invested" value={thb(summary.cost)} muted />
             <Metric
               label="Total Profit / Loss"
               valueNode={<PnLText value={summary.pnl} className="text-[22px]" />}
@@ -255,7 +243,17 @@ export function Portfolio() {
             />
           </div>
 
+          {/* ── Holdings list ── */}
           <div className="mt-6 border-t border-line pt-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-display text-[15px] font-bold text-ink">
+                Holdings
+                <span className="ml-2 rounded-full bg-surface-muted px-2 py-0.5 text-[12px] font-semibold text-ink-muted">
+                  {rows.length}
+                </span>
+              </h3>
+            </div>
+
             {/* Search bar */}
             <div className="relative mb-3">
               <svg
@@ -292,7 +290,7 @@ export function Portfolio() {
                   onClick={() => setFilter(f.key)}
                   className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
                     filter === f.key
-                      ? 'bg-ink text-white'
+                      ? 'bg-ink text-white dark:bg-[#4f46e5] dark:text-white'
                       : 'bg-surface-muted text-ink-soft hover:text-ink'
                   }`}
                 >
@@ -320,7 +318,7 @@ export function Portfolio() {
                     }}
                     className={`flex shrink-0 items-center gap-0.5 rounded-full px-3 py-1 text-[12px] font-semibold transition-colors ${
                       active
-                        ? 'bg-brand text-white'
+                        ? 'bg-brand text-white dark:bg-[#4f46e5]'
                         : 'bg-surface-muted text-ink-soft hover:text-ink'
                     }`}
                   >
@@ -333,21 +331,64 @@ export function Portfolio() {
               })}
             </div>
 
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={rows.map((h) => h.id)} strategy={verticalListSortingStrategy}>
+            {/* Swipe hint — shown only if nothing is swiped yet */}
+            {swipedId === null && rows.length > 0 && (
+              <p className="mb-3 text-[11.5px] text-ink-faint flex items-center gap-1">
+                <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                  <path d="M12 8H4M7 5l-3 3 3 3"/>
+                </svg>
+                Swipe a row left to buy, edit, or remove
+              </p>
+            )}
+
             <ul className="space-y-2">
               {rows.map((h) => {
                 const isBtc = h.assetClass === 'crypto'
                 const isGold = h.assetClass === 'gold'
                 const isExpandable = isBtc || isGold
                 const isExpanded = isExpandable && expandedId === h.id
+                const isSwiped = swipedId === h.id
                 return (
-                  <SortableRow key={h.id} id={h.id}>{(dragHandle) => (<>
-                    {/* Main row */}
+                  <SwipeRow
+                    key={h.id}
+                    isSwiped={isSwiped}
+                    onSwipeOpen={() => { setSwipedId(h.id); setExpandedId(null) }}
+                    onSwipeClose={() => setSwipedId(null)}
+                    actions={
+                      <>
+                        <button
+                          onClick={() => openBuy(h)}
+                          aria-label={`Buy more ${h.name}`}
+                          className="flex h-full w-14 flex-col items-center justify-center gap-0.5 bg-gain/90 text-white transition-opacity hover:bg-gain"
+                        >
+                          <PlusIcon className="h-5 w-5" strokeWidth={2.2} />
+                          <span className="text-[10px] font-semibold">Buy</span>
+                        </button>
+                        <button
+                          onClick={() => openEdit(h)}
+                          aria-label={`Edit ${h.name}`}
+                          className="flex h-full w-14 flex-col items-center justify-center gap-0.5 bg-brand/90 text-white transition-opacity hover:bg-brand dark:bg-[#4f46e5]/90 dark:hover:bg-[#4f46e5]"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                          <span className="text-[10px] font-semibold">Edit</span>
+                        </button>
+                        <button
+                          onClick={() => confirmRemove(h.id, h.name)}
+                          aria-label={`Remove ${h.name}`}
+                          className="flex h-full w-14 flex-col items-center justify-center gap-0.5 rounded-r-2xl bg-loss/90 text-white transition-opacity hover:bg-loss"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                          <span className="text-[10px] font-semibold">Remove</span>
+                        </button>
+                      </>
+                    }
+                  >
+                    {/* Main row content */}
                     <div
                       role="button"
                       tabIndex={0}
                       onClick={() => {
+                        if (isSwiped) { setSwipedId(null); return }
                         if (isExpandable) {
                           setExpandedId(isExpanded ? null : h.id)
                         } else {
@@ -362,14 +403,14 @@ export function Portfolio() {
                         }
                       }}
                       aria-label={isExpandable ? (isExpanded ? `Collapse ${h.name} locations` : `Expand ${h.name} locations`) : `Edit ${h.name}`}
-                      className="flex cursor-pointer items-center gap-3 px-3.5 py-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                      className="flex cursor-pointer items-center gap-3 px-4 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                     >
-                      {dragHandle}
+                      {/* Avatar */}
                       <span
                         className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-[12px] font-bold"
                         style={{
                           color: ASSET_META[h.assetClass].color,
-                          background: `color-mix(in srgb, ${ASSET_META[h.assetClass].color} 12%, white)`,
+                          background: `color-mix(in srgb, ${ASSET_META[h.assetClass].color} 14%, transparent)`,
                         }}
                       >
                         {h.assetClass === 'crypto' ? (
@@ -378,52 +419,48 @@ export function Portfolio() {
                           h.ticker.slice(0, 2).toUpperCase()
                         )}
                       </span>
+
+                      {/* Two-line content */}
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <p className="truncate text-[14px] font-semibold text-ink">{h.name}</p>
-                          {isPriceStale(h.updatedAt) && (
-                            <span
-                              title={`Price not updated in 7+ days${h.updatedAt ? ` (last: ${h.updatedAt})` : ''}`}
-                              className="h-2 w-2 shrink-0 rounded-full bg-warn"
-                            />
-                          )}
-                          {isExpandable && (
-                            <svg
-                              aria-hidden="true"
-                              width={14}
-                              height={14}
-                              viewBox="0 0 14 14"
-                              fill="none"
-                              className={`shrink-0 text-ink-muted transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-                            >
-                              <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          )}
+                        {/* Line 1: name + value */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex min-w-0 items-center gap-1.5">
+                            <p className="truncate text-[14px] font-semibold text-ink">{h.name}</p>
+                            {isPriceStale(h.updatedAt) && (
+                              <span
+                                title={`Price not updated in 7+ days${h.updatedAt ? ` (last: ${h.updatedAt})` : ''}`}
+                                aria-label="Stale price"
+                                className="h-2 w-2 shrink-0 rounded-full bg-warn"
+                              />
+                            )}
+                            {isExpandable && (
+                              <svg
+                                aria-hidden="true"
+                                width={14}
+                                height={14}
+                                viewBox="0 0 14 14"
+                                fill="none"
+                                className={`shrink-0 text-ink-muted transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                              >
+                                <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            )}
+                          </div>
+                          <p className="shrink-0 text-[14px] font-bold tnum text-ink">{thb(h.marketValue)}</p>
                         </div>
-                        <p className="text-[12px] text-ink-muted">
-                          {isBtc
-                            ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats (${h.units.toFixed(8)} BTC)`
-                            : isGold
-                            ? `${h.units.toFixed(2)} g · Gold`
-                            : `${h.units.toLocaleString()} ${unitLabel(h.assetClass)} · ${ASSET_META[h.assetClass].label}`
-                          }
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[14px] font-bold tnum text-ink">{thb(h.marketValue)}</p>
-                        <div className="mt-0.5 flex justify-end">
+
+                        {/* Line 2: units/type + PnL pill */}
+                        <div className="mt-1 flex items-center justify-between gap-2">
+                          <p className="truncate text-[12px] text-ink-muted">
+                            {isBtc
+                              ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats`
+                              : isGold
+                              ? `${h.units.toFixed(2)} g · Gold`
+                              : `${h.units.toLocaleString()} ${unitLabel(h.assetClass)} · ${ASSET_META[h.assetClass].label}`
+                            }
+                          </p>
                           <PnLPill value={h.pnlPct} asPct />
                         </div>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); openBuy(h) }}
-                          title="Buy more"
-                          aria-label={`Buy more ${h.name}`}
-                          className="grid h-9 w-9 place-items-center rounded-full bg-brand-soft text-brand transition-colors hover:bg-brand hover:text-white"
-                        >
-                          <PlusIcon className="h-[16px] w-[16px]" strokeWidth={2.2} />
-                        </button>
                       </div>
                     </div>
 
@@ -432,7 +469,6 @@ export function Portfolio() {
                       <div className="border-t border-line bg-surface-muted px-4 pb-3 pt-2">
                         <p className="mb-2 text-[12px] font-semibold text-ink-muted">Locations</p>
 
-                        {/* BTC locations */}
                         {isBtc && (
                           (h.btcLocations ?? []).length === 0 ? (
                             <p className="py-1 text-[13px] text-ink-muted">No locations yet. Use "Buy more" to add.</p>
@@ -448,14 +484,14 @@ export function Portfolio() {
                                   </div>
                                   <button
                                     onClick={() => openLocEdit(h.id, loc)}
-                                    aria-label={`Edit ${loc.name}`}
+                                    aria-label={`Edit location ${loc.name}`}
                                     className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
                                   >
                                     <PencilIcon className="h-[14px] w-[14px]" />
                                   </button>
                                   <button
                                     onClick={() => removeBtcLocation(h.id, loc.id)}
-                                    aria-label={`Remove ${loc.name}`}
+                                    aria-label={`Remove location ${loc.name}`}
                                     className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss"
                                   >
                                     <TrashIcon className="h-[14px] w-[14px]" />
@@ -466,7 +502,6 @@ export function Portfolio() {
                           )
                         )}
 
-                        {/* Gold locations */}
                         {isGold && (
                           (h.goldLocations ?? []).length === 0 ? (
                             <p className="py-1 text-[13px] text-ink-muted">No locations yet. Use "Buy more" to add.</p>
@@ -482,7 +517,7 @@ export function Portfolio() {
                                   </div>
                                   <button
                                     onClick={() => removeGoldLocation(h.id, loc.id)}
-                                    aria-label={`Remove ${loc.name}`}
+                                    aria-label={`Remove location ${loc.name}`}
                                     className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss"
                                   >
                                     <TrashIcon className="h-[14px] w-[14px]" />
@@ -500,21 +535,13 @@ export function Portfolio() {
                           >
                             Edit holding details
                           </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); removeHolding(h.id) }}
-                            className="text-[12px] font-semibold text-loss hover:underline"
-                          >
-                            Remove holding
-                          </button>
                         </div>
                       </div>
                     )}
-                  </>)}</SortableRow>
+                  </SwipeRow>
                 )
               })}
             </ul>
-              </SortableContext>
-            </DndContext>
           </div>
         </Card>
       </div>
@@ -560,48 +587,97 @@ export function Portfolio() {
           </div>
         </div>
       </Modal>
+
+      {/* Remove holding confirmation modal */}
+      <Modal
+        open={removeConfirmOpen}
+        onClose={() => { setRemoveConfirmOpen(false); setRemoveTarget(null) }}
+        title={`Remove "${removeTarget?.name}"?`}
+        description="This will permanently delete the holding and all its transaction history. This cannot be undone."
+      >
+        <div className="flex flex-col gap-3 pb-1">
+          <button
+            onClick={() => {
+              if (removeTarget) removeHolding(removeTarget.id)
+              setRemoveConfirmOpen(false)
+              setRemoveTarget(null)
+            }}
+            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-loss px-5 text-sm font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
+          >
+            Yes, remove holding
+          </button>
+          <button
+            onClick={() => { setRemoveConfirmOpen(false); setRemoveTarget(null) }}
+            className="w-full rounded-full py-2.5 text-[14px] font-semibold text-ink-muted transition-colors hover:text-ink"
+          >
+            Cancel
+          </button>
+        </div>
+      </Modal>
     </>
   )
 }
 
-// ── Drag-and-drop helpers ─────────────────────────────────────────────────────
+// ── SwipeRow ──────────────────────────────────────────────────────────────────
 
-function SortableRow({ id, children }: { id: string; children: (handle: React.ReactNode) => React.ReactNode }) {
-  const { setNodeRef, transform, transition, isDragging, attributes, listeners } = useSortable({ id })
+interface SwipeRowProps {
+  isSwiped: boolean
+  onSwipeOpen: () => void
+  onSwipeClose: () => void
+  actions: React.ReactNode
+  children: React.ReactNode
+}
 
-  const handle = (
-    <span
-      {...attributes}
-      {...listeners}
-      className="grid h-8 w-5 shrink-0 cursor-grab place-items-center text-ink-faint active:cursor-grabbing touch-none"
-      aria-label="Drag to reorder"
-    >
-      <svg width="12" height="16" viewBox="0 0 12 16" fill="none">
-        <circle cx="4" cy="3"  r="1.5" fill="currentColor"/>
-        <circle cx="8" cy="3"  r="1.5" fill="currentColor"/>
-        <circle cx="4" cy="8"  r="1.5" fill="currentColor"/>
-        <circle cx="8" cy="8"  r="1.5" fill="currentColor"/>
-        <circle cx="4" cy="13" r="1.5" fill="currentColor"/>
-        <circle cx="8" cy="13" r="1.5" fill="currentColor"/>
-      </svg>
-    </span>
-  )
+function SwipeRow({ isSwiped, onSwipeOpen, onSwipeClose, actions, children }: SwipeRowProps) {
+  const touchStartX = useRef<number | null>(null)
+  const ACTION_WIDTH = 42 * 3 // 3 buttons × 42px each
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    touchStartX.current = null
+    if (dx < -50) {
+      onSwipeOpen()
+    } else if (dx > 30) {
+      onSwipeClose()
+    }
+  }
 
   return (
     <li
-      ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.5 : 1,
-        zIndex: isDragging ? 10 : undefined,
-      }}
-      className="rounded-2xl border border-line bg-surface overflow-hidden transition-colors hover:border-line-strong"
+      className="relative rounded-2xl border border-line bg-surface overflow-hidden transition-colors hover:border-line-strong"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
-      {children(handle)}
+      {/* Action buttons revealed at right */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 right-0 flex"
+        style={{ width: ACTION_WIDTH }}
+      >
+        <div
+          className={`pointer-events-auto flex h-full w-full transition-opacity duration-200 ${isSwiped ? 'opacity-100' : 'opacity-0'}`}
+        >
+          {actions}
+        </div>
+      </div>
+
+      {/* Sliding content wrapper */}
+      <div
+        className="relative transition-transform duration-200 ease-out"
+        style={{ transform: isSwiped ? `translateX(-${ACTION_WIDTH}px)` : 'translateX(0)' }}
+      >
+        {children}
+      </div>
     </li>
   )
 }
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function isPriceStale(updatedAt?: string): boolean {
   if (!updatedAt) return false

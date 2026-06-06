@@ -19,7 +19,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {/* Mobile top brand bar */}
       <div className="sticky top-0 z-20 flex items-center gap-2.5 border-b border-line bg-canvas/80 px-5 py-3.5 backdrop-blur-xl lg:hidden">
-        <div className="grid h-8 w-8 place-items-center rounded-lg bg-ink text-white">
+        <div className="grid h-8 w-8 place-items-center rounded-lg bg-ink text-white dark:bg-brand-soft dark:text-brand">
           <SparkleIcon className="h-[18px] w-[18px]" strokeWidth={1.8} />
         </div>
         <p className="font-display text-[17px] font-extrabold tracking-tight text-ink">Spendiary</p>

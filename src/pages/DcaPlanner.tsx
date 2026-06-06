@@ -55,13 +55,13 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
         )}
         {freePct > 0 && (
           <div className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${freePct}%`, background: '#d1d5db' }} />
+            style={{ width: `${freePct}%`, background: 'var(--color-line-strong)' }} />
         )}
       </div>
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
         <BudgetLegend color="var(--color-loss)" label="Fixed"   amount={fixed}     total={total} />
         <BudgetLegend color="var(--color-cash)" label="Savings" amount={savings}   total={total} />
-        <BudgetLegend color="#9ca3af"           label="Free"    amount={remaining} total={total} dim={fixed + savings > total} />
+        <BudgetLegend color="var(--color-ink-faint)" label="Free"    amount={remaining} total={total} dim={fixed + savings > total} />
       </div>
     </div>
   )
@@ -296,7 +296,7 @@ export function DcaPlanner() {
             <div className="flex flex-wrap gap-3">
               <SummaryPill label="Fixed"   amount={fixedTotal}   color="var(--color-loss)" bg="var(--color-loss-soft)" />
               <SummaryPill label="Savings" amount={savingsTotal} color="var(--color-gain)" bg="var(--color-gain-soft)" />
-              <SummaryPill label="Free"    amount={Math.max(0, salary - fixedTotal - savingsTotal)} color="#6b7280" bg="#f3f4f6" />
+              <SummaryPill label="Free"    amount={Math.max(0, salary - fixedTotal - savingsTotal)} color="var(--color-ink-faint)" bg="var(--color-surface-muted)" />
             </div>
           )}
         </div>

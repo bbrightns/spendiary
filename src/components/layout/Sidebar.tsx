@@ -20,7 +20,7 @@ export function Sidebar() {
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-[252px] flex-col border-r border-line bg-surface/80 px-4 py-6 backdrop-blur-xl lg:flex">
       <div className="flex items-center gap-2.5 px-3">
-        <div className="grid h-9 w-9 place-items-center rounded-xl bg-ink text-white shadow-[var(--shadow-soft)]">
+        <div className="grid h-9 w-9 place-items-center rounded-xl bg-ink text-white dark:bg-brand-soft dark:text-brand shadow-[var(--shadow-soft)]">
           <SparkleIcon className="h-5 w-5" strokeWidth={1.8} />
         </div>
         <div className="leading-tight">

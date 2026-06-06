@@ -9,7 +9,7 @@ export function AddButton({ onClick, label = 'Add' }: Props) {
   return (
     <button
       onClick={onClick}
-      className="inline-flex h-10 items-center gap-1.5 rounded-full bg-ink px-4 text-[14px] font-semibold text-white shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-ink-hover active:scale-95"
+      className="inline-flex h-10 items-center gap-1.5 rounded-full bg-ink px-4 text-[14px] font-semibold text-white shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] active:scale-95"
     >
       <PlusIcon className="h-[18px] w-[18px]" strokeWidth={2.2} />
       {label}

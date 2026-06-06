@@ -75,7 +75,7 @@ export function Modal({ open, onClose, title, description, children }: ModalProp
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       <div
-        className="absolute inset-0 bg-ink/35 backdrop-blur-sm"
+        className="absolute inset-0 bg-ink/35 dark:bg-black/60 backdrop-blur-sm"
         style={{ animation: 'fadeIn 0.2s ease both' }}
         onClick={onClose}
       />

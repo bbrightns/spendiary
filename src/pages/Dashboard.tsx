@@ -114,9 +114,9 @@ export function Dashboard() {
           {dcaActions.length > 0 && (
             <button
               onClick={() => navigate('/dca')}
-              className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand-soft px-3.5 py-2 text-[13px] font-semibold text-brand-ink transition-colors hover:bg-brand hover:text-white active:scale-95"
+              className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand-soft px-3.5 py-2 text-[13px] font-semibold text-brand-ink transition-colors hover:bg-brand hover:text-white dark:hover:bg-[#4f46e5] active:scale-95"
             >
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[11px] font-bold text-white">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand dark:bg-[#4f46e5] text-[11px] font-bold text-white">
                 {dcaActions.length}
               </span>
               DCA {dcaActions.length === 1 ? 'plan needs' : 'plans need'} confirmation
@@ -137,7 +137,7 @@ export function Dashboard() {
       )}
 
       {/* Net worth hero */}
-      <Card className="relative overflow-hidden bg-gradient-to-br from-ink to-ink-deep text-white animate-rise">
+      <Card className="relative overflow-hidden text-white animate-rise" style={{ background: 'linear-gradient(135deg, #0b0d12 0%, #1a1f35 100%)' }}>
         <div className="relative flex flex-wrap items-end justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 text-white/60">
@@ -375,7 +375,8 @@ function NetWorthChart({ history }: { history: NetWorthSnapshot[] }) {
   const change = last.value - first.value
   const changePct = Math.abs((change / first.value) * 100)
   const isUp = change >= 0
-  const color = isUp ? '#10b981' : '#c03252'
+  // Use CSS variables so the chart adapts to light/dark mode
+  const colorVar = isUp ? 'var(--color-cash)' : 'var(--color-loss)'
 
   // Show last 90 days label, or actual range
   const [y0, mo0, d0] = first.date.split('-').map(Number)
@@ -397,13 +398,13 @@ function NetWorthChart({ history }: { history: NetWorthSnapshot[] }) {
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 88, display: 'block' }} aria-hidden>
           <defs>
             <linearGradient id="nwg" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity="0.18" />
-              <stop offset="100%" stopColor={color} stopOpacity="0" />
+              <stop offset="0%" style={{ stopColor: colorVar, stopOpacity: 0.2 }} />
+              <stop offset="100%" style={{ stopColor: colorVar, stopOpacity: 0 }} />
             </linearGradient>
           </defs>
           <path d={areaPath} fill="url(#nwg)" />
-          <path d={linePath} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="4" fill={color} />
+          <path d={linePath} fill="none" style={{ stroke: colorVar }} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="4" style={{ fill: colorVar }} />
         </svg>
         {/* Date axis */}
         <div className="flex justify-between">

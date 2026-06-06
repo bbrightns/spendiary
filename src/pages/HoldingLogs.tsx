@@ -79,7 +79,7 @@ export function HoldingLogs() {
               key={f.key}
               onClick={() => setAssetFilter(f.key)}
               className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
-                assetFilter === f.key ? 'bg-ink text-white' : 'bg-surface-muted text-ink-soft hover:text-ink'
+                assetFilter === f.key ? 'bg-ink text-white dark:bg-[#4f46e5] dark:text-white' : 'bg-surface-muted text-ink-soft hover:text-ink'
               }`}
             >
               {f.label}
@@ -92,7 +92,7 @@ export function HoldingLogs() {
               key={f.key}
               onClick={() => setActionFilter(f.key)}
               className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
-                actionFilter === f.key ? 'bg-ink text-white' : 'bg-surface-muted text-ink-soft hover:text-ink'
+                actionFilter === f.key ? 'bg-ink text-white dark:bg-[#4f46e5] dark:text-white' : 'bg-surface-muted text-ink-soft hover:text-ink'
               }`}
             >
               {f.label}

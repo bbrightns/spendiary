@@ -19,7 +19,7 @@ export function Button({
 }: ButtonProps) {
   const variants = {
     primary:
-      'bg-ink text-white hover:bg-ink-hover shadow-[var(--shadow-soft)] active:scale-[0.98]',
+      'bg-ink text-white hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] shadow-[var(--shadow-soft)] active:scale-[0.98]',
     secondary:
       'bg-surface text-ink border border-line-strong hover:bg-surface-muted active:scale-[0.98]',
     ghost: 'text-ink-soft hover:bg-surface-muted',

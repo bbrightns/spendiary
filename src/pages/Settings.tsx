@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { useData } from '../store/DataContext'
+import { useTheme, type Theme } from '../hooks/useTheme'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Modal } from '../components/ui/Modal'
@@ -43,6 +44,7 @@ function dataSummary(data: SpendiaryData): string {
 
 export function Settings() {
   const { data, setData, clearAll, setUserName } = useData()
+  const { theme, setTheme } = useTheme()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [nameDraft, setNameDraft] = useState(data.userName ?? '')
 
@@ -136,6 +138,46 @@ export function Settings() {
         />
       </Card>
 
+      {/* Appearance */}
+      <Card className="animate-rise">
+        <h2 className="font-display text-[17px] font-bold text-ink mb-1">Appearance</h2>
+        <p className="text-[13px] text-ink-muted mb-4">Choose how Spendiary looks on this device.</p>
+        <div className="flex rounded-2xl bg-surface-muted p-1 gap-1">
+          {([
+            { value: 'light' as Theme, label: 'Light', icon: (
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                <circle cx="10" cy="10" r="3.5" />
+                <path d="M10 2v1.5M10 16.5V18M2 10h1.5M16.5 10H18M4.1 4.1l1.1 1.1M14.8 14.8l1.1 1.1M15.9 4.1l-1.1 1.1M5.2 14.8l-1.1 1.1" />
+              </svg>
+            )},
+            { value: 'system' as Theme, label: 'System', icon: (
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                <rect x="2" y="3" width="16" height="11" rx="2" />
+                <path d="M6 17h8M10 14v3" />
+              </svg>
+            )},
+            { value: 'dark' as Theme, label: 'Dark', icon: (
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                <path d="M17 11.5A7 7 0 1 1 8.5 3a5 5 0 0 0 8.5 8.5Z" />
+              </svg>
+            )},
+          ] as const).map(({ value, label, icon }) => (
+            <button
+              key={value}
+              onClick={() => setTheme(value)}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-semibold transition-all duration-200 ${
+                theme === value
+                  ? 'bg-surface text-ink shadow-[var(--shadow-soft)]'
+                  : 'text-ink-muted hover:text-ink'
+              }`}
+            >
+              {icon}
+              {label}
+            </button>
+          ))}
+        </div>
+      </Card>
+
       {/* Data & Backup */}
       <Card className="animate-rise">
         <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">Data &amp; Backup</h2>
@@ -157,7 +199,7 @@ export function Settings() {
             </div>
             <button
               onClick={handleExport}
-              className="ml-4 inline-flex shrink-0 items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white active:scale-95"
+              className="ml-4 inline-flex shrink-0 items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95"
             >
               <DownloadIcon className="h-4 w-4" />
               Export
@@ -183,7 +225,7 @@ export function Settings() {
             <button
               onClick={handleImportClick}
               aria-label="Import data from JSON backup file"
-              className="ml-4 inline-flex shrink-0 items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white active:scale-95"
+              className="ml-4 inline-flex shrink-0 items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95"
             >
               <UploadIcon className="h-4 w-4" />
               Import
@@ -230,14 +272,14 @@ export function Settings() {
         <div className="flex flex-col gap-3 pb-1">
           <button
             onClick={() => handleExport()}
-            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-surface-muted text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white"
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-surface-muted text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5]"
           >
             <DownloadIcon className="h-4 w-4" />
             Export current data first
           </button>
           <button
             onClick={() => pendingImport && commitImport(pendingImport)}
-            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-ink px-5 text-sm font-semibold text-white transition-all duration-200 hover:bg-ink-hover active:scale-[0.98]"
+            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-ink px-5 text-sm font-semibold text-white transition-all duration-200 hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] active:scale-[0.98]"
           >
             Replace with imported data
           </button>
