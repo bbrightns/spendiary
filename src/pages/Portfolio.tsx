@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { useLivePrices } from '../hooks/useLivePrices'
@@ -46,9 +46,6 @@ export function Portfolio() {
   const [buyOpen, setBuyOpen] = useState(false)
   const [buying, setBuying] = useState<Holding | null>(null)
 
-  // Swipe-to-reveal actions
-  const [swipedId, setSwipedId] = useState<string | null>(null)
-
   // Remove confirmation
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false)
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null)
@@ -67,10 +64,9 @@ export function Portfolio() {
   const alloc = allocations(data.holdings)
 
   const openAdd = () => { setEditing(null); setFormOpen(true) }
-  const openEdit = (h: Holding) => { setSwipedId(null); setEditing(h); setFormOpen(true) }
-  const openBuy = (h: Holding) => { setSwipedId(null); setBuying(h); setBuyOpen(true) }
+  const openEdit = (h: Holding) => { setEditing(h); setFormOpen(true) }
+  const openBuy = (h: Holding) => { setBuying(h); setBuyOpen(true) }
   const confirmRemove = (id: string, name: string) => {
-    setSwipedId(null)
     setRemoveTarget({ id, name })
     setRemoveConfirmOpen(true)
   }
@@ -109,9 +105,7 @@ export function Portfolio() {
             title="No holdings yet"
             description="Add your mutual funds, US stocks, and Bitcoin to see allocation, value, and profit/loss at a glance."
             accent="var(--color-funds)"
-            action={
-              <AddButton onClick={openAdd} label="Add holding" />
-            }
+            action={<AddButton onClick={openAdd} label="Add holding" />}
           />
         </Card>
         <HoldingForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
@@ -178,7 +172,7 @@ export function Portfolio() {
                 <button onClick={refreshPrices} className="underline">retry</button>
               </span>
             )}
-            {priceStatus === 'idle' && 'Valued at the latest prices you\'ve filled in.'}
+            {priceStatus === 'idle' && "Valued at the latest prices you've filled in."}
           </span>
         }
         action={
@@ -232,7 +226,7 @@ export function Portfolio() {
 
         {/* Performance summary + holdings list */}
         <Card className="lg:col-span-3 animate-rise">
-          {/* ── Summary metrics ── */}
+          {/* Summary metrics */}
           <div className="grid grid-cols-2 gap-5 sm:grid-cols-3">
             <Metric label="Current Value" value={thb(summary.value)} />
             <Metric label="Amount Invested" value={thb(summary.cost)} muted />
@@ -243,7 +237,7 @@ export function Portfolio() {
             />
           </div>
 
-          {/* ── Holdings list ── */}
+          {/* Holdings list */}
           <div className="mt-6 border-t border-line pt-5">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-display text-[15px] font-bold text-ink">
@@ -254,7 +248,7 @@ export function Portfolio() {
               </h3>
             </div>
 
-            {/* Search bar */}
+            {/* Search */}
             <div className="relative mb-3">
               <svg
                 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
@@ -331,137 +325,120 @@ export function Portfolio() {
               })}
             </div>
 
-            {/* Swipe hint — shown only if nothing is swiped yet */}
-            {swipedId === null && rows.length > 0 && (
-              <p className="mb-3 text-[11.5px] text-ink-faint flex items-center gap-1">
-                <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-                  <path d="M12 8H4M7 5l-3 3 3 3"/>
-                </svg>
-                Swipe a row left to buy, edit, or remove
-              </p>
-            )}
-
             <ul className="space-y-2">
               {rows.map((h) => {
                 const isBtc = h.assetClass === 'crypto'
                 const isGold = h.assetClass === 'gold'
                 const isExpandable = isBtc || isGold
                 const isExpanded = isExpandable && expandedId === h.id
-                const isSwiped = swipedId === h.id
-                return (
-                  <SwipeRow
-                    key={h.id}
-                    isSwiped={isSwiped}
-                    onSwipeOpen={() => { setSwipedId(h.id); setExpandedId(null) }}
-                    onSwipeClose={() => setSwipedId(null)}
-                    actions={
-                      <>
-                        <button
-                          onClick={() => openBuy(h)}
-                          aria-label={`Buy more ${h.name}`}
-                          className="flex h-full w-14 flex-col items-center justify-center gap-0.5 bg-gain/90 text-white transition-opacity hover:bg-gain"
-                        >
-                          <PlusIcon className="h-5 w-5" strokeWidth={2.2} />
-                          <span className="text-[10px] font-semibold">Buy</span>
-                        </button>
-                        <button
-                          onClick={() => openEdit(h)}
-                          aria-label={`Edit ${h.name}`}
-                          className="flex h-full w-14 flex-col items-center justify-center gap-0.5 bg-brand/90 text-white transition-opacity hover:bg-brand dark:bg-[#4f46e5]/90 dark:hover:bg-[#4f46e5]"
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                          <span className="text-[10px] font-semibold">Edit</span>
-                        </button>
-                        <button
-                          onClick={() => confirmRemove(h.id, h.name)}
-                          aria-label={`Remove ${h.name}`}
-                          className="flex h-full w-14 flex-col items-center justify-center gap-0.5 rounded-r-2xl bg-loss/90 text-white transition-opacity hover:bg-loss"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                          <span className="text-[10px] font-semibold">Remove</span>
-                        </button>
-                      </>
-                    }
+
+                // Circular ticker badge (Google Finance style)
+                const tickerLabel = h.ticker.slice(0, 4).toUpperCase()
+                const tickerFontSize = tickerLabel.length <= 2 ? 'text-[13px]' : tickerLabel.length === 3 ? 'text-[11px]' : 'text-[10px]'
+                const badge = (
+                  <span
+                    className={`grid h-10 w-10 shrink-0 place-items-center rounded-full font-bold text-white ${tickerFontSize}`}
+                    style={{ background: ASSET_META[h.assetClass].color }}
                   >
-                    {/* Main row content */}
+                    {tickerLabel}
+                  </span>
+                )
+
+                const unitsLabel = isBtc
+                  ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats`
+                  : isGold
+                  ? `${h.units.toFixed(2)} g · Gold`
+                  : `${h.units.toLocaleString()} ${unitLabel(h.assetClass)} · ${ASSET_META[h.assetClass].label}`
+
+                const staleIndicator = isPriceStale(h.updatedAt) && (
+                  <span title={`Price last updated: ${h.updatedAt ?? 'unknown'}`} aria-label="Price is stale" className="h-2 w-2 shrink-0 rounded-full bg-warn" />
+                )
+
+                const chevron = isExpandable && (
+                  <svg aria-hidden="true" width={14} height={14} viewBox="0 0 14 14" fill="none"
+                    className={`shrink-0 text-ink-muted transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+                    <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )
+
+                const buyBtn = (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openBuy(h) }}
+                    aria-label={`Buy more ${h.name}`}
+                    title="Buy more"
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-soft text-brand transition-all hover:bg-brand hover:text-white active:scale-95"
+                  >
+                    <PlusIcon className="h-[16px] w-[16px]" strokeWidth={2.2} />
+                  </button>
+                )
+
+                const rowClick = () => {
+                  if (isExpandable) setExpandedId(isExpanded ? null : h.id)
+                  else openEdit(h)
+                }
+
+                return (
+                  <li
+                    key={h.id}
+                    className="rounded-2xl border border-line bg-surface overflow-hidden transition-colors hover:border-line-strong"
+                  >
+                    {/* ── Mobile (< sm): compact 2-row ── */}
                     <div
                       role="button"
                       tabIndex={0}
-                      onClick={() => {
-                        if (isSwiped) { setSwipedId(null); return }
-                        if (isExpandable) {
-                          setExpandedId(isExpanded ? null : h.id)
-                        } else {
-                          openEdit(h)
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          if (isExpandable) setExpandedId(isExpanded ? null : h.id)
-                          else openEdit(h)
-                        }
-                      }}
-                      aria-label={isExpandable ? (isExpanded ? `Collapse ${h.name} locations` : `Expand ${h.name} locations`) : `Edit ${h.name}`}
-                      className="flex cursor-pointer items-center gap-3 px-4 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                      onClick={rowClick}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rowClick() } }}
+                      aria-label={isExpandable ? (isExpanded ? `Collapse ${h.name}` : `Expand ${h.name}`) : `Edit ${h.name}`}
+                      className="flex sm:hidden cursor-pointer items-center gap-3 px-4 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                     >
-                      {/* Avatar */}
-                      <span
-                        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-[12px] font-bold"
-                        style={{
-                          color: ASSET_META[h.assetClass].color,
-                          background: `color-mix(in srgb, ${ASSET_META[h.assetClass].color} 14%, transparent)`,
-                        }}
-                      >
-                        {h.assetClass === 'crypto' ? (
-                          <CoinsIcon className="h-[18px] w-[18px]" />
-                        ) : (
-                          h.ticker.slice(0, 2).toUpperCase()
-                        )}
-                      </span>
-
-                      {/* Two-line content */}
+                      {badge}
                       <div className="min-w-0 flex-1">
                         {/* Line 1: name + value */}
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex min-w-0 items-center gap-1.5">
                             <p className="truncate text-[14px] font-semibold text-ink">{h.name}</p>
-                            {isPriceStale(h.updatedAt) && (
-                              <span
-                                title={`Price not updated in 7+ days${h.updatedAt ? ` (last: ${h.updatedAt})` : ''}`}
-                                aria-label="Stale price"
-                                className="h-2 w-2 shrink-0 rounded-full bg-warn"
-                              />
-                            )}
-                            {isExpandable && (
-                              <svg
-                                aria-hidden="true"
-                                width={14}
-                                height={14}
-                                viewBox="0 0 14 14"
-                                fill="none"
-                                className={`shrink-0 text-ink-muted transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-                              >
-                                <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            )}
+                            {staleIndicator}{chevron}
                           </div>
                           <p className="shrink-0 text-[14px] font-bold tnum text-ink">{thb(h.marketValue)}</p>
                         </div>
-
-                        {/* Line 2: units/type + PnL pill */}
-                        <div className="mt-1 flex items-center justify-between gap-2">
-                          <p className="truncate text-[12px] text-ink-muted">
-                            {isBtc
-                              ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats`
-                              : isGold
-                              ? `${h.units.toFixed(2)} g · Gold`
-                              : `${h.units.toLocaleString()} ${unitLabel(h.assetClass)} · ${ASSET_META[h.assetClass].label}`
-                            }
-                          </p>
+                        {/* Line 2: units + PnL% */}
+                        <div className="mt-0.5 flex items-center justify-between gap-2">
+                          <p className="truncate text-[12px] text-ink-muted">{unitsLabel}</p>
                           <PnLPill value={h.pnlPct} asPct />
                         </div>
                       </div>
+                      {buyBtn}
+                    </div>
+
+                    {/* ── Desktop (≥ sm): richer 2-row ── */}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={rowClick}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rowClick() } }}
+                      aria-label={isExpandable ? (isExpanded ? `Collapse ${h.name}` : `Expand ${h.name}`) : `Edit ${h.name}`}
+                      className="hidden sm:flex cursor-pointer items-center gap-3 px-4 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                    >
+                      {badge}
+                      <div className="min-w-0 flex-1">
+                        {/* Line 1: name + value */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex min-w-0 items-center gap-1.5">
+                            <p className="truncate text-[15px] font-semibold text-ink">{h.name}</p>
+                            {staleIndicator}{chevron}
+                          </div>
+                          <p className="shrink-0 text-[15px] font-bold tnum text-ink">{thb(h.marketValue)}</p>
+                        </div>
+                        {/* Line 2: units · type + PnL amount + PnL % */}
+                        <div className="mt-0.5 flex items-center justify-between gap-3">
+                          <p className="truncate text-[12.5px] text-ink-muted">{unitsLabel}</p>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <PnLText value={h.pnl} className="text-[12.5px]" />
+                            <PnLPill value={h.pnlPct} asPct />
+                          </div>
+                        </div>
+                      </div>
+                      {buyBtn}
                     </div>
 
                     {/* BTC / Gold sub-breakdown panel */}
@@ -470,75 +447,66 @@ export function Portfolio() {
                         <p className="mb-2 text-[12px] font-semibold text-ink-muted">Locations</p>
 
                         {isBtc && (
-                          (h.btcLocations ?? []).length === 0 ? (
-                            <p className="py-1 text-[13px] text-ink-muted">No locations yet. Use "Buy more" to add.</p>
-                          ) : (
-                            <ul className="space-y-1.5">
-                              {(h.btcLocations ?? []).map((loc) => (
-                                <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
-                                  <div className="min-w-0 flex-1">
-                                    <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
-                                    <p className="tnum text-[12px] text-ink-muted">
-                                      {loc.satoshi.toLocaleString()} sats · {thb(loc.thbSpent)} spent
-                                    </p>
-                                  </div>
-                                  <button
-                                    onClick={() => openLocEdit(h.id, loc)}
-                                    aria-label={`Edit location ${loc.name}`}
-                                    className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
-                                  >
-                                    <PencilIcon className="h-[14px] w-[14px]" />
-                                  </button>
-                                  <button
-                                    onClick={() => removeBtcLocation(h.id, loc.id)}
-                                    aria-label={`Remove location ${loc.name}`}
-                                    className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss"
-                                  >
-                                    <TrashIcon className="h-[14px] w-[14px]" />
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          )
+                          (h.btcLocations ?? []).length === 0
+                            ? <p className="py-1 text-[13px] text-ink-muted">No locations yet. Use "Buy more" to add.</p>
+                            : (
+                              <ul className="space-y-1.5">
+                                {(h.btcLocations ?? []).map((loc) => (
+                                  <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
+                                      <p className="tnum text-[12px] text-ink-muted">
+                                        {loc.satoshi.toLocaleString()} sats · {thb(loc.thbSpent)} spent
+                                      </p>
+                                    </div>
+                                    <button
+                                      onClick={() => openLocEdit(h.id, loc)}
+                                      aria-label={`Edit location ${loc.name}`}
+                                      className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
+                                    >
+                                      <PencilIcon className="h-[14px] w-[14px]" />
+                                    </button>
+                                    <button
+                                      onClick={() => removeBtcLocation(h.id, loc.id)}
+                                      aria-label={`Remove location ${loc.name}`}
+                                      className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss"
+                                    >
+                                      <TrashIcon className="h-[14px] w-[14px]" />
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            )
                         )}
 
                         {isGold && (
-                          (h.goldLocations ?? []).length === 0 ? (
-                            <p className="py-1 text-[13px] text-ink-muted">No locations yet. Use "Buy more" to add.</p>
-                          ) : (
-                            <ul className="space-y-1.5">
-                              {(h.goldLocations ?? []).map((loc) => (
-                                <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
-                                  <div className="min-w-0 flex-1">
-                                    <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
-                                    <p className="tnum text-[12px] text-ink-muted">
-                                      {loc.grams.toFixed(2)} g · {thb(loc.thbSpent)} spent
-                                    </p>
-                                  </div>
-                                  <button
-                                    onClick={() => removeGoldLocation(h.id, loc.id)}
-                                    aria-label={`Remove location ${loc.name}`}
-                                    className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss"
-                                  >
-                                    <TrashIcon className="h-[14px] w-[14px]" />
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          )
+                          (h.goldLocations ?? []).length === 0
+                            ? <p className="py-1 text-[13px] text-ink-muted">No locations yet. Use "Buy more" to add.</p>
+                            : (
+                              <ul className="space-y-1.5">
+                                {(h.goldLocations ?? []).map((loc) => (
+                                  <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
+                                      <p className="tnum text-[12px] text-ink-muted">
+                                        {loc.grams.toFixed(2)} g · {thb(loc.thbSpent)} spent
+                                      </p>
+                                    </div>
+                                    <button
+                                      onClick={() => removeGoldLocation(h.id, loc.id)}
+                                      aria-label={`Remove location ${loc.name}`}
+                                      className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss"
+                                    >
+                                      <TrashIcon className="h-[14px] w-[14px]" />
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            )
                         )}
-
-                        <div className="mt-2 flex items-center gap-4">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); openEdit(h) }}
-                            className="text-[12px] font-semibold text-brand hover:underline"
-                          >
-                            Edit holding details
-                          </button>
-                        </div>
                       </div>
                     )}
-                  </SwipeRow>
+                  </li>
                 )
               })}
             </ul>
@@ -588,7 +556,7 @@ export function Portfolio() {
         </div>
       </Modal>
 
-      {/* Remove holding confirmation modal */}
+      {/* Remove holding confirmation */}
       <Modal
         open={removeConfirmOpen}
         onClose={() => { setRemoveConfirmOpen(false); setRemoveTarget(null) }}
@@ -602,7 +570,7 @@ export function Portfolio() {
               setRemoveConfirmOpen(false)
               setRemoveTarget(null)
             }}
-            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-loss px-5 text-sm font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
+            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-loss px-5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
           >
             Yes, remove holding
           </button>
@@ -618,73 +586,13 @@ export function Portfolio() {
   )
 }
 
-// ── SwipeRow ──────────────────────────────────────────────────────────────────
-
-interface SwipeRowProps {
-  isSwiped: boolean
-  onSwipeOpen: () => void
-  onSwipeClose: () => void
-  actions: React.ReactNode
-  children: React.ReactNode
-}
-
-function SwipeRow({ isSwiped, onSwipeOpen, onSwipeClose, actions, children }: SwipeRowProps) {
-  const touchStartX = useRef<number | null>(null)
-  const ACTION_WIDTH = 42 * 3 // 3 buttons × 42px each
-
-  function handleTouchStart(e: React.TouchEvent) {
-    touchStartX.current = e.touches[0].clientX
-  }
-
-  function handleTouchEnd(e: React.TouchEvent) {
-    if (touchStartX.current === null) return
-    const dx = e.changedTouches[0].clientX - touchStartX.current
-    touchStartX.current = null
-    if (dx < -50) {
-      onSwipeOpen()
-    } else if (dx > 30) {
-      onSwipeClose()
-    }
-  }
-
-  return (
-    <li
-      className="relative rounded-2xl border border-line bg-surface overflow-hidden transition-colors hover:border-line-strong"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
-      {/* Action buttons revealed at right */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 right-0 flex"
-        style={{ width: ACTION_WIDTH }}
-      >
-        <div
-          className={`pointer-events-auto flex h-full w-full transition-opacity duration-200 ${isSwiped ? 'opacity-100' : 'opacity-0'}`}
-        >
-          {actions}
-        </div>
-      </div>
-
-      {/* Sliding content wrapper */}
-      <div
-        className="relative transition-transform duration-200 ease-out"
-        style={{ transform: isSwiped ? `translateX(-${ACTION_WIDTH}px)` : 'translateX(0)' }}
-      >
-        {children}
-      </div>
-    </li>
-  )
-}
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function isPriceStale(updatedAt?: string): boolean {
   if (!updatedAt) return false
   const [y, m, d] = updatedAt.split('-').map(Number)
   const updated = new Date(y, m - 1, d)
-  const daysSince = (Date.now() - updated.getTime()) / 86_400_000
-  return daysSince >= 7
+  return (Date.now() - updated.getTime()) / 86_400_000 >= 7
 }
 
 function unitLabel(assetClass: AssetClass): string {
@@ -712,11 +620,7 @@ function Metric({
       <p className="text-[12.5px] font-medium text-ink-muted">{label}</p>
       <div className="mt-1.5">
         {valueNode ?? (
-          <span
-            className={`font-display text-[22px] font-extrabold tracking-tight tnum ${
-              muted ? 'text-ink-soft' : 'text-ink'
-            }`}
-          >
+          <span className={`font-display text-[22px] font-extrabold tracking-tight tnum ${muted ? 'text-ink-soft' : 'text-ink'}`}>
             {value}
           </span>
         )}
