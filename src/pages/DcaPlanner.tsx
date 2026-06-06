@@ -234,7 +234,7 @@ export function DcaPlanner() {
 
   // Section expand state — default collapsed
   const [fixedOpen, setFixedOpen] = useState(false)
-  const [savingsOpen, setSavingsOpen] = useState(false)
+  const [savingsOpen, setSavingsOpen] = useState(true)
 
   // Fixed cost item editing
   const [editingItem, setEditingItem] = useState<FixedCostItem | null>(null)

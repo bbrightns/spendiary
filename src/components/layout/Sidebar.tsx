@@ -23,20 +23,9 @@ export function Sidebar() {
         </div>
         <div className="min-w-0">
           <p className="font-display text-[17px] font-extrabold tracking-tight text-ink">Spendiary</p>
-          <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-ink-muted">
-            <span>
-              {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
-            </span>
-            {syncLabel && (
-              <>
-                <span className="text-ink-faint">·</span>
-                <span className={`flex items-center gap-1 font-medium ${syncLabel.color}`}>
-                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                  {syncLabel.text}
-                </span>
-              </>
-            )}
-          </div>
+          <p className="mt-0.5 text-[12px] text-ink-muted">
+            {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+          </p>
         </div>
       </div>
 
@@ -69,6 +58,13 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
+
+      {syncLabel && (
+        <div className={`mb-2 flex items-center gap-1.5 px-3 text-[12px] font-medium ${syncLabel.color}`}>
+          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+          {syncLabel.text}
+        </div>
+      )}
 
       <NavLink
         to={settingsItem.to}
