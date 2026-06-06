@@ -13,7 +13,6 @@ import {
   ClockIcon,
   PortfolioIcon,
   SparkleIcon,
-  TransferIcon,
   WalletIcon,
 } from '../components/icons'
 import {

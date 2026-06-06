@@ -3,13 +3,12 @@ import { useData } from '../store/DataContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
-import { AddButton } from '../components/ui/AddButton'
 import { DcaForm } from '../components/forms/DcaForm'
 import { ConfirmDcaBuyForm } from '../components/forms/ConfirmDcaBuyForm'
 import { CheckIcon, DcaIcon, PencilIcon, TrashIcon } from '../components/icons'
 import {
   ASSET_META, buyDayPassedThisPeriod, dcaThisMonth, isConfirmedForPeriod, isSkippedForPeriod,
-  nextBuyDate, planExecutionsThisMonth, shouldConfirmBuy,
+  nextBuyDate, shouldConfirmBuy,
 } from '../lib/calc'
 import type { DcaPlan, FixedCostItem } from '../lib/types'
 import { daysUntil, localDateStr, ordinal, thb } from '../lib/format'
