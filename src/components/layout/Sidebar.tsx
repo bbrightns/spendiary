@@ -3,15 +3,13 @@ import { navItems, settingsItem } from './nav'
 import { SparkleIcon } from '../icons'
 import { useData } from '../../store/DataContext'
 
-function useSyncLabel(lastSyncedAt: Date | null, syncStatus: string): string | null {
-  if (!lastSyncedAt && syncStatus !== 'error') return null
-  if (syncStatus === 'syncing') return 'Syncing…'
-  if (syncStatus === 'error') return 'Sync failed'
+function useSyncLabel(lastSyncedAt: Date | null, syncStatus: string): { text: string; color: string } | null {
+  if (syncStatus === 'syncing') return { text: 'Syncing…', color: 'text-warn' }
+  if (syncStatus === 'error') return { text: 'Sync failed', color: 'text-loss' }
   if (!lastSyncedAt) return null
   const mins = Math.floor((Date.now() - lastSyncedAt.getTime()) / 60_000)
-  if (mins < 1) return 'Synced just now'
-  if (mins < 60) return `Synced ${mins}m ago`
-  return `Synced ${Math.floor(mins / 60)}h ago`
+  const text = mins < 1 ? 'Synced' : mins < 60 ? `Synced ${mins}m ago` : `Synced ${Math.floor(mins / 60)}h ago`
+  return { text, color: 'text-gain' }
 }
 
 export function Sidebar() {
@@ -19,24 +17,32 @@ export function Sidebar() {
   const syncLabel = useSyncLabel(lastSyncedAt, syncStatus)
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-[252px] flex-col border-r border-line bg-surface/80 px-4 py-6 backdrop-blur-xl lg:flex">
-      <div className="flex items-center gap-2.5 px-3">
-        <div className="grid h-9 w-9 place-items-center rounded-xl bg-ink text-white dark:bg-brand-soft dark:text-brand shadow-[var(--shadow-soft)]">
+      <div className="flex items-center gap-3 px-3">
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-ink text-white dark:bg-brand-soft dark:text-brand shadow-[var(--shadow-soft)]">
           <SparkleIcon className="h-5 w-5" strokeWidth={1.8} />
         </div>
-        <div className="leading-tight">
+        <div className="min-w-0">
           <p className="font-display text-[17px] font-extrabold tracking-tight text-ink">Spendiary</p>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-muted">
-            {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
-          </p>
-          {syncLabel && (
-            <p className={`text-[10px] font-medium leading-none ${syncStatus === 'error' ? 'text-loss' : syncStatus === 'syncing' ? 'text-warn' : 'text-ink-faint'}`}>
-              {syncLabel}
-            </p>
-          )}
+          <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-ink-muted">
+            <span>
+              {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+            </span>
+            {syncLabel && (
+              <>
+                <span className="text-ink-faint">·</span>
+                <span className={`flex items-center gap-1 font-medium ${syncLabel.color}`}>
+                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                  {syncLabel.text}
+                </span>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      <nav className="mt-8 flex flex-1 flex-col gap-1">
+      <div className="mx-3 mt-6 border-t border-line" />
+
+      <nav className="mt-4 flex flex-1 flex-col gap-1">
         {navItems.map((item) => (
           <NavLink
             key={item.to}

@@ -13,7 +13,7 @@ import { BuyMoreForm } from '../components/forms/BuyMoreForm'
 import { Modal } from '../components/ui/Modal'
 import { NumberField, TextField } from '../components/ui/Field'
 import { Button } from '../components/ui/Button'
-import { CoinsIcon, PlusIcon, PortfolioIcon, TrashIcon, PencilIcon } from '../components/icons'
+import { PlusIcon, PortfolioIcon, TrashIcon, PencilIcon } from '../components/icons'
 import {
   ASSET_META,
   allocations,
@@ -46,7 +46,6 @@ export function Portfolio() {
   const [buyOpen, setBuyOpen] = useState(false)
   const [buying, setBuying] = useState<Holding | null>(null)
 
-  // Remove confirmation
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false)
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null)
 
@@ -66,11 +65,6 @@ export function Portfolio() {
   const openAdd = () => { setEditing(null); setFormOpen(true) }
   const openEdit = (h: Holding) => { setEditing(h); setFormOpen(true) }
   const openBuy = (h: Holding) => { setBuying(h); setBuyOpen(true) }
-  const confirmRemove = (id: string, name: string) => {
-    setRemoveTarget({ id, name })
-    setRemoveConfirmOpen(true)
-  }
-
   function openLocEdit(holdingId: string, loc: BtcLocation) {
     setLocEditHoldingId(holdingId)
     setLocEditing(loc)
