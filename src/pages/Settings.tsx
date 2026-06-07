@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { useData } from '../store/DataContext'
+import { useData, type DataBackup } from '../store/DataContext'
 import { useTheme, type Theme } from '../hooks/useTheme'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
@@ -43,7 +43,7 @@ function dataSummary(data: SpendiaryData): string {
 }
 
 export function Settings() {
-  const { data, setData, clearAll, setUserName } = useData()
+  const { data, setData, clearAll, setUserName, backups, restoreBackup } = useData()
   const { theme, setTheme } = useTheme()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [nameDraft, setNameDraft] = useState(data.userName ?? '')
@@ -56,6 +56,11 @@ export function Settings() {
   // Pre-import confirmation state
   const [importConfirmOpen, setImportConfirmOpen] = useState(false)
   const [pendingImport, setPendingImport] = useState<SpendiaryData | null>(null)
+
+  // Backup restore state
+  const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false)
+  const [pendingRestore, setPendingRestore] = useState<DataBackup | null>(null)
+  const [restoreSuccess, setRestoreSuccess] = useState(false)
 
   // ── Export ────────────────────────────────────────────────────
   function handleExport() {
@@ -242,6 +247,41 @@ export function Settings() {
         </div>
       </Card>
 
+      {/* Local backups */}
+      {backups.length > 0 && (
+        <Card className="animate-rise">
+          <h2 className="font-display text-[17px] font-bold text-ink mb-1">Local backups</h2>
+          <p className="text-[13px] text-ink-muted mb-4">
+            Automatic hourly snapshots saved on this device. Restore if your data was wiped.
+          </p>
+          <div role="status" aria-live="polite" className="mb-3 text-[12px] font-medium text-gain min-h-[1em]">
+            {restoreSuccess ? 'Backup restored successfully.' : ''}
+          </div>
+          <ul className="divide-y divide-line">
+            {backups.map((b, i) => {
+              const date = new Date(b.savedAt)
+              const label = date.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+              return (
+                <li key={b.savedAt} className="flex items-center justify-between py-3">
+                  <div>
+                    <p className="text-[13.5px] font-semibold text-ink">
+                      {i === 0 ? 'Latest' : `${i + 1} snapshot${i === 1 ? 's' : 's'} ago`}
+                    </p>
+                    <p className="mt-0.5 text-[12px] text-ink-muted">{label} · {dataSummary(b.data)}</p>
+                  </div>
+                  <button
+                    onClick={() => { setPendingRestore(b); setRestoreConfirmOpen(true) }}
+                    className="ml-4 inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1.5 text-[12.5px] font-semibold text-brand transition-colors hover:bg-brand hover:text-white active:scale-95"
+                  >
+                    Restore
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </Card>
+      )}
+
       {/* Danger zone */}
       <Card className="mt-4 animate-rise border-loss/20 bg-loss-soft/20">
         <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">Danger zone</h2>
@@ -285,6 +325,37 @@ export function Settings() {
           </button>
           <button
             onClick={() => { setImportConfirmOpen(false); setPendingImport(null) }}
+            className="w-full rounded-full py-2.5 text-[14px] font-semibold text-ink-muted transition-colors hover:text-ink"
+          >
+            Cancel
+          </button>
+        </div>
+      </Modal>
+
+      {/* Backup restore confirmation modal */}
+      <Modal
+        open={restoreConfirmOpen}
+        onClose={() => { setRestoreConfirmOpen(false); setPendingRestore(null) }}
+        title="Restore this backup?"
+        description={pendingRestore ? `This will replace your current data (${dataSummary(data)}) with the snapshot from ${new Date(pendingRestore.savedAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} (${dataSummary(pendingRestore.data)}).` : ''}
+      >
+        <div className="flex flex-col gap-3 pb-1">
+          <button
+            onClick={() => {
+              if (pendingRestore) {
+                restoreBackup(pendingRestore)
+                setRestoreConfirmOpen(false)
+                setPendingRestore(null)
+                setRestoreSuccess(true)
+                setTimeout(() => setRestoreSuccess(false), 3000)
+              }
+            }}
+            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-ink px-5 text-sm font-semibold text-white transition-all duration-200 hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] active:scale-[0.98]"
+          >
+            Restore backup
+          </button>
+          <button
+            onClick={() => { setRestoreConfirmOpen(false); setPendingRestore(null) }}
             className="w-full rounded-full py-2.5 text-[14px] font-semibold text-ink-muted transition-colors hover:text-ink"
           >
             Cancel

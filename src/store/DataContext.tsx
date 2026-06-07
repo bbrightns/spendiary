@@ -3,6 +3,32 @@ import type { BtcLocation, CashAccount, DcaPlan, FixedCostItem, GoldLocation, Ho
 import { localDateStr } from '../lib/format'
 
 const STORAGE_KEY = 'spendiary.data.v1'
+const BACKUP_KEY = 'spendiary.backup.v1'
+const MAX_BACKUPS = 5
+const BACKUP_INTERVAL_MS = 60 * 60 * 1000 // write a new snapshot at most once per hour
+
+export interface DataBackup {
+  savedAt: string // ISO timestamp
+  data: SpendiaryData
+}
+
+function readBackups(): DataBackup[] {
+  try {
+    const raw = localStorage.getItem(BACKUP_KEY)
+    if (raw) return JSON.parse(raw) as DataBackup[]
+  } catch { /* ignore */ }
+  return []
+}
+
+function writeBackup(data: SpendiaryData) {
+  try {
+    const backups = readBackups()
+    const lastSaved = backups[0] ? new Date(backups[0].savedAt).getTime() : 0
+    if (Date.now() - lastSaved < BACKUP_INTERVAL_MS) return // too soon
+    const next = [{ savedAt: new Date().toISOString(), data }, ...backups].slice(0, MAX_BACKUPS)
+    localStorage.setItem(BACKUP_KEY, JSON.stringify(next))
+  } catch { /* non-fatal */ }
+}
 
 // ── Cloud sync (optional) ─────────────────────────────────────────────────────
 // Set VITE_API_URL and VITE_API_TOKEN in .env.local to enable Cloudflare sync.
@@ -67,6 +93,9 @@ interface DataContextValue {
   recordNetWorthSnapshot: (value: number) => void
   /** ISO timestamp of the last successful cloud sync, or null */
   lastSyncedAt: Date | null
+  /** Local rolling backups (newest first) */
+  backups: DataBackup[]
+  restoreBackup: (backup: DataBackup) => void
   upsertBtcLocation: (holdingId: string, loc: Omit<BtcLocation, 'id'> & { id?: string }) => void
   removeBtcLocation: (holdingId: string, locId: string) => void
   upsertGoldLocation: (holdingId: string, loc: Omit<GoldLocation, 'id'> & { id?: string }) => void
@@ -132,6 +161,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [usdThb, setUsdThb] = useState<number | null>(null)
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle')
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null)
+  const [backups, setBackups] = useState<DataBackup[]>(readBackups)
 
   // Tracks whether the initial API load has completed (prevents syncing
   // back immediately after we receive data from the server).
@@ -146,10 +176,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const dataRef = useRef(data)
   dataRef.current = data
 
-  // ── Persist to localStorage ──────────────────────────────────
+  // ── Persist to localStorage + rolling backup ─────────────────
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+      writeBackup(data)
+      setBackups(readBackups())
     } catch {
       /* storage may be unavailable; non-fatal */
     }
@@ -165,10 +197,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
           const migrated = migrate(remote as SpendiaryData)
           const migratedStr = JSON.stringify(migrated)
           const currentStr = JSON.stringify(dataRef.current)
+
+          // Safety: never let an empty cloud overwrite non-empty local data.
+          const cloudHasData =
+            (migrated.holdings?.length ?? 0) > 0 ||
+            (migrated.dcaPlans?.length ?? 0) > 0 ||
+            (migrated.transfers?.length ?? 0) > 0
+          const localHasData =
+            (dataRef.current.holdings?.length ?? 0) > 0 ||
+            (dataRef.current.dcaPlans?.length ?? 0) > 0 ||
+            (dataRef.current.transfers?.length ?? 0) > 0
+
+          if (!cloudHasData && localHasData) {
+            // Cloud is empty but local has data — keep local, will sync up.
+            lastSynced.current = ''
+            return
+          }
+
           // If user made local changes before GET completed, keep their
           // changes and let the debounced PUT sync them to cloud instead.
           if (currentStr !== mountSnapshot.current) {
-            // Local data was modified — don't overwrite; will sync up.
             lastSynced.current = ''
           } else {
             // No local changes — safe to load cloud data.
@@ -337,6 +385,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return { ...prev, netWorthHistory: updated }
         }),
 
+      backups,
+      restoreBackup: (backup) => {
+        setDataState(backup.data)
+        // Force a new backup snapshot after restore so you can undo if needed
+        try {
+          const current = readBackups()
+          const next = [{ savedAt: new Date().toISOString(), data: backup.data }, ...current].slice(0, MAX_BACKUPS)
+          localStorage.setItem(BACKUP_KEY, JSON.stringify(next))
+          setBackups(next)
+        } catch { /* non-fatal */ }
+      },
+
       upsertBtcLocation: (holdingId, loc) =>
         setDataState((prev) => ({
           ...prev,
@@ -391,7 +451,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }),
         })),
     }),
-    [data, syncStatus, lastSyncedAt],
+    [data, syncStatus, lastSyncedAt, backups],
   )
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>
