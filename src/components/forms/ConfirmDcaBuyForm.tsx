@@ -82,6 +82,8 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
 
   function confirm() {
     if (!valid || !btcLocValid) { setShowErrors(true); return }
+    if (!plan) return
+    const p = plan
     const today = localDateStr()
 
     if (isBtc && hasHolding && holding) {
@@ -91,7 +93,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         upsertBtcLocation(holding.id, {
           name: newLocName.trim(),
           satoshi: sats,
-          thbSpent: plan.monthlyAmount,
+          thbSpent: p.monthlyAmount,
         })
       } else {
         // Add to existing location
@@ -101,14 +103,14 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
             id: existing.id,
             name: existing.name,
             satoshi: existing.satoshi + sats,
-            thbSpent: existing.thbSpent + plan.monthlyAmount,
+            thbSpent: existing.thbSpent + p.monthlyAmount,
           })
         }
       }
       // Mark plan confirmed + log (skip holding unit update — managed by btcLocations)
-      confirmDcaBuy(plan.id, priceInThb, today)
+      confirmDcaBuy(p.id, priceInThb, today)
     } else {
-      confirmDcaBuy(plan.id, priceInThb, today)
+      confirmDcaBuy(p.id, priceInThb, today)
     }
 
     onClose()

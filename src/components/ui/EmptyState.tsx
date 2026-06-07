@@ -21,7 +21,7 @@ export function EmptyState({
         className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl"
         style={{
           color: accent,
-          background: `color-mix(in srgb, ${accent} 10%, white)`,
+          background: `color-mix(in srgb, ${accent} 10%, transparent)`,
           boxShadow: `0 12px 30px -16px color-mix(in srgb, ${accent} 60%, transparent)`,
         }}
       >

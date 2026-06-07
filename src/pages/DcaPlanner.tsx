@@ -443,7 +443,7 @@ export function DcaPlanner() {
                     >
                       <span
                         className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
-                        style={{ color: meta.color, background: `color-mix(in srgb, ${meta.color} 12%, white)` }}
+                        style={{ color: meta.color, background: `color-mix(in srgb, ${meta.color} 12%, transparent)` }}
                       >
                         <DcaIcon className="h-[17px] w-[17px]" />
                       </span>

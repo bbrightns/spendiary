@@ -174,7 +174,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
               className="rounded-2xl border px-4 py-3"
               style={{
                 borderColor: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 35%, transparent)`,
-                background: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 7%, white)`,
+                background: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 10%, transparent)`,
               }}
             >
               <div className="flex items-center justify-between text-[13px]">
@@ -298,7 +298,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
               className="rounded-2xl border px-4 py-3"
               style={{
                 borderColor: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 35%, transparent)`,
-                background: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 7%, white)`,
+                background: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 10%, transparent)`,
               }}
             >
               <div className="flex items-center justify-between text-[13px]">
@@ -401,7 +401,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
             className="rounded-2xl border px-4 py-3"
             style={{
               borderColor: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 35%, transparent)`,
-              background: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 7%, white)`,
+              background: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 10%, transparent)`,
             }}
           >
             <div className="flex items-center justify-between text-[13px]">

@@ -42,7 +42,7 @@ export function StatCard({
           className="grid h-9 w-9 place-items-center rounded-xl"
           style={{
             color: accent,
-            background: `color-mix(in srgb, ${accent} 11%, white)`,
+            background: `color-mix(in srgb, ${accent} 11%, transparent)`,
           }}
         >
           {icon}

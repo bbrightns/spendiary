@@ -294,7 +294,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                 className="rounded-2xl border px-4 py-3"
                 style={{
                   borderColor: `color-mix(in srgb, ${ASSET_META.crypto.color} 35%, transparent)`,
-                  background: `color-mix(in srgb, ${ASSET_META.crypto.color} 7%, white)`,
+                  background: `color-mix(in srgb, ${ASSET_META.crypto.color} 10%, transparent)`,
                 }}
               >
                 <div className="flex items-center justify-between text-[13px]">
@@ -385,7 +385,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                 className="rounded-2xl border px-4 py-3"
                 style={{
                   borderColor: `color-mix(in srgb, ${ASSET_META.gold.color} 35%, transparent)`,
-                  background: `color-mix(in srgb, ${ASSET_META.gold.color} 7%, white)`,
+                  background: `color-mix(in srgb, ${ASSET_META.gold.color} 10%, transparent)`,
                 }}
               >
                 <div className="flex items-center justify-between text-[13px]">
