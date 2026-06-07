@@ -127,6 +127,7 @@ export function Settings() {
   return (
     <>
       <PageHeader eyebrow="App" title="Settings" />
+      <div className="flex flex-col gap-4">
 
       {/* Profile */}
       <Card className="animate-rise">
@@ -198,9 +199,11 @@ export function Settings() {
               <p className="mt-0.5 text-[12.5px] text-ink-muted">
                 Download a JSON file with all your holdings, DCA plans, and transfers.
               </p>
-              <p role="status" aria-live="polite" className="mt-1 text-[12px] font-medium text-gain min-h-[1em]">
-                {exportSuccess ? 'Backup saved.' : ''}
-              </p>
+              {exportSuccess && (
+                <p role="status" aria-live="polite" className="mt-1 text-[12px] font-medium text-gain">
+                  Backup saved.
+                </p>
+              )}
             </div>
             <button
               onClick={handleExport}
@@ -218,14 +221,14 @@ export function Settings() {
               <p className="mt-0.5 text-[12.5px] text-ink-muted">
                 Restore from a Spendiary JSON backup.
               </p>
-              <p role="status" aria-live="polite" className="mt-1 text-[12px] font-medium min-h-[1em]">
-                {importError
-                  ? <span className="text-loss">{importError}</span>
-                  : importSuccess
-                  ? <span className="text-gain">Data imported successfully.</span>
-                  : null
-                }
-              </p>
+              {(importError || importSuccess) && (
+                <p role="status" aria-live="polite" className="mt-1 text-[12px] font-medium">
+                  {importError
+                    ? <span className="text-loss">{importError}</span>
+                    : <span className="text-gain">Data imported successfully.</span>
+                  }
+                </p>
+              )}
             </div>
             <button
               onClick={handleImportClick}
@@ -254,9 +257,11 @@ export function Settings() {
           <p className="text-[13px] text-ink-muted mb-4">
             Automatic hourly snapshots saved on this device. Restore if your data was wiped.
           </p>
-          <div role="status" aria-live="polite" className="mb-3 text-[12px] font-medium text-gain min-h-[1em]">
-            {restoreSuccess ? 'Backup restored successfully.' : ''}
-          </div>
+          {restoreSuccess && (
+            <div role="status" aria-live="polite" className="mb-3 text-[12px] font-medium text-gain">
+              Backup restored successfully.
+            </div>
+          )}
           <ul className="divide-y divide-line">
             {backups.map((b, i) => {
               const date = new Date(b.savedAt)
@@ -283,7 +288,7 @@ export function Settings() {
       )}
 
       {/* Danger zone */}
-      <Card className="mt-4 animate-rise border-loss/20 bg-loss-soft/20">
+      <Card className="animate-rise border-loss/20 bg-loss-soft/20">
         <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">Danger zone</h2>
         <div className="mt-4 flex items-center justify-between">
           <div>
@@ -301,6 +306,7 @@ export function Settings() {
           </button>
         </div>
       </Card>
+      </div>
 
       {/* Import confirmation modal */}
       <Modal
