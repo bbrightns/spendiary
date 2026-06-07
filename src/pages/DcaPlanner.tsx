@@ -102,7 +102,7 @@ function InlineEditStat({ label, value, editing, draft, inputRef, onOpen, onDraf
             onChange={(e) => onDraftChange(e.target.value)}
             onBlur={onCommit}
             onKeyDown={(e) => { if (e.key === 'Enter') onCommit(); if (e.key === 'Escape') onCancel() }}
-            className="w-36 rounded-lg border border-brand bg-white px-2.5 py-1 text-[15px] font-bold tnum text-ink outline-none focus:ring-2 focus:ring-brand/30"
+            className="w-36 rounded-lg border border-brand bg-surface px-2.5 py-1 text-[15px] font-bold tnum text-ink outline-none focus:ring-2 focus:ring-brand/30"
           />
         </div>
       ) : (

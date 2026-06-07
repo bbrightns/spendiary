@@ -73,6 +73,8 @@ export interface DcaPlan {
   dayOfMonth: number
   /** Linked portfolio holding id — set when created from "From my portfolio" */
   holdingId?: string
+  /** For BTC plans: preferred location id to add sats to when confirming */
+  btcLocationId?: string
   /** ISO date strings of confirmed buys, newest first */
   confirmedDates?: string[]
   /** ISO date strings of skipped periods, newest first */

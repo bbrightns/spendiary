@@ -322,17 +322,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
           const holding = prev.holdings.find((h) => h.id === plan.holdingId)
           if (!holding) return { ...prev, dcaPlans: updatedPlans }
 
+          // BTC: units are derived from btcLocations (managed by upsertBtcLocation).
+          // Don't update units/avgCost here — just update the live price + date.
+          const isBtcWithLocations =
+            holding.assetClass === 'crypto' &&
+            (holding.btcLocations?.length ?? 0) > 0
+
           const units = plan.monthlyAmount / pricePerUnit
           const newUnits = holding.units + units
           const newAvgCost = (holding.units * holding.avgCost + units * pricePerUnit) / newUnits
           const updatedHoldings = prev.holdings.map((h) =>
-            h.id !== plan.holdingId ? h : {
-              ...h,
-              units: newUnits,
-              avgCost: newAvgCost,
-              price: pricePerUnit,
-              updatedAt: date,
-            }
+            h.id !== plan.holdingId ? h : isBtcWithLocations
+              ? { ...h, price: pricePerUnit, updatedAt: date }
+              : { ...h, units: newUnits, avgCost: newAvgCost, price: pricePerUnit, updatedAt: date }
           )
 
           // 3. Add to holding log

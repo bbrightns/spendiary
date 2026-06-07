@@ -14,9 +14,11 @@ interface Props {
 }
 
 export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
-  const { data, confirmDcaBuy, usdThb } = useData()
+  const { data, confirmDcaBuy, upsertBtcLocation, usdThb } = useData()
   const [price, setPrice] = useState<number | ''>('')
   const [showErrors, setShowErrors] = useState(false)
+  const [selectedLocId, setSelectedLocId] = useState<string>('')
+  const [newLocName, setNewLocName] = useState('')
   const wasOpen = useRef(false)
 
   const holding = plan?.holdingId
@@ -27,12 +29,19 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const isBtc   = holding?.assetClass === 'crypto'
   const isGold  = holding?.assetClass === 'gold'
   const rate = usdThb ?? 1
+  const btcLocations = holding?.btcLocations ?? []
 
   useEffect(() => {
     const justOpened = !wasOpen.current && open
     wasOpen.current = open
     if (!justOpened || !plan) return
     setShowErrors(false)
+    // Pre-select location from plan preference, else first location, else new
+    const preferredId = plan.btcLocationId && btcLocations.some((l) => l.id === plan.btcLocationId)
+      ? plan.btcLocationId
+      : btcLocations.length > 0 ? btcLocations[0].id : '__new__'
+    setSelectedLocId(preferredId)
+    setNewLocName('')
 
     // Pre-fill live price where available
     if (holding) {
@@ -53,8 +62,14 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const priceNum = Number(price)
   const priceInThb = isStock && rate > 1 ? priceNum * rate : priceNum
   const units = priceInThb > 0 ? plan.monthlyAmount / priceInThb : 0
+  const sats = Math.round(units * 1e8)
   const hasHolding = !!holding
   const valid = priceNum > 0
+
+  // BTC location validation
+  const btcLocValid = !isBtc || !hasHolding ||
+    (selectedLocId !== '__new__') ||
+    (newLocName.trim().length > 0)
 
   const priceLabel = isStock
     ? `Current price / unit (USD)`
@@ -63,13 +78,39 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     : 'NAV / unit (฿)'
 
   const pricePrefix = isStock ? '$' : '฿'
-
   const meta = ASSET_META[plan.assetClass]
 
   function confirm() {
-    if (!valid) { setShowErrors(true); return }
+    if (!valid || !btcLocValid) { setShowErrors(true); return }
     const today = localDateStr()
-    confirmDcaBuy(plan!.id, priceInThb, today)
+
+    if (isBtc && hasHolding && holding) {
+      // For BTC: add sats to the selected/new location, then mark plan confirmed
+      if (selectedLocId === '__new__') {
+        // Create new location
+        upsertBtcLocation(holding.id, {
+          name: newLocName.trim(),
+          satoshi: sats,
+          thbSpent: plan.monthlyAmount,
+        })
+      } else {
+        // Add to existing location
+        const existing = btcLocations.find((l) => l.id === selectedLocId)
+        if (existing) {
+          upsertBtcLocation(holding.id, {
+            id: existing.id,
+            name: existing.name,
+            satoshi: existing.satoshi + sats,
+            thbSpent: existing.thbSpent + plan.monthlyAmount,
+          })
+        }
+      }
+      // Mark plan confirmed + log (skip holding unit update — managed by btcLocations)
+      confirmDcaBuy(plan.id, priceInThb, today)
+    } else {
+      confirmDcaBuy(plan.id, priceInThb, today)
+    }
+
     onClose()
   }
 
@@ -81,20 +122,20 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
       description={`Record that you bought ${plan.name} today.`}
     >
       <div className="space-y-5">
-        {/* Summary card */}
+        {/* Summary card — fix: use transparent base so dark mode works */}
         <div
           className="rounded-2xl border px-4 py-3"
           style={{
             borderColor: `color-mix(in srgb, ${meta.color} 30%, transparent)`,
-            background: `color-mix(in srgb, ${meta.color} 7%, white)`,
+            background: `color-mix(in srgb, ${meta.color} 10%, transparent)`,
           }}
         >
           <div className="flex items-center justify-between text-[13px]">
-            <span className="text-ink-soft">Plan</span>
+            <span className="text-ink-muted">Plan</span>
             <span className="font-semibold text-ink">{plan.name}</span>
           </div>
           <div className="mt-1 flex items-center justify-between text-[13px]">
-            <span className="text-ink-soft">Amount spent</span>
+            <span className="text-ink-muted">Amount spent</span>
             <span className="font-semibold tnum text-ink">{thb(plan.monthlyAmount)}</span>
           </div>
           {!hasHolding && (
@@ -115,6 +156,73 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
           error={showErrors && !valid ? 'Required (> 0)' : undefined}
         />
 
+        {/* BTC location picker */}
+        {isBtc && hasHolding && (
+          <div>
+            <p className="mb-2 text-[13px] font-semibold text-ink">Where did you buy?</p>
+            <div className="space-y-2">
+              {btcLocations.map((loc) => (
+                <label
+                  key={loc.id}
+                  className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
+                    selectedLocId === loc.id
+                      ? 'border-brand bg-brand-soft'
+                      : 'border-line bg-surface-muted hover:border-ink-faint'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="btcLoc"
+                    value={loc.id}
+                    checked={selectedLocId === loc.id}
+                    onChange={() => setSelectedLocId(loc.id)}
+                    className="accent-brand"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13.5px] font-semibold text-ink">{loc.name}</p>
+                    <p className="text-[11.5px] text-ink-muted">
+                      {loc.satoshi.toLocaleString()} sats · {thb(loc.thbSpent)} spent
+                    </p>
+                  </div>
+                </label>
+              ))}
+
+              {/* New location option */}
+              <label
+                className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
+                  selectedLocId === '__new__'
+                    ? 'border-brand bg-brand-soft'
+                    : 'border-line bg-surface-muted hover:border-ink-faint'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="btcLoc"
+                  value="__new__"
+                  checked={selectedLocId === '__new__'}
+                  onChange={() => setSelectedLocId('__new__')}
+                  className="accent-brand"
+                />
+                <span className="text-[13.5px] font-semibold text-ink">New location…</span>
+              </label>
+
+              {selectedLocId === '__new__' && (
+                <input
+                  type="text"
+                  value={newLocName}
+                  onChange={(e) => setNewLocName(e.target.value)}
+                  placeholder="e.g. Binance, Trezor…"
+                  autoFocus
+                  className="w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-[13.5px] text-ink outline-none placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/20"
+                />
+              )}
+              {showErrors && !btcLocValid && (
+                <p className="text-[12px] text-loss">Please enter a name for the new location.</p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Preview */}
         {valid && hasHolding && (
           <div className="rounded-2xl bg-surface-muted px-4 py-3">
@@ -122,7 +230,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               <span className="text-ink-muted">Units to add</span>
               <span className="font-semibold tnum text-ink">
                 {isBtc
-                  ? `${Math.round(units * 1e8).toLocaleString()} sats (${units.toFixed(8)} BTC)`
+                  ? `${sats.toLocaleString()} sats (${units.toFixed(8)} BTC)`
                   : isGold
                   ? `${units.toFixed(4)} g`
                   : `${units.toFixed(4)} units`}
@@ -130,7 +238,13 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
             </div>
             <div className="mt-1 flex items-center justify-between text-[13px]">
               <span className="text-ink-muted">Goes to</span>
-              <span className="font-semibold text-ink">{holding!.name}</span>
+              <span className="font-semibold text-ink">
+                {isBtc
+                  ? selectedLocId === '__new__'
+                    ? newLocName.trim() || '—'
+                    : (btcLocations.find((l) => l.id === selectedLocId)?.name ?? holding!.name)
+                  : holding!.name}
+              </span>
             </div>
           </div>
         )}

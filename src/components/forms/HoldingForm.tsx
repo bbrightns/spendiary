@@ -230,7 +230,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                 placeholder={isBtc ? 'e.g. My Bitcoin' : isUsd ? 'e.g. Apple Inc.' : isGold ? 'e.g. My Gold' : 'e.g. Kasikorn Fund'}
               />
               {suggestions.length > 0 && (
-                <ul className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-line bg-white shadow-lg">
+                <ul className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-line bg-surface shadow-lg">
                   {suggestions.map((s) => (
                     <li key={s.ticker}>
                       <button
