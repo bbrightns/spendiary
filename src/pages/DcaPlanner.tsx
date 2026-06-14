@@ -376,163 +376,228 @@ export function DcaPlanner() {
       </Card>
 
       {/* ── Savings & Invest ── */}
-      <Card className="mt-4 animate-rise">
-        <SectionHeader
-          label="Savings & Invest"
-          total={savingsTotal}
-          open={savingsOpen}
-          onToggle={() => setSavingsOpen((v) => !v)}
-          action={
-            savingsOpen ? (
-              <button
-                onClick={openAdd}
-                className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12.5px] font-semibold transition-colors active:scale-95"
-                style={{
-                  borderColor: 'color-mix(in srgb, var(--color-gain) 35%, transparent)',
-                  color: 'var(--color-gain)',
-                  background: 'var(--color-gain-soft)',
-                }}
-              >
-                + Add plan
-              </button>
-            ) : null
-          }
-        />
+      <Card className="mt-4 animate-rise overflow-hidden" padded={false}>
+        <div className="p-5 sm:p-6 sm:pb-0">
+          <SectionHeader
+            label="Savings & Invest"
+            total={savingsTotal}
+            open={savingsOpen}
+            onToggle={() => setSavingsOpen((v) => !v)}
+            action={
+              savingsOpen ? (
+                <button
+                  onClick={openAdd}
+                  className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12.5px] font-semibold transition-colors active:scale-95"
+                  style={{
+                    borderColor: 'color-mix(in srgb, var(--color-gain) 35%, transparent)',
+                    color: 'var(--color-gain)',
+                    background: 'var(--color-gain-soft)',
+                  }}
+                >
+                  + Add plan
+                </button>
+              ) : null
+            }
+          />
+        </div>
 
         {savingsOpen && (
-          <div className="mt-4">
-            {plans.length === 0 ? (
-              <EmptyState
-                icon={<DcaIcon className="h-6 w-6" />}
-                title="No invest plans yet"
-                description="Add recurring buys to track your dollar-cost averaging."
-                accent="var(--color-brand)"
-                action={
-                  <button
-                    onClick={openAdd}
-                    className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12.5px] font-semibold transition-colors"
-                    style={{
-                      borderColor: 'color-mix(in srgb, var(--color-gain) 35%, transparent)',
-                      color: 'var(--color-gain)',
-                      background: 'var(--color-gain-soft)',
-                    }}
-                  >
-                    + Add plan
-                  </button>
-                }
-              />
-            ) : (
-              <ul className="divide-y divide-line rounded-xl border border-line overflow-hidden">
-                {plans.map((p) => {
-                  const meta = ASSET_META[p.assetClass]
-                  const bought = buyDayPassedThisPeriod(p)
-                  const confirmed = isConfirmedForPeriod(p)
-                  const skipped = isSkippedForPeriod(p)
-                  const needsAction = shouldConfirmBuy(p)
-                  const next = nextBuyDate(p)
-                  const days = daysUntil(localDateStr(next))
-
-                  return (
-                    <li
-                      key={p.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => openEdit(p)}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(p) } }}
-                      className="flex cursor-pointer items-center gap-3 px-4 py-3.5 transition-colors hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          <div className="mt-6 border-t border-line pt-5">
+              {plans.length === 0 ? (
+                <EmptyState
+                  icon={<DcaIcon className="h-6 w-6" />}
+                  title="No invest plans yet"
+                  description="Add recurring buys to track your dollar-cost averaging."
+                  accent="var(--color-brand)"
+                  action={
+                    <button
+                      onClick={openAdd}
+                      className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12.5px] font-semibold transition-colors"
+                      style={{
+                        borderColor: 'color-mix(in srgb, var(--color-gain) 35%, transparent)',
+                        color: 'var(--color-gain)',
+                        background: 'var(--color-gain-soft)',
+                      }}
                     >
-                      <span
-                        className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
-                        style={{ color: meta.color, background: `color-mix(in srgb, ${meta.color} 12%, transparent)` }}
-                      >
-                        <DcaIcon className="h-[17px] w-[17px]" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14px] font-semibold text-ink">{p.name}</p>
-                        <p className="text-[12px] text-ink-muted">{meta.label} · {freqLabel(p)}</p>
-                      </div>
-                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                        <div className="text-right">
-                          <p className="font-display text-[15px] font-bold tnum text-ink">
-                            {thb(p.monthlyAmount)}
-                            <span className="ml-1 text-[11px] font-medium text-ink-faint">
-                              /{(p.frequency ?? 'monthly') === 'daily' ? 'day' : (p.frequency ?? 'monthly') === 'weekly' ? 'wk' : 'mo'}
-                            </span>
-                          </p>
-                          {confirmed && !skipped ? (
-                            <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-[11px] font-semibold text-gain">
-                              <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Confirmed
-                            </span>
-                          ) : bought && !skipped ? (
-                            <span className="mt-0.5 inline-block text-[11px] font-bold text-loss">
-                              Overdue
-                            </span>
-                          ) : days < 3 ? (
-                            <span className="mt-0.5 inline-block text-[11px] font-semibold text-warn">
-                              {days <= 0 ? 'Today' : days === 1 ? 'Tomorrow' : `in ${days} days`}
-                            </span>
-                          ) : (
-                            <span className="mt-0.5 inline-block text-[11px] font-semibold text-[#0ea5e9]">
-                              in {days} days
-                            </span>
+                      + Add plan
+                    </button>
+                  }
+                />
+              ) : (
+                <ul className="divide-y divide-line rounded-xl border border-line overflow-hidden">
+                  {plans.map((p) => {
+                    const meta = ASSET_META[p.assetClass]
+                    const bought = buyDayPassedThisPeriod(p)
+                    const confirmed = isConfirmedForPeriod(p)
+                    const skipped = isSkippedForPeriod(p)
+                    const needsAction = shouldConfirmBuy(p)
+                    const next = nextBuyDate(p)
+                    const days = daysUntil(localDateStr(next))
+
+                    return (
+                      <li key={p.id}>
+                        {/* Mobile row: maximize horizontal space */}
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => openEdit(p)}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(p) } }}
+                          aria-label={`Edit ${p.name}`}
+                          className="flex sm:hidden cursor-pointer items-center gap-3 px-5 py-3.5 transition-colors hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                        >
+                          <span
+                            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
+                            style={{ color: meta.color, background: `color-mix(in srgb, ${meta.color} 12%, transparent)` }}
+                          >
+                            <DcaIcon className="h-[17px] w-[17px]" />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex min-w-0 items-center gap-1.5">
+                                <p className="truncate text-[14px] font-semibold text-ink">{p.name}</p>
+                              </div>
+                              <p className="shrink-0 text-[14px] font-bold tnum text-ink">{thb(p.monthlyAmount)}</p>
+                            </div>
+                            <div className="mt-0.5 flex items-center justify-between gap-2">
+                              <p className="truncate text-[12px] text-ink-muted">{meta.label} · {freqLabel(p)}</p>
+                              <div className="shrink-0">
+                                {confirmed && !skipped ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-[11px] font-semibold text-gain">
+                                    <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Confirmed
+                                  </span>
+                                ) : bought && !skipped ? (
+                                  <span className="inline-block text-[11px] font-bold text-loss">Overdue</span>
+                                ) : days < 3 ? (
+                                  <span className="inline-block text-[11px] font-semibold text-warn">
+                                    {days <= 0 ? 'Today' : days === 1 ? 'Tomorrow' : `in ${days} days`}
+                                  </span>
+                                ) : (
+                                  <span className="inline-block text-[11px] font-semibold text-[#0ea5e9]">in {days} days</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          {needsAction && (
+                            <div className="flex flex-col gap-1.5">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
+                                className="shrink-0 rounded-xl px-3 py-1.5 text-[12px] font-bold text-white transition-colors active:scale-95"
+                                style={{ background: 'var(--color-gain)' }}
+                              >
+                                Confirm
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); skipDcaBuy(p.id, localDateStr()) }}
+                                className="shrink-0 rounded-xl border px-3 py-1.5 text-[12px] font-semibold transition-colors active:scale-95"
+                                style={{
+                                  borderColor: 'color-mix(in srgb, var(--color-ink-muted) 30%, transparent)',
+                                  color: 'var(--color-ink-muted)',
+                                }}
+                              >
+                                Skip
+                              </button>
+                            </div>
                           )}
                         </div>
-                        {needsAction && (
-                          <div className="flex flex-col gap-1.5">
-                            <button
-                              onClick={() => { setConfirming(p); setConfirmOpen(true) }}
-                              className="shrink-0 rounded-xl px-3 py-1.5 text-[12px] font-bold text-white transition-colors active:scale-95"
-                              style={{ background: 'var(--color-gain)' }}
-                            >
-                              Confirm
-                            </button>
-                            <button
-                              onClick={() => { skipDcaBuy(p.id, localDateStr()) }}
-                              className="shrink-0 rounded-xl border px-3 py-1.5 text-[12px] font-semibold transition-colors active:scale-95"
-                              style={{
-                                borderColor: 'color-mix(in srgb, var(--color-ink-muted) 30%, transparent)',
-                                color: 'var(--color-ink-muted)',
-                              }}
-                            >
-                              Skip
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
 
-            {/* Footer */}
-            {plans.length > 0 && (
-              <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-line pt-4">
-                <div>
-                  <p className="text-[12px] text-ink-muted">Total savings</p>
-                  <p className="font-display text-[18px] font-extrabold tnum text-ink">{thb(savingsTotal)}</p>
+                        {/* Desktop row */}
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => openEdit(p)}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(p) } }}
+                          aria-label={`Edit ${p.name}`}
+                          className="hidden sm:flex cursor-pointer items-center gap-3 px-6 py-3.5 transition-colors hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                        >
+                          <span
+                            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
+                            style={{ color: meta.color, background: `color-mix(in srgb, ${meta.color} 12%, transparent)` }}
+                          >
+                            <DcaIcon className="h-[17px] w-[17px]" />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[15px] font-semibold text-ink">{p.name}</p>
+                            <p className="text-[12px] text-ink-muted">{meta.label} · {freqLabel(p)}</p>
+                          </div>
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            <div className="text-right">
+                              <p className="font-display text-[15px] font-bold tnum text-ink">
+                                {thb(p.monthlyAmount)}
+                                <span className="ml-1 text-[11px] font-medium text-ink-faint">
+                                  /{(p.frequency ?? 'monthly') === 'daily' ? 'day' : (p.frequency ?? 'monthly') === 'weekly' ? 'wk' : 'mo'}
+                                </span>
+                              </p>
+                              {confirmed && !skipped ? (
+                                <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-[11px] font-semibold text-gain">
+                                  <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Confirmed
+                                </span>
+                              ) : bought && !skipped ? (
+                                <span className="mt-0.5 inline-block text-[11px] font-bold text-loss">Overdue</span>
+                              ) : days < 3 ? (
+                                <span className="mt-0.5 inline-block text-[11px] font-semibold text-warn">
+                                  {days <= 0 ? 'Today' : days === 1 ? 'Tomorrow' : `in ${days} days`}
+                                </span>
+                              ) : (
+                                <span className="mt-0.5 inline-block text-[11px] font-semibold text-[#0ea5e9]">in {days} days</span>
+                              )}
+                            </div>
+                            {needsAction && (
+                              <div className="flex flex-col gap-1.5">
+                                <button
+                                  onClick={() => { setConfirming(p); setConfirmOpen(true) }}
+                                  className="shrink-0 rounded-xl px-3 py-1.5 text-[12px] font-bold text-white transition-colors active:scale-95"
+                                  style={{ background: 'var(--color-gain)' }}
+                                >
+                                  Confirm
+                                </button>
+                                <button
+                                  onClick={() => { skipDcaBuy(p.id, localDateStr()) }}
+                                  className="shrink-0 rounded-xl border px-3 py-1.5 text-[12px] font-semibold transition-colors active:scale-95"
+                                  style={{
+                                    borderColor: 'color-mix(in srgb, var(--color-ink-muted) 30%, transparent)',
+                                    color: 'var(--color-ink-muted)',
+                                  }}
+                                >
+                                  Skip
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+
+              {/* Footer */}
+              {plans.length > 0 && (
+                <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-line pt-4 pb-5 px-5 sm:px-6">
+                  <div>
+                    <p className="text-[12px] text-ink-muted">Total savings</p>
+                    <p className="font-display text-[18px] font-extrabold tnum text-ink">{thb(savingsTotal)}</p>
+                  </div>
+                  {salary > 0 && (
+                    <>
+                      <div className="h-8 w-px bg-line" />
+                      <div>
+                        <p className="text-[12px] text-ink-muted">Invest rate</p>
+                        <p className="font-display text-[18px] font-extrabold tnum text-gain">
+                          {Math.round((savingsTotal / salary) * 100)}%
+                        </p>
+                      </div>
+                      <div className="h-8 w-px bg-line" />
+                      <div>
+                        <p className="text-[12px] text-ink-muted">Progress this month</p>
+                        <p className="font-display text-[18px] font-extrabold tnum text-ink">
+                          {Math.round(dcaMonth.pct)}%
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
-                {salary > 0 && (
-                  <>
-                    <div className="h-8 w-px bg-line" />
-                    <div>
-                      <p className="text-[12px] text-ink-muted">Invest rate</p>
-                      <p className="font-display text-[18px] font-extrabold tnum text-gain">
-                        {Math.round((savingsTotal / salary) * 100)}%
-                      </p>
-                    </div>
-                    <div className="h-8 w-px bg-line" />
-                    <div>
-                      <p className="text-[12px] text-ink-muted">Progress this month</p>
-                      <p className="font-display text-[18px] font-extrabold tnum text-ink">
-                        {Math.round(dcaMonth.pct)}%
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+              )}
+            </div>
         )}
       </Card>
 
