@@ -343,7 +343,7 @@ export function Portfolio() {
                 const unitsLabel = isBtc
                   ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats`
                   : isGold
-                  ? `${h.units.toFixed(2)} g · Gold`
+                  ? `${h.units.toFixed(4)} g · Gold`
                   : `${h.units.toLocaleString()} ${unitLabel(h.assetClass)} · ${ASSET_META[h.assetClass].label}`
 
                 const staleIndicator = isPriceStale(h.updatedAt) && (
@@ -485,7 +485,7 @@ export function Portfolio() {
                                     <div className="min-w-0 flex-1">
                                       <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
                                       <p className="tnum text-[12px] text-ink-muted">
-                                        {loc.grams.toFixed(2)} g · {thb(loc.thbSpent)} spent
+                                        {loc.grams.toFixed(4)} g · {thb(loc.thbSpent)} spent
                                       </p>
                                     </div>
                                     <button
