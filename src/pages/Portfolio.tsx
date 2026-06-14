@@ -219,9 +219,9 @@ export function Portfolio() {
         </Card>
 
         {/* Performance summary + holdings list */}
-        <Card className="lg:col-span-3 animate-rise">
+        <Card className="lg:col-span-3 animate-rise overflow-hidden" padded={false}>
           {/* Summary metrics */}
-          <div className="grid grid-cols-2 gap-5 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 p-5 sm:p-6 sm:pb-0">
             <Metric label="Current Value" value={thb(summary.value)} />
             <Metric label="Amount Invested" value={thb(summary.cost)} muted />
             <Metric
@@ -233,93 +233,95 @@ export function Portfolio() {
 
           {/* Holdings list */}
           <div className="mt-6 border-t border-line pt-5">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-display text-[15px] font-bold text-ink">
-                Holdings
-                <span className="ml-2 rounded-full bg-surface-muted px-2 py-0.5 text-[12px] font-semibold text-ink-muted">
-                  {rows.length}
-                </span>
-              </h3>
-            </div>
+            <div className="px-5 sm:px-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="font-display text-[15px] font-bold text-ink">
+                  Holdings
+                  <span className="ml-2 rounded-full bg-surface-muted px-2 py-0.5 text-[12px] font-semibold text-ink-muted">
+                    {rows.length}
+                  </span>
+                </h3>
+              </div>
 
-            {/* Search */}
-            <div className="relative mb-3">
-              <svg
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
-                viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8}
-              >
-                <circle cx={6.5} cy={6.5} r={4.5} />
-                <path d="M10.5 10.5l3 3" strokeLinecap="round" />
-              </svg>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by name or ticker…"
-                className="w-full rounded-xl border border-line bg-surface-muted py-2 pl-9 pr-8 text-[13.5px] text-ink outline-none placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/20"
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-ink-faint hover:text-ink"
+              {/* Search */}
+              <div className="relative mb-3">
+                <svg
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
+                  viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8}
                 >
-                  <svg viewBox="0 0 12 12" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-                    <path d="M2 2l8 8M10 2l-8 8" />
-                  </svg>
-                </button>
-              )}
-            </div>
-
-            {/* Filter pills */}
-            <div className="mb-2 flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
-              {FILTERS.map((f) => (
-                <button
-                  key={f.key}
-                  onClick={() => setFilter(f.key)}
-                  className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
-                    filter === f.key
-                      ? 'bg-ink text-white dark:bg-[#4f46e5] dark:text-white'
-                      : 'bg-surface-muted text-ink-soft hover:text-ink'
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Sort controls */}
-            <div className="mb-4 flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-              <span className="shrink-0 text-[11px] font-medium text-ink-faint">Sort:</span>
-              {([ ['value','Value'], ['pnl','Profit %'], ['type','Type'] ] as const).map(([key, label]) => {
-                const active = sortBy === key
-                const showDir = active && key !== 'type'
-                return (
+                  <circle cx={6.5} cy={6.5} r={4.5} />
+                  <path d="M10.5 10.5l3 3" strokeLinecap="round" />
+                </svg>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by name or ticker…"
+                  className="w-full rounded-xl border border-line bg-surface-muted py-2 pl-9 pr-8 text-[13.5px] text-ink outline-none placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/20"
+                />
+                {search && (
                   <button
-                    key={key}
-                    onClick={() => {
-                      if (active && key !== 'type') {
-                        setSortDir((d) => d === 'desc' ? 'asc' : 'desc')
-                      } else {
-                        setSortBy(key)
-                        setSortDir('desc')
-                      }
-                    }}
-                    className={`flex shrink-0 items-center gap-0.5 rounded-full px-3 py-1 text-[12px] font-semibold transition-colors ${
-                      active
-                        ? 'bg-brand text-white dark:bg-[#4f46e5]'
+                    onClick={() => setSearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-ink-faint hover:text-ink"
+                  >
+                    <svg viewBox="0 0 12 12" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                      <path d="M2 2l8 8M10 2l-8 8" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              {/* Filter pills */}
+              <div className="mb-2 flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
+                {FILTERS.map((f) => (
+                  <button
+                    key={f.key}
+                    onClick={() => setFilter(f.key)}
+                    className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
+                      filter === f.key
+                        ? 'bg-ink text-white dark:bg-[#4f46e5] dark:text-white'
                         : 'bg-surface-muted text-ink-soft hover:text-ink'
                     }`}
                   >
-                    {label}
-                    {showDir && (
-                      <span className="ml-0.5 text-[10px]">{sortDir === 'desc' ? '↓' : '↑'}</span>
-                    )}
+                    {f.label}
                   </button>
-                )
-              })}
+                ))}
+              </div>
+
+              {/* Sort controls */}
+              <div className="mb-4 flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+                <span className="shrink-0 text-[11px] font-medium text-ink-faint">Sort:</span>
+                {([ ['value','Value'], ['pnl','Profit %'], ['type','Type'] ] as const).map(([key, label]) => {
+                  const active = sortBy === key
+                  const showDir = active && key !== 'type'
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => {
+                        if (active && key !== 'type') {
+                          setSortDir((d) => d === 'desc' ? 'asc' : 'desc')
+                        } else {
+                          setSortBy(key)
+                          setSortDir('desc')
+                        }
+                      }}
+                      className={`flex shrink-0 items-center gap-0.5 rounded-full px-3 py-1 text-[12px] font-semibold transition-colors ${
+                        active
+                          ? 'bg-brand text-white dark:bg-[#4f46e5]'
+                          : 'bg-surface-muted text-ink-soft hover:text-ink'
+                      }`}
+                    >
+                      {label}
+                      {showDir && (
+                        <span className="ml-0.5 text-[10px]">{sortDir === 'desc' ? '↓' : '↑'}</span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
-            <ul className="space-y-2">
+            <ul className="divide-y divide-line border-t border-line">
               {rows.map((h) => {
                 const isBtc = h.assetClass === 'crypto'
                 const isGold = h.assetClass === 'gold'
@@ -374,7 +376,7 @@ export function Portfolio() {
                 return (
                   <li
                     key={h.id}
-                    className="rounded-2xl border border-line bg-surface overflow-hidden transition-colors hover:border-line-strong"
+                    className="overflow-hidden transition-colors hover:bg-surface-muted/50"
                   >
                     {/* ── Mobile (< sm): compact 2-row ── */}
                     <div
@@ -383,7 +385,7 @@ export function Portfolio() {
                       onClick={rowClick}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rowClick() } }}
                       aria-label={isExpandable ? (isExpanded ? `Collapse ${h.name}` : `Expand ${h.name}`) : `Edit ${h.name}`}
-                      className="flex sm:hidden cursor-pointer items-center gap-3 px-4 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                      className="flex sm:hidden cursor-pointer items-center gap-3 px-5 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                     >
                       {badge}
                       <div className="min-w-0 flex-1">
@@ -411,7 +413,7 @@ export function Portfolio() {
                       onClick={rowClick}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rowClick() } }}
                       aria-label={isExpandable ? (isExpanded ? `Collapse ${h.name}` : `Expand ${h.name}`) : `Edit ${h.name}`}
-                      className="hidden sm:flex cursor-pointer items-center gap-3 px-4 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                      className="hidden sm:flex cursor-pointer items-center gap-3 px-6 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                     >
                       {badge}
                       <div className="min-w-0 flex-1">
@@ -437,7 +439,7 @@ export function Portfolio() {
 
                     {/* BTC / Gold sub-breakdown panel */}
                     {isExpandable && isExpanded && (
-                      <div className="border-t border-line bg-surface-muted px-4 pb-3 pt-2">
+                      <div className="border-t border-line bg-surface-muted px-5 pb-3.5 pt-2.5 sm:px-6">
                         <p className="mb-2 text-[12px] font-semibold text-ink-muted">Locations</p>
 
                         {isBtc && (
