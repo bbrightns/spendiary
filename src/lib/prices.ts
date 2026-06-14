@@ -9,18 +9,50 @@ async function binancePrice(symbol: string): Promise<number> {
   return price
 }
 
+const THAI_GOLD_GRAMS_PER_TROY_OUNCE = 31.1035
+const GOLD_PRICE_CACHE_TTL_MS = 5 * 60 * 1000
+let cachedGoldPrice: { xauThb: number; pricePerGram: number; updatedAt: number } | null = null
+
 /** USD/THB — tries Binance USDTTHB first, falls back to open.er-api.com */
 export async function fetchUsdThb(): Promise<number> {
   try {
     return await binancePrice('USDTTHB')
   } catch {
-    // Fallback: free exchange rate API, no key needed
     const res = await fetch('https://open.er-api.com/v6/latest/USD')
     if (!res.ok) throw new Error(`USD/THB fallback: ${res.status}`)
     const json = await res.json()
     const rate = json?.rates?.THB
     if (!rate) throw new Error('USD/THB fallback: no THB rate')
     return rate
+  }
+}
+
+/**
+ * GoldPriceService: fetch XAU/THB spot from Binance and derive THB per gram.
+ * Falls back to the last cached value if the API fails.
+ */
+export async function fetchXauThbPricePerGram(): Promise<{ xauThb: number; pricePerGram: number; updatedAt: number }> {
+  const now = Date.now()
+  if (cachedGoldPrice && now < cachedGoldPrice.updatedAt + GOLD_PRICE_CACHE_TTL_MS) {
+    return cachedGoldPrice
+  }
+
+  try {
+    const xauUsdt = await binancePrice('XAUTUSDT')
+    const usdThb = await fetchUsdThb()
+    const xauThb = xauUsdt * usdThb
+    if (typeof xauThb !== 'number' || Number.isNaN(xauThb) || xauThb <= 0) {
+      throw new Error('Invalid XAU/THB price')
+    }
+
+    const pricePerGram = parseFloat((xauThb / THAI_GOLD_GRAMS_PER_TROY_OUNCE).toFixed(4))
+    cachedGoldPrice = { xauThb, pricePerGram, updatedAt: now }
+    return cachedGoldPrice
+  } catch (error) {
+    if (cachedGoldPrice) {
+      return cachedGoldPrice
+    }
+    throw error
   }
 }
 

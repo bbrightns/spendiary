@@ -17,6 +17,8 @@ interface Props {
 
 const SATS_PER_BTC = 100_000_000
 
+const newId = () => crypto?.randomUUID?.() ?? `id-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+
 const blank = {
   name: '',
   ticker: '',
@@ -125,6 +127,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       units: g,
       avgCost: avgCostThb,
       price: avgCostThb,
+      goldLocations: [{ id: newId(), name: locName, grams: g, thbSpent: spent }],
       updatedAt: localDateStr(),
     })
     addHoldingLog({
@@ -132,7 +135,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       holdingName: 'Gold',
       ticker: 'XAU',
       assetClass: 'gold',
-      note: `${g.toFixed(2)} g · ฿${spent.toLocaleString()} spent · ${goldLocationName.trim()}`,
+      note: `${g.toFixed(4)} g · ฿${spent.toLocaleString()} spent · ${goldLocationName.trim()}`,
     })
     onClose()
   }

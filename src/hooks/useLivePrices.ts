@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useData } from '../store/DataContext'
-import { fetchBtcThb, fetchStockPricesUsd, fetchUsdThb } from '../lib/prices'
+import { fetchBtcThb, fetchStockPricesUsd, fetchUsdThb, fetchXauThbPricePerGram } from '../lib/prices'
 import { localDateStr } from '../lib/format'
 
 const REFRESH_MS = 60_000
@@ -12,6 +12,7 @@ export function useLivePrices() {
   const [status, setStatus] = useState<PriceStatus>('idle')
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [usdThbLocal, setUsdThbLocal] = useState<number | null>(null)
+  const [goldThbPerGram, setGoldThbPerGram] = useState<number | null>(null)
   const [errorMsg, setErrorMsg] = useState<string>('')
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Keep a stable ref to data so the interval always sees latest holdings
@@ -23,10 +24,12 @@ export function useLivePrices() {
     const holdings = dataRef.current.holdings
     const stockHoldings = holdings.filter((h) => h.assetClass === 'stock')
     const cryptoHoldings = holdings.filter((h) => h.assetClass === 'crypto')
+    const goldHoldings = holdings.filter((h) => h.assetClass === 'gold')
     const today = localDateStr()
 
     let btcOk = false
     let stocksOk = false
+    let goldOk = false
     const errors: string[] = []
 
     // BTC
@@ -67,7 +70,23 @@ export function useLivePrices() {
       stocksOk = true
     }
 
-    if (btcOk && stocksOk) {
+    // Gold
+    if (goldHoldings.length > 0) {
+      try {
+        const goldPrice = await fetchXauThbPricePerGram()
+        setGoldThbPerGram(goldPrice.pricePerGram)
+        for (const h of goldHoldings) {
+          upsertHolding({ ...h, price: goldPrice.pricePerGram, updatedAt: today })
+        }
+        goldOk = true
+      } catch (e) {
+        errors.push(`Gold: ${(e as Error).message}`)
+      }
+    } else {
+      goldOk = true
+    }
+
+    if (btcOk && stocksOk && goldOk) {
       setStatus('ok')
       setErrorMsg('')
     } else if (btcOk || stocksOk) {
@@ -88,5 +107,5 @@ export function useLivePrices() {
     }
   }, [])
 
-  return { status, lastUpdated, usdThb: usdThbLocal, errorMsg, refresh }
+  return { status, lastUpdated, usdThb: usdThbLocal, goldThbPerGram, errorMsg, refresh }
 }

@@ -111,7 +111,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         holdingName: holding!.name,
         ticker: holding!.ticker,
         assetClass: 'gold',
-        note: `+${g.toFixed(2)} g · ฿${spent.toLocaleString()} spent · ${goldLocName}`,
+        note: `+${g.toFixed(4)} g · ฿${spent.toLocaleString()} spent · ${goldLocName}`,
       })
       onClose()
     }
@@ -179,11 +179,11 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
             >
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-soft">Implied price / gram</span>
-                <span className="font-semibold tnum text-ink">{thb(impliedPrice)}</span>
+                <span className="font-semibold tnum text-ink">{thb(impliedPrice, true)}</span>
               </div>
               <div className="mt-1 flex items-center justify-between text-[13px]">
                 <span className="text-ink-soft">Gold amount</span>
-                <span className="font-semibold tnum text-ink">{g.toFixed(2)} g</span>
+                <span className="font-semibold tnum text-ink">{g.toFixed(4)} g</span>
               </div>
             </div>
           )}

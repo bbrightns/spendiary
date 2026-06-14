@@ -21,7 +21,7 @@ import {
   portfolioSummary,
 } from '../lib/calc'
 import type { AssetClass, BtcLocation, Holding } from '../lib/types'
-import { pct, thb, thbCompact } from '../lib/format'
+import { pct, thb, thbCompact, formatNumber } from '../lib/format'
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -35,7 +35,7 @@ const SATS_PER_BTC = 100_000_000
 
 export function Portfolio() {
   const { data, removeHolding, upsertBtcLocation, removeBtcLocation, removeGoldLocation } = useData()
-  const { status: priceStatus, lastUpdated, usdThb, errorMsg, refresh: refreshPrices } = useLivePrices()
+  const { status: priceStatus, lastUpdated, usdThb, goldThbPerGram, errorMsg, refresh: refreshPrices } = useLivePrices()
   const [filter, setFilter] = useState<AssetClass | 'all'>('all')
   const [sortBy, setSortBy] = useState<'none' | 'value' | 'pnl' | 'type'>('none')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
@@ -150,6 +150,9 @@ export function Portfolio() {
                 <span className="inline-block h-2 w-2 rounded-full bg-gain animate-pulse" />
                 Live · updated {lastUpdated.toLocaleTimeString()}
                 {usdThb && <span className="text-ink-soft">· USD/THB {usdThb.toFixed(2)}</span>}
+                {goldThbPerGram !== null && (
+                  <span className="text-ink-soft">· Gold {formatNumber(goldThbPerGram, 4)} THB/g</span>
+                )}
               </>
             )}
             {priceStatus === 'partial' && lastUpdated && (
@@ -157,6 +160,9 @@ export function Portfolio() {
                 <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
                 Partial update · {lastUpdated.toLocaleTimeString()}
                 {usdThb && <span className="text-ink-soft">· USD/THB {usdThb.toFixed(2)}</span>}
+                {goldThbPerGram !== null && (
+                  <span className="text-ink-soft">· Gold {formatNumber(goldThbPerGram, 4)} THB/g</span>
+                )}
                 <span className="text-loss text-[12px]">{errorMsg}</span>
               </>
             )}

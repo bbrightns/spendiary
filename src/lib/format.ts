@@ -40,6 +40,18 @@ export function signedThb(value: number): string {
   return `${sign}฿${NBSP}${baht.format(Math.abs(Math.round(value)))}`
 }
 
+const numberFormatter = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 4,
+})
+
+export function formatNumber(value: number, decimals = 2): string {
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value)
+}
+
 export function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', {
     day: 'numeric',
