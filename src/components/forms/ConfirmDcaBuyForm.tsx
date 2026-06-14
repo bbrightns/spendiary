@@ -16,10 +16,12 @@ interface Props {
 export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const { data, confirmDcaBuy, upsertBtcLocation, usdThb } = useData()
   const [price, setPrice] = useState<number | ''>('')
+  const [sats, setSats] = useState<number | ''>('')
   const [showErrors, setShowErrors] = useState(false)
   const [selectedLocId, setSelectedLocId] = useState<string>('')
   const [newLocName, setNewLocName] = useState('')
   const wasOpen = useRef(false)
+  const SATS_PER_BTC = 100_000_000
 
   const holding = plan?.holdingId
     ? data.holdings.find((h) => h.id === plan.holdingId) ?? null
@@ -42,12 +44,15 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
       : btcLocations.length > 0 ? btcLocations[0].id : '__new__'
     setSelectedLocId(preferredId)
     setNewLocName('')
+    setSats('')
 
     // Pre-fill live price where available
     if (holding) {
       if (isStock && rate > 1) {
         setPrice(parseFloat((holding.price / rate).toFixed(2)))
-      } else if (isBtc || isGold) {
+      } else if (isBtc) {
+        setPrice('')
+      } else if (isGold) {
         setPrice(holding.price)
       } else {
         setPrice('')   // mutual fund — user enters NAV
@@ -60,11 +65,21 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   if (!plan) return null
 
   const priceNum = Number(price)
-  const priceInThb = isStock && rate > 1 ? priceNum * rate : priceNum
-  const units = priceInThb > 0 ? plan.monthlyAmount / priceInThb : 0
-  const sats = Math.round(units * 1e8)
+  const satsValue = Number(sats)
+  const btcUnits = isBtc && satsValue > 0 ? satsValue / SATS_PER_BTC : 0
+  const priceInThb = isBtc
+    ? btcUnits > 0 ? plan.monthlyAmount / btcUnits : 0
+    : isStock && rate > 1
+    ? priceNum * rate
+    : priceNum
+  const units = isBtc
+    ? btcUnits
+    : priceInThb > 0
+    ? plan.monthlyAmount / priceInThb
+    : 0
+  const satsToAdd = isBtc ? satsValue : Math.round(units * 1e8)
   const hasHolding = !!holding
-  const valid = priceNum > 0
+  const valid = isBtc ? satsValue > 0 : priceNum > 0
 
   // BTC location validation
   const btcLocValid = !isBtc || !hasHolding ||
@@ -73,11 +88,11 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
 
   const priceLabel = isStock
     ? `Current price / unit (USD)`
-    : isBtc ? 'Current price / BTC (฿)'
+    : isBtc ? 'Satoshis bought'
     : isGold ? 'Current price / gram (฿)'
     : 'NAV / unit (฿)'
 
-  const pricePrefix = isStock ? '$' : '฿'
+  const pricePrefix = isStock ? '$' : isBtc ? undefined : '฿'
   const meta = ASSET_META[plan.assetClass]
 
   function confirm() {
@@ -92,7 +107,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         // Create new location
         upsertBtcLocation(holding.id, {
           name: newLocName.trim(),
-          satoshi: sats,
+          satoshi: satsToAdd,
           thbSpent: p.monthlyAmount,
         })
       } else {
@@ -102,7 +117,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
           upsertBtcLocation(holding.id, {
             id: existing.id,
             name: existing.name,
-            satoshi: existing.satoshi + sats,
+            satoshi: existing.satoshi + satsToAdd,
             thbSpent: existing.thbSpent + p.monthlyAmount,
           })
         }
@@ -152,9 +167,9 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         <NumberField
           label={priceLabel}
           prefix={pricePrefix}
-          value={price}
-          onChange={setPrice}
-          placeholder="0"
+          value={isBtc ? sats : price}
+          onChange={isBtc ? setSats : setPrice}
+          placeholder={isBtc ? 'e.g. 500000' : '0'}
           error={showErrors && !valid ? 'Required (> 0)' : undefined}
         />
 
@@ -232,7 +247,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               <span className="text-ink-muted">Units to add</span>
               <span className="font-semibold tnum text-ink">
                 {isBtc
-                  ? `${sats.toLocaleString()} sats (${units.toFixed(8)} BTC)`
+                  ? `${satsValue > 0 ? satsValue.toLocaleString() : 0} sats (${units.toFixed(8)} BTC)`
                   : isGold
                   ? `${units.toFixed(4)} g`
                   : `${units.toFixed(4)} units`}

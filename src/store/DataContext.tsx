@@ -345,7 +345,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
             holdingName: holding.name,
             ticker: holding.ticker,
             assetClass: holding.assetClass,
-            note: `DCA · ${units.toFixed(4)} units @ ฿${pricePerUnit.toLocaleString()}/unit · ฿${plan.monthlyAmount.toLocaleString()} total`,
+            note: holding.assetClass === 'crypto'
+              ? `DCA · +${Math.round(units * 1e8).toLocaleString()} sats · ฿${plan.monthlyAmount.toLocaleString()} total`
+              : holding.assetClass === 'gold'
+              ? `DCA · +${units.toFixed(4)} g · ฿${plan.monthlyAmount.toLocaleString()} total`
+              : `DCA · +${units.toFixed(4)} units @ ฿${pricePerUnit.toLocaleString()}/unit · ฿${plan.monthlyAmount.toLocaleString()} total`,
           }
 
           return {
