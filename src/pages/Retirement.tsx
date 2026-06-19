@@ -36,9 +36,43 @@ function compoundGrow(principal: number, monthly: number, annualRate: number, ye
   return points
 }
 
+function compoundGrowWithAnnualIncrease(
+  principal: number,
+  monthly: number,
+  annualRate: number,
+  years: number,
+  annualIncreasePerYear: number,
+): number[] {
+  const r = annualRate / 12
+  const points: number[] = []
+  let val = principal
+  let currentMonthly = monthly
+  for (let y = 0; y <= years; y++) {
+    points.push(val)
+    for (let m = 0; m < 12; m++) {
+      val = val * (1 + r) + currentMonthly
+    }
+    // annualIncreasePerYear is an absolute THB added per year to the monthly contribution
+    currentMonthly += annualIncreasePerYear / 12
+  }
+  return points
+}
+
 function linearGrow(monthly: number, years: number): number[] {
   const pts: number[] = []
   for (let y = 0; y <= years; y++) pts.push(monthly * 12 * y)
+  return pts
+}
+
+function linearGrowWithAnnualIncrease(monthly: number, years: number, annualIncreasePerYear: number): number[] {
+  const pts: number[] = []
+  let currentMonthly = monthly
+  let total = 0
+  for (let y = 0; y <= years; y++) {
+    pts.push(total)
+    total += currentMonthly * 12
+    currentMonthly += annualIncreasePerYear / 12
+  }
   return pts
 }
 
@@ -163,15 +197,15 @@ function Row({ label, value, bold, highlight, hint }: {
   highlight?: 'gain' | 'loss'; hint?: string
 }) {
   return (
-    <div className="flex items-start justify-between gap-2 text-[13px]">
-      <span className="text-ink-muted shrink-0">{label}</span>
-      <div className="text-right">
+    <div className="flex items-center justify-between gap-2 text-[13px]">
+      <span className="text-ink-muted shrink-0 leading-none">{label}</span>
+      <div className="text-right min-w-0">
         <span className={`tnum font-semibold ${
           highlight === 'gain' ? 'text-gain' :
           highlight === 'loss' ? 'text-loss' :
           bold ? 'font-bold text-ink' : 'text-ink-soft'
-        }`}>{value}</span>
-        {hint && <p className="text-[11px] text-ink-faint">{hint}</p>}
+        } leading-none`}>{value}</span>
+        {hint && <p className="mt-0.5 text-[11px] text-ink-faint">{hint}</p>}
       </div>
     </div>
   )
@@ -202,6 +236,7 @@ export function Retirement() {
   const [planUntilAge,   setPlanUntilAge]   = useState<number | ''>(saved?.deadAge        ?? 85)
   const [expectedReturn, setExpectedReturn] = useState<number | ''>((saved?.expectedReturn ?? 0.08) * 100)
   const [inflationRate,  setInflationRate]  = useState<number | ''>((saved?.inflationRate  ?? 0.03) * 100)
+  const [annualSavingsIncrease, setAnnualSavingsIncrease] = useState<number | ''>(saved?.annualSavingsIncrease ?? 0)
   const [mobileView,     setMobileView]     = useState<'chart' | 'bars'>('chart')
 
   const summary          = useMemo(() => portfolioSummary(data.holdings), [data.holdings])
@@ -210,6 +245,7 @@ export function Retirement() {
 
   // Use the field value if set, otherwise fall back to live DCA total
   const investMonthly = Number(monthlyInvestField) > 0 ? Number(monthlyInvestField) : dcaMonthly
+  const annualSavingsIncreaseAmount = Number(annualSavingsIncrease) || 0
 
   // Sync field when dcaPlans change and user hasn't overridden
   useEffect(() => {
@@ -228,13 +264,20 @@ export function Retirement() {
   const futureMonthlySpend = (Number(monthlySpend) || 0) * Math.pow(1 + inflation, yearsLeft)
   const corpusNeeded       = futureMonthlySpend * 12 * retirementYears
 
-  const investLine  = useMemo(() => compoundGrow(summary.value, investMonthly, annualRate, yearsLeft),  [summary.value, investMonthly, annualRate, yearsLeft])
-  const savingsLine = useMemo(() => linearGrow(investMonthly, yearsLeft), [investMonthly, yearsLeft])
+  const investLine  = useMemo(
+    () => compoundGrowWithAnnualIncrease(summary.value, investMonthly, annualRate, yearsLeft, annualSavingsIncreaseAmount),
+    [summary.value, investMonthly, annualRate, yearsLeft, annualSavingsIncreaseAmount]
+  )
+  const savingsLine = useMemo(
+    () => linearGrowWithAnnualIncrease(investMonthly, yearsLeft, annualSavingsIncreaseAmount),
+    [investMonthly, yearsLeft, annualSavingsIncreaseAmount]
+  )
 
   const projectedInvestment = investLine[investLine.length - 1] ?? 0
   const projectedSavings    = savingsLine[savingsLine.length - 1] ?? 0
   const gap                 = projectedInvestment - corpusNeeded
   const onTrack             = gap >= 0
+  const annualInvestment    = investMonthly * 12
 
   const minRate = useMemo(
     () => corpusNeeded > 0 && yearsLeft > 0 ? solveMinRate(summary.value, investMonthly, yearsLeft, corpusNeeded) : null,
@@ -248,6 +291,7 @@ export function Retirement() {
       : null,
     [onTrack, summary.value, investMonthly, annualRate, yearsLeft, corpusNeeded],
   )
+  const annualGap = monthlyGap !== null ? monthlyGap * 12 : null
 
   const minRetireAge = useMemo(
     () => !onTrack && corpusNeeded > 0
@@ -262,7 +306,7 @@ export function Retirement() {
 
   // ── Persist settings ──
   useEffect(() => {
-    if (monthlySpend !== '' && retireAge !== '' && planUntilAge !== '') {
+      if (monthlySpend !== '' && retireAge !== '' && planUntilAge !== '') {
       setRetirement({
         monthlySpend:   Number(monthlySpend),
         retireAge:      Number(retireAge),
@@ -271,6 +315,7 @@ export function Retirement() {
         expectedReturn: annualRate,
         birthDate,
         monthlyInvest:  Number(monthlyInvestField) > 0 ? Number(monthlyInvestField) : undefined,
+        annualSavingsIncrease: Number(annualSavingsIncrease) > 0 ? Number(annualSavingsIncrease) : undefined,
       })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -342,11 +387,19 @@ export function Retirement() {
               onChange={setMonthlyInvestField}
               placeholder={dcaMonthly > 0 ? String(dcaMonthly) : '0'}
             />
+            <NumberField
+              label="Savings increase per year"
+              prefix="฿"
+              hint="เพิ่มเงินออมต่อปี (THB)"
+              value={annualSavingsIncrease}
+              onChange={setAnnualSavingsIncrease}
+              placeholder="0"
+              min={0}
+            />
             <div className="grid grid-cols-2 gap-3">
               <NumberField
                 label="Expected return"
                 suffix="%"
-                hint="Long-term annual"
                 value={expectedReturn}
                 onChange={setExpectedReturn}
                 placeholder="8"
@@ -355,7 +408,6 @@ export function Retirement() {
               <NumberField
                 label="Inflation"
                 suffix="%"
-                hint="Thai avg ~3–4%"
                 value={inflationRate}
                 onChange={setInflationRate}
                 placeholder="3"
@@ -364,36 +416,16 @@ export function Retirement() {
             </div>
           </div>
 
-          {/* Summary */}
+          {/* Summary: simplified per user request */}
           <div className="mt-5 rounded-2xl bg-surface-muted px-4 py-3 space-y-2">
             <Row label="Years to retirement"  value={`${yearsLeft} yr${yearsLeft !== 1 ? 's' : ''}`} />
             <Row label="Years in retirement"  value={`${retirementYears} yr${retirementYears !== 1 ? 's' : ''}`} />
-            {inflation > 0 && Number(monthlySpend) > 0 && (
+            {Number(monthlySpend) > 0 && (
               <Row
                 label="Spend at retirement"
                 value={`${thbCompact(futureMonthlySpend)}/mo`}
-                hint="in future money"
               />
             )}
-            <Row label="Target corpus" value={thbCompact(corpusNeeded)} bold />
-            <Row label="Monthly investment" value={thbCompact(investMonthly)} />
-            <div className="border-t border-line/60 pt-2 space-y-2">
-              <Row label="Return rate"   value={`${(annualRate  * 100).toFixed(1)}% p.a.`} />
-              <Row label="Inflation"     value={`${(inflation   * 100).toFixed(1)}% p.a.`} />
-              <Row
-                label="Real return"
-                value={`${(realReturn * 100).toFixed(1)}% p.a.`}
-                highlight={realReturn >= 0 ? 'gain' : 'loss'}
-                hint="return − inflation"
-              />
-              {minRate !== null && (
-                <Row
-                  label="Min. return needed"
-                  value={`${(minRate * 100).toFixed(1)}% p.a.`}
-                  highlight={rateGap !== null ? (rateGap >= 0 ? 'gain' : 'loss') : undefined}
-                />
-              )}
-            </div>
           </div>
         </Card>
 

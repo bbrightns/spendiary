@@ -21,14 +21,14 @@ interface LabelWrapProps {
 function LabelWrap({ label, hint, error, children }: LabelWrapProps) {
   return (
     <label className="block">
-      <span className="mb-1.5 flex items-center justify-between">
+      <div className="mb-1.5 flex items-center justify-between gap-3">
         <span className="text-[13px] font-semibold text-ink-soft">{label}</span>
         {error ? (
           <span className="text-[12px] font-semibold text-loss animate-fadeIn">{error}</span>
         ) : (
           hint && <span className="text-[12px] text-ink-muted">{hint}</span>
         )}
-      </span>
+      </div>
       {children}
     </label>
   )
