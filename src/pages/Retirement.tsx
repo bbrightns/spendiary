@@ -41,7 +41,7 @@ function compoundGrowWithAnnualIncrease(
   monthly: number,
   annualRate: number,
   years: number,
-  annualIncreasePerYear: number,
+  annualIncreaseRate: number,
 ): number[] {
   const r = annualRate / 12
   const points: number[] = []
@@ -52,26 +52,22 @@ function compoundGrowWithAnnualIncrease(
     for (let m = 0; m < 12; m++) {
       val = val * (1 + r) + currentMonthly
     }
-    // annualIncreasePerYear is an absolute THB added per year to the monthly contribution
-    currentMonthly += annualIncreasePerYear / 12
+    // annualIncreaseRate is a relative growth (e.g. 0.05 = +5% per year)
+    currentMonthly *= 1 + annualIncreaseRate
   }
   return points
 }
 
-function linearGrow(monthly: number, years: number): number[] {
-  const pts: number[] = []
-  for (let y = 0; y <= years; y++) pts.push(monthly * 12 * y)
-  return pts
-}
 
-function linearGrowWithAnnualIncrease(monthly: number, years: number, annualIncreasePerYear: number): number[] {
+
+function linearGrowWithAnnualIncrease(monthly: number, years: number, annualIncreaseRate: number): number[] {
   const pts: number[] = []
   let currentMonthly = monthly
   let total = 0
   for (let y = 0; y <= years; y++) {
     pts.push(total)
     total += currentMonthly * 12
-    currentMonthly += annualIncreasePerYear / 12
+    currentMonthly *= 1 + annualIncreaseRate
   }
   return pts
 }
@@ -110,6 +106,24 @@ function solveMinRetireAge(
     const retYrs  = Math.max(planUntilAge - age, 0)
     const futureSpend  = monthlySpendToday * Math.pow(1 + inflation, yrs)
     const corpus  = futureSpend * 12 * retYrs
+    if (corpus <= 0) return age
+    const projected = compoundGrow(pv, monthly, annualRate, yrs)[yrs]
+    if (projected >= corpus) return age
+  }
+  return null
+}
+
+/** Find the earliest age (>= currentAge+1 up to maxCandidateAge) where projected savings meet the target. */
+function solveEarliestRetireAge(
+  pv: number, monthly: number, annualRate: number, inflation: number,
+  currentAge: number, maxCandidateAge: number, planUntilAge: number,
+  monthlySpendToday: number,
+): number | null {
+  for (let age = currentAge + 1; age <= Math.min(maxCandidateAge, planUntilAge - 1); age++) {
+    const yrs = age - currentAge
+    const retYrs = Math.max(planUntilAge - age, 0)
+    const futureSpend = monthlySpendToday * Math.pow(1 + inflation, yrs)
+    const corpus = futureSpend * 12 * retYrs
     if (corpus <= 0) return age
     const projected = compoundGrow(pv, monthly, annualRate, yrs)[yrs]
     if (projected >= corpus) return age
@@ -236,7 +250,7 @@ export function Retirement() {
   const [planUntilAge,   setPlanUntilAge]   = useState<number | ''>(saved?.deadAge        ?? 85)
   const [expectedReturn, setExpectedReturn] = useState<number | ''>((saved?.expectedReturn ?? 0.08) * 100)
   const [inflationRate,  setInflationRate]  = useState<number | ''>((saved?.inflationRate  ?? 0.03) * 100)
-  const [annualSavingsIncrease, setAnnualSavingsIncrease] = useState<number | ''>(saved?.annualSavingsIncrease ?? 0)
+  const [annualSavingsGrowth, setAnnualSavingsGrowth] = useState<number | ''>((saved?.annualSavingsGrowth ?? 0) * 100)
   const [mobileView,     setMobileView]     = useState<'chart' | 'bars'>('chart')
 
   const summary          = useMemo(() => portfolioSummary(data.holdings), [data.holdings])
@@ -245,7 +259,7 @@ export function Retirement() {
 
   // Use the field value if set, otherwise fall back to live DCA total
   const investMonthly = Number(monthlyInvestField) > 0 ? Number(monthlyInvestField) : dcaMonthly
-  const annualSavingsIncreaseAmount = Number(annualSavingsIncrease) || 0
+  const annualSavingsGrowthRate = (Number(annualSavingsGrowth) || 0) / 100
 
   // Sync field when dcaPlans change and user hasn't overridden
   useEffect(() => {
@@ -255,53 +269,78 @@ export function Retirement() {
 
   // ── Core derived values ──
   const currentAge      = ageFromBirth(birthDate)
-  const yearsLeft       = yearsUntilAge(currentAge, Number(retireAge) || 40)
-  const retirementYears = Math.max((Number(planUntilAge) || 85) - (Number(retireAge) || 40), 0)
-  const inflation       = (Number(inflationRate)  || 0) / 100
-  const annualRate      = (Number(expectedReturn) || 8) / 100
-  const realReturn      = annualRate - inflation
+  const inflation        = inflationRate === '' ? 0.03 : Number(inflationRate) / 100
+  const annualRate       = expectedReturn === '' ? 0.08 : Number(expectedReturn) / 100
+  const realReturn       = annualRate - inflation
 
-  const futureMonthlySpend = (Number(monthlySpend) || 0) * Math.pow(1 + inflation, yearsLeft)
-  const corpusNeeded       = futureMonthlySpend * 12 * retirementYears
+  const plannedAge = Number(retireAge) || 40
+  const plannedYearsLeft = yearsUntilAge(currentAge, plannedAge)
+  const plannedRetirementYears = Math.max((Number(planUntilAge) || 85) - plannedAge, 0)
+  const plannedFutureMonthlySpend = (Number(monthlySpend) || 0) * Math.pow(1 + inflation, plannedYearsLeft)
+  const plannedCorpusNeeded = plannedFutureMonthlySpend * 12 * plannedRetirementYears
+
+  const minRetireAge = useMemo(
+    () => solveMinRetireAge(
+          summary.value, investMonthly, annualRate, inflation,
+          currentAge, plannedAge, Number(planUntilAge) || 85,
+          Number(monthlySpend) || 0,
+        ),
+    [summary.value, investMonthly, annualRate, inflation, currentAge, plannedAge, planUntilAge, monthlySpend],
+  )
+
+  const earliestRetireAge = useMemo(
+    () => solveEarliestRetireAge(
+          summary.value, investMonthly, annualRate, inflation,
+          currentAge, plannedAge, Number(planUntilAge) || 85,
+          Number(monthlySpend) || 0,
+        ),
+    [summary.value, investMonthly, annualRate, inflation, currentAge, plannedAge, planUntilAge, monthlySpend],
+  )
+
+  const couldRetireAge = useMemo(() => {
+    if (earliestRetireAge !== null) {
+      return {
+        label: 'Could retire at',
+        value: String(earliestRetireAge),
+        highlight: earliestRetireAge <= plannedAge ? 'gain' as const : 'loss' as const,
+      }
+    }
+    if (minRetireAge !== null) {
+      return { label: 'Could retire at', value: String(minRetireAge), highlight: 'loss' as const }
+    }
+    return { label: 'Could retire at', value: plannedAge > 0 ? String(plannedAge) : '—', highlight: 'loss' as const }
+  }, [earliestRetireAge, minRetireAge, plannedAge])
+
+  const yearsLeft = plannedYearsLeft
+  const retirementYears = plannedRetirementYears
+  const futureMonthlySpend = plannedFutureMonthlySpend
+  const corpusNeeded = plannedCorpusNeeded
 
   const investLine  = useMemo(
-    () => compoundGrowWithAnnualIncrease(summary.value, investMonthly, annualRate, yearsLeft, annualSavingsIncreaseAmount),
-    [summary.value, investMonthly, annualRate, yearsLeft, annualSavingsIncreaseAmount]
+    () => compoundGrowWithAnnualIncrease(summary.value, investMonthly, annualRate, yearsLeft, annualSavingsGrowthRate),
+    [summary.value, investMonthly, annualRate, yearsLeft, annualSavingsGrowthRate]
   )
   const savingsLine = useMemo(
-    () => linearGrowWithAnnualIncrease(investMonthly, yearsLeft, annualSavingsIncreaseAmount),
-    [investMonthly, yearsLeft, annualSavingsIncreaseAmount]
+    () => linearGrowWithAnnualIncrease(investMonthly, yearsLeft, annualSavingsGrowthRate),
+    [investMonthly, yearsLeft, annualSavingsGrowthRate]
   )
 
   const projectedInvestment = investLine[investLine.length - 1] ?? 0
   const projectedSavings    = savingsLine[savingsLine.length - 1] ?? 0
   const gap                 = projectedInvestment - corpusNeeded
   const onTrack             = gap >= 0
-  const annualInvestment    = investMonthly * 12
 
   const minRate = useMemo(
-    () => corpusNeeded > 0 && yearsLeft > 0 ? solveMinRate(summary.value, investMonthly, yearsLeft, corpusNeeded) : null,
-    [summary.value, investMonthly, yearsLeft, corpusNeeded],
+    () => plannedCorpusNeeded > 0 && plannedYearsLeft > 0 ? solveMinRate(summary.value, investMonthly, plannedYearsLeft, plannedCorpusNeeded) : null,
+    [summary.value, investMonthly, plannedYearsLeft, plannedCorpusNeeded],
   )
   const rateGap = minRate !== null ? annualRate - minRate : null
 
   const monthlyGap = useMemo(
-    () => !onTrack && corpusNeeded > 0 && yearsLeft > 0
-      ? solveMonthlyGap(summary.value, investMonthly, annualRate, yearsLeft, corpusNeeded)
+    () => !onTrack && plannedCorpusNeeded > 0 && plannedYearsLeft > 0
+      ? solveMonthlyGap(summary.value, investMonthly, annualRate, plannedYearsLeft, plannedCorpusNeeded)
       : null,
-    [onTrack, summary.value, investMonthly, annualRate, yearsLeft, corpusNeeded],
-  )
-  const annualGap = monthlyGap !== null ? monthlyGap * 12 : null
-
-  const minRetireAge = useMemo(
-    () => !onTrack && corpusNeeded > 0
-      ? solveMinRetireAge(
-          summary.value, investMonthly, annualRate, inflation,
-          currentAge, Number(retireAge) || 40, Number(planUntilAge) || 85,
-          Number(monthlySpend) || 0,
-        )
-      : null,
-    [onTrack, summary.value, investMonthly, annualRate, inflation, currentAge, retireAge, planUntilAge, monthlySpend],
+    [onTrack, summary.value, investMonthly, annualRate, plannedYearsLeft, plannedCorpusNeeded],
   )
 
   // ── Persist settings ──
@@ -315,7 +354,7 @@ export function Retirement() {
         expectedReturn: annualRate,
         birthDate,
         monthlyInvest:  Number(monthlyInvestField) > 0 ? Number(monthlyInvestField) : undefined,
-        annualSavingsIncrease: Number(annualSavingsIncrease) > 0 ? Number(annualSavingsIncrease) : undefined,
+        annualSavingsGrowth: Number(annualSavingsGrowth) > 0 ? Number(annualSavingsGrowth) / 100 : undefined,
       })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -379,23 +418,23 @@ export function Retirement() {
                 min={Number(retireAge) + 1}
               />
             </div>
-            <NumberField
-              label="Monthly investment"
-              prefix="฿"
-              hint={dcaMonthly > 0 ? `Auto from DCA plans: ฿${dcaMonthly.toLocaleString()}` : 'From your DCA plans'}
-              value={monthlyInvestField}
-              onChange={setMonthlyInvestField}
-              placeholder={dcaMonthly > 0 ? String(dcaMonthly) : '0'}
-            />
-            <NumberField
-              label="Savings increase per year"
-              prefix="฿"
-              hint="เพิ่มเงินออมต่อปี (THB)"
-              value={annualSavingsIncrease}
-              onChange={setAnnualSavingsIncrease}
-              placeholder="0"
-              min={0}
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <NumberField
+                label="Monthly investment"
+                prefix="฿"
+                value={monthlyInvestField}
+                onChange={setMonthlyInvestField}
+                placeholder={dcaMonthly > 0 ? String(dcaMonthly) : '0'}
+              />
+              <NumberField
+                label="Savings increase per year"
+                suffix="%"
+                value={annualSavingsGrowth}
+                onChange={setAnnualSavingsGrowth}
+                placeholder="0"
+                min={0}
+              />
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <NumberField
                 label="Expected return"
@@ -419,6 +458,7 @@ export function Retirement() {
           {/* Summary: simplified per user request */}
           <div className="mt-5 rounded-2xl bg-surface-muted px-4 py-3 space-y-2">
             <Row label="Years to retirement"  value={`${yearsLeft} yr${yearsLeft !== 1 ? 's' : ''}`} />
+            <Row label={couldRetireAge.label} value={couldRetireAge.value} highlight={couldRetireAge.highlight} />
             <Row label="Years in retirement"  value={`${retirementYears} yr${retirementYears !== 1 ? 's' : ''}`} />
             {Number(monthlySpend) > 0 && (
               <Row
@@ -573,7 +613,7 @@ export function Retirement() {
               {yTicks.map(({ v, y }) => (
                 <g key={v}>
                   <line x1={padL} y1={y} x2={chartW - padR} y2={y} stroke="var(--color-line)" strokeWidth={1} />
-                  <text x={padL - 6} y={y + 4} textAnchor="end" fontSize={11} fill="var(--color-ink-muted)">
+                  <text x={padL - 8} y={y + 4} textAnchor="end" fontSize={14} fill="var(--color-ink-muted)">
                     {thbCompact(v)}
                   </text>
                 </g>
@@ -581,18 +621,23 @@ export function Retirement() {
               {investLine.map((_, i) => {
                 if (i % Math.max(Math.floor(yearsLeft / 5), 1) !== 0 && i !== yearsLeft) return null
                 return (
-                  <text key={i} x={toX(i, investLine.length)} y={chartH - padB + 16}
-                    textAnchor="middle" fontSize={11} fill="var(--color-ink-muted)">
+                  <text key={i} x={toX(i, investLine.length)} y={chartH - padB + 18}
+                    textAnchor="middle" fontSize={15} fill="var(--color-ink-muted)">
                     {currentAge + i}
                   </text>
                 )
               })}
+              <line x1={toX(investLine.length - 1, investLine.length)} x2={toX(investLine.length - 1, investLine.length)}
+                y1={padT} y2={chartH - padB} stroke="var(--color-line)" strokeWidth={1} strokeDasharray="4 3" opacity={0.45} />
+              <text x={(padL + chartW - padR) / 2} y={chartH - 4} textAnchor="middle" fontSize={14} fill="var(--color-ink-muted">
+                Age
+              </text>
               {corpusNeeded > 0 && corpusNeeded <= maxY && (
                 <>
                   <line x1={padL} y1={toY(corpusNeeded)} x2={chartW - padR} y2={toY(corpusNeeded)}
                     stroke={C_TARGET} strokeWidth={1.5} strokeDasharray="5 4" opacity={0.6} />
                   <text x={chartW - padR - 2} y={toY(corpusNeeded) - 4}
-                    textAnchor="end" fontSize={11} fill={C_TARGET} opacity={0.8}>
+                    textAnchor="end" fontSize={12} fill={C_TARGET} opacity={0.8}>
                     Target {thbCompact(corpusNeeded)}
                   </text>
                 </>

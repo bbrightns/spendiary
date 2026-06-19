@@ -53,8 +53,8 @@ export interface RetirementSettings {
   birthDate?: string
   /** Monthly investment override — defaults to sum of DCA plans if not set */
   monthlyInvest?: number
-  /** Annual absolute increase to monthly savings, in THB (e.g. 12000 = add ฿12,000 per year) */
-  annualSavingsIncrease?: number
+  /** Annual growth rate for savings/investment, as decimal (e.g. 0.05 for 5%) */
+  annualSavingsGrowth?: number
 }
 
 export type DcaFrequency = 'daily' | 'weekly' | 'monthly'
