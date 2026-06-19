@@ -95,7 +95,7 @@ export function TransferForm({ open, editing, onClose }: Props) {
           onChange={(note) => setForm((f) => ({ ...f, note }))}
           placeholder="Standing allowance"
         />
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 ">
           <NumberField
             label="Amount / transfer"
             prefix="฿"
@@ -116,7 +116,7 @@ export function TransferForm({ open, editing, onClose }: Props) {
             ]}
           />
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 ">
           <NumberField
             label="Completed"
             value={form.completed}
@@ -157,3 +157,4 @@ export function TransferForm({ open, editing, onClose }: Props) {
     </Modal>
   )
 }
+

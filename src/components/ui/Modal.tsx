@@ -73,7 +73,7 @@ export function Modal({ open, onClose, title, description, children }: ModalProp
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center ">
       <div
         className="absolute inset-0 bg-ink/35 dark:bg-black/60 backdrop-blur-sm"
         style={{ animation: 'fadeIn 0.2s ease both' }}
@@ -85,10 +85,10 @@ export function Modal({ open, onClose, title, description, children }: ModalProp
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-[var(--shadow-lift)] sm:m-4 sm:max-w-[520px] sm:rounded-[28px]"
+        className="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-[var(--shadow-lift)]   "
         style={{ animation: 'sheetUp 0.32s cubic-bezier(0.16,1,0.3,1) both' }}
       >
-        <div className="flex items-start justify-between gap-4 px-6 pb-3 pt-7 sm:px-7">
+        <div className="flex items-start justify-between gap-4 px-6 pb-3 pt-7 ">
           <div>
             <h2 className="font-display text-[20px] font-extrabold tracking-tight text-ink">{title}</h2>
             {description && <p className="mt-0.5 text-[13px] text-ink-muted">{description}</p>}
@@ -101,11 +101,12 @@ export function Modal({ open, onClose, title, description, children }: ModalProp
             <CloseIcon className="h-[18px] w-[18px]" />
           </button>
         </div>
-        <div className="no-scrollbar overflow-y-auto px-6 pt-3 sm:px-7">
+        <div className="no-scrollbar overflow-y-auto px-6 pt-3 ">
           {children}
-          <div className="h-8 sm:h-9 safe-bottom" />
+          <div className="h-8  safe-bottom" />
         </div>
       </div>
     </div>
   )
 }
+

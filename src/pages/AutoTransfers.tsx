@@ -65,7 +65,7 @@ export function AutoTransfers() {
         action={<AddButton onClick={openAdd} label="Add transfer" />}
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 ">
         <StatCard
           label="Active Schedules"
           value={String(active.length)}
@@ -109,7 +109,7 @@ export function AutoTransfers() {
       )}
 
       {/* Transfer cards */}
-      <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="mt-5 grid grid-cols-1 gap-4 ">
         {enriched.map((t) => (
           <TransferCard key={t.id} transfer={t} days={t.days} onEdit={() => openEdit(t)} />
         ))}
@@ -218,3 +218,4 @@ function Status({ done, soon, days }: { done: boolean; soon: boolean; days: numb
     </span>
   )
 }
+

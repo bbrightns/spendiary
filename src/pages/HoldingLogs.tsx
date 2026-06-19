@@ -118,7 +118,7 @@ export function HoldingLogs() {
               <Card padded={false}>
                 <ul className="divide-y divide-line">
                   {group.entries.map((log) => (
-                    <li key={log.id} className="flex items-start gap-3 px-5 py-3.5 sm:px-6">
+                    <li key={log.id} className="flex items-start gap-3 px-5 py-3.5 ">
                       <span
                         className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl text-[12px] font-bold"
                         style={{
@@ -151,3 +151,4 @@ export function HoldingLogs() {
     </>
   )
 }
+

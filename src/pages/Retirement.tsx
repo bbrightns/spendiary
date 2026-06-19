@@ -298,7 +298,7 @@ export function Retirement() {
         subtitle={`Age ${currentAge} · ${yearsLeft} year${yearsLeft !== 1 ? 's' : ''} to retirement`}
       />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 ">
 
         {/* ── Left: Inputs ── */}
         <Card className="animate-rise">
@@ -398,7 +398,7 @@ export function Retirement() {
         </Card>
 
         {/* ── Right: Chart ── */}
-        <Card className="lg:col-span-2 animate-rise">
+        <Card className=" animate-rise">
 
           {/* Hero stats row */}
           <div className="mb-5">
@@ -502,7 +502,7 @@ export function Retirement() {
           </div>
 
           {/* Mobile view toggle */}
-          <div className="sm:hidden flex gap-1 mb-4">
+          <div className=" flex gap-1 mb-4">
             {(['chart', 'bars'] as const).map((v) => (
               <button
                 key={v}
@@ -518,7 +518,7 @@ export function Retirement() {
 
           {/* Mobile bars */}
           {mobileView === 'bars' && (
-            <div className="sm:hidden mb-3">
+            <div className=" mb-3">
               <MobileProjection
                 projectedInvestment={projectedInvestment}
                 projectedSavings={projectedSavings}
@@ -529,7 +529,7 @@ export function Retirement() {
           )}
 
           {/* SVG line chart */}
-          <div className={`overflow-x-auto ${mobileView === 'bars' ? 'hidden sm:block' : ''}`}>
+          <div className={`overflow-x-auto ${mobileView === 'bars' ? 'hidden ' : ''}`}>
             <svg
               style={{ minWidth: 320 }}
               role="img"
@@ -573,7 +573,7 @@ export function Retirement() {
           </div>
 
           {/* Legend */}
-          <div className={`mt-3 flex flex-wrap gap-4 ${mobileView === 'bars' ? 'hidden sm:flex' : ''}`}>
+          <div className={`mt-3 flex flex-wrap gap-4 ${mobileView === 'bars' ? 'hidden ' : ''}`}>
             <LegendItem color={C_INVEST}  label={`With returns (${thbCompact(projectedInvestment)} projected)`} />
             <LegendItem color={C_SAVINGS} label={`Contributions only (${thbCompact(projectedSavings)} projected)`} />
             {corpusNeeded > 0 && <LegendItem color={C_TARGET} label={`Target corpus (${thbCompact(corpusNeeded)})`} dashed />}
@@ -583,3 +583,4 @@ export function Retirement() {
     </>
   )
 }
+

@@ -150,7 +150,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
             />
           )}
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 ">
             <NumberField
               label="Grams bought"
               value={goldGrams}
@@ -274,7 +274,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
             />
           )}
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 ">
             <NumberField
               label="Satoshi bought"
               value={satoshi}
@@ -377,7 +377,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 ">
           <NumberField
             label={`${label} bought`}
             value={units}
@@ -435,3 +435,4 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
     </Modal>
   )
 }
+

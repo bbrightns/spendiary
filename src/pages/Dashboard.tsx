@@ -144,7 +144,7 @@ export function Dashboard() {
               <WalletIcon className="h-4 w-4" />
               <span className="text-[13px] font-medium">Total Net Worth</span>
             </div>
-            <p className="mt-3 font-display text-[40px] font-extrabold leading-none tracking-tight tnum sm:text-[52px]">
+            <p className="mt-3 font-display text-[40px] font-extrabold leading-none tracking-tight tnum ">
               {thb(nw)}
             </p>
             <div className="mt-4 flex items-center gap-2.5">
@@ -205,7 +205,7 @@ export function Dashboard() {
       )}
 
       {/* Metric tiles */}
-      <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-5 grid grid-cols-1 gap-4  ">
         <StatCard
           label="Portfolio Value"
           value={thb(portfolio.value)}
@@ -238,7 +238,7 @@ export function Dashboard() {
           accent="var(--color-cash)"
           editable
           onClick={() => setCashOpen(true)}
-          className="sm:col-span-2 xl:col-span-3"
+          className=" "
           footer={
             data.cashAccounts.length > 0 ? (
               <div className="space-y-2.5">
@@ -272,9 +272,9 @@ export function Dashboard() {
         />
       </div>
 
-      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-5">
+      <div className="mt-5 grid grid-cols-1 gap-4 ">
         {/* DCA progress */}
-        <Card className={`animate-rise ${upcoming.length > 0 ? 'lg:col-span-2' : 'lg:col-span-5'}`}>
+        <Card className={`animate-rise ${upcoming.length > 0 ? '' : ''}`}>
           <div className="flex items-center justify-between">
             <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">This Month's DCA</h2>
             <Link to="/dca" className="text-[13px] font-semibold text-brand hover:underline" aria-label="View DCA planner">
@@ -305,8 +305,8 @@ export function Dashboard() {
 
         {/* Upcoming expirations — hidden entirely when empty */}
         {upcoming.length > 0 && (
-          <Card className="lg:col-span-3 animate-rise" padded={false}>
-            <div className="flex items-center justify-between px-5 pt-5 sm:px-6 sm:pt-6">
+          <Card className=" animate-rise" padded={false}>
+            <div className="flex items-center justify-between px-5 pt-5  ">
               <div>
                 <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">Upcoming Expirations</h2>
                 <p className="text-[13px] text-ink-muted">Transfer schedules ending soon</p>
@@ -319,7 +319,7 @@ export function Dashboard() {
               {upcoming.map((t) => {
                 const soon = t.days <= 14
                 return (
-                  <li key={t.id} className="flex items-center gap-3 px-5 py-3.5 sm:px-6">
+                  <li key={t.id} className="flex items-center gap-3 px-5 py-3.5 ">
                     <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${soon ? 'bg-warn-soft text-warn' : 'bg-surface-muted text-ink-soft'}`}>
                       {soon ? <AlertIcon className="h-[18px] w-[18px]" /> : <ClockIcon className="h-[18px] w-[18px]" />}
                     </span>
@@ -384,7 +384,7 @@ function NetWorthChart({ history }: { history: NetWorthSnapshot[] }) {
   const todayLabel = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
   return (
     <Card className="mt-5 animate-rise overflow-hidden" padded={false}>
-      <div className="flex items-center justify-between px-5 pt-5 sm:px-6 sm:pt-5">
+      <div className="flex items-center justify-between px-5 pt-5  ">
         <div>
           <h2 className="font-display text-[15px] font-bold text-ink">Net Worth History</h2>
           <p className="text-[12.5px] text-ink-muted">{history.length} snapshots · since {startDate}</p>
@@ -394,7 +394,7 @@ function NetWorthChart({ history }: { history: NetWorthSnapshot[] }) {
           <span className="text-[11px] font-medium opacity-70">from start</span>
         </div>
       </div>
-      <div className="relative px-5 pb-4 pt-3 sm:px-6">
+      <div className="relative px-5 pb-4 pt-3 ">
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 88, display: 'block' }} aria-hidden>
           <defs>
             <linearGradient id="nwg" x1="0" y1="0" x2="0" y2="1">
@@ -441,3 +441,4 @@ function Row({
     </div>
   )
 }
+

@@ -191,9 +191,9 @@ export function Portfolio() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 ">
         {/* Allocation chart */}
-        <Card className="lg:col-span-2 animate-rise">
+        <Card className=" animate-rise">
           <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">Asset Allocation</h2>
           <div className="mt-5 flex flex-col items-center gap-6">
             <DonutChart
@@ -225,9 +225,9 @@ export function Portfolio() {
         </Card>
 
         {/* Performance summary + holdings list */}
-        <Card className="lg:col-span-3 animate-rise overflow-hidden" padded={false}>
+        <Card className=" animate-rise overflow-hidden" padded={false}>
           {/* Summary metrics */}
-          <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 p-5 sm:p-6 sm:pb-0">
+          <div className="grid grid-cols-2 gap-5  p-5  ">
             <Metric label="Current Value" value={thb(summary.value)} />
             <Metric label="Amount Invested" value={thb(summary.cost)} muted />
             <Metric
@@ -239,7 +239,7 @@ export function Portfolio() {
 
           {/* Holdings list */}
           <div className="mt-6 border-t border-line pt-5">
-            <div className="px-5 sm:px-6">
+            <div className="px-5 ">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="font-display text-[15px] font-bold text-ink">
                   Holdings
@@ -391,7 +391,7 @@ export function Portfolio() {
                       onClick={rowClick}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rowClick() } }}
                       aria-label={isExpandable ? (isExpanded ? `Collapse ${h.name}` : `Expand ${h.name}`) : `Edit ${h.name}`}
-                      className="flex sm:hidden cursor-pointer items-center gap-3 px-5 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                      className="flex  cursor-pointer items-center gap-3 px-5 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                     >
                       {badge}
                       <div className="min-w-0 flex-1">
@@ -419,7 +419,7 @@ export function Portfolio() {
                       onClick={rowClick}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rowClick() } }}
                       aria-label={isExpandable ? (isExpanded ? `Collapse ${h.name}` : `Expand ${h.name}`) : `Edit ${h.name}`}
-                      className="hidden sm:flex cursor-pointer items-center gap-3 px-6 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                      className="hidden  cursor-pointer items-center gap-3 px-6 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                     >
                       {badge}
                       <div className="min-w-0 flex-1">
@@ -445,7 +445,7 @@ export function Portfolio() {
 
                     {/* BTC / Gold sub-breakdown panel */}
                     {isExpandable && isExpanded && (
-                      <div className="border-t border-line bg-surface-muted px-5 pb-3.5 pt-2.5 sm:px-6">
+                      <div className="border-t border-line bg-surface-muted px-5 pb-3.5 pt-2.5 ">
                         <p className="mb-2 text-[12px] font-semibold text-ink-muted">Locations</p>
 
                         {isBtc && (
@@ -534,7 +534,7 @@ export function Portfolio() {
             placeholder="e.g. Ledger"
             error={locErrors && !locName.trim() ? 'Required' : undefined}
           />
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 ">
             <NumberField
               label="Satoshi"
               value={locSatoshi}
@@ -631,3 +631,4 @@ function Metric({
     </div>
   )
 }
+

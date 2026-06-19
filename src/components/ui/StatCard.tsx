@@ -50,7 +50,7 @@ export function StatCard({
       </div>
       <p
         className={`mt-4 font-display font-extrabold tracking-tight tnum text-ink ${
-          emphasis ? 'text-[30px] sm:text-[36px]' : 'text-[24px] sm:text-[27px]'
+          emphasis ? 'text-[30px] ' : 'text-[24px] '
         }`}
       >
         {value}
@@ -59,3 +59,4 @@ export function StatCard({
     </Card>
   )
 }
+

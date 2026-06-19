@@ -9,14 +9,14 @@ interface PageHeaderProps {
 
 export function PageHeader({ eyebrow, title, subtitle, action }: PageHeaderProps) {
   return (
-    <header className="mb-6 flex flex-wrap items-end justify-between gap-4 sm:mb-8">
+    <header className="mb-6 flex flex-wrap items-end justify-between gap-4 ">
       <div>
         {eyebrow && (
           <p className="mb-1 text-[12px] font-semibold uppercase tracking-[0.08em] text-brand">
             {eyebrow}
           </p>
         )}
-        <h1 className="font-display text-[27px] font-extrabold leading-none tracking-tight text-ink sm:text-[34px] [text-wrap:balance]">
+        <h1 className="font-display text-[27px] font-extrabold leading-none tracking-tight text-ink  [text-wrap:balance]">
           {title}
         </h1>
         {subtitle && <p className="mt-2 text-[14.5px] text-ink-muted">{subtitle}</p>}
@@ -25,3 +25,4 @@ export function PageHeader({ eyebrow, title, subtitle, action }: PageHeaderProps
     </header>
   )
 }
+

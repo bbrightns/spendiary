@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
-import { Sidebar } from './Sidebar'
 import { BottomNav } from './BottomNav'
 import { SettingsIcon, SparkleIcon } from '../icons'
 
@@ -15,10 +14,8 @@ export function Layout({ children }: { children: ReactNode }) {
         Skip to content
       </a>
 
-      <Sidebar />
-
       {/* Mobile top brand bar */}
-      <div className="sticky top-0 z-20 flex items-center gap-2.5 border-b border-line bg-canvas/80 px-5 py-3.5 backdrop-blur-xl lg:hidden">
+      <div className="sticky top-0 z-20 flex items-center gap-2.5 border-b border-line bg-canvas/80 px-5 py-3.5 backdrop-blur-xl ">
         <div className="grid h-8 w-8 place-items-center rounded-lg bg-ink text-white dark:bg-brand-soft dark:text-brand">
           <SparkleIcon className="h-[18px] w-[18px]" strokeWidth={1.8} />
         </div>
@@ -39,8 +36,8 @@ export function Layout({ children }: { children: ReactNode }) {
         </NavLink>
       </div>
 
-      <main id="main-content" className="lg:pl-[252px]">
-        <div className="mx-auto w-full max-w-[1080px] px-5 pb-28 pt-6 sm:px-8 sm:pt-10 lg:pb-14">
+      <main id="main-content" className="">
+        <div className="mx-auto w-full max-w-[1080px] px-5 pb-28 pt-6   ">
           {children}
         </div>
       </main>
@@ -49,3 +46,4 @@ export function Layout({ children }: { children: ReactNode }) {
     </div>
   )
 }
+

@@ -16,7 +16,7 @@ export function Card({ children, padded = true, hover = false, className, ...res
       className={cx(
         'rounded-[var(--radius-card)] bg-surface border border-line shadow-[var(--shadow-soft)]',
         hover && 'transition-shadow duration-300 hover:shadow-[var(--shadow-lift)]',
-        padded && 'p-5 sm:p-6',
+        padded && 'p-5 ',
         className,
       )}
       {...rest}
@@ -25,3 +25,4 @@ export function Card({ children, padded = true, hover = false, className, ...res
     </div>
   )
 }
+

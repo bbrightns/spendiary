@@ -274,7 +274,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
               placeholder="e.g. Ledger, Binance, Trezor"
               error={showErrors && !locationName.trim() ? 'Location is required' : undefined}
             />
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 ">
               <NumberField
                 label="Satoshi bought"
                 value={satoshi}
@@ -327,7 +327,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
               placeholder="0"
               step={0.00000001}
             />
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 ">
               <NumberField
                 label="Avg cost / BTC"
                 prefix="฿"
@@ -365,7 +365,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
               placeholder="e.g. Home safe, Bank vault, Hua Seng Heng"
               error={showErrors && !goldLocationName.trim() ? 'Location is required' : undefined}
             />
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 ">
               <NumberField
                 label="Grams bought"
                 value={grams}
@@ -418,7 +418,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
               placeholder="0"
               step={0.01}
             />
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 ">
               <NumberField
                 label="Avg cost / gram"
                 prefix="฿"
@@ -461,7 +461,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
               placeholder="0"
               step={0.0001}
             />
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 ">
               <NumberField
                 label="Avg cost / unit"
                 prefix={isUsd ? '$' : '฿'}
@@ -515,3 +515,4 @@ export function HoldingForm({ open, editing, onClose }: Props) {
     </Modal>
   )
 }
+

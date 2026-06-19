@@ -377,7 +377,7 @@ export function DcaPlanner() {
 
       {/* ── Savings & Invest ── */}
       <Card className="mt-4 animate-rise overflow-hidden" padded={false}>
-        <div className="p-5 sm:p-6 sm:pb-0">
+        <div className="p-5  ">
           <SectionHeader
             label="Savings & Invest"
             total={savingsTotal}
@@ -443,7 +443,7 @@ export function DcaPlanner() {
                           onClick={() => openEdit(p)}
                           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(p) } }}
                           aria-label={`Edit ${p.name}`}
-                          className="flex sm:hidden cursor-pointer items-center gap-3 px-5 py-3.5 transition-colors hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                          className="flex  cursor-pointer items-center gap-3 px-5 py-3.5 transition-colors hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                         >
                           <span
                             className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
@@ -507,7 +507,7 @@ export function DcaPlanner() {
                           onClick={() => openEdit(p)}
                           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(p) } }}
                           aria-label={`Edit ${p.name}`}
-                          className="hidden sm:flex cursor-pointer items-center gap-3 px-6 py-3.5 transition-colors hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                          className="hidden  cursor-pointer items-center gap-3 px-6 py-3.5 transition-colors hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                         >
                           <span
                             className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
@@ -572,7 +572,7 @@ export function DcaPlanner() {
 
               {/* Footer */}
               {plans.length > 0 && (
-                <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-line pt-4 pb-5 px-5 sm:px-6">
+                <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-line pt-4 pb-5 px-5 ">
                   <div>
                     <p className="text-[12px] text-ink-muted">Total savings</p>
                     <p className="font-display text-[18px] font-extrabold tnum text-ink">{thb(savingsTotal)}</p>
@@ -617,3 +617,4 @@ function freqLabel(p: { frequency?: string; dayOfMonth: number }): string {
   if (freq === 'weekly') return `Every ${WEEKDAY_NAMES[p.dayOfMonth] ?? 'week'}`
   return `Buys on the ${ordinal(p.dayOfMonth)}`
 }
+
