@@ -176,6 +176,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const dataRef = useRef(data)
   dataRef.current = data
 
+  // A wrapper for setDataState that automatically adds/updates lastUpdatedAt.
+  const updateData = (next: SpendiaryData | ((prev: SpendiaryData) => SpendiaryData)) => {
+    setDataState((prev) => {
+      const resolved = typeof next === 'function' ? next(prev) : next
+      return {
+        ...resolved,
+        lastUpdatedAt: Date.now(),
+      }
+    })
+  }
+
   // ── Persist to localStorage + rolling backup ─────────────────
   useEffect(() => {
     try {
@@ -190,10 +201,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // ── Load from Cloudflare on first mount ──────────────────────
   useEffect(() => {
     if (!API_ENABLED) return
+    let isMounted = true
+
     fetch(`${API_URL}/api/data`, { headers: apiHeaders() })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((remote) => {
-        if (remote && typeof remote === 'object' && !Array.isArray(remote)) {
+      .then((r) => {
+        if (r.ok) {
+          return r.json().then((payload) => ({ payload, status: r.status }))
+        }
+        return { payload: null, status: r.status }
+      })
+      .then(({ payload: remote, status }) => {
+        if (!isMounted) return
+
+        if (status === 200 && remote && typeof remote === 'object' && !Array.isArray(remote)) {
           const migrated = migrate(remote as SpendiaryData)
           const migratedStr = JSON.stringify(migrated)
           const currentStr = JSON.stringify(dataRef.current)
@@ -211,6 +231,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
           if (!cloudHasData && localHasData) {
             // Cloud is empty but local has data — keep local, will sync up.
             lastSynced.current = ''
+            syncReady.current = true
+            return
+          }
+
+          // If local data is newer than cloud data AND local has data, keep local.
+          const localTime = dataRef.current.lastUpdatedAt ?? 0
+          const cloudTime = migrated.lastUpdatedAt ?? 0
+          if (localTime > cloudTime && localHasData) {
+            lastSynced.current = ''
+            syncReady.current = true
             return
           }
 
@@ -218,15 +248,31 @@ export function DataProvider({ children }: { children: ReactNode }) {
           // changes and let the debounced PUT sync them to cloud instead.
           if (currentStr !== mountSnapshot.current) {
             lastSynced.current = ''
+            syncReady.current = true
           } else {
             // No local changes — safe to load cloud data.
             lastSynced.current = migratedStr
             setDataState(migrated)
+            syncReady.current = true
           }
+        } else if (status === 404) {
+          // Cloud is empty — safe to upload local data.
+          lastSynced.current = ''
+          syncReady.current = true
+        } else {
+          // Other status (e.g. 500 or auth error) — keep local but do NOT set syncReady
+          setSyncStatus('error')
         }
       })
-      .catch(() => { /* network error — keep localStorage data */ })
-      .finally(() => { syncReady.current = true })
+      .catch(() => {
+        if (!isMounted) return
+        /* network error — keep localStorage data and do NOT set syncReady */
+        setSyncStatus('error')
+      })
+
+    return () => {
+      isMounted = false
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -260,36 +306,36 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const value = useMemo<DataContextValue>(
     () => ({
       data,
-      setData: setDataState,
+      setData: updateData,
       loadSample: () => {},
-      clearAll: () => setDataState(emptyData),
+      clearAll: () => updateData(emptyData),
       syncStatus,
       lastSyncedAt,
       usdThb,
       setUsdThb,
-      setCashAccounts: (cashAccounts) => setDataState((prev) => ({ ...prev, cashAccounts })),
-      setMonthlyIncome: (monthlyIncome) => setDataState((prev) => ({ ...prev, monthlyIncome })),
-      setUserName: (userName) => setDataState((prev) => ({ ...prev, userName })),
-      setMonthlyFixedCost: (monthlyFixedCost) => setDataState((prev) => ({ ...prev, monthlyFixedCost })),
+      setCashAccounts: (cashAccounts) => updateData((prev) => ({ ...prev, cashAccounts })),
+      setMonthlyIncome: (monthlyIncome) => updateData((prev) => ({ ...prev, monthlyIncome })),
+      setUserName: (userName) => updateData((prev) => ({ ...prev, userName })),
+      setMonthlyFixedCost: (monthlyFixedCost) => updateData((prev) => ({ ...prev, monthlyFixedCost })),
       upsertFixedCostItem: (item) =>
-        setDataState((prev) => ({ ...prev, fixedCostItems: upsert(prev.fixedCostItems ?? [], item) })),
+        updateData((prev) => ({ ...prev, fixedCostItems: upsert(prev.fixedCostItems ?? [], item) })),
       removeFixedCostItem: (id) =>
-        setDataState((prev) => ({ ...prev, fixedCostItems: (prev.fixedCostItems ?? []).filter((x) => x.id !== id) })),
-      setMonthlyPersonal: (monthlyPersonal) => setDataState((prev) => ({ ...prev, monthlyPersonal })),
+        updateData((prev) => ({ ...prev, fixedCostItems: (prev.fixedCostItems ?? []).filter((x) => x.id !== id) })),
+      setMonthlyPersonal: (monthlyPersonal) => updateData((prev) => ({ ...prev, monthlyPersonal })),
 
       upsertHolding: (holding) =>
-        setDataState((prev) => ({ ...prev, holdings: upsert(prev.holdings, holding) })),
+        updateData((prev) => ({ ...prev, holdings: upsert(prev.holdings, holding) })),
       removeHolding: (id) =>
-        setDataState((prev) => ({ ...prev, holdings: prev.holdings.filter((h) => h.id !== id) })),
+        updateData((prev) => ({ ...prev, holdings: prev.holdings.filter((h) => h.id !== id) })),
 
       reorderHoldings: (ids) =>
-        setDataState((prev) => ({
+        updateData((prev) => ({
           ...prev,
           holdings: ids.map((id) => prev.holdings.find((h) => h.id === id)!).filter(Boolean),
         })),
 
       addHoldingLog: (log) =>
-        setDataState((prev) => ({
+        updateData((prev) => ({
           ...prev,
           holdingLogs: [
             { ...log, id: newId(), timestamp: new Date().toISOString() },
@@ -298,12 +344,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         })),
 
       upsertPlan: (plan) =>
-        setDataState((prev) => ({ ...prev, dcaPlans: upsert(prev.dcaPlans, plan) })),
+        updateData((prev) => ({ ...prev, dcaPlans: upsert(prev.dcaPlans, plan) })),
       removePlan: (id) =>
-        setDataState((prev) => ({ ...prev, dcaPlans: prev.dcaPlans.filter((p) => p.id !== id) })),
+        updateData((prev) => ({ ...prev, dcaPlans: prev.dcaPlans.filter((p) => p.id !== id) })),
 
       confirmDcaBuy: (planId, pricePerUnit, date) =>
-        setDataState((prev) => {
+        updateData((prev) => {
           const plan = prev.dcaPlans.find((p) => p.id === planId)
           if (!plan) return prev
 
@@ -361,7 +407,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }),
 
       skipDcaBuy: (planId, date) =>
-        setDataState((prev) => ({
+        updateData((prev) => ({
           ...prev,
           dcaPlans: prev.dcaPlans.map((p) =>
             p.id !== planId ? p : {
@@ -372,15 +418,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
         })),
 
       upsertTransfer: (transfer) =>
-        setDataState((prev) => ({ ...prev, transfers: upsert(prev.transfers, transfer) })),
+        updateData((prev) => ({ ...prev, transfers: upsert(prev.transfers, transfer) })),
       removeTransfer: (id) =>
-        setDataState((prev) => ({ ...prev, transfers: prev.transfers.filter((t) => t.id !== id) })),
+        updateData((prev) => ({ ...prev, transfers: prev.transfers.filter((t) => t.id !== id) })),
 
       setRetirement: (retirement) =>
-        setDataState((prev) => ({ ...prev, retirement })),
+        updateData((prev) => ({ ...prev, retirement })),
 
       recordNetWorthSnapshot: (value) =>
-        setDataState((prev) => {
+        updateData((prev) => {
           if (value <= 0) return prev
           const today = localDateStr()
           const existing = prev.netWorthHistory ?? []
@@ -404,7 +450,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       },
 
       upsertBtcLocation: (holdingId, loc) =>
-        setDataState((prev) => ({
+        updateData((prev) => ({
           ...prev,
           holdings: prev.holdings.map((h) => {
             if (h.id !== holdingId) return h
@@ -418,7 +464,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         })),
 
       removeBtcLocation: (holdingId, locId) =>
-        setDataState((prev) => ({
+        updateData((prev) => ({
           ...prev,
           holdings: prev.holdings.map((h) => {
             if (h.id !== holdingId) return h
@@ -432,7 +478,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         })),
 
       upsertGoldLocation: (holdingId, loc) =>
-        setDataState((prev) => ({
+        updateData((prev) => ({
           ...prev,
           holdings: prev.holdings.map((h) => {
             if (h.id !== holdingId) return h
@@ -445,7 +491,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         })),
 
       removeGoldLocation: (holdingId, locId) =>
-        setDataState((prev) => ({
+        updateData((prev) => ({
           ...prev,
           holdings: prev.holdings.map((h) => {
             if (h.id !== holdingId) return h

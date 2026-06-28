@@ -153,4 +153,6 @@ export interface SpendiaryData {
   dcaPlans: DcaPlan[]
   transfers: Transfer[]
   retirement?: RetirementSettings
+  /** Timestamp in ms when this data was last modified locally */
+  lastUpdatedAt?: number
 }
