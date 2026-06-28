@@ -1,50 +1,11 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import type { User } from '@supabase/supabase-js'
+import { supabase } from '../lib/supabase'
 import type { BtcLocation, CashAccount, DcaPlan, FixedCostItem, GoldLocation, Holding, HoldingLog, NetWorthSnapshot, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
 import { localDateStr } from '../lib/format'
 
-const STORAGE_KEY = 'spendiary.data.v1'
-const BACKUP_KEY = 'spendiary.backup.v1'
-const MAX_BACKUPS = 5
-const BACKUP_INTERVAL_MS = 60 * 60 * 1000 // write a new snapshot at most once per hour
-
-export interface DataBackup {
-  savedAt: string // ISO timestamp
-  data: SpendiaryData
-}
-
-function readBackups(): DataBackup[] {
-  try {
-    const raw = localStorage.getItem(BACKUP_KEY)
-    if (raw) return JSON.parse(raw) as DataBackup[]
-  } catch { /* ignore */ }
-  return []
-}
-
-function writeBackup(data: SpendiaryData) {
-  try {
-    const backups = readBackups()
-    const lastSaved = backups[0] ? new Date(backups[0].savedAt).getTime() : 0
-    if (Date.now() - lastSaved < BACKUP_INTERVAL_MS) return // too soon
-    const next = [{ savedAt: new Date().toISOString(), data }, ...backups].slice(0, MAX_BACKUPS)
-    localStorage.setItem(BACKUP_KEY, JSON.stringify(next))
-  } catch { /* non-fatal */ }
-}
-
-// ── Cloud sync (optional) ─────────────────────────────────────────────────────
-// Set VITE_API_URL and VITE_API_TOKEN in .env.local to enable Cloudflare sync.
-// Without them the app works purely from localStorage (offline mode).
-const API_URL = import.meta.env.VITE_API_URL as string | undefined
-const API_TOKEN = import.meta.env.VITE_API_TOKEN as string | undefined
-const API_ENABLED = Boolean(API_URL && API_TOKEN)
-
-function apiHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${API_TOKEN}`,
-  }
-}
-
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
+
 
 const emptyData: SpendiaryData = {
   cashAccounts: [],
@@ -117,6 +78,9 @@ interface DataContextValue {
   loadSample: () => void
   clearAll: () => void
   syncStatus: SyncStatus
+  user: User | null
+  loginWithGoogle: () => Promise<void>
+  logout: () => Promise<void>
   setCashAccounts: (accounts: CashAccount[]) => void
   setMonthlyIncome: (income: number) => void
   setUserName: (name: string) => void
@@ -145,9 +109,7 @@ interface DataContextValue {
   recordNetWorthSnapshot: (value: number) => void
   /** ISO timestamp of the last successful cloud sync, or null */
   lastSyncedAt: Date | null
-  /** Local rolling backups (newest first) */
-  backups: DataBackup[]
-  restoreBackup: (backup: DataBackup) => void
+
   upsertBtcLocation: (holdingId: string, loc: Omit<BtcLocation, 'id'> & { id?: string }) => void
   removeBtcLocation: (holdingId: string, locId: string) => void
   upsertGoldLocation: (holdingId: string, loc: Omit<GoldLocation, 'id'> & { id?: string }) => void
@@ -201,15 +163,7 @@ function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
   return merged
 }
 
-function load(): SpendiaryData {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return migrate(JSON.parse(raw))
-  } catch {
-    /* ignore corrupt storage */
-  }
-  return emptyData
-}
+
 
 /** Insert (when no id) or replace (when id matches) an item in a list. */
 function upsert<T extends { id: string }>(list: T[], item: Omit<T, 'id'> & { id?: string }): T[] {
@@ -220,24 +174,131 @@ function upsert<T extends { id: string }>(list: T[], item: Omit<T, 'id'> & { id?
 }
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [data, setDataState] = useState<SpendiaryData>(load)
+  const [data, setDataState] = useState<SpendiaryData>(emptyData)
   const [usdThb, setUsdThb] = useState<number | null>(null)
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle')
-  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null)
-  const [backups, setBackups] = useState<DataBackup[]>(readBackups)
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(() => {
+    const stored = localStorage.getItem('spendiary.last_synced_time')
+    return stored ? new Date(stored) : null
+  })
 
-  // Tracks whether the initial API load has completed (prevents syncing
+  const updateLastSynced = (date: Date | null) => {
+    setLastSyncedAt(date)
+    if (date) {
+      localStorage.setItem('spendiary.last_synced_time', date.toISOString())
+    } else {
+      localStorage.removeItem('spendiary.last_synced_time')
+    }
+  }
+
+  const [user, setUser] = useState<User | null>(null)
+  
+  // Tracks whether the initial Supabase load has completed (prevents syncing
   // back immediately after we receive data from the server).
-  const syncReady = useRef(!API_ENABLED)
-  // Last data string we synced to the API — avoids redundant PUTs.
+  const syncReady = useRef(false)
+  // Last data string we synced to Supabase — avoids redundant writes.
   const lastSynced = useRef('')
-  // Snapshot of data at mount — used to detect local changes made before
-  // the initial GET completes (race condition guard).
-  const mountSnapshot = useRef(JSON.stringify(load()))
-  // Mirror of current data as a ref so GET callback can read it without
+  // Mirror of current data as a ref so callbacks can read it without
   // capturing a stale closure.
   const dataRef = useRef(data)
   dataRef.current = data
+
+  // Auth setup
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const loginWithGoogle = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    })
+  }
+
+  const logout = async () => {
+    await supabase.auth.signOut()
+    localStorage.removeItem('spendiary.last_user_id')
+    localStorage.removeItem('spendiary.last_synced_time')
+    setDataState(emptyData)
+    updateLastSynced(null)
+  }
+
+  const fetchRemoteData = async (userId: string) => {
+    try {
+      setSyncStatus('syncing')
+      const { data: row, error } = await supabase
+        .from('user_data')
+        .select('payload')
+        .eq('id', userId)
+        .maybeSingle()
+
+      if (error) throw error
+
+      if (row && row.payload) {
+        const remote = row.payload as SpendiaryData
+        const migrated = migrate(remote)
+        const migratedStr = JSON.stringify(migrated)
+        
+        lastSynced.current = migratedStr
+        setDataState(migrated)
+        setSyncStatus('synced')
+        updateLastSynced(new Date())
+      } else {
+        // Cloud is empty
+        lastSynced.current = JSON.stringify(emptyData)
+        setDataState(emptyData)
+        setSyncStatus('synced')
+        updateLastSynced(null)
+      }
+    } catch (err) {
+      console.error('Error fetching remote data:', err)
+      setSyncStatus('error')
+    } finally {
+      syncReady.current = true
+    }
+  }
+
+  // Fetch remote data once user is loaded
+  useEffect(() => {
+    if (user) {
+      const storedLastUser = localStorage.getItem('spendiary.last_user_id')
+      const isSwitch = Boolean(storedLastUser && storedLastUser !== user.id)
+
+      if (isSwitch) {
+        setDataState(emptyData)
+        lastSynced.current = ''
+      }
+
+      localStorage.setItem('spendiary.last_user_id', user.id)
+
+      // Automatically pre-fill default userName from email username prefix if empty
+      setDataState((prev) => {
+        if (!prev.userName && user.email) {
+          const emailPrefix = user.email.split('@')[0]
+          const capitalized = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)
+          return { ...prev, userName: capitalized }
+        }
+        return prev
+      })
+
+      syncReady.current = false
+      fetchRemoteData(user.id)
+    } else {
+      syncReady.current = false
+      setDataState(emptyData)
+      updateLastSynced(null)
+    }
+  }, [user])
 
   // A wrapper for setDataState that automatically adds/updates lastUpdatedAt.
   const updateData = (next: SpendiaryData | ((prev: SpendiaryData) => SpendiaryData)) => {
@@ -250,121 +311,34 @@ export function DataProvider({ children }: { children: ReactNode }) {
     })
   }
 
-  // ── Persist to localStorage + rolling backup ─────────────────
+  // ── Debounced sync to Supabase on data change ──────────────
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-      writeBackup(data)
-      setBackups(readBackups())
-    } catch {
-      /* storage may be unavailable; non-fatal */
-    }
-  }, [data])
-
-  // ── Load from Cloudflare on first mount ──────────────────────
-  useEffect(() => {
-    if (!API_ENABLED) return
-    let isMounted = true
-
-    fetch(`${API_URL}/api/data`, { headers: apiHeaders() })
-      .then((r) => {
-        if (r.ok) {
-          return r.json().then((payload) => ({ payload, status: r.status }))
-        }
-        return { payload: null, status: r.status }
-      })
-      .then(({ payload: remote, status }) => {
-        if (!isMounted) return
-
-        if (status === 200 && remote && typeof remote === 'object' && !Array.isArray(remote)) {
-          const migrated = migrate(remote as SpendiaryData)
-          const migratedStr = JSON.stringify(migrated)
-          const currentStr = JSON.stringify(dataRef.current)
-
-          // Safety: never let an empty cloud overwrite non-empty local data.
-          const cloudHasData =
-            (migrated.holdings?.length ?? 0) > 0 ||
-            (migrated.dcaPlans?.length ?? 0) > 0 ||
-            (migrated.transfers?.length ?? 0) > 0
-          const localHasData =
-            (dataRef.current.holdings?.length ?? 0) > 0 ||
-            (dataRef.current.dcaPlans?.length ?? 0) > 0 ||
-            (dataRef.current.transfers?.length ?? 0) > 0
-
-          if (!cloudHasData && localHasData) {
-            // Cloud is empty but local has data — keep local, will sync up.
-            lastSynced.current = ''
-            syncReady.current = true
-            return
-          }
-
-          // If local data is newer than cloud data AND local has data, keep local.
-          const localTime = dataRef.current.lastUpdatedAt ?? 0
-          const cloudTime = migrated.lastUpdatedAt ?? 0
-          if (localTime > cloudTime && localHasData) {
-            lastSynced.current = ''
-            syncReady.current = true
-            return
-          }
-
-          // If user made local changes before GET completed, keep their
-          // changes and let the debounced PUT sync them to cloud instead.
-          if (currentStr !== mountSnapshot.current) {
-            lastSynced.current = ''
-            syncReady.current = true
-          } else {
-            // No local changes — safe to load cloud data.
-            lastSynced.current = migratedStr
-            setDataState(migrated)
-            syncReady.current = true
-          }
-        } else if (status === 404) {
-          // Cloud is empty — safe to upload local data.
-          lastSynced.current = ''
-          syncReady.current = true
-        } else {
-          // Other status (e.g. 500 or auth error) — keep local but do NOT set syncReady
-          setSyncStatus('error')
-        }
-      })
-      .catch(() => {
-        if (!isMounted) return
-        /* network error — keep localStorage data and do NOT set syncReady */
-        setSyncStatus('error')
-      })
-
-    return () => {
-      isMounted = false
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // ── Debounced sync to Cloudflare on data change ──────────────
-  useEffect(() => {
-    if (!API_ENABLED) return
+    if (!user) return
     if (!syncReady.current) return
     const serialised = JSON.stringify(data)
     if (serialised === lastSynced.current) return   // nothing changed
     setSyncStatus('syncing')
-    const timer = setTimeout(() => {
-      fetch(`${API_URL}/api/data`, {
-        method: 'PUT',
-        headers: apiHeaders(),
-        body: serialised,
-      })
-        .then((r) => {
-          if (r.ok) {
-            lastSynced.current = serialised
-            setSyncStatus('synced')
-            setLastSyncedAt(new Date())
-          } else {
-            setSyncStatus('error')
-          }
-        })
-        .catch(() => setSyncStatus('error'))
+    const timer = setTimeout(async () => {
+      try {
+        const { error } = await supabase
+          .from('user_data')
+          .upsert({
+            id: user.id,
+            payload: data,
+            updated_at: new Date().toISOString()
+          })
+        if (error) throw error
+
+        lastSynced.current = serialised
+        setSyncStatus('synced')
+        updateLastSynced(new Date())
+      } catch (err) {
+        console.error('Error syncing to Supabase:', err)
+        setSyncStatus('error')
+      }
     }, 2000)
     return () => clearTimeout(timer)
-  }, [data])
+  }, [data, user])
 
   const value = useMemo<DataContextValue>(
     () => ({
@@ -374,6 +348,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       clearAll: () => updateData(emptyData),
       syncStatus,
       lastSyncedAt,
+      user,
+      loginWithGoogle,
+      logout,
       usdThb,
       setUsdThb,
       setCashAccounts: (cashAccounts) => updateData((prev) => ({ ...prev, cashAccounts })),
@@ -500,17 +477,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return { ...prev, netWorthHistory: updated }
         }),
 
-      backups,
-      restoreBackup: (backup) => {
-        setDataState(backup.data)
-        // Force a new backup snapshot after restore so you can undo if needed
-        try {
-          const current = readBackups()
-          const next = [{ savedAt: new Date().toISOString(), data: backup.data }, ...current].slice(0, MAX_BACKUPS)
-          localStorage.setItem(BACKUP_KEY, JSON.stringify(next))
-          setBackups(next)
-        } catch { /* non-fatal */ }
-      },
+
 
       // ── Export ────────────────────────────────────────────────
       exportData: () => {
@@ -549,33 +516,31 @@ export function DataProvider({ children }: { children: ReactNode }) {
         // Stamp lastUpdatedAt so this import wins any cloud conflict resolution
         const stamped: SpendiaryData = { ...migrated, lastUpdatedAt: Date.now() }
 
-        // 4. Persist to localStorage immediately (before React re-render)
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(stamped))
-        } catch { /* non-fatal — storage may be full */ }
+
 
         // 5. Update React state
         setDataState(stamped)
 
         // 6. Force an immediate cloud push (bypass the 2-second debounce)
-        if (API_ENABLED) {
+        if (user) {
           const serialised = JSON.stringify(stamped)
           setSyncStatus('syncing')
-          fetch(`${API_URL}/api/data`, {
-            method: 'PUT',
-            headers: apiHeaders(),
-            body: serialised,
-          })
-            .then((r) => {
-              if (r.ok) {
+          supabase
+            .from('user_data')
+            .upsert({
+              id: user.id,
+              payload: stamped,
+              updated_at: new Date().toISOString()
+            })
+            .then(({ error }) => {
+              if (!error) {
                 lastSynced.current = serialised
                 setSyncStatus('synced')
-                setLastSyncedAt(new Date())
+                updateLastSynced(new Date())
               } else {
                 setSyncStatus('error')
               }
-            })
-            .catch(() => setSyncStatus('error'))
+            }, () => setSyncStatus('error'))
         }
 
         return { ok: true }
@@ -635,7 +600,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }),
         })),
     }),
-    [data, syncStatus, lastSyncedAt, backups],
+    [data, syncStatus, lastSyncedAt, user],
   )
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>

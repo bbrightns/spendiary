@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { useData, type DataBackup } from '../store/DataContext'
+import { useData } from '../store/DataContext'
 import { useTheme, type Theme } from '../hooks/useTheme'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
@@ -41,12 +41,12 @@ export function Settings() {
     data,
     clearAll,
     setUserName,
-    backups,
-    restoreBackup,
     exportData,
     importData,
     syncStatus,
     lastSyncedAt,
+    user,
+    logout,
   } = useData()
   const { theme, setTheme } = useTheme()
 
@@ -58,13 +58,10 @@ export function Settings() {
   const [importConfirmOpen, setImportConfirmOpen] = useState(false)
   const [pendingImport, setPendingImport] = useState<string | null>(null)  // raw json string
   const [pendingImportSummary, setPendingImportSummary] = useState('')
-  const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false)
-  const [pendingRestore, setPendingRestore] = useState<DataBackup | null>(null)
 
   // ── inline toast ───────────────────────────────────────────────
   const [exportToast, setExportToast] = useState<ToastState>({ kind: 'idle' })
   const [importToast, setImportToast] = useState<ToastState>({ kind: 'idle' })
-  const [restoreToast, setRestoreToast] = useState<ToastState>({ kind: 'idle' })
 
   function flashToast(
     set: React.Dispatch<React.SetStateAction<ToastState>>,
@@ -179,6 +176,43 @@ export function Settings() {
       <PageHeader eyebrow="App" title="Settings" />
       <div className="flex flex-col gap-4">
 
+        {/* ── Supabase Cloud Sync ─────────────────────────────── */}
+        <Card className="animate-rise">
+          <div className="flex items-start justify-between gap-3 mb-1">
+            <h2 className="font-display text-[17px] font-bold text-ink">Cloud Sync (Supabase)</h2>
+            {syncBadge && (
+              <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${syncBadge.cls}`}>
+                {syncBadge.text}
+              </span>
+            )}
+          </div>
+          <p className="text-[13px] text-ink-muted mb-4">
+            Your data is securely backed up and synchronized automatically.
+          </p>
+
+          <div className="flex flex-col gap-2 rounded-2xl bg-surface-muted p-4 text-[13.5px] mb-4">
+            <div className="flex justify-between">
+              <span className="text-ink-muted">Account</span>
+              <span className="font-semibold text-ink">{user?.email ?? 'Not signed in'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-ink-muted">Last synced</span>
+              <span className="font-semibold text-ink">
+                {lastSyncedAt ? lastSyncedAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'Never'}
+              </span>
+            </div>
+          </div>
+
+          {user && (
+            <button
+              onClick={logout}
+              className="w-full py-2.5 px-4 rounded-xl border border-line bg-surface hover:bg-surface-muted text-[13px] font-semibold text-loss transition-colors duration-200 active:scale-[0.98]"
+            >
+              Sign Out from Google
+            </button>
+          )}
+        </Card>
+
         {/* ── Profile ─────────────────────────────────────────── */}
         <Card className="animate-rise">
           <h2 className="font-display text-[17px] font-bold text-ink mb-1">Profile</h2>
@@ -252,7 +286,6 @@ export function Settings() {
 
         {/* ── Data & Backup ───────────────────────────────────── */}
         <Card className="animate-rise">
-          {/* Header row */}
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">
@@ -260,19 +293,8 @@ export function Settings() {
               </h2>
               <p className="mt-1 text-[13px] text-ink-muted [text-wrap:pretty]">
                 {dataSummary(data)} stored on this device.
-                {lastSyncedAt && (
-                  <span className="ml-1">
-                    Last synced{' '}
-                    {lastSyncedAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}.
-                  </span>
-                )}
               </p>
             </div>
-            {syncBadge && (
-              <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${syncBadge.cls}`}>
-                {syncBadge.text}
-              </span>
-            )}
           </div>
 
           <div className="mt-5 divide-y divide-line">
@@ -364,54 +386,6 @@ export function Settings() {
           </div>
         </Card>
 
-        {/* ── Local backups ───────────────────────────────────── */}
-        {backups.length > 0 && (
-          <Card className="animate-rise">
-            <h2 className="font-display text-[17px] font-bold text-ink mb-1">Local backups</h2>
-            <p className="text-[13px] text-ink-muted mb-4">
-              Automatic hourly snapshots saved on this device. Restore if your data was wiped.
-            </p>
-            {restoreToast.kind === 'success' && (
-              <div role="status" aria-live="polite" className="mb-3 text-[12px] font-medium text-gain">
-                {restoreToast.msg}
-              </div>
-            )}
-            <ul className="divide-y divide-line">
-              {backups.map((b, i) => {
-                const date = new Date(b.savedAt)
-                const label = date.toLocaleString('en-GB', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-                return (
-                  <li key={b.savedAt} className="flex items-center justify-between py-3">
-                    <div>
-                      <p className="text-[13.5px] font-semibold text-ink">
-                        {i === 0 ? 'Latest' : `${i + 1} snapshots ago`}
-                      </p>
-                      <p className="mt-0.5 text-[12px] text-ink-muted">
-                        {label} · {dataSummary(b.data)}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setPendingRestore(b)
-                        setRestoreConfirmOpen(true)
-                      }}
-                      className="ml-4 inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1.5 text-[12.5px] font-semibold text-brand transition-colors hover:bg-brand hover:text-white active:scale-95"
-                    >
-                      Restore
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          </Card>
-        )}
-
         {/* ── Danger zone ─────────────────────────────────────── */}
         <Card className="animate-rise border-loss/20 bg-loss-soft/20">
           <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">
@@ -466,53 +440,6 @@ export function Settings() {
             onClick={() => {
               setImportConfirmOpen(false)
               setPendingImport(null)
-            }}
-            className="w-full rounded-full py-2.5 text-[14px] font-semibold text-ink-muted transition-colors hover:text-ink"
-          >
-            Cancel
-          </button>
-        </div>
-      </Modal>
-
-      {/* ── Backup restore confirmation modal ─────────────────── */}
-      <Modal
-        open={restoreConfirmOpen}
-        onClose={() => {
-          setRestoreConfirmOpen(false)
-          setPendingRestore(null)
-        }}
-        title="Restore this backup?"
-        description={
-          pendingRestore
-            ? `This will replace your current data (${dataSummary(data)}) with the snapshot from ${new Date(
-                pendingRestore.savedAt,
-              ).toLocaleString('en-GB', {
-                day: 'numeric',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit',
-              })} (${dataSummary(pendingRestore.data)}).`
-            : ''
-        }
-      >
-        <div className="flex flex-col gap-3 pb-1">
-          <button
-            onClick={() => {
-              if (pendingRestore) {
-                restoreBackup(pendingRestore)
-                setRestoreConfirmOpen(false)
-                setPendingRestore(null)
-                flashToast(setRestoreToast, { kind: 'success', msg: 'Backup restored successfully.' })
-              }
-            }}
-            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-ink px-5 text-sm font-semibold text-white transition-all duration-200 hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] active:scale-[0.98]"
-          >
-            Restore backup
-          </button>
-          <button
-            onClick={() => {
-              setRestoreConfirmOpen(false)
-              setPendingRestore(null)
             }}
             className="w-full rounded-full py-2.5 text-[14px] font-semibold text-ink-muted transition-colors hover:text-ink"
           >
