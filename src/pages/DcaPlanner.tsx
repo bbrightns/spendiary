@@ -434,6 +434,18 @@ export function DcaPlanner() {
                     const next = nextBuyDate(p)
                     const days = daysUntil(localDateStr(next))
 
+                    const isRecent = (dates: string[] | undefined) => {
+                      if (!dates || dates.length === 0) return false
+                      const latestStr = dates[0]
+                      const [y, m, d] = latestStr.split('-').map(Number)
+                      const actionDate = new Date(y, m - 1, d)
+                      const today = new Date()
+                      today.setHours(0, 0, 0, 0)
+                      const diffDays = Math.round((today.getTime() - actionDate.getTime()) / 86400000)
+                      return diffDays <= 2
+                    }
+                    const showConfirmed = confirmed && isRecent(p.confirmedDates)
+
                     return (
                       <li key={p.id}>
                         {/* Mobile row: maximize horizontal space */}
@@ -461,11 +473,11 @@ export function DcaPlanner() {
                             <div className="mt-0.5 flex items-center justify-between gap-2">
                               <p className="truncate text-[12px] text-ink-muted">{meta.label} · {freqLabel(p)}</p>
                               <div className="shrink-0">
-                                {confirmed && !skipped ? (
+                                {showConfirmed && !skipped ? (
                                   <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-[11px] font-semibold text-gain">
                                     <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Confirmed
                                   </span>
-                                ) : bought && !skipped ? (
+                                ) : bought && !confirmed && !skipped ? (
                                   <span className="inline-block text-[11px] font-bold text-loss">Overdue</span>
                                 ) : days < 3 ? (
                                   <span className="inline-block text-[11px] font-semibold text-warn">
@@ -527,11 +539,11 @@ export function DcaPlanner() {
                                   /{(p.frequency ?? 'monthly') === 'daily' ? 'day' : (p.frequency ?? 'monthly') === 'weekly' ? 'wk' : 'mo'}
                                 </span>
                               </p>
-                              {confirmed && !skipped ? (
+                              {showConfirmed && !skipped ? (
                                 <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-[11px] font-semibold text-gain">
                                   <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Confirmed
                                 </span>
-                              ) : bought && !skipped ? (
+                              ) : bought && !confirmed && !skipped ? (
                                 <span className="mt-0.5 inline-block text-[11px] font-bold text-loss">Overdue</span>
                               ) : days < 3 ? (
                                 <span className="mt-0.5 inline-block text-[11px] font-semibold text-warn">
