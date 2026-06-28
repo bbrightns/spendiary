@@ -116,6 +116,10 @@ export interface HoldingLog {
   ticker: string
   assetClass: AssetClass
   note: string             // human-readable detail line
+  holdingId?: string
+  previousHoldingState?: Holding
+  dcaPlanId?: string
+  dcaDate?: string
 }
 
 export interface FixedCostItem {

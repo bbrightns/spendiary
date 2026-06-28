@@ -96,6 +96,7 @@ interface DataContextValue {
   removeHolding: (id: string) => void
   reorderHoldings: (ids: string[]) => void
   addHoldingLog: (log: Omit<HoldingLog, 'id' | 'timestamp'>) => void
+  undoHoldingLog: (logId: string) => void
 
   upsertPlan: (plan: Omit<DcaPlan, 'id'> & { id?: string }) => void
   removePlan: (id: string) => void
@@ -375,13 +376,70 @@ export function DataProvider({ children }: { children: ReactNode }) {
         })),
 
       addHoldingLog: (log) =>
-        updateData((prev) => ({
-          ...prev,
-          holdingLogs: [
-            { ...log, id: newId(), timestamp: new Date().toISOString() },
-            ...(prev.holdingLogs ?? []),
-          ].slice(0, 200),  // keep last 200 entries
-        })),
+        updateData((prev) => {
+          const holding = prev.holdings.find((h) => h.ticker === log.ticker)
+          const previousHoldingState =
+            log.action !== 'add' && holding
+              ? JSON.parse(JSON.stringify(holding))
+              : undefined
+
+          return {
+            ...prev,
+            holdingLogs: [
+              {
+                ...log,
+                id: newId(),
+                timestamp: new Date().toISOString(),
+                holdingId: holding?.id,
+                previousHoldingState,
+              },
+              ...(prev.holdingLogs ?? []),
+            ].slice(0, 200),
+          }
+        }),
+
+      undoHoldingLog: (logId) =>
+        updateData((prev) => {
+          const logs = prev.holdingLogs ?? []
+          const log = logs.find((l) => l.id === logId)
+          if (!log) return prev
+
+          let updatedHoldings = [...prev.holdings]
+          let updatedPlans = [...prev.dcaPlans]
+
+          // 1. Revert holding change
+          if (log.action === 'add') {
+            // Remove newly added holding
+            updatedHoldings = updatedHoldings.filter((h) => h.id !== log.holdingId && h.ticker !== log.ticker)
+          } else if (log.previousHoldingState) {
+            // Restore previous state
+            updatedHoldings = updatedHoldings.map((h) =>
+              h.id === log.holdingId || h.ticker === log.ticker ? log.previousHoldingState! : h
+            )
+          }
+
+          // 2. Revert DCA plan confirmations if linked
+          if (log.dcaPlanId && log.dcaDate) {
+            updatedPlans = updatedPlans.map((p) => {
+              if (p.id !== log.dcaPlanId) return p
+              return {
+                ...p,
+                confirmedDates: (p.confirmedDates ?? []).filter((d) => d !== log.dcaDate),
+                skippedDates: (p.skippedDates ?? []).filter((d) => d !== log.dcaDate),
+              }
+            })
+          }
+
+          // 3. Remove this log entry
+          const updatedLogs = logs.filter((l) => l.id !== logId)
+
+          return {
+            ...prev,
+            holdings: updatedHoldings,
+            dcaPlans: updatedPlans,
+            holdingLogs: updatedLogs,
+          }
+        }),
 
       upsertPlan: (plan) =>
         updateData((prev) => ({ ...prev, dcaPlans: upsert(prev.dcaPlans, plan) })),
@@ -436,6 +494,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
               : holding.assetClass === 'gold'
               ? `DCA · +${units.toFixed(4)} g · ฿${plan.monthlyAmount.toLocaleString()} total`
               : `DCA · +${units.toFixed(4)} units @ ฿${pricePerUnit.toLocaleString()}/unit · ฿${plan.monthlyAmount.toLocaleString()} total`,
+            holdingId: holding.id,
+            previousHoldingState: JSON.parse(JSON.stringify(holding)),
+            dcaPlanId: plan.id,
+            dcaDate: date,
           }
 
           return {

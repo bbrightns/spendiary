@@ -109,6 +109,12 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* High-contrast focus indicators globally for accessibility */
+  *:focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+
   ::selection {
     background-color: color-mix(in srgb, var(--color-brand) 22%, transparent);
   }

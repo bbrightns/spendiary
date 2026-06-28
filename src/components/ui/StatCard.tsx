@@ -32,10 +32,12 @@ export function StatCard({
       className={`group flex flex-col justify-between animate-rise ${onClick ? 'cursor-pointer' : ''} ${className}`}
     >
       <div className="flex items-start justify-between">
-        <p className="flex items-center gap-1.5 text-[13px] font-medium text-ink-muted">
+        <p className="flex items-center gap-2 text-[13px] font-medium text-ink-muted">
           {label}
           {editable && (
-            <PencilIcon className="h-3.5 w-3.5 text-ink-faint opacity-0 transition-opacity group-hover:opacity-100" />
+            <span className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] -my-3.5 -mx-3">
+              <PencilIcon className="h-4 w-4 text-ink-muted opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200" />
+            </span>
           )}
         </p>
         <span

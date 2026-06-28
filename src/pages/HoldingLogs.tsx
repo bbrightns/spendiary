@@ -41,7 +41,7 @@ const ACTION_FILTERS = [
 ] as const
 
 export function HoldingLogs() {
-  const { data } = useData()
+  const { data, undoHoldingLog } = useData()
   const logs = data.holdingLogs ?? []
 
   const [assetFilter, setAssetFilter] = useState<AssetClass | 'all'>('all')
@@ -137,9 +137,21 @@ export function HoldingLogs() {
                         </div>
                         <p className="mt-0.5 text-[12.5px] text-ink-muted">{log.note}</p>
                       </div>
-                      <time className="shrink-0 text-[11.5px] text-ink-faint">
-                        {new Date(log.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                      </time>
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <time className="text-[11.5px] text-ink-faint">
+                          {new Date(log.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                        </time>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Are you sure you want to undo the activity "${log.holdingName}"?`)) {
+                              undoHoldingLog(log.id)
+                            }
+                          }}
+                          className="text-[11.5px] font-bold text-loss hover:underline active:scale-95 cursor-pointer"
+                        >
+                          Undo
+                        </button>
+                      </div>
                     </li>
                   ))}
                 </ul>
