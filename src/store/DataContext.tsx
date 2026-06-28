@@ -59,6 +59,58 @@ function newId(): string {
   return `id-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
+/** Result returned by importData — UI can react to success/error */
+export type ImportResult =
+  | { ok: true }
+  | { ok: false; error: string }
+
+/** Strict runtime validation of an incoming JSON object as SpendiaryData. */
+export function validateSpendiaryData(obj: unknown): obj is SpendiaryData {
+  if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) return false
+  const d = obj as Record<string, unknown>
+  // Required top-level keys
+  if (!Array.isArray(d.cashAccounts)) return false
+  if (!Array.isArray(d.holdings)) return false
+  if (!Array.isArray(d.dcaPlans)) return false
+  if (!Array.isArray(d.transfers)) return false
+  if (typeof d.monthlyIncome !== 'number') return false
+  // Validate each holding shape
+  for (const h of d.holdings as unknown[]) {
+    if (typeof h !== 'object' || h === null) return false
+    const hh = h as Record<string, unknown>
+    if (typeof hh.id !== 'string') return false
+    if (typeof hh.name !== 'string') return false
+    if (typeof hh.units !== 'number') return false
+    if (typeof hh.avgCost !== 'number') return false
+    if (typeof hh.price !== 'number') return false
+    if (!['fund', 'stock', 'crypto', 'gold'].includes(hh.assetClass as string)) return false
+  }
+  // Validate each DCA plan shape
+  for (const p of d.dcaPlans as unknown[]) {
+    if (typeof p !== 'object' || p === null) return false
+    const pp = p as Record<string, unknown>
+    if (typeof pp.id !== 'string') return false
+    if (typeof pp.monthlyAmount !== 'number') return false
+  }
+  // Validate each transfer shape
+  for (const t of d.transfers as unknown[]) {
+    if (typeof t !== 'object' || t === null) return false
+    const tt = t as Record<string, unknown>
+    if (typeof tt.id !== 'string') return false
+    if (typeof tt.amount !== 'number') return false
+    if (typeof tt.completed !== 'number') return false
+    if (typeof tt.total !== 'number') return false
+  }
+  // Validate each cash account
+  for (const a of d.cashAccounts as unknown[]) {
+    if (typeof a !== 'object' || a === null) return false
+    const aa = a as Record<string, unknown>
+    if (typeof aa.id !== 'string') return false
+    if (typeof aa.balance !== 'number') return false
+  }
+  return true
+}
+
 interface DataContextValue {
   data: SpendiaryData
   setData: (next: SpendiaryData) => void
@@ -100,6 +152,17 @@ interface DataContextValue {
   removeBtcLocation: (holdingId: string, locId: string) => void
   upsertGoldLocation: (holdingId: string, loc: Omit<GoldLocation, 'id'> & { id?: string }) => void
   removeGoldLocation: (holdingId: string, locId: string) => void
+
+  /** Download the current data as a dated JSON file (browser download). */
+  exportData: () => void
+  /**
+   * Parse + validate a JSON string and, if valid, atomically:
+   *   1. Update React state
+   *   2. Persist to localStorage
+   *   3. Immediately push to Cloudflare cloud (skips debounce)
+   * Returns { ok: true } on success or { ok: false; error } on failure.
+   */
+  importData: (jsonString: string) => ImportResult
 }
 
 const DataContext = createContext<DataContextValue | null>(null)
@@ -447,6 +510,75 @@ export function DataProvider({ children }: { children: ReactNode }) {
           localStorage.setItem(BACKUP_KEY, JSON.stringify(next))
           setBackups(next)
         } catch { /* non-fatal */ }
+      },
+
+      // ── Export ────────────────────────────────────────────────
+      exportData: () => {
+        const json = JSON.stringify(dataRef.current, null, 2)
+        const blob = new Blob([json], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `spendiary-backup-${new Date().toISOString().slice(0, 10)}.json`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      },
+
+      // ── Import ────────────────────────────────────────────────
+      importData: (jsonString) => {
+        // 1. Parse
+        let parsed: unknown
+        try {
+          parsed = JSON.parse(jsonString)
+        } catch {
+          return { ok: false, error: 'The file is not valid JSON. Make sure you chose the right file.' }
+        }
+
+        // 2. Strict schema validation
+        if (!validateSpendiaryData(parsed)) {
+          return {
+            ok: false,
+            error: 'File does not match the Spendiary data format. Required fields (holdings, dcaPlans, cashAccounts, transfers, monthlyIncome) are missing or have the wrong type.',
+          }
+        }
+
+        // 3. Migrate legacy fields
+        const migrated = migrate(parsed)
+        // Stamp lastUpdatedAt so this import wins any cloud conflict resolution
+        const stamped: SpendiaryData = { ...migrated, lastUpdatedAt: Date.now() }
+
+        // 4. Persist to localStorage immediately (before React re-render)
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(stamped))
+        } catch { /* non-fatal — storage may be full */ }
+
+        // 5. Update React state
+        setDataState(stamped)
+
+        // 6. Force an immediate cloud push (bypass the 2-second debounce)
+        if (API_ENABLED) {
+          const serialised = JSON.stringify(stamped)
+          setSyncStatus('syncing')
+          fetch(`${API_URL}/api/data`, {
+            method: 'PUT',
+            headers: apiHeaders(),
+            body: serialised,
+          })
+            .then((r) => {
+              if (r.ok) {
+                lastSynced.current = serialised
+                setSyncStatus('synced')
+                setLastSyncedAt(new Date())
+              } else {
+                setSyncStatus('error')
+              }
+            })
+            .catch(() => setSyncStatus('error'))
+        }
+
+        return { ok: true }
       },
 
       upsertBtcLocation: (holdingId, loc) =>
