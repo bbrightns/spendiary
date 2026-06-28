@@ -17,7 +17,7 @@ function AppContent() {
   // 💡 ถ้ายังไม่ได้ล็อกอิน ให้บังคับแสดงหน้าจอนี้ ห้ามผ่านเข้าแอปหลัก
   if (!user) {
     return (
-      <div className="relative cosmic-nebula flex flex-col items-center justify-between min-h-screen text-slate-100 overflow-hidden font-sans select-none px-4 py-6">
+      <div className="relative cosmic-nebula flex flex-col items-center justify-center min-h-screen text-slate-100 overflow-hidden font-sans select-none px-4 py-6">
         <style>{`
           .cosmic-nebula {
             background: radial-gradient(circle at 80% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
@@ -52,9 +52,6 @@ function AppContent() {
           <div className="absolute top-[10%] right-[10%] w-[450px] h-[450px] rounded-full bg-indigo-600/15 ambient-glow-source opacity-80 animate-pulse duration-[8s]" />
           <div className="absolute bottom-[10%] left-[5%] w-[400px] h-[400px] rounded-full bg-purple-600/10 ambient-glow-source opacity-70 animate-pulse duration-[11s]" />
         </div>
-
-        {/* Top spacer */}
-        <div />
 
         {/* Card */}
         <div className="glass-card-border w-full max-w-[360px] bg-[#0c0a14]/85 shadow-2xl rounded-[28px] p-8 pb-10 transition-all duration-700 backdrop-blur-3xl relative overflow-hidden group z-10">
@@ -109,7 +106,7 @@ function AppContent() {
         </div>
 
         {/* Footer */}
-        <footer className="w-full text-center py-4 text-[10.5px] text-slate-500 z-10 font-medium tracking-wide">
+        <footer className="w-full text-center mt-6 text-[10.5px] text-slate-500 z-10 font-medium tracking-wide">
           © 2026 Spendiary by bbrightns. Every choice shapes your wealth.
         </footer>
       </div>
