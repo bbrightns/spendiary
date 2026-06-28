@@ -3,8 +3,8 @@ import { navItems } from './nav'
 
 export function BottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/85 backdrop-blur-xl safe-bottom ">
-      <div className="mx-auto flex max-w-md items-stretch justify-around px-2">
+    <nav className="sticky bottom-0 z-40 border-t border-line bg-surface/85 backdrop-blur-xl safe-bottom">
+      <div className="flex items-stretch justify-around px-2">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -36,4 +36,5 @@ export function BottomNav() {
     </nav>
   )
 }
+
 
