@@ -73,7 +73,7 @@ export function Modal({ open, onClose, title, description, children }: ModalProp
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center ">
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
       <div
         className="absolute inset-0 bg-ink/35 dark:bg-black/60 backdrop-blur-sm"
         style={{ animation: 'fadeIn 0.2s ease both' }}
@@ -85,7 +85,7 @@ export function Modal({ open, onClose, title, description, children }: ModalProp
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-[var(--shadow-lift)]   "
+        className="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-[var(--shadow-lift)] sm:max-w-[440px] sm:rounded-[28px] sm:max-h-[85dvh]"
         style={{ animation: 'sheetUp 0.32s cubic-bezier(0.16,1,0.3,1) both' }}
       >
         <div className="flex items-start justify-between gap-4 px-6 pb-3 pt-7 ">
