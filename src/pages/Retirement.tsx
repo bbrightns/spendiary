@@ -92,6 +92,30 @@ function solveMinRate(pv: number, monthly: number, years: number, target: number
   return (lo + hi) / 2
 }
 
+function calculateCorpusNeeded(
+  monthlySpend: number,
+  yearsLeft: number,
+  retirementYears: number,
+  inflation: number,
+  annualRate: number,
+  strategy: 'lump_sum' | 'drawdown'
+): number {
+  const futureMonthlySpend = monthlySpend * Math.pow(1 + inflation, yearsLeft)
+  if (strategy === 'lump_sum') {
+    return futureMonthlySpend * 12 * retirementYears
+  } else {
+    const r = annualRate / 12
+    const totalMonths = retirementYears * 12
+    if (totalMonths <= 0) return 0
+    if (r === 0) return futureMonthlySpend * totalMonths
+    let pv = 0
+    for (let m = 0; m < totalMonths; m++) {
+      pv += futureMonthlySpend / Math.pow(1 + r, m)
+    }
+    return pv
+  }
+}
+
 /**
  * Earliest retire age where the plan becomes viable, given fixed monthly DCA.
  * Both yearsLeft and retirementYears (and thus corpusNeeded) shift with each candidate age.
@@ -100,12 +124,12 @@ function solveMinRetireAge(
   pv: number, monthly: number, annualRate: number, inflation: number,
   currentAge: number, currentRetireAge: number, planUntilAge: number,
   monthlySpendToday: number,
+  strategy: 'lump_sum' | 'drawdown',
 ): number | null {
   for (let age = currentRetireAge + 1; age <= Math.min(planUntilAge - 1, currentRetireAge + 30); age++) {
     const yrs     = age - currentAge
     const retYrs  = Math.max(planUntilAge - age, 0)
-    const futureSpend  = monthlySpendToday * Math.pow(1 + inflation, yrs)
-    const corpus  = futureSpend * 12 * retYrs
+    const corpus  = calculateCorpusNeeded(monthlySpendToday, yrs, retYrs, inflation, annualRate, strategy)
     if (corpus <= 0) return age
     const projected = compoundGrow(pv, monthly, annualRate, yrs)[yrs]
     if (projected >= corpus) return age
@@ -118,12 +142,12 @@ function solveEarliestRetireAge(
   pv: number, monthly: number, annualRate: number, inflation: number,
   currentAge: number, maxCandidateAge: number, planUntilAge: number,
   monthlySpendToday: number,
+  strategy: 'lump_sum' | 'drawdown',
 ): number | null {
   for (let age = currentAge + 1; age <= Math.min(maxCandidateAge, planUntilAge - 1); age++) {
     const yrs = age - currentAge
     const retYrs = Math.max(planUntilAge - age, 0)
-    const futureSpend = monthlySpendToday * Math.pow(1 + inflation, yrs)
-    const corpus = futureSpend * 12 * retYrs
+    const corpus = calculateCorpusNeeded(monthlySpendToday, yrs, retYrs, inflation, annualRate, strategy)
     if (corpus <= 0) return age
     const projected = compoundGrow(pv, monthly, annualRate, yrs)[yrs]
     if (projected >= corpus) return age
@@ -251,6 +275,7 @@ export function Retirement() {
   const [expectedReturn, setExpectedReturn] = useState<number | ''>((saved?.expectedReturn ?? 0.08) * 100)
   const [inflationRate,  setInflationRate]  = useState<number | ''>((saved?.inflationRate  ?? 0.03) * 100)
   const [annualSavingsGrowth, setAnnualSavingsGrowth] = useState<number | ''>((saved?.annualSavingsGrowth ?? 0) * 100)
+  const [withdrawalStrategy, setWithdrawalStrategy] = useState<'lump_sum' | 'drawdown'>(saved?.withdrawalStrategy ?? 'lump_sum')
   const [mobileView,     setMobileView]     = useState<'chart' | 'bars'>('chart')
 
   const summary          = useMemo(() => portfolioSummary(data.holdings), [data.holdings])
@@ -277,15 +302,23 @@ export function Retirement() {
   const plannedYearsLeft = yearsUntilAge(currentAge, plannedAge)
   const plannedRetirementYears = Math.max((Number(planUntilAge) || 85) - plannedAge, 0)
   const plannedFutureMonthlySpend = (Number(monthlySpend) || 0) * Math.pow(1 + inflation, plannedYearsLeft)
-  const plannedCorpusNeeded = plannedFutureMonthlySpend * 12 * plannedRetirementYears
+  const plannedCorpusNeeded = calculateCorpusNeeded(
+    Number(monthlySpend) || 0,
+    plannedYearsLeft,
+    plannedRetirementYears,
+    inflation,
+    annualRate,
+    withdrawalStrategy
+  )
 
   const minRetireAge = useMemo(
     () => solveMinRetireAge(
           summary.value, investMonthly, annualRate, inflation,
           currentAge, plannedAge, Number(planUntilAge) || 85,
           Number(monthlySpend) || 0,
+          withdrawalStrategy
         ),
-    [summary.value, investMonthly, annualRate, inflation, currentAge, plannedAge, planUntilAge, monthlySpend],
+    [summary.value, investMonthly, annualRate, inflation, currentAge, plannedAge, planUntilAge, monthlySpend, withdrawalStrategy],
   )
 
   const earliestRetireAge = useMemo(
@@ -293,8 +326,9 @@ export function Retirement() {
           summary.value, investMonthly, annualRate, inflation,
           currentAge, plannedAge, Number(planUntilAge) || 85,
           Number(monthlySpend) || 0,
+          withdrawalStrategy
         ),
-    [summary.value, investMonthly, annualRate, inflation, currentAge, plannedAge, planUntilAge, monthlySpend],
+    [summary.value, investMonthly, annualRate, inflation, currentAge, plannedAge, planUntilAge, monthlySpend, withdrawalStrategy],
   )
 
   const couldRetireAge = useMemo(() => {
@@ -355,10 +389,11 @@ export function Retirement() {
         birthDate,
         monthlyInvest:  Number(monthlyInvestField) > 0 ? Number(monthlyInvestField) : undefined,
         annualSavingsGrowth: Number(annualSavingsGrowth) > 0 ? Number(annualSavingsGrowth) / 100 : undefined,
+        withdrawalStrategy,
       })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monthlySpend, retireAge, planUntilAge, inflationRate, expectedReturn, birthDate, monthlyInvestField])
+  }, [monthlySpend, retireAge, planUntilAge, inflationRate, expectedReturn, birthDate, monthlyInvestField, withdrawalStrategy])
 
   // ── SVG chart ──
   const maxY  = Math.max(corpusNeeded * 1.1, projectedInvestment * 1.05, projectedSavings * 1.05, 1)
@@ -402,6 +437,40 @@ export function Retirement() {
               onChange={setMonthlySpend}
               placeholder="50,000"
             />
+            <div>
+              <span className="text-[13px] font-semibold text-ink-soft block mb-1.5">
+                Retirement Option / รูปแบบการใช้เงินหลังเกษียณ
+              </span>
+              <div className="grid grid-cols-2 gap-1 p-1 bg-surface-muted rounded-xl border border-line-strong">
+                <button
+                  type="button"
+                  onClick={() => setWithdrawalStrategy('lump_sum')}
+                  className={`py-2 px-3 rounded-lg text-[13.5px] font-semibold transition-all duration-200 cursor-pointer ${
+                    withdrawalStrategy === 'lump_sum'
+                      ? 'bg-surface text-ink shadow-sm'
+                      : 'text-ink-muted hover:text-ink'
+                  }`}
+                >
+                  ถอนเงินก้อนทั้งหมด
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWithdrawalStrategy('drawdown')}
+                  className={`py-2 px-3 rounded-lg text-[13.5px] font-semibold transition-all duration-200 cursor-pointer ${
+                    withdrawalStrategy === 'drawdown'
+                      ? 'bg-surface text-ink shadow-sm'
+                      : 'text-ink-muted hover:text-ink'
+                  }`}
+                >
+                  ทยอยถอน (ลงทุนต่อ)
+                </button>
+              </div>
+              <p className="mt-1 text-[11px] text-ink-muted leading-relaxed">
+                {withdrawalStrategy === 'lump_sum'
+                  ? 'ถอนเงินก้อนทั้งหมดไปใช้เลย ไม่ลงทุนต่อหลังจากเกษียณ (แบบเดิม)'
+                  : 'ถอนเฉพาะเท่าที่ใช้ต่อปี ส่วนที่เหลือนำไปลงทุนต่อเพื่อสร้างผลตอบแทน'}
+              </p>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <NumberField
                 label="Retire at age"

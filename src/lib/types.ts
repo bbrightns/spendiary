@@ -55,6 +55,8 @@ export interface RetirementSettings {
   monthlyInvest?: number
   /** Annual growth rate for savings/investment, as decimal (e.g. 0.05 for 5%) */
   annualSavingsGrowth?: number
+  /** Post-retirement withdrawal strategy: lump_sum (withdraw all) or drawdown (keep invested) */
+  withdrawalStrategy?: 'lump_sum' | 'drawdown'
 }
 
 export type DcaFrequency = 'daily' | 'weekly' | 'monthly'
