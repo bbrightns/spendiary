@@ -33,7 +33,6 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const rate = usdThb ?? 1
   const btcLocations = holding?.btcLocations ?? []
   const goldLocations = holding?.goldLocations ?? []
-  const locations = isBtc ? btcLocations : isGold ? goldLocations : []
 
   useEffect(() => {
     const justOpened = !wasOpen.current && open
