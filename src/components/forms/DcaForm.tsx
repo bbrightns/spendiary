@@ -25,6 +25,7 @@ const blank = {
   source: 'portfolio' as 'portfolio' | 'custom',
   holdingId: '',
   btcLocationId: '' as string,
+  goldLocationId: '' as string,
   name: '',
   assetClass: 'fund' as AssetClass,
   frequency: 'monthly' as DcaFrequency,
@@ -54,6 +55,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
         source: 'portfolio',
         holdingId: editing.holdingId ?? '',
         btcLocationId: editing.btcLocationId ?? '',
+        goldLocationId: editing.goldLocationId ?? '',
         name: editing.name,
         assetClass: editing.assetClass,
         frequency: freq,
@@ -65,10 +67,12 @@ export function DcaForm({ open, editing, onClose }: Props) {
       const firstHoldingId = holdingOptions[0]?.value ?? ''
       const firstHolding = data.holdings.find((h) => h.id === firstHoldingId)
       const firstLocId = firstHolding?.btcLocations?.[0]?.id ?? ''
+      const firstGoldLocId = firstHolding?.goldLocations?.[0]?.id ?? ''
       setForm({
         ...blank,
         holdingId: firstHoldingId,
         btcLocationId: firstLocId,
+        goldLocationId: firstGoldLocId,
       })
     }
     setShowErrors(false)
@@ -78,12 +82,14 @@ export function DcaForm({ open, editing, onClose }: Props) {
   function selectHolding(id: string) {
     const h = data.holdings.find((hh) => hh.id === id)
     const firstLocId = h?.btcLocations?.[0]?.id ?? ''
+    const firstGoldLocId = h?.goldLocations?.[0]?.id ?? ''
     setForm((f) => ({
       ...f,
       holdingId: id,
       name: h?.name ?? '',
       assetClass: h?.assetClass ?? 'fund',
       btcLocationId: firstLocId,
+      goldLocationId: firstGoldLocId,
     }))
   }
 
@@ -93,10 +99,12 @@ export function DcaForm({ open, editing, onClose }: Props) {
     freq === 'weekly' ? 'Amount / week' :
     'Amount / month'
 
-  // Detect if currently selected holding is BTC with locations
+  // Detect if currently selected holding is BTC or Gold with locations
   const selectedHolding = data.holdings.find((h) => h.id === form.holdingId)
   const isBtcHolding = selectedHolding?.assetClass === 'crypto'
+  const isGoldHolding = selectedHolding?.assetClass === 'gold'
   const btcLocations = selectedHolding?.btcLocations ?? []
+  const goldLocations = selectedHolding?.goldLocations ?? []
 
   function save() {
     const nameToUse = editing
@@ -124,6 +132,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
       dayOfMonth,
       holdingId: editing ? editing.holdingId : (form.source === 'portfolio' ? form.holdingId : undefined),
       btcLocationId: (isBtcHolding && form.btcLocationId) ? form.btcLocationId : undefined,
+      goldLocationId: (isGoldHolding && form.goldLocationId) ? form.goldLocationId : undefined,
       confirmedDates: editing?.confirmedDates,
       skippedDates: editing?.skippedDates,
     })
@@ -206,6 +215,46 @@ export function DcaForm({ open, editing, onClose }: Props) {
                                 <p className="text-[13.5px] font-semibold text-ink">{loc.name}</p>
                                 <p className="text-[11.5px] text-ink-muted">
                                   {loc.satoshi.toLocaleString()} sats held
+                                </p>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Gold location picker */}
+                  {isGoldHolding && (
+                    <div>
+                      <p className="mb-2 text-[13px] font-semibold text-ink">Buy into location</p>
+                      {goldLocations.length === 0 ? (
+                        <p className="rounded-xl bg-warn-soft px-4 py-3 text-[12.5px] text-warn">
+                          No Gold locations set up yet. Add a location in Portfolio → Gold first.
+                        </p>
+                      ) : (
+                        <div className="space-y-2">
+                          {goldLocations.map((loc) => (
+                            <label
+                              key={loc.id}
+                              className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
+                                form.goldLocationId === loc.id
+                                  ? 'border-brand bg-brand-soft'
+                                  : 'border-line bg-surface-muted hover:border-ink-faint'
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="goldLocAdd"
+                                value={loc.id}
+                                checked={form.goldLocationId === loc.id}
+                                onChange={() => setForm((f) => ({ ...f, goldLocationId: loc.id }))}
+                                className="accent-brand"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[13.5px] font-semibold text-ink">{loc.name}</p>
+                                <p className="text-[11.5px] text-ink-muted">
+                                  {loc.grams.toFixed(4)} g held
                                 </p>
                               </div>
                             </label>

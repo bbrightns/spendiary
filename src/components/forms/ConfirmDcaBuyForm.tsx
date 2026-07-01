@@ -41,9 +41,16 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     if (!justOpened || !plan) return
     setShowErrors(false)
     // Pre-select location from plan preference, else first location, else new
-    const preferredId = plan.btcLocationId && locations.some((l) => l.id === plan.btcLocationId)
-      ? plan.btcLocationId
-      : locations.length > 0 ? locations[0].id : '__new__'
+    let preferredId = '__new__'
+    if (isBtc) {
+      preferredId = plan.btcLocationId && btcLocations.some((l) => l.id === plan.btcLocationId)
+        ? plan.btcLocationId
+        : btcLocations.length > 0 ? btcLocations[0].id : '__new__'
+    } else if (isGold) {
+      preferredId = plan.goldLocationId && goldLocations.some((l) => l.id === plan.goldLocationId)
+        ? plan.goldLocationId
+        : goldLocations.length > 0 ? goldLocations[0].id : '__new__'
+    }
     setSelectedLocId(preferredId)
     setNewLocName('')
     setSats('')
@@ -81,6 +88,8 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     : 0
   const satsToAdd = isBtc ? satsValue : Math.round(units * 1e8)
   const gramsToAdd = isGold ? units : 0
+  const hasPreferredBtc = isBtc && plan.btcLocationId && btcLocations.some((l) => l.id === plan.btcLocationId)
+  const hasPreferredGold = isGold && plan.goldLocationId && goldLocations.some((l) => l.id === plan.goldLocationId)
   const hasHolding = !!holding
   const valid = isBtc ? satsValue > 0 : priceNum > 0
 
@@ -200,7 +209,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         />
 
         {/* BTC location picker */}
-        {isBtc && hasHolding && (
+        {isBtc && hasHolding && !hasPreferredBtc && (
           <div>
             <p className="mb-2 text-[13px] font-semibold text-ink">Where did you buy?</p>
             <div className="space-y-2">
@@ -267,7 +276,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         )}
 
         {/* Gold location picker */}
-        {isGold && hasHolding && (
+        {isGold && hasHolding && !hasPreferredGold && (
           <div>
             <p className="mb-2 text-[13px] font-semibold text-ink">Where did you buy?</p>
             <div className="space-y-2">
@@ -353,6 +362,10 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                   ? selectedLocId === '__new__'
                     ? newLocName.trim() || '—'
                     : (btcLocations.find((l) => l.id === selectedLocId)?.name ?? holding!.name)
+                  : isGold
+                  ? selectedLocId === '__new__'
+                    ? newLocName.trim() || '—'
+                    : (goldLocations.find((l) => l.id === selectedLocId)?.name ?? holding!.name)
                   : holding!.name}
               </span>
             </div>

@@ -79,6 +79,8 @@ export interface DcaPlan {
   holdingId?: string
   /** For BTC plans: preferred location id to add sats to when confirming */
   btcLocationId?: string
+  /** For Gold plans: preferred location id to add grams to when confirming */
+  goldLocationId?: string
   /** ISO date strings of confirmed buys, newest first */
   confirmedDates?: string[]
   /** ISO date strings of skipped periods, newest first */
