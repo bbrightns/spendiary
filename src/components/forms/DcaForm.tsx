@@ -139,6 +139,90 @@ export function DcaForm({ open, editing, onClose }: Props) {
     onClose()
   }
 
+  const locationPicker = (
+    <>
+      {/* BTC location picker */}
+      {isBtcHolding && (
+        <div>
+          <p className="mb-2 text-[13px] font-semibold text-ink">Buy into location</p>
+          {btcLocations.length === 0 ? (
+            <p className="rounded-xl bg-warn-soft px-4 py-3 text-[12.5px] text-warn">
+              No BTC locations set up yet. Add a location in Portfolio → Bitcoin first.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {btcLocations.map((loc) => (
+                <label
+                  key={loc.id}
+                  className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
+                    form.btcLocationId === loc.id
+                      ? 'border-brand bg-brand-soft'
+                      : 'border-line bg-surface-muted hover:border-ink-faint'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="btcLoc"
+                    value={loc.id}
+                    checked={form.btcLocationId === loc.id}
+                    onChange={() => setForm((f) => ({ ...f, btcLocationId: loc.id }))}
+                    className="accent-brand"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13.5px] font-semibold text-ink">{loc.name}</p>
+                    <p className="text-[11.5px] text-ink-muted">
+                      {loc.satoshi.toLocaleString()} sats held
+                    </p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Gold location picker */}
+      {isGoldHolding && (
+        <div>
+          <p className="mb-2 text-[13px] font-semibold text-ink">Buy into location</p>
+          {goldLocations.length === 0 ? (
+            <p className="rounded-xl bg-warn-soft px-4 py-3 text-[12.5px] text-warn">
+              No Gold locations set up yet. Add a location in Portfolio → Gold first.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {goldLocations.map((loc) => (
+                <label
+                  key={loc.id}
+                  className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
+                    form.goldLocationId === loc.id
+                      ? 'border-brand bg-brand-soft'
+                      : 'border-line bg-surface-muted hover:border-ink-faint'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="goldLoc"
+                    value={loc.id}
+                    checked={form.goldLocationId === loc.id}
+                    onChange={() => setForm((f) => ({ ...f, goldLocationId: loc.id }))}
+                    className="accent-brand"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13.5px] font-semibold text-ink">{loc.name}</p>
+                    <p className="text-[11.5px] text-ink-muted">
+                      {loc.grams.toFixed(4)} g held
+                    </p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  )
+
   return (
     <Modal
       open={open}
@@ -184,85 +268,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
                     options={holdingOptions}
                   />
 
-                  {/* BTC location picker */}
-                  {isBtcHolding && (
-                    <div>
-                      <p className="mb-2 text-[13px] font-semibold text-ink">Buy into location</p>
-                      {btcLocations.length === 0 ? (
-                        <p className="rounded-xl bg-warn-soft px-4 py-3 text-[12.5px] text-warn">
-                          No BTC locations set up yet. Add a location in Portfolio → Bitcoin first.
-                        </p>
-                      ) : (
-                        <div className="space-y-2">
-                          {btcLocations.map((loc) => (
-                            <label
-                              key={loc.id}
-                              className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
-                                form.btcLocationId === loc.id
-                                  ? 'border-brand bg-brand-soft'
-                                  : 'border-line bg-surface-muted hover:border-ink-faint'
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name="btcLocAdd"
-                                value={loc.id}
-                                checked={form.btcLocationId === loc.id}
-                                onChange={() => setForm((f) => ({ ...f, btcLocationId: loc.id }))}
-                                className="accent-brand"
-                              />
-                              <div className="min-w-0 flex-1">
-                                <p className="text-[13.5px] font-semibold text-ink">{loc.name}</p>
-                                <p className="text-[11.5px] text-ink-muted">
-                                  {loc.satoshi.toLocaleString()} sats held
-                                </p>
-                              </div>
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Gold location picker */}
-                  {isGoldHolding && (
-                    <div>
-                      <p className="mb-2 text-[13px] font-semibold text-ink">Buy into location</p>
-                      {goldLocations.length === 0 ? (
-                        <p className="rounded-xl bg-warn-soft px-4 py-3 text-[12.5px] text-warn">
-                          No Gold locations set up yet. Add a location in Portfolio → Gold first.
-                        </p>
-                      ) : (
-                        <div className="space-y-2">
-                          {goldLocations.map((loc) => (
-                            <label
-                              key={loc.id}
-                              className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
-                                form.goldLocationId === loc.id
-                                  ? 'border-brand bg-brand-soft'
-                                  : 'border-line bg-surface-muted hover:border-ink-faint'
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name="goldLocAdd"
-                                value={loc.id}
-                                checked={form.goldLocationId === loc.id}
-                                onChange={() => setForm((f) => ({ ...f, goldLocationId: loc.id }))}
-                                className="accent-brand"
-                              />
-                              <div className="min-w-0 flex-1">
-                                <p className="text-[13.5px] font-semibold text-ink">{loc.name}</p>
-                                <p className="text-[11.5px] text-ink-muted">
-                                  {loc.grams.toFixed(4)} g held
-                                </p>
-                              </div>
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {locationPicker}
                 </>
               )
             )}
@@ -295,10 +301,13 @@ export function DcaForm({ open, editing, onClose }: Props) {
 
         {/* ── EDIT mode: show plan name as read-only, no asset class ── */}
         {editing && (
-          <div className="rounded-xl bg-surface-muted px-4 py-3">
-            <p className="text-[11.5px] font-semibold uppercase tracking-wider text-ink-faint">Plan</p>
-            <p className="mt-0.5 text-[15px] font-bold text-ink">{editing.name}</p>
-          </div>
+          <>
+            <div className="rounded-xl bg-surface-muted px-4 py-3">
+              <p className="text-[11.5px] font-semibold uppercase tracking-wider text-ink-faint">Plan</p>
+              <p className="mt-0.5 text-[15px] font-bold text-ink">{editing.name}</p>
+            </div>
+            {locationPicker}
+          </>
         )}
 
         {/* Frequency */}
