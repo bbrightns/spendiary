@@ -14,7 +14,7 @@ interface Props {
 }
 
 export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
-  const { data, confirmDcaBuy, upsertBtcLocation, usdThb } = useData()
+  const { data, confirmDcaBuy, upsertBtcLocation, upsertGoldLocation, usdThb } = useData()
   const [price, setPrice] = useState<number | ''>('')
   const [sats, setSats] = useState<number | ''>('')
   const [showErrors, setShowErrors] = useState(false)
@@ -32,6 +32,8 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const isGold  = holding?.assetClass === 'gold'
   const rate = usdThb ?? 1
   const btcLocations = holding?.btcLocations ?? []
+  const goldLocations = holding?.goldLocations ?? []
+  const locations = isBtc ? btcLocations : isGold ? goldLocations : []
 
   useEffect(() => {
     const justOpened = !wasOpen.current && open
@@ -39,9 +41,9 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     if (!justOpened || !plan) return
     setShowErrors(false)
     // Pre-select location from plan preference, else first location, else new
-    const preferredId = plan.btcLocationId && btcLocations.some((l) => l.id === plan.btcLocationId)
+    const preferredId = plan.btcLocationId && locations.some((l) => l.id === plan.btcLocationId)
       ? plan.btcLocationId
-      : btcLocations.length > 0 ? btcLocations[0].id : '__new__'
+      : locations.length > 0 ? locations[0].id : '__new__'
     setSelectedLocId(preferredId)
     setNewLocName('')
     setSats('')
@@ -78,11 +80,12 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     ? plan.monthlyAmount / priceInThb
     : 0
   const satsToAdd = isBtc ? satsValue : Math.round(units * 1e8)
+  const gramsToAdd = isGold ? units : 0
   const hasHolding = !!holding
   const valid = isBtc ? satsValue > 0 : priceNum > 0
 
-  // BTC location validation
-  const btcLocValid = !isBtc || !hasHolding ||
+  // Location validation
+  const locValid = !(isBtc || isGold) || !hasHolding ||
     (selectedLocId !== '__new__') ||
     (newLocName.trim().length > 0)
 
@@ -96,7 +99,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const meta = ASSET_META[plan.assetClass]
 
   function confirm() {
-    if (!valid || !btcLocValid) { setShowErrors(true); return }
+    if (!valid || !locValid) { setShowErrors(true); return }
     if (!plan) return
     const p = plan
     const today = localDateStr()
@@ -123,6 +126,29 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         }
       }
       // Mark plan confirmed + log (skip holding unit update — managed by btcLocations)
+      confirmDcaBuy(p.id, priceInThb, today)
+    } else if (isGold && hasHolding && holding) {
+      // For Gold: add grams to the selected/new location, then mark plan confirmed
+      if (selectedLocId === '__new__') {
+        // Create new location
+        upsertGoldLocation(holding.id, {
+          name: newLocName.trim(),
+          grams: gramsToAdd,
+          thbSpent: p.monthlyAmount,
+        })
+      } else {
+        // Add to existing location
+        const existing = goldLocations.find((l) => l.id === selectedLocId)
+        if (existing) {
+          upsertGoldLocation(holding.id, {
+            id: existing.id,
+            name: existing.name,
+            grams: existing.grams + gramsToAdd,
+            thbSpent: existing.thbSpent + p.monthlyAmount,
+          })
+        }
+      }
+      // Mark plan confirmed + log (skip holding unit update — managed by goldLocations)
       confirmDcaBuy(p.id, priceInThb, today)
     } else {
       confirmDcaBuy(p.id, priceInThb, today)
@@ -233,7 +259,74 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                   className="w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-[13.5px] text-ink outline-none placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/20"
                 />
               )}
-              {showErrors && !btcLocValid && (
+              {showErrors && !locValid && (
+                <p className="text-[12px] text-loss">Please enter a name for the new location.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Gold location picker */}
+        {isGold && hasHolding && (
+          <div>
+            <p className="mb-2 text-[13px] font-semibold text-ink">Where did you buy?</p>
+            <div className="space-y-2">
+              {goldLocations.map((loc) => (
+                <label
+                  key={loc.id}
+                  className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
+                    selectedLocId === loc.id
+                      ? 'border-brand bg-brand-soft'
+                      : 'border-line bg-surface-muted hover:border-ink-faint'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="goldLoc"
+                    value={loc.id}
+                    checked={selectedLocId === loc.id}
+                    onChange={() => setSelectedLocId(loc.id)}
+                    className="accent-brand"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13.5px] font-semibold text-ink">{loc.name}</p>
+                    <p className="text-[11.5px] text-ink-muted">
+                      {loc.grams.toFixed(4)} g · {thb(loc.thbSpent)} spent
+                    </p>
+                  </div>
+                </label>
+              ))}
+
+              {/* New location option */}
+              <label
+                className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
+                  selectedLocId === '__new__'
+                    ? 'border-brand bg-brand-soft'
+                    : 'border-line bg-surface-muted hover:border-ink-faint'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="goldLoc"
+                  value="__new__"
+                  checked={selectedLocId === '__new__'}
+                  onChange={() => setSelectedLocId('__new__')}
+                  className="accent-brand"
+                />
+                <span className="text-[13.5px] font-semibold text-ink">New location…</span>
+              </label>
+
+              {selectedLocId === '__new__' && (
+                <input
+                  type="text"
+                  value={newLocName}
+                  onChange={(e) => setNewLocName(e.target.value)}
+                  placeholder="e.g. Home safe, Bank vault…"
+                  autoFocus
+                  className="w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-[13.5px] text-ink outline-none placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/20"
+                />
+              )}
+              {showErrors && !locValid && (
                 <p className="text-[12px] text-loss">Please enter a name for the new location.</p>
               )}
             </div>

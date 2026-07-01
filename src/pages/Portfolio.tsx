@@ -34,7 +34,7 @@ const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
 const SATS_PER_BTC = 100_000_000
 
 export function Portfolio() {
-  const { data, removeHolding, upsertBtcLocation, removeBtcLocation, removeGoldLocation } = useData()
+  const { data, removeHolding, upsertBtcLocation, removeBtcLocation, upsertGoldLocation, removeGoldLocation } = useData()
   const { status: priceStatus, lastUpdated, usdThb, goldThbPerGram, errorMsg, refresh: refreshPrices } = useLivePrices()
   const [filter, setFilter] = useState<AssetClass | 'all'>('all')
   const [sortBy, setSortBy] = useState<'none' | 'value' | 'pnl' | 'type'>('none')
@@ -53,9 +53,10 @@ export function Portfolio() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [locEditOpen, setLocEditOpen] = useState(false)
   const [locEditHoldingId, setLocEditHoldingId] = useState<string>('')
-  const [locEditing, setLocEditing] = useState<BtcLocation | null>(null)
+  const [locEditing, setLocEditing] = useState<BtcLocation | { id: string; name: string; grams: number; thbSpent: number } | null>(null)
   const [locName, setLocName] = useState('')
   const [locSatoshi, setLocSatoshi] = useState<number | ''>('')
+  const [locGrams, setLocGrams] = useState<number | ''>('')
   const [locThbSpent, setLocThbSpent] = useState<number | ''>('')
   const [locErrors, setLocErrors] = useState(false)
 
@@ -65,29 +66,47 @@ export function Portfolio() {
   const openAdd = () => { setEditing(null); setFormOpen(true) }
   const openEdit = (h: Holding) => { setEditing(h); setFormOpen(true) }
   const openBuy = (h: Holding) => { setBuying(h); setBuyOpen(true) }
-  function openLocEdit(holdingId: string, loc: BtcLocation) {
+  function openLocEdit(holdingId: string, loc: BtcLocation | { id: string; name: string; grams: number; thbSpent: number }) {
     setLocEditHoldingId(holdingId)
     setLocEditing(loc)
     setLocName(loc.name)
-    setLocSatoshi(loc.satoshi)
+    if ('satoshi' in loc) {
+      setLocSatoshi(loc.satoshi)
+      setLocGrams('')
+    } else {
+      setLocSatoshi('')
+      setLocGrams(loc.grams)
+    }
     setLocThbSpent(loc.thbSpent)
     setLocErrors(false)
     setLocEditOpen(true)
   }
 
   function saveLocEdit() {
-    if (!locEditing || !locName.trim() || locSatoshi === '' || locThbSpent === '') {
+    const isGoldLoc = locEditing && !('satoshi' in locEditing)
+    const qtyEmpty = isGoldLoc ? locGrams === '' : locSatoshi === ''
+    if (!locEditing || !locName.trim() || qtyEmpty || locThbSpent === '') {
       setLocErrors(true)
       return
     }
-    upsertBtcLocation(locEditHoldingId, {
-      id: locEditing.id,
-      name: locName.trim(),
-      satoshi: Number(locSatoshi),
-      thbSpent: Number(locThbSpent),
-    })
+    if (isGoldLoc) {
+      upsertGoldLocation(locEditHoldingId, {
+        id: locEditing.id,
+        name: locName.trim(),
+        grams: Number(locGrams),
+        thbSpent: Number(locThbSpent),
+      })
+    } else {
+      upsertBtcLocation(locEditHoldingId, {
+        id: locEditing.id,
+        name: locName.trim(),
+        satoshi: Number(locSatoshi),
+        thbSpent: Number(locThbSpent),
+      })
+    }
     setLocEditOpen(false)
   }
+
 
   if (data.holdings.length === 0) {
     return (
@@ -481,7 +500,7 @@ export function Portfolio() {
                             )
                         )}
 
-                        {isGold && (
+                         {isGold && (
                           (h.goldLocations ?? []).length === 0
                             ? <p className="py-1 text-[13px] text-ink-muted">No locations yet. Use "Buy more" to add.</p>
                             : (
@@ -494,6 +513,13 @@ export function Portfolio() {
                                         {loc.grams.toFixed(4)} g · {thb(loc.thbSpent)} spent
                                       </p>
                                     </div>
+                                    <button
+                                      onClick={() => openLocEdit(h.id, loc)}
+                                      aria-label={`Edit location ${loc.name}`}
+                                      className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
+                                    >
+                                      <PencilIcon className="h-[14px] w-[14px]" />
+                                    </button>
                                     <button
                                       onClick={() => removeGoldLocation(h.id, loc.id)}
                                       aria-label={`Remove location ${loc.name}`}
@@ -519,12 +545,12 @@ export function Portfolio() {
       <HoldingForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
       <BuyMoreForm open={buyOpen} holding={buying} onClose={() => setBuyOpen(false)} />
 
-      {/* BTC location edit modal */}
+      {/* BTC / Gold location edit modal */}
       <Modal
         open={locEditOpen}
         onClose={() => setLocEditOpen(false)}
         title="Edit location"
-        description="Update this location's name, satoshi amount, or THB spent."
+        description={locEditing && !('satoshi' in locEditing) ? "Update this location's name, grams, or THB spent." : "Update this location's name, satoshi amount, or THB spent."}
       >
         <div className="space-y-4 pb-2">
           <TextField
@@ -535,14 +561,25 @@ export function Portfolio() {
             error={locErrors && !locName.trim() ? 'Required' : undefined}
           />
           <div className="grid grid-cols-1 gap-3 ">
-            <NumberField
-              label="Satoshi"
-              value={locSatoshi}
-              onChange={setLocSatoshi}
-              placeholder="0"
-              step={1}
-              error={locErrors && (locSatoshi === '' || Number(locSatoshi) < 0) ? 'Required' : undefined}
-            />
+            {locEditing && !('satoshi' in locEditing) ? (
+              <NumberField
+                label="Grams"
+                value={locGrams}
+                onChange={setLocGrams}
+                placeholder="0"
+                step={0.0001}
+                error={locErrors && (locGrams === '' || Number(locGrams) < 0) ? 'Required' : undefined}
+              />
+            ) : (
+              <NumberField
+                label="Satoshi"
+                value={locSatoshi}
+                onChange={setLocSatoshi}
+                placeholder="0"
+                step={1}
+                error={locErrors && (locSatoshi === '' || Number(locSatoshi) < 0) ? 'Required' : undefined}
+              />
+            )}
             <NumberField
               label="THB spent"
               prefix="฿"

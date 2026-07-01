@@ -467,16 +467,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
           if (!holding) return { ...prev, dcaPlans: updatedPlans }
 
           // BTC: units are derived from btcLocations (managed by upsertBtcLocation).
+          // Gold: units are derived from goldLocations (managed by upsertGoldLocation).
           // Don't update units/avgCost here — just update the live price + date.
           const isBtcWithLocations =
             holding.assetClass === 'crypto' &&
             (holding.btcLocations?.length ?? 0) > 0
+          const isGoldWithLocations =
+            holding.assetClass === 'gold' &&
+            (holding.goldLocations?.length ?? 0) > 0
 
           const units = plan.monthlyAmount / pricePerUnit
           const newUnits = holding.units + units
           const newAvgCost = (holding.units * holding.avgCost + units * pricePerUnit) / newUnits
           const updatedHoldings = prev.holdings.map((h) =>
-            h.id !== plan.holdingId ? h : isBtcWithLocations
+            h.id !== plan.holdingId ? h : (isBtcWithLocations || isGoldWithLocations)
               ? { ...h, price: pricePerUnit, updatedAt: date }
               : { ...h, units: newUnits, avgCost: newAvgCost, price: pricePerUnit, updatedAt: date }
           )
