@@ -87,7 +87,7 @@ export const seedData: SpendiaryData = {
   transfers: [
     {
       id: 't1',
-      recipient: 'Mom — Monthly Support',
+      recipient: 'Mom (Monthly Support)',
       note: 'Standing allowance',
       amount: 15_000,
       frequency: 'monthly',

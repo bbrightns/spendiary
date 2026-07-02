@@ -1,23 +1,34 @@
 import type { ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
 import { BottomNav } from './BottomNav'
+import { Sidebar } from './Sidebar'
 import { SettingsIcon, SparkleIcon } from '../icons'
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
-    /* Outer shell: fills the entire viewport, neutral bg so the phone frame is visible on desktop */
-    <div className="min-h-dvh bg-[#d1d5db] dark:bg-[#111318] flex justify-center">
-      {/* Mobile-width frame — max 390px, acts like a phone shell */}
-      <div className="relative w-full max-w-[390px] min-h-dvh bg-canvas flex flex-col shadow-2xl">
+    /* Outer shell: fills the entire viewport, neutral bg so the phone frame is visible on desktop, transitions to canvas bg on widescreen */
+    <div className="min-h-dvh bg-[#d1d5db] dark:bg-[#111318] flex justify-center lg:bg-canvas lg:dark:bg-canvas lg:block">
+      
+      {/* Skip to main content (keyboard / screen reader) */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-ink focus:px-4 focus:py-2 focus:text-[14px] focus:font-semibold focus:text-white focus:shadow-[var(--shadow-lift)] focus:outline-none"
+      >
+        Skip to content
+      </a>
 
-        {/* Skip to main content (keyboard / screen reader) */}
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-ink focus:px-4 focus:py-2 focus:text-[14px] focus:font-semibold focus:text-white focus:shadow-[var(--shadow-lift)] focus:outline-none"
-        >
-          Skip to content
-        </a>
+      {/* ── Desktop Widescreen Layout (≥ lg) ── */}
+      <div className="hidden lg:flex min-h-dvh w-full">
+        <Sidebar />
+        <main id="main-content" className="flex-1 pl-64">
+          <div className="mx-auto max-w-5xl px-8 py-8">
+            {children}
+          </div>
+        </main>
+      </div>
 
+      {/* ── Mobile/Tablet Simulator Layout (< lg) ── */}
+      <div className="relative w-full max-w-[390px] min-h-dvh bg-canvas flex flex-col shadow-2xl lg:hidden">
         {/* Top brand bar */}
         <div className="sticky top-0 z-20 flex items-center gap-2.5 border-b border-line bg-canvas/80 px-5 py-3.5 backdrop-blur-xl">
           <div className="grid h-8 w-8 place-items-center rounded-lg bg-ink text-white dark:bg-brand-soft dark:text-brand">
@@ -41,7 +52,7 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Page content */}
-        <main id="main-content" className="flex-1">
+        <main className="flex-1">
           <div className="w-full px-5 pb-28 pt-6">
             {children}
           </div>
@@ -53,4 +64,5 @@ export function Layout({ children }: { children: ReactNode }) {
     </div>
   )
 }
+
 

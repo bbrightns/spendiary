@@ -349,7 +349,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
       description={
         isStock
           ? usdThb
-            ? `Price in USD — converted at ฿${rate.toFixed(2)}/USD.`
+            ? `Price in USD, converted at ฿${rate.toFixed(2)}/USD.`
             : 'USD/THB rate loading…'
           : 'Log a purchase. Units grow and your average cost is recalculated.'
       }
@@ -357,7 +357,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
       <div className="space-y-5">
         {isStock && !usdThb && (
           <div className="rounded-xl bg-warn-soft px-4 py-3 text-[13px] font-medium text-warn">
-            USD/THB rate is loading — please wait before saving to avoid wrong values.
+            USD/THB rate is loading. Please wait before saving to avoid wrong values.
           </div>
         )}
         <div className="rounded-2xl bg-surface-muted px-4 py-3">

@@ -28,7 +28,7 @@ export function EditButton({ onClick, label = 'Edit' }: EditButtonProps) {
     <button
       onClick={onClick}
       aria-label={label}
-      className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
+      className="relative grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink after:absolute after:-inset-1.5 after:content-['']"
     >
       <svg
         viewBox="0 0 24 24"

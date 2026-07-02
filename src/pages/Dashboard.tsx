@@ -93,7 +93,7 @@ export function Dashboard() {
           <EmptyState
             icon={<SparkleIcon className="h-7 w-7" />}
             title="Welcome to Spendiary"
-            description="Your private cockpit for investments, DCA plans, and transfer schedules — all in Thai Baht."
+            description="Your private cockpit for investments, DCA plans, and transfer schedules, all in Thai Baht."
           />
         </Card>
       </>

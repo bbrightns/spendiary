@@ -282,7 +282,7 @@ export function DcaPlanner() {
         <div className="flex flex-wrap items-start justify-between gap-6">
           <InlineEditStat
             label="Monthly Salary"
-            value={salary > 0 ? thb(salary) : '—'}
+            value={salary > 0 ? thb(salary) : '-'}
             editing={editingSalary}
             draft={salaryDraft}
             inputRef={salaryRef}

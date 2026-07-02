@@ -208,7 +208,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
           </div>
           {!hasHolding && (
             <p className="mt-2 text-[12px] text-ink-muted">
-              No linked holding — this will only mark the plan as confirmed, not update your portfolio.
+              No linked holding: this will only mark the plan as confirmed, not update your portfolio.
               Link a holding by editing this plan.
             </p>
           )}
@@ -428,11 +428,11 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               <span className="font-semibold text-ink">
                 {isBtc
                   ? selectedLocId === '__new__'
-                    ? newLocName.trim() || '—'
+                    ? newLocName.trim() || '-'
                     : (btcLocations.find((l) => l.id === selectedLocId)?.name ?? holding!.name)
                   : isGold
                   ? selectedLocId === '__new__'
-                    ? newLocName.trim() || '—'
+                    ? newLocName.trim() || '-'
                     : (goldLocations.find((l) => l.id === selectedLocId)?.name ?? holding!.name)
                   : holding!.name}
               </span>
@@ -452,7 +452,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
 
         <div className="pt-1">
           <Button onClick={confirm} className="w-full">
-            ✓ Confirm — I bought this
+            ✓ Confirm purchase
           </Button>
         </div>
       </div>

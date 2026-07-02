@@ -107,7 +107,7 @@ export function HoldingLogs() {
           <EmptyState
             icon={<ClockIcon className="h-7 w-7" />}
             title="No activity yet"
-            description="Actions you take in Portfolio — adding, buying more, or editing holdings — will appear here."
+            description="Actions you take in Portfolio (adding, buying more, or editing holdings) will appear here."
             accent="var(--color-brand)"
           />
         </Card>

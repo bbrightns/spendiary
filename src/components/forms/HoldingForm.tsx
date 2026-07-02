@@ -190,8 +190,8 @@ export function HoldingForm({ open, editing, onClose }: Props) {
     : isGold
     ? 'Log your first gold purchase in grams.'
     : isUsd
-    ? `Prices in USD — converted to THB at ${usdThb ? `฿${usdThb.toFixed(2)}/USD` : 'live rate'}.`
-    : 'Mutual fund — valued in THB.'
+    ? `Prices in USD, converted to THB at ${usdThb ? `฿${usdThb.toFixed(2)}/USD` : 'live rate'}.`
+    : 'Mutual fund, valued in THB.'
 
   return (
     <Modal
@@ -450,7 +450,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
           <>
             {isUsd && !usdThb && (
               <div className="rounded-xl bg-warn-soft px-4 py-3 text-[13px] font-medium text-warn">
-                USD/THB rate is loading — please wait before saving to avoid wrong values.
+                USD/THB rate is loading. Please wait before saving to avoid wrong values.
               </div>
             )}
             <NumberField

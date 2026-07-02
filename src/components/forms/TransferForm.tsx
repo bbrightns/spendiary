@@ -87,7 +87,7 @@ export function TransferForm({ open, editing, onClose }: Props) {
           value={form.recipient}
           error={showErrors && form.recipient.trim() === '' ? 'Recipient is required' : undefined}
           onChange={(recipient) => setForm((f) => ({ ...f, recipient }))}
-          placeholder="e.g. Mom — Monthly Support"
+          placeholder="e.g. Mom (Monthly Support)"
         />
         <TextField
           label="Note"

@@ -97,7 +97,7 @@ export function Portfolio() {
     const targetVal = (targetPct / 100) * targetTotalValue
 
     let diff = targetVal - actualVal
-    let actionLabel = '—'
+    let actionLabel = '-'
     let actionCls = 'text-ink-muted'
 
     if (targetsSum === 100) {
@@ -447,7 +447,7 @@ export function Portfolio() {
                               <span className="truncate">{shortName}</span>
                             </div>
                             <div className="text-[10px] text-ink-muted pl-3.5">
-                              Tgt: {targetsSum === 100 ? thbCompact(row.targetVal) : '—'}
+                              Tgt: {targetsSum === 100 ? thbCompact(row.targetVal) : '-'}
                             </div>
                           </td>
                           
@@ -479,7 +479,7 @@ export function Portfolio() {
                                 {row.actionLabel}
                               </span>
                             ) : (
-                              <span className="text-ink-muted">—</span>
+                              <span className="text-ink-muted">-</span>
                             )}
                           </td>
                         </tr>
@@ -626,7 +626,7 @@ export function Portfolio() {
                     onClick={(e) => { e.stopPropagation(); openBuy(h) }}
                     aria-label={`Buy more ${h.name}`}
                     title="Buy more"
-                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-soft text-brand transition-all hover:bg-brand hover:text-white active:scale-95"
+                    className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-soft text-brand transition-all hover:bg-brand hover:text-white active:scale-95 after:absolute after:-inset-1 after:content-['']"
                   >
                     <PlusIcon className="h-[16px] w-[16px]" strokeWidth={2.2} />
                   </button>
@@ -722,14 +722,14 @@ export function Portfolio() {
                                     <button
                                       onClick={() => openLocEdit(h.id, loc)}
                                       aria-label={`Edit location ${loc.name}`}
-                                      className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
+                                      className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink after:absolute after:-inset-1.5 after:content-['']"
                                     >
                                       <PencilIcon className="h-[14px] w-[14px]" />
                                     </button>
                                     <button
                                       onClick={() => removeBtcLocation(h.id, loc.id)}
                                       aria-label={`Remove location ${loc.name}`}
-                                      className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss"
+                                      className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss after:absolute after:-inset-1.5 after:content-['']"
                                     >
                                       <TrashIcon className="h-[14px] w-[14px]" />
                                     </button>
@@ -755,14 +755,14 @@ export function Portfolio() {
                                     <button
                                       onClick={() => openLocEdit(h.id, loc)}
                                       aria-label={`Edit location ${loc.name}`}
-                                      className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
+                                      className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink after:absolute after:-inset-1.5 after:content-['']"
                                     >
                                       <PencilIcon className="h-[14px] w-[14px]" />
                                     </button>
                                     <button
                                       onClick={() => removeGoldLocation(h.id, loc.id)}
                                       aria-label={`Remove location ${loc.name}`}
-                                      className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss"
+                                      className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss after:absolute after:-inset-1.5 after:content-['']"
                                     >
                                       <TrashIcon className="h-[14px] w-[14px]" />
                                     </button>

@@ -353,7 +353,7 @@ export function Retirement() {
     if (minRetireAge !== null) {
       return { label: 'Could retire at', value: String(minRetireAge), highlight: 'loss' as const }
     }
-    return { label: 'Could retire at', value: plannedAge > 0 ? String(plannedAge) : '—', highlight: 'loss' as const }
+    return { label: 'Could retire at', value: plannedAge > 0 ? String(plannedAge) : '-', highlight: 'loss' as const }
   }, [earliestRetireAge, minRetireAge, plannedAge])
 
   const yearsLeft = plannedYearsLeft
@@ -608,7 +608,7 @@ export function Retirement() {
             <div>
               <p className="text-[12.5px] font-medium text-ink-muted">Current Wealth Runway</p>
               <p className="mt-1 font-display text-[28px] font-extrabold tnum text-ink leading-none">
-                {runwayYears !== null ? `${runwayYears.toFixed(1)} years` : '—'}
+                {runwayYears !== null ? `${runwayYears.toFixed(1)} years` : '-'}
               </p>
               <p className="mt-1 text-[11px] text-ink-muted">
                 {runwayYears !== null
@@ -727,7 +727,7 @@ export function Retirement() {
                     <path d="M8 6v3M8 11.5v.5" strokeLinecap="round" />
                     <circle cx={8} cy={8} r={6.5} />
                   </svg>
-                  <p className="text-[13px] font-bold text-loss">To close the gap — pick a path:</p>
+                  <p className="text-[13px] font-bold text-loss">To close the gap, pick a path:</p>
                 </div>
                 <div className="space-y-2 pl-1">
                   {monthlyGap !== null && monthlyGap > 0 && (
@@ -751,7 +751,7 @@ export function Retirement() {
                   ) : (
                     <div className="flex items-start gap-2 text-[12.5px] text-loss/60">
                       <span className="mt-px font-bold shrink-0">②</span>
-                      <span>Retiring later won't close the gap — increase your monthly investment instead.</span>
+                      <span>Retiring later won't close the gap. Increase your monthly investment instead.</span>
                     </div>
                   )}
                 </div>
