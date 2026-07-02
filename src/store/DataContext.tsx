@@ -107,6 +107,8 @@ interface DataContextValue {
     overrideUnits?: number,
     overrideAvgCost?: number,
     overridePrice?: number,
+    btcLocationUpdate?: Omit<BtcLocation, 'id'> & { id?: string },
+    goldLocationUpdate?: Omit<GoldLocation, 'id'> & { id?: string },
   ) => void
   skipDcaBuy: (planId: string, date: string) => void
 
@@ -598,6 +600,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         overrideUnits,
         overrideAvgCost,
         overridePrice,
+        btcLocationUpdate,
+        goldLocationUpdate,
       ) =>
         updateData((prev) => {
           const plan = prev.dcaPlans.find((p) => p.id === planId)
@@ -634,24 +638,43 @@ export function DataProvider({ children }: { children: ReactNode }) {
           const holding = prev.holdings.find((h) => h.id === plan.holdingId)
           if (!holding) return { ...prev, dcaPlans: updatedPlans }
 
-          // BTC: units are derived from btcLocations (managed by upsertBtcLocation).
-          // Gold: units are derived from goldLocations (managed by upsertGoldLocation).
-          // Don't update units/avgCost here — just update the live price + date.
+          // Capture previous state (for undo) BEFORE applying location updates
+          const previousHoldingState = JSON.parse(JSON.stringify(holding))
+
+          let calculatedUnits = plan.monthlyAmount / pricePerUnit
+          let newUnits = overrideUnits !== undefined ? overrideUnits : (holding.units + calculatedUnits)
+          let newAvgCost = overrideAvgCost !== undefined ? overrideAvgCost : ((holding.units * holding.avgCost + calculatedUnits * pricePerUnit) / newUnits)
+          const finalPrice = overridePrice !== undefined ? overridePrice : pricePerUnit
+
+          let finalBtcLocations = holding.btcLocations
+          let finalGoldLocations = holding.goldLocations
+
+          if (holding.assetClass === 'crypto' && btcLocationUpdate) {
+            finalBtcLocations = upsert(holding.btcLocations ?? [], btcLocationUpdate)
+            const totalSats = finalBtcLocations.reduce((s, l) => s + l.satoshi, 0)
+            const totalThb = finalBtcLocations.reduce((s, l) => s + l.thbSpent, 0)
+            newUnits = totalSats / 100_000_000
+            newAvgCost = newUnits > 0 ? totalThb / newUnits : holding.avgCost
+            calculatedUnits = newUnits - holding.units
+          } else if (holding.assetClass === 'gold' && goldLocationUpdate) {
+            finalGoldLocations = upsert(holding.goldLocations ?? [], goldLocationUpdate)
+            const totalGrams = finalGoldLocations.reduce((s, l) => s + l.grams, 0)
+            const totalThb = finalGoldLocations.reduce((s, l) => s + l.thbSpent, 0)
+            newUnits = totalGrams
+            newAvgCost = newUnits > 0 ? totalThb / newUnits : holding.avgCost
+            calculatedUnits = newUnits - holding.units
+          }
+
           const isBtcWithLocations =
             holding.assetClass === 'crypto' &&
-            (holding.btcLocations?.length ?? 0) > 0
+            (finalBtcLocations?.length ?? 0) > 0
           const isGoldWithLocations =
             holding.assetClass === 'gold' &&
-            (holding.goldLocations?.length ?? 0) > 0
-
-          const units = plan.monthlyAmount / pricePerUnit
-          const newUnits = overrideUnits !== undefined ? overrideUnits : (holding.units + units)
-          const newAvgCost = overrideAvgCost !== undefined ? overrideAvgCost : ((holding.units * holding.avgCost + units * pricePerUnit) / newUnits)
-          const finalPrice = overridePrice !== undefined ? overridePrice : pricePerUnit
+            (finalGoldLocations?.length ?? 0) > 0
 
           const updatedHoldings = prev.holdings.map((h) =>
             h.id !== plan.holdingId ? h : (isBtcWithLocations || isGoldWithLocations)
-              ? { ...h, price: finalPrice, updatedAt: date }
+              ? { ...h, btcLocations: finalBtcLocations, goldLocations: finalGoldLocations, units: newUnits, avgCost: newAvgCost, price: finalPrice, updatedAt: date }
               : { ...h, units: newUnits, avgCost: newAvgCost, price: finalPrice, updatedAt: date }
           )
 
@@ -664,14 +687,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
             ticker: holding.ticker,
             assetClass: holding.assetClass,
             note: holding.assetClass === 'crypto'
-              ? `DCA · +${Math.round(units * 1e8).toLocaleString()} sats · ฿${plan.monthlyAmount.toLocaleString()} total`
+              ? `DCA · +${Math.round(calculatedUnits * 1e8).toLocaleString()} sats · ฿${plan.monthlyAmount.toLocaleString()} total`
               : holding.assetClass === 'gold'
-              ? `DCA · +${units.toFixed(4)} g · ฿${plan.monthlyAmount.toLocaleString()} total`
+              ? `DCA · +${calculatedUnits.toFixed(4)} g · ฿${plan.monthlyAmount.toLocaleString()} total`
               : overrideUnits !== undefined
               ? `DCA (Updated Portfolio) · New Units: ${overrideUnits.toLocaleString()} @ Avg Cost: ${overrideAvgCost?.toLocaleString()}`
-              : `DCA · +${units.toFixed(4)} units @ ฿${pricePerUnit.toLocaleString()}/unit · ฿${plan.monthlyAmount.toLocaleString()} total`,
+              : `DCA · +${calculatedUnits.toFixed(4)} units @ ฿${pricePerUnit.toLocaleString()}/unit · ฿${plan.monthlyAmount.toLocaleString()} total`,
             holdingId: holding.id,
-            previousHoldingState: JSON.parse(JSON.stringify(holding)),
+            previousHoldingState,
             dcaPlanId: plan.id,
             dcaDate: date,
           }

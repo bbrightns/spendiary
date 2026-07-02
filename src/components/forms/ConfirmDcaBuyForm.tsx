@@ -5,7 +5,7 @@ import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import { ASSET_META } from '../../lib/calc'
 import type { DcaPlan } from '../../lib/types'
-import { thb } from '../../lib/format'
+import { localDateStr, thb } from '../../lib/format'
 
 interface Props {
   open: boolean
@@ -14,7 +14,7 @@ interface Props {
 }
 
 export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
-  const { data, confirmDcaBuy, upsertBtcLocation, upsertGoldLocation, usdThb } = useData()
+  const { data, confirmDcaBuy, usdThb } = useData()
   const [price, setPrice] = useState<number | ''>('')
   const [sats, setSats] = useState<number | ''>('')
   const [unitHeld, setUnitHeld] = useState<number | ''>('')
@@ -131,54 +131,46 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     if (!valid || !locValid) { setShowErrors(true); return }
     if (!plan) return
     const p = plan
-    const today = new Date().toISOString()
+    const today = localDateStr()
 
     if (isBtc && hasHolding && holding) {
-      // For BTC: add sats to the selected/new location, then mark plan confirmed
-      if (selectedLocId === '__new__') {
-        // Create new location
-        upsertBtcLocation(holding.id, {
-          name: newLocName.trim(),
-          satoshi: satsToAdd,
-          thbSpent: p.monthlyAmount,
-        })
-      } else {
-        // Add to existing location
-        const existing = btcLocations.find((l) => l.id === selectedLocId)
-        if (existing) {
-          upsertBtcLocation(holding.id, {
-            id: existing.id,
-            name: existing.name,
-            satoshi: existing.satoshi + satsToAdd,
-            thbSpent: existing.thbSpent + p.monthlyAmount,
-          })
-        }
-      }
-      // Mark plan confirmed + log (skip holding unit update — managed by btcLocations)
-      confirmDcaBuy(p.id, priceInThb, today)
+      const btcLocUpdate = selectedLocId === '__new__'
+        ? {
+            name: newLocName.trim(),
+            satoshi: satsToAdd,
+            thbSpent: p.monthlyAmount,
+          }
+        : (() => {
+            const existing = btcLocations.find((l) => l.id === selectedLocId)
+            return existing
+              ? {
+                  id: existing.id,
+                  name: existing.name,
+                  satoshi: existing.satoshi + satsToAdd,
+                  thbSpent: existing.thbSpent + p.monthlyAmount,
+                }
+              : undefined
+          })()
+      confirmDcaBuy(p.id, priceInThb, today, undefined, undefined, undefined, btcLocUpdate)
     } else if (isGold && hasHolding && holding) {
-      // For Gold: add grams to the selected/new location, then mark plan confirmed
-      if (selectedLocId === '__new__') {
-        // Create new location
-        upsertGoldLocation(holding.id, {
-          name: newLocName.trim(),
-          grams: gramsToAdd,
-          thbSpent: p.monthlyAmount,
-        })
-      } else {
-        // Add to existing location
-        const existing = goldLocations.find((l) => l.id === selectedLocId)
-        if (existing) {
-          upsertGoldLocation(holding.id, {
-            id: existing.id,
-            name: existing.name,
-            grams: existing.grams + gramsToAdd,
-            thbSpent: existing.thbSpent + p.monthlyAmount,
-          })
-        }
-      }
-      // Mark plan confirmed + log (skip holding unit update — managed by goldLocations)
-      confirmDcaBuy(p.id, priceInThb, today)
+      const goldLocUpdate = selectedLocId === '__new__'
+        ? {
+            name: newLocName.trim(),
+            grams: gramsToAdd,
+            thbSpent: p.monthlyAmount,
+          }
+        : (() => {
+            const existing = goldLocations.find((l) => l.id === selectedLocId)
+            return existing
+              ? {
+                  id: existing.id,
+                  name: existing.name,
+                  grams: existing.grams + gramsToAdd,
+                  thbSpent: existing.thbSpent + p.monthlyAmount,
+                }
+              : undefined
+          })()
+      confirmDcaBuy(p.id, priceInThb, today, undefined, undefined, undefined, undefined, goldLocUpdate)
     } else if (isStock && hasHolding && holding) {
       // Send total units and avg cost overrides (and the stock price in USD, which is converted to THB for metadata/updatedAt price)
       confirmDcaBuy(p.id, priceInThb, today, Number(unitHeld), Number(avgCost), priceInThb)
@@ -445,6 +437,16 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                     ? newLocName.trim() || '—'
                     : (goldLocations.find((l) => l.id === selectedLocId)?.name ?? holding!.name)
                   : holding!.name}
+              </span>
+            </div>
+            <div className="mt-1 flex items-center justify-between text-[13px]">
+              <span className="text-ink-muted">Total will be</span>
+              <span className="font-semibold tnum text-ink">
+                {isBtc
+                  ? `${(((btcLocations.find((l) => l.id === selectedLocId)?.satoshi ?? 0) + satsToAdd) / 100_000_000).toFixed(8)} BTC`
+                  : isGold
+                  ? `${((goldLocations.find((l) => l.id === selectedLocId)?.grams ?? 0) + gramsToAdd).toFixed(4)} g`
+                  : `${((holding?.units ?? 0) + units).toFixed(4)} units`}
               </span>
             </div>
           </div>

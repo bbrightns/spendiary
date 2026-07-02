@@ -4,6 +4,7 @@ import { NumberField, SelectField, TextField } from '../ui/Field'
 import { FormActions } from './FormActions'
 import { useData } from '../../store/DataContext'
 import type { Frequency, Transfer } from '../../lib/types'
+import { localDateStr } from '../../lib/format'
 
 interface Props {
   open: boolean
@@ -14,7 +15,7 @@ interface Props {
 function defaultExpiry(): string {
   const d = new Date()
   d.setMonth(d.getMonth() + 3)
-  return d.toISOString().slice(0, 10)
+  return localDateStr(d)
 }
 
 const blank = () => ({
