@@ -421,7 +421,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         )}
 
         {/* Preview */}
-        {valid && hasHolding && (
+        {hasHolding && (
           <div className="rounded-2xl bg-surface-muted px-4 py-3">
             <div className="flex items-center justify-between text-[13px]">
               <span className="text-ink-muted">Units to add</span>
