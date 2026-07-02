@@ -319,7 +319,7 @@ export function Portfolio() {
         <div className="grid grid-cols-2 gap-4">
           {/* Card 1: Current Value & Invested */}
           <Card className="animate-rise">
-            <span className="text-[11.5px] font-bold text-ink">Current Value</span>
+            <span className="text-[11.5px] font-bold text-ink-muted">Current Value</span>
             <p className="mt-1 font-display text-[22px] font-extrabold tracking-tight tnum text-ink leading-tight whitespace-nowrap">
               {thb(summary.value)}
             </p>
@@ -330,7 +330,7 @@ export function Portfolio() {
 
           {/* Card 2: Total Profit / Loss */}
           <Card className="animate-rise">
-            <span className="text-[11.5px] font-bold text-ink">Total Profit / Loss</span>
+            <span className="text-[11.5px] font-bold text-ink-muted">Total Profit / Loss</span>
             <p className="mt-1 leading-tight whitespace-nowrap">
               <PnLText value={summary.pnl} className="font-display text-[22px] !font-extrabold tracking-tight" />
             </p>
