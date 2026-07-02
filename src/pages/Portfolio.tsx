@@ -133,7 +133,7 @@ export function Portfolio() {
     )
   }
 
-  const TYPE_ORDER: Record<AssetClass, number> = { crypto: 0, gold: 1, stock: 2, fund: 3 }
+  const TYPE_ORDER: Record<AssetClass, number> = { crypto: 0, gold: 1, stock: 2, fund: 3, cash: 4 }
 
   const searchLower = search.toLowerCase()
   const rows = data.holdings

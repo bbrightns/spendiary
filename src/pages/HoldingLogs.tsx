@@ -31,6 +31,7 @@ const ASSET_FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'stock', label: 'Stocks' },
   { key: 'crypto', label: 'Bitcoin' },
   { key: 'gold', label: 'Gold' },
+  { key: 'cash', label: 'Cash' },
 ]
 
 const ACTION_FILTERS = [

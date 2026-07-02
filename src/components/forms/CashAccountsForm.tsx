@@ -14,11 +14,26 @@ interface Props {
 interface Draft {
   id: string
   name: string
-  balance: number | ''
+  balance: string
 }
 
 function tempId(): string {
   return `tmp-${Math.random().toString(36).slice(2, 9)}`
+}
+
+function formatWithCommas(value: string | number): string {
+  const s = String(value)
+  let clean = s.replace(/[^0-9.]/g, '')
+  const parts = clean.split('.')
+  if (parts.length > 2) {
+    clean = parts[0] + '.' + parts.slice(1).join('')
+  }
+  const cleanParts = clean.split('.')
+  const integerPart = cleanParts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  if (cleanParts.length > 1) {
+    return `${integerPart}.${cleanParts[1].slice(0, 2)}`
+  }
+  return integerPart
 }
 
 export function CashAccountsForm({ open, onClose }: Props) {
@@ -29,12 +44,15 @@ export function CashAccountsForm({ open, onClose }: Props) {
     if (!open) return
     setRows(
       data.cashAccounts.length > 0
-        ? data.cashAccounts.map((a) => ({ id: a.id, name: a.name, balance: a.balance }))
+        ? data.cashAccounts.map((a) => ({ id: a.id, name: a.name, balance: formatWithCommas(a.balance) }))
         : [{ id: tempId(), name: '', balance: '' }],
     )
   }, [open, data.cashAccounts])
 
-  const total = rows.reduce((sum, r) => sum + (r.balance === '' ? 0 : Number(r.balance)), 0)
+  const total = rows.reduce((sum, r) => {
+    const clean = r.balance.replace(/[^0-9.]/g, '')
+    return sum + (clean === '' ? 0 : Number(clean))
+  }, 0)
 
   const update = (id: string, patch: Partial<Draft>) =>
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)))
@@ -44,11 +62,14 @@ export function CashAccountsForm({ open, onClose }: Props) {
   function save() {
     const cleaned: CashAccount[] = rows
       .filter((r) => r.name.trim() !== '')
-      .map((r) => ({
-        id: r.id.startsWith('tmp-') ? tempId().replace('tmp-', 'cash-') : r.id,
-        name: r.name.trim(),
-        balance: r.balance === '' ? 0 : Number(r.balance),
-      }))
+      .map((r) => {
+        const clean = r.balance.replace(/[^0-9.]/g, '')
+        return {
+          id: r.id.startsWith('tmp-') ? tempId().replace('tmp-', 'cash-') : r.id,
+          name: r.name.trim(),
+          balance: clean === '' ? 0 : Number(clean),
+        }
+      })
     setCashAccounts(cleaned)
     onClose()
   }
@@ -74,14 +95,13 @@ export function CashAccountsForm({ open, onClose }: Props) {
                 ฿
               </span>
               <input
-                type="number"
+                type="text"
                 inputMode="decimal"
-                min={0}
                 className="h-11 w-full rounded-xl border border-line-strong bg-surface pl-8 pr-3 text-[15px] tnum text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15"
                 placeholder="0"
                 value={r.balance}
                 onChange={(e) =>
-                  update(r.id, { balance: e.target.value === '' ? '' : Number(e.target.value) })
+                  update(r.id, { balance: formatWithCommas(e.target.value) })
                 }
               />
             </div>

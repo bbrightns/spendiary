@@ -1,4 +1,4 @@
-export type AssetClass = 'fund' | 'stock' | 'crypto' | 'gold'
+export type AssetClass = 'fund' | 'stock' | 'crypto' | 'gold' | 'cash'
 
 export interface BtcLocation {
   id: string
@@ -122,6 +122,7 @@ export interface HoldingLog {
   note: string             // human-readable detail line
   holdingId?: string
   previousHoldingState?: Holding
+  previousCashAccountsState?: CashAccount[]
   dcaPlanId?: string
   dcaDate?: string
 }

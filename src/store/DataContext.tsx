@@ -361,7 +361,53 @@ export function DataProvider({ children }: { children: ReactNode }) {
       logout,
       usdThb,
       setUsdThb,
-      setCashAccounts: (cashAccounts) => updateData((prev) => ({ ...prev, cashAccounts })),
+      setCashAccounts: (cashAccounts) =>
+        updateData((prev) => {
+          const changes: string[] = []
+          const oldAccounts = prev.cashAccounts ?? []
+          
+          for (const oldAcc of oldAccounts) {
+            const newAcc = cashAccounts.find((a) => a.id === oldAcc.id)
+            if (!newAcc) {
+              changes.push(`Removed "${oldAcc.name}"`)
+            } else if (newAcc.name !== oldAcc.name || newAcc.balance !== oldAcc.balance) {
+              if (newAcc.name !== oldAcc.name && newAcc.balance !== oldAcc.balance) {
+                changes.push(`Renamed "${oldAcc.name}" to "${newAcc.name}" and set balance to ฿${newAcc.balance.toLocaleString()}`)
+              } else if (newAcc.name !== oldAcc.name) {
+                changes.push(`Renamed "${oldAcc.name}" to "${newAcc.name}"`)
+              } else {
+                changes.push(`Updated "${oldAcc.name}" balance to ฿${newAcc.balance.toLocaleString()}`)
+              }
+            }
+          }
+          
+          for (const newAcc of cashAccounts) {
+            if (!oldAccounts.some((a) => a.id === newAcc.id)) {
+              changes.push(`Added "${newAcc.name}" with balance ฿${newAcc.balance.toLocaleString()}`)
+            }
+          }
+          
+          if (changes.length === 0) {
+            return { ...prev, cashAccounts }
+          }
+          
+          const logEntry: HoldingLog = {
+            id: newId(),
+            timestamp: new Date().toISOString(),
+            action: 'edit',
+            holdingName: 'Cash Accounts',
+            ticker: 'CASH',
+            assetClass: 'cash',
+            note: changes.join(', '),
+            previousCashAccountsState: oldAccounts,
+          }
+          
+          return {
+            ...prev,
+            cashAccounts,
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+          }
+        }),
       setMonthlyIncome: (monthlyIncome) => updateData((prev) => ({ ...prev, monthlyIncome })),
       setUserName: (userName) => updateData((prev) => ({ ...prev, userName })),
       setMonthlyFixedCost: (monthlyFixedCost) => updateData((prev) => ({ ...prev, monthlyFixedCost })),
@@ -453,6 +499,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
           let updatedHoldings = [...prev.holdings]
           let updatedPlans = [...prev.dcaPlans]
+          let updatedCashAccounts = prev.cashAccounts ? [...prev.cashAccounts] : []
+
+          if (log.previousCashAccountsState) {
+            updatedCashAccounts = log.previousCashAccountsState
+          }
 
           // 1. Revert holding change
           if (log.action === 'add') {
@@ -490,6 +541,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             ...prev,
             holdings: updatedHoldings,
             dcaPlans: updatedPlans,
+            cashAccounts: updatedCashAccounts,
             holdingLogs: updatedLogs,
           }
         }),
