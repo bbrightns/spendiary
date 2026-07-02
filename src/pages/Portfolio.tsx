@@ -471,23 +471,24 @@ export function Portfolio() {
         <div className="grid grid-cols-2 gap-4">
           {/* Card 1: Current Value & Invested */}
           <Card className="animate-rise">
-            <span className="text-[12.5px] font-medium text-ink-muted">Current Value</span>
-            <p className="mt-1.5 font-display text-[26px] font-extrabold tracking-tight tnum text-ink">
+            <span className="text-[11.5px] font-medium text-ink-muted">Current Value</span>
+            <p className="mt-1 font-display text-[18px] font-extrabold tracking-tight tnum text-ink leading-tight whitespace-nowrap">
               {thb(summary.value)}
             </p>
-            <p className="mt-1 text-[12.5px] text-ink-soft">
-              from <span className="font-semibold tnum">{thb(summary.cost)}</span> invested
+            <p className="mt-0.5 text-[11px] text-ink-muted font-medium">
+              Invested: <span className="font-semibold tnum">{thbCompact(summary.cost)}</span>
             </p>
           </Card>
 
           {/* Card 2: Total Profit / Loss */}
           <Card className="animate-rise">
-            <span className="text-[12.5px] font-medium text-ink-muted">Total Profit / Loss</span>
-            <div className="mt-1.5 flex items-baseline gap-2 flex-wrap">
-              <PnLText value={summary.pnl} className="font-display text-[26px] font-extrabold tracking-tight" />
-              <PnLPill value={summary.pnlPct} asPct size="md" />
-            </div>
-            <p className="mt-1 text-[12.5px] text-ink-muted font-medium">all-time returns</p>
+            <span className="text-[11.5px] font-medium text-ink-muted">Total Profit / Loss</span>
+            <p className="mt-1 leading-tight whitespace-nowrap">
+              <PnLText value={summary.pnl} className="font-display text-[18px] font-extrabold tracking-tight" />
+            </p>
+            <span className={`text-[11px] font-bold mt-0.5 inline-block ${summary.pnl >= 0 ? 'text-gain' : 'text-loss'}`}>
+              {summary.pnl >= 0 ? '▲' : '▼'} {summary.pnlPct.toFixed(1)}%
+            </span>
           </Card>
         </div>
 
