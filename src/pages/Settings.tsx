@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { useTheme, type Theme } from '../hooks/useTheme'
@@ -53,6 +53,10 @@ export function Settings() {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [nameDraft, setNameDraft] = useState(data.userName ?? '')
+
+  useEffect(() => {
+    setNameDraft(data.userName ?? '')
+  }, [data.userName])
 
   // ── modal states ───────────────────────────────────────────────
   const [resetOpen, setResetOpen] = useState(false)
