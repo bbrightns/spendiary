@@ -157,6 +157,8 @@ export interface SpendiaryData {
   monthlyPersonal?: number
   /** Daily net worth snapshots — one per day, auto-recorded, last 365 */
   netWorthHistory?: NetWorthSnapshot[]
+  /** Daily portfolio-value-only snapshots — one per day, auto-recorded, last 365 */
+  portfolioHistory?: NetWorthSnapshot[]
   holdings: Holding[]
   holdingLogs?: HoldingLog[]
   dcaPlans: DcaPlan[]

@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom'
+import { ScrollToTop } from './components/ScrollToTop'
 import { DataProvider, useData } from './store/DataContext' // 💡 เพิ่ม useData เข้ามา
 import { useTheme } from './hooks/useTheme'
 import { Layout } from './components/layout/Layout'
@@ -116,6 +117,7 @@ function AppContent() {
   // 💡 ถ้าล็อกอินผ่านแล้ว ให้แสดงผลหน้าตาแอปและ Router ปกติ
   return (
     <Layout>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/portfolio" element={<Portfolio />} />

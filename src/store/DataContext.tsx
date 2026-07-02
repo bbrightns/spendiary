@@ -125,6 +125,7 @@ interface DataContextValue {
   setRetirement: (settings: RetirementSettings) => void
   setRebalanceTargets: (targets: Record<AssetClass, number>) => void
   recordNetWorthSnapshot: (value: number) => void
+  recordPortfolioSnapshot: (value: number) => void
   /** ISO timestamp of the last successful cloud sync, or null */
   lastSyncedAt: Date | null
 
@@ -766,6 +767,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
             .sort((a: NetWorthSnapshot, b: NetWorthSnapshot) => a.date.localeCompare(b.date))
             .slice(-365)
           return { ...prev, netWorthHistory: updated }
+        }),
+
+      recordPortfolioSnapshot: (value) =>
+        updateData((prev) => {
+          if (value <= 0) return prev
+          const today = localDateStr()
+          const existing = prev.portfolioHistory ?? []
+          const updated = [...existing.filter((s: NetWorthSnapshot) => s.date !== today), { date: today, value }]
+            .sort((a: NetWorthSnapshot, b: NetWorthSnapshot) => a.date.localeCompare(b.date))
+            .slice(-365)
+          return { ...prev, portfolioHistory: updated }
         }),
 
 
