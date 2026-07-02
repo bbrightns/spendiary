@@ -366,9 +366,49 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setUserName: (userName) => updateData((prev) => ({ ...prev, userName })),
       setMonthlyFixedCost: (monthlyFixedCost) => updateData((prev) => ({ ...prev, monthlyFixedCost })),
       upsertFixedCostItem: (item) =>
-        updateData((prev) => ({ ...prev, fixedCostItems: upsert(prev.fixedCostItems ?? [], item) })),
+        updateData((prev) => {
+          const isEdit = item.id && (prev.fixedCostItems ?? []).some((x) => x.id === item.id)
+          const updatedItems = upsert(prev.fixedCostItems ?? [], item)
+          const savedItem = updatedItems.find((x) => x.id === item.id) || updatedItems[updatedItems.length - 1]
+          
+          const logEntry: import('../lib/types').HoldingLog = {
+            id: newId(),
+            timestamp: new Date().toISOString(),
+            action: isEdit ? 'edit' : 'add',
+            holdingName: `Fixed Cost: ${savedItem.name}`,
+            ticker: 'FIXED',
+            assetClass: 'fund', // fallback
+            note: `${isEdit ? 'Updated' : 'Added'} fixed expense item of ฿${savedItem.amount.toLocaleString()}`,
+          }
+
+          return {
+            ...prev,
+            fixedCostItems: updatedItems,
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+          }
+        }),
       removeFixedCostItem: (id) =>
-        updateData((prev) => ({ ...prev, fixedCostItems: (prev.fixedCostItems ?? []).filter((x) => x.id !== id) })),
+        updateData((prev) => {
+          const item = (prev.fixedCostItems ?? []).find((x) => x.id === id)
+          if (!item) return prev
+          const updatedItems = (prev.fixedCostItems ?? []).filter((x) => x.id !== id)
+          
+          const logEntry: import('../lib/types').HoldingLog = {
+            id: newId(),
+            timestamp: new Date().toISOString(),
+            action: 'edit',
+            holdingName: `Fixed Cost: ${item.name}`,
+            ticker: 'FIXED',
+            assetClass: 'fund',
+            note: `Removed fixed expense item of ฿${item.amount.toLocaleString()}`,
+          }
+
+          return {
+            ...prev,
+            fixedCostItems: updatedItems,
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+          }
+        }),
       setMonthlyPersonal: (monthlyPersonal) => updateData((prev) => ({ ...prev, monthlyPersonal })),
 
       upsertHolding: (holding) =>
@@ -417,7 +457,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
           // 1. Revert holding change
           if (log.action === 'add') {
             // Remove newly added holding
-            updatedHoldings = updatedHoldings.filter((h) => h.id !== log.holdingId && h.ticker !== log.ticker)
+            if (log.ticker === 'FIXED') {
+              // Ignore fixed cost revert here, not full undo support needed for this simple log
+            } else if (log.ticker === 'DCA') {
+              // Ignore simple DCA plan add revert for now
+            } else {
+              updatedHoldings = updatedHoldings.filter((h) => h.id !== log.holdingId && h.ticker !== log.ticker)
+            }
           } else if (log.previousHoldingState) {
             // Restore previous state
             updatedHoldings = updatedHoldings.map((h) =>
@@ -449,9 +495,49 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }),
 
       upsertPlan: (plan) =>
-        updateData((prev) => ({ ...prev, dcaPlans: upsert(prev.dcaPlans, plan) })),
+        updateData((prev) => {
+          const isEdit = plan.id && prev.dcaPlans.some((p) => p.id === plan.id)
+          const updatedPlans = upsert(prev.dcaPlans, plan)
+          const savedPlan = updatedPlans.find((p) => p.id === plan.id) || updatedPlans[updatedPlans.length - 1]
+
+          const logEntry: import('../lib/types').HoldingLog = {
+            id: newId(),
+            timestamp: new Date().toISOString(),
+            action: isEdit ? 'edit' : 'add',
+            holdingName: `DCA Plan: ${savedPlan.name}`,
+            ticker: 'DCA',
+            assetClass: savedPlan.assetClass,
+            note: `${isEdit ? 'Updated' : 'Created'} DCA plan of ฿${savedPlan.monthlyAmount.toLocaleString()}/month`,
+          }
+
+          return {
+            ...prev,
+            dcaPlans: updatedPlans,
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+          }
+        }),
       removePlan: (id) =>
-        updateData((prev) => ({ ...prev, dcaPlans: prev.dcaPlans.filter((p) => p.id !== id) })),
+        updateData((prev) => {
+          const plan = prev.dcaPlans.find((p) => p.id === id)
+          if (!plan) return prev
+          const updatedPlans = prev.dcaPlans.filter((p) => p.id !== id)
+
+          const logEntry: import('../lib/types').HoldingLog = {
+            id: newId(),
+            timestamp: new Date().toISOString(),
+            action: 'edit',
+            holdingName: `DCA Plan: ${plan.name}`,
+            ticker: 'DCA',
+            assetClass: plan.assetClass,
+            note: `Deleted DCA plan of ฿${plan.monthlyAmount.toLocaleString()}/month`,
+          }
+
+          return {
+            ...prev,
+            dcaPlans: updatedPlans,
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+          }
+        }),
 
       confirmDcaBuy: (
         planId,
@@ -475,7 +561,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
           // 2. If plan is linked to a holding, apply the buy
           if (!plan.holdingId) {
-            return { ...prev, dcaPlans: updatedPlans }
+            // Log simple plan confirmation (no holding update)
+            const logEntry: import('../lib/types').HoldingLog = {
+              id: newId(),
+              timestamp: new Date().toISOString(),
+              action: 'buy_more',
+              holdingName: `DCA Plan: ${plan.name}`,
+              ticker: 'DCA',
+              assetClass: plan.assetClass,
+              note: `Confirmed DCA buy of ฿${plan.monthlyAmount.toLocaleString()} (No linked holding)`,
+              dcaPlanId: plan.id,
+              dcaDate: date,
+            }
+            return {
+              ...prev,
+              dcaPlans: updatedPlans,
+              holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+            }
           }
           const holding = prev.holdings.find((h) => h.id === plan.holdingId)
           if (!holding) return { ...prev, dcaPlans: updatedPlans }
@@ -531,15 +633,35 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }),
 
       skipDcaBuy: (planId, date) =>
-        updateData((prev) => ({
-          ...prev,
-          dcaPlans: prev.dcaPlans.map((p) =>
+        updateData((prev) => {
+          const plan = prev.dcaPlans.find((p) => p.id === planId)
+          if (!plan) return prev
+
+          const updatedPlans = prev.dcaPlans.map((p) =>
             p.id !== planId ? p : {
               ...p,
               skippedDates: [date, ...(p.skippedDates ?? [])],
             }
-          ),
-        })),
+          )
+
+          const logEntry: import('../lib/types').HoldingLog = {
+            id: newId(),
+            timestamp: new Date().toISOString(),
+            action: 'edit',
+            holdingName: `DCA Plan: ${plan.name}`,
+            ticker: 'DCA',
+            assetClass: plan.assetClass,
+            note: `Skipped DCA buy of ฿${plan.monthlyAmount.toLocaleString()} for this period`,
+            dcaPlanId: plan.id,
+            dcaDate: date,
+          }
+
+          return {
+            ...prev,
+            dcaPlans: updatedPlans,
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+          }
+        }),
 
       upsertTransfer: (transfer) =>
         updateData((prev) => ({ ...prev, transfers: upsert(prev.transfers, transfer) })),

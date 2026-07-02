@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+
 import { useData } from '../store/DataContext'
 import { useLivePrices } from '../hooks/useLivePrices'
 import { PageHeader } from '../components/layout/PageHeader'
@@ -203,15 +203,6 @@ export function Portfolio() {
         }
         action={
           <div className="flex items-center gap-2">
-            <Link
-              to="/logs"
-              className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-4 text-[14px] font-semibold text-ink-soft shadow-[var(--shadow-soft)] transition-all hover:bg-surface-muted hover:text-ink active:scale-95"
-            >
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="shrink-0">
-                <path d="M2 3.5h11M2 7.5h8M2 11.5h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-              </svg>
-              Logs
-            </Link>
             <AddButton onClick={openAdd} label="Add holding" />
           </div>
         }

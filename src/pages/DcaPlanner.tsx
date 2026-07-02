@@ -437,12 +437,17 @@ export function DcaPlanner() {
                     const isRecent = (dates: string[] | undefined) => {
                       if (!dates || dates.length === 0) return false
                       const latestStr = dates[0]
-                      const [y, m, d] = latestStr.split('-').map(Number)
-                      const actionDate = new Date(y, m - 1, d)
-                      const today = new Date()
-                      today.setHours(0, 0, 0, 0)
-                      const diffDays = Math.round((today.getTime() - actionDate.getTime()) / 86400000)
-                      return diffDays <= 2
+                      let latestMs = 0
+                      if (latestStr.includes('T') || latestStr.includes(':')) {
+                        latestMs = new Date(latestStr).getTime()
+                      } else {
+                        // fallback YYYY-MM-DD
+                        const [y, m, d] = latestStr.split('-').map(Number)
+                        latestMs = new Date(y, m - 1, d).getTime()
+                      }
+                      const diffMs = Date.now() - latestMs
+                      // 1 hour is 3,600,000 milliseconds
+                      return diffMs > 0 && diffMs <= 3600000
                     }
                     const showConfirmed = confirmed && isRecent(p.confirmedDates)
 

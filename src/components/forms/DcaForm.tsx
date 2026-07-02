@@ -73,6 +73,8 @@ export function DcaForm({ open, editing, onClose }: Props) {
         holdingId: firstHoldingId,
         btcLocationId: firstLocId,
         goldLocationId: firstGoldLocId,
+        name: firstHolding?.name ?? '',
+        assetClass: firstHolding?.assetClass ?? 'fund',
       })
     }
     setShowErrors(false)

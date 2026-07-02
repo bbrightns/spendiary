@@ -155,7 +155,8 @@ export function isConfirmedForPeriod(plan: DcaPlan, now = new Date()): boolean {
   if (allDates.length === 0) return false
   const freq = plan.frequency ?? 'monthly'
   if (freq === 'daily') {
-    return allDates.includes(localDateStr(now))
+    const todayStr = localDateStr(now)
+    return allDates.some((d) => (d.includes('T') ? d.slice(0, 10) : d) === todayStr)
   }
   if (freq === 'weekly') {
     const weekStart = new Date(now)
@@ -165,7 +166,7 @@ export function isConfirmedForPeriod(plan: DcaPlan, now = new Date()): boolean {
   }
   // monthly
   const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  return allDates.some((d) => d.startsWith(ym))
+  return allDates.some((d) => (d.includes('T') ? d.slice(0, 10) : d).startsWith(ym))
 }
 
 /** Was this period explicitly skipped (not confirmed)? */
@@ -174,7 +175,8 @@ export function isSkippedForPeriod(plan: DcaPlan, now = new Date()): boolean {
   if (dates.length === 0) return false
   const freq = plan.frequency ?? 'monthly'
   if (freq === 'daily') {
-    return dates.includes(localDateStr(now))
+    const todayStr = localDateStr(now)
+    return dates.some((d) => (d.includes('T') ? d.slice(0, 10) : d) === todayStr)
   }
   if (freq === 'weekly') {
     const weekStart = new Date(now)
@@ -183,7 +185,7 @@ export function isSkippedForPeriod(plan: DcaPlan, now = new Date()): boolean {
     return dates.some((d) => new Date(d) >= weekStart)
   }
   const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  return dates.some((d) => d.startsWith(ym))
+  return dates.some((d) => (d.includes('T') ? d.slice(0, 10) : d).startsWith(ym))
 }
 
 /**

@@ -5,7 +5,7 @@ import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import { ASSET_META } from '../../lib/calc'
 import type { DcaPlan } from '../../lib/types'
-import { localDateStr, thb } from '../../lib/format'
+import { thb } from '../../lib/format'
 
 interface Props {
   open: boolean
@@ -131,7 +131,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     if (!valid || !locValid) { setShowErrors(true); return }
     if (!plan) return
     const p = plan
-    const today = localDateStr()
+    const today = new Date().toISOString()
 
     if (isBtc && hasHolding && holding) {
       // For BTC: add sats to the selected/new location, then mark plan confirmed
