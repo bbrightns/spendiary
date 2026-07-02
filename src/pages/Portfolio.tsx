@@ -467,21 +467,33 @@ export function Portfolio() {
           )}
         </Card>
 
-        {/* Performance summary + holdings list */}
-        <Card className=" animate-rise overflow-hidden" padded={false}>
-          {/* Summary metrics */}
-          <div className="grid grid-cols-2 gap-5  p-5  ">
-            <Metric label="Current Value" value={thb(summary.value)} />
-            <Metric label="Amount Invested" value={thb(summary.cost)} muted />
-            <Metric
-              label="Total Profit / Loss"
-              valueNode={<PnLText value={summary.pnl} className="text-[22px]" />}
-              extra={<PnLPill value={summary.pnlPct} asPct />}
-            />
-          </div>
+        {/* Summary Metric Cards */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Card 1: Current Value & Invested */}
+          <Card className="animate-rise">
+            <span className="text-[12.5px] font-medium text-ink-muted">Current Value</span>
+            <p className="mt-1.5 font-display text-[26px] font-extrabold tracking-tight tnum text-ink">
+              {thb(summary.value)}
+            </p>
+            <p className="mt-1 text-[12.5px] text-ink-soft">
+              from <span className="font-semibold tnum">{thb(summary.cost)}</span> invested
+            </p>
+          </Card>
 
-          {/* Holdings list */}
-          <div className="mt-6 border-t border-line pt-5">
+          {/* Card 2: Total Profit / Loss */}
+          <Card className="animate-rise">
+            <span className="text-[12.5px] font-medium text-ink-muted">Total Profit / Loss</span>
+            <div className="mt-1.5 flex items-baseline gap-2 flex-wrap">
+              <PnLText value={summary.pnl} className="font-display text-[26px] font-extrabold tracking-tight" />
+              <PnLPill value={summary.pnlPct} asPct size="md" />
+            </div>
+            <p className="mt-1 text-[12.5px] text-ink-muted font-medium">all-time returns</p>
+          </Card>
+        </div>
+
+        {/* Holdings list */}
+        <Card className="animate-rise overflow-hidden" padded={false}>
+          <div className="pt-5">
             <div className="px-5 ">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="font-display text-[15px] font-bold text-ink">
@@ -866,31 +878,5 @@ function unitLabel(assetClass: AssetClass): string {
   return 'BTC'
 }
 
-function Metric({
-  label,
-  value,
-  valueNode,
-  extra,
-  muted,
-}: {
-  label: string
-  value?: string
-  valueNode?: React.ReactNode
-  extra?: React.ReactNode
-  muted?: boolean
-}) {
-  return (
-    <div>
-      <p className="text-[12.5px] font-medium text-ink-muted">{label}</p>
-      <div className="mt-1.5">
-        {valueNode ?? (
-          <span className={`font-display text-[22px] font-extrabold tracking-tight tnum ${muted ? 'text-ink-soft' : 'text-ink'}`}>
-            {value}
-          </span>
-        )}
-      </div>
-      {extra && <div className="mt-1.5">{extra}</div>}
-    </div>
-  )
-}
+
 
