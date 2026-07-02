@@ -320,7 +320,7 @@ export function Portfolio() {
           {/* Card 1: Current Value & Invested */}
           <Card className="animate-rise">
             <span className="text-[11.5px] font-medium text-ink-muted">Current Value</span>
-            <p className="mt-1 font-display text-[18px] font-extrabold tracking-tight tnum text-ink leading-tight whitespace-nowrap">
+            <p className="mt-1 font-display text-[22px] font-extrabold tracking-tight tnum text-ink leading-tight whitespace-nowrap">
               {thb(summary.value)}
             </p>
             <p className="mt-0.5 text-[11px] text-ink-muted font-medium">
@@ -332,7 +332,7 @@ export function Portfolio() {
           <Card className="animate-rise">
             <span className="text-[11.5px] font-medium text-ink-muted">Total Profit / Loss</span>
             <p className="mt-1 leading-tight whitespace-nowrap">
-              <PnLText value={summary.pnl} className="font-display text-[18px] !font-extrabold tracking-tight" />
+              <PnLText value={summary.pnl} className="font-display text-[22px] !font-extrabold tracking-tight" />
             </p>
             <span className={`text-[11px] font-bold mt-0.5 inline-block ${summary.pnl >= 0 ? 'text-gain' : 'text-loss'}`}>
               {summary.pnl >= 0 ? '▲' : '▼'} {summary.pnlPct.toFixed(1)}%
