@@ -147,9 +147,26 @@ export function Dashboard() {
             <p className="mt-3 font-display text-[40px] font-extrabold leading-none tracking-tight tnum ">
               {thb(nw)}
             </p>
-            <div className="mt-4 flex items-center gap-2.5">
+            <div className="mt-4 flex flex-wrap items-center gap-2.5">
               <PnLPill value={portfolio.pnl} size="md" />
-              <span className="text-[13px] text-white/55">unrealised across portfolio</span>
+              <span className="text-[13px] text-white/55">unrealised</span>
+              {data.retirement?.monthlySpend && data.retirement.monthlySpend > 0 ? (
+                <Link
+                  to="/retirement"
+                  className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[11.5px] font-semibold text-white/80 transition-colors hover:bg-white/20 hover:text-white"
+                  aria-label="View wealth runway details on retirement page"
+                >
+                  ⏳ {((nw / (data.retirement.monthlySpend * 12))).toFixed(1)}y runway
+                </Link>
+              ) : (
+                <Link
+                  to="/retirement"
+                  className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-semibold text-white/40 transition-colors hover:bg-white/15 hover:text-white"
+                  aria-label="Set up retirement spend to see runway"
+                >
+                  ⏳ Set runway target
+                </Link>
+              )}
             </div>
           </div>
           <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">

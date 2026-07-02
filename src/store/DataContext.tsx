@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import type { BtcLocation, CashAccount, DcaPlan, FixedCostItem, GoldLocation, Holding, HoldingLog, NetWorthSnapshot, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
+import type { AssetClass, BtcLocation, CashAccount, DcaPlan, FixedCostItem, GoldLocation, Holding, HoldingLog, NetWorthSnapshot, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
 import { localDateStr } from '../lib/format'
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
@@ -69,6 +69,13 @@ export function validateSpendiaryData(obj: unknown): obj is SpendiaryData {
     if (typeof aa.id !== 'string') return false
     if (typeof aa.balance !== 'number') return false
   }
+  if (d.rebalanceTargets !== undefined) {
+    if (typeof d.rebalanceTargets !== 'object' || d.rebalanceTargets === null || Array.isArray(d.rebalanceTargets)) return false
+    const rt = d.rebalanceTargets as Record<string, unknown>
+    for (const k of Object.keys(rt)) {
+      if (typeof rt[k] !== 'number') return false
+    }
+  }
   return true
 }
 
@@ -116,6 +123,7 @@ interface DataContextValue {
   removeTransfer: (id: string) => void
 
   setRetirement: (settings: RetirementSettings) => void
+  setRebalanceTargets: (targets: Record<AssetClass, number>) => void
   recordNetWorthSnapshot: (value: number) => void
   /** ISO timestamp of the last successful cloud sync, or null */
   lastSyncedAt: Date | null
@@ -745,6 +753,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       setRetirement: (retirement) =>
         updateData((prev) => ({ ...prev, retirement })),
+      setRebalanceTargets: (rebalanceTargets) =>
+        updateData((prev) => ({ ...prev, rebalanceTargets })),
 
       recordNetWorthSnapshot: (value) =>
         updateData((prev) => {

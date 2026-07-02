@@ -375,6 +375,53 @@ export function Retirement() {
   const gap                 = projectedInvestment - corpusNeeded
   const onTrack             = gap >= 0
 
+  const totalCashVal = useMemo(() => data.cashAccounts.reduce((sum, a) => sum + a.balance, 0), [data.cashAccounts])
+  const currentNetWorth = summary.value + totalCashVal
+  const monthlySpendVal = Number(monthlySpend) || 0
+  const runwayYears = monthlySpendVal > 0 ? (currentNetWorth / (monthlySpendVal * 12)) : null
+
+  const coastFiTarget = useMemo(() => {
+    if (corpusNeeded > 0 && yearsLeft > 0 && realReturn > -1) {
+      return corpusNeeded / Math.pow(1 + realReturn, yearsLeft)
+    }
+    return corpusNeeded
+  }, [corpusNeeded, yearsLeft, realReturn])
+
+  const milestoneList = useMemo(() => [
+    {
+      id: 'runway_1y',
+      name: 'Foundational Runway',
+      desc: '1 year of planned retirement expenses covered.',
+      valueLabel: thbCompact(monthlySpendVal * 12),
+      completed: monthlySpendVal > 0 && currentNetWorth >= (monthlySpendVal * 12),
+      progress: monthlySpendVal > 0 ? (currentNetWorth / (monthlySpendVal * 12)) * 100 : 0,
+    },
+    {
+      id: 'coast_fi',
+      name: 'Coast FI',
+      desc: 'Enough saved today to compound to your target by retirement age.',
+      valueLabel: thbCompact(coastFiTarget),
+      completed: corpusNeeded > 0 && currentNetWorth >= coastFiTarget,
+      progress: coastFiTarget > 0 ? (currentNetWorth / coastFiTarget) * 100 : 0,
+    },
+    {
+      id: 'lean_fi',
+      name: 'Lean FI',
+      desc: '75% of your target retirement corpus covered.',
+      valueLabel: thbCompact(corpusNeeded * 0.75),
+      completed: corpusNeeded > 0 && currentNetWorth >= (corpusNeeded * 0.75),
+      progress: corpusNeeded > 0 ? (currentNetWorth / (corpusNeeded * 0.75)) * 100 : 0,
+    },
+    {
+      id: 'fi',
+      name: 'Financial Independence (FI)',
+      desc: '100% of your target retirement corpus covered.',
+      valueLabel: thbCompact(corpusNeeded),
+      completed: corpusNeeded > 0 && currentNetWorth >= corpusNeeded,
+      progress: corpusNeeded > 0 ? (currentNetWorth / corpusNeeded) * 100 : 0,
+    },
+  ], [monthlySpendVal, currentNetWorth, coastFiTarget, corpusNeeded])
+
   const minRate = useMemo(
     () => plannedCorpusNeeded > 0 && plannedYearsLeft > 0 ? solveMinRate(summary.value, investMonthly, plannedYearsLeft, plannedCorpusNeeded, annualSavingsGrowthRate) : null,
     [summary.value, investMonthly, plannedYearsLeft, plannedCorpusNeeded, annualSavingsGrowthRate],
@@ -546,6 +593,65 @@ export function Retirement() {
                 value={`${thbCompact(futureMonthlySpend)}/mo`}
               />
             )}
+          </div>
+        </Card>
+
+        {/* ── Wealth Runway & Milestones ── */}
+        <Card className="animate-rise">
+          <h2 className="font-display text-[17px] font-bold text-ink mb-1">Wealth Runway & Milestones</h2>
+          <p className="text-[13px] text-ink-muted mb-4">
+            How long your money lasts and your progress toward financial independence.
+          </p>
+
+          {/* Runway Large display */}
+          <div className="rounded-2xl bg-surface-muted px-4 py-4 mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-[12.5px] font-medium text-ink-muted">Current Wealth Runway</p>
+              <p className="mt-1 font-display text-[28px] font-extrabold tnum text-ink leading-none">
+                {runwayYears !== null ? `${runwayYears.toFixed(1)} years` : '—'}
+              </p>
+              <p className="mt-1 text-[11px] text-ink-muted">
+                {runwayYears !== null
+                  ? `Covering ฿${(monthlySpendVal * 12).toLocaleString()}/yr of expenses`
+                  : 'Enter monthly spend to calculate'}
+              </p>
+            </div>
+            <div className="h-12 w-12 shrink-0 rounded-full bg-brand-soft text-brand flex items-center justify-center font-bold text-[18px]">
+              ⏳
+            </div>
+          </div>
+
+          {/* Milestones list */}
+          <div className="space-y-3.5">
+            <h3 className="text-[13.5px] font-bold text-ink">Financial Milestones</h3>
+            <div className="space-y-2">
+              {milestoneList.map((m) => (
+                <div key={m.id} className="flex items-start gap-3 rounded-xl border border-line bg-surface p-3 transition-shadow hover:shadow-[var(--shadow-soft)]">
+                  <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+                    m.completed ? 'bg-gain text-white' : 'bg-surface-muted text-ink-faint border border-line-strong'
+                  }`}>
+                    {m.completed ? '✓' : '•'}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[13px] font-semibold text-ink">{m.name}</p>
+                      <span className="tnum text-[12px] font-bold text-ink-soft">{m.valueLabel}</span>
+                    </div>
+                    <p className="text-[11.5px] text-ink-muted mt-0.5">{m.desc}</p>
+                    
+                    {/* Progress bar for this milestone if not completed */}
+                    {!m.completed && m.progress > 0 && (
+                      <div className="mt-2 h-1.5 w-full rounded-full bg-surface-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-brand"
+                          style={{ width: `${Math.min(100, m.progress)}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </Card>
 

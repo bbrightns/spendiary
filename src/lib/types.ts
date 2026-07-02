@@ -162,6 +162,7 @@ export interface SpendiaryData {
   dcaPlans: DcaPlan[]
   transfers: Transfer[]
   retirement?: RetirementSettings
+  rebalanceTargets?: Record<AssetClass, number>
   /** Timestamp in ms when this data was last modified locally */
   lastUpdatedAt?: number
 }
