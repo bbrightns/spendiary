@@ -28,7 +28,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
 
   const holding = plan?.holdingId
     ? data.holdings.find((h) => h.id === plan.holdingId) ?? null
-    : null
+    : data.holdings.find((h) => h.assetClass === plan?.assetClass) ?? null
 
   const isStock = holding?.assetClass === 'stock'
   const isBtc   = holding?.assetClass === 'crypto'
@@ -100,8 +100,6 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     : 0
   const satsToAdd = isBtc ? satsValue : Math.round(units * 1e8)
   const gramsToAdd = isGold ? units : 0
-  const hasPreferredBtc = isBtc && plan.btcLocationId && btcLocations.some((l) => l.id === plan.btcLocationId)
-  const hasPreferredGold = isGold && plan.goldLocationId && goldLocations.some((l) => l.id === plan.goldLocationId)
   const hasHolding = !!holding
 
   // Validation
@@ -279,7 +277,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         )}
 
         {/* BTC location picker */}
-        {isBtc && hasHolding && !hasPreferredBtc && (
+        {isBtc && hasHolding && (
           <div>
             <p className="mb-2 text-[13px] font-semibold text-ink">Where did you buy?</p>
             <div className="space-y-2">
@@ -346,7 +344,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         )}
 
         {/* Gold location picker */}
-        {isGold && hasHolding && !hasPreferredGold && (
+        {isGold && hasHolding && (
           <div>
             <p className="mb-2 text-[13px] font-semibold text-ink">Where did you buy?</p>
             <div className="space-y-2">

@@ -102,7 +102,9 @@ export function DcaForm({ open, editing, onClose }: Props) {
     'Amount / month'
 
   // Detect if currently selected holding is BTC or Gold with locations
-  const selectedHolding = data.holdings.find((h) => h.id === form.holdingId)
+  const selectedHolding =
+    data.holdings.find((h) => h.id === form.holdingId) ||
+    data.holdings.find((h) => h.assetClass === form.assetClass)
   const isBtcHolding = selectedHolding?.assetClass === 'crypto'
   const isGoldHolding = selectedHolding?.assetClass === 'gold'
   const btcLocations = selectedHolding?.btcLocations ?? []
@@ -132,7 +134,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
       frequency: freq,
       monthlyAmount: Number(form.monthlyAmount),
       dayOfMonth,
-      holdingId: editing ? editing.holdingId : (form.source === 'portfolio' ? form.holdingId : undefined),
+      holdingId: editing ? (editing.holdingId || selectedHolding?.id) : (form.source === 'portfolio' ? form.holdingId : undefined),
       btcLocationId: (isBtcHolding && form.btcLocationId) ? form.btcLocationId : undefined,
       goldLocationId: (isGoldHolding && form.goldLocationId) ? form.goldLocationId : undefined,
       confirmedDates: editing?.confirmedDates,
