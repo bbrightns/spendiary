@@ -138,7 +138,7 @@ function FixedCostRow({ item, onEdit, onDelete }: {
         <span className="text-[14px] font-medium text-ink">{item.name}</span>
       </div>
       <span className="font-display text-[14px] font-bold tnum text-ink">{thb(item.amount)}</span>
-      <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
         <button onClick={() => onEdit(item)}
           className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink">
           <PencilIcon className="h-3.5 w-3.5" />

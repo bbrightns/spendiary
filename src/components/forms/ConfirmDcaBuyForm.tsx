@@ -17,6 +17,9 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const { data, confirmDcaBuy, upsertBtcLocation, upsertGoldLocation, usdThb } = useData()
   const [price, setPrice] = useState<number | ''>('')
   const [sats, setSats] = useState<number | ''>('')
+  const [unitHeld, setUnitHeld] = useState<number | ''>('')
+  const [avgCost, setAvgCost] = useState<number | ''>('')
+  const [currentPrice, setCurrentPrice] = useState<number | ''>('')
   const [showErrors, setShowErrors] = useState(false)
   const [selectedLocId, setSelectedLocId] = useState<string>('')
   const [newLocName, setNewLocName] = useState('')
@@ -30,6 +33,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const isStock = holding?.assetClass === 'stock'
   const isBtc   = holding?.assetClass === 'crypto'
   const isGold  = holding?.assetClass === 'gold'
+  const isFund  = holding?.assetClass === 'fund'
   const rate = usdThb ?? 1
   const btcLocations = holding?.btcLocations ?? []
   const goldLocations = holding?.goldLocations ?? []
@@ -54,18 +58,27 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     setNewLocName('')
     setSats('')
 
-    // Pre-fill live price where available
+    // Pre-fill fields from holding
     if (holding) {
+      setUnitHeld(holding.units || '')
+      setAvgCost(holding.avgCost || '')
+      
       if (isStock && rate > 1) {
         setPrice(parseFloat((holding.price / rate).toFixed(2)))
       } else if (isBtc) {
         setPrice('')
       } else if (isGold) {
         setPrice(holding.price)
+      } else if (isFund) {
+        setPrice('')
+        setCurrentPrice(holding.price || '')
       } else {
-        setPrice('')   // mutual fund — user enters NAV
+        setPrice('')
       }
     } else {
+      setUnitHeld('')
+      setAvgCost('')
+      setCurrentPrice('')
       setPrice('')
     }
   }, [open, plan])
@@ -90,7 +103,15 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const hasPreferredBtc = isBtc && plan.btcLocationId && btcLocations.some((l) => l.id === plan.btcLocationId)
   const hasPreferredGold = isGold && plan.goldLocationId && goldLocations.some((l) => l.id === plan.goldLocationId)
   const hasHolding = !!holding
-  const valid = isBtc ? satsValue > 0 : priceNum > 0
+
+  // Validation
+  const valid = isBtc
+    ? satsValue > 0
+    : isStock
+    ? Number(unitHeld) > 0 && Number(avgCost) > 0
+    : isFund
+    ? Number(unitHeld) > 0 && Number(avgCost) > 0 && Number(currentPrice) > 0
+    : priceNum > 0
 
   // Location validation
   const locValid = !(isBtc || isGold) || !hasHolding ||
@@ -158,6 +179,12 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
       }
       // Mark plan confirmed + log (skip holding unit update — managed by goldLocations)
       confirmDcaBuy(p.id, priceInThb, today)
+    } else if (isStock && hasHolding && holding) {
+      // Send total units and avg cost overrides (and the stock price in USD, which is converted to THB for metadata/updatedAt price)
+      confirmDcaBuy(p.id, priceInThb, today, Number(unitHeld), Number(avgCost), priceInThb)
+    } else if (isFund && hasHolding && holding) {
+      // Send total units, avg cost, and current price overrides
+      confirmDcaBuy(p.id, Number(currentPrice), today, Number(unitHeld), Number(avgCost), Number(currentPrice))
     } else {
       confirmDcaBuy(p.id, priceInThb, today)
     }
@@ -197,15 +224,67 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
           )}
         </div>
 
-        {/* Price input */}
-        <NumberField
-          label={priceLabel}
-          prefix={pricePrefix}
-          value={isBtc ? sats : price}
-          onChange={isBtc ? setSats : setPrice}
-          placeholder={isBtc ? 'e.g. 500000' : '0'}
-          error={showErrors && !valid ? 'Required (> 0)' : undefined}
-        />
+        {/* Price / Inputs block */}
+        {isStock && hasHolding ? (
+          <div className="space-y-4">
+            <div className="rounded-xl bg-surface-muted p-3 text-[12px] text-ink-muted">
+              <span className="font-semibold text-ink">Update Total Portfolio:</span> Update your total held units and average cost to keep your portfolio stats accurate.
+            </div>
+            <NumberField
+              label="Total units held (shares)"
+              value={unitHeld}
+              onChange={setUnitHeld}
+              placeholder="0.00"
+              error={showErrors && Number(unitHeld) <= 0 ? 'Required (> 0)' : undefined}
+            />
+            <NumberField
+              label="Average cost per unit (USD)"
+              prefix="$"
+              value={avgCost}
+              onChange={setAvgCost}
+              placeholder="0.00"
+              error={showErrors && Number(avgCost) <= 0 ? 'Required (> 0)' : undefined}
+            />
+          </div>
+        ) : isFund && hasHolding ? (
+          <div className="space-y-4">
+            <div className="rounded-xl bg-surface-muted p-3 text-[12px] text-ink-muted">
+              <span className="font-semibold text-ink">Update Total Portfolio:</span> Update your total held units, average cost, and current NAV to keep your portfolio stats accurate.
+            </div>
+            <NumberField
+              label="Total units held"
+              value={unitHeld}
+              onChange={setUnitHeld}
+              placeholder="0.00"
+              error={showErrors && Number(unitHeld) <= 0 ? 'Required (> 0)' : undefined}
+            />
+            <NumberField
+              label="Average cost per unit (฿)"
+              prefix="฿"
+              value={avgCost}
+              onChange={setAvgCost}
+              placeholder="0.00"
+              error={showErrors && Number(avgCost) <= 0 ? 'Required (> 0)' : undefined}
+            />
+            <NumberField
+              label="Current NAV / unit (฿)"
+              prefix="฿"
+              value={currentPrice}
+              onChange={setCurrentPrice}
+              placeholder="0.00"
+              error={showErrors && Number(currentPrice) <= 0 ? 'Required (> 0)' : undefined}
+            />
+          </div>
+        ) : (
+          <NumberField
+            label={priceLabel}
+            prefix={pricePrefix}
+            value={isBtc ? sats : price}
+            onChange={isBtc ? setSats : setPrice}
+            placeholder={isBtc ? 'e.g. 500000' : '0'}
+            error={showErrors && !valid ? 'Required (> 0)' : undefined}
+          />
+        )}
 
         {/* BTC location picker */}
         {isBtc && hasHolding && !hasPreferredBtc && (

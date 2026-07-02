@@ -100,7 +100,14 @@ interface DataContextValue {
 
   upsertPlan: (plan: Omit<DcaPlan, 'id'> & { id?: string }) => void
   removePlan: (id: string) => void
-  confirmDcaBuy: (planId: string, pricePerUnit: number, date: string) => void
+  confirmDcaBuy: (
+    planId: string,
+    pricePerUnit: number,
+    date: string,
+    overrideUnits?: number,
+    overrideAvgCost?: number,
+    overridePrice?: number,
+  ) => void
   skipDcaBuy: (planId: string, date: string) => void
 
   upsertTransfer: (transfer: Omit<Transfer, 'id'> & { id?: string }) => void
@@ -446,7 +453,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
       removePlan: (id) =>
         updateData((prev) => ({ ...prev, dcaPlans: prev.dcaPlans.filter((p) => p.id !== id) })),
 
-      confirmDcaBuy: (planId, pricePerUnit, date) =>
+      confirmDcaBuy: (
+        planId,
+        pricePerUnit,
+        date,
+        overrideUnits,
+        overrideAvgCost,
+        overridePrice,
+      ) =>
         updateData((prev) => {
           const plan = prev.dcaPlans.find((p) => p.id === planId)
           if (!plan) return prev
@@ -460,7 +474,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           )
 
           // 2. If plan is linked to a holding, apply the buy
-          if (!plan.holdingId || pricePerUnit <= 0) {
+          if (!plan.holdingId) {
             return { ...prev, dcaPlans: updatedPlans }
           }
           const holding = prev.holdings.find((h) => h.id === plan.holdingId)
@@ -477,12 +491,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
             (holding.goldLocations?.length ?? 0) > 0
 
           const units = plan.monthlyAmount / pricePerUnit
-          const newUnits = holding.units + units
-          const newAvgCost = (holding.units * holding.avgCost + units * pricePerUnit) / newUnits
+          const newUnits = overrideUnits !== undefined ? overrideUnits : (holding.units + units)
+          const newAvgCost = overrideAvgCost !== undefined ? overrideAvgCost : ((holding.units * holding.avgCost + units * pricePerUnit) / newUnits)
+          const finalPrice = overridePrice !== undefined ? overridePrice : pricePerUnit
+
           const updatedHoldings = prev.holdings.map((h) =>
             h.id !== plan.holdingId ? h : (isBtcWithLocations || isGoldWithLocations)
-              ? { ...h, price: pricePerUnit, updatedAt: date }
-              : { ...h, units: newUnits, avgCost: newAvgCost, price: pricePerUnit, updatedAt: date }
+              ? { ...h, price: finalPrice, updatedAt: date }
+              : { ...h, units: newUnits, avgCost: newAvgCost, price: finalPrice, updatedAt: date }
           )
 
           // 3. Add to holding log
@@ -497,6 +513,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
               ? `DCA · +${Math.round(units * 1e8).toLocaleString()} sats · ฿${plan.monthlyAmount.toLocaleString()} total`
               : holding.assetClass === 'gold'
               ? `DCA · +${units.toFixed(4)} g · ฿${plan.monthlyAmount.toLocaleString()} total`
+              : overrideUnits !== undefined
+              ? `DCA (Updated Portfolio) · New Units: ${overrideUnits.toLocaleString()} @ Avg Cost: ${overrideAvgCost?.toLocaleString()}`
               : `DCA · +${units.toFixed(4)} units @ ฿${pricePerUnit.toLocaleString()}/unit · ฿${plan.monthlyAmount.toLocaleString()} total`,
             holdingId: holding.id,
             previousHoldingState: JSON.parse(JSON.stringify(holding)),

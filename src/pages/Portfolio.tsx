@@ -53,7 +53,7 @@ export function Portfolio() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [locEditOpen, setLocEditOpen] = useState(false)
   const [locEditHoldingId, setLocEditHoldingId] = useState<string>('')
-  const [locEditing, setLocEditing] = useState<BtcLocation | { id: string; name: string; grams: number; thbSpent: number } | null>(null)
+  const [locEditing, setLocEditing] = useState<BtcLocation | import('../lib/types').GoldLocation | null>(null)
   const [locName, setLocName] = useState('')
   const [locSatoshi, setLocSatoshi] = useState<number | ''>('')
   const [locGrams, setLocGrams] = useState<number | ''>('')
@@ -66,7 +66,7 @@ export function Portfolio() {
   const openAdd = () => { setEditing(null); setFormOpen(true) }
   const openEdit = (h: Holding) => { setEditing(h); setFormOpen(true) }
   const openBuy = (h: Holding) => { setBuying(h); setBuyOpen(true) }
-  function openLocEdit(holdingId: string, loc: BtcLocation | { id: string; name: string; grams: number; thbSpent: number }) {
+  function openLocEdit(holdingId: string, loc: BtcLocation | import('../lib/types').GoldLocation) {
     setLocEditHoldingId(holdingId)
     setLocEditing(loc)
     setLocName(loc.name)
@@ -74,8 +74,8 @@ export function Portfolio() {
       setLocSatoshi(loc.satoshi)
       setLocGrams('')
     } else {
-      setLocSatoshi('')
       setLocGrams(loc.grams)
+      setLocSatoshi('')
     }
     setLocThbSpent(loc.thbSpent)
     setLocErrors(false)
@@ -83,24 +83,31 @@ export function Portfolio() {
   }
 
   function saveLocEdit() {
-    const isGoldLoc = locEditing && !('satoshi' in locEditing)
-    const qtyEmpty = isGoldLoc ? locGrams === '' : locSatoshi === ''
-    if (!locEditing || !locName.trim() || qtyEmpty || locThbSpent === '') {
+    if (!locEditing || !locName.trim() || locThbSpent === '') {
       setLocErrors(true)
       return
     }
-    if (isGoldLoc) {
-      upsertGoldLocation(locEditHoldingId, {
-        id: locEditing.id,
-        name: locName.trim(),
-        grams: Number(locGrams),
-        thbSpent: Number(locThbSpent),
-      })
-    } else {
+    if ('satoshi' in locEditing && locSatoshi === '') {
+      setLocErrors(true)
+      return
+    }
+    if (!('satoshi' in locEditing) && locGrams === '') {
+      setLocErrors(true)
+      return
+    }
+
+    if ('satoshi' in locEditing) {
       upsertBtcLocation(locEditHoldingId, {
         id: locEditing.id,
         name: locName.trim(),
         satoshi: Number(locSatoshi),
+        thbSpent: Number(locThbSpent),
+      })
+    } else {
+      upsertGoldLocation(locEditHoldingId, {
+        id: locEditing.id,
+        name: locName.trim(),
+        grams: Number(locGrams),
         thbSpent: Number(locThbSpent),
       })
     }
@@ -561,16 +568,7 @@ export function Portfolio() {
             error={locErrors && !locName.trim() ? 'Required' : undefined}
           />
           <div className="grid grid-cols-1 gap-3 ">
-            {locEditing && !('satoshi' in locEditing) ? (
-              <NumberField
-                label="Grams"
-                value={locGrams}
-                onChange={setLocGrams}
-                placeholder="0"
-                step={0.0001}
-                error={locErrors && (locGrams === '' || Number(locGrams) < 0) ? 'Required' : undefined}
-              />
-            ) : (
+            {locEditing && 'satoshi' in locEditing ? (
               <NumberField
                 label="Satoshi"
                 value={locSatoshi}
@@ -578,6 +576,15 @@ export function Portfolio() {
                 placeholder="0"
                 step={1}
                 error={locErrors && (locSatoshi === '' || Number(locSatoshi) < 0) ? 'Required' : undefined}
+              />
+            ) : (
+              <NumberField
+                label="Grams"
+                value={locGrams}
+                onChange={setLocGrams}
+                placeholder="0.00"
+                step={0.0001}
+                error={locErrors && (locGrams === '' || Number(locGrams) < 0) ? 'Required' : undefined}
               />
             )}
             <NumberField
