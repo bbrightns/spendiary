@@ -206,23 +206,31 @@ function TransferRow({
           >
             <TransferIcon className="h-[17px] w-[17px]" />
           </span>
-          <div className="min-w-0">
-            <p className="truncate text-[14.5px] font-bold text-ink">{transfer.recipient}</p>
-            <p className="text-[12px] text-ink-muted">
-              {FREQUENCY_LABEL[transfer.frequency]} · {remaining} remaining
-            </p>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate text-[14.5px] font-bold text-ink">{transfer.recipient}</p>
+              <p className="shrink-0 font-display text-[15px] font-bold tnum text-ink">
+                {thb(transfer.amount)}
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-2 mt-0.5">
+              <p className="text-[12px] text-ink-muted">
+                {FREQUENCY_LABEL[transfer.frequency]} · {remaining} remaining
+              </p>
+              <p className="shrink-0 text-[11.5px] text-ink-muted">
+                {done ? 'Complete' : `Expires ${formatDate(transfer.expiryDate)}`}
+              </p>
+            </div>
+            <div className="mt-2.5">
+              <ProgressBar
+                value={progress}
+                color={done ? 'var(--color-gain)' : soon ? 'var(--color-warn)' : 'var(--color-brand)'}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <p className="font-display text-[15px] font-bold tnum text-ink">
-              {thb(transfer.amount)}
-            </p>
-            <p className="text-[11.5px] text-ink-muted">
-              {done ? 'Complete' : `Expires ${formatDate(transfer.expiryDate)}`}
-            </p>
-          </div>
+        <div className="flex items-center">
           <ChevronIcon open={isExpanded} />
         </div>
       </div>
@@ -237,19 +245,12 @@ function TransferRow({
             </div>
           )}
 
-          <div>
-            <div className="mb-1.5 flex items-center justify-between text-[12px]">
-              <span className="font-medium text-ink-soft">
-                Progress: {transfer.completed} of {transfer.total} sent
-              </span>
-              <span className="font-semibold text-ink-muted">
-                {progress.toFixed(0)}% completed
-              </span>
-            </div>
-            <ProgressBar
-              value={progress}
-              color={done ? 'var(--color-gain)' : soon ? 'var(--color-warn)' : 'var(--color-brand)'}
-            />
+          <div className="flex items-center gap-2 text-[12px]">
+            <span className="font-medium text-ink-soft">
+              {transfer.completed} of {transfer.total} sent
+            </span>
+            <span className="text-ink-faint">·</span>
+            <span className="font-semibold text-ink-muted">{progress.toFixed(0)}% completed</span>
           </div>
 
           <div className="flex items-center justify-between gap-3 pt-2">

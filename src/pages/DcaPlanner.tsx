@@ -42,46 +42,40 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
   const savingsPct = Math.min((savings / total) * 100, Math.max(0, 100 - fixedPct))
   const freePct    = Math.max(0, (remaining / total) * 100)
 
+  const segments = [
+    { pct: fixedPct,   amount: fixed,     label: 'Fixed',   textColor: 'var(--color-loss)',      bg: 'var(--color-loss-soft)',      barColor: 'var(--color-loss)' },
+    { pct: savingsPct, amount: savings,   label: 'Savings', textColor: 'var(--color-gain)',      bg: 'var(--color-gain-soft)',      barColor: 'var(--color-cash)' },
+    { pct: freePct,    amount: remaining, label: 'Free',    textColor: 'var(--color-ink-faint)', bg: 'var(--color-surface-muted)', barColor: 'var(--color-ink-faint)' },
+  ].filter((s) => s.pct > 0)
+
   return (
     <div className="mt-5">
-      <div className="flex h-4 overflow-hidden rounded-full bg-surface-muted gap-0.5">
-        {fixedPct > 0 && (
-          <div className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${fixedPct}%`, background: 'var(--color-loss)' }} />
-        )}
-        {savingsPct > 0 && (
-          <div className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${savingsPct}%`, background: 'var(--color-cash)' }} />
-        )}
-        {freePct > 0 && (
-          <div className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${freePct}%`, background: 'var(--color-line-strong)' }} />
-        )}
+      {/* Labels: each section has the same proportional width as its bar segment */}
+      <div className="flex mb-2.5">
+        {segments.map((seg) => (
+          <div key={seg.label} style={{ width: `${seg.pct}%` }} className="flex justify-center">
+            <div className="rounded-xl px-2.5 py-1.5 text-center" style={{ background: seg.bg }}>
+              <p className="text-[10px] font-semibold leading-none" style={{ color: seg.textColor }}>{seg.label}</p>
+              <p className="mt-1 font-display text-[13px] font-extrabold tnum leading-none" style={{ color: seg.textColor }}>{thb(seg.amount)}</p>
+            </div>
+          </div>
+        ))}
       </div>
-      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
-        <BudgetLegend color="var(--color-loss)" label="Fixed"   amount={fixed}     total={total} />
-        <BudgetLegend color="var(--color-cash)" label="Savings" amount={savings}   total={total} />
-        <BudgetLegend color="var(--color-ink-faint)" label="Free"    amount={remaining} total={total} dim={fixed + savings > total} />
+
+      {/* Bar */}
+      <div className="flex h-4 overflow-hidden rounded-full bg-surface-muted gap-0.5">
+        {segments.map((seg) => (
+          <div
+            key={seg.label}
+            className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${seg.pct}%`, background: seg.barColor }}
+          />
+        ))}
       </div>
     </div>
   )
 }
 
-function BudgetLegend({ color, label, amount, total, dim }: {
-  color: string; label: string; amount: number; total: number; dim?: boolean
-}) {
-  const pct = total > 0 ? Math.round((amount / total) * 100) : 0
-  return (
-    <div className="flex items-center gap-2">
-      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color }} />
-      <span className="text-[12.5px] text-ink-muted">{label}</span>
-      <span className={`font-display text-[13px] font-bold tnum ${dim ? 'text-loss' : 'text-ink'}`}>
-        {thb(amount)}
-      </span>
-      <span className="text-[11.5px] text-ink-faint">({pct}%)</span>
-    </div>
-  )
-}
 
 // ─── Inline edit stat (salary) ────────────────────────────────────────────────
 
@@ -116,16 +110,6 @@ function InlineEditStat({ label, value, editing, draft, inputRef, onOpen, onDraf
   )
 }
 
-// ─── Summary pill ─────────────────────────────────────────────────────────────
-
-function SummaryPill({ label, amount, color, bg }: { label: string; amount: number; color: string; bg: string }) {
-  return (
-    <div className="rounded-xl px-3 py-2 text-center" style={{ background: bg }}>
-      <p className="text-[11px] font-semibold" style={{ color }}>{label}</p>
-      <p className="mt-0.5 font-display text-[14px] font-extrabold tnum" style={{ color }}>{thb(amount)}</p>
-    </div>
-  )
-}
 
 // ─── Fixed cost item row ──────────────────────────────────────────────────────
 
@@ -292,13 +276,7 @@ export function DcaPlanner() {
             onCancel={() => setEditingSalary(false)}
             hint={salary <= 0 ? 'Tap to set your salary' : undefined}
           />
-          {salary > 0 && (
-            <div className="flex flex-wrap gap-3">
-              <SummaryPill label="Fixed"   amount={fixedTotal}   color="var(--color-loss)" bg="var(--color-loss-soft)" />
-              <SummaryPill label="Savings" amount={savingsTotal} color="var(--color-gain)" bg="var(--color-gain-soft)" />
-              <SummaryPill label="Free"    amount={Math.max(0, salary - fixedTotal - savingsTotal)} color="var(--color-ink-faint)" bg="var(--color-surface-muted)" />
-            </div>
-          )}
+
         </div>
         {salary > 0 && <BudgetBar salary={salary} fixed={fixedTotal} savings={savingsTotal} />}
         {salary <= 0 && (

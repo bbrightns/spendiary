@@ -315,30 +315,33 @@ export function Portfolio() {
       />
 
       <div className="grid grid-cols-1 gap-4 ">
-        {/* Summary Metric Cards */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Card 1: Current Value & Invested */}
-          <Card className="animate-rise">
-            <span className="text-[11.5px] font-bold text-ink-muted">Current Value</span>
-            <p className="mt-1 font-display text-[22px] font-extrabold tracking-tight tnum text-ink leading-tight whitespace-nowrap">
-              {thb(summary.value)}
-            </p>
-            <p className="mt-0.5 text-[11px] text-ink-muted font-medium">
-              Invested: <span className="font-semibold tnum">{thbCompact(summary.cost)}</span>
-            </p>
-          </Card>
+        {/* Summary Metric Cards — unified panel */}
+        <Card className="animate-rise" padded={false}>
+          <div className="grid grid-cols-2 divide-x divide-line">
+            {/* Left: Current Value */}
+            <div className="flex flex-col justify-center px-5 py-5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Current Value</span>
+              <p className="mt-2 font-display text-[22px] font-extrabold tracking-tight tnum text-ink leading-none">
+                {thb(summary.value)}
+              </p>
+              <p className="mt-1.5 text-[12px] text-ink-muted font-medium">
+                Invested: <span className="font-semibold tnum">{thbCompact(summary.cost)}</span>
+              </p>
+            </div>
 
-          {/* Card 2: Total Profit / Loss */}
-          <Card className="animate-rise">
-            <span className="text-[11.5px] font-bold text-ink-muted">Total Profit / Loss</span>
-            <p className="mt-1 leading-tight whitespace-nowrap">
-              <PnLText value={summary.pnl} className="font-display text-[22px] !font-extrabold tracking-tight" />
-            </p>
-            <span className={`text-[11px] font-bold mt-0.5 inline-block ${summary.pnl >= 0 ? 'text-gain' : 'text-loss'}`}>
-              {summary.pnl >= 0 ? '▲' : '▼'} {summary.pnlPct.toFixed(1)}%
-            </span>
-          </Card>
-        </div>
+            {/* Right: Profit / Loss */}
+            <div className="flex flex-col justify-center px-5 py-5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Profit / Loss</span>
+              <p className="mt-2 leading-none">
+                <PnLText value={summary.pnl} className="font-display text-[22px] !font-extrabold tracking-tight" />
+              </p>
+              <span className={`mt-1.5 text-[12px] font-bold inline-block ${summary.pnl >= 0 ? 'text-gain' : 'text-loss'}`}>
+                {summary.pnl >= 0 ? '▲' : '▼'} {summary.pnlPct.toFixed(1)}%
+              </span>
+            </div>
+          </div>
+        </Card>
+
 
         {/* Allocation chart */}
         <Card className=" animate-rise">
