@@ -26,7 +26,7 @@ import {
   totalCash,
   FREQUENCY_LABEL,
 } from '../lib/calc'
-import { daysUntil, formatDateShort, pct, thb, thbCompact } from '../lib/format'
+import { daysUntil, formatDateShort, thb, thbCompact } from '../lib/format'
 import type { NetWorthSnapshot } from '../lib/types'
 
 // Distinct colors for cash account segments — cycles if >8 accounts
@@ -219,18 +219,7 @@ export function Dashboard() {
             </div>
           }
         />
-        <StatCard
-          label="Monthly DCA"
-          value={thb(dca.invested)}
-          icon={<ClockIcon className="h-[18px] w-[18px]" />}
-          accent="var(--color-brand)"
-          onClick={() => navigate('/dca')}
-          footer={
-            <span className="text-[12.5px] text-ink-muted">
-              of {thb(dca.total)} this month · {pct(dca.pct, 0)}
-            </span>
-          }
-        />
+
         <StatCard
           label="Cash Available"
           value={thb(cash)}
