@@ -65,21 +65,22 @@ export async function fetchBtcThb(): Promise<number> {
   return btcUsdt * usdThb
 }
 
-/** Fetch a single stock's latest price in USD via Yahoo Finance chart endpoint (via Vite proxy). */
+/** Fetch a single stock's latest price in USD via Finnhub Quote API. */
 async function fetchOneStockUsd(ticker: string): Promise<number> {
+  const token = import.meta.env.VITE_FINNHUB_API_KEY || ''
+  if (!token) throw new Error('Finnhub API key not configured (VITE_FINNHUB_API_KEY)')
+  
   const res = await fetch(
-    `/yahoo-finance/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`,
+    `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(ticker.toUpperCase())}&token=${token}`,
   )
-  if (!res.ok) throw new Error(`Yahoo ${ticker}: ${res.status}`)
+  if (!res.ok) throw new Error(`Finnhub ${ticker}: ${res.status}`)
   const json = await res.json()
-  const price =
-    json?.chart?.result?.[0]?.meta?.regularMarketPrice ??
-    json?.chart?.result?.[0]?.meta?.previousClose
-  if (!price) throw new Error(`Yahoo ${ticker}: no price in response`)
+  const price = json?.c
+  if (!price || isNaN(price)) throw new Error(`Finnhub ${ticker}: invalid price in response`)
   return price
 }
 
-/** Stock prices in USD from Yahoo Finance chart API (parallel, via Vite dev proxy). */
+/** Stock prices in USD from Finnhub API (parallel). */
 export async function fetchStockPricesUsd(tickers: string[]): Promise<Record<string, number>> {
   if (tickers.length === 0) return {}
   const results = await Promise.allSettled(
