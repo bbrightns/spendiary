@@ -88,52 +88,46 @@ function calculateCorpusNeeded(
     return futureMonthlySpend * 12 * retirementYears
   } else {
     const r = annualRate / 12
+    const g = inflation / 12          // monthly inflation during retirement
     const totalMonths = retirementYears * 12
     if (totalMonths <= 0) return 0
-    if (r === 0) return futureMonthlySpend * totalMonths
+    // When return ≈ inflation, each discounted term equals futureMonthlySpend
+    if (Math.abs(r - g) < 1e-10) return futureMonthlySpend * totalMonths
     let pv = 0
     for (let m = 0; m < totalMonths; m++) {
-      pv += futureMonthlySpend / Math.pow(1 + r, m)
+      // Spending grows with inflation each month; discount back at nominal return
+      pv += futureMonthlySpend * Math.pow(1 + g, m) / Math.pow(1 + r, m)
     }
     return pv
   }
 }
 
 /**
- * Earliest retire age where the plan becomes viable, given fixed monthly DCA.
- * Both yearsLeft and retirementYears (and thus corpusNeeded) shift with each candidate age.
+ * The absolute earliest age (currentAge+1 … planUntilAge-1) at which the plan
+ * becomes genuinely viable. Completely independent of the user's chosen retireAge
+ * so that "Could retire at" never changes just because the slider moves.
+ *
+ * To filter degenerate near-death crossovers (where corpus shrinks to near-zero
+ * as retirement years approach 0), we require that the candidate age leaves at
+ * least max(5, ⌈totalHorizon/3⌉) years of retirement remaining.
+ * This correctly returns "Never" for low-savings + return<inflation plans, while
+ * still finding the genuine early-retirement age when savings are large enough.
  */
-function solveMinRetireAge(
+function solveEarliestViableRetireAge(
   pv: number, monthly: number, annualRate: number, inflation: number,
-  currentAge: number, currentRetireAge: number, planUntilAge: number,
+  currentAge: number, planUntilAge: number,
   monthlySpendToday: number,
   strategy: 'lump_sum' | 'drawdown',
   annualIncreaseRate: number,
 ): number | null {
-  for (let age = currentRetireAge + 1; age <= Math.min(planUntilAge - 1, currentRetireAge + 30); age++) {
-    const yrs     = age - currentAge
-    const retYrs  = Math.max(planUntilAge - age, 0)
-    const corpus  = calculateCorpusNeeded(monthlySpendToday, yrs, retYrs, inflation, annualRate, strategy)
-    if (corpus <= 0) return age
-    const projected = compoundGrowWithAnnualIncrease(pv, monthly, annualRate, yrs, annualIncreaseRate)[yrs]
-    if (projected >= corpus) return age
-  }
-  return null
-}
+  // At least 1/3 of the total plan horizon must remain as retirement (floor of 5 yrs)
+  const minRetYrs = Math.max(5, Math.ceil((planUntilAge - currentAge) / 3))
+  const maxAge    = planUntilAge - minRetYrs
 
-/** Find the earliest age (>= currentAge+1 up to maxCandidateAge) where projected savings meet the target. */
-function solveEarliestRetireAge(
-  pv: number, monthly: number, annualRate: number, inflation: number,
-  currentAge: number, maxCandidateAge: number, planUntilAge: number,
-  monthlySpendToday: number,
-  strategy: 'lump_sum' | 'drawdown',
-  annualIncreaseRate: number,
-): number | null {
-  for (let age = currentAge + 1; age <= Math.min(maxCandidateAge, planUntilAge - 1); age++) {
-    const yrs = age - currentAge
+  for (let age = currentAge + 1; age <= maxAge; age++) {
+    const yrs    = age - currentAge
     const retYrs = Math.max(planUntilAge - age, 0)
-    const corpus = calculateCorpusNeeded(monthlySpendToday, yrs, retYrs, inflation, annualRate, strategy)
-    if (corpus <= 0) return age
+    const corpus    = calculateCorpusNeeded(monthlySpendToday, yrs, retYrs, inflation, annualRate, strategy)
     const projected = compoundGrowWithAnnualIncrease(pv, monthly, annualRate, yrs, annualIncreaseRate)[yrs]
     if (projected >= corpus) return age
   }
@@ -162,12 +156,12 @@ function HeroStat({ label, value, sub, color }: {
   label: string; value: string; sub?: string; color?: 'gain' | 'loss' | 'neutral'
 }) {
   return (
-    <div>
-      <p className="text-[12px] font-medium text-ink-muted">{label}</p>
-      <p className={`mt-0.5 font-display text-[22px] font-extrabold tnum leading-none ${
+    <div className="min-w-0">
+      <p className="text-[11px] font-medium text-ink-muted truncate">{label}</p>
+      <p className={`mt-0.5 font-display text-[15px] font-extrabold tnum leading-none truncate ${
         color === 'gain' ? 'text-gain' : color === 'loss' ? 'text-loss' : 'text-ink'
       }`}>{value}</p>
-      {sub && <p className="mt-0.5 text-[11px] text-ink-faint">{sub}</p>}
+      {sub && <p className="mt-0.5 text-[10px] text-ink-faint truncate">{sub}</p>}
     </div>
   )
 }
@@ -320,41 +314,29 @@ export function Retirement() {
     withdrawalStrategy
   )
 
-  const minRetireAge = useMemo(
-    () => solveMinRetireAge(
+  // The earliest age at which the plan is viable — independent of plannedAge
+  const earliestViableAge = useMemo(
+    () => solveEarliestViableRetireAge(
           summary.value, investMonthly, annualRate, inflation,
-          currentAge, plannedAge, Number(planUntilAge) || 85,
+          currentAge, Number(planUntilAge) || 85,
           Number(monthlySpend) || 0,
           withdrawalStrategy,
           annualSavingsGrowthRate
         ),
-    [summary.value, investMonthly, annualRate, inflation, currentAge, plannedAge, planUntilAge, monthlySpend, withdrawalStrategy, annualSavingsGrowthRate],
-  )
-
-  const earliestRetireAge = useMemo(
-    () => solveEarliestRetireAge(
-          summary.value, investMonthly, annualRate, inflation,
-          currentAge, plannedAge, Number(planUntilAge) || 85,
-          Number(monthlySpend) || 0,
-          withdrawalStrategy,
-          annualSavingsGrowthRate
-        ),
-    [summary.value, investMonthly, annualRate, inflation, currentAge, plannedAge, planUntilAge, monthlySpend, withdrawalStrategy, annualSavingsGrowthRate],
+    [summary.value, investMonthly, annualRate, inflation, currentAge, planUntilAge, monthlySpend, withdrawalStrategy, annualSavingsGrowthRate],
   )
 
   const couldRetireAge = useMemo(() => {
-    if (earliestRetireAge !== null) {
+    if (earliestViableAge !== null) {
       return {
         label: 'Could retire at',
-        value: String(earliestRetireAge),
-        highlight: earliestRetireAge <= plannedAge ? 'gain' as const : 'loss' as const,
+        value: String(earliestViableAge),
+        // Green if achievable on or before the planned date, red if needs to be later
+        highlight: earliestViableAge <= plannedAge ? 'gain' as const : 'loss' as const,
       }
     }
-    if (minRetireAge !== null) {
-      return { label: 'Could retire at', value: String(minRetireAge), highlight: 'loss' as const }
-    }
-    return { label: 'Could retire at', value: plannedAge > 0 ? String(plannedAge) : '-', highlight: 'loss' as const }
-  }, [earliestRetireAge, minRetireAge, plannedAge])
+    return { label: 'Could retire at', value: 'Never', highlight: 'loss' as const }
+  }, [earliestViableAge, plannedAge])
 
   const yearsLeft = plannedYearsLeft
   const retirementYears = plannedRetirementYears
@@ -694,7 +676,7 @@ export function Retirement() {
 
             {/* Secondary hero stats */}
             {corpusNeeded > 0 && (
-              <div className="mt-4 grid grid-cols-3 gap-3 rounded-2xl bg-surface-muted px-4 py-3">
+              <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl bg-surface-muted px-3 py-3">
                 <HeroStat
                   label={onTrack ? 'Surplus' : 'Shortfall'}
                   value={thbCompact(Math.abs(gap))}
@@ -720,43 +702,51 @@ export function Retirement() {
             )}
 
             {/* Shortfall callout — two paths to close the gap */}
-            {!onTrack && (monthlyGap !== null || minRetireAge !== null) && (
-              <div className="mt-3 rounded-2xl border border-loss/20 bg-loss-soft px-4 py-3 space-y-3">
-                <div className="flex items-center gap-2">
+            {!onTrack && (monthlyGap !== null || (earliestViableAge !== null && earliestViableAge > plannedAge)) && (
+              <div className="mt-3 rounded-2xl border border-loss/20 bg-loss-soft px-4 py-4 space-y-1">
+                {/* Header */}
+                <div className="flex items-center gap-2 mb-3">
                   <svg className="h-4 w-4 shrink-0 text-loss" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8}>
                     <path d="M8 6v3M8 11.5v.5" strokeLinecap="round" />
                     <circle cx={8} cy={8} r={6.5} />
                   </svg>
                   <p className="text-[13px] font-bold text-loss">To close the gap, pick a path:</p>
                 </div>
-                <div className="space-y-2 pl-1">
+                {/* Path items */}
+                <div className="space-y-3">
                   {monthlyGap !== null && monthlyGap > 0 && (
-                    <div className="flex items-start gap-2 text-[12.5px] text-loss/90">
-                      <span className="mt-px font-bold shrink-0">①</span>
-                      <span>
-                        Invest <span className="font-bold">{thbCompact(monthlyGap)}</span> more per month
-                        {' '}<span className="text-loss/60">(total: {thbCompact(investMonthly + monthlyGap)}/mo)</span>
-                      </span>
+                    <div className="flex items-start gap-3">
+                      <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/20 text-[10px] font-bold text-loss">1</span>
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-semibold text-loss leading-snug">
+                          Invest <span className="font-bold">{thbCompact(monthlyGap)}</span> more / month
+                        </p>
+                        <p className="text-[11.5px] text-loss/60 mt-0.5">Total: {thbCompact(investMonthly + monthlyGap)}/mo</p>
+                      </div>
                     </div>
                   )}
-                  {minRetireAge !== null ? (
-                    <div className="flex items-start gap-2 text-[12.5px] text-loss/90">
-                      <span className="mt-px font-bold shrink-0">②</span>
-                      <span>
-                        Retire at age <span className="font-bold">{minRetireAge}</span> instead of{' '}
-                        {Number(retireAge) || 40}
-                        {' '}<span className="text-loss/60">({minRetireAge - (Number(retireAge) || 40)} more year{minRetireAge - (Number(retireAge) || 40) !== 1 ? 's' : ''} of compounding)</span>
-                      </span>
+                  {earliestViableAge !== null && earliestViableAge > plannedAge ? (
+                    <div className="flex items-start gap-3">
+                      <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/20 text-[10px] font-bold text-loss">2</span>
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-semibold text-loss leading-snug">
+                          Retire at age <span className="font-bold">{earliestViableAge}</span> instead of {Number(retireAge) || 40}
+                        </p>
+                        <p className="text-[11.5px] text-loss/60 mt-0.5">
+                          {earliestViableAge - (Number(retireAge) || 40)} more year{earliestViableAge - (Number(retireAge) || 40) !== 1 ? 's' : ''} of compounding
+                        </p>
+                      </div>
                     </div>
                   ) : (
-                    <div className="flex items-start gap-2 text-[12.5px] text-loss/60">
-                      <span className="mt-px font-bold shrink-0">②</span>
-                      <span>Retiring later won't close the gap. Increase your monthly investment instead.</span>
+                    <div className="flex items-start gap-3">
+                      <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/10 text-[10px] font-bold text-loss/40">2</span>
+                      <p className="text-[12px] text-loss/50 leading-snug">Retiring later won't close the gap within the plan horizon.</p>
                     </div>
                   )}
                 </div>
               </div>
             )}
+
           </div>
 
           {/* Mobile view toggle */}
