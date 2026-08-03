@@ -213,7 +213,7 @@ export function Settings() {
               onClick={logout}
               className="w-full py-2.5 px-4 rounded-xl border border-line bg-surface hover:bg-surface-muted text-[13px] font-semibold text-loss transition-colors duration-200 active:scale-[0.98]"
             >
-              Sign Out from Google
+              Sign out
             </button>
           )}
         </Card>

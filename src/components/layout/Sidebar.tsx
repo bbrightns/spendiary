@@ -1,20 +1,30 @@
 import { Link, useLocation } from 'react-router-dom'
 import { navItems, settingsItem } from './nav'
 import { SparkleIcon } from '../icons'
+import { useData } from '../../store/DataContext'
 
 export function Sidebar() {
   const location = useLocation()
   const pathname = location.pathname
+  const { user } = useData()
+  const isTestMode = user?.id === 'test-user-local'
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-line bg-surface px-4 py-6 lg:flex flex-col justify-between">
       <div className="flex flex-col gap-8">
         {/* Brand Header */}
-        <div className="flex items-center gap-2.5 px-2">
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-ink text-white dark:bg-brand-soft dark:text-brand">
-            <SparkleIcon className="h-[18px] w-[18px]" strokeWidth={1.8} />
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-8 w-8 place-items-center rounded-lg bg-ink text-white dark:bg-brand-soft dark:text-brand">
+              <SparkleIcon className="h-[18px] w-[18px]" strokeWidth={1.8} />
+            </div>
+            <span className="font-display text-[18px] font-extrabold tracking-tight text-ink">Spendiary</span>
           </div>
-          <span className="font-display text-[18px] font-extrabold tracking-tight text-ink">Spendiary</span>
+          {isTestMode && (
+            <span className="rounded-full bg-amber-500/10 text-amber-600 dark:bg-amber-400/15 dark:text-amber-300 border border-amber-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase">
+              Test Mode
+            </span>
+          )}
         </div>
 
         {/* Navigation Items */}

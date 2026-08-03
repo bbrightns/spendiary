@@ -105,8 +105,9 @@ export function DcaForm({ open, editing, onClose }: Props) {
   const selectedHolding =
     data.holdings.find((h) => h.id === form.holdingId) ||
     data.holdings.find((h) => h.assetClass === form.assetClass)
-  const isBtcHolding = selectedHolding?.assetClass === 'crypto'
-  const isGoldHolding = selectedHolding?.assetClass === 'gold'
+  const currentAssetClass = editing ? editing.assetClass : (form.source === 'portfolio' ? (selectedHolding?.assetClass ?? form.assetClass) : form.assetClass)
+  const isBtcHolding = currentAssetClass === 'crypto'
+  const isGoldHolding = currentAssetClass === 'gold'
   const btcLocations = selectedHolding?.btcLocations ?? []
   const goldLocations = selectedHolding?.goldLocations ?? []
 

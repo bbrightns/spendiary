@@ -3,6 +3,7 @@ import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import type { AssetClass, BtcLocation, CashAccount, DcaPlan, FixedCostItem, GoldLocation, Holding, HoldingLog, NetWorthSnapshot, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
 import { localDateStr } from '../lib/format'
+import { seedData } from '../lib/seed'
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
 
@@ -87,6 +88,9 @@ interface DataContextValue {
   syncStatus: SyncStatus
   user: User | null
   loginWithGoogle: () => Promise<void>
+  loginAsGuest: () => void
+  loginAsTestMode: () => void
+  authError: string | null
   logout: () => Promise<void>
   setCashAccounts: (accounts: CashAccount[]) => void
   setMonthlyIncome: (income: number) => void
@@ -211,6 +215,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }
 
   const [user, setUser] = useState<User | null>(null)
+  const [authError, setAuthError] = useState<string | null>(null)
   
   // Tracks whether the initial Supabase load has completed (prevents syncing
   // back immediately after we receive data from the server).
@@ -236,23 +241,113 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const loginWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin
+    setAuthError(null)
+    const supabaseUrl = import.meta.env.VITE_API_URL || ''
+    const supabaseKey = import.meta.env.VITE_API_TOKEN || ''
+
+    if (!supabaseUrl || !supabaseKey) {
+      setAuthError('ยังไม่ได้ตั้งค่า Supabase URL หรือ Token ในไฟล์ .env (กรุณาดูไฟล์ .env.example หรือใช้โหมด Guest ด้านล่าง)')
+      return
+    }
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      })
+      if (error) {
+        setAuthError(`ไม่สามารถเข้าสู่ระบบด้วย Google ได้: ${error.message}`)
       }
-    })
+    } catch (err: any) {
+      console.error('Sign in error:', err)
+      setAuthError(`เกิดข้อผิดพลาดในการ Sign In: ${err?.message || 'ไม่สามารถติดต่อ Supabase ได้'}`)
+    }
+  }
+
+  const loginAsGuest = () => {
+    setAuthError(null)
+    const guestUser: User = {
+      id: 'guest-user-local',
+      app_metadata: { provider: 'guest' },
+      user_metadata: { name: 'Guest User' },
+      aud: 'authenticated',
+      created_at: new Date().toISOString(),
+      email: 'guest@spendiary.local',
+      role: 'authenticated'
+    }
+    setUser(guestUser)
+  }
+
+  const loginAsTestMode = () => {
+    setAuthError(null)
+    const testUser: User = {
+      id: 'test-user-local',
+      app_metadata: { provider: 'test' },
+      user_metadata: { name: 'Test Mode User' },
+      aud: 'authenticated',
+      created_at: new Date().toISOString(),
+      email: 'test@spendiary.local',
+      role: 'authenticated'
+    }
+    setUser(testUser)
   }
 
   const logout = async () => {
-    await supabase.auth.signOut()
+    if (user?.id !== 'guest-user-local' && user?.id !== 'test-user-local') {
+      await supabase.auth.signOut()
+    }
     localStorage.removeItem('spendiary.last_user_id')
     localStorage.removeItem('spendiary.last_synced_time')
+    setUser(null)
     setDataState(emptyData)
     updateLastSynced(null)
   }
 
   const fetchRemoteData = async (userId: string) => {
+    if (userId === 'guest-user-local') {
+      const local = localStorage.getItem('spendiary.guest_data')
+      if (local) {
+        try {
+          const parsed = JSON.parse(local)
+          const migrated = migrate(parsed)
+          lastSynced.current = JSON.stringify(migrated)
+          setDataState(migrated)
+        } catch {
+          setDataState(emptyData)
+        }
+      } else {
+        setDataState(emptyData)
+      }
+      setSyncStatus('synced')
+      syncReady.current = true
+      return
+    }
+
+    if (userId === 'test-user-local') {
+      const local = localStorage.getItem('spendiary.test_data')
+      if (local) {
+        try {
+          const parsed = JSON.parse(local)
+          const migrated = migrate(parsed)
+          lastSynced.current = JSON.stringify(migrated)
+          setDataState(migrated)
+        } catch {
+          const migrated = migrate(seedData)
+          lastSynced.current = JSON.stringify(migrated)
+          setDataState(migrated)
+        }
+      } else {
+        const migrated = migrate(seedData)
+        lastSynced.current = JSON.stringify(migrated)
+        setDataState(migrated)
+      }
+      setSyncStatus('synced')
+      syncReady.current = true
+      return
+    }
+
     try {
       setSyncStatus('syncing')
       const { data: row, error } = await supabase
@@ -330,12 +425,29 @@ export function DataProvider({ children }: { children: ReactNode }) {
     })
   }
 
-  // ── Debounced sync to Supabase on data change ──────────────
+  // ── Debounced sync to Supabase (or localStorage for Guest) on data change ──────────────
   useEffect(() => {
     if (!user) return
     if (!syncReady.current) return
     const serialised = JSON.stringify(data)
     if (serialised === lastSynced.current) return   // nothing changed
+
+    if (user.id === 'guest-user-local') {
+      localStorage.setItem('spendiary.guest_data', serialised)
+      lastSynced.current = serialised
+      setSyncStatus('synced')
+      updateLastSynced(new Date())
+      return
+    }
+
+    if (user.id === 'test-user-local') {
+      localStorage.setItem('spendiary.test_data', serialised)
+      lastSynced.current = serialised
+      setSyncStatus('synced')
+      updateLastSynced(new Date())
+      return
+    }
+
     setSyncStatus('syncing')
     const timer = setTimeout(async () => {
       try {
@@ -369,6 +481,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       lastSyncedAt,
       user,
       loginWithGoogle,
+      loginAsGuest,
+      loginAsTestMode,
+      authError,
       logout,
       usdThb,
       setUsdThb,
@@ -624,8 +739,32 @@ export function DataProvider({ children }: { children: ReactNode }) {
             }
           )
 
-          // 2. If plan is linked to a holding, apply the buy
-          if (!plan.holdingId) {
+          // 2. If plan is linked to a holding, or asset holding exists/created, apply the buy
+          let holding = plan.holdingId
+            ? prev.holdings.find((h) => h.id === plan.holdingId)
+            : prev.holdings.find((h) => h.assetClass === plan.assetClass)
+
+          let holdingsList = prev.holdings
+
+          // Auto-create holding if needed when location or buy detail is provided
+          if (!holding && (btcLocationUpdate || goldLocationUpdate || (pricePerUnit > 0 && (plan.assetClass === 'gold' || plan.assetClass === 'crypto')))) {
+            const createdHolding: import('../lib/types').Holding = {
+              id: newId(),
+              name: plan.assetClass === 'gold' ? 'Gold' : plan.assetClass === 'crypto' ? 'Bitcoin' : plan.name,
+              ticker: plan.assetClass === 'gold' ? 'GOLD' : plan.assetClass === 'crypto' ? 'BTC' : plan.name.toUpperCase().slice(0, 6),
+              assetClass: plan.assetClass,
+              units: 0,
+              avgCost: pricePerUnit,
+              price: pricePerUnit,
+              updatedAt: date,
+              btcLocations: [],
+              goldLocations: [],
+            }
+            holding = createdHolding
+            holdingsList = [...prev.holdings, createdHolding]
+          }
+
+          if (!holding) {
             // Log simple plan confirmation (no holding update)
             const logEntry: import('../lib/types').HoldingLog = {
               id: newId(),
@@ -644,15 +783,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
               holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
             }
           }
-          const holding = prev.holdings.find((h) => h.id === plan.holdingId)
-          if (!holding) return { ...prev, dcaPlans: updatedPlans }
 
           // Capture previous state (for undo) BEFORE applying location updates
           const previousHoldingState = JSON.parse(JSON.stringify(holding))
 
-          let calculatedUnits = plan.monthlyAmount / pricePerUnit
+          let calculatedUnits = pricePerUnit > 0 ? plan.monthlyAmount / pricePerUnit : 0
+          if (!isFinite(calculatedUnits) || isNaN(calculatedUnits)) calculatedUnits = 0
+
           let newUnits = overrideUnits !== undefined ? overrideUnits : (holding.units + calculatedUnits)
-          let newAvgCost = overrideAvgCost !== undefined ? overrideAvgCost : ((holding.units * holding.avgCost + calculatedUnits * pricePerUnit) / newUnits)
+          let newAvgCost = overrideAvgCost !== undefined ? overrideAvgCost : (newUnits > 0 ? (holding.units * holding.avgCost + calculatedUnits * pricePerUnit) / newUnits : holding.avgCost)
+          if (!isFinite(newAvgCost) || isNaN(newAvgCost)) newAvgCost = holding.avgCost
           const finalPrice = overridePrice !== undefined ? overridePrice : pricePerUnit
 
           let finalBtcLocations = holding.btcLocations
@@ -664,14 +804,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const totalThb = finalBtcLocations.reduce((s, l) => s + l.thbSpent, 0)
             newUnits = totalSats / 100_000_000
             newAvgCost = newUnits > 0 ? totalThb / newUnits : holding.avgCost
-            calculatedUnits = newUnits - holding.units
+            if (!isFinite(newAvgCost) || isNaN(newAvgCost)) newAvgCost = holding.avgCost
+            calculatedUnits = newUnits - (holding.units || 0)
+            if (!isFinite(calculatedUnits) || isNaN(calculatedUnits)) calculatedUnits = 0
           } else if (holding.assetClass === 'gold' && goldLocationUpdate) {
             finalGoldLocations = upsert(holding.goldLocations ?? [], goldLocationUpdate)
             const totalGrams = finalGoldLocations.reduce((s, l) => s + l.grams, 0)
             const totalThb = finalGoldLocations.reduce((s, l) => s + l.thbSpent, 0)
             newUnits = totalGrams
             newAvgCost = newUnits > 0 ? totalThb / newUnits : holding.avgCost
-            calculatedUnits = newUnits - holding.units
+            if (!isFinite(newAvgCost) || isNaN(newAvgCost)) newAvgCost = holding.avgCost
+            calculatedUnits = newUnits - (holding.units || 0)
+            if (!isFinite(calculatedUnits) || isNaN(calculatedUnits)) calculatedUnits = 0
           }
 
           const isBtcWithLocations =
@@ -681,11 +825,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
             holding.assetClass === 'gold' &&
             (finalGoldLocations?.length ?? 0) > 0
 
-          const updatedHoldings = prev.holdings.map((h) =>
-            h.id !== plan.holdingId ? h : (isBtcWithLocations || isGoldWithLocations)
+          const targetHoldingId = holding.id
+          const updatedHoldings = holdingsList.map((h) =>
+            h.id !== targetHoldingId ? h : (isBtcWithLocations || isGoldWithLocations)
               ? { ...h, btcLocations: finalBtcLocations, goldLocations: finalGoldLocations, units: newUnits, avgCost: newAvgCost, price: finalPrice, updatedAt: date }
               : { ...h, units: newUnits, avgCost: newAvgCost, price: finalPrice, updatedAt: date }
           )
+
+          const displayGrams = isFinite(calculatedUnits) && !isNaN(calculatedUnits) ? calculatedUnits.toFixed(4) : '0.0000'
 
           // 3. Add to holding log
           const logEntry: import('../lib/types').HoldingLog = {
@@ -698,10 +845,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
             note: holding.assetClass === 'crypto'
               ? `DCA · +${Math.round(calculatedUnits * 1e8).toLocaleString()} sats · ฿${plan.monthlyAmount.toLocaleString()} total`
               : holding.assetClass === 'gold'
-              ? `DCA · +${calculatedUnits.toFixed(4)} g · ฿${plan.monthlyAmount.toLocaleString()} total`
+              ? `DCA · +${displayGrams} g · ฿${plan.monthlyAmount.toLocaleString()} total`
               : overrideUnits !== undefined
               ? `DCA (Updated Portfolio) · New Units: ${overrideUnits.toLocaleString()} @ Avg Cost: ${overrideAvgCost?.toLocaleString()}`
-              : `DCA · +${calculatedUnits.toFixed(4)} units @ ฿${pricePerUnit.toLocaleString()}/unit · ฿${plan.monthlyAmount.toLocaleString()} total`,
+              : `DCA · +${displayGrams} units @ ฿${pricePerUnit.toLocaleString()}/unit · ฿${plan.monthlyAmount.toLocaleString()} total`,
             holdingId: holding.id,
             previousHoldingState,
             dcaPlanId: plan.id,

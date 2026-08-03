@@ -5,6 +5,7 @@ import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { DcaForm } from '../components/forms/DcaForm'
 import { ConfirmDcaBuyForm } from '../components/forms/ConfirmDcaBuyForm'
+import { DcaSuccessModal } from '../components/forms/DcaSuccessModal'
 import { CheckIcon, DcaIcon, PencilIcon, TrashIcon } from '../components/icons'
 import {
   ASSET_META, buyDayPassedThisPeriod, dcaThisMonth, isConfirmedForPeriod, isSkippedForPeriod,
@@ -231,6 +232,10 @@ export function DcaPlanner() {
   // Confirm buy form
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [confirming, setConfirming] = useState<DcaPlan | null>(null)
+
+  // DCA Success Modal state
+  const [successOpen, setSuccessOpen] = useState(false)
+  const [completedPlan, setCompletedPlan] = useState<DcaPlan | null>(null)
 
   // ── Derived numbers ──
   const fixedItems = [...(data.fixedCostItems ?? [])].sort((a, b) => b.amount - a.amount)
@@ -597,7 +602,20 @@ export function DcaPlanner() {
       </Card>
 
       <DcaForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
-      <ConfirmDcaBuyForm open={confirmOpen} plan={confirming} onClose={() => setConfirmOpen(false)} />
+      <ConfirmDcaBuyForm
+        open={confirmOpen}
+        plan={confirming}
+        onClose={() => setConfirmOpen(false)}
+        onSuccess={() => {
+          setCompletedPlan(confirming)
+          setSuccessOpen(true)
+        }}
+      />
+      <DcaSuccessModal
+        open={successOpen}
+        plan={completedPlan}
+        onClose={() => setSuccessOpen(false)}
+      />
     </>
   )
 }

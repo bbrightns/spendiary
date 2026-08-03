@@ -7,13 +7,19 @@ import { ASSET_META } from '../../lib/calc'
 import type { DcaPlan } from '../../lib/types'
 import { localDateStr, thb } from '../../lib/format'
 
+function safeFixed(num: number, digits: number = 4): string {
+  if (!isFinite(num) || isNaN(num)) return (0).toFixed(digits)
+  return num.toFixed(digits)
+}
+
 interface Props {
   open: boolean
   plan: DcaPlan | null
   onClose: () => void
+  onSuccess?: () => void
 }
 
-export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
+export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
   const { data, confirmDcaBuy, usdThb } = useData()
   const [price, setPrice] = useState<number | ''>('')
   const [sats, setSats] = useState<number | ''>('')
@@ -23,6 +29,8 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const [showErrors, setShowErrors] = useState(false)
   const [selectedLocId, setSelectedLocId] = useState<string>('')
   const [newLocName, setNewLocName] = useState('')
+  const [goldInputMode, setGoldInputMode] = useState<'price' | 'grams'>('price')
+  const [goldGrams, setGoldGrams] = useState<number | ''>('')
   const wasOpen = useRef(false)
   const SATS_PER_BTC = 100_000_000
 
@@ -30,10 +38,11 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     ? data.holdings.find((h) => h.id === plan.holdingId) ?? null
     : data.holdings.find((h) => h.assetClass === plan?.assetClass) ?? null
 
-  const isStock = holding?.assetClass === 'stock'
-  const isBtc   = holding?.assetClass === 'crypto'
-  const isGold  = holding?.assetClass === 'gold'
-  const isFund  = holding?.assetClass === 'fund'
+  const assetClass = plan?.assetClass ?? holding?.assetClass
+  const isStock = assetClass === 'stock'
+  const isBtc   = assetClass === 'crypto'
+  const isGold  = assetClass === 'gold'
+  const isFund  = assetClass === 'fund'
   const rate = usdThb ?? 1
   const btcLocations = holding?.btcLocations ?? []
   const goldLocations = holding?.goldLocations ?? []
@@ -43,6 +52,8 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     wasOpen.current = open
     if (!justOpened || !plan) return
     setShowErrors(false)
+    setGoldInputMode('price')
+    setGoldGrams('')
     // Pre-select location from plan preference, else first location, else new
     let preferredId = '__new__'
     if (isBtc) {
@@ -87,17 +98,25 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
 
   const priceNum = Number(price)
   const satsValue = Number(sats)
+  const goldGramsValue = Number(goldGrams)
   const btcUnits = isBtc && satsValue > 0 ? satsValue / SATS_PER_BTC : 0
+
   const priceInThb = isBtc
     ? btcUnits > 0 ? plan.monthlyAmount / btcUnits : 0
+    : isGold && goldInputMode === 'grams'
+    ? goldGramsValue > 0 ? plan.monthlyAmount / goldGramsValue : 0
     : isStock && rate > 1
     ? priceNum * rate
     : priceNum
+
   const units = isBtc
     ? btcUnits
+    : isGold && goldInputMode === 'grams'
+    ? goldGramsValue
     : priceInThb > 0
     ? plan.monthlyAmount / priceInThb
     : 0
+
   const satsToAdd = isBtc ? satsValue : Math.round(units * 1e8)
   const gramsToAdd = isGold ? units : 0
   const hasHolding = !!holding
@@ -105,14 +124,16 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   // Validation
   const valid = isBtc
     ? satsValue > 0
-    : isStock
+    : isGold
+    ? goldInputMode === 'price' ? priceNum > 0 : goldGramsValue > 0
+    : isStock && hasHolding
     ? Number(unitHeld) > 0 && Number(avgCost) > 0
-    : isFund
+    : isFund && hasHolding
     ? Number(unitHeld) > 0 && Number(avgCost) > 0 && Number(currentPrice) > 0
     : priceNum > 0
 
   // Location validation
-  const locValid = !(isBtc || isGold) || !hasHolding ||
+  const locValid = !(isBtc || isGold) ||
     (selectedLocId !== '__new__') ||
     (newLocName.trim().length > 0)
 
@@ -131,7 +152,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     const p = plan
     const today = localDateStr()
 
-    if (isBtc && hasHolding && holding) {
+    if (isBtc) {
       const btcLocUpdate = selectedLocId === '__new__'
         ? {
             name: newLocName.trim(),
@@ -150,7 +171,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               : undefined
           })()
       confirmDcaBuy(p.id, priceInThb, today, undefined, undefined, undefined, btcLocUpdate)
-    } else if (isGold && hasHolding && holding) {
+    } else if (isGold) {
       const goldLocUpdate = selectedLocId === '__new__'
         ? {
             name: newLocName.trim(),
@@ -179,6 +200,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
       confirmDcaBuy(p.id, priceInThb, today)
     }
 
+    onSuccess?.()
     onClose()
   }
 
@@ -215,6 +237,33 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         </div>
 
         {/* Price / Inputs block */}
+        {isGold && (
+          <div className="flex rounded-xl bg-surface-muted p-1 gap-1 mb-1">
+            <button
+              type="button"
+              onClick={() => setGoldInputMode('price')}
+              className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition-all ${
+                goldInputMode === 'price'
+                  ? 'bg-surface text-ink shadow-sm'
+                  : 'text-ink-muted hover:text-ink'
+              }`}
+            >
+              Current price / gram (฿)
+            </button>
+            <button
+              type="button"
+              onClick={() => setGoldInputMode('grams')}
+              className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition-all ${
+                goldInputMode === 'grams'
+                  ? 'bg-surface text-ink shadow-sm'
+                  : 'text-ink-muted hover:text-ink'
+              }`}
+            >
+              Grams bought (g)
+            </button>
+          </div>
+        )}
+
         {isStock && hasHolding ? (
           <div className="space-y-4">
             <div className="rounded-xl bg-surface-muted p-3 text-[12px] text-ink-muted">
@@ -265,6 +314,14 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               error={showErrors && Number(currentPrice) <= 0 ? 'Required (> 0)' : undefined}
             />
           </div>
+        ) : isGold && goldInputMode === 'grams' ? (
+          <NumberField
+            label="Grams bought (g)"
+            value={goldGrams}
+            onChange={setGoldGrams}
+            placeholder="e.g. 0.4753"
+            error={showErrors && !valid ? 'Required (> 0)' : undefined}
+          />
         ) : (
           <NumberField
             label={priceLabel}
@@ -277,7 +334,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         )}
 
         {/* BTC location picker */}
-        {isBtc && hasHolding && (
+        {isBtc && (
           <div>
             <p className="mb-2 text-[13px] font-semibold text-ink">Where did you buy?</p>
             <div className="space-y-2">
@@ -344,7 +401,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         )}
 
         {/* Gold location picker */}
-        {isGold && hasHolding && (
+        {isGold && (
           <div>
             <p className="mb-2 text-[13px] font-semibold text-ink">Where did you buy?</p>
             <div className="space-y-2">
@@ -411,16 +468,16 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         )}
 
         {/* Preview */}
-        {hasHolding && (
+        {(hasHolding || isBtc || isGold || priceInThb > 0) && (
           <div className="rounded-2xl bg-surface-muted px-4 py-3">
             <div className="flex items-center justify-between text-[13px]">
               <span className="text-ink-muted">Units to add</span>
               <span className="font-semibold tnum text-ink">
                 {isBtc
-                  ? `${satsValue > 0 ? satsValue.toLocaleString() : 0} sats (${units.toFixed(8)} BTC)`
+                  ? `${satsValue > 0 ? satsValue.toLocaleString() : 0} sats (${safeFixed(units, 8)} BTC)`
                   : isGold
-                  ? `${units.toFixed(4)} g`
-                  : `${units.toFixed(4)} units`}
+                  ? `${safeFixed(units, 4)} g`
+                  : `${safeFixed(units, 4)} units`}
               </span>
             </div>
             <div className="mt-1 flex items-center justify-between text-[13px]">
@@ -429,22 +486,22 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                 {isBtc
                   ? selectedLocId === '__new__'
                     ? newLocName.trim() || '-'
-                    : (btcLocations.find((l) => l.id === selectedLocId)?.name ?? holding!.name)
+                    : (btcLocations.find((l) => l.id === selectedLocId)?.name ?? holding?.name ?? plan.name)
                   : isGold
                   ? selectedLocId === '__new__'
                     ? newLocName.trim() || '-'
-                    : (goldLocations.find((l) => l.id === selectedLocId)?.name ?? holding!.name)
-                  : holding!.name}
+                    : (goldLocations.find((l) => l.id === selectedLocId)?.name ?? holding?.name ?? plan.name)
+                  : (holding?.name ?? plan.name)}
               </span>
             </div>
             <div className="mt-1 flex items-center justify-between text-[13px]">
               <span className="text-ink-muted">Total will be</span>
               <span className="font-semibold tnum text-ink">
                 {isBtc
-                  ? `${(((btcLocations.find((l) => l.id === selectedLocId)?.satoshi ?? 0) + satsToAdd) / 100_000_000).toFixed(8)} BTC`
+                  ? `${safeFixed(((btcLocations.find((l) => l.id === selectedLocId)?.satoshi ?? 0) + satsToAdd) / 100_000_000, 8)} BTC`
                   : isGold
-                  ? `${((goldLocations.find((l) => l.id === selectedLocId)?.grams ?? 0) + gramsToAdd).toFixed(4)} g`
-                  : `${((holding?.units ?? 0) + units).toFixed(4)} units`}
+                  ? `${safeFixed((goldLocations.find((l) => l.id === selectedLocId)?.grams ?? 0) + gramsToAdd, 4)} g`
+                  : `${safeFixed((holding?.units ?? 0) + units, 4)} units`}
               </span>
             </div>
           </div>

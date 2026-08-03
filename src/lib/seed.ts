@@ -10,12 +10,18 @@ function inDays(days: number): string {
 const today = new Date().toISOString().slice(0, 10)
 
 export const seedData: SpendiaryData = {
+  userName: 'Tester',
   cashAccounts: [
     { id: 'c1', name: 'KBank', balance: 145_000 },
     { id: 'c2', name: 'SCB', balance: 92_000 },
     { id: 'c3', name: 'Bangkok Bank', balance: 48_000 },
   ],
   monthlyIncome: 80_000,
+  fixedCostItems: [
+    { id: 'fc1', name: 'Condo Rent & Utilities', amount: 18_000 },
+    { id: 'fc2', name: 'Family Allowance', amount: 10_000 },
+  ],
+  monthlyPersonal: 15_000,
   holdings: [
     {
       id: 'h1',
@@ -123,6 +129,38 @@ export const seedData: SpendiaryData = {
       completed: 5,
       total: 6,
       expiryDate: inDays(19),
+    },
+  ],
+  holdingLogs: [
+    {
+      id: 'log-seed-1',
+      timestamp: new Date(Date.now() - 86400000 * 5).toISOString(),
+      action: 'add',
+      holdingName: 'SCB US Index Fund',
+      ticker: 'SCBS&P500',
+      assetClass: 'fund',
+      note: 'Initial position: 4,200 units @ ฿18.40',
+      holdingId: 'h1',
+    },
+    {
+      id: 'log-seed-2',
+      timestamp: new Date(Date.now() - 86400000 * 3).toISOString(),
+      action: 'buy_more',
+      holdingName: 'NVIDIA Corp.',
+      ticker: 'NVDA',
+      assetClass: 'stock',
+      note: 'DCA Buy: 15 units @ ฿3,100 (+฿46,500)',
+      holdingId: 'h4',
+    },
+    {
+      id: 'log-seed-3',
+      timestamp: new Date(Date.now() - 86400000 * 1).toISOString(),
+      action: 'add',
+      holdingName: 'Bitcoin',
+      ticker: 'BTC',
+      assetClass: 'crypto',
+      note: 'Initial crypto allocation: 0.42 BTC @ ฿2,180,000',
+      holdingId: 'h6',
     },
   ],
 }

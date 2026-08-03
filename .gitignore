@@ -6,3 +6,5 @@ dist-ssr
 .vite
 *.log
 npm-debug.log*
+.node/
+*.tsbuildinfo
