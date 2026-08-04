@@ -38,6 +38,10 @@ export function HoldingForm({ open, editing, onClose }: Props) {
   // Applied FX Rate for stocks
   const [fxRateInput, setFxRateInput] = useState<number | ''>('')
 
+  // Manual THB Invested override for stocks
+  const [thbInvestedInput, setThbInvestedInput] = useState<number | ''>('')
+  const [isThbInvestedManuallyEdited, setIsThbInvestedManuallyEdited] = useState(false)
+
   // Autocomplete (fund/stock only)
   const [suggestions, setSuggestions] = useState<Security[]>([])
 
@@ -83,8 +87,14 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       if (editing.assetClass === 'stock') {
         const impliedRate = editing.avgCostThb && editing.avgCostUsd ? editing.avgCostThb / editing.avgCostUsd : (usdThb || 35)
         setFxRateInput(parseFloat(impliedRate.toFixed(4)))
+
+        const histThb = editing.totalThbInvested ?? (editing.units * editing.avgCost)
+        setThbInvestedInput(histThb)
+        setIsThbInvestedManuallyEdited(true)
       } else {
         setFxRateInput('')
+        setThbInvestedInput('')
+        setIsThbInvestedManuallyEdited(false)
       }
     } else {
       setForm(blank)
@@ -95,9 +105,20 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       setGoldThbSpent('')
       setGoldLocationName('')
       setFxRateInput(usdThb || '')
+      setThbInvestedInput('')
+      setIsThbInvestedManuallyEdited(false)
     }
     setShowErrors(false)
   }, [open, editing, usdThb])
+
+  // Recalculate THB capital basis in real-time when Card B changes (unless overridden)
+  useEffect(() => {
+    if (isThbInvestedManuallyEdited) return
+    const shares = Number(form.units) || 0
+    const avgCost = Number(form.avgCost) || 0
+    const fxRate = Number(fxRateInput) || usdThb || 35
+    setThbInvestedInput(parseFloat((shares * avgCost * fxRate).toFixed(2)))
+  }, [form.units, form.avgCost, fxRateInput, isThbInvestedManuallyEdited, usdThb])
 
   // ── Save: BTC new holding ──
   function saveBtc() {
@@ -190,27 +211,10 @@ export function HoldingForm({ open, editing, onClose }: Props) {
 
     if (isUsd) {
       const fxRateVal = Number(fxRateInput) || usdThb || 35
-      const hasSharesChanged = !editing || unitsNum !== editing.units
-      const hasAvgCostChanged = !editing || avgCostInput !== editing.avgCostUsd
-      const hasFxRateChanged = editing && editing.avgCostUsd && editing.avgCostThb && Math.abs((editing.avgCostThb / editing.avgCostUsd) - fxRateVal) > 0.001
-      const isCostBasisModified = hasSharesChanged || hasAvgCostChanged || hasFxRateChanged
-
-      let totalThbInvested: number
-      let totalUsdInvested: number
-      let avgCostUsd: number
-      let avgCostThb: number
-
-      if (editing && !isCostBasisModified) {
-        totalThbInvested = editing.totalThbInvested ?? (editing.units * editing.avgCost)
-        totalUsdInvested = editing.totalUsdInvested ?? (editing.units * (editing.avgCostUsd ?? (usdThb ? editing.avgCost / usdThb : editing.avgCost / 35)))
-        avgCostUsd = editing.avgCostUsd ?? (totalUsdInvested / unitsNum)
-        avgCostThb = totalThbInvested / unitsNum
-      } else {
-        totalUsdInvested = unitsNum * avgCostInput
-        totalThbInvested = totalUsdInvested * fxRateVal
-        avgCostUsd = avgCostInput
-        avgCostThb = totalThbInvested / unitsNum
-      }
+      const totalThbInvested = Number(thbInvestedInput) || 0
+      const totalUsdInvested = unitsNum * avgCostInput
+      const avgCostUsd = avgCostInput
+      const avgCostThb = unitsNum > 0 ? totalThbInvested / unitsNum : 0
 
       updateObj = {
         ...updateObj,
@@ -262,19 +266,18 @@ export function HoldingForm({ open, editing, onClose }: Props) {
   const avgCostUsdVal = Number(form.avgCost) || 0
   const fxRateVal = Number(fxRateInput) || usdThb || 35
 
-  const hasSharesChanged = !editing || sharesInputVal !== editing.units
-  const hasAvgCostChanged = !editing || avgCostUsdVal !== editing.avgCostUsd
-  const hasFxRateChanged = editing && editing.avgCostUsd && editing.avgCostThb && Math.abs((editing.avgCostThb / editing.avgCostUsd) - fxRateVal) > 0.001
-  const isCostBasisModified = hasSharesChanged || hasAvgCostChanged || hasFxRateChanged
-
-  const totalThbInvestedVal = (editing && !isCostBasisModified)
-    ? (editing.totalThbInvested ?? (editing.units * editing.avgCost))
-    : (sharesInputVal * avgCostUsdVal * fxRateVal)
+  const totalThbInvestedVal = Number(thbInvestedInput) || 0
 
   const livePriceUsd = editing ? (editing.price / (usdThb || 35)) : (Number(form.price) || 0)
   const currentMarketValueThb = sharesInputVal * livePriceUsd * (usdThb || fxRateVal)
   const netPnlThb = currentMarketValueThb - totalThbInvestedVal
   const netReturnPct = totalThbInvestedVal > 0 ? (netPnlThb / totalThbInvestedVal) * 100 : 0
+
+  const formattedNetPnlThb = netPnlThb > 0
+    ? `+฿${netPnlThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : netPnlThb < 0
+    ? `-฿${Math.abs(netPnlThb).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : `฿0.00`
 
   const modalDescription = isBtc
     ? 'Log your first purchase in Satoshi.'
@@ -540,18 +543,42 @@ export function HoldingForm({ open, editing, onClose }: Props) {
         {!isBtc && !isGold && (
           isUsd ? (
             <>
-              {/* Card A: Real Money Section (THB Focus - Read Only / Calculated) */}
-              <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-3 shadow-sm">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-brand">Real Money Section (THB Focus)</p>
+              {/* Card A: THB Investment Summary (Total THB Invested is editable, rest read-only) */}
+              <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-4 shadow-sm">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-brand">THB Investment Summary</p>
                 
-                <div className="flex items-center justify-between text-[13px]">
-                  <span className="text-ink-soft">Total THB Invested</span>
-                  <span className="font-bold tnum text-ink">
-                    ฿{totalThbInvestedVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                </div>
+                <NumberField
+                  label="Total THB Invested"
+                  prefix="฿"
+                  value={thbInvestedInput}
+                  onChange={(val) => {
+                    setThbInvestedInput(val)
+                    setIsThbInvestedManuallyEdited(true)
+                  }}
+                  error={showErrors && thbInvestedInput === '' ? 'Total THB Invested is required' : undefined}
+                  placeholder="0.00"
+                  step={0.01}
+                />
                 
-                <div className="flex items-center justify-between text-[13px]">
+                {isThbInvestedManuallyEdited && (
+                  <div className="text-right -mt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsThbInvestedManuallyEdited(false)
+                        const shares = Number(form.units) || 0
+                        const avgCost = Number(form.avgCost) || 0
+                        const fxRate = Number(fxRateInput) || usdThb || 35
+                        setThbInvestedInput(parseFloat((shares * avgCost * fxRate).toFixed(2)))
+                      }}
+                      className="text-[11px] font-semibold text-brand hover:underline cursor-pointer"
+                    >
+                      Reset to calculated (฿{(sharesInputVal * avgCostUsdVal * fxRateVal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between text-[13px] pt-1">
                   <span className="text-ink-soft">Current Market Value (THB)</span>
                   <span className="font-bold tnum text-ink">
                     ฿{currentMarketValueThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -561,7 +588,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                 <div className="flex items-center justify-between text-[13px]">
                   <span className="text-ink-soft">Net Profit / Loss (THB)</span>
                   <span className={`font-bold tnum ${netPnlThb >= 0 ? 'text-gain' : 'text-loss'}`}>
-                    {netPnlThb >= 0 ? '+' : ''}{netPnlThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formattedNetPnlThb}
                   </span>
                 </div>
 
@@ -573,9 +600,9 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                 </div>
               </div>
 
-              {/* Card B: Asset Metrics Section (USD Focus - Editable) */}
+              {/* Card B: USD Position Details (USD Focus - Editable) */}
               <div className="rounded-2xl border border-line p-4 space-y-4">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-brand">Asset Metrics Section (USD Focus)</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-brand">USD Position Details</p>
                 
                 <NumberField
                   label="Total Shares Held"
