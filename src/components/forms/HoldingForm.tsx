@@ -8,6 +8,7 @@ import { ASSET_META } from '../../lib/calc'
 import type { AssetClass, Holding } from '../../lib/types'
 import { localDateStr, thb } from '../../lib/format'
 import { searchSecurities, type Security } from '../../lib/securities'
+import { PencilIcon } from '../icons'
 
 interface Props {
   open: boolean
@@ -611,9 +612,10 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                     <button
                       type="button"
                       onClick={() => setIsEditingThb(true)}
-                      className="text-[11px] font-bold text-brand hover:underline cursor-pointer uppercase tracking-wider"
+                      className="inline-flex items-center gap-1 rounded-md bg-brand/15 px-2 py-0.5 text-[11px] font-bold text-brand hover:bg-brand/25 active:scale-95 transition-all cursor-pointer uppercase tracking-wider"
                     >
-                      Override THB
+                      <PencilIcon className="h-3 w-3" />
+                      EDIT THB
                     </button>
                   )}
                 </div>
