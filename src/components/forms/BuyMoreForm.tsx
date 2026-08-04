@@ -330,7 +330,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
   function save() {
     if (!valid) { setShowErrors(true); return }
     const next = applyBuy(holding!, Number(units), priceInThb)
-    let stockExtra: Partial<Holding> = {}
+    let extra: Partial<Holding> = {}
     if (isStock) {
       const unitsBoughtNum = Number(units)
       const priceUsdNum = Number(price)
@@ -348,7 +348,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
       const newAvgCostUsd = newTotalUnits > 0 ? newTotalUsdInvested / newTotalUnits : 0
       const newAvgCostThb = newTotalUnits > 0 ? newTotalThbInvested / newTotalUnits : 0
 
-      stockExtra = {
+      extra = {
         totalUnits: newTotalUnits,
         totalThbInvested: newTotalThbInvested,
         totalUsdInvested: newTotalUsdInvested,
@@ -356,8 +356,20 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         avgCostThb: newAvgCostThb,
         avgCost: newAvgCostThb,
       }
+    } else {
+      const currentUnits = holding!.units ?? holding!.totalUnits ?? 0
+      const currentThbInvested = holding!.totalThbInvested ?? (currentUnits * (holding!.avgCostThb ?? holding!.avgCost ?? 0))
+      const amountSpentThb = Number(units) * priceInThb
+      const newTotalThbInvested = currentThbInvested + amountSpentThb
+      const newTotalUnits = next.units
+
+      extra = {
+        totalUnits: newTotalUnits,
+        totalThbInvested: newTotalThbInvested,
+        avgCostThb: next.avgCost,
+      }
     }
-    upsertHolding({ ...holding!, ...next, ...stockExtra })
+    upsertHolding({ ...holding!, ...next, ...extra })
     addHoldingLog({
       action: 'buy_more',
       holdingName: holding!.name,
