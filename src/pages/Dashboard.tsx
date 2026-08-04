@@ -26,7 +26,7 @@ import {
   totalCash,
   FREQUENCY_LABEL,
 } from '../lib/calc'
-import { daysUntil, formatDateShort, thb, thbCompact } from '../lib/format'
+import { daysUntil, formatDateShort, moneyCompact, thb, thbCompact } from '../lib/format'
 import type { NetWorthSnapshot } from '../lib/types'
 
 // Distinct colors for cash account segments — cycles if >8 accounts
@@ -42,7 +42,7 @@ const CASH_COLORS = [
 ]
 
 export function Dashboard() {
-  const { data, recordNetWorthSnapshot } = useData()
+  const { data, recordNetWorthSnapshot, usdThb } = useData()
   const navigate = useNavigate()
   const [cashOpen, setCashOpen] = useState(false)
   const hasAnything =
@@ -51,8 +51,8 @@ export function Dashboard() {
   const portfolio = useMemo(() => portfolioSummary(data.holdings), [data.holdings])
   const alloc = useMemo(() => allocations(data.holdings), [data.holdings])
   const dca = useMemo(() => dcaThisMonth(data.dcaPlans), [data.dcaPlans])
-  const cash = useMemo(() => totalCash(data), [data.cashAccounts])
-  const nw = useMemo(() => netWorth(data), [data.cashAccounts, data.holdings])
+  const cash = useMemo(() => totalCash(data, usdThb), [data.cashAccounts, usdThb])
+  const nw = useMemo(() => netWorth(data, usdThb), [data.cashAccounts, data.holdings, usdThb])
 
   const upcoming = useMemo(
     () =>
@@ -249,15 +249,19 @@ export function Dashboard() {
             data.cashAccounts.length > 0 ? (
               <div className="space-y-2.5">
                 <div className="flex h-1.5 overflow-hidden rounded-full">
-                  {data.cashAccounts.map((a, i) => (
-                    <div
-                      key={a.id}
-                      style={{
-                        width: `${(a.balance / cash) * 100}%`,
-                        background: CASH_COLORS[i % CASH_COLORS.length],
-                      }}
-                    />
-                  ))}
+                  {data.cashAccounts.map((a, i) => {
+                    const rate = usdThb && usdThb > 0 ? usdThb : 35
+                    const thbVal = a.currency === 'USD' ? a.balance * rate : a.balance
+                    return (
+                      <div
+                        key={a.id}
+                        style={{
+                          width: `${cash > 0 ? (thbVal / cash) * 100 : 0}%`,
+                          background: CASH_COLORS[i % CASH_COLORS.length],
+                        }}
+                      />
+                    )
+                  })}
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1">
                   {data.cashAccounts.map((a, i) => (
@@ -266,7 +270,7 @@ export function Dashboard() {
                         className="h-1.5 w-1.5 shrink-0 rounded-full"
                         style={{ background: CASH_COLORS[i % CASH_COLORS.length] }}
                       />
-                      {a.name} {thbCompact(a.balance)}
+                      {a.name} {moneyCompact(a.balance, a.currency)}
                     </span>
                   ))}
                 </div>

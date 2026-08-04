@@ -288,13 +288,18 @@ export const FREQUENCY_LABEL: Record<Transfer['frequency'], string> = {
 
 /* ----------------------------- Cash ---------------------------- */
 
-export function totalCash(data: SpendiaryData): number {
-  return data.cashAccounts.reduce((sum, a) => sum + a.balance, 0)
+export function totalCash(data: SpendiaryData, usdThb?: number | null): number {
+  const rate = usdThb && usdThb > 0 ? usdThb : 35
+  return data.cashAccounts.reduce((sum, a) => {
+    const isUsd = a.currency === 'USD'
+    const thbVal = isUsd ? a.balance * rate : a.balance
+    return sum + thbVal
+  }, 0)
 }
 
 /* --------------------------- Net worth -------------------------- */
 
 /** Net worth is always derived — cash on hand plus the live portfolio value. */
-export function netWorth(data: SpendiaryData): number {
-  return totalCash(data) + portfolioValue(data.holdings)
+export function netWorth(data: SpendiaryData, usdThb?: number | null): number {
+  return totalCash(data, usdThb) + portfolioValue(data.holdings)
 }

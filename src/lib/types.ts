@@ -108,8 +108,10 @@ export interface CashAccount {
   id: string
   /** Where the cash sits, e.g. "KBank", "SCB" */
   name: string
-  /** Balance in THB */
+  /** Balance amount */
   balance: number
+  /** Currency of the account: THB or USD (defaults to THB if undefined) */
+  currency?: 'THB' | 'USD'
 }
 
 export interface HoldingLog {

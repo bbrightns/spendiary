@@ -3,7 +3,7 @@ import { useData } from '../store/DataContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { NumberField, TextField } from '../components/ui/Field'
-import { dcaPerMonth, portfolioSummary } from '../lib/calc'
+import { dcaPerMonth, portfolioSummary, totalCash } from '../lib/calc'
 import { thbCompact } from '../lib/format'
 
 const C_INVEST  = 'var(--color-crypto)'
@@ -246,7 +246,7 @@ function LegendItem({ color, label, dashed }: { color: string; label: string; da
 const DEFAULT_BIRTH = '1996-10-16'
 
 export function Retirement() {
-  const { data, setRetirement, syncStatus } = useData()
+  const { data, setRetirement, syncStatus, usdThb } = useData()
   const saved = data.retirement
 
   const [isInitialized, setIsInitialized] = useState(false)
@@ -357,7 +357,7 @@ export function Retirement() {
   const gap                 = projectedInvestment - corpusNeeded
   const onTrack             = gap >= 0
 
-  const totalCashVal = useMemo(() => data.cashAccounts.reduce((sum, a) => sum + a.balance, 0), [data.cashAccounts])
+  const totalCashVal = useMemo(() => totalCash(data, usdThb), [data.cashAccounts, usdThb])
   const currentNetWorth = summary.value + totalCashVal
   const monthlySpendVal = Number(monthlySpend) || 0
   const runwayYears = monthlySpendVal > 0 ? (currentNetWorth / (monthlySpendVal * 12)) : null

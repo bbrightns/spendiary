@@ -13,19 +13,34 @@ const baht2 = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2,
 })
 
-/** e.g. ฿1,240,500 */
+/** e.g. ฿1,240,500 or $1,240,500 */
 export function thb(value: number, decimals = false): string {
   const n = decimals ? baht2.format(value) : baht.format(Math.round(value))
   return `฿${NBSP}${n}`
 }
 
-/** Compact for tight spaces, e.g. ฿1.24M */
+export function money(value: number, currency: 'THB' | 'USD' = 'THB', decimals = false): string {
+  const symbol = currency === 'USD' ? '$' : '฿'
+  const n = decimals ? baht2.format(value) : baht.format(Math.round(value))
+  return `${symbol}${NBSP}${n}`
+}
+
+/** Compact for tight spaces, e.g. ฿1.24M or $1.24M */
 export function thbCompact(value: number): string {
   const abs = Math.abs(value)
   const sign = value < 0 ? '-' : ''
   if (abs >= 1_000_000) return `${sign}฿${NBSP}${(abs / 1_000_000).toFixed(2)}M`
   if (abs >= 1_000) return `${sign}฿${NBSP}${(abs / 1_000).toFixed(1)}K`
   return `${sign}฿${NBSP}${baht.format(abs)}`
+}
+
+export function moneyCompact(value: number, currency: 'THB' | 'USD' = 'THB'): string {
+  const symbol = currency === 'USD' ? '$' : '฿'
+  const abs = Math.abs(value)
+  const sign = value < 0 ? '-' : ''
+  if (abs >= 1_000_000) return `${sign}${symbol}${NBSP}${(abs / 1_000_000).toFixed(2)}M`
+  if (abs >= 1_000) return `${sign}${symbol}${NBSP}${(abs / 1_000).toFixed(1)}K`
+  return `${sign}${symbol}${NBSP}${baht.format(abs)}`
 }
 
 /** Signed percentage, e.g. +12.4% */

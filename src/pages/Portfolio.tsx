@@ -66,7 +66,7 @@ export function Portfolio() {
   const [targets, setLocalTargets] = useState<Record<AssetClass, number>>(initialTargets)
 
   // Derived values for rebalancing
-  const totalCashVal = totalCash(data)
+  const totalCashVal = totalCash(data, usdThb)
   const portVal = data.holdings.reduce((sum, h) => sum + h.units * h.price, 0)
   const currentNetWorth = totalCashVal + portVal
 
