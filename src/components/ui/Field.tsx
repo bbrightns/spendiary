@@ -1,4 +1,4 @@
-import type { ReactNode, SelectHTMLAttributes } from 'react'
+import { useState, type ReactNode, type SelectHTMLAttributes } from 'react'
 
 const fieldBase =
   'h-11 w-full rounded-xl border bg-surface px-3.5 text-[15px] text-ink outline-none transition-colors placeholder:text-ink-faint'
@@ -93,6 +93,46 @@ export function NumberField({
   autoFocus,
   allowString,
 }: NumberFieldProps) {
+  const [isFocused, setIsFocused] = useState(false)
+
+  const getDisplayValue = () => {
+    if (value === '') return ''
+    if (!allowString) return value.toString()
+    if (isFocused) {
+      return value.toString().replace(/,/g, '')
+    }
+
+    const rawVal = value.toString().replace(/,/g, '')
+    const num = Number(rawVal)
+    if (isNaN(num)) return value.toString()
+
+    const dotIdx = rawVal.indexOf('.')
+    if (prefix === '฿') {
+      return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    }
+
+    if (suffix === 'shares' || label.toLowerCase().includes('shares') || label.toLowerCase().includes('units')) {
+      return num.toLocaleString(undefined, { maximumFractionDigits: 4 })
+    }
+
+    if (dotIdx === -1) {
+      return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    }
+    const decLength = rawVal.length - dotIdx - 1
+    const maxDec = Math.min(4, Math.max(2, decLength))
+    return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: maxDec })
+  }
+
+  const handleFocus = () => {
+    setIsFocused(true)
+    if (onFocus) onFocus()
+  }
+
+  const handleBlur = () => {
+    setIsFocused(false)
+    if (onBlur) onBlur()
+  }
+
   return (
     <LabelWrap label={label} hint={hint} error={error}>
       <div className="relative">
@@ -107,24 +147,25 @@ export function NumberField({
           </span>
         )}
         <input
-          type="number"
+          type={allowString ? 'text' : 'number'}
           inputMode="decimal"
           min={min}
           step={step}
           autoFocus={autoFocus}
           className={`${getFieldClass(!!error)} tnum ${prefix ? 'pl-8' : ''} ${suffix ? 'pr-8' : ''}`}
-          value={value}
+          value={getDisplayValue()}
           placeholder={placeholder}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           onChange={(e) => {
             const v = e.target.value
+            const stripped = v.replace(/,/g, '')
             if (allowString) {
-              onChange(v === '' ? '' : v)
+              onChange(stripped === '' ? '' : stripped)
             } else {
-              onChange(v === '' ? '' : Number(v))
+              onChange(stripped === '' ? '' : Number(stripped))
             }
           }}
-          onBlur={onBlur}
-          onFocus={onFocus}
         />
       </div>
     </LabelWrap>
