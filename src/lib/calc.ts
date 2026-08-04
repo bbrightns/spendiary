@@ -31,7 +31,7 @@ export function applyBuy(
 
 export function holdingMetrics(h: Holding): HoldingMetrics {
   const marketValue = h.units * h.price
-  const costBasis = h.units * h.avgCost
+  const costBasis = h.totalThbInvested ?? (h.units * h.avgCost)
   const pnl = marketValue - costBasis
   const pnlPct = costBasis > 0 ? (pnl / costBasis) * 100 : 0
   return { ...h, marketValue, costBasis, pnl, pnlPct }
@@ -59,7 +59,7 @@ export function portfolioValue(holdings: Holding[]): number {
 }
 
 export function portfolioCost(holdings: Holding[]): number {
-  return holdings.reduce((sum, h) => sum + h.units * h.avgCost, 0)
+  return holdings.reduce((sum, h) => sum + (h.totalThbInvested ?? (h.units * h.avgCost)), 0)
 }
 
 export function allocations(holdings: Holding[]): Allocation[] {

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { ScrollToTop } from './components/ScrollToTop'
 import { DataProvider, useData } from './store/DataContext' // 💡 เพิ่ม useData เข้ามา
@@ -15,9 +14,6 @@ import { HoldingLogs } from './pages/HoldingLogs'
 // 💡 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
 function AppContent() {
   const { user, loginWithGoogle, loginAsGuest, loginAsTestMode, authError } = useData()
-  const [showTestModal, setShowTestModal] = useState(false)
-  const [passcode, setPasscode] = useState('')
-  const [passcodeError, setPasscodeError] = useState('')
 
   // 💡 ถ้ายังไม่ได้ล็อกอิน ให้บังคับแสดงหน้าจอนี้ ห้ามผ่านเข้าแอปหลัก
   if (!user) {
@@ -134,92 +130,13 @@ function AppContent() {
           <div>
             <button
               type="button"
-              onClick={() => {
-                setPasscode('')
-                setPasscodeError('')
-                setShowTestModal(true)
-              }}
+              onClick={loginAsTestMode}
               className="text-slate-500 hover:text-indigo-400 transition-colors underline underline-offset-2 cursor-pointer font-medium text-[10.5px]"
             >
               Test Mode
             </button>
           </div>
         </footer>
-
-        {/* Test Mode Passcode Modal */}
-        {showTestModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-            <div className="glass-card-border w-full max-w-[340px] bg-[#0c0a14]/95 border border-white/10 shadow-2xl rounded-[24px] p-6 text-white relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-bold font-display text-white">
-                  เข้าใช้งาน Test Mode
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setShowTestModal(false)}
-                  className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <p className="text-xs text-slate-400 mb-4 leading-relaxed">
-                กรุณากรอกรหัสผ่านเพื่อเข้าใช้งานโหมดทดลอง พร้อมข้อมูล seed data และระบบบันทึก Log แยกส่วน
-              </p>
-
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  if (passcode.trim() === '6784') {
-                    loginAsTestMode()
-                    setShowTestModal(false)
-                  } else {
-                    setPasscodeError('รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง')
-                  }
-                }}
-                className="space-y-4"
-              >
-                <div>
-                  <input
-                    type="password"
-                    maxLength={6}
-                    value={passcode}
-                    onChange={(e) => {
-                      setPasscode(e.target.value)
-                      if (passcodeError) setPasscodeError('')
-                    }}
-                    placeholder="กรอกรหัสผ่าน"
-                    autoFocus
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl text-center text-xl font-bold tracking-widest text-white placeholder-slate-600 outline-none transition-all"
-                  />
-                  {passcodeError && (
-                    <p className="mt-2 text-xs text-red-400 text-center font-medium">
-                      {passcodeError}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowTestModal(false)}
-                    className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold rounded-xl transition-all cursor-pointer"
-                  >
-                    ยกเลิก
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
-                  >
-                    เข้าสู่ระบบ
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
       </div>
     )
   }

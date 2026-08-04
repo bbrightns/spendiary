@@ -71,6 +71,7 @@ interface NumberFieldProps {
   suffix?: string
   min?: number
   step?: number
+  autoFocus?: boolean
 }
 
 export function NumberField({
@@ -84,6 +85,7 @@ export function NumberField({
   suffix,
   min = 0,
   step,
+  autoFocus,
 }: NumberFieldProps) {
   return (
     <LabelWrap label={label} hint={hint} error={error}>
@@ -103,6 +105,7 @@ export function NumberField({
           inputMode="decimal"
           min={min}
           step={step}
+          autoFocus={autoFocus}
           className={`${getFieldClass(!!error)} tnum ${prefix ? 'pl-8' : ''} ${suffix ? 'pr-8' : ''}`}
           value={value}
           placeholder={placeholder}

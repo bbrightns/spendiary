@@ -120,6 +120,16 @@ interface DataContextValue {
     overridePrice?: number,
     btcLocationUpdate?: Omit<BtcLocation, 'id'> & { id?: string },
     goldLocationUpdate?: Omit<GoldLocation, 'id'> & { id?: string },
+    stockUpdate?: {
+      unitsBought: number
+      amountSpentThb: number
+      fxRate: number
+    },
+    fundUpdate?: {
+      unitsBought: number
+      amountSpentThb: number
+      nav: number
+    },
   ) => void
   skipDcaBuy: (planId: string, date: string) => void
 
@@ -726,34 +736,41 @@ export function DataProvider({ children }: { children: ReactNode }) {
         overridePrice,
         btcLocationUpdate,
         goldLocationUpdate,
+        stockUpdate,
+        fundUpdate,
       ) =>
         updateData((prev) => {
           const plan = prev.dcaPlans.find((p) => p.id === planId)
           if (!plan) return prev
 
-          // 1. Mark date as confirmed on the plan
-          const updatedPlans = prev.dcaPlans.map((p) =>
-            p.id !== planId ? p : {
-              ...p,
-              confirmedDates: [date, ...(p.confirmedDates ?? [])],
-            }
-          )
-
-          // 2. If plan is linked to a holding, or asset holding exists/created, apply the buy
-          let holding = plan.holdingId
+          // Check if holding already existed before this transaction
+          const existingHolding = plan.holdingId
             ? prev.holdings.find((h) => h.id === plan.holdingId)
-            : prev.holdings.find((h) => h.assetClass === plan.assetClass)
+            : prev.holdings.find(
+                (h) =>
+                  h.ticker.toUpperCase() === plan.name.toUpperCase() ||
+                  h.name.toLowerCase() === plan.name.toLowerCase() ||
+                  h.name.toLowerCase().includes(plan.name.toLowerCase()) ||
+                  plan.name.toLowerCase().includes(h.name.toLowerCase()),
+              )
 
+          const isNewHolding = !existingHolding
+          let holding = existingHolding
           let holdingsList = prev.holdings
 
           // Auto-create holding if needed when location or buy detail is provided
-          if (!holding && (btcLocationUpdate || goldLocationUpdate || (pricePerUnit > 0 && (plan.assetClass === 'gold' || plan.assetClass === 'crypto')))) {
+          if (!holding && (stockUpdate || fundUpdate || btcLocationUpdate || goldLocationUpdate || (pricePerUnit > 0 && (plan.assetClass === 'gold' || plan.assetClass === 'crypto' || plan.assetClass === 'stock' || plan.assetClass === 'fund')))) {
             const createdHolding: import('../lib/types').Holding = {
               id: newId(),
-              name: plan.assetClass === 'gold' ? 'Gold' : plan.assetClass === 'crypto' ? 'Bitcoin' : plan.name,
-              ticker: plan.assetClass === 'gold' ? 'GOLD' : plan.assetClass === 'crypto' ? 'BTC' : plan.name.toUpperCase().slice(0, 6),
+              name: plan.name,
+              ticker: plan.name.toUpperCase().slice(0, 6),
               assetClass: plan.assetClass,
               units: 0,
+              totalUnits: 0,
+              totalThbInvested: 0,
+              totalUsdInvested: 0,
+              avgCostUsd: 0,
+              avgCostThb: 0,
               avgCost: pricePerUnit,
               price: pricePerUnit,
               updatedAt: date,
@@ -763,6 +780,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
             holding = createdHolding
             holdingsList = [...prev.holdings, createdHolding]
           }
+
+          // Mark date as confirmed on the plan + link holdingId to prevent future binding bugs
+          const updatedPlans = prev.dcaPlans.map((p) =>
+            p.id !== planId
+              ? p
+              : {
+                  ...p,
+                  holdingId: holding ? holding.id : p.holdingId,
+                  confirmedDates: [date, ...(p.confirmedDates ?? [])],
+                },
+          )
 
           if (!holding) {
             // Log simple plan confirmation (no holding update)
@@ -784,29 +812,103 @@ export function DataProvider({ children }: { children: ReactNode }) {
             }
           }
 
-          // Capture previous state (for undo) BEFORE applying location updates
-          const previousHoldingState = JSON.parse(JSON.stringify(holding))
+          // Capture previous state (for undo) BEFORE applying updates (if holding existed)
+          const previousHoldingState = !isNewHolding ? JSON.parse(JSON.stringify(holding)) : undefined
 
           let calculatedUnits = pricePerUnit > 0 ? plan.monthlyAmount / pricePerUnit : 0
           if (!isFinite(calculatedUnits) || isNaN(calculatedUnits)) calculatedUnits = 0
 
-          let newUnits = overrideUnits !== undefined ? overrideUnits : (holding.units + calculatedUnits)
-          let newAvgCost = overrideAvgCost !== undefined ? overrideAvgCost : (newUnits > 0 ? (holding.units * holding.avgCost + calculatedUnits * pricePerUnit) / newUnits : holding.avgCost)
+          let newUnits = overrideUnits !== undefined ? overrideUnits : holding.units + calculatedUnits
+          let newAvgCost =
+            overrideAvgCost !== undefined
+              ? overrideAvgCost
+              : newUnits > 0
+              ? (holding.units * holding.avgCost + calculatedUnits * pricePerUnit) / newUnits
+              : holding.avgCost
           if (!isFinite(newAvgCost) || isNaN(newAvgCost)) newAvgCost = holding.avgCost
           const finalPrice = overridePrice !== undefined ? overridePrice : pricePerUnit
 
           let finalBtcLocations = holding.btcLocations
           let finalGoldLocations = holding.goldLocations
+          let updatedFields: Partial<import('../lib/types').Holding> = {}
+          let logNote = ''
 
-          if (holding.assetClass === 'crypto' && btcLocationUpdate) {
+          if (stockUpdate) {
+            const { unitsBought, amountSpentThb, fxRate } = stockUpdate
+            const usdSpentThisTx = fxRate > 0 ? amountSpentThb / fxRate : 0
+            const pricePerShareUsd = unitsBought > 0 ? usdSpentThisTx / unitsBought : 0
+
+            const currentUnits = holding.units ?? holding.totalUnits ?? 0
+            const currentThbInvested = holding.totalThbInvested ?? currentUnits * (holding.avgCostThb ?? holding.avgCost ?? 0)
+            const currentUsdInvested = holding.totalUsdInvested ?? currentUnits * (holding.avgCostUsd ?? (fxRate > 0 ? (holding.avgCost ?? 0) / fxRate : 0))
+
+            const newTotalUnits = currentUnits + unitsBought
+            const newTotalThbInvested = currentThbInvested + amountSpentThb
+            const newTotalUsdInvested = currentUsdInvested + usdSpentThisTx
+
+            const newAvgCostUsd = newTotalUnits > 0 ? newTotalUsdInvested / newTotalUnits : (holding.avgCostUsd ?? 0)
+            const newAvgCostThb = newTotalUnits > 0 ? newTotalThbInvested / newTotalUnits : (holding.avgCostThb ?? holding.avgCost ?? 0)
+
+            newUnits = newTotalUnits
+            newAvgCost = newAvgCostThb
+            calculatedUnits = unitsBought
+
+            updatedFields = {
+              units: newTotalUnits,
+              totalUnits: newTotalUnits,
+              totalThbInvested: newTotalThbInvested,
+              totalUsdInvested: newTotalUsdInvested,
+              avgCostUsd: newAvgCostUsd,
+              avgCostThb: newAvgCostThb,
+              avgCost: newAvgCostThb,
+              price: pricePerShareUsd > 0 ? pricePerShareUsd : holding.price,
+            }
+
+            logNote = `DCA Buy: ${unitsBought} shares @ $${pricePerShareUsd.toFixed(2)}/share (+฿${amountSpentThb.toLocaleString()})`
+          } else if (fundUpdate) {
+            const { unitsBought, amountSpentThb, nav } = fundUpdate
+            const currentUnits = holding.units ?? holding.totalUnits ?? 0
+            const currentThbInvested = holding.totalThbInvested ?? (currentUnits * (holding.avgCostThb ?? holding.avgCost ?? 0))
+
+            const newTotalUnits = currentUnits + unitsBought
+            const newTotalThbInvested = currentThbInvested + amountSpentThb
+            const newAvgCostThb = newTotalUnits > 0 ? newTotalThbInvested / newTotalUnits : holding.avgCost
+
+            newUnits = newTotalUnits
+            newAvgCost = newAvgCostThb
+            calculatedUnits = unitsBought
+
+            updatedFields = {
+              units: newTotalUnits,
+              totalUnits: newTotalUnits,
+              totalThbInvested: newTotalThbInvested,
+              avgCostThb: newAvgCostThb,
+              avgCost: newAvgCostThb,
+              price: nav > 0 ? nav : holding.price,
+            }
+
+            logNote = `DCA Buy: ${unitsBought} units @ ฿${nav.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}/unit (+฿${amountSpentThb.toLocaleString()})`
+          } else if (holding.assetClass === 'crypto' && btcLocationUpdate) {
             finalBtcLocations = upsert(holding.btcLocations ?? [], btcLocationUpdate)
             const totalSats = finalBtcLocations.reduce((s, l) => s + l.satoshi, 0)
             const totalThb = finalBtcLocations.reduce((s, l) => s + l.thbSpent, 0)
             newUnits = totalSats / 100_000_000
             newAvgCost = newUnits > 0 ? totalThb / newUnits : holding.avgCost
             if (!isFinite(newAvgCost) || isNaN(newAvgCost)) newAvgCost = holding.avgCost
-            calculatedUnits = newUnits - (holding.units || 0)
-            if (!isFinite(calculatedUnits) || isNaN(calculatedUnits)) calculatedUnits = 0
+            calculatedUnits = btcLocationUpdate.satoshi / 100_000_000
+
+            const impliedBtcPrice = btcLocationUpdate.satoshi > 0 ? (btcLocationUpdate.thbSpent / btcLocationUpdate.satoshi) * 100_000_000 : pricePerUnit
+
+            updatedFields = {
+              totalThbInvested: totalThb,
+              totalUnits: newUnits,
+              units: newUnits,
+              avgCostThb: newAvgCost,
+              avgCost: newAvgCost,
+              price: impliedBtcPrice > 0 ? impliedBtcPrice : holding.price,
+            }
+
+            logNote = `DCA Buy: ${btcLocationUpdate.satoshi.toLocaleString()} sats @ ฿${Math.round(impliedBtcPrice).toLocaleString()}/BTC (+฿${btcLocationUpdate.thbSpent.toLocaleString()})`
           } else if (holding.assetClass === 'gold' && goldLocationUpdate) {
             finalGoldLocations = upsert(holding.goldLocations ?? [], goldLocationUpdate)
             const totalGrams = finalGoldLocations.reduce((s, l) => s + l.grams, 0)
@@ -814,41 +916,76 @@ export function DataProvider({ children }: { children: ReactNode }) {
             newUnits = totalGrams
             newAvgCost = newUnits > 0 ? totalThb / newUnits : holding.avgCost
             if (!isFinite(newAvgCost) || isNaN(newAvgCost)) newAvgCost = holding.avgCost
-            calculatedUnits = newUnits - (holding.units || 0)
-            if (!isFinite(calculatedUnits) || isNaN(calculatedUnits)) calculatedUnits = 0
+            calculatedUnits = goldLocationUpdate.grams
+
+            const impliedPricePerGram = goldLocationUpdate.grams > 0 ? goldLocationUpdate.thbSpent / goldLocationUpdate.grams : pricePerUnit
+
+            updatedFields = {
+              totalThbInvested: totalThb,
+              totalUnits: newUnits,
+              units: newUnits,
+              avgCostThb: newAvgCost,
+              avgCost: newAvgCost,
+              price: impliedPricePerGram > 0 ? impliedPricePerGram : holding.price,
+            }
+
+            logNote = `DCA Buy: ${goldLocationUpdate.grams.toFixed(4)} g @ ฿${impliedPricePerGram.toFixed(2)}/g (+฿${goldLocationUpdate.thbSpent.toLocaleString()})`
+          } else if (holding.assetClass === 'fund') {
+            const currentUnits = holding.units ?? holding.totalUnits ?? 0
+            const currentThbInvested = holding.totalThbInvested ?? (currentUnits * (holding.avgCostThb ?? holding.avgCost ?? 0))
+            const spentThb = plan.monthlyAmount
+            const newTotalUnits = overrideUnits !== undefined ? overrideUnits : (currentUnits + calculatedUnits)
+            const newTotalThb = currentThbInvested + spentThb
+            const newAvgCostThb = newTotalUnits > 0 ? newTotalThb / newTotalUnits : holding.avgCost
+            updatedFields = {
+              totalThbInvested: newTotalThb,
+              totalUnits: newTotalUnits,
+              units: newTotalUnits,
+              avgCostThb: newAvgCostThb,
+              avgCost: newAvgCostThb,
+            }
+            logNote = `DCA Buy: ${calculatedUnits.toFixed(4)} units @ ฿${pricePerUnit.toFixed(2)}/unit (+฿${spentThb.toLocaleString()})`
           }
 
-          const isBtcWithLocations =
-            holding.assetClass === 'crypto' &&
-            (finalBtcLocations?.length ?? 0) > 0
-          const isGoldWithLocations =
-            holding.assetClass === 'gold' &&
-            (finalGoldLocations?.length ?? 0) > 0
+          const isBtcWithLocations = holding.assetClass === 'crypto' && (finalBtcLocations?.length ?? 0) > 0
+          const isGoldWithLocations = holding.assetClass === 'gold' && (finalGoldLocations?.length ?? 0) > 0
 
           const targetHoldingId = holding.id
           const updatedHoldings = holdingsList.map((h) =>
-            h.id !== targetHoldingId ? h : (isBtcWithLocations || isGoldWithLocations)
-              ? { ...h, btcLocations: finalBtcLocations, goldLocations: finalGoldLocations, units: newUnits, avgCost: newAvgCost, price: finalPrice, updatedAt: date }
-              : { ...h, units: newUnits, avgCost: newAvgCost, price: finalPrice, updatedAt: date }
+            h.id !== targetHoldingId
+              ? h
+              : isBtcWithLocations || isGoldWithLocations
+              ? {
+                  ...h,
+                  btcLocations: finalBtcLocations,
+                  goldLocations: finalGoldLocations,
+                  units: newUnits,
+                  totalUnits: newUnits,
+                  avgCost: newAvgCost,
+                  price: finalPrice,
+                  updatedAt: date,
+                  ...updatedFields,
+                }
+              : {
+                  ...h,
+                  units: newUnits,
+                  totalUnits: newUnits,
+                  avgCost: newAvgCost,
+                  price: finalPrice,
+                  updatedAt: date,
+                  ...updatedFields,
+                },
           )
-
-          const displayGrams = isFinite(calculatedUnits) && !isNaN(calculatedUnits) ? calculatedUnits.toFixed(4) : '0.0000'
 
           // 3. Add to holding log
           const logEntry: import('../lib/types').HoldingLog = {
             id: newId(),
             timestamp: new Date().toISOString(),
-            action: 'buy_more',
+            action: isNewHolding ? 'add' : 'buy_more',
             holdingName: holding.name,
             ticker: holding.ticker,
             assetClass: holding.assetClass,
-            note: holding.assetClass === 'crypto'
-              ? `DCA · +${Math.round(calculatedUnits * 1e8).toLocaleString()} sats · ฿${plan.monthlyAmount.toLocaleString()} total`
-              : holding.assetClass === 'gold'
-              ? `DCA · +${displayGrams} g · ฿${plan.monthlyAmount.toLocaleString()} total`
-              : overrideUnits !== undefined
-              ? `DCA (Updated Portfolio) · New Units: ${overrideUnits.toLocaleString()} @ Avg Cost: ${overrideAvgCost?.toLocaleString()}`
-              : `DCA · +${displayGrams} units @ ฿${pricePerUnit.toLocaleString()}/unit · ฿${plan.monthlyAmount.toLocaleString()} total`,
+            note: logNote || `DCA Buy: ${calculatedUnits.toFixed(4)} units @ ฿${pricePerUnit.toLocaleString()} (+฿${plan.monthlyAmount.toLocaleString()})`,
             holdingId: holding.id,
             previousHoldingState,
             dcaPlanId: plan.id,

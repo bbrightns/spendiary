@@ -24,9 +24,19 @@ export interface Holding {
   name: string
   ticker: string
   assetClass: AssetClass
-  /** Units / shares / coins held */
+  /** Units / shares / coins held (totalUnits) */
   units: number
-  /** Average cost per unit, in THB */
+  /** Total units held */
+  totalUnits?: number
+  /** Total THB actually spent/invested */
+  totalThbInvested?: number
+  /** Total USD actually spent/invested */
+  totalUsdInvested?: number
+  /** Average cost per unit in USD */
+  avgCostUsd?: number
+  /** Average cost per unit in THB */
+  avgCostThb?: number
+  /** Average cost per unit, in THB (for backwards compatibility) */
   avgCost: number
   /** Latest market price / NAV per unit you filled in, in THB */
   price: number

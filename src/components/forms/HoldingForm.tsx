@@ -153,12 +153,24 @@ export function HoldingForm({ open, editing, onClose }: Props) {
     const multiplier = isUsd && rate > 1 ? rate : 1
     const name = form.name.trim()
     const ticker = form.ticker.trim() || name.slice(0, 4).toUpperCase()
+    const unitsNum = Number(form.units)
+    const avgCostInput = Number(form.avgCost)
+    const avgCostUsd = isUsd ? avgCostInput : undefined
+    const avgCostThb = isUsd ? avgCostInput * multiplier : avgCostInput
+    const totalUsdInvested = isUsd ? unitsNum * avgCostInput : undefined
+    const totalThbInvested = isUsd ? unitsNum * avgCostThb : unitsNum * avgCostInput
+
     upsertHolding({
       id: editing?.id,
       name,
       ticker,
       assetClass: form.assetClass,
-      units: Number(form.units),
+      units: unitsNum,
+      totalUnits: unitsNum,
+      avgCostUsd,
+      avgCostThb,
+      totalUsdInvested,
+      totalThbInvested,
       avgCost: Number(form.avgCost) * multiplier,
       price: useLivePrice ? livePrice! : Number(form.price) * multiplier,
       updatedAt: localDateStr(),
