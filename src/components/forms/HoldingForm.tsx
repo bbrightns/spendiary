@@ -20,13 +20,44 @@ const SATS_PER_BTC = 100_000_000
 
 const newId = () => crypto?.randomUUID?.() ?? `id-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
+function formatToMaxDecimals(val: number | string, maxDecimals: number): string {
+  const num = Number(val)
+  if (isNaN(num) || val === '') return ''
+  return Number(num.toFixed(maxDecimals)).toString()
+}
+
+function formatCostOrFx(val: number | string): string {
+  const num = Number(val)
+  if (isNaN(num) || val === '') return ''
+  const str = num.toString()
+  const dotIdx = str.indexOf('.')
+  if (dotIdx === -1) {
+    return num.toFixed(2)
+  }
+  const decimals = str.length - dotIdx - 1
+  if (decimals <= 2) {
+    return num.toFixed(2)
+  }
+  const rounded = Number(num.toFixed(4))
+  const roundedStr = rounded.toString()
+  const roundedDotIdx = roundedStr.indexOf('.')
+  if (roundedDotIdx === -1) {
+    return rounded.toFixed(2)
+  }
+  const roundedDecimals = roundedStr.length - roundedDotIdx - 1
+  if (roundedDecimals < 2) {
+    return rounded.toFixed(2)
+  }
+  return roundedStr
+}
+
 const blank = {
   name: '',
   ticker: '',
   assetClass: 'fund' as AssetClass,
-  units: '' as number | '',
-  avgCost: '' as number | '',
-  price: '' as number | '',
+  units: '' as number | string | '',
+  avgCost: '' as number | string | '',
+  price: '' as number | string | '',
 }
 
 export function HoldingForm({ open, editing, onClose }: Props) {
@@ -37,10 +68,10 @@ export function HoldingForm({ open, editing, onClose }: Props) {
   const [showErrors, setShowErrors] = useState(false)
 
   // Applied FX Rate for stocks
-  const [fxRateInput, setFxRateInput] = useState<number | ''>('')
+  const [fxRateInput, setFxRateInput] = useState<number | string | ''>('')
 
   // Manual THB Invested override for stocks
-  const [thbInvestedInput, setThbInvestedInput] = useState<number | ''>('')
+  const [thbInvestedInput, setThbInvestedInput] = useState<number | string | ''>('')
   const [isThbInvestedManuallyEdited, setIsThbInvestedManuallyEdited] = useState(false)
   const [isEditingThb, setIsEditingThb] = useState(false)
 
@@ -71,33 +102,33 @@ export function HoldingForm({ open, editing, onClose }: Props) {
     wasOpen.current = open
     if (!justOpened) {
       if (open && !editing && !fxRateInput && usdThb) {
-        setFxRateInput(parseFloat(usdThb.toFixed(2)))
+        setFxRateInput(formatCostOrFx(usdThb))
       }
       return
     }
 
     if (editing) {
       const loadedAvgCost = editing.assetClass === 'stock'
-        ? (editing.avgCostUsd ?? (rate > 1 ? parseFloat((editing.avgCost / rate).toFixed(4)) : editing.avgCost))
+        ? (editing.avgCostUsd ?? (rate > 1 ? Number((editing.avgCost / rate).toFixed(4)) : editing.avgCost))
         : editing.avgCost
       const loadedPrice = editing.assetClass === 'stock'
-        ? (rate > 1 ? parseFloat((editing.price / rate).toFixed(4)) : editing.price)
+        ? (rate > 1 ? Number((editing.price / rate).toFixed(4)) : editing.price)
         : editing.price
 
       setForm({
         name: editing.name,
         ticker: editing.ticker,
         assetClass: editing.assetClass,
-        units: editing.units,
-        avgCost: loadedAvgCost,
+        units: editing.assetClass === 'stock' ? formatToMaxDecimals(editing.units, 4) : editing.units,
+        avgCost: editing.assetClass === 'stock' ? formatCostOrFx(loadedAvgCost) : loadedAvgCost,
         price: loadedPrice,
       })
       if (editing.assetClass === 'stock') {
         const impliedRate = editing.avgCostThb && editing.avgCostUsd ? editing.avgCostThb / editing.avgCostUsd : (usdThb || 35)
-        setFxRateInput(parseFloat(impliedRate.toFixed(2)))
+        setFxRateInput(formatCostOrFx(impliedRate))
 
         const histThb = editing.totalThbInvested ?? (editing.units * editing.avgCost)
-        setThbInvestedInput(parseFloat(histThb.toFixed(2)))
+        setThbInvestedInput(Number(histThb.toFixed(2)))
         setIsThbInvestedManuallyEdited(true)
         setIsEditingThb(false)
       } else {
@@ -114,7 +145,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       setGrams('')
       setGoldThbSpent('')
       setGoldLocationName('')
-      setFxRateInput(usdThb ? parseFloat(usdThb.toFixed(2)) : '')
+      setFxRateInput(usdThb ? formatCostOrFx(usdThb) : '')
       setThbInvestedInput('')
       setIsThbInvestedManuallyEdited(false)
       setIsEditingThb(false)
@@ -123,27 +154,27 @@ export function HoldingForm({ open, editing, onClose }: Props) {
   }, [open, editing, usdThb])
 
   // Interactive handlers for dynamic dual-currency and FX rate recalculations
-  const handleSharesChange = (newUnits: number | '') => {
+  const handleSharesChange = (newUnits: number | string | '') => {
     setForm((f) => ({ ...f, units: newUnits }))
     const shares = Number(newUnits) || 0
     const avgCost = Number(form.avgCost) || 0
-    const totalUsd = shares * avgCost
+    const totalUsd = Number((shares * avgCost).toFixed(4))
     const fxRate = Number(fxRateInput) || usdThb || 35
-    const calculatedThb = totalUsd * fxRate
-    setThbInvestedInput(parseFloat(calculatedThb.toFixed(2)))
+    const calculatedThb = Number((totalUsd * fxRate).toFixed(2))
+    setThbInvestedInput(calculatedThb)
   }
 
-  const handleAvgCostChange = (newAvgCost: number | '') => {
+  const handleAvgCostChange = (newAvgCost: number | string | '') => {
     setForm((f) => ({ ...f, avgCost: newAvgCost }))
     const shares = Number(form.units) || 0
     const avgCost = Number(newAvgCost) || 0
-    const totalUsd = shares * avgCost
+    const totalUsd = Number((shares * avgCost).toFixed(4))
     const fxRate = Number(fxRateInput) || usdThb || 35
-    const calculatedThb = totalUsd * fxRate
-    setThbInvestedInput(parseFloat(calculatedThb.toFixed(2)))
+    const calculatedThb = Number((totalUsd * fxRate).toFixed(2))
+    setThbInvestedInput(calculatedThb)
   }
 
-  const handleThbInvestedChange = (newThb: number | '') => {
+  const handleThbInvestedChange = (newThb: number | string | '') => {
     setThbInvestedInput(newThb)
     setIsThbInvestedManuallyEdited(true)
 
@@ -155,15 +186,15 @@ export function HoldingForm({ open, editing, onClose }: Props) {
     const thbVal = Number(newThb) || 0
     const shares = Number(form.units) || 0
     const avgCost = Number(form.avgCost) || 0
-    const totalUsd = shares * avgCost
+    const totalUsd = Number((shares * avgCost).toFixed(4))
 
     if (totalUsd > 0) {
-      const calculatedFxRate = thbVal / totalUsd
-      setFxRateInput(parseFloat(calculatedFxRate.toFixed(2)))
+      const calculatedFxRate = Number((thbVal / totalUsd).toFixed(4))
+      setFxRateInput(calculatedFxRate)
     }
   }
 
-  const handleFxRateChange = (newRate: number | '') => {
+  const handleFxRateChange = (newRate: number | string | '') => {
     setFxRateInput(newRate)
     setIsThbInvestedManuallyEdited(true)
 
@@ -175,10 +206,67 @@ export function HoldingForm({ open, editing, onClose }: Props) {
     const rateVal = Number(newRate) || 0
     const shares = Number(form.units) || 0
     const avgCost = Number(form.avgCost) || 0
-    const totalUsd = shares * avgCost
+    const totalUsd = Number((shares * avgCost).toFixed(4))
 
-    const calculatedThb = totalUsd * rateVal
-    setThbInvestedInput(parseFloat(calculatedThb.toFixed(2)))
+    const calculatedThb = Number((totalUsd * rateVal).toFixed(2))
+    setThbInvestedInput(calculatedThb)
+  }
+
+  const handleSharesBlur = () => {
+    if (form.assetClass === 'stock') {
+      const formatted = formatToMaxDecimals(form.units, 4)
+      setForm((f) => ({ ...f, units: formatted }))
+      
+      const shares = Number(formatted) || 0
+      const avgCost = Number(form.avgCost) || 0
+      const totalUsd = Number((shares * avgCost).toFixed(4))
+      const fxRate = Number(fxRateInput) || usdThb || 35
+      const calculatedThb = Number((totalUsd * fxRate).toFixed(2))
+      setThbInvestedInput(calculatedThb)
+    }
+  }
+
+  const handleAvgCostBlur = () => {
+    if (form.assetClass === 'stock') {
+      const formatted = formatCostOrFx(form.avgCost)
+      setForm((f) => ({ ...f, avgCost: formatted }))
+      
+      const shares = Number(form.units) || 0
+      const avgCost = Number(formatted) || 0
+      const totalUsd = Number((shares * avgCost).toFixed(4))
+      const fxRate = Number(fxRateInput) || usdThb || 35
+      const calculatedThb = Number((totalUsd * fxRate).toFixed(2))
+      setThbInvestedInput(calculatedThb)
+    }
+  }
+
+  const handleFxRateBlur = () => {
+    if (form.assetClass === 'stock') {
+      const formatted = formatCostOrFx(fxRateInput)
+      setFxRateInput(formatted)
+      
+      const rateVal = Number(formatted) || 0
+      const shares = Number(form.units) || 0
+      const avgCost = Number(form.avgCost) || 0
+      const totalUsd = Number((shares * avgCost).toFixed(4))
+      const calculatedThb = Number((totalUsd * rateVal).toFixed(2))
+      setThbInvestedInput(calculatedThb)
+    }
+  }
+
+  const handleThbInvestedBlur = () => {
+    if (thbInvestedInput !== '') {
+      const formatted = Number(Number(thbInvestedInput).toFixed(2))
+      setThbInvestedInput(formatted)
+      
+      const shares = Number(form.units) || 0
+      const avgCost = Number(form.avgCost) || 0
+      const totalUsd = Number((shares * avgCost).toFixed(4))
+      if (totalUsd > 0) {
+        const calculatedFxRate = Number((formatted / totalUsd).toFixed(4))
+        setFxRateInput(formatCostOrFx(calculatedFxRate))
+      }
+    }
   }
 
 
@@ -274,7 +362,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
     if (isUsd) {
       const fxRateVal = Number(fxRateInput) || usdThb || 35
       const totalThbInvested = parseFloat((Number(thbInvestedInput) || 0).toFixed(2))
-      const totalUsdInvested = unitsNum * avgCostInput
+      const totalUsdInvested = Number((unitsNum * avgCostInput).toFixed(4))
       const avgCostUsd = avgCostInput
       const avgCostThb = unitsNum > 0 ? parseFloat((totalThbInvested / unitsNum).toFixed(2)) : 0
 
@@ -328,12 +416,12 @@ export function HoldingForm({ open, editing, onClose }: Props) {
   const avgCostUsdVal = Number(form.avgCost) || 0
   const fxRateVal = Number(fxRateInput) || usdThb || 35
 
-  const totalThbInvestedVal = Number(thbInvestedInput) || 0
+  const totalThbInvestedVal = Number(Number(thbInvestedInput).toFixed(2)) || 0
 
-  const livePriceUsd = editing ? (editing.price / (usdThb || 35)) : (Number(form.price) || 0)
-  const currentMarketValueThb = sharesInputVal * livePriceUsd * (usdThb || fxRateVal)
-  const netPnlThb = currentMarketValueThb - totalThbInvestedVal
-  const netReturnPct = totalThbInvestedVal > 0 ? (netPnlThb / totalThbInvestedVal) * 100 : 0
+  const livePriceUsd = editing ? Number((editing.price / (usdThb || 35)).toFixed(4)) : (Number(form.price) || 0)
+  const currentMarketValueThb = Number((sharesInputVal * livePriceUsd * (usdThb || fxRateVal)).toFixed(2))
+  const netPnlThb = Number((currentMarketValueThb - totalThbInvestedVal).toFixed(2))
+  const netReturnPct = totalThbInvestedVal > 0 ? Number(((netPnlThb / totalThbInvestedVal) * 100).toFixed(2)) : 0
 
   const formattedNetPnlThb = netPnlThb > 0
     ? `+฿${netPnlThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -638,6 +726,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                       prefix="฿"
                       value={thbInvestedInput}
                       onChange={handleThbInvestedChange}
+                      onBlur={handleThbInvestedBlur}
                       error={showErrors && thbInvestedInput === '' ? 'Total THB Invested is required' : undefined}
                       placeholder="0.00"
                       step={0.01}
@@ -651,13 +740,13 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                             const shares = Number(form.units) || 0
                             const avgCost = Number(form.avgCost) || 0
                             const fxRate = usdThb || 35
-                            const calculatedThb = shares * avgCost * fxRate
-                            setThbInvestedInput(parseFloat(calculatedThb.toFixed(2)))
-                            setFxRateInput(parseFloat(fxRate.toFixed(2)))
+                            const calculatedThb = Number((shares * avgCost * fxRate).toFixed(2))
+                            setThbInvestedInput(calculatedThb)
+                            setFxRateInput(formatCostOrFx(fxRate))
                           }}
                           className="text-[11px] font-semibold text-brand hover:underline cursor-pointer"
                         >
-                          Reset to calculated (฿{(sharesInputVal * avgCostUsdVal * (usdThb || 35)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} @ {(usdThb || 35).toFixed(2)})
+                          Reset to calculated (฿{Number((sharesInputVal * avgCostUsdVal * (usdThb || 35)).toFixed(2)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} @ {Number((usdThb || 35).toFixed(2))})
                         </button>
                       </div>
                     )}
@@ -703,6 +792,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                   suffix="shares"
                   error={showErrors && form.units === '' ? 'Shares held is required' : undefined}
                   onChange={handleSharesChange}
+                  onBlur={handleSharesBlur}
                   placeholder="0"
                   step={0.0001}
                 />
@@ -713,6 +803,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                   value={form.avgCost}
                   error={showErrors && form.avgCost === '' ? 'Average cost is required' : undefined}
                   onChange={handleAvgCostChange}
+                  onBlur={handleAvgCostBlur}
                   placeholder="0"
                   step={0.01}
                 />
@@ -744,6 +835,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                   value={fxRateInput}
                   error={showErrors && fxRateInput === '' ? 'FX rate is required' : undefined}
                   onChange={handleFxRateChange}
+                  onBlur={handleFxRateBlur}
                   placeholder="e.g. 35.20"
                   step={0.0001}
                 />
