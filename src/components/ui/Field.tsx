@@ -65,7 +65,7 @@ interface NumberFieldProps {
   hint?: string
   error?: string
   value: number | string | ''
-  onChange: (v: number | string | '') => void
+  onChange: (v: any) => void
   onBlur?: () => void
   onFocus?: () => void
   placeholder?: string
@@ -74,6 +74,7 @@ interface NumberFieldProps {
   min?: number
   step?: number
   autoFocus?: boolean
+  allowString?: boolean
 }
 
 export function NumberField({
@@ -90,6 +91,7 @@ export function NumberField({
   min = 0,
   step,
   autoFocus,
+  allowString,
 }: NumberFieldProps) {
   return (
     <LabelWrap label={label} hint={hint} error={error}>
@@ -115,7 +117,11 @@ export function NumberField({
           placeholder={placeholder}
           onChange={(e) => {
             const v = e.target.value
-            onChange(v === '' ? '' : v)
+            if (allowString) {
+              onChange(v === '' ? '' : v)
+            } else {
+              onChange(v === '' ? '' : Number(v))
+            }
           }}
           onBlur={onBlur}
           onFocus={onFocus}
