@@ -664,7 +664,9 @@ export function Portfolio() {
                         {/* Line 1: name + value */}
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex min-w-0 items-center gap-1.5">
-                            <p className="truncate text-[14px] font-semibold text-ink">{h.name}</p>
+                            <p className="truncate text-[14px] font-semibold text-ink">
+                              {h.name} <span className="text-[11px] font-normal text-ink-muted ml-1">{h.ticker}</span>
+                            </p>
                             {staleIndicator}{chevron}
                           </div>
                           <p className="shrink-0 text-[14px] font-bold tnum text-ink">{thb(h.marketValue)}</p>
@@ -692,18 +694,17 @@ export function Portfolio() {
                         {/* Line 1: name + value */}
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex min-w-0 items-center gap-1.5">
-                            <p className="truncate text-[15px] font-semibold text-ink">{h.name}</p>
+                            <p className="truncate text-[15px] font-semibold text-ink">
+                              {h.name} <span className="text-[12px] font-normal text-ink-muted ml-1">{h.ticker}</span>
+                            </p>
                             {staleIndicator}{chevron}
                           </div>
                           <p className="shrink-0 text-[15px] font-bold tnum text-ink">{thb(h.marketValue)}</p>
                         </div>
-                        {/* Line 2: units · type + PnL amount + PnL % */}
-                        <div className="mt-0.5 flex items-center justify-between gap-3">
+                        {/* Line 2: units + PnL% */}
+                        <div className="mt-0.5 flex items-center justify-between gap-2">
                           <p className="truncate text-[12.5px] text-ink-muted">{unitsLabel}</p>
-                          <div className="flex shrink-0 items-center gap-2">
-                            <PnLText value={h.pnl} className="text-[12.5px]" />
-                            <PnLPill value={h.pnlPct} asPct />
-                          </div>
+                          <PnLPill value={h.pnlPct} asPct />
                         </div>
                       </div>
                       {buyBtn}
