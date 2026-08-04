@@ -15,6 +15,37 @@ interface Props {
 
 const SATS_PER_BTC = 100_000_000
 
+function formatToMaxDecimals(val: number | string, maxDecimals: number): string {
+  const num = Number(val)
+  if (isNaN(num) || val === '') return ''
+  return Number(num.toFixed(maxDecimals)).toString()
+}
+
+function formatCostOrFx(val: number | string): string {
+  const num = Number(val)
+  if (isNaN(num) || val === '') return ''
+  const str = num.toString()
+  const dotIdx = str.indexOf('.')
+  if (dotIdx === -1) {
+    return num.toFixed(2)
+  }
+  const decimals = str.length - dotIdx - 1
+  if (decimals <= 2) {
+    return num.toFixed(2)
+  }
+  const rounded = Number(num.toFixed(4))
+  const roundedStr = rounded.toString()
+  const roundedDotIdx = roundedStr.indexOf('.')
+  if (roundedDotIdx === -1) {
+    return rounded.toFixed(2)
+  }
+  const roundedDecimals = roundedStr.length - roundedDotIdx - 1
+  if (roundedDecimals < 2) {
+    return rounded.toFixed(2)
+  }
+  return roundedStr
+}
+
 export function BuyMoreForm({ open, holding, onClose }: Props) {
   const { upsertHolding, upsertBtcLocation, upsertGoldLocation, addHoldingLog, usdThb } = useData()
 
@@ -36,10 +67,10 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
   const [goldNewLocationName, setGoldNewLocationName] = useState('')
 
   // US Stock-specific state
-  const [amountSpentThb, setAmountSpentThb] = useState<number | ''>('')
-  const [fxRate, setFxRate] = useState<number | ''>('')
-  const [priceUsd, setPriceUsd] = useState<number | ''>('')
-  const [sharesBought, setSharesBought] = useState<number | ''>('')
+  const [amountSpentThb, setAmountSpentThb] = useState<number | string | ''>('')
+  const [fxRate, setFxRate] = useState<number | string | ''>('')
+  const [priceUsd, setPriceUsd] = useState<number | string | ''>('')
+  const [sharesBought, setSharesBought] = useState<number | string | ''>('')
   const [lastFocused, setLastFocused] = useState<'thb' | 'shares'>('thb')
 
   const isBtc = holding?.assetClass === 'crypto'
@@ -80,69 +111,138 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
   const stockNewTotalUnits = stockCurrentUnits + sharesBoughtNum
   const stockNewTotalThbInvested = stockPrevThbInvested + amountSpentThbNum
 
-  function handleAmountSpentThbChange(val: number | '') {
+  function handleAmountSpentThbChange(val: number | string | '') {
     setAmountSpentThb(val)
     setLastFocused('thb')
-    if (val === '' || val <= 0) {
+    if (val === '' || Number(val) <= 0) {
       setSharesBought('')
       return
     }
+    const valNum = Number(val)
     const currentFxRate = Number(fxRate) || rate
     const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 ? holding.price / rate : 1)
     if (currentFxRate > 0 && currentPriceUsd > 0) {
-      const usdSpent = val / currentFxRate
+      const usdSpent = valNum / currentFxRate
       const shares = usdSpent / currentPriceUsd
-      setSharesBought(shares)
+      setSharesBought(Number(shares.toFixed(4)))
     } else {
       setSharesBought('')
     }
   }
 
-  function handleSharesBoughtChange(val: number | '') {
+  function handleSharesBoughtChange(val: number | string | '') {
     setSharesBought(val)
     setLastFocused('shares')
-    if (val === '' || val <= 0) {
+    if (val === '' || Number(val) <= 0) {
       setAmountSpentThb('')
       return
     }
+    const valNum = Number(val)
     const currentFxRate = Number(fxRate) || rate
     const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 ? holding.price / rate : 1)
     if (currentFxRate > 0 && currentPriceUsd > 0) {
-      const usdSpent = val * currentPriceUsd
+      const usdSpent = valNum * currentPriceUsd
       const thbSpentVal = usdSpent * currentFxRate
-      setAmountSpentThb(thbSpentVal)
+      setAmountSpentThb(Number(thbSpentVal.toFixed(2)))
     } else {
       setAmountSpentThb('')
     }
   }
 
-  function handleFxRateChange(val: number | '') {
+  function handleFxRateChange(val: number | string | '') {
     setFxRate(val)
-    if (val === '' || val <= 0) return
+    if (val === '' || Number(val) <= 0) return
+    const valNum = Number(val)
     const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 ? holding.price / rate : 1)
-    if (lastFocused === 'thb' && amountSpentThb !== '' && amountSpentThb > 0) {
-      const usdSpent = Number(amountSpentThb) / val
+    if (lastFocused === 'thb' && amountSpentThb !== '' && Number(amountSpentThb) > 0) {
+      const usdSpent = Number(amountSpentThb) / valNum
       const shares = usdSpent / currentPriceUsd
-      setSharesBought(shares)
-    } else if (lastFocused === 'shares' && sharesBought !== '' && sharesBought > 0) {
+      setSharesBought(Number(shares.toFixed(4)))
+    } else if (lastFocused === 'shares' && sharesBought !== '' && Number(sharesBought) > 0) {
       const usdSpent = Number(sharesBought) * currentPriceUsd
-      const thbSpentVal = usdSpent * val
-      setAmountSpentThb(thbSpentVal)
+      const thbSpentVal = usdSpent * valNum
+      setAmountSpentThb(Number(thbSpentVal.toFixed(2)))
     }
   }
 
-  function handlePriceUsdChange(val: number | '') {
+  function handlePriceUsdChange(val: number | string | '') {
     setPriceUsd(val)
-    if (val === '' || val <= 0) return
+    if (val === '' || Number(val) <= 0) return
+    const valNum = Number(val)
     const currentFxRate = Number(fxRate) || rate
-    if (lastFocused === 'thb' && amountSpentThb !== '' && amountSpentThb > 0) {
+    if (lastFocused === 'thb' && amountSpentThb !== '' && Number(amountSpentThb) > 0) {
       const usdSpent = Number(amountSpentThb) / currentFxRate
-      const shares = usdSpent / val
-      setSharesBought(shares)
-    } else if (lastFocused === 'shares' && sharesBought !== '' && sharesBought > 0) {
-      const usdSpent = Number(sharesBought) * val
+      const shares = usdSpent / valNum
+      setSharesBought(Number(shares.toFixed(4)))
+    } else if (lastFocused === 'shares' && sharesBought !== '' && Number(sharesBought) > 0) {
+      const usdSpent = Number(sharesBought) * valNum
       const thbSpentVal = usdSpent * currentFxRate
-      setAmountSpentThb(thbSpentVal)
+      setAmountSpentThb(Number(thbSpentVal.toFixed(2)))
+    }
+  }
+
+  const handleAmountSpentThbBlur = () => {
+    if (amountSpentThb !== '') {
+      const formatted = Number(Number(amountSpentThb).toFixed(2))
+      setAmountSpentThb(formatted)
+      const currentFxRate = Number(fxRate) || rate
+      const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 ? holding.price / rate : 1)
+      if (currentFxRate > 0 && currentPriceUsd > 0) {
+        const usdSpent = formatted / currentFxRate
+        const shares = usdSpent / currentPriceUsd
+        setSharesBought(Number(shares.toFixed(4)))
+      }
+    }
+  }
+
+  const handleSharesBoughtBlur = () => {
+    if (sharesBought !== '') {
+      const formatted = formatToMaxDecimals(sharesBought, 4)
+      setSharesBought(formatted)
+      const formattedNum = Number(formatted)
+      const currentFxRate = Number(fxRate) || rate
+      const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 ? holding.price / rate : 1)
+      if (currentFxRate > 0 && currentPriceUsd > 0) {
+        const usdSpent = formattedNum * currentPriceUsd
+        const thbSpentVal = usdSpent * currentFxRate
+        setAmountSpentThb(Number(thbSpentVal.toFixed(2)))
+      }
+    }
+  }
+
+  const handleFxRateBlur = () => {
+    if (fxRate !== '') {
+      const formatted = formatCostOrFx(fxRate)
+      setFxRate(formatted)
+      const formattedNum = Number(formatted)
+      const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 ? holding.price / rate : 1)
+      if (lastFocused === 'thb' && amountSpentThb !== '' && Number(amountSpentThb) > 0) {
+        const usdSpent = Number(amountSpentThb) / formattedNum
+        const shares = usdSpent / currentPriceUsd
+        setSharesBought(Number(shares.toFixed(4)))
+      } else if (lastFocused === 'shares' && sharesBought !== '' && Number(sharesBought) > 0) {
+        const usdSpent = Number(sharesBought) * currentPriceUsd
+        const thbSpentVal = usdSpent * formattedNum
+        setAmountSpentThb(Number(thbSpentVal.toFixed(2)))
+      }
+    }
+  }
+
+  const handlePriceUsdBlur = () => {
+    if (priceUsd !== '') {
+      const formatted = formatCostOrFx(priceUsd)
+      setPriceUsd(formatted)
+      const formattedNum = Number(formatted)
+      const currentFxRate = Number(fxRate) || rate
+      if (lastFocused === 'thb' && amountSpentThb !== '' && Number(amountSpentThb) > 0) {
+        const usdSpent = Number(amountSpentThb) / currentFxRate
+        const shares = usdSpent / formattedNum
+        setSharesBought(Number(shares.toFixed(4)))
+      } else if (lastFocused === 'shares' && sharesBought !== '' && Number(sharesBought) > 0) {
+        const usdSpent = Number(sharesBought) * formattedNum
+        const thbSpentVal = usdSpent * currentFxRate
+        setAmountSpentThb(Number(thbSpentVal.toFixed(2)))
+      }
     }
   }
 
@@ -164,10 +264,10 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
     // Pre-fill price: USD for stocks, THB for funds, not used for BTC
     if (!isBtc) {
       if (isStock && rate > 1) {
-        const usdPrice = parseFloat((holding.price / rate).toFixed(4))
+        const usdPrice = Number((holding.price / rate).toFixed(4))
         setPrice(usdPrice)
-        setFxRate(rate)
-        setPriceUsd(usdPrice)
+        setFxRate(formatCostOrFx(rate))
+        setPriceUsd(formatCostOrFx(usdPrice))
         setAmountSpentThb('')
         setSharesBought('')
         setLastFocused('thb')
@@ -470,7 +570,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         holdingName: holding!.name,
         ticker: holding!.ticker,
         assetClass: holding!.assetClass,
-        note: `+${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${priceUsdNum.toFixed(2)}/unit`,
+        note: `+${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${priceUsdNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/unit`,
       })
       onClose()
     } else {
@@ -529,7 +629,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
             <span className="text-ink-muted">Avg cost</span>
             <span className="font-semibold tnum text-ink">
               {isStock && rate > 1
-                ? `$${(holding.avgCost / rate).toFixed(2)}`
+                ? `$${(holding.avgCost / rate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                 : thb(holding.avgCost, true)}
             </span>
           </div>
@@ -543,15 +643,19 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
               value={amountSpentThb}
               error={showErrors && (amountSpentThb === '' || Number(amountSpentThb) <= 0) ? 'Required (> 0)' : undefined}
               onChange={handleAmountSpentThbChange}
+              onBlur={handleAmountSpentThbBlur}
               placeholder="0"
+              allowString
             />
             <NumberField
               label="Applied FX Rate (USD/THB)"
               value={fxRate}
               error={showErrors && (fxRate === '' || Number(fxRate) <= 0) ? 'Required (> 0)' : undefined}
               onChange={handleFxRateChange}
+              onBlur={handleFxRateBlur}
               placeholder="e.g. 33.21"
               step={0.01}
+              allowString
             />
             <NumberField
               label="Price / unit (USD)"
@@ -559,16 +663,20 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
               value={priceUsd}
               error={showErrors && (priceUsd === '' || Number(priceUsd) <= 0) ? 'Required (> 0)' : undefined}
               onChange={handlePriceUsdChange}
+              onBlur={handlePriceUsdBlur}
               placeholder="0"
               step={0.01}
+              allowString
             />
             <NumberField
               label="Shares Bought"
               value={sharesBought}
               error={showErrors && (sharesBought === '' || Number(sharesBought) <= 0) ? 'Required (> 0)' : undefined}
               onChange={handleSharesBoughtChange}
+              onBlur={handleSharesBoughtBlur}
               placeholder="0"
               step={0.0001}
+              allowString
             />
           </div>
         ) : (
