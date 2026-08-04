@@ -73,23 +73,30 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       }
       return
     }
+
     if (editing) {
-      // Only stocks are USD-denominated — BTC and Gold are priced in THB directly
       const divisor = editing.assetClass === 'stock' && rate > 1 ? rate : 1
+      const loadedAvgCost = editing.assetClass === 'stock'
+        ? (editing.avgCostUsd ?? (rate > 1 ? parseFloat((editing.avgCost / rate).toFixed(4)) : editing.avgCost))
+        : editing.avgCost
+      const loadedPrice = editing.assetClass === 'stock'
+        ? (rate > 1 ? parseFloat((editing.price / rate).toFixed(4)) : editing.price)
+        : editing.price
+
       setForm({
         name: editing.name,
         ticker: editing.ticker,
         assetClass: editing.assetClass,
         units: editing.units,
-        avgCost: divisor > 1 ? parseFloat((editing.avgCost / divisor).toFixed(4)) : editing.avgCost,
-        price: divisor > 1 ? parseFloat((editing.price / divisor).toFixed(4)) : editing.price,
+        avgCost: loadedAvgCost,
+        price: loadedPrice,
       })
       if (editing.assetClass === 'stock') {
         const impliedRate = editing.avgCostThb && editing.avgCostUsd ? editing.avgCostThb / editing.avgCostUsd : (usdThb || 35)
         setFxRateInput(parseFloat(impliedRate.toFixed(4)))
 
         const histThb = editing.totalThbInvested ?? (editing.units * editing.avgCost)
-        setThbInvestedInput(histThb)
+        setThbInvestedInput(parseFloat(histThb.toFixed(2)))
         setIsThbInvestedManuallyEdited(true)
       } else {
         setFxRateInput('')
@@ -118,13 +125,9 @@ export function HoldingForm({ open, editing, onClose }: Props) {
     const avgCost = Number(form.avgCost) || 0
     const totalUsd = shares * avgCost
 
-    const thbInvested = Number(thbInvestedInput) || 0
     const fxRate = Number(fxRateInput) || usdThb || 35
 
-    if (thbInvested > 0 && totalUsd > 0) {
-      const impliedRate = thbInvested / totalUsd
-      setFxRateInput(parseFloat(impliedRate.toFixed(4)))
-    } else if (totalUsd > 0) {
+    if (totalUsd > 0) {
       const calculatedThb = totalUsd * fxRate
       setThbInvestedInput(parseFloat(calculatedThb.toFixed(2)))
     }
@@ -136,13 +139,9 @@ export function HoldingForm({ open, editing, onClose }: Props) {
     const avgCost = Number(newAvgCost) || 0
     const totalUsd = shares * avgCost
 
-    const thbInvested = Number(thbInvestedInput) || 0
     const fxRate = Number(fxRateInput) || usdThb || 35
 
-    if (thbInvested > 0 && totalUsd > 0) {
-      const impliedRate = thbInvested / totalUsd
-      setFxRateInput(parseFloat(impliedRate.toFixed(4)))
-    } else if (totalUsd > 0) {
+    if (totalUsd > 0) {
       const calculatedThb = totalUsd * fxRate
       setThbInvestedInput(parseFloat(calculatedThb.toFixed(2)))
     }
@@ -154,12 +153,11 @@ export function HoldingForm({ open, editing, onClose }: Props) {
 
     const thbVal = Number(newThb) || 0
     const shares = Number(form.units) || 0
-    const avgCost = Number(form.avgCost) || 0
-    const totalUsd = shares * avgCost
+    const fxRate = Number(fxRateInput) || usdThb || 35
 
-    if (totalUsd > 0) {
-      const impliedRate = thbVal / totalUsd
-      setFxRateInput(parseFloat(impliedRate.toFixed(4)))
+    if (fxRate > 0 && shares > 0) {
+      const avgCostUsd = (thbVal / fxRate) / shares
+      setForm((f) => ({ ...f, avgCost: parseFloat(avgCostUsd.toFixed(4)) }))
     }
   }
 
@@ -177,6 +175,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       setThbInvestedInput(parseFloat(calculatedThb.toFixed(2)))
     }
   }
+
 
   // ── Save: BTC new holding ──
   function saveBtc() {
