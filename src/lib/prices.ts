@@ -70,30 +70,31 @@ export async function fetchBtcThb(): Promise<number> {
   return btcUsdt * usdThb
 }
 
-/** Fetch a single stock's latest price in USD via Finnhub Quote API. */
-async function fetchOneStockUsd(ticker: string): Promise<number> {
-  const token = import.meta.env.VITE_FINNHUB_API_KEY || ''
-  if (!token) throw new Error('Finnhub API key not configured (VITE_FINNHUB_API_KEY)')
-  
-  const res = await fetch(
-    `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(ticker.toUpperCase())}&token=${token}`,
-  )
-  if (!res.ok) throw new Error(`Finnhub ${ticker}: ${res.status}`)
-  const json = await res.json()
-  const price = json?.c
-  if (!price || isNaN(price)) throw new Error(`Finnhub ${ticker}: invalid price in response`)
-  return price
-}
-
-/** Stock prices in USD from Finnhub API (parallel). */
+/** Stock prices in USD via Supabase Edge Function (proxies Yahoo Finance — no API key needed). */
 export async function fetchStockPricesUsd(tickers: string[]): Promise<Record<string, number>> {
   if (tickers.length === 0) return {}
-  const results = await Promise.allSettled(
-    tickers.map(async (t) => ({ ticker: t.toUpperCase(), price: await fetchOneStockUsd(t) })),
-  )
-  const map: Record<string, number> = {}
-  for (const r of results) {
-    if (r.status === 'fulfilled') map[r.value.ticker] = r.value.price
-  }
-  return map
+
+  const supabaseUrl = import.meta.env.VITE_API_URL || ''
+  const supabaseKey = import.meta.env.VITE_API_TOKEN || ''
+  if (!supabaseUrl) throw new Error('Supabase URL not configured (VITE_API_URL)')
+
+  const symbols = tickers.map((t) => t.toUpperCase()).join(',')
+
+  const res = await fetch(`${supabaseUrl}/functions/v1/stock-price`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${supabaseKey}`,
+      'apikey': supabaseKey,
+    },
+    body: JSON.stringify({ symbols }),
+  })
+
+  if (!res.ok) throw new Error(`stock-price Edge Function: ${res.status}`)
+
+  const json = await res.json()
+  if (json.error) throw new Error(`stock-price Edge Function: ${json.error}`)
+
+  // json.prices = { "SGOV": 100.43, "AAPL": 210.5, ... }
+  return (json.prices as Record<string, number>) ?? {}
 }
