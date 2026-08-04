@@ -13,10 +13,15 @@ const THAI_GOLD_GRAMS_PER_TROY_OUNCE = 31.1035
 const GOLD_PRICE_CACHE_TTL_MS = 5 * 60 * 1000
 let cachedGoldPrice: { xauThb: number; pricePerGram: number; updatedAt: number } | null = null
 
-/** USD/THB — tries Binance USDTTHB first, falls back to open.er-api.com */
+/** USD/THB — tries Binance TH USDTTHB first, falls back to open.er-api.com */
 export async function fetchUsdThb(): Promise<number> {
   try {
-    return await binancePrice('USDTTHB')
+    const res = await fetch('https://api.binance.th/api/v1/ticker/price?symbol=USDTTHB')
+    if (!res.ok) throw new Error(`Binance TH USDTTHB: ${res.status}`)
+    const json = await res.json()
+    const price = parseFloat(json.price)
+    if (!price || isNaN(price)) throw new Error('Binance TH USDTTHB: invalid price')
+    return price
   } catch {
     const res = await fetch('https://open.er-api.com/v6/latest/USD')
     if (!res.ok) throw new Error(`USD/THB fallback: ${res.status}`)
