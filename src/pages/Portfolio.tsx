@@ -47,7 +47,7 @@ export function Portfolio() {
   } = useData()
   const { status: priceStatus, lastUpdated, usdThb, goldThbPerGram, errorMsg, refresh: refreshPrices } = useLivePrices()
   const [filter, setFilter] = useState<AssetClass | 'all'>('all')
-  const [sortBy, setSortBy] = useState<'none' | 'value' | 'pnl' | 'type'>('none')
+  const [sortBy, setSortBy] = useState<'none' | 'value' | 'pnl' | 'type'>('value')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [search, setSearch] = useState('')
 
