@@ -5,7 +5,7 @@ import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import { ASSET_META, applyBuy, holdingMetrics } from '../../lib/calc'
 import type { Holding } from '../../lib/types'
-import { thb } from '../../lib/format'
+import { thb, localDateStr } from '../../lib/format'
 
 interface Props {
   open: boolean
@@ -35,6 +35,13 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
   const [goldLocationId, setGoldLocationId] = useState('')
   const [goldNewLocationName, setGoldNewLocationName] = useState('')
 
+  // US Stock-specific state
+  const [amountSpentThb, setAmountSpentThb] = useState<number | ''>('')
+  const [fxRate, setFxRate] = useState<number | ''>('')
+  const [priceUsd, setPriceUsd] = useState<number | ''>('')
+  const [sharesBought, setSharesBought] = useState<number | ''>('')
+  const [lastFocused, setLastFocused] = useState<'thb' | 'shares'>('thb')
+
   const isBtc = holding?.assetClass === 'crypto'
   const isGold = holding?.assetClass === 'gold'
   const isStock = holding?.assetClass === 'stock'
@@ -44,6 +51,100 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
   // Guard: only reset form when modal *freshly opens* (false→true),
   // not when holding changes mid-session due to live price ticks.
   const wasOpen = useRef(false)
+
+  const priceInThb = isStock && rate > 1 ? Number(price) * rate : Number(price)
+  const valid = units !== '' && Number(units) > 0 && price !== '' && Number(price) > 0
+  const preview = valid && holding ? applyBuy(holding, Number(units), priceInThb) : null
+  const cost = valid ? Number(units) * priceInThb : 0
+  const label = holding?.assetClass === 'fund' ? 'units' : 'shares'
+
+  const fxRateNum = Number(fxRate) || rate
+  const priceUsdNum = Number(priceUsd) || (holding && rate > 0 ? holding.price / rate : 0)
+  const amountSpentThbNum = Number(amountSpentThb)
+  const sharesBoughtNum = Number(sharesBought)
+  const validStock =
+    amountSpentThb !== '' &&
+    amountSpentThbNum > 0 &&
+    fxRate !== '' &&
+    fxRateNum > 0 &&
+    priceUsd !== '' &&
+    priceUsdNum > 0 &&
+    sharesBought !== '' &&
+    sharesBoughtNum > 0
+
+  const stockCurrentUnits = holding ? (holding.units ?? holding.totalUnits ?? 0) : 0
+  const stockPrevThbInvested = holding
+    ? (holding.totalThbInvested ??
+      stockCurrentUnits * (holding.avgCostThb ?? holding.avgCost ?? 0))
+    : 0
+  const stockNewTotalUnits = stockCurrentUnits + sharesBoughtNum
+  const stockNewTotalThbInvested = stockPrevThbInvested + amountSpentThbNum
+
+  function handleAmountSpentThbChange(val: number | '') {
+    setAmountSpentThb(val)
+    setLastFocused('thb')
+    if (val === '' || val <= 0) {
+      setSharesBought('')
+      return
+    }
+    const currentFxRate = Number(fxRate) || rate
+    const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 ? holding.price / rate : 1)
+    if (currentFxRate > 0 && currentPriceUsd > 0) {
+      const usdSpent = val / currentFxRate
+      const shares = usdSpent / currentPriceUsd
+      setSharesBought(shares)
+    } else {
+      setSharesBought('')
+    }
+  }
+
+  function handleSharesBoughtChange(val: number | '') {
+    setSharesBought(val)
+    setLastFocused('shares')
+    if (val === '' || val <= 0) {
+      setAmountSpentThb('')
+      return
+    }
+    const currentFxRate = Number(fxRate) || rate
+    const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 ? holding.price / rate : 1)
+    if (currentFxRate > 0 && currentPriceUsd > 0) {
+      const usdSpent = val * currentPriceUsd
+      const thbSpentVal = usdSpent * currentFxRate
+      setAmountSpentThb(thbSpentVal)
+    } else {
+      setAmountSpentThb('')
+    }
+  }
+
+  function handleFxRateChange(val: number | '') {
+    setFxRate(val)
+    if (val === '' || val <= 0) return
+    const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 ? holding.price / rate : 1)
+    if (lastFocused === 'thb' && amountSpentThb !== '' && amountSpentThb > 0) {
+      const usdSpent = Number(amountSpentThb) / val
+      const shares = usdSpent / currentPriceUsd
+      setSharesBought(shares)
+    } else if (lastFocused === 'shares' && sharesBought !== '' && sharesBought > 0) {
+      const usdSpent = Number(sharesBought) * currentPriceUsd
+      const thbSpentVal = usdSpent * val
+      setAmountSpentThb(thbSpentVal)
+    }
+  }
+
+  function handlePriceUsdChange(val: number | '') {
+    setPriceUsd(val)
+    if (val === '' || val <= 0) return
+    const currentFxRate = Number(fxRate) || rate
+    if (lastFocused === 'thb' && amountSpentThb !== '' && amountSpentThb > 0) {
+      const usdSpent = Number(amountSpentThb) / currentFxRate
+      const shares = usdSpent / val
+      setSharesBought(shares)
+    } else if (lastFocused === 'shares' && sharesBought !== '' && sharesBought > 0) {
+      const usdSpent = Number(sharesBought) * val
+      const thbSpentVal = usdSpent * currentFxRate
+      setAmountSpentThb(thbSpentVal)
+    }
+  }
 
   // ALL useEffects at top level — no hooks after conditional returns
   useEffect(() => {
@@ -63,7 +164,13 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
     // Pre-fill price: USD for stocks, THB for funds, not used for BTC
     if (!isBtc) {
       if (isStock && rate > 1) {
-        setPrice(parseFloat((holding.price / rate).toFixed(4)))
+        const usdPrice = parseFloat((holding.price / rate).toFixed(4))
+        setPrice(usdPrice)
+        setFxRate(rate)
+        setPriceUsd(usdPrice)
+        setAmountSpentThb('')
+        setSharesBought('')
+        setLastFocused('thb')
       } else {
         setPrice(holding.price)
       }
@@ -321,63 +428,75 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
   }
 
   // ── Fund / Stock path ──
-  const priceInThb = isStock && rate > 1 ? Number(price) * rate : Number(price)
-  const valid = units !== '' && Number(units) > 0 && price !== '' && Number(price) > 0
-  const preview = valid ? applyBuy(holding, Number(units), priceInThb) : null
-  const cost = valid ? Number(units) * priceInThb : 0
-  const label = holding.assetClass === 'fund' ? 'units' : 'shares'
 
   function save() {
-    if (!valid) { setShowErrors(true); return }
-    const next = applyBuy(holding!, Number(units), priceInThb)
-    let extra: Partial<Holding> = {}
     if (isStock) {
-      const unitsBoughtNum = Number(units)
-      const priceUsdNum = Number(price)
+      if (!validStock) { setShowErrors(true); return }
+      const unitsBoughtNum = Number(sharesBought)
+      const priceUsdNum = Number(priceUsd)
+      const fxRateNum = Number(fxRate)
+      const amountSpentThbNum = Number(amountSpentThb)
       const usdSpentThisTx = unitsBoughtNum * priceUsdNum
-      const amountSpentThb = unitsBoughtNum * priceInThb
 
       const currentUnits = holding!.units ?? holding!.totalUnits ?? 0
       const currentThbInvested = holding!.totalThbInvested ?? (currentUnits * (holding!.avgCostThb ?? holding!.avgCost ?? 0))
       const currentUsdInvested = holding!.totalUsdInvested ?? (currentUnits * (holding!.avgCostUsd ?? (rate > 0 ? (holding!.avgCost ?? 0) / rate : 0)))
 
       const newTotalUnits = currentUnits + unitsBoughtNum
-      const newTotalThbInvested = currentThbInvested + amountSpentThb
+      const newTotalThbInvested = currentThbInvested + amountSpentThbNum
       const newTotalUsdInvested = currentUsdInvested + usdSpentThisTx
 
       const newAvgCostUsd = newTotalUnits > 0 ? newTotalUsdInvested / newTotalUnits : 0
       const newAvgCostThb = newTotalUnits > 0 ? newTotalThbInvested / newTotalUnits : 0
 
-      extra = {
+      const next = {
+        units: newTotalUnits,
+        avgCost: newAvgCostThb,
+        price: priceUsdNum * fxRateNum,
+        updatedAt: localDateStr(new Date()),
+      }
+
+      const extra = {
         totalUnits: newTotalUnits,
         totalThbInvested: newTotalThbInvested,
         totalUsdInvested: newTotalUsdInvested,
         avgCostUsd: newAvgCostUsd,
         avgCostThb: newAvgCostThb,
-        avgCost: newAvgCostThb,
       }
+
+      upsertHolding({ ...holding!, ...next, ...extra })
+      addHoldingLog({
+        action: 'buy_more',
+        holdingName: holding!.name,
+        ticker: holding!.ticker,
+        assetClass: holding!.assetClass,
+        note: `+${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${priceUsdNum.toFixed(2)}/unit`,
+      })
+      onClose()
     } else {
+      if (!valid) { setShowErrors(true); return }
+      const next = applyBuy(holding!, Number(units), priceInThb)
       const currentUnits = holding!.units ?? holding!.totalUnits ?? 0
       const currentThbInvested = holding!.totalThbInvested ?? (currentUnits * (holding!.avgCostThb ?? holding!.avgCost ?? 0))
       const amountSpentThb = Number(units) * priceInThb
       const newTotalThbInvested = currentThbInvested + amountSpentThb
       const newTotalUnits = next.units
 
-      extra = {
+      const extra = {
         totalUnits: newTotalUnits,
         totalThbInvested: newTotalThbInvested,
         avgCostThb: next.avgCost,
       }
+      upsertHolding({ ...holding!, ...next, ...extra })
+      addHoldingLog({
+        action: 'buy_more',
+        holdingName: holding!.name,
+        ticker: holding!.ticker,
+        assetClass: holding!.assetClass,
+        note: `+${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${label} @ ฿${Number(price).toLocaleString()}/unit`,
+      })
+      onClose()
     }
-    upsertHolding({ ...holding!, ...next, ...extra })
-    addHoldingLog({
-      action: 'buy_more',
-      holdingName: holding!.name,
-      ticker: holding!.ticker,
-      assetClass: holding!.assetClass,
-      note: `+${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${label} @ ${isStock ? `$${Number(price).toFixed(2)}` : `฿${Number(price).toLocaleString()}`}/unit`,
-    })
-    onClose()
   }
 
   return (
@@ -416,26 +535,96 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 ">
-          <NumberField
-            label={`${label} bought`}
-            value={units}
-            error={showErrors && (units === '' || Number(units) <= 0) ? 'Required (> 0)' : undefined}
-            onChange={setUnits}
-            placeholder="0"
-            step={0.0001}
-          />
-          <NumberField
-            label={isStock ? 'Price / unit (USD)' : 'Price / unit'}
-            prefix={isStock ? '$' : '฿'}
-            value={price}
-            error={showErrors && (price === '' || Number(price) <= 0) ? 'Required (> 0)' : undefined}
-            onChange={setPrice}
-            placeholder="0"
-          />
-        </div>
+        {isStock ? (
+          <div className="grid grid-cols-1 gap-3">
+            <NumberField
+              label="Amount Spent (THB)"
+              prefix="฿"
+              value={amountSpentThb}
+              error={showErrors && (amountSpentThb === '' || Number(amountSpentThb) <= 0) ? 'Required (> 0)' : undefined}
+              onChange={handleAmountSpentThbChange}
+              placeholder="0"
+            />
+            <NumberField
+              label="Applied FX Rate (USD/THB)"
+              value={fxRate}
+              error={showErrors && (fxRate === '' || Number(fxRate) <= 0) ? 'Required (> 0)' : undefined}
+              onChange={handleFxRateChange}
+              placeholder="e.g. 33.21"
+              step={0.01}
+            />
+            <NumberField
+              label="Price / unit (USD)"
+              prefix="$"
+              value={priceUsd}
+              error={showErrors && (priceUsd === '' || Number(priceUsd) <= 0) ? 'Required (> 0)' : undefined}
+              onChange={handlePriceUsdChange}
+              placeholder="0"
+              step={0.01}
+            />
+            <NumberField
+              label="Shares Bought"
+              value={sharesBought}
+              error={showErrors && (sharesBought === '' || Number(sharesBought) <= 0) ? 'Required (> 0)' : undefined}
+              onChange={handleSharesBoughtChange}
+              placeholder="0"
+              step={0.0001}
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3">
+            <NumberField
+              label={`${label} bought`}
+              value={units}
+              error={showErrors && (units === '' || Number(units) <= 0) ? 'Required (> 0)' : undefined}
+              onChange={setUnits}
+              placeholder="0"
+              step={0.0001}
+            />
+            <NumberField
+              label="Price / unit"
+              prefix="฿"
+              value={price}
+              error={showErrors && (price === '' || Number(price) <= 0) ? 'Required (> 0)' : undefined}
+              onChange={setPrice}
+              placeholder="0"
+            />
+          </div>
+        )}
 
-        {preview && (
+        {isStock && validStock && (
+          <div
+            className="rounded-2xl border px-4 py-3 space-y-1.5"
+            style={{
+              borderColor: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 35%, transparent)`,
+              background: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 10%, transparent)`,
+            }}
+          >
+            <div className="flex items-center justify-between text-[13px]">
+              <span className="text-ink-soft">Transaction Cost</span>
+              <span className="font-semibold tnum text-ink">
+                ฿{amountSpentThbNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
+                <span className="text-ink-muted">
+                  (${ (amountSpentThbNum / fxRateNum).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })
+                </span>
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-[13px]">
+              <span className="text-ink-soft">Shares Added</span>
+              <span className="font-semibold tnum text-ink">+{sharesBoughtNum.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} shares</span>
+            </div>
+            <div className="flex items-center justify-between text-[13px]">
+              <span className="text-ink-soft">New Total Shares</span>
+              <span className="font-semibold tnum text-ink">{stockNewTotalUnits.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} shares</span>
+            </div>
+            <div className="flex items-center justify-between text-[13px]">
+              <span className="text-ink-soft">New Total THB Invested</span>
+              <span className="font-semibold tnum text-ink">฿{stockNewTotalThbInvested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+          </div>
+        )}
+
+        {!isStock && preview && (
           <div
             className="rounded-2xl border px-4 py-3"
             style={{
@@ -456,9 +645,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
             <div className="mt-1 flex items-center justify-between text-[12.5px]">
               <span className="text-ink-muted">New avg cost · value</span>
               <span className="tnum text-ink-soft">
-                {isStock && rate > 1
-                  ? `$${(preview.avgCost / rate).toFixed(2)}`
-                  : thb(preview.avgCost, true)}{' '}
+                {thb(preview.avgCost, true)}{' '}
                 · {thb(holdingMetrics({ ...holding, ...preview }).marketValue)}
               </span>
             </div>
@@ -466,7 +653,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         )}
 
         <div className="pt-3">
-          <Button onClick={save} className="w-full" disabled={isStock && !usdThb}>
+          <Button onClick={save} className="w-full" disabled={isStock ? !validStock : !valid}>
             Add to holding
           </Button>
         </div>
@@ -474,4 +661,5 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
     </Modal>
   )
 }
+
 
