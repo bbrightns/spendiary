@@ -80,7 +80,7 @@ export async function fetchStockPricesUsd(tickers: string[]): Promise<Record<str
 
   const symbols = tickers.map((t) => t.toUpperCase()).join(',')
 
-  const res = await fetch(`${supabaseUrl}/functions/v1/stock-price`, {
+  const res = await fetch(`${supabaseUrl}/functions/v1/smart-responder`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
