@@ -6,10 +6,7 @@ import { useData } from '../../store/DataContext'
 import type { DcaPlan } from '../../lib/types'
 import { localDateStr } from '../../lib/format'
 
-function safeFixed(num: number, digits: number = 4): string {
-  if (!isFinite(num) || isNaN(num)) return (0).toFixed(digits)
-  return num.toFixed(digits)
-}
+
 
 interface Props {
   open: boolean
@@ -351,35 +348,35 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">Execution NAV (this tx)</span>
                 <span className={valueStyle(hasValidFund)}>
-                  {hasValidFund ? `฿${safeFixed(fundImpliedNav, 4)} / unit` : '฿-- / unit'}
+                  {hasValidFund ? `฿${fundImpliedNav.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} / unit` : '฿0.00 / unit'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">Units Added</span>
                 <span className={valueStyle(hasValidFund)}>
-                  {hasValidFund ? `+${safeFixed(fundUnitsNum, 4)} units` : '+0.0000 units'}
+                  {hasValidFund ? `+${fundUnitsNum.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} units` : '+0.0000 units'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">New Total Units</span>
                 <span className={valueStyle(hasValidFund)}>
-                  {hasValidFund ? `${safeFixed(fundNewTotalUnits, 4)} units` : '-- units'}
+                  {hasValidFund ? `${fundNewTotalUnits.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} units` : '0.0000 units'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">New Total THB Invested</span>
                 <span className={valueStyle(hasValidFund)}>
-                  {hasValidFund ? `฿${fundNewTotalThbInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '฿--'}
+                  {hasValidFund ? `฿${fundNewTotalThbInvested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '฿0.00'}
                 </span>
               </div>
 
               <div className="pt-2 border-t border-line flex flex-col gap-1 text-[12.5px]">
                 <span className="text-[11px] font-medium text-ink-muted">New Avg Cost</span>
                 <div className={`text-[13.5px] ${hasValidFund ? 'font-bold tnum text-ink' : 'font-medium tnum text-ink-muted'}`}>
-                  {hasValidFund ? `฿${safeFixed(fundNewAvgCostThb, 2)} / unit` : '฿-- / unit'}
+                  {hasValidFund ? `฿${fundNewAvgCostThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} / unit` : '฿0.00 / unit'}
                 </div>
               </div>
             </div>
@@ -402,7 +399,6 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
               />
               <NumberField
                 label="FX Rate (USD/THB)"
-                prefix="$"
                 value={fxRate}
                 onChange={setFxRate}
                 placeholder="33.40"
@@ -426,42 +422,42 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">Implied Price/Share (this tx)</span>
                 <span className={valueStyle(hasValidStock)}>
-                  {hasValidStock ? `$${safeFixed(stockImpliedPriceUsd, 2)} / share` : '$ -- / share'}
+                  {hasValidStock ? `$${stockImpliedPriceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} / share` : '$0.00 / share'}
                 </span>
               </div>
               
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">Shares Added</span>
                 <span className={valueStyle(hasValidStock)}>
-                  {hasValidStock ? `+${safeFixed(stockUnitsBoughtNum, 4)} shares` : '+0.0000 shares'}
+                  {hasValidStock ? `+${stockUnitsBoughtNum.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} shares` : '+0.0000 shares'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">New Total Shares</span>
                 <span className={valueStyle(hasValidStock)}>
-                  {hasValidStock ? `${safeFixed(stockNewTotalUnits, 4)} shares` : '-- shares'}
+                  {hasValidStock ? `${stockNewTotalUnits.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} shares` : '0.0000 shares'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">New Total THB Invested</span>
                 <span className={valueStyle(hasValidStock)}>
-                  {hasValidStock ? `฿${stockNewTotalThbInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '฿--'}
+                  {hasValidStock ? `฿${stockNewTotalThbInvested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '฿0.00'}
                 </span>
               </div>
 
               <div className="pt-2 border-t border-line flex flex-col gap-1 text-[12.5px]">
                 <span className="text-[11px] font-medium text-ink-muted">New Avg Cost</span>
                 {hasValidStock ? (
-                  <div className="flex items-center gap-2 flex-wrap font-bold tnum text-ink text-[13.5px]">
-                    <span>${safeFixed(stockNewAvgCostUsd, 2)} / share</span>
+                  <div className="flex items-center gap-2 flex-wrap font-bold tnum text-ink text-[13px]">
+                    <span>${stockNewAvgCostUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} / share</span>
                     <span className="text-ink-muted font-normal">≈</span>
-                    <span>฿{stockNewAvgCostThb.toLocaleString(undefined, { maximumFractionDigits: 2 })} / share</span>
+                    <span>฿{stockNewAvgCostThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / share</span>
                   </div>
                 ) : (
-                  <div className="font-medium tnum text-ink-muted text-[13.5px]">
-                    $ -- / share ≈ ฿-- / share
+                  <div className="font-medium tnum text-ink-muted text-[13px]">
+                    $0.00 / share ≈ ฿0.00 / share
                   </div>
                 )}
               </div>
@@ -516,7 +512,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">Implied BTC Price (this tx)</span>
                 <span className={valueStyle(hasValidBtc)}>
-                  {hasValidBtc ? `฿${Math.round(btcImpliedPrice).toLocaleString()} / BTC` : '฿-- / BTC'}
+                  {hasValidBtc ? `฿${Math.round(btcImpliedPrice).toLocaleString()} / BTC` : '฿0 / BTC'}
                 </span>
               </div>
 
@@ -530,21 +526,21 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">New Total Sats</span>
                 <span className={valueStyle(hasValidBtc)}>
-                  {hasValidBtc ? `${btcNewTotalSats.toLocaleString()} sats` : '-- sats'}
+                  {hasValidBtc ? `${btcNewTotalSats.toLocaleString()} sats` : '0 sats'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">New Total THB Invested</span>
                 <span className={valueStyle(hasValidBtc)}>
-                  {hasValidBtc ? `฿${btcNewTotalThbInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '฿--'}
+                  {hasValidBtc ? `฿${btcNewTotalThbInvested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '฿0.00'}
                 </span>
               </div>
 
               <div className="pt-2 border-t border-line flex flex-col gap-1 text-[12.5px]">
                 <span className="text-[11px] font-medium text-ink-muted">New Avg Cost</span>
                 <div className={`text-[13.5px] ${hasValidBtc ? 'font-bold tnum text-ink' : 'font-medium tnum text-ink-muted'}`}>
-                  {hasValidBtc ? `฿${Math.round(btcNewAvgCostThb).toLocaleString()} / BTC` : '฿-- / BTC'}
+                  {hasValidBtc ? `฿${Math.round(btcNewAvgCostThb).toLocaleString()} / BTC` : '฿0 / BTC'}
                 </div>
               </div>
             </div>
@@ -635,35 +631,35 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">Price / Gram (this tx)</span>
                 <span className={valueStyle(hasValidGold)}>
-                  {hasValidGold ? `฿${safeFixed(goldImpliedPricePerGram, 2)} / g` : '฿-- / g'}
+                  {hasValidGold ? `฿${goldImpliedPricePerGram.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / g` : '฿0.00 / g'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">Grams Added</span>
                 <span className={valueStyle(hasValidGold)}>
-                  {hasValidGold ? `+${safeFixed(goldGramsToAdd, 4)} g` : '+0.0000 g'}
+                  {hasValidGold ? `+${goldGramsToAdd.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} g` : '+0.0000 g'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">New Total Grams</span>
                 <span className={valueStyle(hasValidGold)}>
-                  {hasValidGold ? `${safeFixed(goldNewTotalGrams, 4)} g` : '-- g'}
+                  {hasValidGold ? `${goldNewTotalGrams.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} g` : '0.0000 g'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">New Total THB Invested</span>
                 <span className={valueStyle(hasValidGold)}>
-                  {hasValidGold ? `฿${goldNewTotalThbInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '฿--'}
+                  {hasValidGold ? `฿${goldNewTotalThbInvested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '฿0.00'}
                 </span>
               </div>
 
               <div className="pt-2 border-t border-line flex flex-col gap-1 text-[12.5px]">
                 <span className="text-[11px] font-medium text-ink-muted">New Avg Cost</span>
                 <div className={`text-[13.5px] ${hasValidGold ? 'font-bold tnum text-ink' : 'font-medium tnum text-ink-muted'}`}>
-                  {hasValidGold ? `฿${safeFixed(goldNewAvgCostThb, 2)} / g` : '฿-- / g'}
+                  {hasValidGold ? `฿${goldNewAvgCostThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / g` : '฿0.00 / g'}
                 </div>
               </div>
             </div>
