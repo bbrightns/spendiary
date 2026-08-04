@@ -91,6 +91,7 @@ const US_STOCKS: Security[] = [
   { name: 'Emerging Markets ETF (VWO)', ticker: 'VWO', assetClass: 'stock' },
   { name: 'Gold ETF (GLD)', ticker: 'GLD', assetClass: 'stock' },
   { name: 'Bitcoin ETF (IBIT)', ticker: 'IBIT', assetClass: 'stock' },
+  { name: 'iShares 0-3 Month Treasury Bond ETF (SGOV)', ticker: 'SGOV', assetClass: 'stock' },
 ]
 
 // ── Gold ─────────────────────────────────────────────────────────────────────
