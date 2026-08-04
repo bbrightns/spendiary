@@ -111,14 +111,72 @@ export function HoldingForm({ open, editing, onClose }: Props) {
     setShowErrors(false)
   }, [open, editing, usdThb])
 
-  // Recalculate THB capital basis in real-time when Card B changes (unless overridden)
-  useEffect(() => {
-    if (isThbInvestedManuallyEdited) return
+  // Interactive handlers for dynamic dual-currency and FX rate recalculations
+  const handleSharesChange = (newUnits: number | '') => {
+    setForm((f) => ({ ...f, units: newUnits }))
+    const shares = Number(newUnits) || 0
+    const avgCost = Number(form.avgCost) || 0
+    const totalUsd = shares * avgCost
+
+    const thbInvested = Number(thbInvestedInput) || 0
+    const fxRate = Number(fxRateInput) || usdThb || 35
+
+    if (thbInvested > 0 && totalUsd > 0) {
+      const impliedRate = thbInvested / totalUsd
+      setFxRateInput(parseFloat(impliedRate.toFixed(4)))
+    } else if (totalUsd > 0) {
+      const calculatedThb = totalUsd * fxRate
+      setThbInvestedInput(parseFloat(calculatedThb.toFixed(2)))
+    }
+  }
+
+  const handleAvgCostChange = (newAvgCost: number | '') => {
+    setForm((f) => ({ ...f, avgCost: newAvgCost }))
+    const shares = Number(form.units) || 0
+    const avgCost = Number(newAvgCost) || 0
+    const totalUsd = shares * avgCost
+
+    const thbInvested = Number(thbInvestedInput) || 0
+    const fxRate = Number(fxRateInput) || usdThb || 35
+
+    if (thbInvested > 0 && totalUsd > 0) {
+      const impliedRate = thbInvested / totalUsd
+      setFxRateInput(parseFloat(impliedRate.toFixed(4)))
+    } else if (totalUsd > 0) {
+      const calculatedThb = totalUsd * fxRate
+      setThbInvestedInput(parseFloat(calculatedThb.toFixed(2)))
+    }
+  }
+
+  const handleThbInvestedChange = (newThb: number | '') => {
+    setThbInvestedInput(newThb)
+    setIsThbInvestedManuallyEdited(true)
+
+    const thbVal = Number(newThb) || 0
     const shares = Number(form.units) || 0
     const avgCost = Number(form.avgCost) || 0
-    const fxRate = Number(fxRateInput) || usdThb || 35
-    setThbInvestedInput(parseFloat((shares * avgCost * fxRate).toFixed(2)))
-  }, [form.units, form.avgCost, fxRateInput, isThbInvestedManuallyEdited, usdThb])
+    const totalUsd = shares * avgCost
+
+    if (totalUsd > 0) {
+      const impliedRate = thbVal / totalUsd
+      setFxRateInput(parseFloat(impliedRate.toFixed(4)))
+    }
+  }
+
+  const handleFxRateChange = (newRate: number | '') => {
+    setFxRateInput(newRate)
+    setIsThbInvestedManuallyEdited(true)
+
+    const rateVal = Number(newRate) || 0
+    const shares = Number(form.units) || 0
+    const avgCost = Number(form.avgCost) || 0
+    const totalUsd = shares * avgCost
+
+    if (totalUsd > 0) {
+      const calculatedThb = totalUsd * rateVal
+      setThbInvestedInput(parseFloat(calculatedThb.toFixed(2)))
+    }
+  }
 
   // ── Save: BTC new holding ──
   function saveBtc() {
@@ -551,10 +609,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                   label="Total THB Invested"
                   prefix="฿"
                   value={thbInvestedInput}
-                  onChange={(val) => {
-                    setThbInvestedInput(val)
-                    setIsThbInvestedManuallyEdited(true)
-                  }}
+                  onChange={handleThbInvestedChange}
                   error={showErrors && thbInvestedInput === '' ? 'Total THB Invested is required' : undefined}
                   placeholder="0.00"
                   step={0.01}
@@ -568,12 +623,14 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                         setIsThbInvestedManuallyEdited(false)
                         const shares = Number(form.units) || 0
                         const avgCost = Number(form.avgCost) || 0
-                        const fxRate = Number(fxRateInput) || usdThb || 35
-                        setThbInvestedInput(parseFloat((shares * avgCost * fxRate).toFixed(2)))
+                        const fxRate = usdThb || 35
+                        const calculatedThb = shares * avgCost * fxRate
+                        setThbInvestedInput(parseFloat(calculatedThb.toFixed(2)))
+                        setFxRateInput(parseFloat(fxRate.toFixed(4)))
                       }}
                       className="text-[11px] font-semibold text-brand hover:underline cursor-pointer"
                     >
-                      Reset to calculated (฿{(sharesInputVal * avgCostUsdVal * fxRateVal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                      Reset to calculated (฿{(sharesInputVal * avgCostUsdVal * (usdThb || 35)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} @ {(usdThb || 35).toFixed(4)})
                     </button>
                   </div>
                 )}
@@ -608,7 +665,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                   label="Total Shares Held"
                   value={form.units}
                   error={showErrors && form.units === '' ? 'Shares held is required' : undefined}
-                  onChange={(units) => setForm((f) => ({ ...f, units }))}
+                  onChange={handleSharesChange}
                   placeholder="0"
                   step={0.0001}
                 />
@@ -618,7 +675,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                   prefix="$"
                   value={form.avgCost}
                   error={showErrors && form.avgCost === '' ? 'Average cost is required' : undefined}
-                  onChange={(avgCost) => setForm((f) => ({ ...f, avgCost }))}
+                  onChange={handleAvgCostChange}
                   placeholder="0"
                   step={0.01}
                 />
@@ -649,7 +706,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                   label="Applied FX Rate (USD/THB)"
                   value={fxRateInput}
                   error={showErrors && fxRateInput === '' ? 'FX rate is required' : undefined}
-                  onChange={(val) => setFxRateInput(val)}
+                  onChange={handleFxRateChange}
                   placeholder="e.g. 35.20"
                   step={0.0001}
                 />
