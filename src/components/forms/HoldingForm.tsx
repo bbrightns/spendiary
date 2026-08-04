@@ -730,6 +730,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                       error={showErrors && thbInvestedInput === '' ? 'Total THB Invested is required' : undefined}
                       placeholder="0.00"
                       step={0.01}
+                      allowString
                     />
                     {isThbInvestedManuallyEdited && (
                       <div className="text-right -mt-1.5">
@@ -795,6 +796,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                   onBlur={handleSharesBlur}
                   placeholder="0"
                   step={0.0001}
+                  allowString
                 />
 
                 <NumberField
@@ -806,6 +808,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                   onBlur={handleAvgCostBlur}
                   placeholder="0"
                   step={0.01}
+                  allowString
                 />
 
                 {editing ? (
@@ -838,6 +841,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                   onBlur={handleFxRateBlur}
                   placeholder="e.g. 35.20"
                   step={0.0001}
+                  allowString
                 />
               </div>
 
