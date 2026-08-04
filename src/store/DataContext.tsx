@@ -192,6 +192,27 @@ function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
       merged.fixedCostItems = []
     }
   }
+  // Migrate holdings to strictly track totalThbInvested and totalUnits
+  merged.holdings = (merged.holdings ?? []).map((h) => {
+    const units = h.units ?? h.totalUnits ?? 0
+    let totalThb = h.totalThbInvested
+    if (typeof totalThb !== 'number') {
+      if (h.assetClass === 'crypto' && h.btcLocations && h.btcLocations.length > 0) {
+        totalThb = h.btcLocations.reduce((s, l) => s + l.thbSpent, 0)
+      } else if (h.assetClass === 'gold' && h.goldLocations && h.goldLocations.length > 0) {
+        totalThb = h.goldLocations.reduce((s, l) => s + l.thbSpent, 0)
+      } else {
+        totalThb = units * (h.avgCostThb ?? h.avgCost ?? 0)
+      }
+    }
+    return {
+      ...h,
+      totalUnits: units,
+      units,
+      totalThbInvested: totalThb,
+      avgCostThb: h.avgCostThb ?? h.avgCost,
+    }
+  })
   delete (merged as { cash?: number }).cash
   return merged
 }
@@ -1143,7 +1164,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const totalThb = locations.reduce((s, l) => s + l.thbSpent, 0)
             const units = totalSats / 100_000_000
             const avgCost = units > 0 ? totalThb / units : h.avgCost
-            return { ...h, btcLocations: locations, units, avgCost }
+            return { ...h, btcLocations: locations, units, totalUnits: units, avgCost, totalThbInvested: totalThb, avgCostThb: avgCost }
           }),
         })),
 
@@ -1157,7 +1178,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const totalThb = locations.reduce((s, l) => s + l.thbSpent, 0)
             const units = totalSats / 100_000_000
             const avgCost = units > 0 ? totalThb / units : h.avgCost
-            return { ...h, btcLocations: locations, units, avgCost }
+            return { ...h, btcLocations: locations, units, totalUnits: units, avgCost, totalThbInvested: totalThb, avgCostThb: avgCost }
           }),
         })),
 
@@ -1170,7 +1191,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const totalGrams = locations.reduce((s, l) => s + l.grams, 0)
             const totalThb = locations.reduce((s, l) => s + l.thbSpent, 0)
             const avgCost = totalGrams > 0 ? totalThb / totalGrams : h.avgCost
-            return { ...h, goldLocations: locations, units: totalGrams, avgCost }
+            return { ...h, goldLocations: locations, units: totalGrams, totalUnits: totalGrams, avgCost, totalThbInvested: totalThb, avgCostThb: avgCost }
           }),
         })),
 
@@ -1183,7 +1204,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const totalGrams = locations.reduce((s, l) => s + l.grams, 0)
             const totalThb = locations.reduce((s, l) => s + l.thbSpent, 0)
             const avgCost = totalGrams > 0 ? totalThb / totalGrams : h.avgCost
-            return { ...h, goldLocations: locations, units: totalGrams, avgCost }
+            return { ...h, goldLocations: locations, units: totalGrams, totalUnits: totalGrams, avgCost, totalThbInvested: totalThb, avgCostThb: avgCost }
           }),
         })),
     }),
