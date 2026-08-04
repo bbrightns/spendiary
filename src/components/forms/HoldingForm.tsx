@@ -75,7 +75,6 @@ export function HoldingForm({ open, editing, onClose }: Props) {
     }
 
     if (editing) {
-      const divisor = editing.assetClass === 'stock' && rate > 1 ? rate : 1
       const loadedAvgCost = editing.assetClass === 'stock'
         ? (editing.avgCostUsd ?? (rate > 1 ? parseFloat((editing.avgCost / rate).toFixed(4)) : editing.avgCost))
         : editing.avgCost
