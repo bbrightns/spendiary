@@ -41,6 +41,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
   // Manual THB Invested override for stocks
   const [thbInvestedInput, setThbInvestedInput] = useState<number | ''>('')
   const [isThbInvestedManuallyEdited, setIsThbInvestedManuallyEdited] = useState(false)
+  const [isEditingThb, setIsEditingThb] = useState(false)
 
   // Autocomplete (fund/stock only)
   const [suggestions, setSuggestions] = useState<Security[]>([])
@@ -97,10 +98,12 @@ export function HoldingForm({ open, editing, onClose }: Props) {
         const histThb = editing.totalThbInvested ?? (editing.units * editing.avgCost)
         setThbInvestedInput(parseFloat(histThb.toFixed(2)))
         setIsThbInvestedManuallyEdited(true)
+        setIsEditingThb(false)
       } else {
         setFxRateInput('')
         setThbInvestedInput('')
         setIsThbInvestedManuallyEdited(false)
+        setIsEditingThb(false)
       }
     } else {
       setForm(blank)
@@ -113,6 +116,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       setFxRateInput(usdThb || '')
       setThbInvestedInput('')
       setIsThbInvestedManuallyEdited(false)
+      setIsEditingThb(false)
     }
     setShowErrors(false)
   }, [open, editing, usdThb])
@@ -599,41 +603,72 @@ export function HoldingForm({ open, editing, onClose }: Props) {
         {!isBtc && !isGold && (
           isUsd ? (
             <>
-              {/* Card A: THB Investment Summary (Total THB Invested is editable, rest read-only) */}
+              {/* Card A: THB Investment Summary (Total THB Invested has a subtle edit option, rest read-only) */}
               <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-4 shadow-sm">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-brand">THB Investment Summary</p>
-                
-                <NumberField
-                  label="Total THB Invested"
-                  prefix="฿"
-                  value={thbInvestedInput}
-                  onChange={handleThbInvestedChange}
-                  error={showErrors && thbInvestedInput === '' ? 'Total THB Invested is required' : undefined}
-                  placeholder="0.00"
-                  step={0.01}
-                />
-                
-                {isThbInvestedManuallyEdited && (
-                  <div className="text-right -mt-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-brand">THB Investment Summary</p>
+                  {!isEditingThb && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setIsThbInvestedManuallyEdited(false)
-                        const shares = Number(form.units) || 0
-                        const avgCost = Number(form.avgCost) || 0
-                        const fxRate = usdThb || 35
-                        const calculatedThb = shares * avgCost * fxRate
-                        setThbInvestedInput(parseFloat(calculatedThb.toFixed(2)))
-                        setFxRateInput(parseFloat(fxRate.toFixed(4)))
-                      }}
-                      className="text-[11px] font-semibold text-brand hover:underline cursor-pointer"
+                      onClick={() => setIsEditingThb(true)}
+                      className="text-[11px] font-bold text-brand hover:underline cursor-pointer uppercase tracking-wider"
                     >
-                      Reset to calculated (฿{(sharesInputVal * avgCostUsdVal * (usdThb || 35)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} @ {(usdThb || 35).toFixed(4)})
+                      Override THB
                     </button>
+                  )}
+                </div>
+                
+                {isEditingThb ? (
+                  <div className="space-y-3 pt-0.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[13px] text-ink-muted">Manually Adjust THB Cost</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingThb(false)}
+                        className="text-[11px] font-bold text-brand hover:underline cursor-pointer uppercase tracking-wider"
+                      >
+                        Keep Value
+                      </button>
+                    </div>
+                    <NumberField
+                      label=""
+                      prefix="฿"
+                      value={thbInvestedInput}
+                      onChange={handleThbInvestedChange}
+                      error={showErrors && thbInvestedInput === '' ? 'Total THB Invested is required' : undefined}
+                      placeholder="0.00"
+                      step={0.01}
+                    />
+                    {isThbInvestedManuallyEdited && (
+                      <div className="text-right -mt-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsThbInvestedManuallyEdited(false)
+                            const shares = Number(form.units) || 0
+                            const avgCost = Number(form.avgCost) || 0
+                            const fxRate = usdThb || 35
+                            const calculatedThb = shares * avgCost * fxRate
+                            setThbInvestedInput(parseFloat(calculatedThb.toFixed(2)))
+                            setFxRateInput(parseFloat(fxRate.toFixed(4)))
+                          }}
+                          className="text-[11px] font-semibold text-brand hover:underline cursor-pointer"
+                        >
+                          Reset to calculated (฿{(sharesInputVal * avgCostUsdVal * (usdThb || 35)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} @ {(usdThb || 35).toFixed(4)})
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between text-[13px] pt-1">
+                    <span className="text-ink-soft">Total THB Invested</span>
+                    <span className="font-bold tnum text-[14px] text-ink">
+                      ฿{totalThbInvestedVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between text-[13px] pt-1">
+                <div className="flex items-center justify-between text-[13px]">
                   <span className="text-ink-soft">Current Market Value (THB)</span>
                   <span className="font-bold tnum text-ink">
                     ฿{currentMarketValueThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -662,6 +697,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                 <NumberField
                   label="Total Shares Held"
                   value={form.units}
+                  suffix="shares"
                   error={showErrors && form.units === '' ? 'Shares held is required' : undefined}
                   onChange={handleSharesChange}
                   placeholder="0"
