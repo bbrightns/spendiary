@@ -303,3 +303,44 @@ export function totalCash(data: SpendiaryData, usdThb?: number | null): number {
 export function netWorth(data: SpendiaryData, usdThb?: number | null): number {
   return totalCash(data, usdThb) + portfolioValue(data.holdings)
 }
+
+/** Helper to match a DCA plan to an existing holding in the portfolio */
+export function findMatchingHolding(
+  holdings: Holding[],
+  plan: { holdingId?: string; name: string; assetClass?: AssetClass },
+): Holding | null {
+  if (plan.holdingId) {
+    const byId = holdings.find((h) => h.id === plan.holdingId)
+    if (byId) return byId
+  }
+
+  const pName = plan.name.toLowerCase().trim()
+  const pNorm = pName.replace(/[^a-z0-9]/g, '')
+
+  // 1. Exact match on ticker (case insensitive) or name
+  const exact = holdings.find(
+    (h) => h.ticker.toLowerCase() === pName || h.name.toLowerCase() === pName,
+  )
+  if (exact) return exact
+
+  // 2. Normalized string match (handles symbols like S&P vs SP, hyphens, spaces)
+  const normMatch = holdings.find((h) => {
+    const hNameNorm = h.name.toLowerCase().replace(/[^a-z0-9]/g, '')
+    const hTickerNorm = h.ticker.toLowerCase().replace(/[^a-z0-9]/g, '')
+    if (!pNorm || (!hNameNorm && !hTickerNorm)) return false
+
+    if (hNameNorm === pNorm || hTickerNorm === pNorm) return true
+    if (pNorm.length >= 3 && (hNameNorm.includes(pNorm) || hTickerNorm.includes(pNorm))) return true
+    if (hTickerNorm.length >= 3 && pNorm.includes(hTickerNorm)) return true
+    return false
+  })
+  if (normMatch) return normMatch
+
+  // 3. Fallback to single holding in same assetClass if specified
+  if (plan.assetClass) {
+    const sameClass = holdings.filter((h) => h.assetClass === plan.assetClass)
+    if (sameClass.length === 1) return sameClass[0]
+  }
+
+  return null
+}
