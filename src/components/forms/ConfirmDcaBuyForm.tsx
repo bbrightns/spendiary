@@ -5,8 +5,7 @@ import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import type { DcaPlan } from '../../lib/types'
 import { localDateStr } from '../../lib/format'
-
-
+import { findMatchingHolding } from '../../lib/calc'
 
 interface Props {
   open: boolean
@@ -17,6 +16,9 @@ interface Props {
 
 export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
   const { data, confirmDcaBuy, usdThb } = useData()
+
+  // Target Holding state
+  const [targetHoldingId, setTargetHoldingId] = useState<string>('')
 
   // Shared Amount Spent THB (editable for ALL asset classes)
   const [amountSpentThb, setAmountSpentThb] = useState<number | ''>('')
@@ -44,16 +46,11 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
   const wasOpen = useRef(false)
   const SATS_PER_BTC = 100_000_000
 
-  // Lookup holding strictly by plan.holdingId first, then by exact/partial ticker or name
-  const holding = plan?.holdingId
-    ? data.holdings.find((h) => h.id === plan.holdingId) ?? null
-    : data.holdings.find(
-        (h) =>
-          h.ticker.toUpperCase() === plan?.name.toUpperCase() ||
-          h.name.toLowerCase() === plan?.name.toLowerCase() ||
-          h.name.toLowerCase().includes(plan?.name.toLowerCase() ?? '') ||
-          plan?.name.toLowerCase().includes(h.name.toLowerCase() ?? ''),
-      ) ?? null
+  // Target holding resolution: find matching holding or fall back to targetHoldingId
+  const matchedHolding = plan ? findMatchingHolding(data.holdings, plan) : null
+  const holding = (targetHoldingId && targetHoldingId !== '__new__')
+    ? (data.holdings.find((h) => h.id === targetHoldingId) ?? matchedHolding)
+    : (targetHoldingId === '__new__' ? null : matchedHolding)
 
   const assetClass = plan?.assetClass ?? holding?.assetClass
   const isStock = assetClass === 'stock'
@@ -69,6 +66,10 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
     wasOpen.current = open
     if (!justOpened || !plan) return
     setShowErrors(false)
+
+    // Initial target holding
+    const initialMatched = findMatchingHolding(data.holdings, plan)
+    setTargetHoldingId(initialMatched?.id ?? '__new__')
 
     // Shared amount initialization
     setAmountSpentThb(plan.monthlyAmount)
@@ -219,6 +220,8 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
     const p = plan
     const today = localDateStr()
 
+    const resolvedTargetId = targetHoldingId !== '__new__' ? (holding?.id ?? targetHoldingId) : undefined
+
     if (isStock) {
       confirmDcaBuy(
         p.id,
@@ -234,6 +237,8 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
           amountSpentThb: amountThbNum,
           fxRate: fxRateNum,
         },
+        undefined,
+        resolvedTargetId,
       )
     } else if (isFund) {
       confirmDcaBuy(
@@ -251,6 +256,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
           amountSpentThb: amountThbNum,
           nav: fundImpliedNav,
         },
+        resolvedTargetId,
       )
     } else if (isGold) {
       const goldLocUpdate = selectedLocId === '__new__'
@@ -270,7 +276,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
                 }
               : undefined
           })()
-      confirmDcaBuy(p.id, goldImpliedPricePerGram, today, undefined, undefined, undefined, undefined, goldLocUpdate)
+      confirmDcaBuy(p.id, goldImpliedPricePerGram, today, undefined, undefined, undefined, undefined, goldLocUpdate, undefined, undefined, resolvedTargetId)
     } else if (isBtc) {
       const btcLocUpdate = selectedLocId === '__new__'
         ? {
@@ -289,7 +295,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
                 }
               : undefined
           })()
-      confirmDcaBuy(p.id, btcImpliedPrice, today, undefined, undefined, undefined, btcLocUpdate)
+      confirmDcaBuy(p.id, btcImpliedPrice, today, undefined, undefined, undefined, btcLocUpdate, undefined, undefined, undefined, resolvedTargetId)
     }
 
     onSuccess?.()
@@ -318,6 +324,20 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
       description={`Record DCA purchase into ${targetSubtitleText}`}
     >
       <div className="space-y-5">
+        {data.holdings.length > 0 && (
+          <SelectField
+            label="Target Holding in Portfolio"
+            value={targetHoldingId}
+            onChange={setTargetHoldingId}
+            options={[
+              ...data.holdings
+                .filter((h) => !assetClass || h.assetClass === assetClass)
+                .map((h) => ({ value: h.id, label: `${h.name} (${h.ticker})` })),
+              { value: '__new__', label: `+ Create new holding "${plan?.name ?? 'New'}"` },
+            ]}
+          />
+        )}
+
         {/* ------------------------------------------------------------------ */}
         {/* 1. Mutual Fund Form */}
         {/* ------------------------------------------------------------------ */}
