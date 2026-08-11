@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase'
 import type { AssetClass, BtcLocation, CashAccount, DcaPlan, FixedCostItem, GoldLocation, Holding, HoldingLog, NetWorthSnapshot, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
 import { localDateStr } from '../lib/format'
 import { seedData } from '../lib/seed'
+import { findMatchingHolding } from '../lib/calc'
+
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
 
@@ -130,6 +132,7 @@ interface DataContextValue {
       amountSpentThb: number
       nav: number
     },
+    targetHoldingId?: string,
   ) => void
   skipDcaBuy: (planId: string, date: string) => void
 
@@ -192,7 +195,7 @@ function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
       merged.fixedCostItems = []
     }
   }
-  // Migrate holdings to strictly track totalThbInvested and totalUnits
+  // Migrate holdings to strictly track totalThbInvested and totalUnits + fix USD stock price bugs
   merged.holdings = (merged.holdings ?? []).map((h) => {
     const units = h.units ?? h.totalUnits ?? 0
     let totalThb = h.totalThbInvested
@@ -205,12 +208,21 @@ function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
         totalThb = units * (h.avgCostThb ?? h.avgCost ?? 0)
       }
     }
+
+    let price = h.price
+    // Heal US stock holding if price was saved in USD ($100-$1000) while avgCostThb is in THB (฿2000+)
+    if (h.assetClass === 'stock' && typeof price === 'number' && price > 0 && price < 1000 && (h.avgCostThb ?? h.avgCost ?? 0) > 2000) {
+      const estimatedFx = (h.avgCostUsd && h.avgCostUsd > 0) ? ((h.avgCostThb ?? h.avgCost) / h.avgCostUsd) : 34
+      price = price * estimatedFx
+    }
+
     return {
       ...h,
       totalUnits: units,
       units,
       totalThbInvested: totalThb,
       avgCostThb: h.avgCostThb ?? h.avgCost,
+      price: typeof price === 'number' && price > 0 ? price : (h.avgCostThb ?? h.avgCost ?? 0),
     }
   })
   delete (merged as { cash?: number }).cash
@@ -761,21 +773,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
         goldLocationUpdate,
         stockUpdate,
         fundUpdate,
+        targetHoldingId,
       ) =>
         updateData((prev) => {
           const plan = prev.dcaPlans.find((p) => p.id === planId)
           if (!plan) return prev
 
-          // Check if holding already existed before this transaction
-          const existingHolding = plan.holdingId
-            ? prev.holdings.find((h) => h.id === plan.holdingId)
-            : prev.holdings.find(
-                (h) =>
-                  h.ticker.toUpperCase() === plan.name.toUpperCase() ||
-                  h.name.toLowerCase() === plan.name.toLowerCase() ||
-                  h.name.toLowerCase().includes(plan.name.toLowerCase()) ||
-                  plan.name.toLowerCase().includes(h.name.toLowerCase()),
-              )
+          // Check if holding already existed before this transaction (via targetHoldingId or findMatchingHolding)
+          const existingHolding = targetHoldingId
+            ? prev.holdings.find((h) => h.id === targetHoldingId)
+            : findMatchingHolding(prev.holdings, plan)
 
           const isNewHolding = !existingHolding
           let holding = existingHolding
@@ -860,6 +867,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const { unitsBought, amountSpentThb, fxRate } = stockUpdate
             const usdSpentThisTx = fxRate > 0 ? amountSpentThb / fxRate : 0
             const pricePerShareUsd = unitsBought > 0 ? usdSpentThisTx / unitsBought : 0
+            const pricePerShareThb = pricePerShareUsd > 0 ? pricePerShareUsd * fxRate : holding.price
 
             const currentUnits = holding.units ?? holding.totalUnits ?? 0
             const currentThbInvested = holding.totalThbInvested ?? currentUnits * (holding.avgCostThb ?? holding.avgCost ?? 0)
@@ -884,7 +892,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
               avgCostUsd: newAvgCostUsd,
               avgCostThb: newAvgCostThb,
               avgCost: newAvgCostThb,
-              price: pricePerShareUsd > 0 ? pricePerShareUsd : holding.price,
+              price: pricePerShareThb > 0 ? pricePerShareThb : holding.price,
             }
 
             logNote = `DCA Buy: ${unitsBought} shares @ $${pricePerShareUsd.toFixed(2)}/share (+฿${amountSpentThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
@@ -895,7 +903,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
             const newTotalUnits = currentUnits + unitsBought
             const newTotalThbInvested = parseFloat((currentThbInvested + amountSpentThb).toFixed(2))
-            const newAvgCostThb = newTotalUnits > 0 ? newTotalThbInvested / newTotalUnits : holding.avgCost
+            const newAvgCostThb = newTotalUnits > 0 ? newTotalThbInvested / newTotalUnits : (holding.avgCostThb ?? holding.avgCost ?? 0)
 
             newUnits = newTotalUnits
             newAvgCost = newAvgCostThb
@@ -907,7 +915,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
               totalThbInvested: newTotalThbInvested,
               avgCostThb: newAvgCostThb,
               avgCost: newAvgCostThb,
-              price: nav > 0 ? nav : holding.price,
+              price: nav > 0 ? nav : (holding.price > 0 ? holding.price : newAvgCostThb),
             }
 
             logNote = `DCA Buy: ${unitsBought} units @ ฿${nav.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}/unit (+฿${amountSpentThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
