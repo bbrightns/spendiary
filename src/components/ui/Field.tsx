@@ -91,7 +91,7 @@ export function NumberField({
   min = 0,
   step,
   autoFocus,
-  allowString,
+  allowString = true,
 }: NumberFieldProps) {
   const [isFocused, setIsFocused] = useState(false)
 
@@ -161,7 +161,9 @@ export function NumberField({
             const v = e.target.value
             const stripped = v.replace(/,/g, '')
             if (allowString) {
-              onChange(stripped === '' ? '' : stripped)
+              if (stripped === '' || /^-?\d*\.?\d*$/.test(stripped)) {
+                onChange(stripped)
+              }
             } else {
               onChange(stripped === '' ? '' : Number(stripped))
             }
