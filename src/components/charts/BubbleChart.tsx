@@ -15,7 +15,7 @@ interface BubbleChartProps {
   size?: number
 }
 
-// Default icons for asset classes
+// Asset class icons (charming and clean)
 const DEFAULT_ICONS: Record<string, string> = {
   fund: '📊',
   stock: '📈',
@@ -27,7 +27,6 @@ const DEFAULT_ICONS: Record<string, string> = {
 export function BubbleChart({
   items,
   totalValue,
-  size = 320,
 }: BubbleChartProps) {
   // Filter items with value > 0 and sort by value descending
   const validItems = items.filter((item) => item.value > 0).sort((a, b) => b.value - a.value)
@@ -40,113 +39,123 @@ export function BubbleChart({
     )
   }
 
-  // The largest item is ALWAYS in the center
+  // The largest asset class is ALWAYS in the dead center
   const centerItem = validItems[0]
   const otherItems = validItems.slice(1)
 
-  // Initial center position reference
-  const centerPos = size / 2
+  // Central Bubble dimensions (diameter between 120px and 144px)
+  const centerDiameter = Math.max(120, Math.min(144, 110 + (centerItem.pct / 100) * 40))
+  const centerRadius = centerDiameter / 2
 
-  // Determine radii proportional to sqrt of value percentage
-  const centerRadius = Math.max(52, Math.min(75, Math.sqrt(centerItem.value / (totalValue || 1)) * 95))
-
-  // Calculate satellite bubble positions without any overlap
+  // Satellite bubble dimensions and balanced angle distribution
+  const N = otherItems.length
   const satellites = otherItems.map((item, idx) => {
-    const itemRatio = Math.sqrt(item.value / (totalValue || 1))
-    const r = Math.max(28, Math.min(50, itemRatio * 95))
+    // Proportional radius (diameter between 64px and 88px)
+    const ratio = Math.sqrt(item.value / (totalValue || 1))
+    const diameter = Math.max(64, Math.min(88, 56 + ratio * 48))
+    const satRadius = diameter / 2
 
-    // Distance from center = centerRadius + satelliteRadius + gap (10px gap between circles)
-    const dist = centerRadius + r + 10
+    // Symmetric angle distribution for balanced visual appearance
+    let angle = 0
+    if (N === 1) {
+      angle = -Math.PI / 2 // Top
+    } else if (N === 2) {
+      angle = idx === 0 ? -Math.PI / 2 : Math.PI / 2 // Top & Bottom
+    } else if (N === 3) {
+      // Top, Bottom-Right, Bottom-Left
+      const angles = [-Math.PI / 2, Math.PI / 6, (5 * Math.PI) / 6]
+      angle = angles[idx]
+    } else if (N === 4) {
+      // 4 corners: Top-Right, Bottom-Right, Bottom-Left, Top-Left
+      const angles = [-Math.PI / 4, Math.PI / 4, (3 * Math.PI) / 4, (-3 * Math.PI) / 4]
+      angle = angles[idx]
+    } else {
+      // Evenly spaced starting from top
+      const angleStep = (2 * Math.PI) / N
+      angle = -Math.PI / 2 + idx * angleStep
+    }
 
-    // Distribute angles evenly around center circle
-    const angleStep = (2 * Math.PI) / Math.max(otherItems.length, 1)
-    const angle = -Math.PI / 2 + idx * angleStep
+    // Distance from center = centerRadius + satRadius + safe gap (10px)
+    const dist = centerRadius + satRadius + 10
 
-    const cx = centerPos + Math.cos(angle) * dist
-    const cy = centerPos + Math.sin(angle) * dist
+    // Coordinate offsets in pixels from center (0, 0)
+    const offsetX = Math.cos(angle) * dist
+    const offsetY = Math.sin(angle) * dist
 
     return {
       ...item,
-      r,
-      cx,
-      cy,
+      diameter,
+      offsetX,
+      offsetY,
     }
   })
 
-  // Determine actual container size needed
-  const maxExtent = Math.max(
-    centerRadius,
-    ...satellites.map((s) => Math.hypot(s.cx - centerPos, s.cy - centerPos) + s.r)
-  )
-  const containerSize = Math.max(size, Math.ceil(maxExtent * 2 + 16))
-  const finalCenterPos = containerSize / 2
-  const offset = finalCenterPos - centerPos
-
   return (
-    <div className="relative flex flex-col items-center justify-center select-none w-full my-2">
-      <div
-        className="relative"
-        style={{ width: containerSize, height: containerSize, maxWidth: '100%' }}
-      >
-        {/* Central Bubble (Always the largest item) */}
+    <div className="relative flex items-center justify-center w-full py-4 select-none">
+      {/* Fixed square canvas container for 100% guaranteed centering */}
+      <div className="relative w-[330px] h-[330px] max-w-full flex items-center justify-center">
+        {/* Central Bubble (Centered at 50%, 50%) */}
         <div
-          className="absolute transform -translate-x-1/2 -translate-y-1/2 rounded-full flex flex-col items-center justify-center p-3 text-center border-2 border-white/20 dark:border-white/10 shadow-md"
+          className="absolute rounded-full flex flex-col items-center justify-center p-2.5 text-center transition-transform z-10"
           style={{
-            left: finalCenterPos,
-            top: finalCenterPos,
-            width: centerRadius * 2,
-            height: centerRadius * 2,
-            backgroundColor: centerItem.color,
-            color: '#ffffff',
+            width: centerDiameter,
+            height: centerDiameter,
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: `radial-gradient(circle at 35% 30%, color-mix(in srgb, ${centerItem.color} 80%, white) 0%, ${centerItem.color} 100%)`,
+            border: '3px solid rgba(255, 255, 255, 0.85)',
+            boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.25), inset 0 2px 4px rgba(255, 255, 255, 0.4)',
           }}
         >
-          <span className="text-xl sm:text-2xl mb-0.5 filter drop-shadow-sm">
+          <span className="text-2xl mb-0.5 filter drop-shadow-sm leading-none">
             {centerItem.icon || DEFAULT_ICONS[centerItem.id] || '💰'}
           </span>
-          <span className="text-[12px] font-bold opacity-90 line-clamp-1 leading-tight">
+          <span className="text-[12.5px] font-bold text-white leading-tight tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] line-clamp-1 max-w-[90%]">
             {centerItem.label}
           </span>
-          <span className="font-display text-[16px] sm:text-[18px] font-extrabold tnum mt-0.5 leading-none">
+          <span className="font-display text-[17px] font-extrabold text-white tnum tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] my-0.5 leading-none">
             {thbCompact(centerItem.value)}
           </span>
-          <span className="mt-1 inline-block rounded-full bg-black/20 px-2 py-0.5 text-[10.5px] font-bold tnum">
+          <span className="mt-1 inline-block rounded-full bg-black/25 px-2 py-0.5 text-[10.5px] font-bold tnum text-white drop-shadow-xs">
             {pct(centerItem.pct, 0)}
           </span>
         </div>
 
-        {/* Satellite Bubbles */}
+        {/* Satellite Bubbles (Orbiting center) */}
         {satellites.map((sat) => (
           <div
             key={sat.id}
-            className="absolute transform -translate-x-1/2 -translate-y-1/2 rounded-full flex flex-col items-center justify-center p-2 text-center border border-white/20 dark:border-white/10 shadow-sm"
+            className="absolute rounded-full flex flex-col items-center justify-center p-1.5 text-center z-20"
             style={{
-              left: sat.cx + offset,
-              top: sat.cy + offset,
-              width: sat.r * 2,
-              height: sat.r * 2,
-              backgroundColor: sat.color,
-              color: '#ffffff',
+              width: sat.diameter,
+              height: sat.diameter,
+              left: `calc(50% + ${sat.offsetX}px)`,
+              top: `calc(50% + ${sat.offsetY}px)`,
+              transform: 'translate(-50%, -50%)',
+              background: `radial-gradient(circle at 35% 30%, color-mix(in srgb, ${sat.color} 80%, white) 0%, ${sat.color} 100%)`,
+              border: '2.5px solid rgba(255, 255, 255, 0.85)',
+              boxShadow: '0 4px 16px -2px rgba(0, 0, 0, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.35)',
             }}
           >
-            <span className="text-sm sm:text-base filter drop-shadow-xs">
+            <span className="text-base filter drop-shadow-xs leading-none mb-0.5">
               {sat.icon || DEFAULT_ICONS[sat.id] || '🪙'}
             </span>
-            {sat.r >= 38 && (
-              <span className="text-[11px] font-bold opacity-90 line-clamp-1 leading-tight px-1">
+            {sat.diameter >= 70 && (
+              <span className="text-[10.5px] font-bold text-white leading-tight tracking-tight drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)] line-clamp-1 max-w-[90%]">
                 {sat.label}
               </span>
             )}
-            <span className="font-display text-[12px] sm:text-[13.5px] font-bold tnum leading-tight mt-0.5">
+            <span className="font-display text-[12.5px] font-extrabold text-white tnum leading-tight drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)] my-0.5">
               {thbCompact(sat.value)}
             </span>
-            {sat.r >= 44 && (
-              <span className="text-[9.5px] font-semibold opacity-85 mt-0.5">
-                {pct(sat.pct, 0)}
-              </span>
-            )}
+            <span className="text-[9.5px] font-bold text-white/90 tnum leading-none">
+              {pct(sat.pct, 0)}
+            </span>
           </div>
         ))}
       </div>
     </div>
   )
 }
+
