@@ -68,12 +68,71 @@ export function HoldingLogs() {
     }
   }
 
+  // Helper to render before -> after comparison details
+  const renderStateComparison = (log: typeof filtered[number]) => {
+    const prev = log.previousHoldingState
+    const curr = log.holdingId ? data.holdings.find((h) => h.id === log.holdingId) : undefined
+
+    if (prev && curr) {
+      const prevUnits = prev.units ?? prev.totalUnits ?? 0
+      const currUnits = curr.units ?? curr.totalUnits ?? 0
+      const unitDiff = currUnits - prevUnits
+
+      const prevBasis = prev.totalThbInvested ?? (prevUnits * (prev.avgCostThb ?? prev.avgCost ?? 0))
+      const currBasis = curr.totalThbInvested ?? (currUnits * (curr.avgCostThb ?? curr.avgCost ?? 0))
+      const basisDiff = currBasis - prevBasis
+
+      const formatUnit = (val: number) => {
+        if (log.assetClass === 'crypto') return Math.round(val).toLocaleString() + ' sats'
+        if (log.assetClass === 'gold') return val.toFixed(4) + ' g'
+        if (log.assetClass === 'stock') return val.toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' shares'
+        return val.toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' units'
+      }
+
+      return (
+        <div className="mt-2.5 rounded-xl border border-line bg-surface-muted/60 p-3 text-[12px] space-y-1.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <span className="text-ink-faint block text-[11px] uppercase tracking-wider font-medium">Holding Balance</span>
+              <div className="flex items-center gap-1.5 font-medium text-ink mt-0.5">
+                <span>{formatUnit(prevUnits)}</span>
+                <span className="text-ink-faint">→</span>
+                <span className="font-semibold text-brand">{formatUnit(currUnits)}</span>
+                {unitDiff > 0 && (
+                  <span className="ml-1 text-[11px] font-bold text-gain">
+                    (+{log.assetClass === 'crypto' ? Math.round(unitDiff).toLocaleString() : unitDiff.toFixed(2)})
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <span className="text-ink-faint block text-[11px] uppercase tracking-wider font-medium">Total Cost Basis</span>
+              <div className="flex items-center gap-1.5 font-medium text-ink mt-0.5">
+                <span>฿{prevBasis.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                <span className="text-ink-faint">→</span>
+                <span className="font-semibold text-brand">฿{currBasis.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                {basisDiff > 0 && (
+                  <span className="ml-1 text-[11px] font-bold text-gain">
+                    (+฿{basisDiff.toLocaleString(undefined, { maximumFractionDigits: 0 })})
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    return null
+  }
+
   return (
     <>
       <PageHeader eyebrow="Portfolio" title="Activity Logs" />
 
       {/* Filters */}
-      <div className="mb-4 space-y-2">
+      <div className="mb-5 space-y-2.5">
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
           {ASSET_FILTERS.map((f) => (
             <button
@@ -112,34 +171,43 @@ export function HoldingLogs() {
           />
         </Card>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-6">
           {groups.map((group) => (
             <div key={group.date}>
-              <p className="mb-2 px-1 text-[12px] font-semibold text-ink-muted">{group.date}</p>
+              <p className="mb-2.5 px-1 text-[12.5px] font-bold text-ink-soft tracking-wide">{group.date}</p>
               <Card padded={false}>
                 <ul className="divide-y divide-line">
                   {group.entries.map((log) => (
-                    <li key={log.id} className="flex items-start gap-3 px-5 py-3.5 ">
+                    <li key={log.id} className="flex items-start gap-3.5 px-5 py-4 transition-colors hover:bg-surface-muted/30">
                       <span
-                        className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl text-[12px] font-bold"
+                        className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl text-[14px] font-bold shadow-sm"
                         style={{
-                          color: ASSET_META[log.assetClass].color,
-                          background: `color-mix(in srgb, ${ASSET_META[log.assetClass].color} 12%, white)`,
+                          color: ASSET_META[log.assetClass]?.color ?? '#6366f1',
+                          background: `color-mix(in srgb, ${ASSET_META[log.assetClass]?.color ?? '#6366f1'} 14%, transparent)`,
                         }}
                       >
                         {ACTION_ICON[log.action]}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                          <span className="text-[14px] font-semibold text-ink">{log.holdingName}</span>
-                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${ACTION_STYLE[log.action]}`}>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className="text-[14.5px] font-bold text-ink">{log.holdingName}</span>
+                          {log.ticker && log.ticker !== 'CASH' && log.ticker !== 'FIXED' && log.ticker !== 'DCA' && (
+                            <span className="rounded-md bg-surface-muted px-1.5 py-0.5 text-[11px] font-medium text-ink-muted">
+                              {log.ticker}
+                            </span>
+                          )}
+                          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${ACTION_STYLE[log.action]}`}>
                             {ACTION_LABEL[log.action]}
                           </span>
                         </div>
-                        <p className="mt-0.5 text-[12.5px] text-ink-muted">{log.note}</p>
+                        <p className="mt-1 text-[13px] font-medium text-ink-muted leading-relaxed">{log.note}</p>
+                        
+                        {/* State comparison (Before -> After) */}
+                        {renderStateComparison(log)}
                       </div>
-                      <div className="flex flex-col items-end gap-1.5 shrink-0">
-                        <time className="text-[11.5px] text-ink-faint">
+
+                      <div className="flex flex-col items-end gap-2 shrink-0 pt-0.5">
+                        <time className="text-[11.5px] font-medium text-ink-faint">
                           {new Date(log.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                         </time>
                         <button
@@ -148,7 +216,7 @@ export function HoldingLogs() {
                               undoHoldingLog(log.id)
                             }
                           }}
-                          className="text-[11.5px] font-bold text-loss hover:underline active:scale-95 cursor-pointer"
+                          className="rounded-lg px-2 py-1 text-[11.5px] font-bold text-loss hover:bg-loss/10 transition-colors cursor-pointer"
                         >
                           Undo
                         </button>
