@@ -7,6 +7,7 @@ import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { AddButton } from '../components/ui/AddButton'
 import { DonutChart } from '../components/charts/DonutChart'
+import { BubbleChart } from '../components/charts/BubbleChart'
 import { PnLPill, PnLText } from '../components/ui/PnL'
 import { HoldingForm } from '../components/forms/HoldingForm'
 import { BuyMoreForm } from '../components/forms/BuyMoreForm'
@@ -50,6 +51,7 @@ export function Portfolio() {
   const [sortBy, setSortBy] = useState<'none' | 'value' | 'pnl' | 'type'>('value')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [search, setSearch] = useState('')
+  const [chartView, setChartView] = useState<'donut' | 'bubble'>('bubble')
 
   // Rebalancing states
   const [rebalanceOpen, setRebalanceOpen] = useState(false)
@@ -350,14 +352,68 @@ export function Portfolio() {
 
         {/* Allocation chart */}
         <Card className=" animate-rise">
-          <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">Asset Allocation</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">Asset Allocation</h2>
+            <div className="inline-flex items-center gap-1 rounded-lg bg-surface-muted p-1 border border-line/40">
+              <button
+                type="button"
+                onClick={() => setChartView('donut')}
+                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold transition-all cursor-pointer ${
+                  chartView === 'donut'
+                    ? 'bg-surface text-ink shadow-xs border border-line/60'
+                    : 'text-ink-muted hover:text-ink'
+                }`}
+                title="Donut Chart View"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <circle cx="8" cy="8" r="6" />
+                  <circle cx="8" cy="8" r="2.5" />
+                </svg>
+                Donut
+              </button>
+              <button
+                type="button"
+                onClick={() => setChartView('bubble')}
+                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold transition-all cursor-pointer ${
+                  chartView === 'bubble'
+                    ? 'bg-surface text-ink shadow-xs border border-line/60'
+                    : 'text-ink-muted hover:text-ink'
+                }`}
+                title="Bubble View (Modern/Packed)"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
+                  <circle cx="8" cy="8" r="4.5" />
+                  <circle cx="4" cy="4" r="2.5" />
+                  <circle cx="12.5" cy="5" r="2" />
+                  <circle cx="12" cy="11.5" r="2.5" />
+                  <circle cx="4.5" cy="12" r="1.8" />
+                </svg>
+                Bubble
+              </button>
+            </div>
+          </div>
+
           <div className="mt-5 flex flex-col items-center gap-6">
-            <DonutChart
-              segments={segments}
-              ariaLabel={`Portfolio asset allocation, total value ${thb(summary.value)}`}
-              centerLabel="Total"
-              centerValue={thbCompact(summary.value)}
-            />
+            {chartView === 'donut' ? (
+              <DonutChart
+                segments={segments}
+                ariaLabel={`Portfolio asset allocation, total value ${thb(summary.value)}`}
+                centerLabel="Total"
+                centerValue={thbCompact(summary.value)}
+              />
+            ) : (
+              <BubbleChart
+                items={alloc.map((a) => ({
+                  id: a.assetClass,
+                  label: ASSET_META[a.assetClass].plural,
+                  value: a.value,
+                  pct: a.pct,
+                  color: ASSET_META[a.assetClass].color,
+                }))}
+                totalValue={summary.value}
+                size={300}
+              />
+            )}
             <ul className="w-full space-y-2.5">
               {alloc.map((a) => (
                 <li key={a.assetClass} className="flex items-center gap-3">
