@@ -13,8 +13,6 @@ export function BottomNav() {
           const isActive =
             item.to === '/'
               ? pathname === '/'
-              : item.to === '/portfolio'
-              ? pathname.startsWith('/portfolio') || pathname.startsWith('/logs')
               : pathname.startsWith(item.to)
 
           return (
