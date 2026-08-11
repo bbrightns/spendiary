@@ -14,6 +14,14 @@ interface Props {
   onSuccess?: () => void
 }
 
+function fmtNum(val: number | undefined | null, maxDec = 4): string {
+  if (val === undefined || val === null || isNaN(val) || !isFinite(val)) return '0'
+  return val.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: maxDec,
+  })
+}
+
 export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
   const { data, confirmDcaBuy, usdThb } = useData()
 
@@ -362,42 +370,40 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
             />
 
             {/* Static PURCHASE SUMMARY Preview Section: Mutual Fund */}
-            <div className="min-h-[220px] rounded-2xl border border-line-strong bg-surface-muted p-4 flex flex-col justify-between space-y-2.5 shadow-sm">
-              <p className="text-[12px] font-bold uppercase tracking-wider text-brand">PURCHASE SUMMARY</p>
-              
+            <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-3 shadow-sm">
+              <div className="flex items-center justify-between border-b border-line pb-2">
+                <p className="text-[12px] font-bold uppercase tracking-wider text-brand">PURCHASE PREVIEW (BEFORE → AFTER)</p>
+                <span className="text-[11px] font-medium text-ink-muted">Max 4 decimals</span>
+              </div>
+
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">Execution NAV (this tx)</span>
                 <span className={valueStyle(hasValidFund)}>
-                  {hasValidFund ? `฿${fundImpliedNav.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} / unit` : '฿0.00 / unit'}
+                  {hasValidFund ? `฿${fmtNum(fundImpliedNav, 4)} / unit` : '฿0 / unit'}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="text-ink-muted">Units Added</span>
-                <span className={valueStyle(hasValidFund)}>
-                  {hasValidFund ? `+${fundUnitsNum.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} units` : '+0.0000 units'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="text-ink-muted">New Total Units</span>
-                <span className={valueStyle(hasValidFund)}>
-                  {hasValidFund ? `${fundNewTotalUnits.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} units` : '0.0000 units'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="text-ink-muted">New Total THB Invested</span>
-                <span className={valueStyle(hasValidFund)}>
-                  {hasValidFund ? `฿${fundNewTotalThbInvested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '฿0.00'}
-                </span>
-              </div>
-
-              <div className="pt-2 border-t border-line flex flex-col gap-1 text-[12.5px]">
-                <span className="text-[11px] font-medium text-ink-muted">New Avg Cost</span>
-                <div className={`text-[13.5px] ${hasValidFund ? 'font-bold tnum text-ink' : 'font-medium tnum text-ink-muted'}`}>
-                  {hasValidFund ? `฿${fundNewAvgCostThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} / unit` : '฿0.00 / unit'}
+              <div className="space-y-1.5 pt-1 text-[13px]">
+                <div className="flex items-center justify-between">
+                  <span className="text-ink-muted">Units</span>
+                  <span className="tnum text-ink-soft">
+                    {fmtNum(fundCurrentUnits, 4)} <span className="text-ink-muted font-normal">+ ({hasValidFund ? fmtNum(fundUnitsNum, 4) : '0'})</span> → <strong className={valueStyle(hasValidFund)}>{fmtNum(hasValidFund ? fundNewTotalUnits : fundCurrentUnits, 4)}</strong>
+                  </span>
                 </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-ink-muted">THB Invested</span>
+                  <span className="tnum text-ink-soft">
+                    ฿{fmtNum(fundCurrentThbInvested, 2)} → <strong className={valueStyle(hasValidFund)}>฿{fmtNum(hasValidFund ? fundNewTotalThbInvested : fundCurrentThbInvested, 2)}</strong>
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-line flex items-center justify-between text-[13px]">
+                <span className="font-medium text-ink-muted">New Avg Cost</span>
+                <span className={`tnum ${hasValidFund ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
+                  {hasValidFund ? `฿${fmtNum(fundNewAvgCostThb, 4)} / unit` : `฿${fmtNum(fundCurrentUnits > 0 ? fundCurrentThbInvested / fundCurrentUnits : 0, 4)} / unit`}
+                </span>
               </div>
             </div>
           </div>
@@ -436,50 +442,44 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
             />
 
             {/* Static PURCHASE SUMMARY Preview Section: Stock */}
-            <div className="min-h-[220px] rounded-2xl border border-line-strong bg-surface-muted p-4 flex flex-col justify-between space-y-2.5 shadow-sm">
-              <p className="text-[12px] font-bold uppercase tracking-wider text-brand">PURCHASE SUMMARY</p>
-              
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="text-ink-muted">Implied Price/Share (this tx)</span>
-                <span className={valueStyle(hasValidStock)}>
-                  {hasValidStock ? `$${stockImpliedPriceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} / share` : '$0.00 / share'}
-                </span>
-              </div>
-              
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="text-ink-muted">Shares Added</span>
-                <span className={valueStyle(hasValidStock)}>
-                  {hasValidStock ? `+${stockUnitsBoughtNum.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} shares` : '+0.0000 shares'}
-                </span>
+            <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-3 shadow-sm">
+              <div className="flex items-center justify-between border-b border-line pb-2">
+                <p className="text-[12px] font-bold uppercase tracking-wider text-brand">PURCHASE PREVIEW (BEFORE → AFTER)</p>
+                <span className="text-[11px] font-medium text-ink-muted">Max 4 decimals</span>
               </div>
 
               <div className="flex items-center justify-between text-[13px]">
-                <span className="text-ink-muted">New Total Shares</span>
+                <span className="text-ink-muted">Implied Price (this tx)</span>
                 <span className={valueStyle(hasValidStock)}>
-                  {hasValidStock ? `${stockNewTotalUnits.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} shares` : '0.0000 shares'}
+                  {hasValidStock ? `$${fmtNum(stockImpliedPriceUsd, 4)} / share` : '$0 / share'}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="text-ink-muted">New Total THB Invested</span>
-                <span className={valueStyle(hasValidStock)}>
-                  {hasValidStock ? `฿${stockNewTotalThbInvested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '฿0.00'}
-                </span>
+              <div className="space-y-1.5 pt-1 text-[13px]">
+                <div className="flex items-center justify-between">
+                  <span className="text-ink-muted">Shares</span>
+                  <span className="tnum text-ink-soft">
+                    {fmtNum(stockCurrentUnits, 4)} <span className="text-ink-muted font-normal">+ ({hasValidStock ? fmtNum(stockUnitsBoughtNum, 4) : '0'})</span> → <strong className={valueStyle(hasValidStock)}>{fmtNum(hasValidStock ? stockNewTotalUnits : stockCurrentUnits, 4)}</strong>
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-ink-muted">THB Invested</span>
+                  <span className="tnum text-ink-soft">
+                    ฿{fmtNum(stockCurrentThbInvested, 2)} → <strong className={valueStyle(hasValidStock)}>฿{fmtNum(hasValidStock ? stockNewTotalThbInvested : stockCurrentThbInvested, 2)}</strong>
+                  </span>
+                </div>
               </div>
 
-              <div className="pt-2 border-t border-line flex flex-col gap-1 text-[12.5px]">
-                <span className="text-[11px] font-medium text-ink-muted">New Avg Cost</span>
-                {hasValidStock ? (
-                  <div className="flex items-center gap-2 flex-wrap font-bold tnum text-ink text-[13px]">
-                    <span>${stockNewAvgCostUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} / share</span>
-                    <span className="text-ink-muted font-normal">≈</span>
-                    <span>฿{stockNewAvgCostThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / share</span>
-                  </div>
-                ) : (
-                  <div className="font-medium tnum text-ink-muted text-[13px]">
-                    $0.00 / share ≈ ฿0.00 / share
-                  </div>
-                )}
+              <div className="pt-2 border-t border-line flex items-center justify-between text-[13px]">
+                <span className="font-medium text-ink-muted">New Avg Cost</span>
+                <div className={`tnum ${hasValidStock ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
+                  {hasValidStock ? (
+                    <span>${fmtNum(stockNewAvgCostUsd, 4)} ≈ ฿{fmtNum(stockNewAvgCostThb, 2)}</span>
+                  ) : (
+                    <span>$0 ≈ ฿0</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -526,42 +526,40 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
             )}
 
             {/* Static PURCHASE SUMMARY Preview Section: Crypto / BTC */}
-            <div className="min-h-[220px] rounded-2xl border border-line-strong bg-surface-muted p-4 flex flex-col justify-between space-y-2.5 shadow-sm">
-              <p className="text-[12px] font-bold uppercase tracking-wider text-brand">PURCHASE SUMMARY</p>
-              
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="text-ink-muted">Implied BTC Price (this tx)</span>
-                <span className={valueStyle(hasValidBtc)}>
-                  {hasValidBtc ? `฿${Math.round(btcImpliedPrice).toLocaleString()} / BTC` : '฿0 / BTC'}
-                </span>
+            <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-3 shadow-sm">
+              <div className="flex items-center justify-between border-b border-line pb-2">
+                <p className="text-[12px] font-bold uppercase tracking-wider text-brand">PURCHASE PREVIEW (BEFORE → AFTER)</p>
+                <span className="text-[11px] font-medium text-ink-muted">Digits only</span>
               </div>
 
               <div className="flex items-center justify-between text-[13px]">
-                <span className="text-ink-muted">Sats Added</span>
+                <span className="text-ink-muted">Implied BTC Price</span>
                 <span className={valueStyle(hasValidBtc)}>
-                  {hasValidBtc ? `+${satsNum.toLocaleString()} sats` : '+0 sats'}
+                  {hasValidBtc ? `฿${fmtNum(Math.round(btcImpliedPrice), 0)} / BTC` : '฿0 / BTC'}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="text-ink-muted">New Total Sats</span>
-                <span className={valueStyle(hasValidBtc)}>
-                  {hasValidBtc ? `${btcNewTotalSats.toLocaleString()} sats` : '0 sats'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="text-ink-muted">New Total THB Invested</span>
-                <span className={valueStyle(hasValidBtc)}>
-                  {hasValidBtc ? `฿${btcNewTotalThbInvested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '฿0.00'}
-                </span>
-              </div>
-
-              <div className="pt-2 border-t border-line flex flex-col gap-1 text-[12.5px]">
-                <span className="text-[11px] font-medium text-ink-muted">New Avg Cost</span>
-                <div className={`text-[13.5px] ${hasValidBtc ? 'font-bold tnum text-ink' : 'font-medium tnum text-ink-muted'}`}>
-                  {hasValidBtc ? `฿${Math.round(btcNewAvgCostThb).toLocaleString()} / BTC` : '฿0 / BTC'}
+              <div className="space-y-1.5 pt-1 text-[13px]">
+                <div className="flex items-center justify-between">
+                  <span className="text-ink-muted">Sats</span>
+                  <span className="tnum text-ink-soft">
+                    {fmtNum(btcCurrentTotalSats, 0)} <span className="text-ink-muted font-normal">+ ({hasValidBtc ? fmtNum(satsNum, 0) : '0'})</span> → <strong className={valueStyle(hasValidBtc)}>{fmtNum(hasValidBtc ? btcNewTotalSats : btcCurrentTotalSats, 0)} sats</strong>
+                  </span>
                 </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-ink-muted">THB Invested</span>
+                  <span className="tnum text-ink-soft">
+                    ฿{fmtNum(btcCurrentTotalThb, 2)} → <strong className={valueStyle(hasValidBtc)}>฿{fmtNum(hasValidBtc ? btcNewTotalThbInvested : btcCurrentTotalThb, 2)}</strong>
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-line flex items-center justify-between text-[13px]">
+                <span className="font-medium text-ink-muted">New Avg Cost</span>
+                <span className={`tnum ${hasValidBtc ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
+                  {hasValidBtc ? `฿${fmtNum(Math.round(btcNewAvgCostThb), 0)} / BTC` : '฿0 / BTC'}
+                </span>
               </div>
             </div>
           </div>
@@ -645,42 +643,40 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
             )}
 
             {/* Static PURCHASE SUMMARY Preview Section: Gold */}
-            <div className="min-h-[220px] rounded-2xl border border-line-strong bg-surface-muted p-4 flex flex-col justify-between space-y-2.5 shadow-sm">
-              <p className="text-[12px] font-bold uppercase tracking-wider text-brand">PURCHASE SUMMARY</p>
-              
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="text-ink-muted">Price / Gram (this tx)</span>
-                <span className={valueStyle(hasValidGold)}>
-                  {hasValidGold ? `฿${goldImpliedPricePerGram.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / g` : '฿0.00 / g'}
-                </span>
+            <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-3 shadow-sm">
+              <div className="flex items-center justify-between border-b border-line pb-2">
+                <p className="text-[12px] font-bold uppercase tracking-wider text-brand">PURCHASE PREVIEW (BEFORE → AFTER)</p>
+                <span className="text-[11px] font-medium text-ink-muted">Max 4 decimals</span>
               </div>
 
               <div className="flex items-center justify-between text-[13px]">
-                <span className="text-ink-muted">Grams Added</span>
+                <span className="text-ink-muted">Price / Gram</span>
                 <span className={valueStyle(hasValidGold)}>
-                  {hasValidGold ? `+${goldGramsToAdd.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} g` : '+0.0000 g'}
+                  {hasValidGold ? `฿${fmtNum(goldImpliedPricePerGram, 2)} / g` : '฿0 / g'}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="text-ink-muted">New Total Grams</span>
-                <span className={valueStyle(hasValidGold)}>
-                  {hasValidGold ? `${goldNewTotalGrams.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} g` : '0.0000 g'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="text-ink-muted">New Total THB Invested</span>
-                <span className={valueStyle(hasValidGold)}>
-                  {hasValidGold ? `฿${goldNewTotalThbInvested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '฿0.00'}
-                </span>
-              </div>
-
-              <div className="pt-2 border-t border-line flex flex-col gap-1 text-[12.5px]">
-                <span className="text-[11px] font-medium text-ink-muted">New Avg Cost</span>
-                <div className={`text-[13.5px] ${hasValidGold ? 'font-bold tnum text-ink' : 'font-medium tnum text-ink-muted'}`}>
-                  {hasValidGold ? `฿${goldNewAvgCostThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / g` : '฿0.00 / g'}
+              <div className="space-y-1.5 pt-1 text-[13px]">
+                <div className="flex items-center justify-between">
+                  <span className="text-ink-muted">Grams</span>
+                  <span className="tnum text-ink-soft">
+                    {fmtNum(goldCurrentTotalGrams, 4)}g <span className="text-ink-muted font-normal">+ ({hasValidGold ? fmtNum(goldGramsToAdd, 4) : '0'})</span> → <strong className={valueStyle(hasValidGold)}>{fmtNum(hasValidGold ? goldNewTotalGrams : goldCurrentTotalGrams, 4)} g</strong>
+                  </span>
                 </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-ink-muted">THB Invested</span>
+                  <span className="tnum text-ink-soft">
+                    ฿{fmtNum(goldCurrentTotalThb, 2)} → <strong className={valueStyle(hasValidGold)}>฿{fmtNum(hasValidGold ? goldNewTotalThbInvested : goldCurrentTotalThb, 2)}</strong>
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-line flex items-center justify-between text-[13px]">
+                <span className="font-medium text-ink-muted">New Avg Cost</span>
+                <span className={`tnum ${hasValidGold ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
+                  {hasValidGold ? `฿${fmtNum(goldNewAvgCostThb, 2)} / g` : '฿0 / g'}
+                </span>
               </div>
             </div>
           </div>
