@@ -44,46 +44,56 @@ export function BubbleChart({
   const centerItem = validItems[0]
   const otherItems = validItems.slice(1)
 
+  // Initial center position reference
   const centerPos = size / 2
 
-  // Center bubble size proportional to percentage (min radius 65, max 95)
-  const centerRadius = Math.max(65, Math.min(95, Math.sqrt(centerItem.value / (totalValue || 1)) * 125))
+  // Determine radii proportional to sqrt of value percentage
+  const centerRadius = Math.max(52, Math.min(75, Math.sqrt(centerItem.value / (totalValue || 1)) * 95))
 
-  // Satellite bubbles placement around center
-  const orbitRadius = centerRadius + 42
-
+  // Calculate satellite bubble positions without any overlap
   const satellites = otherItems.map((item, idx) => {
-    // Distribute satellites evenly around the circle starting from top-right
-    const angleStep = (2 * Math.PI) / Math.max(otherItems.length, 1)
-    const angle = -Math.PI / 3 + idx * angleStep
-
-    // Radius proportional to sqrt of percentage relative to total
     const itemRatio = Math.sqrt(item.value / (totalValue || 1))
-    const r = Math.max(34, Math.min(65, itemRatio * 125))
+    const r = Math.max(28, Math.min(50, itemRatio * 95))
 
-    const cx = centerPos + Math.cos(angle) * orbitRadius
-    const cy = centerPos + Math.sin(angle) * orbitRadius
+    // Distance from center = centerRadius + satelliteRadius + gap (10px gap between circles)
+    const dist = centerRadius + r + 10
+
+    // Distribute angles evenly around center circle
+    const angleStep = (2 * Math.PI) / Math.max(otherItems.length, 1)
+    const angle = -Math.PI / 2 + idx * angleStep
+
+    const cx = centerPos + Math.cos(angle) * dist
+    const cy = centerPos + Math.sin(angle) * dist
 
     return {
       ...item,
       r,
-      cx: Math.max(r + 8, Math.min(size - r - 8, cx)),
-      cy: Math.max(r + 8, Math.min(size - r - 8, cy)),
+      cx,
+      cy,
     }
   })
+
+  // Determine actual container size needed
+  const maxExtent = Math.max(
+    centerRadius,
+    ...satellites.map((s) => Math.hypot(s.cx - centerPos, s.cy - centerPos) + s.r)
+  )
+  const containerSize = Math.max(size, Math.ceil(maxExtent * 2 + 16))
+  const finalCenterPos = containerSize / 2
+  const offset = finalCenterPos - centerPos
 
   return (
     <div className="relative flex flex-col items-center justify-center select-none w-full my-2">
       <div
         className="relative"
-        style={{ width: size, height: size, maxWidth: '100%' }}
+        style={{ width: containerSize, height: containerSize, maxWidth: '100%' }}
       >
         {/* Central Bubble (Always the largest item) */}
         <div
           className="absolute transform -translate-x-1/2 -translate-y-1/2 rounded-full flex flex-col items-center justify-center p-3 text-center border-2 border-white/20 dark:border-white/10 shadow-md"
           style={{
-            left: centerPos,
-            top: centerPos,
+            left: finalCenterPos,
+            top: finalCenterPos,
             width: centerRadius * 2,
             height: centerRadius * 2,
             backgroundColor: centerItem.color,
@@ -110,8 +120,8 @@ export function BubbleChart({
             key={sat.id}
             className="absolute transform -translate-x-1/2 -translate-y-1/2 rounded-full flex flex-col items-center justify-center p-2 text-center border border-white/20 dark:border-white/10 shadow-sm"
             style={{
-              left: sat.cx,
-              top: sat.cy,
+              left: sat.cx + offset,
+              top: sat.cy + offset,
               width: sat.r * 2,
               height: sat.r * 2,
               backgroundColor: sat.color,
