@@ -6,6 +6,8 @@ import { Card } from '../components/ui/Card'
 import { StatCard } from '../components/ui/StatCard'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ProgressRing } from '../components/charts/ProgressRing'
+import { AssetAllocationDonutCard } from '../components/charts/AssetAllocationDonutCard'
+import { ExpenseBubbleChart } from '../components/charts/ExpenseBubbleChart'
 import { PnLPill } from '../components/ui/PnL'
 import { CashAccountsForm } from '../components/forms/CashAccountsForm'
 import {
@@ -45,6 +47,7 @@ export function Dashboard() {
   const { data, recordNetWorthSnapshot, usdThb } = useData()
   const navigate = useNavigate()
   const [cashOpen, setCashOpen] = useState(false)
+  const [visualTab, setVisualTab] = useState<'donut' | 'bubble'>('donut')
   const hasAnything =
     data.holdings.length > 0 || data.dcaPlans.length > 0 || data.transfers.length > 0
 
@@ -220,6 +223,57 @@ export function Dashboard() {
       {(data.netWorthHistory?.length ?? 0) >= 2 && (
         <NetWorthChart history={data.netWorthHistory!} />
       )}
+
+      {/* Visual Insights (Donut Chart & Bubble Chart) */}
+      <div className="mt-5 space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <div>
+            <h2 className="font-display text-[17px] font-bold text-ink">Visual Insights</h2>
+            <p className="text-[12.5px] text-ink-muted">Interactive visual analysis</p>
+          </div>
+          <div className="inline-flex rounded-full bg-surface-muted p-1 ring-1 ring-line">
+            <button
+              onClick={() => setVisualTab('donut')}
+              className={`rounded-full px-3.5 py-1 text-[12px] font-semibold transition-all ${
+                visualTab === 'donut'
+                  ? 'bg-ink text-white shadow-xs dark:bg-brand dark:text-white'
+                  : 'text-ink-muted hover:text-ink'
+              }`}
+            >
+              🍩 Donut
+            </button>
+            <button
+              onClick={() => setVisualTab('bubble')}
+              className={`rounded-full px-3.5 py-1 text-[12px] font-semibold transition-all ${
+                visualTab === 'bubble'
+                  ? 'bg-ink text-white shadow-xs dark:bg-brand dark:text-white'
+                  : 'text-ink-muted hover:text-ink'
+              }`}
+            >
+              🫧 Bubbles
+            </button>
+          </div>
+        </div>
+
+        {visualTab === 'donut' ? (
+          <AssetAllocationDonutCard
+            items={
+              alloc.length > 0
+                ? alloc.map((a, i) => ({
+                    id: a.assetClass,
+                    label: ASSET_META[a.assetClass].label,
+                    value: a.value,
+                    color: ['#818cf8', '#38bdf8', '#f59e0b', '#d97706'][i % 4],
+                    changePct: `+${Math.round((a.value / (nw || 1)) * 100)}%`,
+                  }))
+                : undefined
+            }
+            totalValue={portfolio.value > 0 ? portfolio.value : undefined}
+          />
+        ) : (
+          <ExpenseBubbleChart />
+        )}
+      </div>
 
       {/* Metric tiles */}
       <div className="mt-5 grid grid-cols-1 gap-4  ">
