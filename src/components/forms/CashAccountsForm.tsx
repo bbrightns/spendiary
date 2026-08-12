@@ -3,6 +3,7 @@ import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { DragHandleIcon, PlusIcon, TrashIcon, WalletIcon } from '../icons'
 import { useData } from '../../store/DataContext'
+import { useToast } from '../../store/ToastContext'
 import type { CashAccount } from '../../lib/types'
 import { thb } from '../../lib/format'
 
@@ -39,6 +40,7 @@ function formatWithCommas(value: string | number): string {
 
 export function CashAccountsForm({ open, onClose }: Props) {
   const { data, setCashAccounts, usdThb } = useData()
+  const { showToast } = useToast()
   const [rows, setRows] = useState<Draft[]>([])
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null)
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
@@ -140,6 +142,7 @@ export function CashAccountsForm({ open, onClose }: Props) {
         }
       })
     setCashAccounts(cleaned)
+    showToast('Cash accounts updated', 'success')
     onClose()
   }
 
@@ -204,7 +207,8 @@ export function CashAccountsForm({ open, onClose }: Props) {
                   onClick={() =>
                     update(r.id, { currency: r.currency === 'USD' ? 'THB' : 'USD' })
                   }
-                  className={`absolute left-1.5 top-1/2 -translate-y-1/2 rounded-lg px-2.5 py-1 text-[13px] font-extrabold transition-all select-none ${
+                  aria-label={`Toggle currency for ${r.name || 'account'}, currently ${r.currency}`}
+                  className={`absolute left-1.5 top-1/2 -translate-y-1/2 rounded-lg px-2.5 py-1 text-[13px] font-extrabold transition-all select-none cursor-pointer ${
                     r.currency === 'USD'
                       ? 'bg-sky-500/15 text-sky-400 ring-1 ring-sky-500/30 hover:bg-sky-500/25'
                       : 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30 hover:bg-emerald-500/25'
@@ -227,8 +231,8 @@ export function CashAccountsForm({ open, onClose }: Props) {
               <button
                 type="button"
                 onClick={() => remove(r.id)}
-                aria-label="Remove account"
-                className="grid h-11 w-10 shrink-0 place-items-center rounded-xl text-ink-muted transition-colors hover:bg-loss-soft hover:text-loss"
+                aria-label={`Remove account ${r.name || ''}`}
+                className="grid h-11 w-10 shrink-0 place-items-center rounded-xl text-ink-muted transition-colors hover:bg-loss-soft hover:text-loss cursor-pointer"
               >
                 <TrashIcon className="h-[18px] w-[18px]" />
               </button>
