@@ -3,6 +3,7 @@ import { Modal } from '../ui/Modal'
 import { NumberField, SelectField, TextField } from '../ui/Field'
 import { FormActions } from './FormActions'
 import { useData } from '../../store/DataContext'
+import { useToast } from '../../store/ToastContext'
 import type { Frequency, Transfer } from '../../lib/types'
 import { localDateStr } from '../../lib/format'
 
@@ -30,6 +31,7 @@ const blank = () => ({
 
 export function TransferForm({ open, editing, onClose }: Props) {
   const { upsertTransfer, removeTransfer } = useData()
+  const { showToast } = useToast()
   const [form, setForm] = useState(blank)
   const [showErrors, setShowErrors] = useState(false)
 
@@ -71,6 +73,7 @@ export function TransferForm({ open, editing, onClose }: Props) {
       total,
       expiryDate: form.expiryDate,
     })
+    showToast(editing ? `Updated transfer for "${form.recipient.trim()}"` : `Created transfer schedule for "${form.recipient.trim()}"`, 'success')
     onClose()
   }
 
@@ -149,6 +152,7 @@ export function TransferForm({ open, editing, onClose }: Props) {
             editing
               ? () => {
                   removeTransfer(editing.id)
+                  showToast(`Removed transfer schedule for "${editing.recipient}"`, 'info')
                   onClose()
                 }
               : undefined
