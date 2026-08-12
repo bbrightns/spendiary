@@ -114,6 +114,7 @@ export function Dashboard() {
               <button
                 type="button"
                 onClick={() => navigate('/dca')}
+                aria-label={`View ${dcaActions.length} DCA ${dcaActions.length === 1 ? 'buy' : 'buys'} ready to confirm`}
                 className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand-soft px-3.5 py-1.5 text-[12.5px] font-semibold text-brand-ink transition-all hover:bg-brand hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 cursor-pointer"
               >
                 <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand dark:bg-[#4f46e5] text-[10.5px] font-bold text-white">
@@ -126,6 +127,7 @@ export function Dashboard() {
               <button
                 type="button"
                 onClick={() => navigate('/transfers')}
+                aria-label={`View ${expiringTransfers.length} transfer ${expiringTransfers.length === 1 ? 'schedule' : 'schedules'} expiring soon`}
                 className="inline-flex items-center gap-2 rounded-full border border-warn/25 bg-warn-soft px-3.5 py-1.5 text-[12.5px] font-semibold text-warn transition-all hover:bg-warn hover:text-white active:scale-95 cursor-pointer"
               >
                 <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-warn text-[10.5px] font-bold text-white">
@@ -461,6 +463,7 @@ export function Dashboard() {
                   <button
                     type="button"
                     onClick={() => setCashOpen(true)}
+                    aria-label="Manage cash accounts"
                     className="text-[12.5px] font-semibold text-brand hover:underline cursor-pointer"
                   >
                     Manage ✏️
@@ -525,6 +528,7 @@ export function Dashboard() {
                   <button
                     type="button"
                     onClick={() => setCashOpen(true)}
+                    aria-label="Add first cash account"
                     className="mt-1 text-[12px] font-semibold text-brand hover:underline cursor-pointer"
                   >
                     + Add first account
@@ -538,6 +542,7 @@ export function Dashboard() {
               <button
                 type="button"
                 onClick={() => setCashOpen(true)}
+                aria-label="Add new cash account"
                 className="font-semibold text-brand hover:underline cursor-pointer"
               >
                 + Add Account
