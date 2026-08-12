@@ -460,10 +460,10 @@ export function DcaPlanner() {
                                     {thb(p.monthlyAmount)}
                                   </p>
                                 </div>
-                                <div className="mt-1 flex items-center justify-between gap-2 text-[12px]">
-                                  <span className="text-ink-muted">
-                                    Day {p.buyDay} · {meta.label}
-                                  </span>
+                                  <div className="mt-1 flex items-center justify-between gap-2 text-[12px]">
+                                    <span className="text-ink-muted">
+                                      {meta.label} · {freqLabel(p)}
+                                    </span>
                                   {showConfirmed && !skipped ? (
                                     <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-[11px] font-semibold text-gain">
                                       <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Confirmed
@@ -477,58 +477,83 @@ export function DcaPlanner() {
                                   ) : (
                                     <span className="inline-block text-[11px] font-semibold text-[#0ea5e9]">in {days} days</span>
                                   )}
-                                </div>
-                                {needsAction && (
-                                  <div className="mt-2 flex items-center gap-2">
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
-                                      className="rounded-lg px-3 py-1 text-[11.5px] font-bold text-white transition-colors active:scale-95 cursor-pointer"
-                                      style={{ background: 'var(--color-gain)' }}
-                                    >
-                                      Confirm Buy
-                                    </button>
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); skipDcaBuy(p.id, localDateStr()) }}
-                                      className="rounded-lg border px-2.5 py-1 text-[11.5px] font-semibold transition-colors active:scale-95 cursor-pointer text-ink-muted border-line hover:bg-surface-muted"
-                                    >
-                                      Skip
-                                    </button>
                                   </div>
-                                )}
+                                  {needsAction && (
+                                    <div className="mt-2 flex items-center gap-2">
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
+                                        className="rounded-lg px-3 py-1 text-[11.5px] font-bold text-white transition-colors active:scale-95 cursor-pointer"
+                                        style={{ background: 'var(--color-gain)' }}
+                                      >
+                                        Confirm Buy
+                                      </button>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); skipDcaBuy(p.id, localDateStr()) }}
+                                        className="rounded-lg border px-2.5 py-1 text-[11.5px] font-semibold transition-colors active:scale-95 cursor-pointer text-ink-muted border-line hover:bg-surface-muted"
+                                      >
+                                        Skip
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                      <div>
-                        <p className="text-[12px] text-ink-muted">Progress this month</p>
-                        <p className="font-display text-[18px] font-extrabold tnum text-ink">
-                          {Math.round(dcaMonth.pct)}%
-                        </p>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-        )}
-      </Card>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    )}
 
-      <DcaForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
-      <ConfirmDcaBuyForm
-        open={confirmOpen}
-        plan={confirming}
-        onClose={() => setConfirmOpen(false)}
-        onSuccess={() => {
-          setCompletedPlan(confirming)
-          setSuccessOpen(true)
-        }}
-      />
-      <DcaSuccessModal
-        open={successOpen}
-        plan={completedPlan}
-        onClose={() => setSuccessOpen(false)}
-      />
-    </>
-  )
-}
+                    {/* Footer */}
+                    {plans.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-6 border-t border-line py-4 px-5 bg-surface-muted/30">
+                        <div>
+                          <p className="text-[11.5px] text-ink-muted">Total savings</p>
+                          <p className="font-display text-[17px] font-extrabold tnum text-ink">{thb(savingsTotal)}</p>
+                        </div>
+                        {salary > 0 && (
+                          <>
+                            <div className="h-7 w-px bg-line" />
+                            <div>
+                              <p className="text-[11.5px] text-ink-muted">Invest rate</p>
+                              <p className="font-display text-[17px] font-extrabold tnum text-gain">
+                                {Math.round((savingsTotal / salary) * 100)}%
+                              </p>
+                            </div>
+                            <div className="h-7 w-px bg-line" />
+                            <div>
+                              <p className="text-[11.5px] text-ink-muted">Progress this month</p>
+                              <p className="font-display text-[17px] font-extrabold tnum text-ink">
+                                {Math.round(dcaMonth.pct)}%
+                              </p>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+              )}
+            </Card>
+          </div>
+        </div>
+
+        <DcaForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
+        <ConfirmDcaBuyForm
+          open={confirmOpen}
+          plan={confirming}
+          onClose={() => setConfirmOpen(false)}
+          onSuccess={() => {
+            setCompletedPlan(confirming)
+            setSuccessOpen(true)
+          }}
+        />
+        <DcaSuccessModal
+          open={successOpen}
+          plan={completedPlan}
+          onClose={() => setSuccessOpen(false)}
+        />
+      </>
+    )
+  }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
