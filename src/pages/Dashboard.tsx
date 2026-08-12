@@ -422,11 +422,6 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* ── ROW 3: Cash & Liquidity Hub (6 cols) & Action Center / Expirations (6 cols) ── */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-        {/* Cash Available Hub */}
-        <div className="lg:col-span-6">
-          <Card className="animate-rise h-full flex flex-col justify-between">
       {/* ── ROW 3: Cash & Liquidity Hub (Full Width 12-cols) ── */}
       <div>
         <Card className="animate-rise">
