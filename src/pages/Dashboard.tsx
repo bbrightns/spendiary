@@ -3,17 +3,20 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
-import { StatCard } from '../components/ui/StatCard'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ProgressRing } from '../components/charts/ProgressRing'
+import { InteractiveNetWorthChart } from '../components/charts/InteractiveNetWorthChart'
 import { PnLPill } from '../components/ui/PnL'
 import { CashAccountsForm } from '../components/forms/CashAccountsForm'
 import {
   AlertIcon,
+  CheckIcon,
   ClockIcon,
   PortfolioIcon,
   SparkleIcon,
   WalletIcon,
+  DcaIcon,
+  TransferIcon,
 } from '../components/icons'
 import {
   ASSET_META,
@@ -27,18 +30,17 @@ import {
   FREQUENCY_LABEL,
 } from '../lib/calc'
 import { daysUntil, formatDateShort, moneyCompact, thb, thbCompact } from '../lib/format'
-import type { NetWorthSnapshot } from '../lib/types'
 
 // Distinct colors for cash account segments — cycles if >8 accounts
 const CASH_COLORS = [
-  'var(--color-cash)',      // emerald
-  'var(--color-brand)',     // indigo
-  'var(--color-crypto)',    // amber
-  'var(--color-stocks)',    // sky
-  'var(--color-funds)',     // violet
-  '#f472b6',               // pink
-  '#fb923c',               // orange
-  '#a78bfa',               // purple
+  'var(--color-cash)', // emerald
+  'var(--color-brand)', // indigo
+  'var(--color-crypto)', // amber
+  'var(--color-stocks)', // sky
+  'var(--color-funds)', // violet
+  '#f472b6', // pink
+  '#fb923c', // orange
+  '#a78bfa', // purple
 ]
 
 export function Dashboard() {
@@ -73,7 +75,7 @@ export function Dashboard() {
   // Record today's net worth snapshot whenever nw updates
   useEffect(() => {
     if (nw > 0) recordNetWorthSnapshot(nw)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nw])
 
   const dcaActions = useMemo(
@@ -101,329 +103,508 @@ export function Dashboard() {
   }
 
   return (
-    <>
-      <PageHeader
-        eyebrow={today}
-        title={`Good day${data.userName ? `, ${data.userName}` : ''}`}
-        subtitle="Here's where your money stands."
-      />
+    <div className="space-y-6">
+      {/* Top Header Row with Greetings & Quick Action Badges */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <PageHeader
+          eyebrow={today}
+          title={`Good day${data.userName ? `, ${data.userName}` : ''}`}
+          subtitle="Here's where your wealth and cash flow stand."
+        />
 
-      {/* Today's actions strip */}
-      {(dcaActions.length > 0 || expiringTransfers.length > 0) && (
-        <div className="mb-5 flex flex-wrap gap-2">
-          {dcaActions.length > 0 && (
-            <button
-              onClick={() => navigate('/dca')}
-              className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand-soft px-3.5 py-2 text-[13px] font-semibold text-brand-ink transition-colors hover:bg-brand hover:text-white dark:hover:bg-[#4f46e5] active:scale-95"
-            >
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand dark:bg-[#4f46e5] text-[11px] font-bold text-white">
-                {dcaActions.length}
-              </span>
-              DCA {dcaActions.length === 1 ? 'plan needs' : 'plans need'} confirmation
-            </button>
-          )}
-          {expiringTransfers.length > 0 && (
-            <button
-              onClick={() => navigate('/transfers')}
-              className="inline-flex items-center gap-2 rounded-full border border-warn/25 bg-warn-soft px-3.5 py-2 text-[13px] font-semibold text-warn transition-colors hover:bg-warn hover:text-white active:scale-95"
-            >
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-warn text-[11px] font-bold text-white">
-                {expiringTransfers.length}
-              </span>
-              Transfer {expiringTransfers.length === 1 ? 'schedule expires' : 'schedules expire'} this week
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Net worth hero */}
-      <Card className="relative overflow-hidden text-white animate-rise" style={{ background: 'linear-gradient(135deg, #0b0d12 0%, #1a1f35 100%)' }}>
-        <div className="relative flex flex-wrap items-end justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2 text-white/60">
-              <WalletIcon className="h-4 w-4" />
-              <span className="text-[13px] font-medium">Total Net Worth</span>
-            </div>
-            <p className="mt-3 font-display text-[40px] font-extrabold leading-none tracking-tight tnum ">
-              {thb(nw)}
-            </p>
-            <div className="mt-4 flex flex-wrap items-center gap-2.5">
-              <PnLPill value={portfolio.pnl} size="md" />
-              <span className="text-[13px] text-white/55">unrealised</span>
-              {data.retirement?.monthlySpend && data.retirement.monthlySpend > 0 ? (
-                <Link
-                  to="/retirement"
-                  className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[11.5px] font-semibold text-white/80 transition-colors hover:bg-white/20 hover:text-white"
-                  aria-label="View wealth runway details on retirement page"
-                >
-                  ⏳ {((nw / (data.retirement.monthlySpend * 12))).toFixed(1)}y runway
-                </Link>
-              ) : (
-                <Link
-                  to="/retirement"
-                  className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-semibold text-white/40 transition-colors hover:bg-white/15 hover:text-white"
-                  aria-label="Set up retirement spend to see runway"
-                >
-                  ⏳ Set runway target
-                </Link>
-              )}
-            </div>
+        {/* Global actionable badges */}
+        {(dcaActions.length > 0 || expiringTransfers.length > 0) && (
+          <div className="flex flex-wrap items-center gap-2 pt-1 sm:pt-0">
+            {dcaActions.length > 0 && (
+              <button
+                type="button"
+                onClick={() => navigate('/dca')}
+                className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand-soft px-3.5 py-1.5 text-[12.5px] font-semibold text-brand-ink transition-all hover:bg-brand hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 cursor-pointer"
+              >
+                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand dark:bg-[#4f46e5] text-[10.5px] font-bold text-white">
+                  {dcaActions.length}
+                </span>
+                <span>DCA {dcaActions.length === 1 ? 'buy ready' : 'buys ready'}</span>
+              </button>
+            )}
+            {expiringTransfers.length > 0 && (
+              <button
+                type="button"
+                onClick={() => navigate('/transfers')}
+                className="inline-flex items-center gap-2 rounded-full border border-warn/25 bg-warn-soft px-3.5 py-1.5 text-[12.5px] font-semibold text-warn transition-all hover:bg-warn hover:text-white active:scale-95 cursor-pointer"
+              >
+                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-warn text-[10.5px] font-bold text-white">
+                  {expiringTransfers.length}
+                </span>
+                <span>{expiringTransfers.length === 1 ? 'Schedule expires' : 'Schedules expire'} soon</span>
+              </button>
+            )}
           </div>
-          <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
-            <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/60 ring-1 ring-white/10">
-              Auto-calculated
-            </p>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-            <div>
-              <p className="text-[12px] text-white/55">Invested</p>
-              <p className="mt-0.5 font-display text-lg font-bold tnum">{thbCompact(portfolio.value)}</p>
+        )}
+      </div>
+
+      {/* ── ROW 1: Net Worth Master Hero & Monthly DCA Pulse (Bento 12-cols) ── */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+        {/* Net worth hero Bento (Left 7-8 cols) */}
+        <div className="lg:col-span-7 xl:col-span-8">
+          <Card
+            className="relative overflow-hidden text-white animate-rise h-full flex flex-col justify-between"
+            style={{
+              background: 'linear-gradient(135deg, #0b0d14 0%, #151928 100%)',
+              borderColor: 'rgba(255, 255, 255, 0.08)',
+            }}
+          >
+            {/* Ambient subtle glow inside card */}
+            <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand/15 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
+
+            <div className="relative flex flex-col justify-between gap-6 sm:flex-row sm:items-start">
+              <div>
+                <div className="flex items-center gap-2 text-white/60">
+                  <WalletIcon className="h-4 w-4" />
+                  <span className="text-[13px] font-medium tracking-wide">Total Net Worth</span>
+                </div>
+                <p className="mt-2.5 font-display text-[34px] sm:text-[40px] font-extrabold leading-none tracking-tight tnum text-white">
+                  {thb(nw)}
+                </p>
+
+                <div className="mt-3.5 flex flex-wrap items-center gap-2.5">
+                  <PnLPill value={portfolio.pnl} size="md" />
+                  <span className="text-[12.5px] text-white/55 font-medium">unrealised</span>
+                  {data.retirement?.monthlySpend && data.retirement.monthlySpend > 0 ? (
+                    <Link
+                      to="/retirement"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 text-[11.5px] font-semibold text-white/80 transition-colors hover:bg-white/20 hover:text-white"
+                      aria-label="View wealth runway details on retirement page"
+                    >
+                      ⏳ {((nw / (data.retirement.monthlySpend * 12))).toFixed(1)}y runway
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/retirement"
+                      className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-white/40 transition-colors hover:bg-white/15 hover:text-white"
+                      aria-label="Set up retirement spend to see runway"
+                    >
+                      ⏳ Set runway target
+                    </Link>
+                  )}
+                </div>
+              </div>
+
+              {/* Quick ratio box */}
+              <div className="rounded-2xl bg-white/5 p-3.5 ring-1 ring-white/10 sm:min-w-[200px]">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[11.5px] font-medium text-white/50">Invested</p>
+                    <p className="mt-0.5 font-display text-[16px] font-bold tnum text-white">
+                      {thbCompact(portfolio.value)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[11.5px] font-medium text-white/50">Cash</p>
+                    <p className="mt-0.5 font-display text-[16px] font-bold tnum text-white">
+                      {thbCompact(cash)}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-[12px] text-white/55">Cash</p>
-              <p className="mt-0.5 font-display text-lg font-bold tnum">{thbCompact(cash)}</p>
-            </div>
+
+            {/* Asset Distribution Bar & Legend */}
             {nw > 0 && (
-              <div className="col-span-2 space-y-2 pt-1">
-                <div className="flex h-1.5 overflow-hidden rounded-full">
+              <div className="relative mt-6 pt-3 border-t border-white/10 space-y-2.5">
+                <div className="flex h-2 overflow-hidden rounded-full bg-white/10">
                   {alloc.map((a) => (
                     <div
                       key={a.assetClass}
-                      style={{ width: `${(a.value / nw) * 100}%`, background: ASSET_META[a.assetClass].cssVar }}
+                      style={{
+                        width: `${(a.value / nw) * 100}%`,
+                        background: ASSET_META[a.assetClass].cssVar,
+                      }}
+                      title={`${ASSET_META[a.assetClass].label}: ${thb(a.value)}`}
                     />
                   ))}
                   {cash > 0 && (
-                    <div style={{ width: `${(cash / nw) * 100}%`, background: 'var(--color-cash)' }} />
+                    <div
+                      style={{
+                        width: `${(cash / nw) * 100}%`,
+                        background: 'var(--color-cash)',
+                      }}
+                      title={`Cash: ${thb(cash)}`}
+                    />
                   )}
                 </div>
-                <div className="flex flex-wrap gap-x-3 gap-y-1">
+                <div className="flex flex-wrap gap-x-4 gap-y-1.5">
                   {alloc.map((a) => (
-                    <span key={a.assetClass} className="flex items-center gap-1 text-[11px] text-white/50">
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: ASSET_META[a.assetClass].cssVar }} />
+                    <span
+                      key={a.assetClass}
+                      className="flex items-center gap-1.5 text-[11.5px] text-white/65 font-medium"
+                    >
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ background: ASSET_META[a.assetClass].cssVar }}
+                      />
                       {ASSET_META[a.assetClass].label} {Math.round((a.value / nw) * 100)}%
                     </span>
                   ))}
                   {cash > 0 && (
-                    <span className="flex items-center gap-1 text-[11px] text-white/50">
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'var(--color-cash)' }} />
+                    <span className="flex items-center gap-1.5 text-[11.5px] text-white/65 font-medium">
+                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--color-cash)' }} />
                       Cash {Math.round((cash / nw) * 100)}%
                     </span>
                   )}
                 </div>
               </div>
             )}
-            </div>
-          </div>
+          </Card>
         </div>
-      </Card>
 
-      {/* Net worth history chart */}
-      {(data.netWorthHistory?.length ?? 0) >= 2 && (
-        <NetWorthChart history={data.netWorthHistory!} />
-      )}
+        {/* DCA Monthly Pulse Bento (Right 4-5 cols) */}
+        <div className="lg:col-span-5 xl:col-span-4">
+          <Card className="animate-rise h-full flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-brand-soft text-brand-ink">
+                    <DcaIcon className="h-4 w-4" />
+                  </div>
+                  <h2 className="font-display text-[16px] font-bold text-ink">This Month's DCA</h2>
+                </div>
+                <Link
+                  to="/dca"
+                  className="text-[12.5px] font-semibold text-brand hover:underline"
+                  aria-label="View DCA planner"
+                >
+                  DCA Planner →
+                </Link>
+              </div>
 
-      {/* Metric tiles */}
-      <div className="mt-5 grid grid-cols-1 gap-4  ">
-        <StatCard
-          label="Portfolio Value"
-          value={thb(portfolio.value)}
-          icon={<PortfolioIcon className="h-[18px] w-[18px]" />}
-          accent="var(--color-funds)"
-          onClick={() => navigate('/portfolio')}
-          footer={
-            <div className="flex items-center gap-2">
-              <PnLPill value={portfolio.pnlPct} asPct />
-              <span className="text-[12.5px] text-ink-muted">all-time</span>
+              <div className="mt-5 flex items-center gap-5">
+                <ProgressRing
+                  value={dca.pct}
+                  size={120}
+                  thickness={11}
+                  ariaLabel={`This month's DCA progress, ${Math.round(dca.pct)}% bought`}
+                >
+                  <div className="text-center">
+                    <p className="font-display text-[22px] font-extrabold tnum text-ink leading-tight">
+                      {Math.round(dca.pct)}%
+                    </p>
+                    <p className="text-[10.5px] font-medium text-ink-muted leading-tight">bought</p>
+                  </div>
+                </ProgressRing>
+                <div className="flex-1 space-y-2.5">
+                  <Row label="Bought so far" value={thb(dca.invested)} strong />
+                  <Row label="Upcoming" value={thb(dca.upcoming)} />
+                  <Row label="Monthly target" value={thb(dca.total)} muted />
+                </div>
+              </div>
             </div>
-          }
-        />
 
-        <StatCard
-          label="Cash Available"
-          value={thb(cash)}
-          icon={<WalletIcon className="h-[18px] w-[18px]" />}
-          accent="var(--color-cash)"
-          editable
-          onClick={() => setCashOpen(true)}
-          className=" "
-          footer={
-            data.cashAccounts.length > 0 ? (
-              <div className="space-y-2.5">
-                <div className="flex h-1.5 overflow-hidden rounded-full">
-                  {data.cashAccounts.map((a, i) => {
-                    const rate = usdThb && usdThb > 0 ? usdThb : 35
-                    const thbVal = a.currency === 'USD' ? a.balance * rate : a.balance
-                    return (
-                      <div
-                        key={a.id}
-                        style={{
-                          width: `${cash > 0 ? (thbVal / cash) * 100 : 0}%`,
-                          background: CASH_COLORS[i % CASH_COLORS.length],
-                        }}
-                      />
-                    )
-                  })}
-                </div>
-                <div className="flex flex-wrap gap-x-4 gap-y-1">
-                  {data.cashAccounts.map((a, i) => (
-                    <span key={a.id} className="flex items-center gap-1 text-[11.5px] text-ink-muted">
-                      <span
-                        className="h-1.5 w-1.5 shrink-0 rounded-full"
-                        style={{ background: CASH_COLORS[i % CASH_COLORS.length] }}
-                      />
-                      {a.name} {moneyCompact(a.balance, a.currency)}
-                    </span>
-                  ))}
-                </div>
+            {dcaActions.length > 0 ? (
+              <div className="mt-4 pt-3 border-t border-line">
+                <button
+                  type="button"
+                  onClick={() => navigate('/dca')}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-brand-soft/80 border border-brand/20 text-brand-ink text-[12.5px] font-semibold hover:bg-brand hover:text-white transition-all cursor-pointer"
+                >
+                  <span>⚡ {dcaActions.length} buy ready to confirm</span>
+                  <span>Confirm now →</span>
+                </button>
               </div>
             ) : (
-              <span className="text-[12.5px] font-medium text-brand">Tap to add accounts</span>
-            )
-          }
-        />
+              <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
+                <span>Next DCA buys on track</span>
+                <span className="font-medium text-ink-soft">
+                  {data.dcaPlans.length} active plans
+                </span>
+              </div>
+            )}
+          </Card>
+        </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-1 gap-4 ">
-        {/* DCA progress */}
-        <Card className={`animate-rise ${upcoming.length > 0 ? '' : ''}`}>
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">This Month's DCA</h2>
-            <Link to="/dca" className="text-[13px] font-semibold text-brand hover:underline" aria-label="View DCA planner">
-              DCA planner
-            </Link>
-          </div>
-          <div className="mt-4 flex items-center gap-6">
-            <ProgressRing
-              value={dca.pct}
-              size={132}
-              thickness={13}
-              ariaLabel={`This month's DCA progress, ${Math.round(dca.pct)}% bought`}
-            >
-              <div className="text-center">
-                <p className="font-display text-2xl font-extrabold tnum text-ink">
-                  {Math.round(dca.pct)}%
+      {/* ── ROW 2: Performance Chart (8 cols) & Asset Breakdown (4 cols) ── */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+        {/* Net worth performance chart */}
+        <div className="lg:col-span-7 xl:col-span-8">
+          <Card className="animate-rise overflow-hidden h-full" padded={false}>
+            {(data.netWorthHistory?.length ?? 0) >= 2 ? (
+              <InteractiveNetWorthChart history={data.netWorthHistory!} />
+            ) : (
+              <div className="p-8 text-center">
+                <SparkleIcon className="h-6 w-6 mx-auto text-brand mb-2" />
+                <h3 className="font-display font-bold text-ink">Net Worth Performance Chart</h3>
+                <p className="text-[13px] text-ink-muted mt-1 max-w-md mx-auto">
+                  Snapshot history will record daily as your balances and holdings update.
                 </p>
-                <p className="text-[11px] font-medium text-ink-muted">bought</p>
               </div>
-            </ProgressRing>
-            <div className="flex-1 space-y-3">
-              <Row label="Bought so far" value={thb(dca.invested)} strong />
-              <Row label="Upcoming" value={thb(dca.upcoming)} />
-              <Row label="Monthly total" value={thb(dca.total)} muted />
-            </div>
-          </div>
-        </Card>
+            )}
+          </Card>
+        </div>
 
-        {/* Upcoming expirations — hidden entirely when empty */}
-        {upcoming.length > 0 && (
-          <Card className=" animate-rise" padded={false}>
-            <div className="flex items-center justify-between px-5 pt-5  ">
-              <div>
-                <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">Upcoming Expirations</h2>
-                <p className="text-[13px] text-ink-muted">Transfer schedules ending soon</p>
+        {/* Portfolio asset breakdown card */}
+        <div className="lg:col-span-5 xl:col-span-4">
+          <Card className="animate-rise h-full flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-500/10 text-indigo-500">
+                    <PortfolioIcon className="h-4 w-4" />
+                  </div>
+                  <h2 className="font-display text-[16px] font-bold text-ink">Holdings & Assets</h2>
+                </div>
+                <Link
+                  to="/portfolio"
+                  className="text-[12.5px] font-semibold text-brand hover:underline"
+                  aria-label="View portfolio details"
+                >
+                  Portfolio →
+                </Link>
               </div>
-              <Link to="/transfers" className="text-[13px] font-semibold text-brand hover:underline" aria-label="View all transfers">
-                All transfers
+
+              {/* Value & Gain */}
+              <div className="mt-4 flex items-baseline justify-between">
+                <div>
+                  <span className="text-[11.5px] font-medium text-ink-muted">Portfolio Value</span>
+                  <p className="font-display text-[24px] font-extrabold tnum text-ink leading-tight">
+                    {thb(portfolio.value)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <PnLPill value={portfolio.pnlPct} asPct />
+                  <span className="text-[11.5px] text-ink-muted">all-time</span>
+                </div>
+              </div>
+
+              {/* Breakdown by asset class */}
+              <div className="mt-4 space-y-2.5">
+                {alloc.map((a) => {
+                  const pctVal = portfolio.value > 0 ? (a.value / portfolio.value) * 100 : 0
+                  return (
+                    <div key={a.assetClass} className="space-y-1">
+                      <div className="flex items-center justify-between text-[12.5px]">
+                        <span className="flex items-center gap-2 font-medium text-ink">
+                          <span
+                            className="h-2 w-2 rounded-full"
+                            style={{ background: ASSET_META[a.assetClass].cssVar }}
+                          />
+                          {ASSET_META[a.assetClass].label}
+                        </span>
+                        <span className="font-bold tnum text-ink">
+                          {thb(a.value)}{' '}
+                          <span className="font-normal text-ink-muted text-[11px]">
+                            ({pctVal.toFixed(1)}%)
+                          </span>
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${pctVal}%`,
+                            background: ASSET_META[a.assetClass].cssVar,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
+              <span>{data.holdings.length} total holding positions</span>
+              <button
+                type="button"
+                onClick={() => navigate('/portfolio')}
+                className="font-semibold text-brand hover:underline cursor-pointer"
+              >
+                Rebalance
+              </button>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      {/* ── ROW 3: Cash & Liquidity Hub (6 cols) & Action Center / Expirations (6 cols) ── */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+        {/* Cash Available Hub */}
+        <div className="lg:col-span-6">
+          <Card className="animate-rise h-full flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <WalletIcon className="h-4 w-4" />
+                  </div>
+                  <h2 className="font-display text-[16px] font-bold text-ink">Cash & Liquidity Hub</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCashOpen(true)}
+                  className="text-[12.5px] font-semibold text-brand hover:underline cursor-pointer"
+                >
+                  Manage Accounts ✏️
+                </button>
+              </div>
+
+              <div className="mt-4 flex items-baseline justify-between">
+                <div>
+                  <span className="text-[11.5px] font-medium text-ink-muted">Available Cash</span>
+                  <p className="font-display text-[24px] font-extrabold tnum text-ink leading-tight">
+                    {thb(cash)}
+                  </p>
+                </div>
+                <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  {data.cashAccounts.length} Accounts
+                </span>
+              </div>
+
+              {/* Cash accounts visual bar */}
+              {data.cashAccounts.length > 0 && (
+                <div className="mt-4 space-y-3">
+                  <div className="flex h-2 overflow-hidden rounded-full bg-surface-muted">
+                    {data.cashAccounts.map((a, i) => {
+                      const rate = usdThb && usdThb > 0 ? usdThb : 35
+                      const thbVal = a.currency === 'USD' ? a.balance * rate : a.balance
+                      return (
+                        <div
+                          key={a.id}
+                          style={{
+                            width: `${cash > 0 ? (thbVal / cash) * 100 : 0}%`,
+                            background: CASH_COLORS[i % CASH_COLORS.length],
+                          }}
+                          title={`${a.name}: ${moneyCompact(a.balance, a.currency)}`}
+                        />
+                      )
+                    })}
+                  </div>
+
+                  {/* Cash accounts list grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
+                    {data.cashAccounts.map((a, i) => (
+                      <div
+                        key={a.id}
+                        className="flex flex-col p-2 rounded-xl bg-surface-muted/60 border border-line/40"
+                      >
+                        <span className="flex items-center gap-1.5 text-[11px] font-medium text-ink-muted truncate">
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-full"
+                            style={{ background: CASH_COLORS[i % CASH_COLORS.length] }}
+                          />
+                          <span className="truncate">{a.name}</span>
+                        </span>
+                        <span className="mt-0.5 font-display font-bold tnum text-[13px] text-ink">
+                          {moneyCompact(a.balance, a.currency)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
+              <span>Emergency cash reserve</span>
+              <button
+                type="button"
+                onClick={() => setCashOpen(true)}
+                className="font-semibold text-brand hover:underline cursor-pointer"
+              >
+                + Add Account
+              </button>
+            </div>
+          </Card>
+        </div>
+
+        {/* Action Center & Upcoming Timeline */}
+        <div className="lg:col-span-6">
+          <Card className="animate-rise h-full flex flex-col justify-between" padded={false}>
+            <div>
+              <div className="flex items-center justify-between px-5 pt-5">
+                <div className="flex items-center gap-2">
+                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-sky-500/10 text-sky-500">
+                    <TransferIcon className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h2 className="font-display text-[16px] font-bold text-ink">Upcoming & Schedules</h2>
+                    <p className="text-[12px] text-ink-muted">Recurring transfers & actions</p>
+                  </div>
+                </div>
+                <Link
+                  to="/transfers"
+                  className="text-[12.5px] font-semibold text-brand hover:underline"
+                  aria-label="View all transfers"
+                >
+                  All Schedules →
+                </Link>
+              </div>
+
+              {upcoming.length > 0 ? (
+                <ul className="mt-3 divide-y divide-line">
+                  {upcoming.map((t) => {
+                    const soon = t.days <= 14
+                    return (
+                      <li key={t.id} className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-surface-muted/40">
+                        <span
+                          className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${
+                            soon ? 'bg-warn-soft text-warn' : 'bg-surface-muted text-ink-soft'
+                          }`}
+                        >
+                          {soon ? (
+                            <AlertIcon className="h-4 w-4" />
+                          ) : (
+                            <ClockIcon className="h-4 w-4" />
+                          )}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[13.5px] font-semibold text-ink">{t.recipient}</p>
+                          <p className="text-[11.5px] text-ink-muted">
+                            {thb(t.amount)} · {FREQUENCY_LABEL[t.frequency]} · {remainingTransfers(t)} left
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span
+                            className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                              soon
+                                ? 'bg-warn-soft text-warn border border-warn/30'
+                                : 'bg-surface-muted text-ink-muted'
+                            }`}
+                          >
+                            {t.days <= 0 ? 'Due' : `${t.days}d left`}
+                          </span>
+                          <p className="text-[10.5px] text-ink-muted mt-0.5">
+                            {formatDateShort(t.expiryDate)}
+                          </p>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              ) : (
+                <div className="p-8 text-center text-ink-muted">
+                  <CheckIcon className="h-6 w-6 mx-auto text-gain mb-1.5" />
+                  <p className="text-[13px] font-semibold text-ink">All schedules up to date</p>
+                  <p className="text-[11.5px] text-ink-muted mt-0.5">
+                    No transfers are expiring in the next 14 days.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="px-5 py-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
+              <span>{data.transfers.length} active transfer rules</span>
+              <Link to="/transfers" className="font-semibold text-brand hover:underline">
+                + New Schedule
               </Link>
             </div>
-            <ul className="mt-3 divide-y divide-line">
-              {upcoming.map((t) => {
-                const soon = t.days <= 14
-                return (
-                  <li key={t.id} className="flex items-center gap-3 px-5 py-3.5 ">
-                    <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${soon ? 'bg-warn-soft text-warn' : 'bg-surface-muted text-ink-soft'}`}>
-                      {soon ? <AlertIcon className="h-[18px] w-[18px]" /> : <ClockIcon className="h-[18px] w-[18px]" />}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[14px] font-semibold text-ink">{t.recipient}</p>
-                      <p className="text-[12.5px] text-ink-muted">
-                        {thb(t.amount)} · {FREQUENCY_LABEL[t.frequency]} · {remainingTransfers(t)} left
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-[13px] font-bold ${soon ? 'text-warn' : 'text-ink'}`}>
-                        {t.days <= 0 ? 'Due' : `${t.days}d`}
-                      </p>
-                      <p className="text-[11.5px] text-ink-muted">{formatDateShort(t.expiryDate)}</p>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
           </Card>
-        )}
+        </div>
       </div>
 
       <CashAccountsForm open={cashOpen} onClose={() => setCashOpen(false)} />
-    </>
-  )
-}
-
-// ── Net Worth History Chart ───────────────────────────────────────────────────
-
-function NetWorthChart({ history }: { history: NetWorthSnapshot[] }) {
-  const W = 600, H = 96
-  const PAD_X = 2, PAD_Y = 10
-  const iW = W - PAD_X * 2
-  const iH = H - PAD_Y * 2
-
-  const vals = history.map((s) => s.value)
-  const minV = Math.min(...vals)
-  const maxV = Math.max(...vals)
-  const range = maxV - minV || 1
-
-  const pts = history.map((s, i) => ({
-    x: PAD_X + (i / (history.length - 1)) * iW,
-    y: PAD_Y + (1 - (s.value - minV) / range) * iH,
-    ...s,
-  }))
-
-  const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
-  const areaPath = `${linePath} L${pts[pts.length - 1].x},${H} L${pts[0].x},${H}Z`
-
-  const first = history[0]
-  const last = history[history.length - 1]
-  const change = last.value - first.value
-  const changePct = Math.abs((change / first.value) * 100)
-  const isUp = change >= 0
-  // Use CSS variables so the chart adapts to light/dark mode
-  const colorVar = isUp ? 'var(--color-cash)' : 'var(--color-loss)'
-
-  // Show last 90 days label, or actual range
-  const [y0, mo0, d0] = first.date.split('-').map(Number)
-  const startDate = new Date(y0, mo0 - 1, d0).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-  const todayLabel = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-  return (
-    <Card className="mt-5 animate-rise overflow-hidden" padded={false}>
-      <div className="flex items-center justify-between px-5 pt-5  ">
-        <div>
-          <h2 className="font-display text-[15px] font-bold text-ink">Net Worth History</h2>
-          <p className="text-[12.5px] text-ink-muted">{history.length} snapshots · since {startDate}</p>
-        </div>
-        <div className={`flex items-baseline gap-1 rounded-full px-3 py-1 text-[13px] font-bold ${isUp ? 'bg-gain-soft text-gain' : 'bg-loss-soft text-loss'}`}>
-          {isUp ? '▲' : '▼'} {changePct.toFixed(1)}%
-          <span className="text-[11px] font-medium opacity-70">from start</span>
-        </div>
-      </div>
-      <div className="relative px-5 pb-4 pt-3 ">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 88, display: 'block' }} aria-hidden>
-          <defs>
-            <linearGradient id="nwg" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" style={{ stopColor: colorVar, stopOpacity: 0.2 }} />
-              <stop offset="100%" style={{ stopColor: colorVar, stopOpacity: 0 }} />
-            </linearGradient>
-          </defs>
-          <path d={areaPath} fill="url(#nwg)" />
-          <path d={linePath} fill="none" style={{ stroke: colorVar }} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="4" style={{ fill: colorVar }} />
-        </svg>
-        {/* Date axis */}
-        <div className="flex justify-between">
-          <span className="text-[11px] text-ink-faint">{startDate}</span>
-          <span className="text-[11px] font-semibold text-ink-muted">{thb(last.value)} today</span>
-          <span className="text-[11px] text-ink-faint">{todayLabel}</span>
-        </div>
-      </div>
-    </Card>
+    </div>
   )
 }
 
@@ -440,10 +621,14 @@ function Row({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-[13px] text-ink-muted">{label}</span>
+      <span className="text-[12.5px] text-ink-muted">{label}</span>
       <span
         className={`tnum ${
-          strong ? 'text-[15px] font-bold text-ink' : muted ? 'text-[13.5px] text-ink-muted' : 'text-[14px] font-semibold text-ink-soft'
+          strong
+            ? 'text-[14.5px] font-bold text-ink'
+            : muted
+            ? 'text-[13px] text-ink-muted'
+            : 'text-[13.5px] font-semibold text-ink-soft'
         }`}
       >
         {value}
@@ -451,4 +636,3 @@ function Row({
     </div>
   )
 }
-
