@@ -74,7 +74,6 @@ export function InteractiveNetWorthChart({ history }: InteractiveNetWorthChartPr
   const first = filteredHistory[0]
   const last = filteredHistory[filteredHistory.length - 1]
   const change = last.value - first.value
-  const changePct = first.value > 0 ? (change / first.value) * 100 : 0
   const isUp = change >= 0
   const colorVar = isUp ? 'var(--color-cash)' : 'var(--color-loss)'
 
