@@ -3,6 +3,7 @@ import { Modal } from '../ui/Modal'
 import { NumberField, SelectField, TextField } from '../ui/Field'
 import { FormActions } from './FormActions'
 import { useData } from '../../store/DataContext'
+import { useToast } from '../../store/ToastContext'
 import type { AssetClass, DcaFrequency, DcaPlan } from '../../lib/types'
 
 interface Props {
@@ -36,6 +37,7 @@ const blank = {
 
 export function DcaForm({ open, editing, onClose }: Props) {
   const { data, upsertPlan, removePlan } = useData()
+  const { showToast } = useToast()
   const [form, setForm] = useState(blank)
   const [showErrors, setShowErrors] = useState(false)
 
@@ -141,6 +143,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
       confirmedDates: editing?.confirmedDates,
       skippedDates: editing?.skippedDates,
     })
+    showToast(editing ? `Updated DCA plan "${nameToUse}"` : `Created DCA plan "${nameToUse}"`, 'success')
     onClose()
   }
 
