@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 
 import { useData } from '../store/DataContext'
+import { useToast } from '../store/ToastContext'
 import { useLivePrices } from '../hooks/useLivePrices'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
@@ -46,6 +47,7 @@ export function Portfolio() {
     setRebalanceTargets,
     recordPortfolioSnapshot,
   } = useData()
+  const { showToast } = useToast()
   const { status: priceStatus, lastUpdated, usdThb, goldThbPerGram, errorMsg, refresh: refreshPrices } = useLivePrices()
   const [filter, setFilter] = useState<AssetClass | 'all'>('all')
   const [sortBy, setSortBy] = useState<'none' | 'value' | 'pnl' | 'type'>('value')
@@ -228,6 +230,7 @@ export function Portfolio() {
         thbSpent: Number(locThbSpent),
       })
     }
+    showToast(`Updated location "${locName.trim()}"`, 'success')
     setLocEditOpen(false)
   }
 
@@ -420,6 +423,8 @@ export function Portfolio() {
               </div>
               <button
                 onClick={() => setRebalanceOpen(!rebalanceOpen)}
+                aria-label={rebalanceOpen ? 'Close rebalancing configuration' : 'Configure rebalancing targets'}
+                aria-expanded={rebalanceOpen}
                 className="inline-flex h-8 items-center gap-1.5 rounded-full bg-ink px-3 text-[11.5px] font-semibold text-white shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] active:scale-95 cursor-pointer whitespace-nowrap"
               >
                 {rebalanceOpen ? 'Close' : 'Configure'}
@@ -569,6 +574,7 @@ export function Portfolio() {
                   {search && (
                     <button
                       onClick={() => setSearch('')}
+                      aria-label="Clear search query"
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-ink-faint hover:text-ink cursor-pointer"
                     >
                       <svg viewBox="0 0 12 12" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
@@ -586,6 +592,8 @@ export function Portfolio() {
                       <button
                         key={f.key}
                         onClick={() => setFilter(f.key)}
+                        aria-label={`Filter holdings by ${f.label}`}
+                        aria-pressed={filter === f.key}
                         className={`rounded-full px-3 py-1 text-[12.5px] font-semibold transition-colors cursor-pointer ${
                           filter === f.key
                             ? 'bg-ink text-white dark:bg-[#4f46e5] dark:text-white shadow-xs'
@@ -614,6 +622,8 @@ export function Portfolio() {
                               setSortDir('desc')
                             }
                           }}
+                          aria-label={`Sort by ${label}${active && key !== 'type' ? ` (${sortDir === 'desc' ? 'descending' : 'ascending'})` : ''}`}
+                          aria-pressed={active}
                           className={`flex shrink-0 items-center gap-0.5 rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold transition-colors cursor-pointer ${
                             active
                               ? 'bg-brand text-white dark:bg-[#4f46e5]'
@@ -748,7 +758,10 @@ export function Portfolio() {
                                           <PencilIcon className="h-[14px] w-[14px]" />
                                         </button>
                                         <button
-                                          onClick={() => removeBtcLocation(h.id, loc.id)}
+                                          onClick={() => {
+                                            removeBtcLocation(h.id, loc.id)
+                                            showToast(`Removed location "${loc.name}"`, 'info')
+                                          }}
                                           aria-label={`Remove location ${loc.name}`}
                                           className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss cursor-pointer"
                                         >
@@ -785,7 +798,10 @@ export function Portfolio() {
                                           <PencilIcon className="h-[14px] w-[14px]" />
                                         </button>
                                         <button
-                                          onClick={() => removeGoldLocation(h.id, loc.id)}
+                                          onClick={() => {
+                                            removeGoldLocation(h.id, loc.id)
+                                            showToast(`Removed location "${loc.name}"`, 'info')
+                                          }}
                                           aria-label={`Remove location ${loc.name}`}
                                           className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss cursor-pointer"
                                         >
@@ -895,17 +911,22 @@ export function Portfolio() {
         <div className="flex flex-col gap-3 pb-1">
           <button
             onClick={() => {
-              if (removeTarget) removeHolding(removeTarget.id)
+              if (removeTarget) {
+                removeHolding(removeTarget.id)
+                showToast(`Removed "${removeTarget.name}" from portfolio`, 'info')
+              }
               setRemoveConfirmOpen(false)
               setRemoveTarget(null)
             }}
-            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-loss px-5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+            aria-label={`Confirm remove holding ${removeTarget?.name ?? ''}`}
+            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-loss px-5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer"
           >
             Yes, remove holding
           </button>
           <button
             onClick={() => { setRemoveConfirmOpen(false); setRemoveTarget(null) }}
-            className="w-full rounded-full py-2.5 text-[14px] font-semibold text-ink-muted transition-colors hover:text-ink"
+            aria-label="Cancel removal"
+            className="w-full rounded-full py-2.5 text-[14px] font-semibold text-ink-muted transition-colors hover:text-ink cursor-pointer"
           >
             Cancel
           </button>
