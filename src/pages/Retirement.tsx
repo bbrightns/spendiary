@@ -457,381 +457,383 @@ export function Retirement() {
         subtitle={`Age ${currentAge} · ${yearsLeft} year${yearsLeft !== 1 ? 's' : ''} to retirement`}
       />
 
-      <div className="grid grid-cols-1 gap-4 ">
-
-        {/* ── Left: Inputs ── */}
-        <Card className="animate-rise">
-          <h2 className="font-display text-[17px] font-bold text-ink mb-5">Your Plan</h2>
-          <div className="space-y-4">
-            <TextField
-              label="Date of birth"
-              type="date"
-              value={birthDate}
-              onChange={setBirthDate}
-            />
-            <NumberField
-              label="Monthly spend in retirement"
-              prefix="฿"
-              hint="In today's money"
-              value={monthlySpend}
-              onChange={setMonthlySpend}
-              placeholder="50,000"
-            />
-            <div>
-              <span className="text-[13px] font-semibold text-ink-soft block mb-1.5">
-                Payout Strategy
-              </span>
-              <div className="grid grid-cols-2 gap-1 p-1 bg-surface-muted rounded-xl border border-line-strong">
-                <button
-                  type="button"
-                  onClick={() => setWithdrawalStrategy('lump_sum')}
-                  className={`py-2 px-3 rounded-lg text-[13.5px] font-semibold transition-all duration-200 cursor-pointer ${
-                    withdrawalStrategy === 'lump_sum'
-                      ? 'bg-surface text-ink shadow-sm'
-                      : 'text-ink-muted hover:text-ink'
-                  }`}
-                >
-                  Lump Sum
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setWithdrawalStrategy('drawdown')}
-                  className={`py-2 px-3 rounded-lg text-[13.5px] font-semibold transition-all duration-200 cursor-pointer ${
-                    withdrawalStrategy === 'drawdown'
-                      ? 'bg-surface text-ink shadow-sm'
-                      : 'text-ink-muted hover:text-ink'
-                  }`}
-                >
-                  Drawdown
-                </button>
-              </div>
-              <p className="mt-1 text-[11px] text-ink-muted leading-relaxed">
-                {withdrawalStrategy === 'lump_sum'
-                  ? 'Withdraw full amount at retirement; no reinvestment.'
-                  : 'Withdraw annual budget; keep the rest invested.'}
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <NumberField
-                label="Retire at age"
-                value={retireAge}
-                onChange={setRetireAge}
-                placeholder="40"
-                min={currentAge + 1}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* ── Left Column (5 cols): Inputs & Runway Milestones ── */}
+        <div className="lg:col-span-5 xl:col-span-5 space-y-6">
+          {/* ── Left: Inputs ── */}
+          <Card className="animate-rise">
+            <h2 className="font-display text-[17px] font-bold text-ink mb-5">Your Plan</h2>
+            <div className="space-y-4">
+              <TextField
+                label="Date of birth"
+                type="date"
+                value={birthDate}
+                onChange={setBirthDate}
               />
               <NumberField
-                label="Plan until age"
-                value={planUntilAge}
-                onChange={setPlanUntilAge}
-                placeholder="85"
-                min={Number(retireAge) + 1}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <NumberField
-                label="Monthly investment"
+                label="Monthly spend in retirement"
                 prefix="฿"
-                value={monthlyInvestField}
-                onChange={setMonthlyInvestField}
-                placeholder={dcaMonthly > 0 ? String(dcaMonthly) : '0'}
+                hint="In today's money"
+                value={monthlySpend}
+                onChange={setMonthlySpend}
+                placeholder="50,000"
               />
-              <NumberField
-                label="Savings increase/year"
-                suffix="%"
-                value={annualSavingsGrowth}
-                onChange={setAnnualSavingsGrowth}
-                placeholder="0"
-                min={0}
-              />
+              <div>
+                <span className="text-[13px] font-semibold text-ink-soft block mb-1.5">
+                  Payout Strategy
+                </span>
+                <div className="grid grid-cols-2 gap-1 p-1 bg-surface-muted rounded-xl border border-line-strong">
+                  <button
+                    type="button"
+                    onClick={() => setWithdrawalStrategy('lump_sum')}
+                    className={`py-2 px-3 rounded-lg text-[13.5px] font-semibold transition-all duration-200 cursor-pointer ${
+                      withdrawalStrategy === 'lump_sum'
+                        ? 'bg-surface text-ink shadow-sm'
+                        : 'text-ink-muted hover:text-ink'
+                    }`}
+                  >
+                    Lump Sum
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWithdrawalStrategy('drawdown')}
+                    className={`py-2 px-3 rounded-lg text-[13.5px] font-semibold transition-all duration-200 cursor-pointer ${
+                      withdrawalStrategy === 'drawdown'
+                        ? 'bg-surface text-ink shadow-sm'
+                        : 'text-ink-muted hover:text-ink'
+                    }`}
+                  >
+                    Drawdown
+                  </button>
+                </div>
+                <p className="mt-1 text-[11px] text-ink-muted leading-relaxed">
+                  {withdrawalStrategy === 'lump_sum'
+                    ? 'Withdraw full amount at retirement; no reinvestment.'
+                    : 'Withdraw annual budget; keep the rest invested.'}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <NumberField
+                  label="Retire at age"
+                  value={retireAge}
+                  onChange={setRetireAge}
+                  placeholder="40"
+                  min={currentAge + 1}
+                />
+                <NumberField
+                  label="Plan until age"
+                  value={planUntilAge}
+                  onChange={setPlanUntilAge}
+                  placeholder="85"
+                  min={Number(retireAge) + 1}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <NumberField
+                  label="Monthly investment"
+                  prefix="฿"
+                  value={monthlyInvestField}
+                  onChange={setMonthlyInvestField}
+                  placeholder={dcaMonthly > 0 ? String(dcaMonthly) : '0'}
+                />
+                <NumberField
+                  label="Savings increase/year"
+                  suffix="%"
+                  value={annualSavingsGrowth}
+                  onChange={setAnnualSavingsGrowth}
+                  placeholder="0"
+                  min={0}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <NumberField
+                  label="Expected return"
+                  suffix="%"
+                  value={expectedReturn}
+                  onChange={setExpectedReturn}
+                  placeholder="8"
+                  min={0}
+                />
+                <NumberField
+                  label="Inflation"
+                  suffix="%"
+                  value={inflationRate}
+                  onChange={setInflationRate}
+                  placeholder="3"
+                  min={0}
+                />
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <NumberField
-                label="Expected return"
-                suffix="%"
-                value={expectedReturn}
-                onChange={setExpectedReturn}
-                placeholder="8"
-                min={0}
-              />
-              <NumberField
-                label="Inflation"
-                suffix="%"
-                value={inflationRate}
-                onChange={setInflationRate}
-                placeholder="3"
-                min={0}
-              />
+
+            {/* Summary: simplified per user request */}
+            <div className="mt-5 rounded-2xl bg-surface-muted px-4 py-3 space-y-2">
+              <Row label="Years to retirement"  value={`${yearsLeft} yr${yearsLeft !== 1 ? 's' : ''}`} />
+              <Row label={couldRetireAge.label} value={couldRetireAge.value} highlight={couldRetireAge.highlight} />
+              <Row label="Years in retirement"  value={`${retirementYears} yr${retirementYears !== 1 ? 's' : ''}`} />
+              {Number(monthlySpend) > 0 && (
+                <Row
+                  label="Spend at retirement"
+                  value={`${thbCompact(futureMonthlySpend)}/mo`}
+                />
+              )}
             </div>
-          </div>
+          </Card>
 
-          {/* Summary: simplified per user request */}
-          <div className="mt-5 rounded-2xl bg-surface-muted px-4 py-3 space-y-2">
-            <Row label="Years to retirement"  value={`${yearsLeft} yr${yearsLeft !== 1 ? 's' : ''}`} />
-            <Row label={couldRetireAge.label} value={couldRetireAge.value} highlight={couldRetireAge.highlight} />
-            <Row label="Years in retirement"  value={`${retirementYears} yr${retirementYears !== 1 ? 's' : ''}`} />
-            {Number(monthlySpend) > 0 && (
-              <Row
-                label="Spend at retirement"
-                value={`${thbCompact(futureMonthlySpend)}/mo`}
-              />
-            )}
-          </div>
-        </Card>
+          {/* ── Wealth Runway & Milestones ── */}
+          <Card className="animate-rise">
+            <h2 className="font-display text-[17px] font-bold text-ink mb-1">Wealth Runway & Milestones</h2>
+            <p className="text-[13px] text-ink-muted mb-4">
+              How long your money lasts and your progress toward financial independence.
+            </p>
 
-        {/* ── Wealth Runway & Milestones ── */}
-        <Card className="animate-rise">
-          <h2 className="font-display text-[17px] font-bold text-ink mb-1">Wealth Runway & Milestones</h2>
-          <p className="text-[13px] text-ink-muted mb-4">
-            How long your money lasts and your progress toward financial independence.
-          </p>
-
-          {/* Runway Large display */}
-          <div className="rounded-2xl bg-surface-muted px-4 py-4 mb-4 flex items-center justify-between">
-            <div>
-              <p className="text-[12.5px] font-medium text-ink-muted">Current Wealth Runway</p>
-              <p className="mt-1 font-display text-[28px] font-extrabold tnum text-ink leading-none">
-                {runwayYears !== null ? `${runwayYears.toFixed(1)} years` : '-'}
-              </p>
-              <p className="mt-1 text-[11px] text-ink-muted">
-                {runwayYears !== null
-                  ? `Covering ฿${(monthlySpendVal * 12).toLocaleString()}/yr of expenses`
-                  : 'Enter monthly spend to calculate'}
-              </p>
+            {/* Runway Large display */}
+            <div className="rounded-2xl bg-surface-muted px-4 py-4 mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-[12.5px] font-medium text-ink-muted">Current Wealth Runway</p>
+                <p className="mt-1 font-display text-[28px] font-extrabold tnum text-ink leading-none">
+                  {runwayYears !== null ? `${runwayYears.toFixed(1)} years` : '-'}
+                </p>
+                <p className="mt-1 text-[11px] text-ink-muted">
+                  {runwayYears !== null
+                    ? `Covering ฿${(monthlySpendVal * 12).toLocaleString()}/yr of expenses`
+                    : 'Enter monthly spend to calculate'}
+                </p>
+              </div>
+              <div className="h-12 w-12 shrink-0 rounded-full bg-brand-soft text-brand flex items-center justify-center font-bold text-[18px]">
+                ⏳
+              </div>
             </div>
-            <div className="h-12 w-12 shrink-0 rounded-full bg-brand-soft text-brand flex items-center justify-center font-bold text-[18px]">
-              ⏳
-            </div>
-          </div>
 
-          {/* Milestones list */}
-          <div className="space-y-3.5">
-            <h3 className="text-[13.5px] font-bold text-ink">Financial Milestones</h3>
-            <div className="space-y-2">
-              {milestoneList.map((m) => (
-                <div key={m.id} className="flex items-start gap-3 rounded-xl border border-line bg-surface p-3 transition-shadow hover:shadow-[var(--shadow-soft)]">
-                  <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
-                    m.completed ? 'bg-gain text-white' : 'bg-surface-muted text-ink-faint border border-line-strong'
-                  }`}>
-                    {m.completed ? '✓' : '•'}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-[13px] font-semibold text-ink">{m.name}</p>
-                      <span className="tnum text-[12px] font-bold text-ink-soft">{m.valueLabel}</span>
+            {/* Milestones list */}
+            <div className="space-y-3.5">
+              <h3 className="text-[13.5px] font-bold text-ink">Financial Milestones</h3>
+              <div className="space-y-2">
+                {milestoneList.map((m) => (
+                  <div key={m.id} className="flex items-start gap-3 rounded-xl border border-line bg-surface p-3 transition-shadow hover:shadow-[var(--shadow-soft)]">
+                    <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+                      m.completed ? 'bg-gain text-white' : 'bg-surface-muted text-ink-faint border border-line-strong'
+                    }`}>
+                      {m.completed ? '✓' : '•'}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[13px] font-semibold text-ink">{m.name}</p>
+                        <span className="tnum text-[12px] font-bold text-ink-soft">{m.valueLabel}</span>
+                      </div>
+                      <p className="text-[11.5px] text-ink-muted mt-0.5">{m.desc}</p>
+                      
+                      {/* Progress bar for this milestone if not completed */}
+                      {!m.completed && m.progress > 0 && (
+                        <div className="mt-2 h-1.5 w-full rounded-full bg-surface-muted overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-brand"
+                            style={{ width: `${Math.min(100, m.progress)}%` }}
+                          />
+                        </div>
+                      )}
                     </div>
-                    <p className="text-[11.5px] text-ink-muted mt-0.5">{m.desc}</p>
-                    
-                    {/* Progress bar for this milestone if not completed */}
-                    {!m.completed && m.progress > 0 && (
-                      <div className="mt-2 h-1.5 w-full rounded-full bg-surface-muted overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-brand"
-                          style={{ width: `${Math.min(100, m.progress)}%` }}
-                        />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* ── Right Column (7 cols): Projection Chart ── */}
+        <div className="lg:col-span-7 xl:col-span-7 space-y-6">
+          <Card className="animate-rise">
+            {/* Hero stats row */}
+            <div className="mb-5">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                  <p className="text-[12px] font-medium text-ink-muted">Projected at retirement</p>
+                  <p className="mt-0.5 font-display text-[32px] font-extrabold tnum text-ink leading-none">
+                    {thbCompact(projectedInvestment)}
+                  </p>
+                </div>
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className={`rounded-full px-3.5 py-1.5 text-[13px] font-bold flex items-center gap-1.5 shrink-0 ${
+                    onTrack ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'
+                  }`}
+                >
+                  {onTrack ? (
+                    <>
+                      <svg aria-hidden="true" width={12} height={12} viewBox="0 0 12 12" fill="none">
+                        <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      On Track
+                    </>
+                  ) : (
+                    <>
+                      <svg aria-hidden="true" width={12} height={12} viewBox="0 0 12 12" fill="none">
+                        <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
+                      </svg>
+                      Shortfall
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Secondary hero stats */}
+              {corpusNeeded > 0 && (
+                <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl bg-surface-muted px-3 py-3">
+                  <HeroStat
+                    label={onTrack ? 'Surplus' : 'Shortfall'}
+                    value={thbCompact(Math.abs(gap))}
+                    color={onTrack ? 'gain' : 'loss'}
+                  />
+                  <HeroStat
+                    label="Real return"
+                    value={`${(realReturn * 100).toFixed(1)}%`}
+                    sub="after inflation"
+                    color={realReturn >= 0 ? 'gain' : 'loss'}
+                  />
+                  {minRate !== null ? (
+                    <HeroStat
+                      label="Min. return"
+                      value={`${(minRate * 100).toFixed(1)}%`}
+                      sub={rateGap !== null ? `${rateGap >= 0 ? '+' : ''}${(rateGap * 100).toFixed(1)}% buffer` : undefined}
+                      color={rateGap !== null ? (rateGap >= 0 ? 'gain' : 'loss') : 'neutral'}
+                    />
+                  ) : (
+                    <HeroStat label="Min. return" value="Unreachable" color="loss" />
+                  )}
+                </div>
+              )}
+
+              {/* Shortfall callout — two paths to close the gap */}
+              {!onTrack && (monthlyGap !== null || (earliestViableAge !== null && earliestViableAge > plannedAge)) && (
+                <div className="mt-3 rounded-2xl border border-loss/20 bg-loss-soft px-4 py-4 space-y-1">
+                  {/* Header */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg className="h-4 w-4 shrink-0 text-loss" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                      <path d="M8 6v3M8 11.5v.5" strokeLinecap="round" />
+                      <circle cx={8} cy={8} r={6.5} />
+                    </svg>
+                    <p className="text-[13px] font-bold text-loss">To close the gap, pick a path:</p>
+                  </div>
+                  {/* Path items */}
+                  <div className="space-y-3">
+                    {monthlyGap !== null && monthlyGap > 0 && (
+                      <div className="flex items-start gap-3">
+                        <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/20 text-[10px] font-bold text-loss">1</span>
+                        <div className="min-w-0">
+                          <p className="text-[13px] font-semibold text-loss leading-snug">
+                            Invest <span className="font-bold">{thbCompact(monthlyGap)}</span> more / month
+                          </p>
+                          <p className="text-[11.5px] text-loss/60 mt-0.5">Total: {thbCompact(investMonthly + monthlyGap)}/mo</p>
+                        </div>
+                      </div>
+                    )}
+                    {earliestViableAge !== null && earliestViableAge > plannedAge ? (
+                      <div className="flex items-start gap-3">
+                        <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/20 text-[10px] font-bold text-loss">2</span>
+                        <div className="min-w-0">
+                          <p className="text-[13px] font-semibold text-loss leading-snug">
+                            Retire at age <span className="font-bold">{earliestViableAge}</span> instead of {Number(retireAge) || 40}
+                          </p>
+                          <p className="text-[11.5px] text-loss/60 mt-0.5">
+                            {earliestViableAge - (Number(retireAge) || 40)} more year{earliestViableAge - (Number(retireAge) || 40) !== 1 ? 's' : ''} of compounding
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-3">
+                        <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/10 text-[10px] font-bold text-loss/40">2</span>
+                        <p className="text-[12px] text-loss/50 leading-snug">Retiring later won't close the gap within the plan horizon.</p>
                       </div>
                     )}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </Card>
-
-        {/* ── Right: Chart ── */}
-        <Card className=" animate-rise">
-
-          {/* Hero stats row */}
-          <div className="mb-5">
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div>
-                <p className="text-[12px] font-medium text-ink-muted">Projected at retirement</p>
-                <p className="mt-0.5 font-display text-[32px] font-extrabold tnum text-ink leading-none">
-                  {thbCompact(projectedInvestment)}
-                </p>
-              </div>
-              <div
-                role="status"
-                aria-live="polite"
-                className={`rounded-full px-3.5 py-1.5 text-[13px] font-bold flex items-center gap-1.5 shrink-0 ${
-                  onTrack ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'
-                }`}
-              >
-                {onTrack ? (
-                  <>
-                    <svg aria-hidden="true" width={12} height={12} viewBox="0 0 12 12" fill="none">
-                      <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    On Track
-                  </>
-                ) : (
-                  <>
-                    <svg aria-hidden="true" width={12} height={12} viewBox="0 0 12 12" fill="none">
-                      <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
-                    </svg>
-                    Shortfall
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Secondary hero stats */}
-            {corpusNeeded > 0 && (
-              <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl bg-surface-muted px-3 py-3">
-                <HeroStat
-                  label={onTrack ? 'Surplus' : 'Shortfall'}
-                  value={thbCompact(Math.abs(gap))}
-                  color={onTrack ? 'gain' : 'loss'}
-                />
-                <HeroStat
-                  label="Real return"
-                  value={`${(realReturn * 100).toFixed(1)}%`}
-                  sub="after inflation"
-                  color={realReturn >= 0 ? 'gain' : 'loss'}
-                />
-                {minRate !== null ? (
-                  <HeroStat
-                    label="Min. return"
-                    value={`${(minRate * 100).toFixed(1)}%`}
-                    sub={rateGap !== null ? `${rateGap >= 0 ? '+' : ''}${(rateGap * 100).toFixed(1)}% buffer` : undefined}
-                    color={rateGap !== null ? (rateGap >= 0 ? 'gain' : 'loss') : 'neutral'}
-                  />
-                ) : (
-                  <HeroStat label="Min. return" value="Unreachable" color="loss" />
-                )}
-              </div>
-            )}
-
-            {/* Shortfall callout — two paths to close the gap */}
-            {!onTrack && (monthlyGap !== null || (earliestViableAge !== null && earliestViableAge > plannedAge)) && (
-              <div className="mt-3 rounded-2xl border border-loss/20 bg-loss-soft px-4 py-4 space-y-1">
-                {/* Header */}
-                <div className="flex items-center gap-2 mb-3">
-                  <svg className="h-4 w-4 shrink-0 text-loss" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8}>
-                    <path d="M8 6v3M8 11.5v.5" strokeLinecap="round" />
-                    <circle cx={8} cy={8} r={6.5} />
-                  </svg>
-                  <p className="text-[13px] font-bold text-loss">To close the gap, pick a path:</p>
-                </div>
-                {/* Path items */}
-                <div className="space-y-3">
-                  {monthlyGap !== null && monthlyGap > 0 && (
-                    <div className="flex items-start gap-3">
-                      <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/20 text-[10px] font-bold text-loss">1</span>
-                      <div className="min-w-0">
-                        <p className="text-[13px] font-semibold text-loss leading-snug">
-                          Invest <span className="font-bold">{thbCompact(monthlyGap)}</span> more / month
-                        </p>
-                        <p className="text-[11.5px] text-loss/60 mt-0.5">Total: {thbCompact(investMonthly + monthlyGap)}/mo</p>
-                      </div>
-                    </div>
-                  )}
-                  {earliestViableAge !== null && earliestViableAge > plannedAge ? (
-                    <div className="flex items-start gap-3">
-                      <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/20 text-[10px] font-bold text-loss">2</span>
-                      <div className="min-w-0">
-                        <p className="text-[13px] font-semibold text-loss leading-snug">
-                          Retire at age <span className="font-bold">{earliestViableAge}</span> instead of {Number(retireAge) || 40}
-                        </p>
-                        <p className="text-[11.5px] text-loss/60 mt-0.5">
-                          {earliestViableAge - (Number(retireAge) || 40)} more year{earliestViableAge - (Number(retireAge) || 40) !== 1 ? 's' : ''} of compounding
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-start gap-3">
-                      <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/10 text-[10px] font-bold text-loss/40">2</span>
-                      <p className="text-[12px] text-loss/50 leading-snug">Retiring later won't close the gap within the plan horizon.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-          </div>
-
-          {/* Mobile view toggle */}
-          <div className=" flex gap-1 mb-4">
-            {(['chart', 'bars'] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => setMobileView(v)}
-                className={`px-3 py-1 rounded-full text-[12px] font-semibold transition-colors ${
-                  mobileView === v ? 'bg-ink text-surface' : 'bg-surface-muted text-ink-soft'
-                }`}
-              >
-                {v === 'chart' ? 'Line chart' : 'Bars'}
-              </button>
-            ))}
-          </div>
-
-          {/* Mobile bars */}
-          {mobileView === 'bars' && (
-            <div className=" mb-3">
-              <MobileProjection
-                projectedInvestment={projectedInvestment}
-                projectedSavings={projectedSavings}
-                corpusNeeded={corpusNeeded}
-                maxY={maxY}
-              />
-            </div>
-          )}
-
-          {/* SVG line chart */}
-          <div className={`overflow-x-auto ${mobileView === 'bars' ? 'hidden ' : ''}`}>
-            <svg
-              style={{ minWidth: 320 }}
-              role="img"
-              aria-label="Retirement growth projection chart"
-              viewBox={`0 0 ${chartW} ${chartH}`}
-              className="w-full"
-            >
-              <title>Retirement growth projection</title>
-              {yTicks.map(({ v, y }) => (
-                <g key={v}>
-                  <line x1={padL} y1={y} x2={chartW - padR} y2={y} stroke="var(--color-line)" strokeWidth={1} />
-                  <text x={padL - 8} y={y + 4} textAnchor="end" fontSize={14} fill="var(--color-ink-muted)">
-                    {thbCompact(v)}
-                  </text>
-                </g>
-              ))}
-              {investLine.map((_, i) => {
-                if (i % Math.max(Math.floor(yearsLeft / 5), 1) !== 0 && i !== yearsLeft) return null
-                return (
-                  <text key={i} x={toX(i, investLine.length)} y={chartH - padB + 18}
-                    textAnchor="middle" fontSize={15} fill="var(--color-ink-muted)">
-                    {currentAge + i}
-                  </text>
-                )
-              })}
-              <line x1={toX(investLine.length - 1, investLine.length)} x2={toX(investLine.length - 1, investLine.length)}
-                y1={padT} y2={chartH - padB} stroke="var(--color-line)" strokeWidth={1} strokeDasharray="4 3" opacity={0.45} />
-              <text x={(padL + chartW - padR) / 2} y={chartH - 4} textAnchor="middle" fontSize={14} fill="var(--color-ink-muted">
-                Age
-              </text>
-              {corpusNeeded > 0 && corpusNeeded <= maxY && (
-                <>
-                  <line x1={padL} y1={toY(corpusNeeded)} x2={chartW - padR} y2={toY(corpusNeeded)}
-                    stroke={C_TARGET} strokeWidth={1.5} strokeDasharray="5 4" opacity={0.6} />
-                  <text x={chartW - padR - 2} y={toY(corpusNeeded) - 4}
-                    textAnchor="end" fontSize={12} fill={C_TARGET} opacity={0.8}>
-                    Target {thbCompact(corpusNeeded)}
-                  </text>
-                </>
               )}
-              <path d={makePath(savingsLine)} fill="none" stroke={C_SAVINGS} strokeWidth={2}   strokeLinejoin="round" />
-              <path d={makePath(investLine)}  fill="none" stroke={C_INVEST}  strokeWidth={2.5} strokeLinejoin="round" />
-              <circle cx={toX(investLine.length  - 1, investLine.length)}  cy={toY(projectedInvestment)} r={4} fill={C_INVEST}  />
-              <circle cx={toX(savingsLine.length - 1, savingsLine.length)} cy={toY(projectedSavings)}    r={4} fill={C_SAVINGS} />
-            </svg>
-          </div>
+            </div>
 
-          {/* Legend */}
-          <div className={`mt-3 flex flex-wrap gap-4 ${mobileView === 'bars' ? 'hidden ' : ''}`}>
-            <LegendItem color={C_INVEST}  label={`With returns (${thbCompact(projectedInvestment)} projected)`} />
-            <LegendItem color={C_SAVINGS} label={`Contributions only (${thbCompact(projectedSavings)} projected)`} />
-            {corpusNeeded > 0 && <LegendItem color={C_TARGET} label={`Target corpus (${thbCompact(corpusNeeded)})`} dashed />}
-          </div>
-        </Card>
+            {/* Mobile view toggle */}
+            <div className=" flex gap-1 mb-4">
+              {(['chart', 'bars'] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setMobileView(v)}
+                  className={`px-3 py-1 rounded-full text-[12px] font-semibold transition-colors ${
+                    mobileView === v ? 'bg-ink text-surface' : 'bg-surface-muted text-ink-soft'
+                  }`}
+                >
+                  {v === 'chart' ? 'Line chart' : 'Bars'}
+                </button>
+              ))}
+            </div>
+
+            {/* Mobile bars */}
+            {mobileView === 'bars' && (
+              <div className=" mb-3">
+                <MobileProjection
+                  projectedInvestment={projectedInvestment}
+                  projectedSavings={projectedSavings}
+                  corpusNeeded={corpusNeeded}
+                  maxY={maxY}
+                />
+              </div>
+            )}
+
+            {/* SVG line chart */}
+            <div className={`overflow-x-auto ${mobileView === 'bars' ? 'hidden ' : ''}`}>
+              <svg
+                style={{ minWidth: 320 }}
+                role="img"
+                aria-label="Retirement growth projection chart"
+                viewBox={`0 0 ${chartW} ${chartH}`}
+                className="w-full"
+              >
+                <title>Retirement growth projection</title>
+                {yTicks.map(({ v, y }) => (
+                  <g key={v}>
+                    <line x1={padL} y1={y} x2={chartW - padR} y2={y} stroke="var(--color-line)" strokeWidth={1} />
+                    <text x={padL - 8} y={y + 4} textAnchor="end" fontSize={14} fill="var(--color-ink-muted)">
+                      {thbCompact(v)}
+                    </text>
+                  </g>
+                ))}
+                {investLine.map((_, i) => {
+                  if (i % Math.max(Math.floor(yearsLeft / 5), 1) !== 0 && i !== yearsLeft) return null
+                  return (
+                    <text key={i} x={toX(i, investLine.length)} y={chartH - padB + 18}
+                      textAnchor="middle" fontSize={15} fill="var(--color-ink-muted)">
+                      {currentAge + i}
+                    </text>
+                  )
+                })}
+                <line x1={toX(investLine.length - 1, investLine.length)} x2={toX(investLine.length - 1, investLine.length)}
+                  y1={padT} y2={chartH - padB} stroke="var(--color-line)" strokeWidth={1} strokeDasharray="4 3" opacity={0.45} />
+                <text x={(padL + chartW - padR) / 2} y={chartH - 4} textAnchor="middle" fontSize={14} fill="var(--color-ink-muted">
+                  Age
+                </text>
+                {corpusNeeded > 0 && corpusNeeded <= maxY && (
+                  <>
+                    <line x1={padL} y1={toY(corpusNeeded)} x2={chartW - padR} y2={toY(corpusNeeded)}
+                      stroke={C_TARGET} strokeWidth={1.5} strokeDasharray="5 4" opacity={0.6} />
+                    <text x={chartW - padR - 2} y={toY(corpusNeeded) - 4}
+                      textAnchor="end" fontSize={12} fill={C_TARGET} opacity={0.8}>
+                      Target {thbCompact(corpusNeeded)}
+                    </text>
+                  </>
+                )}
+                <path d={makePath(savingsLine)} fill="none" stroke={C_SAVINGS} strokeWidth={2}   strokeLinejoin="round" />
+                <path d={makePath(investLine)}  fill="none" stroke={C_INVEST}  strokeWidth={2.5} strokeLinejoin="round" />
+                <circle cx={toX(investLine.length  - 1, investLine.length)}  cy={toY(projectedInvestment)} r={4} fill={C_INVEST}  />
+                <circle cx={toX(savingsLine.length - 1, savingsLine.length)} cy={toY(projectedSavings)}    r={4} fill={C_SAVINGS} />
+              </svg>
+            </div>
+
+            {/* Legend */}
+            <div className={`mt-3 flex flex-wrap gap-4 ${mobileView === 'bars' ? 'hidden ' : ''}`}>
+              <LegendItem color={C_INVEST}  label={`With returns (${thbCompact(projectedInvestment)} projected)`} />
+              <LegendItem color={C_SAVINGS} label={`Contributions only (${thbCompact(projectedSavings)} projected)`} />
+              {corpusNeeded > 0 && <LegendItem color={C_TARGET} label={`Target corpus (${thbCompact(corpusNeeded)})`} dashed />}
+            </div>
+          </Card>
+        </div>
       </div>
     </>
   )
