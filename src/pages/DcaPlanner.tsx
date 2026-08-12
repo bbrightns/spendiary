@@ -6,7 +6,7 @@ import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { DcaForm } from '../components/forms/DcaForm'
 import { ConfirmDcaBuyForm } from '../components/forms/ConfirmDcaBuyForm'
-import { CheckIcon, DcaIcon, PencilIcon, TrashIcon } from '../components/icons'
+import { CheckCircleIcon, CheckIcon, DcaIcon, PencilIcon, TrashIcon } from '../components/icons'
 import {
   ASSET_META, buyDayPassedThisPeriod, dcaThisMonth, isConfirmedForPeriod, isSkippedForPeriod,
   nextBuyDate, shouldConfirmBuy,
@@ -506,10 +506,10 @@ export function DcaPlanner() {
                                       <button
                                         onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
                                         aria-label={`Confirm DCA buy for ${p.name}`}
-                                        className="rounded-lg px-3 py-1 text-[11.5px] font-bold text-white transition-colors active:scale-95 cursor-pointer"
-                                        style={{ background: 'var(--color-gain)' }}
+                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#2ee68f] px-3 py-1.5 text-[12px] font-bold text-[#063327] transition-all hover:bg-[#28d683] hover:brightness-95 active:scale-95 cursor-pointer shadow-sm"
                                       >
-                                        Confirm Buy
+                                        <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
+                                        <span>Confirm Buy</span>
                                       </button>
                                       <button
                                         onClick={(e) => {
@@ -518,7 +518,7 @@ export function DcaPlanner() {
                                           showToast(`Skipped DCA buy for "${p.name}" this period`, 'info')
                                         }}
                                         aria-label={`Skip DCA buy for ${p.name} this period`}
-                                        className="rounded-lg border px-2.5 py-1 text-[11.5px] font-semibold transition-colors active:scale-95 cursor-pointer text-ink-muted border-line hover:bg-surface-muted"
+                                        className="rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors active:scale-95 cursor-pointer text-ink-muted border-line hover:bg-surface-muted hover:text-ink"
                                       >
                                         Skip
                                       </button>
