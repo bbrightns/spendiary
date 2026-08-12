@@ -12,7 +12,7 @@ export const navItems: NavItem[] = [
   { to: '/', label: 'Dashboard', short: 'Home', icon: DashboardIcon },
   { to: '/portfolio', label: 'Portfolio', short: 'Portfolio', icon: PortfolioIcon },
   { to: '/logs', label: 'Activity Logs', short: 'Logs', icon: ClockIcon },
-  { to: '/dca', label: 'Planner', short: 'Plan', icon: DcaIcon },
+  { to: '/dca', label: 'DCA Planner', short: 'DCA', icon: DcaIcon },
   { to: '/retirement', label: 'Retirement', short: 'Retire', icon: RetirementIcon },
 ]
 
