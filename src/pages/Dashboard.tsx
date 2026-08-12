@@ -10,14 +10,10 @@ import { InteractiveNetWorthChart } from '../components/charts/InteractiveNetWor
 import { PnLPill } from '../components/ui/PnL'
 import { CashAccountsForm } from '../components/forms/CashAccountsForm'
 import {
-  AlertIcon,
-  CheckIcon,
-  ClockIcon,
   PortfolioIcon,
   SparkleIcon,
   WalletIcon,
   DcaIcon,
-  TransferIcon,
 } from '../components/icons'
 import {
   ASSET_META,
@@ -28,9 +24,8 @@ import {
   remainingTransfers,
   shouldConfirmBuy,
   totalCash,
-  FREQUENCY_LABEL,
 } from '../lib/calc'
-import { daysUntil, formatDateShort, moneyCompact, thb, thbCompact } from '../lib/format'
+import { daysUntil, moneyCompact, thb, thbCompact } from '../lib/format'
 
 // Distinct colors for cash account segments — cycles if >8 accounts
 const CASH_COLORS = [
@@ -39,9 +34,9 @@ const CASH_COLORS = [
   'var(--color-crypto)', // amber
   'var(--color-stocks)', // sky
   'var(--color-funds)', // violet
-  '#f472b6', // pink
-  '#fb923c', // orange
-  '#a78bfa', // purple
+  '#f43f5e', // rose
+  '#06b6d4', // cyan
+  '#84cc16', // lime
 ]
 
 export function Dashboard() {
@@ -65,16 +60,6 @@ export function Dashboard() {
   const dca = useMemo(() => dcaThisMonth(data.dcaPlans), [data.dcaPlans])
   const cash = useMemo(() => totalCash(data, usdThb), [data.cashAccounts, usdThb])
   const nw = useMemo(() => netWorth(data, usdThb), [data.cashAccounts, data.holdings, usdThb])
-
-  const upcoming = useMemo(
-    () =>
-      [...data.transfers]
-        .map((t) => ({ ...t, days: daysUntil(t.expiryDate) }))
-        .filter((t) => remainingTransfers(t) > 0)
-        .sort((a, b) => a.days - b.days)
-        .slice(0, 4),
-    [data.transfers],
-  )
 
   const today = new Date().toLocaleDateString('en-GB', {
     weekday: 'long',
@@ -168,23 +153,23 @@ export function Dashboard() {
             <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand/15 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
 
-            <div className="relative flex flex-col justify-between gap-6 sm:flex-row sm:items-start">
+            <div className="relative flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
               <div>
                 <div className="flex items-center gap-2 text-white/60">
-                  <WalletIcon className="h-4 w-4" />
-                  <span className="text-[13px] font-medium tracking-wide">Total Net Worth</span>
+                  <WalletIcon className="h-3.5 w-3.5" />
+                  <span className="text-[12.5px] font-medium tracking-wide">Total Net Worth</span>
                 </div>
-                <p className="mt-2.5 font-display text-[34px] sm:text-[40px] font-extrabold leading-none tracking-tight tnum text-white">
+                <p className="mt-1.5 font-display text-[28px] sm:text-[32px] font-extrabold leading-none tracking-tight tnum text-white">
                   {thb(nw)}
                 </p>
 
-                <div className="mt-3.5 flex flex-wrap items-center gap-2.5">
-                  <PnLPill value={portfolio.pnl} size="md" />
-                  <span className="text-[12.5px] text-white/55 font-medium">unrealised</span>
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  <PnLPill value={portfolio.pnl} size="sm" />
+                  <span className="text-[11.5px] text-white/55 font-medium">unrealised</span>
                   {data.retirement?.monthlySpend && data.retirement.monthlySpend > 0 ? (
                     <Link
                       to="/retirement"
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 text-[11.5px] font-semibold text-white/80 transition-colors hover:bg-white/20 hover:text-white"
+                      className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold text-white/80 transition-colors hover:bg-white/20 hover:text-white"
                       aria-label="View wealth runway details on retirement page"
                     >
                       ⏳ {((nw / (data.retirement.monthlySpend * 12))).toFixed(1)}y runway
@@ -192,7 +177,7 @@ export function Dashboard() {
                   ) : (
                     <Link
                       to="/retirement"
-                      className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-white/40 transition-colors hover:bg-white/15 hover:text-white"
+                      className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-0.5 text-[10.5px] font-semibold text-white/40 transition-colors hover:bg-white/15 hover:text-white"
                       aria-label="Set up retirement spend to see runway"
                     >
                       ⏳ Set runway target
@@ -202,17 +187,17 @@ export function Dashboard() {
               </div>
 
               {/* Quick ratio box */}
-              <div className="rounded-2xl bg-white/5 p-3.5 ring-1 ring-white/10 sm:min-w-[200px]">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-xl bg-white/5 p-2.5 px-3.5 ring-1 ring-white/10 sm:min-w-[170px]">
+                <div className="grid grid-cols-2 gap-3.5">
                   <div>
-                    <p className="text-[11.5px] font-medium text-white/50">Invested</p>
-                    <p className="mt-0.5 font-display text-[16px] font-bold tnum text-white">
+                    <p className="text-[11px] font-medium text-white/50">Invested</p>
+                    <p className="mt-0.5 font-display text-[15px] font-bold tnum text-white">
                       {thbCompact(portfolio.value)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11.5px] font-medium text-white/50">Cash</p>
-                    <p className="mt-0.5 font-display text-[16px] font-bold tnum text-white">
+                    <p className="text-[11px] font-medium text-white/50">Cash</p>
+                    <p className="mt-0.5 font-display text-[15px] font-bold tnum text-white">
                       {thbCompact(cash)}
                     </p>
                   </div>
@@ -222,8 +207,8 @@ export function Dashboard() {
 
             {/* Asset Distribution Bar & Legend */}
             {nw > 0 && (
-              <div className="relative mt-6 pt-3 border-t border-white/10 space-y-2.5">
-                <div className="flex h-2 overflow-hidden rounded-full bg-white/10">
+              <div className="relative mt-4 pt-2.5 border-t border-white/10 space-y-2">
+                <div className="flex h-1.5 overflow-hidden rounded-full bg-white/10">
                   {alloc.map((a) => (
                     <div
                       key={a.assetClass}
@@ -244,22 +229,22 @@ export function Dashboard() {
                     />
                   )}
                 </div>
-                <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                <div className="flex flex-wrap gap-x-3.5 gap-y-1">
                   {alloc.map((a) => (
                     <span
                       key={a.assetClass}
-                      className="flex items-center gap-1.5 text-[11.5px] text-white/65 font-medium"
+                      className="flex items-center gap-1 text-[11px] text-white/65 font-medium"
                     >
                       <span
-                        className="h-2 w-2 shrink-0 rounded-full"
+                        className="h-1.5 w-1.5 shrink-0 rounded-full"
                         style={{ background: ASSET_META[a.assetClass].cssVar }}
                       />
                       {ASSET_META[a.assetClass].label} {Math.round((a.value / nw) * 100)}%
                     </span>
                   ))}
                   {cash > 0 && (
-                    <span className="flex items-center gap-1.5 text-[11.5px] text-white/65 font-medium">
-                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--color-cash)' }} />
+                    <span className="flex items-center gap-1 text-[11px] text-white/65 font-medium">
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'var(--color-cash)' }} />
                       Cash {Math.round((cash / nw) * 100)}%
                     </span>
                   )}
@@ -442,175 +427,93 @@ export function Dashboard() {
         {/* Cash Available Hub */}
         <div className="lg:col-span-6">
           <Card className="animate-rise h-full flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                    <WalletIcon className="h-4 w-4" />
-                  </div>
-                  <h2 className="font-display text-[16px] font-bold text-ink">Cash & Liquidity Hub</h2>
+      {/* ── ROW 3: Cash & Liquidity Hub (Full Width 12-cols) ── */}
+      <div>
+        <Card className="animate-rise">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-3.5 border-b border-line">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <div className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <WalletIcon className="h-4 w-4" />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setCashOpen(true)}
-                  className="text-[12.5px] font-semibold text-brand hover:underline cursor-pointer"
-                >
-                  Manage Accounts ✏️
-                </button>
+                <h2 className="font-display text-[16px] font-bold text-ink">Cash & Liquidity Hub</h2>
               </div>
-
-              <div className="mt-4 flex items-baseline justify-between">
-                <div>
-                  <span className="text-[11.5px] font-medium text-ink-muted">Available Cash</span>
-                  <p className="font-display text-[24px] font-extrabold tnum text-ink leading-tight">
-                    {thb(cash)}
-                  </p>
-                </div>
-                <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  {data.cashAccounts.length} Accounts
+              <div className="flex items-baseline gap-2 pl-3 border-l border-line">
+                <span className="font-display text-[22px] font-extrabold tnum text-ink leading-none">
+                  {thb(cash)}
                 </span>
+                <span className="text-[12px] text-ink-muted">available cash</span>
               </div>
-
-              {/* Cash accounts visual bar */}
-              {data.cashAccounts.length > 0 && (
-                <div className="mt-4 space-y-3">
-                  <div className="flex h-2 overflow-hidden rounded-full bg-surface-muted">
-                    {data.cashAccounts.map((a, i) => {
-                      const rate = usdThb && usdThb > 0 ? usdThb : 35
-                      const thbVal = a.currency === 'USD' ? a.balance * rate : a.balance
-                      return (
-                        <div
-                          key={a.id}
-                          style={{
-                            width: `${cash > 0 ? (thbVal / cash) * 100 : 0}%`,
-                            background: CASH_COLORS[i % CASH_COLORS.length],
-                          }}
-                          title={`${a.name}: ${moneyCompact(a.balance, a.currency)}`}
-                        />
-                      )
-                    })}
-                  </div>
-
-                  {/* Cash accounts list grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
-                    {data.cashAccounts.map((a, i) => (
-                      <div
-                        key={a.id}
-                        className="flex flex-col p-2 rounded-xl bg-surface-muted/60 border border-line/40"
-                      >
-                        <span className="flex items-center gap-1.5 text-[11px] font-medium text-ink-muted truncate">
-                          <span
-                            className="h-2 w-2 shrink-0 rounded-full"
-                            style={{ background: CASH_COLORS[i % CASH_COLORS.length] }}
-                          />
-                          <span className="truncate">{a.name}</span>
-                        </span>
-                        <span className="mt-0.5 font-display font-bold tnum text-[13px] text-ink">
-                          {moneyCompact(a.balance, a.currency)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
-            <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
-              <span>Emergency cash reserve</span>
+            <div className="flex items-center gap-3">
+              <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11.5px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                {data.cashAccounts.length} {data.cashAccounts.length === 1 ? 'Account' : 'Accounts'}
+              </span>
               <button
                 type="button"
                 onClick={() => setCashOpen(true)}
-                className="font-semibold text-brand hover:underline cursor-pointer"
+                className="text-[12.5px] font-semibold text-brand hover:underline cursor-pointer"
               >
-                + Add Account
+                Manage Accounts ✏️
               </button>
             </div>
-          </Card>
-        </div>
+          </div>
 
-        {/* Action Center & Upcoming Timeline */}
-        <div className="lg:col-span-6">
-          <Card className="animate-rise h-full flex flex-col justify-between" padded={false}>
-            <div>
-              <div className="flex items-center justify-between px-5 pt-5">
-                <div className="flex items-center gap-2">
-                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-sky-500/10 text-sky-500">
-                    <TransferIcon className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h2 className="font-display text-[16px] font-bold text-ink">Upcoming & Schedules</h2>
-                    <p className="text-[12px] text-ink-muted">Recurring transfers & actions</p>
-                  </div>
-                </div>
-                <Link
-                  to="/transfers"
-                  className="text-[12.5px] font-semibold text-brand hover:underline"
-                  aria-label="View all transfers"
-                >
-                  All Schedules →
-                </Link>
+          {/* Cash accounts visual bar & account pills */}
+          {data.cashAccounts.length > 0 ? (
+            <div className="mt-4 space-y-3">
+              <div className="flex h-2 overflow-hidden rounded-full bg-surface-muted">
+                {data.cashAccounts.map((a, i) => {
+                  const rate = usdThb && usdThb > 0 ? usdThb : 35
+                  const thbVal = a.currency === 'USD' ? a.balance * rate : a.balance
+                  return (
+                    <div
+                      key={a.id}
+                      style={{
+                        width: `${cash > 0 ? (thbVal / cash) * 100 : 0}%`,
+                        background: CASH_COLORS[i % CASH_COLORS.length],
+                      }}
+                      title={`${a.name}: ${moneyCompact(a.balance, a.currency)}`}
+                    />
+                  )
+                })}
               </div>
 
-              {upcoming.length > 0 ? (
-                <ul className="mt-3 divide-y divide-line">
-                  {upcoming.map((t) => {
-                    const soon = t.days <= 14
-                    return (
-                      <li key={t.id} className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-surface-muted/40">
-                        <span
-                          className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${
-                            soon ? 'bg-warn-soft text-warn' : 'bg-surface-muted text-ink-soft'
-                          }`}
-                        >
-                          {soon ? (
-                            <AlertIcon className="h-4 w-4" />
-                          ) : (
-                            <ClockIcon className="h-4 w-4" />
-                          )}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-[13.5px] font-semibold text-ink">{t.recipient}</p>
-                          <p className="text-[11.5px] text-ink-muted">
-                            {thb(t.amount)} · {FREQUENCY_LABEL[t.frequency]} · {remainingTransfers(t)} left
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <span
-                            className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                              soon
-                                ? 'bg-warn-soft text-warn border border-warn/30'
-                                : 'bg-surface-muted text-ink-muted'
-                            }`}
-                          >
-                            {t.days <= 0 ? 'Due' : `${t.days}d left`}
-                          </span>
-                          <p className="text-[10.5px] text-ink-muted mt-0.5">
-                            {formatDateShort(t.expiryDate)}
-                          </p>
-                        </div>
-                      </li>
-                    )
-                  })}
-                </ul>
-              ) : (
-                <div className="p-8 text-center text-ink-muted">
-                  <CheckIcon className="h-6 w-6 mx-auto text-gain mb-1.5" />
-                  <p className="text-[13px] font-semibold text-ink">All schedules up to date</p>
-                  <p className="text-[11.5px] text-ink-muted mt-0.5">
-                    No transfers are expiring in the next 14 days.
-                  </p>
-                </div>
-              )}
+              {/* Cash accounts list grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 pt-1">
+                {data.cashAccounts.map((a, i) => (
+                  <div
+                    key={a.id}
+                    className="flex flex-col p-2.5 rounded-xl bg-surface-muted/50 border border-line/40 hover:bg-surface-muted transition-colors"
+                  >
+                    <span className="flex items-center gap-1.5 text-[11px] font-medium text-ink-muted truncate">
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ background: CASH_COLORS[i % CASH_COLORS.length] }}
+                      />
+                      <span className="truncate">{a.name}</span>
+                    </span>
+                    <span className="mt-1 font-display font-bold tnum text-[13.5px] text-ink">
+                      {moneyCompact(a.balance, a.currency)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-
-            <div className="px-5 py-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
-              <span>{data.transfers.length} active transfer rules</span>
-              <Link to="/transfers" className="font-semibold text-brand hover:underline">
-                + New Schedule
-              </Link>
+          ) : (
+            <div className="py-4 text-center">
+              <p className="text-[12.5px] text-ink-muted">No cash accounts added yet.</p>
+              <button
+                type="button"
+                onClick={() => setCashOpen(true)}
+                className="mt-1 text-[12px] font-semibold text-brand hover:underline cursor-pointer"
+              >
+                + Add first account
+              </button>
             </div>
-          </Card>
-        </div>
+          )}
+        </Card>
       </div>
 
       <CashAccountsForm open={cashOpen} onClose={() => setCashOpen(false)} />
