@@ -173,8 +173,10 @@ export function InteractiveNetWorthChart({ history }: InteractiveNetWorthChartPr
           style={{ height: '150px', display: 'block', cursor: 'crosshair' }}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          aria-label="Net worth history interactive performance chart"
+          role="img"
+          aria-label={`Net worth history performance chart from ${startDate} to ${endDate}. Current value is ${thb(activePoint?.value ?? last.value)}`}
         >
+          <title>{`Net worth chart: ${startDate} to ${endDate}`}</title>
           <defs>
             <linearGradient id="nwInteractiveGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" style={{ stopColor: colorVar, stopOpacity: 0.28 }} />
