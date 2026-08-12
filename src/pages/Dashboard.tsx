@@ -187,21 +187,57 @@ export function Dashboard() {
               </div>
 
               {/* Quick ratio box */}
-              <div className="rounded-xl bg-white/5 p-2.5 px-3.5 ring-1 ring-white/10 sm:min-w-[170px]">
-                <div className="grid grid-cols-2 gap-3.5">
+              <div className="rounded-2xl bg-white/10 p-3 px-4 ring-1 ring-white/15 backdrop-blur-sm sm:min-w-[210px]">
+                <div className="flex items-center justify-between gap-3 text-[10.5px] font-bold tracking-wider uppercase text-white/50 pb-1.5 border-b border-white/10 mb-2">
+                  <span>Ratio</span>
+                  <span className="font-mono text-[11px] font-semibold text-white/80">
+                    {nw > 0 ? `${Math.round((portfolio.value / nw) * 100)}% : ${Math.round((cash / nw) * 100)}%` : '0% : 0%'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <p className="text-[11px] font-medium text-white/50">Invested</p>
-                    <p className="mt-0.5 font-display text-[15px] font-bold tnum text-white">
+                    <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-indigo-300">
+                      <span className="h-2 w-2 rounded-full bg-indigo-400 shrink-0" />
+                      <span>Invested</span>
+                    </div>
+                    <p className="mt-1 font-display text-[16px] sm:text-[17px] font-black tnum text-white">
                       {thbCompact(portfolio.value)}
                     </p>
+                    <p className="mt-0.5 text-[11px] font-semibold text-indigo-200/70 tnum">
+                      {nw > 0 ? `${((portfolio.value / nw) * 100).toFixed(1)}%` : '0%'}
+                    </p>
                   </div>
-                  <div>
-                    <p className="text-[11px] font-medium text-white/50">Cash</p>
-                    <p className="mt-0.5 font-display text-[15px] font-bold tnum text-white">
+
+                  <div className="pl-3 border-l border-white/10">
+                    <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-emerald-300">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
+                      <span>Cash</span>
+                    </div>
+                    <p className="mt-1 font-display text-[16px] sm:text-[17px] font-black tnum text-white">
                       {thbCompact(cash)}
+                    </p>
+                    <p className="mt-0.5 text-[11px] font-semibold text-emerald-200/70 tnum">
+                      {nw > 0 ? `${((cash / nw) * 100).toFixed(1)}%` : '0%'}
                     </p>
                   </div>
                 </div>
+
+                {/* Mini ratio split bar */}
+                {nw > 0 && (
+                  <div className="mt-2.5 flex h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="bg-indigo-400 transition-all duration-500"
+                      style={{ width: `${(portfolio.value / nw) * 100}%` }}
+                      title={`Invested: ${thb(portfolio.value)} (${((portfolio.value / nw) * 100).toFixed(1)}%)`}
+                    />
+                    <div
+                      className="bg-emerald-400 transition-all duration-500"
+                      style={{ width: `${(cash / nw) * 100}%` }}
+                      title={`Cash: ${thb(cash)} (${((cash / nw) * 100).toFixed(1)}%)`}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
