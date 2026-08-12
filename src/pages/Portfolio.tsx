@@ -322,543 +322,532 @@ export function Portfolio() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 ">
-        {/* Summary Metric Cards — unified panel */}
-        <Card className="animate-rise" padded={false}>
-          <div className="grid grid-cols-2 divide-x divide-line">
-            {/* Left: Current Value */}
-            <div className="flex flex-col justify-center px-5 py-5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Current Value</span>
-              <p className="mt-2 font-display text-[22px] font-extrabold tracking-tight tnum text-ink leading-none">
-                {thb(summary.value)}
-              </p>
-              <p className="mt-1.5 text-[12px] text-ink-muted font-medium">
-                Invested: <span className="font-semibold tnum">{thbCompact(summary.cost)}</span>
-              </p>
-            </div>
+      {/* Top 4-Card Metric Strip */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* Metric 1: Current Value */}
+        <Card className="animate-rise p-4">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Portfolio Value</span>
+          <p className="mt-1.5 font-display text-[22px] font-extrabold tracking-tight tnum text-ink leading-tight">
+            {thb(summary.value)}
+          </p>
+          <p className="mt-1 text-[11.5px] text-ink-muted font-medium">
+            Invested: <span className="font-semibold tnum text-ink-soft">{thbCompact(summary.cost)}</span>
+          </p>
+        </Card>
 
-            {/* Right: Profit / Loss */}
-            <div className="flex flex-col justify-center px-5 py-5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Profit / Loss</span>
-              <p className="mt-2 leading-none">
-                <PnLText value={summary.pnl} className="font-display text-[22px] !font-extrabold tracking-tight" />
-              </p>
-              <span className={`mt-1.5 text-[12px] font-bold inline-block ${summary.pnl >= 0 ? 'text-gain' : 'text-loss'}`}>
-                {summary.pnl >= 0 ? '▲' : '▼'} {summary.pnlPct.toFixed(1)}%
-              </span>
-            </div>
+        {/* Metric 2: Profit / Loss */}
+        <Card className="animate-rise p-4">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">All-Time PnL</span>
+          <div className="mt-1.5 flex items-baseline gap-1.5">
+            <PnLText value={summary.pnl} className="font-display text-[22px] !font-extrabold tracking-tight leading-tight" />
+          </div>
+          <div className="mt-1">
+            <span className={`text-[11.5px] font-bold inline-block ${summary.pnl >= 0 ? 'text-gain' : 'text-loss'}`}>
+              {summary.pnl >= 0 ? '▲' : '▼'} {summary.pnlPct.toFixed(1)}% all-time
+            </span>
           </div>
         </Card>
 
-
-        {/* Allocation chart */}
-        <Card className=" animate-rise">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">Asset Allocation</h2>
-            <div className="inline-flex items-center gap-1 rounded-lg bg-surface-muted p-1 border border-line/40">
-              <button
-                type="button"
-                onClick={() => setChartView('donut')}
-                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold transition-all cursor-pointer ${
-                  chartView === 'donut'
-                    ? 'bg-surface text-ink shadow-xs border border-line/60'
-                    : 'text-ink-muted hover:text-ink'
-                }`}
-                title="Donut Chart View"
-              >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <circle cx="8" cy="8" r="6" />
-                  <circle cx="8" cy="8" r="2.5" />
-                </svg>
-                Donut
-              </button>
-              <button
-                type="button"
-                onClick={() => setChartView('bubble')}
-                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold transition-all cursor-pointer ${
-                  chartView === 'bubble'
-                    ? 'bg-surface text-ink shadow-xs border border-line/60'
-                    : 'text-ink-muted hover:text-ink'
-                }`}
-                title="Bubble View (Modern/Packed)"
-              >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-                  <circle cx="8" cy="8" r="4.5" />
-                  <circle cx="4" cy="4" r="2.5" />
-                  <circle cx="12.5" cy="5" r="2" />
-                  <circle cx="12" cy="11.5" r="2.5" />
-                  <circle cx="4.5" cy="12" r="1.8" />
-                </svg>
-                Bubble
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-5 flex flex-col items-center gap-6">
-            {chartView === 'donut' ? (
-              <DonutChart
-                segments={segments}
-                ariaLabel={`Portfolio asset allocation, total value ${thb(summary.value)}`}
-                centerLabel="Total"
-                centerValue={thbCompact(summary.value)}
-              />
-            ) : (
-              <BubbleChart
-                items={alloc.map((a) => ({
-                  id: a.assetClass,
-                  label: ASSET_META[a.assetClass].plural,
-                  value: a.value,
-                  pct: a.pct,
-                  color: ASSET_META[a.assetClass].color,
-                }))}
-                totalValue={summary.value}
-                size={300}
-              />
-            )}
-            <ul className="w-full space-y-2.5">
-              {alloc.map((a) => (
-                <li key={a.assetClass} className="flex items-center gap-3">
-                  <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ background: ASSET_META[a.assetClass].color }}
-                  />
-                  <span className="flex-1 text-[14px] font-medium text-ink">
-                    {ASSET_META[a.assetClass].plural}
-                  </span>
-                  <span className="text-[13px] font-semibold tnum text-ink-muted">
-                    {pct(a.pct, 0)}
-                  </span>
-                  <span className="w-20 text-right text-[14px] font-semibold tnum text-ink">
-                    {thbCompact(a.value)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
+        {/* Metric 3: Positions & Classes */}
+        <Card className="animate-rise p-4">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Positions</span>
+          <p className="mt-1.5 font-display text-[22px] font-extrabold tracking-tight tnum text-ink leading-tight">
+            {data.holdings.length}
+          </p>
+          <p className="mt-1 text-[11.5px] text-ink-muted font-medium">
+            Across <span className="font-semibold text-ink-soft">{alloc.length} asset classes</span>
+          </p>
         </Card>
 
-        {/* Rebalancing Calculator */}
-        <Card className="animate-rise">
+        {/* Metric 4: Live Market Status */}
+        <Card className="animate-rise p-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-[17px] font-bold text-ink">Rebalancing Calculator</h2>
-            <button
-              onClick={() => setRebalanceOpen(!rebalanceOpen)}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-ink px-3.5 text-[12px] font-semibold text-white shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] active:scale-95 cursor-pointer whitespace-nowrap"
-            >
-              {rebalanceOpen ? 'Collapse' : 'Configure & Calculate'}
-            </button>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Live Rates</span>
+            <span className="h-2 w-2 rounded-full bg-gain animate-pulse" />
           </div>
-          
-          {rebalanceOpen && (
-            <div className="mt-5 space-y-5">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <NumberField
-                  label="New Cash to Deploy"
-                  prefix="฿"
-                  value={newCash}
-                  onChange={setNewCash}
-                  placeholder="e.g. 50,000"
+          <p className="mt-1.5 font-display text-[20px] font-bold tracking-tight tnum text-ink leading-tight">
+            {usdThb ? `฿${usdThb.toFixed(2)}` : 'Live'}
+          </p>
+          <p className="mt-1 text-[11.5px] text-ink-muted font-medium truncate">
+            {goldThbPerGram ? `Gold ฿${Math.round(goldThbPerGram * GRAMS_PER_BAHT_GOLD).toLocaleString()}/บาท` : 'USD / THB'}
+          </p>
+        </Card>
+      </div>
+
+      {/* Main Split-View Workspace Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column (5 cols): Allocation Donut + Rebalancer + Portfolio Trend */}
+        <div className="lg:col-span-5 xl:col-span-4 space-y-6">
+          {/* Allocation chart */}
+          <Card className="animate-rise">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-[16px] font-bold text-ink [text-wrap:balance]">Asset Allocation</h2>
+              <div className="inline-flex items-center gap-1 rounded-lg bg-surface-muted p-1 border border-line/40">
+                <button
+                  type="button"
+                  onClick={() => setChartView('donut')}
+                  className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-semibold transition-all cursor-pointer ${
+                    chartView === 'donut'
+                      ? 'bg-surface text-ink shadow-xs border border-line/60'
+                      : 'text-ink-muted hover:text-ink'
+                  }`}
+                  title="Donut Chart View"
+                >
+                  Donut
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChartView('bubble')}
+                  className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-semibold transition-all cursor-pointer ${
+                    chartView === 'bubble'
+                      ? 'bg-surface text-ink shadow-xs border border-line/60'
+                      : 'text-ink-muted hover:text-ink'
+                  }`}
+                  title="Bubble View (Modern/Packed)"
+                >
+                  Bubble
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-col items-center gap-5">
+              {chartView === 'donut' ? (
+                <DonutChart
+                  segments={segments}
+                  ariaLabel={`Portfolio asset allocation, total value ${thb(summary.value)}`}
+                  centerLabel="Total"
+                  centerValue={thbCompact(summary.value)}
                 />
-                
-                {Number(newCash) > 0 && (
-                  <div className="flex flex-col justify-end pb-1.5">
-                    <label className="flex items-center gap-2 text-[13.5px] font-semibold text-ink-soft cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={smartRebalance}
-                        onChange={(e) => setSmartRebalance(e.target.checked)}
-                        className="rounded border-line-strong text-brand focus:ring-brand/15 h-4 w-4"
-                      />
-                      Smart Rebalancing (Buy Only)
-                    </label>
-                    <p className="mt-1 text-[11px] text-ink-muted">
-                      Directs new cash solely to underweight classes. No sell recommendations.
-                    </p>
+              ) : (
+                <BubbleChart
+                  items={alloc.map((a) => ({
+                    id: a.assetClass,
+                    label: ASSET_META[a.assetClass].plural,
+                    value: a.value,
+                    pct: a.pct,
+                    color: ASSET_META[a.assetClass].color,
+                  }))}
+                  totalValue={summary.value}
+                  size={260}
+                />
+              )}
+              <ul className="w-full space-y-2 pt-2 border-t border-line">
+                {alloc.map((a) => (
+                  <li key={a.assetClass} className="flex items-center gap-2.5 text-[13px]">
+                    <span
+                      className="h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{ background: ASSET_META[a.assetClass].color }}
+                    />
+                    <span className="flex-1 font-medium text-ink">
+                      {ASSET_META[a.assetClass].plural}
+                    </span>
+                    <span className="text-[12px] font-semibold tnum text-ink-muted">
+                      {pct(a.pct, 0)}
+                    </span>
+                    <span className="w-20 text-right font-semibold tnum text-ink">
+                      {thbCompact(a.value)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Card>
+
+          {/* Rebalancing Calculator */}
+          <Card className="animate-rise">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-display text-[16px] font-bold text-ink">Rebalancing</h2>
+                <p className="text-[12px] text-ink-muted">Target asset allocation</p>
+              </div>
+              <button
+                onClick={() => setRebalanceOpen(!rebalanceOpen)}
+                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-ink px-3 text-[11.5px] font-semibold text-white shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] active:scale-95 cursor-pointer whitespace-nowrap"
+              >
+                {rebalanceOpen ? 'Close' : 'Configure'}
+              </button>
+            </div>
+            
+            {rebalanceOpen && (
+              <div className="mt-4 space-y-4 pt-3 border-t border-line">
+                <div className="space-y-3">
+                  <NumberField
+                    label="New Cash to Deploy"
+                    prefix="฿"
+                    value={newCash}
+                    onChange={setNewCash}
+                    placeholder="e.g. 50,000"
+                  />
+                  
+                  {Number(newCash) > 0 && (
+                    <div className="flex flex-col justify-end">
+                      <label className="flex items-center gap-2 text-[13px] font-semibold text-ink-soft cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={smartRebalance}
+                          onChange={(e) => setSmartRebalance(e.target.checked)}
+                          className="rounded border-line-strong text-brand focus:ring-brand/15 h-4 w-4"
+                        />
+                        Smart Rebalancing (Buy Only)
+                      </label>
+                      <p className="mt-1 text-[11px] text-ink-muted">
+                        Directs new cash solely to underweight classes. No sell recommendations.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {targetsSum !== 100 && (
+                  <div className="rounded-xl border border-warn/25 bg-warn-soft px-3 py-2 text-[12px] text-warn font-semibold flex items-center gap-2">
+                    <svg className="h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                      <path d="M8 5v4M8 11.5v.5" strokeLinecap="round" />
+                      <circle cx={8} cy={8} r={6.5} />
+                    </svg>
+                    <span>Targets sum to {targetsSum}%. Must equal 100%.</span>
                   </div>
                 )}
-              </div>
 
-              {targetsSum !== 100 && (
-                <div className="rounded-xl border border-warn/25 bg-warn-soft px-3.5 py-2.5 text-[12.5px] text-warn font-semibold flex items-center gap-2">
-                  <svg className="h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8}>
-                    <path d="M8 5v4M8 11.5v.5" strokeLinecap="round" />
-                    <circle cx={8} cy={8} r={6.5} />
-                  </svg>
-                  <span>Allocation targets sum to {targetsSum}%. Must equal 100% to calculate trades.</span>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-[12px] border-collapse">
+                    <thead>
+                      <tr className="text-ink-muted border-b border-line pb-1.5 font-medium">
+                        <th className="pb-1.5 font-semibold text-left">Asset</th>
+                        <th className="pb-1.5 font-semibold text-right">Actual</th>
+                        <th className="pb-1.5 font-semibold text-center w-[70px]">Target</th>
+                        <th className="pb-1.5 font-semibold text-right">Advice</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rebalanceRows.map((row) => {
+                        const color = ASSET_META[row.key]?.color ?? 'var(--color-cash)'
+                        const shortName = row.key === 'fund' ? 'Funds' : row.key === 'stock' ? 'Stocks' : row.key === 'crypto' ? 'Bitcoin' : row.key === 'gold' ? 'Gold' : 'Cash'
+
+                        return (
+                          <tr key={row.key} className="border-b border-line last:border-0 align-middle">
+                            <td className="py-2 text-left font-medium text-ink">
+                              <div className="flex items-center gap-1.5">
+                                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} />
+                                <span className="truncate">{shortName}</span>
+                              </div>
+                            </td>
+                            
+                            <td className="py-2 text-right tnum text-ink-soft">
+                              <div className="font-semibold">{thbCompact(row.actualVal)}</div>
+                              <div className="text-[10px] text-ink-muted">{row.actualPct.toFixed(0)}%</div>
+                            </td>
+
+                            <td className="py-2 text-center">
+                              <div className="inline-flex items-center rounded-lg border border-line-strong px-1 py-0.5 bg-surface-muted max-w-[60px] mx-auto">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={100}
+                                  value={row.targetPct}
+                                  onChange={(e) => handleTargetChange(row.key, Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
+                                  className="w-full text-center outline-none bg-transparent tnum text-[12px] font-bold text-ink"
+                                />
+                                <span className="text-[9.5px] text-ink-muted font-bold">%</span>
+                              </div>
+                            </td>
+
+                            <td className="py-2 text-right tnum font-bold text-[11.5px]">
+                              {targetsSum === 100 ? (
+                                <span className={row.diff > 5 ? 'text-gain' : row.diff < -5 ? 'text-loss' : 'text-ink-muted'}>
+                                  {row.actionLabel}
+                                </span>
+                              ) : (
+                                <span className="text-ink-muted">-</span>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-              )}
+              </div>
+            )}
+          </Card>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-[12.5px] border-collapse">
-                  <thead>
-                    <tr className="text-ink-muted border-b border-line pb-1.5 font-medium">
-                      <th className="pb-1.5 font-semibold text-left">Asset</th>
-                      <th className="pb-1.5 font-semibold text-right">Actual</th>
-                      <th className="pb-1.5 font-semibold text-center w-[75px]">Target</th>
-                      <th className="pb-1.5 font-semibold text-right">Advice</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rebalanceRows.map((row) => {
-                      const color = ASSET_META[row.key]?.color ?? 'var(--color-cash)'
-                      const shortName = row.key === 'fund' ? 'Funds' : row.key === 'stock' ? 'Stocks' : row.key === 'crypto' ? 'Bitcoin' : row.key === 'gold' ? 'Gold' : 'Cash'
+          {/* Portfolio Value Trend */}
+          {(data.portfolioHistory?.length ?? 0) >= 1 && (
+            <PortfolioTrendChart history={data.portfolioHistory!} />
+          )}
+        </div>
 
+        {/* Right Column (7 cols): Holdings Hub & Management */}
+        <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+          <Card className="animate-rise overflow-hidden" padded={false}>
+            <div className="pt-5">
+              <div className="px-5">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-display text-[17px] font-bold text-ink">
+                      Holdings & Assets
+                    </h3>
+                    <p className="text-[12px] text-ink-muted">
+                      {rows.length} of {data.holdings.length} positions shown
+                    </p>
+                  </div>
+                  <AddButton onClick={openAdd} label="Add holding" />
+                </div>
+
+                {/* Search */}
+                <div className="relative mb-3">
+                  <svg
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
+                    viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8}
+                  >
+                    <circle cx={6.5} cy={6.5} r={4.5} />
+                    <path d="M10.5 10.5l3 3" strokeLinecap="round" />
+                  </svg>
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search by name or ticker…"
+                    className="w-full rounded-xl border border-line bg-surface-muted py-2 pl-9 pr-8 text-[13.5px] text-ink outline-none placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/20"
+                  />
+                  {search && (
+                    <button
+                      onClick={() => setSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-ink-faint hover:text-ink cursor-pointer"
+                    >
+                      <svg viewBox="0 0 12 12" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                        <path d="M2 2l8 8M10 2l-8 8" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                {/* Filter pills & Sort controls */}
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
+                  {/* Filter pills */}
+                  <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+                    {FILTERS.map((f) => (
+                      <button
+                        key={f.key}
+                        onClick={() => setFilter(f.key)}
+                        className={`rounded-full px-3 py-1 text-[12.5px] font-semibold transition-colors cursor-pointer ${
+                          filter === f.key
+                            ? 'bg-ink text-white dark:bg-[#4f46e5] dark:text-white shadow-xs'
+                            : 'bg-surface-muted text-ink-soft hover:text-ink'
+                        }`}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Sort controls */}
+                  <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5">
+                    <span className="shrink-0 text-[11px] font-medium text-ink-faint mr-1">Sort:</span>
+                    {([ ['value','Value'], ['pnl','Profit %'], ['type','Type'] ] as const).map(([key, label]) => {
+                      const active = sortBy === key
+                      const showDir = active && key !== 'type'
                       return (
-                        <tr key={row.key} className="border-b border-line last:border-0 align-middle">
-                          {/* Asset Name + Target Value */}
-                          <td className="py-2.5 text-left font-medium text-ink">
-                            <div className="flex items-center gap-1.5">
-                              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} />
-                              <span className="truncate">{shortName}</span>
-                            </div>
-                            <div className="text-[10px] text-ink-muted pl-3.5">
-                              Tgt: {targetsSum === 100 ? thbCompact(row.targetVal) : '-'}
-                            </div>
-                          </td>
-                          
-                          {/* Actual Value */}
-                          <td className="py-2.5 text-right tnum text-ink-soft">
-                            <div className="font-semibold">{thbCompact(row.actualVal)}</div>
-                            <div className="text-[10px] text-ink-muted">{row.actualPct.toFixed(0)}%</div>
-                          </td>
-
-                          {/* Target input % */}
-                          <td className="py-2.5 text-center">
-                            <div className="inline-flex items-center rounded-lg border border-line-strong px-1.5 py-0.5 bg-surface-muted max-w-[65px] mx-auto">
-                              <input
-                                type="number"
-                                min={0}
-                                max={100}
-                                value={row.targetPct}
-                                onChange={(e) => handleTargetChange(row.key, Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
-                                className="w-full text-center outline-none bg-transparent tnum text-[12.5px] font-bold text-ink"
-                              />
-                              <span className="text-[10px] text-ink-muted font-bold ml-0.5">%</span>
-                            </div>
-                          </td>
-
-                          {/* Action Advice */}
-                          <td className="py-2.5 text-right tnum font-bold">
-                            {targetsSum === 100 ? (
-                              <span className={row.diff > 5 ? 'text-gain' : row.diff < -5 ? 'text-loss' : 'text-ink-muted'}>
-                                {row.actionLabel}
-                              </span>
-                            ) : (
-                              <span className="text-ink-muted">-</span>
-                            )}
-                          </td>
-                        </tr>
+                        <button
+                          key={key}
+                          onClick={() => {
+                            if (active && key !== 'type') {
+                              setSortDir((d) => d === 'desc' ? 'asc' : 'desc')
+                            } else {
+                              setSortBy(key)
+                              setSortDir('desc')
+                            }
+                          }}
+                          className={`flex shrink-0 items-center gap-0.5 rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold transition-colors cursor-pointer ${
+                            active
+                              ? 'bg-brand text-white dark:bg-[#4f46e5]'
+                              : 'bg-surface-muted text-ink-soft hover:text-ink'
+                          }`}
+                        >
+                          {label}
+                          {showDir && (
+                            <span className="ml-0.5 text-[10px]">{sortDir === 'desc' ? '↓' : '↑'}</span>
+                          )}
+                        </button>
                       )
                     })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </Card>
-
-
-        {/* Holdings list */}
-        <Card className="animate-rise overflow-hidden" padded={false}>
-          <div className="pt-5">
-            <div className="px-5 ">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-display text-[15px] font-bold text-ink">
-                  Holdings
-                  <span className="ml-2 rounded-full bg-surface-muted px-2 py-0.5 text-[12px] font-semibold text-ink-muted">
-                    {rows.length}
-                  </span>
-                </h3>
-                <AddButton onClick={openAdd} label="Add holding" />
+                  </div>
+                </div>
               </div>
 
-              {/* Search */}
-              <div className="relative mb-3">
-                <svg
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
-                  viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8}
-                >
-                  <circle cx={6.5} cy={6.5} r={4.5} />
-                  <path d="M10.5 10.5l3 3" strokeLinecap="round" />
-                </svg>
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search by name or ticker…"
-                  className="w-full rounded-xl border border-line bg-surface-muted py-2 pl-9 pr-8 text-[13.5px] text-ink outline-none placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/20"
-                />
-                {search && (
-                  <button
-                    onClick={() => setSearch('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-ink-faint hover:text-ink"
-                  >
-                    <svg viewBox="0 0 12 12" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-                      <path d="M2 2l8 8M10 2l-8 8" />
-                    </svg>
-                  </button>
-                )}
-              </div>
+              <ul className="divide-y divide-line border-t border-line">
+                {rows.map((h) => {
+                  const isBtc = h.assetClass === 'crypto'
+                  const isGold = h.assetClass === 'gold'
+                  const isExpandable = isBtc || isGold
+                  const isExpanded = isExpandable && expandedId === h.id
 
-              {/* Filter pills */}
-              <div className="mb-2 flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
-                {FILTERS.map((f) => (
-                  <button
-                    key={f.key}
-                    onClick={() => setFilter(f.key)}
-                    className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
-                      filter === f.key
-                        ? 'bg-ink text-white dark:bg-[#4f46e5] dark:text-white'
-                        : 'bg-surface-muted text-ink-soft hover:text-ink'
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Sort controls */}
-              <div className="mb-4 flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-                <span className="shrink-0 text-[11px] font-medium text-ink-faint">Sort:</span>
-                {([ ['value','Value'], ['pnl','Profit %'], ['type','Type'] ] as const).map(([key, label]) => {
-                  const active = sortBy === key
-                  const showDir = active && key !== 'type'
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => {
-                        if (active && key !== 'type') {
-                          setSortDir((d) => d === 'desc' ? 'asc' : 'desc')
-                        } else {
-                          setSortBy(key)
-                          setSortDir('desc')
-                        }
-                      }}
-                      className={`flex shrink-0 items-center gap-0.5 rounded-full px-3 py-1 text-[12px] font-semibold transition-colors ${
-                        active
-                          ? 'bg-brand text-white dark:bg-[#4f46e5]'
-                          : 'bg-surface-muted text-ink-soft hover:text-ink'
-                      }`}
+                  // Circular ticker badge (Google Finance style)
+                  const tickerLabel = h.ticker.slice(0, 4).toUpperCase()
+                  const tickerFontSize = tickerLabel.length <= 2 ? 'text-[13px]' : tickerLabel.length === 3 ? 'text-[11px]' : 'text-[10px]'
+                  const badge = (
+                    <span
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full font-bold text-white ${tickerFontSize}`}
+                      style={{ background: ASSET_META[h.assetClass].color }}
                     >
-                      {label}
-                      {showDir && (
-                        <span className="ml-0.5 text-[10px]">{sortDir === 'desc' ? '↓' : '↑'}</span>
-                      )}
+                      {tickerLabel}
+                    </span>
+                  )
+
+                  const btcAvgCost = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost)
+                  const goldAvgCostPerBaht = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost) * GRAMS_PER_BAHT_GOLD
+                  const unitsLabel = isBtc
+                    ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats · avg ${thb(btcAvgCost)}/BTC`
+                    : isGold
+                    ? `${h.units.toFixed(4)} g (${(h.units / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง) · avg ${thb(goldAvgCostPerBaht)}/บาททอง`
+                    : `${h.units.toLocaleString()} ${unitLabel(h.assetClass)} · ${ASSET_META[h.assetClass].label}`
+
+                  const staleIndicator = isPriceStale(h.updatedAt) && (
+                    <span title={`Price last updated: ${h.updatedAt ?? 'unknown'}`} aria-label="Price is stale" className="h-2 w-2 shrink-0 rounded-full bg-warn" />
+                  )
+
+                  const chevron = isExpandable && (
+                    <svg aria-hidden="true" width={14} height={14} viewBox="0 0 14 14" fill="none"
+                      className={`shrink-0 text-ink-muted transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+                      <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )
+
+                  const buyBtn = (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openBuy(h) }}
+                      aria-label={`Buy more ${h.name}`}
+                      title="Buy more"
+                      className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-soft text-brand transition-all hover:bg-brand hover:text-white active:scale-95 cursor-pointer"
+                    >
+                      <PlusIcon className="h-[16px] w-[16px]" strokeWidth={2.2} />
                     </button>
                   )
+
+                  const rowClick = () => {
+                    if (isExpandable) setExpandedId(isExpanded ? null : h.id)
+                    else openEdit(h)
+                  }
+
+                  return (
+                    <li
+                      key={h.id}
+                      className="overflow-hidden transition-colors hover:bg-surface-muted/50"
+                    >
+                      {/* ── Compact & Desktop Unified Row ── */}
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={rowClick}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rowClick() } }}
+                        aria-label={isExpandable ? (isExpanded ? `Collapse ${h.name}` : `Expand ${h.name}`) : `Edit ${h.name}`}
+                        className="flex cursor-pointer items-center gap-3.5 px-5 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                      >
+                        {badge}
+                        <div className="min-w-0 flex-1">
+                          {/* Line 1: name + value */}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex min-w-0 items-center gap-1.5">
+                              <p className="truncate text-[14.5px] font-semibold text-ink">
+                                {h.name} <span className="text-[11.5px] font-normal text-ink-muted ml-1">{h.ticker}</span>
+                              </p>
+                              {staleIndicator}{chevron}
+                            </div>
+                            <p className="shrink-0 text-[14.5px] font-bold tnum text-ink">{thb(h.marketValue)}</p>
+                          </div>
+                          {/* Line 2: units + PnL% */}
+                          <div className="mt-0.5 flex items-center justify-between gap-2">
+                            <p className="truncate text-[12px] text-ink-muted">{unitsLabel}</p>
+                            <PnLPill value={h.pnlPct} asPct />
+                          </div>
+                        </div>
+                        {buyBtn}
+                      </div>
+
+                      {/* BTC / Gold sub-breakdown panel */}
+                      {isExpandable && isExpanded && (
+                        <div className="border-t border-line bg-surface-muted px-5 pb-3.5 pt-2.5">
+                          <p className="mb-2 text-[12px] font-semibold text-ink-muted">Storage & Purchase Locations</p>
+
+                          {isBtc && (
+                            (h.btcLocations ?? []).length === 0
+                              ? <p className="py-1 text-[13px] text-ink-muted">No locations yet. Use "Buy more" to add.</p>
+                              : (
+                                <ul className="space-y-1.5">
+                                  {(h.btcLocations ?? []).map((loc) => {
+                                    const locCostPerBtc = loc.satoshi > 0 ? (loc.thbSpent / loc.satoshi) * SATS_PER_BTC : 0
+                                    return (
+                                      <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
+                                        <div className="min-w-0 flex-1">
+                                          <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
+                                          <p className="tnum text-[12px] text-ink-muted">
+                                            {loc.satoshi.toLocaleString()} sats · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBtc)}/BTC
+                                          </p>
+                                        </div>
+                                        <button
+                                          onClick={() => openLocEdit(h.id, loc)}
+                                          aria-label={`Edit location ${loc.name}`}
+                                          className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink cursor-pointer"
+                                        >
+                                          <PencilIcon className="h-[14px] w-[14px]" />
+                                        </button>
+                                        <button
+                                          onClick={() => removeBtcLocation(h.id, loc.id)}
+                                          aria-label={`Remove location ${loc.name}`}
+                                          className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss cursor-pointer"
+                                        >
+                                          <TrashIcon className="h-[14px] w-[14px]" />
+                                        </button>
+                                      </li>
+                                    )
+                                  })}
+                                </ul>
+                              )
+                          )}
+
+                          {isGold && (
+                            (h.goldLocations ?? []).length === 0
+                              ? <p className="py-1 text-[13px] text-ink-muted">No locations yet. Use "Buy more" to add.</p>
+                              : (
+                                <ul className="space-y-1.5">
+                                  {(h.goldLocations ?? []).map((loc) => {
+                                    const locCostPerBaht = loc.grams > 0 ? (loc.thbSpent / loc.grams) * GRAMS_PER_BAHT_GOLD : 0
+                                    const locBaht = loc.grams / GRAMS_PER_BAHT_GOLD
+                                    return (
+                                      <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
+                                        <div className="min-w-0 flex-1">
+                                          <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
+                                          <p className="tnum text-[12px] text-ink-muted">
+                                            {loc.grams.toFixed(4)} g ({locBaht.toFixed(4)} บาททอง) · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBaht)}/บาททอง
+                                          </p>
+                                        </div>
+                                        <button
+                                          onClick={() => openLocEdit(h.id, loc)}
+                                          aria-label={`Edit location ${loc.name}`}
+                                          className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink cursor-pointer"
+                                        >
+                                          <PencilIcon className="h-[14px] w-[14px]" />
+                                        </button>
+                                        <button
+                                          onClick={() => removeGoldLocation(h.id, loc.id)}
+                                          aria-label={`Remove location ${loc.name}`}
+                                          className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss cursor-pointer"
+                                        >
+                                          <TrashIcon className="h-[14px] w-[14px]" />
+                                        </button>
+                                      </li>
+                                    )
+                                  })}
+                                </ul>
+                              )
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  )
                 })}
-              </div>
+              </ul>
             </div>
-
-            <ul className="divide-y divide-line border-t border-line">
-              {rows.map((h) => {
-                const isBtc = h.assetClass === 'crypto'
-                const isGold = h.assetClass === 'gold'
-                const isExpandable = isBtc || isGold
-                const isExpanded = isExpandable && expandedId === h.id
-
-                // Circular ticker badge (Google Finance style)
-                const tickerLabel = h.ticker.slice(0, 4).toUpperCase()
-                const tickerFontSize = tickerLabel.length <= 2 ? 'text-[13px]' : tickerLabel.length === 3 ? 'text-[11px]' : 'text-[10px]'
-                const badge = (
-                  <span
-                    className={`grid h-10 w-10 shrink-0 place-items-center rounded-full font-bold text-white ${tickerFontSize}`}
-                    style={{ background: ASSET_META[h.assetClass].color }}
-                  >
-                    {tickerLabel}
-                  </span>
-                )
-
-                const btcAvgCost = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost)
-                const goldAvgCostPerBaht = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost) * GRAMS_PER_BAHT_GOLD
-                const unitsLabel = isBtc
-                  ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats · avg ${thb(btcAvgCost)}/BTC`
-                  : isGold
-                  ? `${h.units.toFixed(4)} g (${(h.units / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง) · avg ${thb(goldAvgCostPerBaht)}/บาททอง`
-                  : `${h.units.toLocaleString()} ${unitLabel(h.assetClass)} · ${ASSET_META[h.assetClass].label}`
-
-                const staleIndicator = isPriceStale(h.updatedAt) && (
-                  <span title={`Price last updated: ${h.updatedAt ?? 'unknown'}`} aria-label="Price is stale" className="h-2 w-2 shrink-0 rounded-full bg-warn" />
-                )
-
-                const chevron = isExpandable && (
-                  <svg aria-hidden="true" width={14} height={14} viewBox="0 0 14 14" fill="none"
-                    className={`shrink-0 text-ink-muted transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
-                    <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )
-
-                const buyBtn = (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); openBuy(h) }}
-                    aria-label={`Buy more ${h.name}`}
-                    title="Buy more"
-                    className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-soft text-brand transition-all hover:bg-brand hover:text-white active:scale-95 after:absolute after:-inset-1 after:content-['']"
-                  >
-                    <PlusIcon className="h-[16px] w-[16px]" strokeWidth={2.2} />
-                  </button>
-                )
-
-                const rowClick = () => {
-                  if (isExpandable) setExpandedId(isExpanded ? null : h.id)
-                  else openEdit(h)
-                }
-
-                return (
-                  <li
-                    key={h.id}
-                    className="overflow-hidden transition-colors hover:bg-surface-muted/50"
-                  >
-                    {/* ── Mobile (< sm): compact 2-row ── */}
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={rowClick}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rowClick() } }}
-                      aria-label={isExpandable ? (isExpanded ? `Collapse ${h.name}` : `Expand ${h.name}`) : `Edit ${h.name}`}
-                      className="flex  cursor-pointer items-center gap-3 px-5 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                    >
-                      {badge}
-                      <div className="min-w-0 flex-1">
-                        {/* Line 1: name + value */}
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex min-w-0 items-center gap-1.5">
-                            <p className="truncate text-[14px] font-semibold text-ink">
-                              {h.name} <span className="text-[11px] font-normal text-ink-muted ml-1">{h.ticker}</span>
-                            </p>
-                            {staleIndicator}{chevron}
-                          </div>
-                          <p className="shrink-0 text-[14px] font-bold tnum text-ink">{thb(h.marketValue)}</p>
-                        </div>
-                        {/* Line 2: units + PnL% */}
-                        <div className="mt-0.5 flex items-center justify-between gap-2">
-                          <p className="truncate text-[12px] text-ink-muted">{unitsLabel}</p>
-                          <PnLPill value={h.pnlPct} asPct />
-                        </div>
-                      </div>
-                      {buyBtn}
-                    </div>
-
-                    {/* ── Desktop (≥ sm): richer 2-row ── */}
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={rowClick}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rowClick() } }}
-                      aria-label={isExpandable ? (isExpanded ? `Collapse ${h.name}` : `Expand ${h.name}`) : `Edit ${h.name}`}
-                      className="hidden  cursor-pointer items-center gap-3 px-6 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                    >
-                      {badge}
-                      <div className="min-w-0 flex-1">
-                        {/* Line 1: name + value */}
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex min-w-0 items-center gap-1.5">
-                            <p className="truncate text-[15px] font-semibold text-ink">
-                              {h.name} <span className="text-[12px] font-normal text-ink-muted ml-1">{h.ticker}</span>
-                            </p>
-                            {staleIndicator}{chevron}
-                          </div>
-                          <p className="shrink-0 text-[15px] font-bold tnum text-ink">{thb(h.marketValue)}</p>
-                        </div>
-                        {/* Line 2: units + PnL% */}
-                        <div className="mt-0.5 flex items-center justify-between gap-2">
-                          <p className="truncate text-[12.5px] text-ink-muted">{unitsLabel}</p>
-                          <PnLPill value={h.pnlPct} asPct />
-                        </div>
-                      </div>
-                      {buyBtn}
-                    </div>
-
-                    {/* BTC / Gold sub-breakdown panel */}
-                    {isExpandable && isExpanded && (
-                      <div className="border-t border-line bg-surface-muted px-5 pb-3.5 pt-2.5 ">
-                        <p className="mb-2 text-[12px] font-semibold text-ink-muted">Locations</p>
-
-                        {isBtc && (
-                          (h.btcLocations ?? []).length === 0
-                            ? <p className="py-1 text-[13px] text-ink-muted">No locations yet. Use "Buy more" to add.</p>
-                            : (
-                              <ul className="space-y-1.5">
-                                {(h.btcLocations ?? []).map((loc) => {
-                                  const locCostPerBtc = loc.satoshi > 0 ? (loc.thbSpent / loc.satoshi) * SATS_PER_BTC : 0
-                                  return (
-                                    <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
-                                      <div className="min-w-0 flex-1">
-                                        <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
-                                        <p className="tnum text-[12px] text-ink-muted">
-                                          {loc.satoshi.toLocaleString()} sats · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBtc)}/BTC
-                                        </p>
-                                      </div>
-                                      <button
-                                        onClick={() => openLocEdit(h.id, loc)}
-                                        aria-label={`Edit location ${loc.name}`}
-                                        className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink after:absolute after:-inset-1.5 after:content-['']"
-                                      >
-                                        <PencilIcon className="h-[14px] w-[14px]" />
-                                      </button>
-                                      <button
-                                        onClick={() => removeBtcLocation(h.id, loc.id)}
-                                        aria-label={`Remove location ${loc.name}`}
-                                        className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss after:absolute after:-inset-1.5 after:content-['']"
-                                      >
-                                        <TrashIcon className="h-[14px] w-[14px]" />
-                                      </button>
-                                    </li>
-                                  )
-                                })}
-                              </ul>
-                            )
-                        )}
-
-                         {isGold && (
-                          (h.goldLocations ?? []).length === 0
-                            ? <p className="py-1 text-[13px] text-ink-muted">No locations yet. Use "Buy more" to add.</p>
-                            : (
-                              <ul className="space-y-1.5">
-                                {(h.goldLocations ?? []).map((loc) => {
-                                  const locCostPerBaht = loc.grams > 0 ? (loc.thbSpent / loc.grams) * GRAMS_PER_BAHT_GOLD : 0
-                                  const locBaht = loc.grams / GRAMS_PER_BAHT_GOLD
-                                  return (
-                                    <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
-                                      <div className="min-w-0 flex-1">
-                                        <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
-                                        <p className="tnum text-[12px] text-ink-muted">
-                                          {loc.grams.toFixed(4)} g ({locBaht.toFixed(4)} บาททอง) · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBaht)}/บาททอง
-                                        </p>
-                                      </div>
-                                      <button
-                                        onClick={() => openLocEdit(h.id, loc)}
-                                        aria-label={`Edit location ${loc.name}`}
-                                        className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink after:absolute after:-inset-1.5 after:content-['']"
-                                      >
-                                        <PencilIcon className="h-[14px] w-[14px]" />
-                                      </button>
-                                      <button
-                                        onClick={() => removeGoldLocation(h.id, loc.id)}
-                                        aria-label={`Remove location ${loc.name}`}
-                                        className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss after:absolute after:-inset-1.5 after:content-['']"
-                                      >
-                                        <TrashIcon className="h-[14px] w-[14px]" />
-                                      </button>
-                                    </li>
-                                  )
-                                })}
-                              </ul>
-                            )
-                        )}
-                      </div>
-                    )}
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        </Card>
-
-        {/* Portfolio Value Trend — last card */}
-        {(data.portfolioHistory?.length ?? 0) >= 1 && (
-          <PortfolioTrendChart history={data.portfolioHistory!} />
-        )}
+          </Card>
+        </div>
       </div>
 
       <HoldingForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
