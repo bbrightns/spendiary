@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react'
 import { useData } from '../store/DataContext'
+import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -125,11 +126,13 @@ function FixedCostRow({ item, onEdit, onDelete }: {
       <span className="font-display text-[14px] font-bold tnum text-ink">{thb(item.amount)}</span>
       <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
         <button onClick={() => onEdit(item)}
-          className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink">
+          aria-label={`Edit fixed cost ${item.name}`}
+          className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink cursor-pointer">
           <PencilIcon className="h-3.5 w-3.5" />
         </button>
         <button onClick={() => onDelete(item.id)}
-          className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-loss-soft hover:text-loss">
+          aria-label={`Delete fixed cost ${item.name}`}
+          className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-loss-soft hover:text-loss cursor-pointer">
           <TrashIcon className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -189,7 +192,12 @@ function SectionHeader({ label, total, open, onToggle, action }: {
 }) {
   return (
     <div className="flex items-center justify-between">
-      <button onClick={onToggle} className="flex items-center gap-2 group">
+      <button
+        onClick={onToggle}
+        aria-label={`Toggle ${label} section, total ${thb(total)}`}
+        aria-expanded={open}
+        className="flex items-center gap-2 group cursor-pointer"
+      >
         <div className="text-left">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-faint">{label}</p>
           <p className="mt-0.5 font-display text-[20px] font-extrabold tnum text-ink leading-none">
@@ -211,6 +219,7 @@ export function DcaPlanner() {
     upsertFixedCostItem, removeFixedCostItem,
     skipDcaBuy,
   } = useData()
+  const { showToast } = useToast()
 
   // Salary edit
   const [editingSalary, setEditingSalary] = useState(false)
@@ -302,6 +311,7 @@ export function DcaPlanner() {
                 fixedOpen && !addingItem && !editingItem ? (
                   <button
                     onClick={() => setAddingItem(true)}
+                    aria-label="Add fixed expense"
                     className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[12px] font-semibold transition-colors active:scale-95 cursor-pointer"
                     style={{
                       borderColor: 'color-mix(in srgb, var(--color-loss) 35%, transparent)',
@@ -328,12 +338,24 @@ export function DcaPlanner() {
                         <div key={item.id} className="py-2">
                           <FixedCostForm
                             initial={item}
-                            onSave={(name, amount) => { upsertFixedCostItem({ id: item.id, name, amount }); setEditingItem(null) }}
+                            onSave={(name, amount) => {
+                              upsertFixedCostItem({ id: item.id, name, amount })
+                              showToast(`Updated "${name}"`, 'success')
+                              setEditingItem(null)
+                            }}
                             onCancel={() => setEditingItem(null)}
                           />
                         </div>
                       ) : (
-                        <FixedCostRow key={item.id} item={item} onEdit={setEditingItem} onDelete={removeFixedCostItem} />
+                        <FixedCostRow
+                          key={item.id}
+                          item={item}
+                          onEdit={setEditingItem}
+                          onDelete={(id) => {
+                            removeFixedCostItem(id)
+                            showToast(`Removed "${item.name}"`, 'info')
+                          }}
+                        />
                       )
                     )}
                   </div>
@@ -342,7 +364,11 @@ export function DcaPlanner() {
                 {addingItem && (
                   <div className="mt-3">
                     <FixedCostForm
-                      onSave={(name, amount) => { upsertFixedCostItem({ name, amount }); setAddingItem(false) }}
+                      onSave={(name, amount) => {
+                        upsertFixedCostItem({ name, amount })
+                        showToast(`Added "${name}"`, 'success')
+                        setAddingItem(false)
+                      }}
                       onCancel={() => setAddingItem(false)}
                     />
                   </div>
@@ -373,6 +399,7 @@ export function DcaPlanner() {
                   savingsOpen ? (
                     <button
                       onClick={openAdd}
+                      aria-label="Add DCA investment plan"
                       className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[12px] font-semibold transition-colors active:scale-95 cursor-pointer"
                       style={{
                         borderColor: 'color-mix(in srgb, var(--color-gain) 35%, transparent)',
@@ -482,13 +509,19 @@ export function DcaPlanner() {
                                     <div className="mt-2 flex items-center gap-2">
                                       <button
                                         onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
+                                        aria-label={`Confirm DCA buy for ${p.name}`}
                                         className="rounded-lg px-3 py-1 text-[11.5px] font-bold text-white transition-colors active:scale-95 cursor-pointer"
                                         style={{ background: 'var(--color-gain)' }}
                                       >
                                         Confirm Buy
                                       </button>
                                       <button
-                                        onClick={(e) => { e.stopPropagation(); skipDcaBuy(p.id, localDateStr()) }}
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          skipDcaBuy(p.id, localDateStr())
+                                          showToast(`Skipped DCA buy for "${p.name}" this period`, 'info')
+                                        }}
+                                        aria-label={`Skip DCA buy for ${p.name} this period`}
                                         className="rounded-lg border px-2.5 py-1 text-[11.5px] font-semibold transition-colors active:scale-95 cursor-pointer text-ink-muted border-line hover:bg-surface-muted"
                                       >
                                         Skip
