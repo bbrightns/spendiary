@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useData } from '../store/DataContext'
+import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -43,6 +44,7 @@ const ACTION_FILTERS = [
 
 export function HoldingLogs() {
   const { data, undoHoldingLog } = useData()
+  const { showToast } = useToast()
   const logs = data.holdingLogs ?? []
 
   const [assetFilter, setAssetFilter] = useState<AssetClass | 'all'>('all')
@@ -214,8 +216,10 @@ export function HoldingLogs() {
                           onClick={() => {
                             if (confirm(`Are you sure you want to undo the activity "${log.holdingName}"?`)) {
                               undoHoldingLog(log.id)
+                              showToast(`Undid activity for "${log.holdingName}"`, 'info')
                             }
                           }}
+                          aria-label={`Undo activity for ${log.holdingName}`}
                           className="rounded-lg px-2 py-1 text-[11.5px] font-bold text-loss hover:bg-loss/10 transition-colors cursor-pointer"
                         >
                           Undo
