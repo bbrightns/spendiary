@@ -5,6 +5,7 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ProgressRing } from '../components/charts/ProgressRing'
+import { DonutChart } from '../components/charts/DonutChart'
 import { InteractiveNetWorthChart } from '../components/charts/InteractiveNetWorthChart'
 import { PnLPill } from '../components/ui/PnL'
 import { CashAccountsForm } from '../components/forms/CashAccountsForm'
@@ -52,6 +53,15 @@ export function Dashboard() {
 
   const portfolio = useMemo(() => portfolioSummary(data.holdings), [data.holdings])
   const alloc = useMemo(() => allocations(data.holdings), [data.holdings])
+  const allocSegments = useMemo(
+    () =>
+      alloc.map((a) => ({
+        label: ASSET_META[a.assetClass].plural,
+        value: a.value,
+        color: ASSET_META[a.assetClass].color,
+      })),
+    [alloc],
+  )
   const dca = useMemo(() => dcaThisMonth(data.dcaPlans), [data.dcaPlans])
   const cash = useMemo(() => totalCash(data, usdThb), [data.cashAccounts, usdThb])
   const nw = useMemo(() => netWorth(data, usdThb), [data.cashAccounts, data.holdings, usdThb])
@@ -377,17 +387,26 @@ export function Dashboard() {
                 </div>
               </div>
 
-              {/* Breakdown by asset class */}
-              <div className="mt-4 space-y-2.5">
-                {alloc.map((a) => {
-                  const pctVal = portfolio.value > 0 ? (a.value / portfolio.value) * 100 : 0
-                  return (
-                    <div key={a.assetClass} className="space-y-1">
-                      <div className="flex items-center justify-between text-[12.5px]">
+              {/* Donut Chart & Breakdown */}
+              <div className="mt-4 flex flex-col items-center gap-4">
+                <DonutChart
+                  segments={allocSegments}
+                  size={155}
+                  thickness={17}
+                  ariaLabel={`Holdings asset allocation, total value ${thb(portfolio.value)}`}
+                  centerLabel="Total"
+                  centerValue={thbCompact(portfolio.value)}
+                />
+
+                <div className="w-full space-y-2 pt-2 border-t border-line">
+                  {alloc.map((a) => {
+                    const pctVal = portfolio.value > 0 ? (a.value / portfolio.value) * 100 : 0
+                    return (
+                      <div key={a.assetClass} className="flex items-center justify-between text-[12.5px]">
                         <span className="flex items-center gap-2 font-medium text-ink">
                           <span
-                            className="h-2 w-2 rounded-full"
-                            style={{ background: ASSET_META[a.assetClass].cssVar }}
+                            className="h-2.5 w-2.5 rounded-full shrink-0"
+                            style={{ background: ASSET_META[a.assetClass].color }}
                           />
                           {ASSET_META[a.assetClass].label}
                         </span>
@@ -398,18 +417,9 @@ export function Dashboard() {
                           </span>
                         </span>
                       </div>
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
-                        <div
-                          className="h-full rounded-full transition-all duration-500"
-                          style={{
-                            width: `${pctVal}%`,
-                            background: ASSET_META[a.assetClass].cssVar,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
             </div>
 
