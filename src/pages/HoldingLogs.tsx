@@ -4,8 +4,9 @@ import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
+import { Modal } from '../components/ui/Modal'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC } from '../lib/calc'
-import type { AssetClass } from '../lib/types'
+import type { AssetClass, HoldingLog } from '../lib/types'
 import { ClockIcon } from '../components/icons'
 
 const ACTION_LABEL = {
@@ -47,6 +48,7 @@ export function HoldingLogs() {
   const { showToast } = useToast()
   const logs = data.holdingLogs ?? []
 
+  const [undoTarget, setUndoTarget] = useState<HoldingLog | null>(null)
   const [assetFilter, setAssetFilter] = useState<AssetClass | 'all'>('all')
   const [actionFilter, setActionFilter] = useState<'all' | 'add' | 'buy_more' | 'edit'>('all')
 
@@ -213,12 +215,7 @@ export function HoldingLogs() {
                           {new Date(log.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                         </time>
                         <button
-                          onClick={() => {
-                            if (confirm(`Are you sure you want to undo the activity "${log.holdingName}"?`)) {
-                              undoHoldingLog(log.id)
-                              showToast(`Undid activity for "${log.holdingName}"`, 'info')
-                            }
-                          }}
+                          onClick={() => setUndoTarget(log)}
                           aria-label={`Undo activity for ${log.holdingName}`}
                           className="rounded-lg px-2 py-1 text-[11.5px] font-bold text-loss hover:bg-loss/10 transition-colors cursor-pointer"
                         >
@@ -233,6 +230,73 @@ export function HoldingLogs() {
           ))}
         </div>
       )}
+
+      {/* Custom Undo Confirmation Modal */}
+      <Modal
+        open={!!undoTarget}
+        onClose={() => setUndoTarget(null)}
+        title={`Undo "${undoTarget?.holdingName}"?`}
+        description="This will revert your portfolio balance and holdings state to before this activity was recorded."
+      >
+        <div className="space-y-4 pb-1">
+          {undoTarget && (
+            <div className="rounded-2xl border border-line bg-surface-muted p-4 space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[12px] font-bold"
+                    style={{
+                      color: ASSET_META[undoTarget.assetClass]?.color ?? '#6366f1',
+                      background: `color-mix(in srgb, ${ASSET_META[undoTarget.assetClass]?.color ?? '#6366f1'} 14%, transparent)`,
+                    }}
+                  >
+                    {ACTION_ICON[undoTarget.action]}
+                  </span>
+                  <span className="font-bold text-[14px] text-ink truncate">{undoTarget.holdingName}</span>
+                  {undoTarget.ticker && undoTarget.ticker !== 'CASH' && undoTarget.ticker !== 'FIXED' && undoTarget.ticker !== 'DCA' && (
+                    <span className="rounded-md bg-surface px-1.5 py-0.5 text-[11px] font-medium text-ink-muted">
+                      {undoTarget.ticker}
+                    </span>
+                  )}
+                </div>
+                <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${ACTION_STYLE[undoTarget.action]}`}>
+                  {ACTION_LABEL[undoTarget.action]}
+                </span>
+              </div>
+              <p className="text-[12.5px] font-medium text-ink-muted leading-relaxed">{undoTarget.note}</p>
+              <time className="block text-[11px] text-ink-faint">
+                {new Date(undoTarget.timestamp).toLocaleString('en-GB', {
+                  dateStyle: 'medium',
+                  timeStyle: 'short',
+                })}
+              </time>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2.5 pt-1">
+            <button
+              onClick={() => {
+                if (undoTarget) {
+                  undoHoldingLog(undoTarget.id)
+                  showToast(`Undid activity for "${undoTarget.holdingName}"`, 'info')
+                }
+                setUndoTarget(null)
+              }}
+              aria-label={`Confirm undo activity for ${undoTarget?.holdingName ?? ''}`}
+              className="inline-flex h-11 w-full items-center justify-center rounded-full bg-loss px-5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer"
+            >
+              Yes, undo activity
+            </button>
+            <button
+              onClick={() => setUndoTarget(null)}
+              aria-label="Cancel undo"
+              className="w-full rounded-full py-2.5 text-[14px] font-semibold text-ink-muted transition-colors hover:text-ink cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Modal>
     </>
   )
 }
