@@ -81,49 +81,50 @@ export function AutoTransfers() {
         action={<AddButton onClick={openAdd} label="Add transfer" />}
       />
 
-      <Card className="animate-rise">
-        <div className="grid grid-cols-3 divide-x divide-line">
-          {/* Active Schedules */}
-          <div className="flex flex-col items-center justify-center text-center px-1">
-            <span className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Active</span>
-            <p className="mt-1 font-display text-[20px] sm:text-[22px] font-extrabold tnum text-ink leading-tight">
-              {active.length}
-            </p>
-            <span className="mt-0.5 text-[11px] text-ink-muted">running</span>
-          </div>
+      {/* 3-Card Responsive Top Stat Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Active Schedules */}
+        <Card className="animate-rise p-4 text-center">
+          <span className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Active Schedules</span>
+          <p className="mt-1 font-display text-[26px] font-extrabold tnum text-ink leading-tight">
+            {active.length}
+          </p>
+          <span className="mt-0.5 text-[11.5px] text-ink-muted">running recurring transfers</span>
+        </Card>
 
-          {/* Monthly Outflow */}
-          <div className="flex flex-col items-center justify-center text-center px-1">
-            <span className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Est. Monthly</span>
-            <p className="mt-1 font-display text-[20px] sm:text-[22px] font-extrabold tnum text-brand leading-tight">
-              {thb(monthlyOutflow)}
-            </p>
-            <span className="mt-0.5 text-[11px] text-ink-muted">outflow</span>
-          </div>
+        {/* Monthly Outflow */}
+        <Card className="animate-rise p-4 text-center">
+          <span className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Est. Monthly Outflow</span>
+          <p className="mt-1 font-display text-[26px] font-extrabold tnum text-brand leading-tight">
+            {thb(monthlyOutflow)}
+          </p>
+          <span className="mt-0.5 text-[11.5px] text-ink-muted">total monthly allocation</span>
+        </Card>
 
-          {/* Expiring Soon */}
-          <div className="flex flex-col items-center justify-center text-center px-1">
-            <span className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Expiring</span>
-            <p className={`mt-1 font-display text-[20px] sm:text-[22px] font-extrabold tnum leading-tight ${expiringSoon.length > 0 ? 'text-warn' : 'text-ink'}`}>
-              {expiringSoon.length}
-            </p>
-            <span className="mt-0.5 text-[11px] text-ink-muted">within {SOON_THRESHOLD}d</span>
-          </div>
-        </div>
-      </Card>
+        {/* Expiring Soon */}
+        <Card className="animate-rise p-4 text-center">
+          <span className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Expiring Soon</span>
+          <p className={`mt-1 font-display text-[26px] font-extrabold tnum leading-tight ${expiringSoon.length > 0 ? 'text-warn' : 'text-gain'}`}>
+            {expiringSoon.length}
+          </p>
+          <span className="mt-0.5 text-[11.5px] text-ink-muted">
+            {expiringSoon.length > 0 ? `within next ${SOON_THRESHOLD} days` : 'all schedules on track'}
+          </span>
+        </Card>
+      </div>
 
       {/* Expiring soon warning banner */}
       {expiringSoon.length > 0 && (
-        <div className="mt-5 flex items-start gap-3 rounded-[var(--radius-card)] border border-warn/25 bg-warn-soft px-5 py-4 animate-rise">
+        <div className="mt-5 flex items-start gap-3.5 rounded-2xl border border-warn/25 bg-warn-soft px-5 py-4 animate-rise">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-warn/15 text-warn">
-            <AlertIcon className="h-[18px] w-[18px]" />
+            <AlertIcon className="h-5 w-5" />
           </span>
           <div>
-            <p className="text-[14px] font-bold text-ink">
-              {expiringSoon.length} schedule{expiringSoon.length > 1 ? 's' : ''} expiring soon
+            <p className="text-[14.5px] font-bold text-ink">
+              {expiringSoon.length} schedule{expiringSoon.length > 1 ? 's' : ''} ending soon
             </p>
             <p className="mt-0.5 text-[13px] text-ink-soft">
-              {expiringSoon.map((t) => t.recipient).join(' · ')}. Review before the final transfer goes out.
+              {expiringSoon.map((t) => t.recipient).join(' · ')}. Review these before your final auto-transfers execute.
             </p>
           </div>
         </div>
@@ -132,6 +133,12 @@ export function AutoTransfers() {
       {/* Transfer List */}
       <div className="mt-5">
         <Card padded={false} className="overflow-hidden animate-rise">
+          <div className="px-5 py-4 border-b border-line flex items-center justify-between">
+            <h3 className="font-display text-[16px] font-bold text-ink">
+              All Recurring Transfers ({enriched.length})
+            </h3>
+            <span className="text-[12px] text-ink-muted">Click row to view progress & notes</span>
+          </div>
           <ul className="divide-y divide-line">
             {enriched.map((t) => (
               <TransferRow
