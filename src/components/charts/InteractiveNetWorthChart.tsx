@@ -150,6 +150,8 @@ export function InteractiveNetWorthChart({ history }: InteractiveNetWorthChartPr
                 key={tf}
                 type="button"
                 onClick={() => setTimeframe(tf)}
+                aria-label={`Select timeframe ${tf}`}
+                aria-pressed={timeframe === tf}
                 className={`px-2.5 py-1 text-[11.5px] font-semibold rounded-lg transition-all cursor-pointer ${
                   timeframe === tf
                     ? 'bg-surface text-ink shadow-xs font-bold'
