@@ -3,6 +3,7 @@ import { Modal } from '../ui/Modal'
 import { NumberField, TextField, SelectField } from '../ui/Field'
 import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
+import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, applyBuy, holdingMetrics } from '../../lib/calc'
 import type { Holding } from '../../lib/types'
 import { thb, localDateStr } from '../../lib/format'
@@ -48,6 +49,7 @@ function formatCostOrFx(val: number | string): string {
 
 export function BuyMoreForm({ open, holding, onClose }: Props) {
   const { upsertHolding, upsertBtcLocation, upsertGoldLocation, addHoldingLog, usdThb } = useData()
+  const { showToast } = useToast()
 
   // Shared state
   const [units, setUnits] = useState<number | ''>('')
@@ -320,6 +322,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         assetClass: 'gold',
         note: `+${g.toFixed(4)} g · ฿${spent.toLocaleString()} spent · ${goldLocName}`,
       })
+      showToast(`Bought ${g.toFixed(4)}g gold for ${holding!.name}`, 'success')
       onClose()
     }
 
@@ -448,6 +451,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         assetClass: 'crypto',
         note: `+${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} spent · ${locName}`,
       })
+      showToast(`Bought ${sats.toLocaleString()} sats for ${holding!.name}`, 'success')
       onClose()
     }
 
@@ -576,6 +580,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         assetClass: holding!.assetClass,
         note: `+${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${priceUsdNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/unit`,
       })
+      showToast(`Bought ${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares of ${holding!.name}`, 'success')
       onClose()
     } else {
       if (!valid) { setShowErrors(true); return }
@@ -599,6 +604,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         assetClass: holding!.assetClass,
         note: `+${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${label} @ ฿${Number(price).toLocaleString()}/unit`,
       })
+      showToast(`Bought ${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} units of ${holding!.name}`, 'success')
       onClose()
     }
   }
