@@ -143,6 +143,7 @@ export function Dashboard() {
         {/* Net worth hero Bento (Left 7-8 cols) */}
         <div className="lg:col-span-7 xl:col-span-8">
           <Card
+            padded={false}
             className="relative overflow-hidden text-white animate-rise h-full flex flex-col justify-between"
             style={{
               background: 'linear-gradient(135deg, #0b0d14 0%, #151928 100%)',
