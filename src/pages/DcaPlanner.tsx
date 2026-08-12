@@ -236,8 +236,6 @@ export function DcaPlanner() {
   // DCA Success Modal state
   const [successOpen, setSuccessOpen] = useState(false)
   const [completedPlan, setCompletedPlan] = useState<DcaPlan | null>(null)
-
-  // ── Derived numbers ──
   const fixedItems = [...(data.fixedCostItems ?? [])].sort((a, b) => b.amount - a.amount)
   const fixedTotal = fixedItems.reduce((s, x) => s + x.amount, 0)
   const dcaMonth   = dcaThisMonth(data.dcaPlans)
@@ -266,136 +264,116 @@ export function DcaPlanner() {
     <>
       <PageHeader eyebrow="Strategy" title="Planner" subtitle="Your monthly money breakdown." />
 
-      {/* ── Income + Budget Bar ── */}
-      <Card className="animate-rise">
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <InlineEditStat
-            label="Monthly Salary"
-            value={salary > 0 ? thb(salary) : '-'}
-            editing={editingSalary}
-            draft={salaryDraft}
-            inputRef={salaryRef}
-            onOpen={openSalaryEdit}
-            onDraftChange={setSalaryDraft}
-            onCommit={commitSalary}
-            onCancel={() => setEditingSalary(false)}
-            hint={salary <= 0 ? 'Tap to set your salary' : undefined}
-          />
-
-        </div>
-        {salary > 0 && <BudgetBar salary={salary} fixed={fixedTotal} savings={savingsTotal} />}
-        {salary <= 0 && (
-          <button onClick={openSalaryEdit} className="mt-4 text-[13px] font-semibold text-brand hover:underline">
-            + Add monthly salary to see breakdown
-          </button>
-        )}
-      </Card>
-
-      {/* ── Fixed Costs ── */}
-      <Card className="mt-4 animate-rise">
-        <SectionHeader
-          label="Fixed Costs"
-          total={fixedTotal}
-          open={fixedOpen}
-          onToggle={() => setFixedOpen((v) => !v)}
-          action={
-            fixedOpen && !addingItem && !editingItem ? (
-              <button
-                onClick={() => setAddingItem(true)}
-                className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12.5px] font-semibold transition-colors active:scale-95"
-                style={{
-                  borderColor: 'color-mix(in srgb, var(--color-loss) 35%, transparent)',
-                  color: 'var(--color-loss)',
-                  background: 'var(--color-loss-soft)',
-                }}
-              >
-                + Add expense
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column (5 cols): Salary Budget & Fixed Costs */}
+        <div className="lg:col-span-5 xl:col-span-4 space-y-6">
+          {/* ── Income + Budget Bar ── */}
+          <Card className="animate-rise">
+            <div className="flex flex-wrap items-start justify-between gap-6">
+              <InlineEditStat
+                label="Monthly Salary"
+                value={salary > 0 ? thb(salary) : '-'}
+                editing={editingSalary}
+                draft={salaryDraft}
+                inputRef={salaryRef}
+                onOpen={openSalaryEdit}
+                onDraftChange={setSalaryDraft}
+                onCommit={commitSalary}
+                onCancel={() => setEditingSalary(false)}
+                hint={salary <= 0 ? 'Tap to set your salary' : undefined}
+              />
+            </div>
+            {salary > 0 && <BudgetBar salary={salary} fixed={fixedTotal} savings={savingsTotal} />}
+            {salary <= 0 && (
+              <button onClick={openSalaryEdit} className="mt-4 text-[13px] font-semibold text-brand hover:underline cursor-pointer">
+                + Add monthly salary to see breakdown
               </button>
-            ) : null
-          }
-        />
-
-        {fixedOpen && (
-          <div className="mt-4">
-            {fixedItems.length === 0 && !addingItem && (
-              <p className="text-[13px] text-ink-muted">No fixed costs yet. Add things like rent, bills, or family support.</p>
             )}
+          </Card>
 
-            {fixedItems.length > 0 && (
-              <div className="divide-y divide-line">
-                {fixedItems.map((item) =>
-                  editingItem?.id === item.id ? (
-                    <div key={item.id} className="py-2">
-                      <FixedCostForm
-                        initial={item}
-                        onSave={(name, amount) => { upsertFixedCostItem({ id: item.id, name, amount }); setEditingItem(null) }}
-                        onCancel={() => setEditingItem(null)}
-                      />
-                    </div>
-                  ) : (
-                    <FixedCostRow key={item.id} item={item} onEdit={setEditingItem} onDelete={removeFixedCostItem} />
-                  )
+          {/* ── Fixed Costs ── */}
+          <Card className="animate-rise">
+            <SectionHeader
+              label="Fixed Costs"
+              total={fixedTotal}
+              open={fixedOpen}
+              onToggle={() => setFixedOpen((v) => !v)}
+              action={
+                fixedOpen && !addingItem && !editingItem ? (
+                  <button
+                    onClick={() => setAddingItem(true)}
+                    className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[12px] font-semibold transition-colors active:scale-95 cursor-pointer"
+                    style={{
+                      borderColor: 'color-mix(in srgb, var(--color-loss) 35%, transparent)',
+                      color: 'var(--color-loss)',
+                      background: 'var(--color-loss-soft)',
+                    }}
+                  >
+                    + Add expense
+                  </button>
+                ) : null
+              }
+            />
+
+            {fixedOpen && (
+              <div className="mt-4">
+                {fixedItems.length === 0 && !addingItem && (
+                  <p className="text-[13px] text-ink-muted">No fixed costs yet. Add things like rent, bills, or family support.</p>
+                )}
+
+                {fixedItems.length > 0 && (
+                  <div className="divide-y divide-line">
+                    {fixedItems.map((item) =>
+                      editingItem?.id === item.id ? (
+                        <div key={item.id} className="py-2">
+                          <FixedCostForm
+                            initial={item}
+                            onSave={(name, amount) => { upsertFixedCostItem({ id: item.id, name, amount }); setEditingItem(null) }}
+                            onCancel={() => setEditingItem(null)}
+                          />
+                        </div>
+                      ) : (
+                        <FixedCostRow key={item.id} item={item} onEdit={setEditingItem} onDelete={removeFixedCostItem} />
+                      )
+                    )}
+                  </div>
+                )}
+
+                {addingItem && (
+                  <div className="mt-3">
+                    <FixedCostForm
+                      onSave={(name, amount) => { upsertFixedCostItem({ name, amount }); setAddingItem(false) }}
+                      onCancel={() => setAddingItem(false)}
+                    />
+                  </div>
+                )}
+
+                {fixedItems.length > 0 && (
+                  <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
+                    <span className="text-[12.5px] font-semibold text-ink-muted">Total fixed</span>
+                    <span className="font-display text-[15px] font-extrabold tnum text-ink">{thb(fixedTotal)}</span>
+                  </div>
                 )}
               </div>
             )}
-
-            {addingItem && (
-              <div className="mt-3">
-                <FixedCostForm
-                  onSave={(name, amount) => { upsertFixedCostItem({ name, amount }); setAddingItem(false) }}
-                  onCancel={() => setAddingItem(false)}
-                />
-              </div>
-            )}
-
-            {fixedItems.length > 0 && (
-              <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
-                <span className="text-[12.5px] font-semibold text-ink-muted">Total fixed</span>
-                <span className="font-display text-[15px] font-extrabold tnum text-ink">{thb(fixedTotal)}</span>
-              </div>
-            )}
-          </div>
-        )}
-      </Card>
-
-      {/* ── Savings & Invest ── */}
-      <Card className="mt-4 animate-rise overflow-hidden" padded={false}>
-        <div className="p-5  ">
-          <SectionHeader
-            label="Savings & Invest"
-            total={savingsTotal}
-            open={savingsOpen}
-            onToggle={() => setSavingsOpen((v) => !v)}
-            action={
-              savingsOpen ? (
-                <button
-                  onClick={openAdd}
-                  className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12.5px] font-semibold transition-colors active:scale-95"
-                  style={{
-                    borderColor: 'color-mix(in srgb, var(--color-gain) 35%, transparent)',
-                    color: 'var(--color-gain)',
-                    background: 'var(--color-gain-soft)',
-                  }}
-                >
-                  + Add plan
-                </button>
-              ) : null
-            }
-          />
+          </Card>
         </div>
 
-        {savingsOpen && (
-          <div className="mt-6 border-t border-line pt-5">
-              {plans.length === 0 ? (
-                <EmptyState
-                  icon={<DcaIcon className="h-6 w-6" />}
-                  title="No invest plans yet"
-                  description="Add recurring buys to track your dollar-cost averaging."
-                  accent="var(--color-brand)"
-                  action={
+        {/* Right Column (7 cols): Savings & Invest / DCA Plans */}
+        <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+          {/* ── Savings & Invest ── */}
+          <Card className="animate-rise overflow-hidden" padded={false}>
+            <div className="p-5">
+              <SectionHeader
+                label="Savings & Invest"
+                total={savingsTotal}
+                open={savingsOpen}
+                onToggle={() => setSavingsOpen((v) => !v)}
+                action={
+                  savingsOpen ? (
                     <button
                       onClick={openAdd}
-                      className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12.5px] font-semibold transition-colors"
+                      className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[12px] font-semibold transition-colors active:scale-95 cursor-pointer"
                       style={{
                         borderColor: 'color-mix(in srgb, var(--color-gain) 35%, transparent)',
                         color: 'var(--color-gain)',
@@ -404,189 +382,121 @@ export function DcaPlanner() {
                     >
                       + Add plan
                     </button>
-                  }
-                />
-              ) : (
-                <ul className="divide-y divide-line rounded-xl border border-line overflow-hidden">
-                  {plans.map((p) => {
-                    const meta = ASSET_META[p.assetClass]
-                    const bought = buyDayPassedThisPeriod(p)
-                    const confirmed = isConfirmedForPeriod(p)
-                    const skipped = isSkippedForPeriod(p)
-                    const needsAction = shouldConfirmBuy(p)
-                    const next = nextBuyDate(p)
-                    const days = daysUntil(localDateStr(next))
+                  ) : null
+                }
+              />
+            </div>
 
-                    const isRecent = (dates: string[] | undefined) => {
-                      if (!dates || dates.length === 0) return false
-                      const latestStr = dates[0]
-                      let latestMs = 0
-                      if (latestStr.includes('T') || latestStr.includes(':')) {
-                        latestMs = new Date(latestStr).getTime()
-                      } else {
-                        // fallback YYYY-MM-DD
-                        const [y, m, d] = latestStr.split('-').map(Number)
-                        latestMs = new Date(y, m - 1, d).getTime()
-                      }
-                      const diffMs = Date.now() - latestMs
-                      // 1 hour is 3,600,000 milliseconds
-                      return diffMs > 0 && diffMs <= 3600000
-                    }
-                    const showConfirmed = confirmed && isRecent(p.confirmedDates)
-
-                    return (
-                      <li key={p.id}>
-                        {/* Mobile row: maximize horizontal space */}
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => openEdit(p)}
-                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(p) } }}
-                          aria-label={`Edit ${p.name}`}
-                          className="flex  cursor-pointer items-center gap-3 px-5 py-3.5 transition-colors hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                        >
-                          <span
-                            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
-                            style={{ color: meta.color, background: `color-mix(in srgb, ${meta.color} 12%, transparent)` }}
+            {savingsOpen && (
+              <div className="border-t border-line">
+                  {plans.length === 0 ? (
+                    <div className="p-5">
+                      <EmptyState
+                        icon={<DcaIcon className="h-6 w-6" />}
+                        title="No invest plans yet"
+                        description="Add recurring buys to track your dollar-cost averaging."
+                        accent="var(--color-brand)"
+                        action={
+                          <button
+                            onClick={openAdd}
+                            className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12.5px] font-semibold transition-colors cursor-pointer"
+                            style={{
+                              borderColor: 'color-mix(in srgb, var(--color-gain) 35%, transparent)',
+                              color: 'var(--color-gain)',
+                              background: 'var(--color-gain-soft)',
+                            }}
                           >
-                            <DcaIcon className="h-[17px] w-[17px]" />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex min-w-0 items-center gap-1.5">
-                                <p className="truncate text-[14px] font-semibold text-ink">{p.name}</p>
-                              </div>
-                              <p className="shrink-0 text-[14px] font-bold tnum text-ink">{thb(p.monthlyAmount)}</p>
-                            </div>
-                            <div className="mt-0.5 flex items-center justify-between gap-2">
-                              <p className="truncate text-[12px] text-ink-muted">{meta.label} · {freqLabel(p)}</p>
-                              <div className="shrink-0">
-                                {showConfirmed && !skipped ? (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-[11px] font-semibold text-gain">
-                                    <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Confirmed
+                            + Add plan
+                          </button>
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <ul className="divide-y divide-line">
+                      {plans.map((p) => {
+                        const meta = ASSET_META[p.assetClass]
+                        const bought = buyDayPassedThisPeriod(p)
+                        const confirmed = isConfirmedForPeriod(p)
+                        const skipped = isSkippedForPeriod(p)
+                        const needsAction = shouldConfirmBuy(p)
+                        const next = nextBuyDate(p)
+                        const days = daysUntil(localDateStr(next))
+
+                        const isRecent = (dates: string[] | undefined) => {
+                          if (!dates || dates.length === 0) return false
+                          const latestStr = dates[0]
+                          let latestMs = 0
+                          if (latestStr.includes('T') || latestStr.includes(':')) {
+                            latestMs = new Date(latestStr).getTime()
+                          } else {
+                            const [y, m, d] = latestStr.split('-').map(Number)
+                            latestMs = new Date(y, m - 1, d).getTime()
+                          }
+                          const diffMs = Date.now() - latestMs
+                          return diffMs > 0 && diffMs <= 3600000
+                        }
+                        const showConfirmed = confirmed && isRecent(p.confirmedDates)
+
+                        return (
+                          <li key={p.id}>
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => openEdit(p)}
+                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(p) } }}
+                              aria-label={`Edit ${p.name}`}
+                              className="flex cursor-pointer items-center gap-3.5 px-5 py-4 transition-colors hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                            >
+                              <span
+                                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl"
+                                style={{ color: meta.color, background: `color-mix(in srgb, ${meta.color} 12%, transparent)` }}
+                              >
+                                <DcaIcon className="h-5 w-5" strokeWidth={1.8} />
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="truncate text-[14.5px] font-semibold text-ink">{p.name}</p>
+                                  <p className="shrink-0 font-display text-[15px] font-extrabold tnum text-ink">
+                                    {thb(p.monthlyAmount)}
+                                  </p>
+                                </div>
+                                <div className="mt-1 flex items-center justify-between gap-2 text-[12px]">
+                                  <span className="text-ink-muted">
+                                    Day {p.buyDay} · {meta.label}
                                   </span>
-                                ) : bought && !confirmed && !skipped ? (
-                                  <span className="inline-block text-[11px] font-bold text-loss">Overdue</span>
-                                ) : days < 3 ? (
-                                  <span className="inline-block text-[11px] font-semibold text-warn">
-                                    {days <= 0 ? 'Today' : days === 1 ? 'Tomorrow' : `in ${days} days`}
-                                  </span>
-                                ) : (
-                                  <span className="inline-block text-[11px] font-semibold text-[#0ea5e9]">in {days} days</span>
+                                  {showConfirmed && !skipped ? (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-[11px] font-semibold text-gain">
+                                      <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Confirmed
+                                    </span>
+                                  ) : bought && !confirmed && !skipped ? (
+                                    <span className="inline-block text-[11px] font-bold text-loss">Overdue</span>
+                                  ) : days < 3 ? (
+                                    <span className="inline-block text-[11px] font-semibold text-warn">
+                                      {days <= 0 ? 'Today' : days === 1 ? 'Tomorrow' : `in ${days} days`}
+                                    </span>
+                                  ) : (
+                                    <span className="inline-block text-[11px] font-semibold text-[#0ea5e9]">in {days} days</span>
+                                  )}
+                                </div>
+                                {needsAction && (
+                                  <div className="mt-2 flex items-center gap-2">
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
+                                      className="rounded-lg px-3 py-1 text-[11.5px] font-bold text-white transition-colors active:scale-95 cursor-pointer"
+                                      style={{ background: 'var(--color-gain)' }}
+                                    >
+                                      Confirm Buy
+                                    </button>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); skipDcaBuy(p.id, localDateStr()) }}
+                                      className="rounded-lg border px-2.5 py-1 text-[11.5px] font-semibold transition-colors active:scale-95 cursor-pointer text-ink-muted border-line hover:bg-surface-muted"
+                                    >
+                                      Skip
+                                    </button>
+                                  </div>
                                 )}
                               </div>
                             </div>
-                          </div>
-                          {needsAction && (
-                            <div className="flex flex-col gap-1.5">
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
-                                className="shrink-0 rounded-xl px-3 py-1.5 text-[12px] font-bold text-white transition-colors active:scale-95"
-                                style={{ background: 'var(--color-gain)' }}
-                              >
-                                Confirm
-                              </button>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); skipDcaBuy(p.id, localDateStr()) }}
-                                className="shrink-0 rounded-xl border px-3 py-1.5 text-[12px] font-semibold transition-colors active:scale-95"
-                                style={{
-                                  borderColor: 'color-mix(in srgb, var(--color-ink-muted) 30%, transparent)',
-                                  color: 'var(--color-ink-muted)',
-                                }}
-                              >
-                                Skip
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Desktop row */}
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => openEdit(p)}
-                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(p) } }}
-                          aria-label={`Edit ${p.name}`}
-                          className="hidden  cursor-pointer items-center gap-3 px-6 py-3.5 transition-colors hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                        >
-                          <span
-                            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
-                            style={{ color: meta.color, background: `color-mix(in srgb, ${meta.color} 12%, transparent)` }}
-                          >
-                            <DcaIcon className="h-[17px] w-[17px]" />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-[15px] font-semibold text-ink">{p.name}</p>
-                            <p className="text-[12px] text-ink-muted">{meta.label} · {freqLabel(p)}</p>
-                          </div>
-                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                            <div className="text-right">
-                              <p className="font-display text-[15px] font-bold tnum text-ink">
-                                {thb(p.monthlyAmount)}
-                                <span className="ml-1 text-[11px] font-medium text-ink-faint">
-                                  /{(p.frequency ?? 'monthly') === 'daily' ? 'day' : (p.frequency ?? 'monthly') === 'weekly' ? 'wk' : 'mo'}
-                                </span>
-                              </p>
-                              {showConfirmed && !skipped ? (
-                                <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-[11px] font-semibold text-gain">
-                                  <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Confirmed
-                                </span>
-                              ) : bought && !confirmed && !skipped ? (
-                                <span className="mt-0.5 inline-block text-[11px] font-bold text-loss">Overdue</span>
-                              ) : days < 3 ? (
-                                <span className="mt-0.5 inline-block text-[11px] font-semibold text-warn">
-                                  {days <= 0 ? 'Today' : days === 1 ? 'Tomorrow' : `in ${days} days`}
-                                </span>
-                              ) : (
-                                <span className="mt-0.5 inline-block text-[11px] font-semibold text-[#0ea5e9]">in {days} days</span>
-                              )}
-                            </div>
-                            {needsAction && (
-                              <div className="flex flex-col gap-1.5">
-                                <button
-                                  onClick={() => { setConfirming(p); setConfirmOpen(true) }}
-                                  className="shrink-0 rounded-xl px-3 py-1.5 text-[12px] font-bold text-white transition-colors active:scale-95"
-                                  style={{ background: 'var(--color-gain)' }}
-                                >
-                                  Confirm
-                                </button>
-                                <button
-                                  onClick={() => { skipDcaBuy(p.id, localDateStr()) }}
-                                  className="shrink-0 rounded-xl border px-3 py-1.5 text-[12px] font-semibold transition-colors active:scale-95"
-                                  style={{
-                                    borderColor: 'color-mix(in srgb, var(--color-ink-muted) 30%, transparent)',
-                                    color: 'var(--color-ink-muted)',
-                                  }}
-                                >
-                                  Skip
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-
-              {/* Footer */}
-              {plans.length > 0 && (
-                <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-line pt-4 pb-5 px-5 ">
-                  <div>
-                    <p className="text-[12px] text-ink-muted">Total savings</p>
-                    <p className="font-display text-[18px] font-extrabold tnum text-ink">{thb(savingsTotal)}</p>
-                  </div>
-                  {salary > 0 && (
-                    <>
-                      <div className="h-8 w-px bg-line" />
-                      <div>
-                        <p className="text-[12px] text-ink-muted">Invest rate</p>
-                        <p className="font-display text-[18px] font-extrabold tnum text-gain">
-                          {Math.round((savingsTotal / salary) * 100)}%
-                        </p>
-                      </div>
-                      <div className="h-8 w-px bg-line" />
                       <div>
                         <p className="text-[12px] text-ink-muted">Progress this month</p>
                         <p className="font-display text-[18px] font-extrabold tnum text-ink">
