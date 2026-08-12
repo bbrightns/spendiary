@@ -550,7 +550,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                 </div>
                 <div className="mt-1 flex items-center justify-between text-[13px]">
                   <span className="text-ink-soft">BTC amount</span>
-                  <span className="font-semibold tnum text-ink">{btcAmount.toFixed(8)} BTC</span>
+                  <span className="font-semibold tnum text-ink">{btcAmount.toFixed(8)} BTC ({sats.toLocaleString()} sats)</span>
                 </div>
               </div>
             )}
@@ -563,14 +563,21 @@ export function HoldingForm({ open, editing, onClose }: Props) {
         {/* ── BTC: edit ── */}
         {isBtc && editing && (
           <>
-            <NumberField
-              label="BTC held (decimal)"
-              value={form.units}
-              error={showErrors && form.units === '' ? 'Units are required' : undefined}
-              onChange={(units) => setForm((f) => ({ ...f, units }))}
-              placeholder="0"
-              step={0.00000001}
-            />
+            <div>
+              <NumberField
+                label="BTC held (decimal)"
+                value={form.units}
+                error={showErrors && form.units === '' ? 'Units are required' : undefined}
+                onChange={(units) => setForm((f) => ({ ...f, units }))}
+                placeholder="0"
+                step={0.00000001}
+              />
+              {Number(form.units) > 0 && (
+                <p className="mt-1 text-[11.5px] text-ink-muted">
+                  ≈ {Math.round(Number(form.units) * SATS_PER_BTC).toLocaleString()} sats
+                </p>
+              )}
+            </div>
             <div className="grid grid-cols-1 gap-3 ">
               <NumberField
                 label="Avg cost / BTC"

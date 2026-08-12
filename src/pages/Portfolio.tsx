@@ -669,9 +669,10 @@ export function Portfolio() {
                   </span>
                 )
 
+                const btcAvgCost = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost)
                 const goldAvgCostPerBaht = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost) * GRAMS_PER_BAHT_GOLD
                 const unitsLabel = isBtc
-                  ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats`
+                  ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats · avg ${thb(btcAvgCost)}/BTC`
                   : isGold
                   ? `${h.units.toFixed(4)} g (${(h.units / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาท) · avg ${thb(goldAvgCostPerBaht)}/บาท`
                   : `${h.units.toLocaleString()} ${unitLabel(h.assetClass)} · ${ASSET_META[h.assetClass].label}`
@@ -778,30 +779,33 @@ export function Portfolio() {
                             ? <p className="py-1 text-[13px] text-ink-muted">No locations yet. Use "Buy more" to add.</p>
                             : (
                               <ul className="space-y-1.5">
-                                {(h.btcLocations ?? []).map((loc) => (
-                                  <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
-                                    <div className="min-w-0 flex-1">
-                                      <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
-                                      <p className="tnum text-[12px] text-ink-muted">
-                                        {loc.satoshi.toLocaleString()} sats · {thb(loc.thbSpent)} spent
-                                      </p>
-                                    </div>
-                                    <button
-                                      onClick={() => openLocEdit(h.id, loc)}
-                                      aria-label={`Edit location ${loc.name}`}
-                                      className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink after:absolute after:-inset-1.5 after:content-['']"
-                                    >
-                                      <PencilIcon className="h-[14px] w-[14px]" />
-                                    </button>
-                                    <button
-                                      onClick={() => removeBtcLocation(h.id, loc.id)}
-                                      aria-label={`Remove location ${loc.name}`}
-                                      className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss after:absolute after:-inset-1.5 after:content-['']"
-                                    >
-                                      <TrashIcon className="h-[14px] w-[14px]" />
-                                    </button>
-                                  </li>
-                                ))}
+                                {(h.btcLocations ?? []).map((loc) => {
+                                  const locCostPerBtc = loc.satoshi > 0 ? (loc.thbSpent / loc.satoshi) * SATS_PER_BTC : 0
+                                  return (
+                                    <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
+                                      <div className="min-w-0 flex-1">
+                                        <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
+                                        <p className="tnum text-[12px] text-ink-muted">
+                                          {loc.satoshi.toLocaleString()} sats · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBtc)}/BTC
+                                        </p>
+                                      </div>
+                                      <button
+                                        onClick={() => openLocEdit(h.id, loc)}
+                                        aria-label={`Edit location ${loc.name}`}
+                                        className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink after:absolute after:-inset-1.5 after:content-['']"
+                                      >
+                                        <PencilIcon className="h-[14px] w-[14px]" />
+                                      </button>
+                                      <button
+                                        onClick={() => removeBtcLocation(h.id, loc.id)}
+                                        aria-label={`Remove location ${loc.name}`}
+                                        className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss after:absolute after:-inset-1.5 after:content-['']"
+                                      >
+                                        <TrashIcon className="h-[14px] w-[14px]" />
+                                      </button>
+                                    </li>
+                                  )
+                                })}
                               </ul>
                             )
                         )}
@@ -904,6 +908,18 @@ export function Portfolio() {
               error={locErrors && (locThbSpent === '' || Number(locThbSpent) < 0) ? 'Required' : undefined}
             />
           </div>
+          {locEditing && 'satoshi' in locEditing && Number(locSatoshi) > 0 && Number(locThbSpent) > 0 && (
+            <div className="rounded-xl border border-line bg-surface-muted px-3.5 py-2.5 text-[12.5px] space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-ink-muted">BTC amount</span>
+                <span className="font-semibold text-ink tnum">{(Number(locSatoshi) / SATS_PER_BTC).toFixed(8)} BTC</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-ink-muted">Avg cost / BTC</span>
+                <span className="font-semibold text-brand tnum">{thb((Number(locThbSpent) / Number(locSatoshi)) * SATS_PER_BTC)}</span>
+              </div>
+            </div>
+          )}
           {locEditing && !('satoshi' in locEditing) && Number(locGrams) > 0 && Number(locThbSpent) > 0 && (
             <div className="rounded-xl border border-line bg-surface-muted px-3.5 py-2.5 text-[12.5px] space-y-1">
               <div className="flex items-center justify-between">

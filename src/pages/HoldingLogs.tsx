@@ -3,7 +3,7 @@ import { useData } from '../store/DataContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
-import { ASSET_META, GRAMS_PER_BAHT_GOLD } from '../lib/calc'
+import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC } from '../lib/calc'
 import type { AssetClass } from '../lib/types'
 import { ClockIcon } from '../components/icons'
 
@@ -83,7 +83,7 @@ export function HoldingLogs() {
       const basisDiff = currBasis - prevBasis
 
       const formatUnit = (val: number) => {
-        if (log.assetClass === 'crypto') return Math.round(val).toLocaleString() + ' sats'
+        if (log.assetClass === 'crypto') return `${Math.round(val).toLocaleString()} sats (${(val / SATS_PER_BTC).toLocaleString(undefined, { maximumFractionDigits: 8 })} BTC)`
         if (log.assetClass === 'gold') return `${val.toFixed(4)} g (${(val / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาท)`
         if (log.assetClass === 'stock') return val.toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' shares'
         return val.toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' units'

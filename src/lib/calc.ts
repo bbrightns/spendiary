@@ -109,6 +109,23 @@ export function goldCostPerBaht(thbSpent: number, grams: number): number {
   return (thbSpent / grams) * GRAMS_PER_BAHT_GOLD
 }
 
+/* ----------------------------- Bitcoin Calculations ----------------------------- */
+
+export const SATS_PER_BTC = 100_000_000
+
+export function satsToBtc(sats: number): number {
+  return sats / SATS_PER_BTC
+}
+
+export function btcToSats(btc: number): number {
+  return Math.round(btc * SATS_PER_BTC)
+}
+
+export function btcCostPerCoin(thbSpent: number, satoshi: number): number {
+  if (satoshi <= 0) return 0
+  return (thbSpent / satoshi) * SATS_PER_BTC
+}
+
 /* ----------------------------- DCA ----------------------------- */
 
 /** Normalise a plan's per-period amount to a monthly equivalent for summary stats. */
