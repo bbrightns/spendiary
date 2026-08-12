@@ -3,6 +3,7 @@ import { Modal } from '../ui/Modal'
 import { NumberField, SelectField, TextField } from '../ui/Field'
 import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
+import { useToast } from '../../store/ToastContext'
 import type { DcaPlan } from '../../lib/types'
 import { localDateStr } from '../../lib/format'
 import { findMatchingHolding, GRAMS_PER_BAHT_GOLD } from '../../lib/calc'
@@ -24,6 +25,7 @@ function fmtNum(val: number | undefined | null, maxDec = 4): string {
 
 export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
   const { data, confirmDcaBuy, usdThb } = useData()
+  const { showToast } = useToast()
 
   // Target Holding state
   const [targetHoldingId, setTargetHoldingId] = useState<string>('')
@@ -306,6 +308,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
       confirmDcaBuy(p.id, btcImpliedPrice, today, undefined, undefined, undefined, btcLocUpdate, undefined, undefined, undefined, resolvedTargetId)
     }
 
+    showToast(`Confirmed DCA buy for "${holding?.name ?? plan.name}"`, 'success')
     onSuccess?.()
     onClose()
   }
