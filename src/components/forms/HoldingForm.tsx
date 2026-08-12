@@ -4,6 +4,7 @@ import { NumberField, SelectField, TextField } from '../ui/Field'
 import { FormActions } from './FormActions'
 import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
+import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD } from '../../lib/calc'
 import type { AssetClass, Holding } from '../../lib/types'
 import { localDateStr, thb } from '../../lib/format'
@@ -62,6 +63,7 @@ const blank = {
 
 export function HoldingForm({ open, editing, onClose }: Props) {
   const { upsertHolding, removeHolding, addHoldingLog, usdThb } = useData()
+  const { showToast } = useToast()
 
   // Generic fields
   const [form, setForm] = useState(blank)
@@ -398,6 +400,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
         ? `${unitsNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares · cost basis ฿${updateObj.totalThbInvested?.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
         : `${unitsNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ ${isUsd ? `$${avgCostInput.toLocaleString()}` : `฿${avgCostInput.toLocaleString()}`}/unit`,
     })
+    showToast(editing ? `Updated ${name}` : `Added ${name} to portfolio`, 'success')
     onClose()
   }
 
@@ -482,6 +485,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                     <li key={s.ticker}>
                       <button
                         type="button"
+                        aria-label={`Select ${s.ticker} - ${s.name}`}
                         className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left hover:bg-surface-muted"
                         onMouseDown={() => {
                           setForm((f) => ({ ...f, name: s.name, ticker: s.ticker }))
@@ -733,6 +737,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                     <button
                       type="button"
                       onClick={() => setIsEditingThb(true)}
+                      aria-label="Edit THB cost basis manually"
                       className="inline-flex items-center gap-1 rounded-md bg-brand/15 px-2 py-0.5 text-[11px] font-bold text-brand hover:bg-brand/25 active:scale-95 transition-all cursor-pointer uppercase tracking-wider"
                     >
                       <PencilIcon className="h-3 w-3" />
@@ -748,6 +753,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                       <button
                         type="button"
                         onClick={() => setIsEditingThb(false)}
+                        aria-label="Keep manually adjusted THB value"
                         className="text-[11px] font-bold text-brand hover:underline cursor-pointer uppercase tracking-wider"
                       >
                         Keep Value
@@ -777,6 +783,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                             setThbInvestedInput(calculatedThb)
                             setFxRateInput(formatCostOrFx(fxRate))
                           }}
+                          aria-label="Reset THB cost basis to calculate from USD shares and cost"
                           className="text-[11px] font-semibold text-brand hover:underline cursor-pointer"
                         >
                           Reset to calculated (฿{Number((sharesInputVal * avgCostUsdVal * (usdThb || 35)).toFixed(2)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} @ {Number((usdThb || 35).toFixed(2))})
