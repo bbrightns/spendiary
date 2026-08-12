@@ -12,7 +12,6 @@ export function Layout({ children }: { children: ReactNode }) {
   return (
     /* Outer shell: fills the entire viewport, neutral bg so the phone frame is visible on desktop, transitions to canvas bg on widescreen */
     <div className="min-h-dvh bg-[#d1d5db] dark:bg-[#111318] flex justify-center lg:bg-canvas lg:dark:bg-canvas lg:block">
-      
       {/* Skip to main content (keyboard / screen reader) */}
       <a
         href="#main-content"
@@ -24,17 +23,17 @@ export function Layout({ children }: { children: ReactNode }) {
       {/* ── Desktop Widescreen Layout (≥ lg) ── */}
       <div className="hidden lg:flex min-h-dvh w-full">
         <Sidebar />
-        <main id="main-content" className="flex-1 pl-64">
-          <div className="mx-auto max-w-5xl px-8 py-8">
+        <main id="main-content" className="flex-1 pl-64 transition-all duration-300">
+          <div className="mx-auto max-w-[1440px] px-8 lg:px-10 py-7">
             {children}
           </div>
         </main>
       </div>
 
       {/* ── Mobile/Tablet Simulator Layout (< lg) ── */}
-      <div className="relative w-full max-w-[390px] min-h-dvh bg-canvas flex flex-col shadow-2xl lg:hidden">
+      <div className="relative w-full max-w-[420px] min-h-dvh bg-canvas flex flex-col shadow-2xl lg:hidden">
         {/* Top brand bar */}
-        <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-line bg-canvas/80 px-5 py-3.5 backdrop-blur-xl">
+        <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-line bg-canvas/85 px-5 py-3.5 backdrop-blur-xl">
           <div className="grid h-8 w-8 place-items-center rounded-lg bg-ink text-white dark:bg-brand-soft dark:text-brand">
             <SparkleIcon className="h-[18px] w-[18px]" strokeWidth={1.8} />
           </div>
@@ -73,5 +72,3 @@ export function Layout({ children }: { children: ReactNode }) {
     </div>
   )
 }
-
-
