@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useData } from '../store/DataContext'
+import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -183,6 +184,7 @@ function TransferRow({
   onToggle: () => void
 }) {
   const { removeTransfer } = useData()
+  const { showToast } = useToast()
   const remaining = remainingTransfers(transfer)
   const progress = transferProgress(transfer)
   const done = remaining === 0
@@ -202,6 +204,8 @@ function TransferRow({
           }
         }}
         className={`flex cursor-pointer items-center justify-between gap-3 px-5 py-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${soon ? 'bg-warn-soft/10' : ''}`}
+        aria-expanded={isExpanded}
+        aria-label={isExpanded ? `Collapse details for ${transfer.recipient}` : `Expand details for ${transfer.recipient}`}
       >
         <div className="flex items-center gap-3 min-w-0">
           <span
@@ -270,6 +274,7 @@ function TransferRow({
                   e.stopPropagation()
                   onEdit()
                 }}
+                aria-label={`Edit transfer schedule for ${transfer.recipient}`}
                 className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[12px] font-semibold text-ink transition-colors hover:bg-surface-muted active:scale-95 cursor-pointer"
               >
                 <PencilIcon className="h-3.5 w-3.5 text-ink-muted" /> Edit
@@ -279,8 +284,10 @@ function TransferRow({
                   e.stopPropagation()
                   if (confirm(`Remove support schedule for "${transfer.recipient}"?`)) {
                     removeTransfer(transfer.id)
+                    showToast(`Removed transfer schedule for "${transfer.recipient}"`, 'info')
                   }
                 }}
+                aria-label={`Delete transfer schedule for ${transfer.recipient}`}
                 className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[12px] font-semibold text-loss transition-colors hover:bg-loss-soft hover:border-loss/30 active:scale-95 cursor-pointer"
               >
                 <TrashIcon className="h-3.5 w-3.5 text-loss/70" /> Delete
