@@ -6,6 +6,7 @@ import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { AddButton } from '../components/ui/AddButton'
+import { Modal } from '../components/ui/Modal'
 import { TransferForm } from '../components/forms/TransferForm'
 import { AlertIcon, CheckIcon, TransferIcon, PencilIcon, TrashIcon } from '../components/icons'
 import { FREQUENCY_LABEL, remainingTransfers, transferProgress } from '../lib/calc'
@@ -31,9 +32,11 @@ function ChevronIcon({ open }: { open: boolean }) {
 }
 
 export function AutoTransfers() {
-  const { data } = useData()
+  const { data, removeTransfer } = useData()
+  const { showToast } = useToast()
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Transfer | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Transfer | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const openAdd = () => {
@@ -147,6 +150,7 @@ export function AutoTransfers() {
                 transfer={t}
                 days={t.days}
                 onEdit={() => openEdit(t)}
+                onDelete={() => setDeleteTarget(t)}
                 isExpanded={expandedId === t.id}
                 onToggle={() => setExpandedId(expandedId === t.id ? null : t.id)}
               />
@@ -156,6 +160,37 @@ export function AutoTransfers() {
       </div>
 
       <TransferForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
+
+      {/* Delete confirmation modal */}
+      <Modal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title={`Delete transfer for "${deleteTarget?.recipient}"?`}
+        description="This will remove the recurring transfer schedule and stop tracking upcoming payments."
+      >
+        <div className="flex flex-col gap-2.5 pb-1">
+          <button
+            onClick={() => {
+              if (deleteTarget) {
+                removeTransfer(deleteTarget.id)
+                showToast(`Removed transfer schedule for "${deleteTarget.recipient}"`, 'info')
+              }
+              setDeleteTarget(null)
+            }}
+            aria-label={`Confirm delete transfer for ${deleteTarget?.recipient ?? ''}`}
+            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-loss px-5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer"
+          >
+            Yes, delete transfer
+          </button>
+          <button
+            onClick={() => setDeleteTarget(null)}
+            aria-label="Cancel deletion"
+            className="w-full rounded-full py-2.5 text-[14px] font-semibold text-ink-muted transition-colors hover:text-ink cursor-pointer"
+          >
+            Cancel
+          </button>
+        </div>
+      </Modal>
     </>
   )
 }
@@ -174,17 +209,17 @@ function TransferRow({
   transfer,
   days,
   onEdit,
+  onDelete,
   isExpanded,
   onToggle,
 }: {
   transfer: Transfer
   days: number
   onEdit: () => void
+  onDelete: () => void
   isExpanded: boolean
   onToggle: () => void
 }) {
-  const { removeTransfer } = useData()
-  const { showToast } = useToast()
   const remaining = remainingTransfers(transfer)
   const progress = transferProgress(transfer)
   const done = remaining === 0
@@ -282,10 +317,7 @@ function TransferRow({
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  if (confirm(`Remove support schedule for "${transfer.recipient}"?`)) {
-                    removeTransfer(transfer.id)
-                    showToast(`Removed transfer schedule for "${transfer.recipient}"`, 'info')
-                  }
+                  onDelete()
                 }}
                 aria-label={`Delete transfer schedule for ${transfer.recipient}`}
                 className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[12px] font-semibold text-loss transition-colors hover:bg-loss-soft hover:border-loss/30 active:scale-95 cursor-pointer"
