@@ -394,7 +394,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
               </div>
               <div className="mt-1 flex items-center justify-between text-[13px]">
                 <span className="text-ink-soft">Gold amount</span>
-                <span className="font-semibold tnum text-ink">{g.toFixed(4)} g ({(g / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาท)</span>
+                <span className="font-semibold tnum text-ink">{g.toFixed(4)} g ({(g / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง)</span>
               </div>
             </div>
           )}

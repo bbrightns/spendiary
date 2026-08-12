@@ -674,7 +674,7 @@ export function Portfolio() {
                 const unitsLabel = isBtc
                   ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats · avg ${thb(btcAvgCost)}/BTC`
                   : isGold
-                  ? `${h.units.toFixed(4)} g (${(h.units / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาท) · avg ${thb(goldAvgCostPerBaht)}/บาท`
+                  ? `${h.units.toFixed(4)} g (${(h.units / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง) · avg ${thb(goldAvgCostPerBaht)}/บาททอง`
                   : `${h.units.toLocaleString()} ${unitLabel(h.assetClass)} · ${ASSET_META[h.assetClass].label}`
 
                 const staleIndicator = isPriceStale(h.updatedAt) && (
@@ -823,7 +823,7 @@ export function Portfolio() {
                                       <div className="min-w-0 flex-1">
                                         <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
                                         <p className="tnum text-[12px] text-ink-muted">
-                                          {loc.grams.toFixed(4)} g ({locBaht.toFixed(4)} บาท) · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBaht)}/บาท
+                                          {loc.grams.toFixed(4)} g ({locBaht.toFixed(4)} บาททอง) · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBaht)}/บาททอง
                                         </p>
                                       </div>
                                       <button

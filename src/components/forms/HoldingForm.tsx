@@ -652,7 +652,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                 </div>
                 <div className="mt-1 flex items-center justify-between text-[13px]">
                   <span className="text-ink-soft">Total weight</span>
-                  <span className="font-semibold tnum text-ink">{goldGrams.toFixed(4)} g ({(goldGrams / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาท)</span>
+                  <span className="font-semibold tnum text-ink">{goldGrams.toFixed(4)} g ({(goldGrams / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง)</span>
                 </div>
               </div>
             )}

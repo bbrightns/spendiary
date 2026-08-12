@@ -652,7 +652,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">Price / Gram</span>
                 <span className={valueStyle(hasValidGold)}>
-                  {hasValidGold ? `฿${fmtNum(goldImpliedPricePerGram, 2)} / g (≈ ฿${fmtNum(goldImpliedPricePerGram * GRAMS_PER_BAHT_GOLD, 0)} / บาท)` : '฿0 / g'}
+                  {hasValidGold ? `฿${fmtNum(goldImpliedPricePerGram, 2)} / g (≈ ฿${fmtNum(goldImpliedPricePerGram * GRAMS_PER_BAHT_GOLD, 0)} / บาททอง)` : '฿0 / g'}
                 </span>
               </div>
 
@@ -660,7 +660,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
                 <div className="flex items-center justify-between">
                   <span className="text-ink-muted">Grams</span>
                   <span className="tnum text-ink-soft">
-                    {fmtNum(goldCurrentTotalGrams, 4)}g <span className="text-ink-muted font-normal">+ ({hasValidGold ? fmtNum(goldGramsToAdd, 4) : '0'})</span> → <strong className={valueStyle(hasValidGold)}>{fmtNum(hasValidGold ? goldNewTotalGrams : goldCurrentTotalGrams, 4)} g (≈ {fmtNum((hasValidGold ? goldNewTotalGrams : goldCurrentTotalGrams) / GRAMS_PER_BAHT_GOLD, 4)} บาท)</strong>
+                    {fmtNum(goldCurrentTotalGrams, 4)}g <span className="text-ink-muted font-normal">+ ({hasValidGold ? fmtNum(goldGramsToAdd, 4) : '0'})</span> → <strong className={valueStyle(hasValidGold)}>{fmtNum(hasValidGold ? goldNewTotalGrams : goldCurrentTotalGrams, 4)} g (≈ {fmtNum((hasValidGold ? goldNewTotalGrams : goldCurrentTotalGrams) / GRAMS_PER_BAHT_GOLD, 4)} บาททอง)</strong>
                   </span>
                 </div>
 
