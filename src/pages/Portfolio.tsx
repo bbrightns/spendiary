@@ -24,7 +24,7 @@ import {
   totalCash,
 } from '../lib/calc'
 import type { AssetClass, BtcLocation, Holding, NetWorthSnapshot } from '../lib/types'
-import { pct, thb, thbCompact, formatNumber } from '../lib/format'
+import { thb, thbCompact, formatNumber } from '../lib/format'
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -379,38 +379,70 @@ export function Portfolio() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column (5 cols): Allocation Donut + Rebalancer + Portfolio Trend */}
         <div className="lg:col-span-5 xl:col-span-4 space-y-6">
-          {/* Allocation chart */}
+          {/* Asset Allocation card (Matching Dashboard Holdings & Assets card design) */}
           <Card className="animate-rise">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-[16px] font-bold text-ink [text-wrap:balance]">Asset Allocation</h2>
+              <h2 className="font-display text-[16px] font-bold text-ink">Asset Allocation</h2>
             </div>
 
-            <div className="mt-4 flex flex-col items-center gap-5">
+            {/* Value & PnL Header */}
+            <div className="mt-4 flex items-baseline justify-between">
+              <div>
+                <span className="text-[11.5px] font-medium text-ink-muted">Portfolio Value</span>
+                <p className="font-display text-[24px] font-extrabold tnum text-ink leading-tight">
+                  {thb(summary.value)}
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <PnLPill value={summary.pnlPct} asPct />
+                <span className="text-[11.5px] text-ink-muted">all-time</span>
+              </div>
+            </div>
+
+            {/* Donut Chart & Breakdown */}
+            <div className="mt-4 flex flex-col items-center gap-4">
               <DonutChart
                 segments={segments}
-                ariaLabel={`Portfolio asset allocation, total value ${thb(summary.value)}`}
+                size={155}
+                thickness={17}
+                ariaLabel={`Holdings asset allocation, total value ${thb(summary.value)}`}
                 centerLabel="Total"
                 centerValue={thbCompact(summary.value)}
               />
-              <ul className="w-full space-y-2 pt-2 border-t border-line">
-                {alloc.map((a) => (
-                  <li key={a.assetClass} className="flex items-center gap-2.5 text-[13px]">
-                    <span
-                      className="h-2.5 w-2.5 shrink-0 rounded-full"
-                      style={{ background: ASSET_META[a.assetClass].color }}
-                    />
-                    <span className="flex-1 font-medium text-ink">
-                      {ASSET_META[a.assetClass].plural}
-                    </span>
-                    <span className="text-[12px] font-semibold tnum text-ink-muted">
-                      {pct(a.pct, 0)}
-                    </span>
-                    <span className="w-20 text-right font-semibold tnum text-ink">
-                      {thbCompact(a.value)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+
+              <div className="w-full space-y-2 pt-2 border-t border-line">
+                {alloc.map((a) => {
+                  const pctVal = summary.value > 0 ? (a.value / summary.value) * 100 : 0
+                  return (
+                    <div key={a.assetClass} className="flex items-center justify-between text-[12.5px]">
+                      <span className="flex items-center gap-2 font-medium text-ink">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full shrink-0"
+                          style={{ background: ASSET_META[a.assetClass].color }}
+                        />
+                        {ASSET_META[a.assetClass].plural}
+                      </span>
+                      <span className="font-bold tnum text-ink">
+                        {thb(a.value)}{' '}
+                        <span className="font-normal text-ink-muted text-[11px]">
+                          ({pctVal.toFixed(1)}%)
+                        </span>
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
+              <span>{data.holdings.length} total holding positions</span>
+              <button
+                type="button"
+                onClick={() => setRebalanceOpen(true)}
+                className="font-semibold text-brand hover:underline cursor-pointer"
+              >
+                Rebalance
+              </button>
             </div>
           </Card>
 
