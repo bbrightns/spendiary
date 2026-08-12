@@ -12,7 +12,6 @@ interface Props {
   open: boolean
   plan: DcaPlan | null
   onClose: () => void
-  onSuccess?: () => void
 }
 
 function fmtNum(val: number | undefined | null, maxDec = 4): string {
@@ -23,7 +22,7 @@ function fmtNum(val: number | undefined | null, maxDec = 4): string {
   })
 }
 
-export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
+export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const { data, confirmDcaBuy, usdThb } = useData()
   const { showToast } = useToast()
 
@@ -309,7 +308,6 @@ export function ConfirmDcaBuyForm({ open, plan, onClose, onSuccess }: Props) {
     }
 
     showToast(`Confirmed DCA buy for "${holding?.name ?? plan.name}"`, 'success')
-    onSuccess?.()
     onClose()
   }
 
