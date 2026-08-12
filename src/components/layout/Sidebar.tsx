@@ -10,7 +10,7 @@ export function Sidebar() {
   const location = useLocation()
   const pathname = location.pathname
   const { data, user, usdThb } = useData()
-  const { theme, setTheme } = useTheme()
+  const { setTheme } = useTheme()
   const isTestMode = user?.id === 'test-user-local'
 
   // Calculate live badge counts
