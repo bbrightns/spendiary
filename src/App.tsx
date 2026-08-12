@@ -1,6 +1,8 @@
 import { Route, Routes } from 'react-router-dom'
 import { ScrollToTop } from './components/ScrollToTop'
 import { DataProvider, useData } from './store/DataContext' // 💡 เพิ่ม useData เข้ามา
+import { ToastProvider } from './store/ToastContext'
+import { ToastContainer } from './components/ui/Toast'
 import { useTheme } from './hooks/useTheme'
 import { Layout } from './components/layout/Layout'
 import { Dashboard } from './pages/Dashboard'
@@ -157,15 +159,16 @@ function AppContent() {
       </Routes>
     </Layout>
   )
-}
-
 // 💡 2. Component หลัก ทำหน้าที่หุ้มตัวแอปด้วย DataProvider
 export default function App() {
   useTheme() // initializes + syncs theme to <html> class
 
   return (
     <DataProvider>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+        <ToastContainer />
+      </ToastProvider>
     </DataProvider>
   )
 }
