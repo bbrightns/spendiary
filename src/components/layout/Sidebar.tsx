@@ -3,8 +3,8 @@ import { navItems, settingsItem } from './nav'
 import { SparkleIcon } from '../icons'
 import { useData } from '../../store/DataContext'
 import { useTheme } from '../../hooks/useTheme'
-import { daysUntil } from '../../lib/format'
-import { remainingTransfers, shouldConfirmBuy } from '../../lib/calc'
+
+import { shouldConfirmBuy } from '../../lib/calc'
 
 export function Sidebar() {
   const location = useLocation()
@@ -15,13 +15,9 @@ export function Sidebar() {
 
   // Calculate live badge counts
   const dcaAlertCount = data.dcaPlans.filter((p) => shouldConfirmBuy(p)).length
-  const transferAlertCount = data.transfers.filter(
-    (t) => daysUntil(t.expiryDate) <= 7 && remainingTransfers(t) > 0,
-  ).length
 
   const getBadgeCount = (path: string) => {
     if (path === '/dca') return dcaAlertCount
-    if (path === '/transfers') return transferAlertCount
     return 0
   }
 
@@ -105,11 +101,7 @@ export function Sidebar() {
 
                 {badgeCount > 0 && (
                   <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10.5px] font-bold leading-tight ${
-                      item.to === '/transfers'
-                        ? 'bg-warn-soft text-warn border border-warn/30'
-                        : 'bg-brand text-white'
-                    }`}
+                    className="px-1.5 py-0.2 rounded-full text-[10.5px] font-bold leading-tight bg-brand text-white"
                   >
                     {badgeCount}
                   </span>
