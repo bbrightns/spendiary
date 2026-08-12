@@ -4,7 +4,6 @@ import { useData } from '../store/DataContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
-import { ProgressRing } from '../components/charts/ProgressRing'
 import { DonutChart } from '../components/charts/DonutChart'
 import { InteractiveNetWorthChart } from '../components/charts/InteractiveNetWorthChart'
 import { PnLPill } from '../components/ui/PnL'
@@ -13,12 +12,10 @@ import {
   PortfolioIcon,
   SparkleIcon,
   WalletIcon,
-  DcaIcon,
 } from '../components/icons'
 import {
   ASSET_META,
   allocations,
-  dcaThisMonth,
   netWorth,
   portfolioSummary,
   shouldConfirmBuy,
@@ -56,7 +53,6 @@ export function Dashboard() {
       })),
     [alloc],
   )
-  const dca = useMemo(() => dcaThisMonth(data.dcaPlans), [data.dcaPlans])
   const cash = useMemo(() => totalCash(data, usdThb), [data.cashAccounts, usdThb])
   const nw = useMemo(() => netWorth(data, usdThb), [data.cashAccounts, data.holdings, usdThb])
 
@@ -120,223 +116,156 @@ export function Dashboard() {
         )}
       </div>
 
-      {/* ── ROW 1: Net Worth Master Hero & Monthly DCA Pulse (Bento 12-cols) ── */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-        {/* Net worth hero Bento (Left 7-8 cols) */}
-        <div className="lg:col-span-7 xl:col-span-8">
-          <Card
-            padded={false}
-            className="relative overflow-hidden text-white animate-rise h-full flex flex-col justify-between"
-            style={{
-              background: 'linear-gradient(135deg, #0b0d14 0%, #151928 100%)',
-              borderColor: 'rgba(255, 255, 255, 0.08)',
-            }}
-          >
-            {/* Ambient subtle glow inside card */}
-            <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand/15 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
+      {/* ── ROW 1: Net Worth Master Hero (Full Width Bento) ── */}
+      <div>
+        <Card
+          padded={false}
+          className="relative overflow-hidden text-white animate-rise h-full flex flex-col justify-between"
+          style={{
+            background: 'linear-gradient(135deg, #0b0d14 0%, #151928 100%)',
+            borderColor: 'rgba(255, 255, 255, 0.08)',
+          }}
+        >
+          {/* Ambient subtle glow inside card */}
+          <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
 
-            {/* Top Main Stats Area */}
-            <div className="relative flex flex-col justify-between gap-5 sm:flex-row sm:items-start p-6 sm:p-7">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-white/70">
-                  <WalletIcon className="h-4 w-4 text-emerald-400" />
-                  <span className="text-[13.5px] font-semibold uppercase tracking-wider">Total Net Worth</span>
-                </div>
-                <p className="font-display text-[36px] sm:text-[44px] xl:text-[48px] font-black leading-tight tracking-tight tnum text-white drop-shadow-sm">
-                  {thb(nw)}
-                </p>
-
-                <div className="pt-1 flex flex-wrap items-center gap-2.5">
-                  <PnLPill value={portfolio.pnl} size="md" />
-                  <span className="text-[12.5px] text-white/70 font-medium">unrealised</span>
-                  {data.retirement?.monthlySpend && data.retirement.monthlySpend > 0 ? (
-                    <Link
-                      to="/retirement"
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-3 py-1 text-[12px] font-semibold text-white/90 shadow-sm border border-white/10 transition-colors hover:bg-white/20 hover:text-white"
-                      aria-label="View wealth runway details on retirement page"
-                    >
-                      ⏳ {((nw / (data.retirement.monthlySpend * 12))).toFixed(1)}y runway
-                    </Link>
-                  ) : (
-                    <Link
-                      to="/retirement"
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11.5px] font-semibold text-white/60 transition-colors hover:bg-white/20 hover:text-white"
-                      aria-label="Set up retirement spend to see runway"
-                    >
-                      ⏳ Set runway target
-                    </Link>
-                  )}
-                </div>
+          {/* Top Main Stats Area */}
+          <div className="relative flex flex-col justify-between gap-5 sm:flex-row sm:items-start p-6 sm:p-7">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-white/70">
+                <WalletIcon className="h-4 w-4 text-emerald-400" />
+                <span className="text-[13.5px] font-semibold uppercase tracking-wider">Total Net Worth</span>
               </div>
+              <p className="font-display text-[36px] sm:text-[44px] xl:text-[48px] font-black leading-tight tracking-tight tnum text-white drop-shadow-sm">
+                {thb(nw)}
+              </p>
 
-              {/* Quick ratio box */}
-              <div className="rounded-2xl bg-white/10 p-3.5 px-4.5 ring-1 ring-white/15 backdrop-blur-md sm:min-w-[220px]">
-                <div className="flex items-center justify-between gap-3 text-[10.5px] font-bold tracking-wider uppercase text-white/50 pb-1.5 border-b border-white/10 mb-2">
-                  <span>Ratio</span>
-                  <span className="font-mono text-[11px] font-semibold text-white/80">
-                    {nw > 0 ? `${Math.round((portfolio.value / nw) * 100)}% : ${Math.round((cash / nw) * 100)}%` : '0% : 0%'}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3.5">
-                  <div>
-                    <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-indigo-300">
-                      <span className="h-2 w-2 rounded-full bg-indigo-400 shrink-0" />
-                      <span>Invested</span>
-                    </div>
-                    <p className="mt-1 font-display text-[17px] sm:text-[19px] font-black tnum text-white">
-                      {thbCompact(portfolio.value)}
-                    </p>
-                    <p className="mt-0.5 text-[11.5px] font-semibold text-indigo-200/80 tnum">
-                      {nw > 0 ? `${((portfolio.value / nw) * 100).toFixed(1)}%` : '0%'}
-                    </p>
-                  </div>
-
-                  <div className="pl-3.5 border-l border-white/10">
-                    <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-emerald-300">
-                      <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
-                      <span>Cash</span>
-                    </div>
-                    <p className="mt-1 font-display text-[17px] sm:text-[19px] font-black tnum text-white">
-                      {thbCompact(cash)}
-                    </p>
-                    <p className="mt-0.5 text-[11.5px] font-semibold text-emerald-200/80 tnum">
-                      {nw > 0 ? `${((cash / nw) * 100).toFixed(1)}%` : '0%'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Mini ratio split bar */}
-                {nw > 0 && (
-                  <div className="mt-2.5 flex h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="bg-indigo-400 transition-all duration-500"
-                      style={{ width: `${(portfolio.value / nw) * 100}%` }}
-                      title={`Invested: ${thb(portfolio.value)} (${((portfolio.value / nw) * 100).toFixed(1)}%)`}
-                    />
-                    <div
-                      className="bg-emerald-400 transition-all duration-500"
-                      style={{ width: `${(cash / nw) * 100}%` }}
-                      title={`Cash: ${thb(cash)} (${((cash / nw) * 100).toFixed(1)}%)`}
-                    />
-                  </div>
+              <div className="pt-1 flex flex-wrap items-center gap-2.5">
+                <PnLPill value={portfolio.pnl} size="md" />
+                <span className="text-[12.5px] text-white/70 font-medium">unrealised</span>
+                {data.retirement?.monthlySpend && data.retirement.monthlySpend > 0 ? (
+                  <Link
+                    to="/retirement"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-3 py-1 text-[12px] font-semibold text-white/90 shadow-sm border border-white/10 transition-colors hover:bg-white/20 hover:text-white"
+                    aria-label="View wealth runway details on retirement page"
+                  >
+                    ⏳ {((nw / (data.retirement.monthlySpend * 12))).toFixed(1)}y runway
+                  </Link>
+                ) : (
+                  <Link
+                    to="/retirement"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11.5px] font-semibold text-white/60 transition-colors hover:bg-white/20 hover:text-white"
+                    aria-label="Set up retirement spend to see runway"
+                  >
+                    ⏳ Set runway target
+                  </Link>
                 )}
               </div>
             </div>
 
-            {/* Asset Distribution Bar & Legend */}
-            {nw > 0 && (
-              <div className="relative mt-auto px-6 sm:px-7 pb-5 pt-3.5 border-t border-white/10 space-y-2.5">
-                <div className="flex h-2 overflow-hidden rounded-full bg-white/10">
-                  {alloc.map((a) => (
-                    <div
-                      key={a.assetClass}
-                      style={{
-                        width: `${(a.value / nw) * 100}%`,
-                        background: ASSET_META[a.assetClass].cssVar,
-                      }}
-                      title={`${ASSET_META[a.assetClass].label}: ${thb(a.value)}`}
-                    />
-                  ))}
-                  {cash > 0 && (
-                    <div
-                      style={{
-                        width: `${(cash / nw) * 100}%`,
-                        background: 'var(--color-cash)',
-                      }}
-                      title={`Cash: ${thb(cash)}`}
-                    />
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-                  {alloc.map((a) => (
-                    <span
-                      key={a.assetClass}
-                      className="flex items-center gap-1.5 text-[12px] text-white/85 font-semibold"
-                    >
-                      <span
-                        className="h-2 w-2 shrink-0 rounded-full"
-                        style={{ background: ASSET_META[a.assetClass].cssVar }}
-                      />
-                      {ASSET_META[a.assetClass].label} {Math.round((a.value / nw) * 100)}%
-                    </span>
-                  ))}
-                  {cash > 0 && (
-                    <span className="flex items-center gap-1.5 text-[12px] text-white/85 font-semibold">
-                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--color-cash)' }} />
-                      Cash {Math.round((cash / nw) * 100)}%
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-          </Card>
-        </div>
-
-        {/* DCA Monthly Pulse Bento (Right 4-5 cols) */}
-        <div className="lg:col-span-5 xl:col-span-4">
-          <Card className="animate-rise h-full flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-brand-soft text-brand-ink">
-                    <DcaIcon className="h-4 w-4" />
-                  </div>
-                  <h2 className="font-display text-[16px] font-bold text-ink">This Month's DCA</h2>
-                </div>
-                <Link
-                  to="/dca"
-                  className="text-[12.5px] font-semibold text-brand hover:underline"
-                  aria-label="View DCA planner"
-                >
-                  DCA Planner →
-                </Link>
-              </div>
-
-              <div className="mt-5 flex items-center gap-5">
-                <ProgressRing
-                  value={dca.pct}
-                  size={120}
-                  thickness={11}
-                  ariaLabel={`This month's DCA progress, ${Math.round(dca.pct)}% bought`}
-                >
-                  <div className="text-center">
-                    <p className="font-display text-[22px] font-extrabold tnum text-ink leading-tight">
-                      {Math.round(dca.pct)}%
-                    </p>
-                    <p className="text-[10.5px] font-medium text-ink-muted leading-tight">bought</p>
-                  </div>
-                </ProgressRing>
-                <div className="flex-1 space-y-2.5">
-                  <Row label="Bought so far" value={thb(dca.invested)} strong />
-                  <Row label="Upcoming" value={thb(dca.upcoming)} />
-                  <Row label="Monthly target" value={thb(dca.total)} muted />
-                </div>
-              </div>
-            </div>
-
-            {dcaActions.length > 0 ? (
-              <div className="mt-4 pt-3 border-t border-line">
-                <button
-                  type="button"
-                  onClick={() => navigate('/dca')}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-brand-soft/80 border border-brand/20 text-brand-ink text-[12.5px] font-semibold hover:bg-brand hover:text-white transition-all cursor-pointer"
-                >
-                  <span>⚡ {dcaActions.length} buy ready to confirm</span>
-                  <span>Confirm now →</span>
-                </button>
-              </div>
-            ) : (
-              <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
-                <span>Next DCA buys on track</span>
-                <span className="font-medium text-ink-soft">
-                  {data.dcaPlans.length} active plans
+            {/* Quick ratio box */}
+            <div className="rounded-2xl bg-white/10 p-3.5 px-4.5 ring-1 ring-white/15 backdrop-blur-md sm:min-w-[220px]">
+              <div className="flex items-center justify-between gap-3 text-[10.5px] font-bold tracking-wider uppercase text-white/50 pb-1.5 border-b border-white/10 mb-2">
+                <span>Ratio</span>
+                <span className="font-mono text-[11px] font-semibold text-white/80">
+                  {nw > 0 ? `${Math.round((portfolio.value / nw) * 100)}% : ${Math.round((cash / nw) * 100)}%` : '0% : 0%'}
                 </span>
               </div>
-            )}
-          </Card>
-        </div>
+
+              <div className="grid grid-cols-2 gap-3.5">
+                <div>
+                  <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-indigo-300">
+                    <span className="h-2 w-2 rounded-full bg-indigo-400 shrink-0" />
+                    <span>Invested</span>
+                  </div>
+                  <p className="mt-1 font-display text-[17px] sm:text-[19px] font-black tnum text-white">
+                    {thbCompact(portfolio.value)}
+                  </p>
+                  <p className="mt-0.5 text-[11.5px] font-semibold text-indigo-200/80 tnum">
+                    {nw > 0 ? `${((portfolio.value / nw) * 100).toFixed(1)}%` : '0%'}
+                  </p>
+                </div>
+
+                <div className="pl-3.5 border-l border-white/10">
+                  <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-emerald-300">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
+                    <span>Cash</span>
+                  </div>
+                  <p className="mt-1 font-display text-[17px] sm:text-[19px] font-black tnum text-white">
+                    {thbCompact(cash)}
+                  </p>
+                  <p className="mt-0.5 text-[11.5px] font-semibold text-emerald-200/80 tnum">
+                    {nw > 0 ? `${((cash / nw) * 100).toFixed(1)}%` : '0%'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Mini ratio split bar */}
+              {nw > 0 && (
+                <div className="mt-2.5 flex h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="bg-indigo-400 transition-all duration-500"
+                    style={{ width: `${(portfolio.value / nw) * 100}%` }}
+                    title={`Invested: ${thb(portfolio.value)} (${((portfolio.value / nw) * 100).toFixed(1)}%)`}
+                  />
+                  <div
+                    className="bg-emerald-400 transition-all duration-500"
+                    style={{ width: `${(cash / nw) * 100}%` }}
+                    title={`Cash: ${thb(cash)} (${((cash / nw) * 100).toFixed(1)}%)`}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Asset Distribution Bar & Legend */}
+          {nw > 0 && (
+            <div className="relative mt-auto px-6 sm:px-7 pb-5 pt-3.5 border-t border-white/10 space-y-2.5">
+              <div className="flex h-2 overflow-hidden rounded-full bg-white/10">
+                {alloc.map((a) => (
+                  <div
+                    key={a.assetClass}
+                    style={{
+                      width: `${(a.value / nw) * 100}%`,
+                      background: ASSET_META[a.assetClass].cssVar,
+                    }}
+                    title={`${ASSET_META[a.assetClass].label}: ${thb(a.value)}`}
+                  />
+                ))}
+                {cash > 0 && (
+                  <div
+                    style={{
+                      width: `${(cash / nw) * 100}%`,
+                      background: 'var(--color-cash)',
+                    }}
+                    title={`Cash: ${thb(cash)}`}
+                  />
+                )}
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                {alloc.map((a) => (
+                  <span
+                    key={a.assetClass}
+                    className="flex items-center gap-1.5 text-[12px] text-white/85 font-semibold"
+                  >
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ background: ASSET_META[a.assetClass].cssVar }}
+                    />
+                    {ASSET_META[a.assetClass].label} {Math.round((a.value / nw) * 100)}%
+                  </span>
+                ))}
+                {cash > 0 && (
+                  <span className="flex items-center gap-1.5 text-[12px] text-white/85 font-semibold">
+                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--color-cash)' }} />
+                    Cash {Math.round((cash / nw) * 100)}%
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </Card>
       </div>
 
       {/* ── ROW 2: Holdings Donut Breakdown (5 cols) & Cash & Liquidity Hub (7 cols) ── */}
@@ -554,31 +483,4 @@ export function Dashboard() {
   )
 }
 
-function Row({
-  label,
-  value,
-  strong,
-  muted,
-}: {
-  label: string
-  value: string
-  strong?: boolean
-  muted?: boolean
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-[12.5px] text-ink-muted">{label}</span>
-      <span
-        className={`tnum ${
-          strong
-            ? 'text-[14.5px] font-bold text-ink'
-            : muted
-            ? 'text-[13px] text-ink-muted'
-            : 'text-[13.5px] font-semibold text-ink-soft'
-        }`}
-      >
-        {value}
-      </span>
-    </div>
-  )
-}
+
