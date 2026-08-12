@@ -138,188 +138,7 @@ export function Dashboard() {
         )}
       </div>
 
-      {/* ── ROW 1: Net Worth Master Hero & Monthly DCA Pulse (Bento 12-cols) ── */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-        {/* Net worth hero Bento (Left 7-8 cols) */}
-        <div className="lg:col-span-7 xl:col-span-8">
-          <Card
-            className="relative overflow-hidden text-white animate-rise h-full flex flex-col justify-between"
-            style={{
-              background: 'linear-gradient(135deg, #0b0d14 0%, #151928 100%)',
-              borderColor: 'rgba(255, 255, 255, 0.08)',
-            }}
-          >
-            {/* Ambient subtle glow inside card */}
-            <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand/15 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
-
-            <div className="relative flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-              <div>
-                <div className="flex items-center gap-2 text-white/60">
-                  <WalletIcon className="h-3.5 w-3.5" />
-                  <span className="text-[12.5px] font-medium tracking-wide">Total Net Worth</span>
-                </div>
-                <p className="mt-1.5 font-display text-[28px] sm:text-[32px] font-extrabold leading-none tracking-tight tnum text-white">
-                  {thb(nw)}
-                </p>
-
-                <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                  <PnLPill value={portfolio.pnl} size="sm" />
-                  <span className="text-[11.5px] text-white/55 font-medium">unrealised</span>
-                  {data.retirement?.monthlySpend && data.retirement.monthlySpend > 0 ? (
-                    <Link
-                      to="/retirement"
-                      className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold text-white/80 transition-colors hover:bg-white/20 hover:text-white"
-                      aria-label="View wealth runway details on retirement page"
-                    >
-                      ⏳ {((nw / (data.retirement.monthlySpend * 12))).toFixed(1)}y runway
-                    </Link>
-                  ) : (
-                    <Link
-                      to="/retirement"
-                      className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-0.5 text-[10.5px] font-semibold text-white/40 transition-colors hover:bg-white/15 hover:text-white"
-                      aria-label="Set up retirement spend to see runway"
-                    >
-                      ⏳ Set runway target
-                    </Link>
-                  )}
-                </div>
-              </div>
-
-              {/* Quick ratio box */}
-              <div className="rounded-xl bg-white/5 p-2.5 px-3.5 ring-1 ring-white/10 sm:min-w-[170px]">
-                <div className="grid grid-cols-2 gap-3.5">
-                  <div>
-                    <p className="text-[11px] font-medium text-white/50">Invested</p>
-                    <p className="mt-0.5 font-display text-[15px] font-bold tnum text-white">
-                      {thbCompact(portfolio.value)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-medium text-white/50">Cash</p>
-                    <p className="mt-0.5 font-display text-[15px] font-bold tnum text-white">
-                      {thbCompact(cash)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Asset Distribution Bar & Legend */}
-            {nw > 0 && (
-              <div className="relative mt-4 pt-2.5 border-t border-white/10 space-y-2">
-                <div className="flex h-1.5 overflow-hidden rounded-full bg-white/10">
-                  {alloc.map((a) => (
-                    <div
-                      key={a.assetClass}
-                      style={{
-                        width: `${(a.value / nw) * 100}%`,
-                        background: ASSET_META[a.assetClass].cssVar,
-                      }}
-                      title={`${ASSET_META[a.assetClass].label}: ${thb(a.value)}`}
-                    />
-                  ))}
-                  {cash > 0 && (
-                    <div
-                      style={{
-                        width: `${(cash / nw) * 100}%`,
-                        background: 'var(--color-cash)',
-                      }}
-                      title={`Cash: ${thb(cash)}`}
-                    />
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-x-3.5 gap-y-1">
-                  {alloc.map((a) => (
-                    <span
-                      key={a.assetClass}
-                      className="flex items-center gap-1 text-[11px] text-white/65 font-medium"
-                    >
-                      <span
-                        className="h-1.5 w-1.5 shrink-0 rounded-full"
-                        style={{ background: ASSET_META[a.assetClass].cssVar }}
-                      />
-                      {ASSET_META[a.assetClass].label} {Math.round((a.value / nw) * 100)}%
-                    </span>
-                  ))}
-                  {cash > 0 && (
-                    <span className="flex items-center gap-1 text-[11px] text-white/65 font-medium">
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'var(--color-cash)' }} />
-                      Cash {Math.round((cash / nw) * 100)}%
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-          </Card>
-        </div>
-
-        {/* DCA Monthly Pulse Bento (Right 4-5 cols) */}
-        <div className="lg:col-span-5 xl:col-span-4">
-          <Card className="animate-rise h-full flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-brand-soft text-brand-ink">
-                    <DcaIcon className="h-4 w-4" />
-                  </div>
-                  <h2 className="font-display text-[16px] font-bold text-ink">This Month's DCA</h2>
-                </div>
-                <Link
-                  to="/dca"
-                  className="text-[12.5px] font-semibold text-brand hover:underline"
-                  aria-label="View DCA planner"
-                >
-                  DCA Planner →
-                </Link>
-              </div>
-
-              <div className="mt-5 flex items-center gap-5">
-                <ProgressRing
-                  value={dca.pct}
-                  size={120}
-                  thickness={11}
-                  ariaLabel={`This month's DCA progress, ${Math.round(dca.pct)}% bought`}
-                >
-                  <div className="text-center">
-                    <p className="font-display text-[22px] font-extrabold tnum text-ink leading-tight">
-                      {Math.round(dca.pct)}%
-                    </p>
-                    <p className="text-[10.5px] font-medium text-ink-muted leading-tight">bought</p>
-                  </div>
-                </ProgressRing>
-                <div className="flex-1 space-y-2.5">
-                  <Row label="Bought so far" value={thb(dca.invested)} strong />
-                  <Row label="Upcoming" value={thb(dca.upcoming)} />
-                  <Row label="Monthly target" value={thb(dca.total)} muted />
-                </div>
-              </div>
-            </div>
-
-            {dcaActions.length > 0 ? (
-              <div className="mt-4 pt-3 border-t border-line">
-                <button
-                  type="button"
-                  onClick={() => navigate('/dca')}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-brand-soft/80 border border-brand/20 text-brand-ink text-[12.5px] font-semibold hover:bg-brand hover:text-white transition-all cursor-pointer"
-                >
-                  <span>⚡ {dcaActions.length} buy ready to confirm</span>
-                  <span>Confirm now →</span>
-                </button>
-              </div>
-            ) : (
-              <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
-                <span>Next DCA buys on track</span>
-                <span className="font-medium text-ink-soft">
-                  {data.dcaPlans.length} active plans
-                </span>
-              </div>
-            )}
-          </Card>
-        </div>
-      </div>
-
-      {/* ── ROW 2: Performance Chart (8 cols) & Asset Breakdown (4 cols) ── */}
+      {/* ── ROW 1: Performance Chart (8 cols) & Holdings Donut (4 cols) ── */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
         {/* Net worth performance chart */}
         <div className="lg:col-span-7 xl:col-span-8">
@@ -422,90 +241,272 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* ── ROW 3: Cash & Liquidity Hub (Full Width 12-cols) ── */}
-      <div>
-        <Card className="animate-rise">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-3.5 border-b border-line">
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <div className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                  <WalletIcon className="h-4 w-4" />
+      {/* ── ROW 2: Monthly DCA Pulse (5 cols) & Cash Hub (7 cols) ── */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+        {/* DCA Monthly Pulse Bento (5 cols) */}
+        <div className="lg:col-span-5 xl:col-span-5">
+          <Card className="animate-rise h-full flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-brand-soft text-brand-ink">
+                    <DcaIcon className="h-4 w-4" />
+                  </div>
+                  <h2 className="font-display text-[16px] font-bold text-ink">This Month's DCA</h2>
                 </div>
-                <h2 className="font-display text-[16px] font-bold text-ink">Cash & Liquidity Hub</h2>
+                <Link
+                  to="/dca"
+                  className="text-[12.5px] font-semibold text-brand hover:underline"
+                  aria-label="View DCA planner"
+                >
+                  DCA Planner →
+                </Link>
               </div>
-              <div className="flex items-baseline gap-2 pl-3 border-l border-line">
-                <span className="font-display text-[22px] font-extrabold tnum text-ink leading-none">
-                  {thb(cash)}
-                </span>
-                <span className="text-[12px] text-ink-muted">available cash</span>
+
+              <div className="mt-5 flex items-center gap-5">
+                <ProgressRing
+                  value={dca.pct}
+                  size={115}
+                  thickness={11}
+                  ariaLabel={`This month's DCA progress, ${Math.round(dca.pct)}% bought`}
+                >
+                  <div className="text-center">
+                    <p className="font-display text-[22px] font-extrabold tnum text-ink leading-tight">
+                      {Math.round(dca.pct)}%
+                    </p>
+                    <p className="text-[10.5px] font-medium text-ink-muted leading-tight">bought</p>
+                  </div>
+                </ProgressRing>
+                <div className="flex-1 space-y-2.5">
+                  <Row label="Bought so far" value={thb(dca.invested)} strong />
+                  <Row label="Upcoming" value={thb(dca.upcoming)} />
+                  <Row label="Monthly target" value={thb(dca.total)} muted />
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11.5px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                {data.cashAccounts.length} {data.cashAccounts.length === 1 ? 'Account' : 'Accounts'}
-              </span>
+            {dcaActions.length > 0 ? (
+              <div className="mt-4 pt-3 border-t border-line">
+                <button
+                  type="button"
+                  onClick={() => navigate('/dca')}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-brand-soft/80 border border-brand/20 text-brand-ink text-[12.5px] font-semibold hover:bg-brand hover:text-white transition-all cursor-pointer"
+                >
+                  <span>⚡ {dcaActions.length} buy ready to confirm</span>
+                  <span>Confirm now →</span>
+                </button>
+              </div>
+            ) : (
+              <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
+                <span>Next DCA buys on track</span>
+                <span className="font-medium text-ink-soft">
+                  {data.dcaPlans.length} active plans
+                </span>
+              </div>
+            )}
+          </Card>
+        </div>
+
+        {/* Cash & Liquidity Hub (7 cols) */}
+        <div className="lg:col-span-7 xl:col-span-7">
+          <Card className="animate-rise h-full flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <WalletIcon className="h-4 w-4" />
+                  </div>
+                  <h2 className="font-display text-[16px] font-bold text-ink">Cash & Liquidity</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCashOpen(true)}
+                  className="text-[12.5px] font-semibold text-brand hover:underline cursor-pointer"
+                >
+                  Manage Accounts ✏️
+                </button>
+              </div>
+
+              <div className="mt-4 flex items-baseline justify-between">
+                <div>
+                  <span className="text-[11.5px] font-medium text-ink-muted">Available Cash</span>
+                  <p className="font-display text-[24px] font-extrabold tnum text-ink leading-tight">
+                    {thb(cash)}
+                  </p>
+                </div>
+                <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  {data.cashAccounts.length} Accounts
+                </span>
+              </div>
+
+              {/* Cash accounts visual bar & grid */}
+              {data.cashAccounts.length > 0 ? (
+                <div className="mt-3.5 space-y-2.5">
+                  <div className="flex h-2 overflow-hidden rounded-full bg-surface-muted">
+                    {data.cashAccounts.map((a, i) => {
+                      const rate = usdThb && usdThb > 0 ? usdThb : 35
+                      const thbVal = a.currency === 'USD' ? a.balance * rate : a.balance
+                      return (
+                        <div
+                          key={a.id}
+                          style={{
+                            width: `${cash > 0 ? (thbVal / cash) * 100 : 0}%`,
+                            background: CASH_COLORS[i % CASH_COLORS.length],
+                          }}
+                          title={`${a.name}: ${moneyCompact(a.balance, a.currency)}`}
+                        />
+                      )
+                    })}
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
+                    {data.cashAccounts.map((a, i) => (
+                      <div
+                        key={a.id}
+                        className="flex flex-col p-2 rounded-xl bg-surface-muted/50 border border-line/40"
+                      >
+                        <span className="flex items-center gap-1.5 text-[11px] font-medium text-ink-muted truncate">
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-full"
+                            style={{ background: CASH_COLORS[i % CASH_COLORS.length] }}
+                          />
+                          <span className="truncate">{a.name}</span>
+                        </span>
+                        <span className="mt-0.5 font-display font-bold tnum text-[13px] text-ink">
+                          {moneyCompact(a.balance, a.currency)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-4 text-[12.5px] text-ink-muted">No cash accounts added yet.</p>
+              )}
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
+              <span>Emergency cash reserve</span>
               <button
                 type="button"
                 onClick={() => setCashOpen(true)}
-                className="text-[12.5px] font-semibold text-brand hover:underline cursor-pointer"
+                className="font-semibold text-brand hover:underline cursor-pointer"
               >
-                Manage Accounts ✏️
+                + Add Account
               </button>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      {/* ── ROW 3: Total Net Worth Summary (Bottom Bento Hero) ── */}
+      <div>
+        <Card
+          className="relative overflow-hidden text-white animate-rise"
+          style={{
+            background: 'linear-gradient(135deg, #0b0d14 0%, #151928 100%)',
+            borderColor: 'rgba(255, 255, 255, 0.08)',
+          }}
+        >
+          {/* Ambient subtle glow inside card */}
+          <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
+
+          <div className="relative flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <div className="flex items-center gap-2 text-white/60">
+                <WalletIcon className="h-3.5 w-3.5" />
+                <span className="text-[12.5px] font-medium tracking-wide">Total Net Worth</span>
+              </div>
+              <p className="mt-1.5 font-display text-[28px] sm:text-[32px] font-extrabold leading-none tracking-tight tnum text-white">
+                {thb(nw)}
+              </p>
+
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                <PnLPill value={portfolio.pnl} size="sm" />
+                <span className="text-[11.5px] text-white/55 font-medium">unrealised</span>
+                {data.retirement?.monthlySpend && data.retirement.monthlySpend > 0 ? (
+                  <Link
+                    to="/retirement"
+                    className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold text-white/80 transition-colors hover:bg-white/20 hover:text-white"
+                    aria-label="View wealth runway details on retirement page"
+                  >
+                    ⏳ {((nw / (data.retirement.monthlySpend * 12))).toFixed(1)}y runway
+                  </Link>
+                ) : (
+                  <Link
+                    to="/retirement"
+                    className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-0.5 text-[10.5px] font-semibold text-white/40 transition-colors hover:bg-white/15 hover:text-white"
+                    aria-label="Set up retirement spend to see runway"
+                  >
+                    ⏳ Set runway target
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            {/* Quick ratio box */}
+            <div className="rounded-xl bg-white/5 p-3 px-4 ring-1 ring-white/10 sm:min-w-[200px]">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[11px] font-medium text-white/50">Invested</p>
+                  <p className="mt-0.5 font-display text-[16px] font-bold tnum text-white">
+                    {thbCompact(portfolio.value)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-medium text-white/50">Cash</p>
+                  <p className="mt-0.5 font-display text-[16px] font-bold tnum text-white">
+                    {thbCompact(cash)}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Cash accounts visual bar & account pills */}
-          {data.cashAccounts.length > 0 ? (
-            <div className="mt-4 space-y-3">
-              <div className="flex h-2 overflow-hidden rounded-full bg-surface-muted">
-                {data.cashAccounts.map((a, i) => {
-                  const rate = usdThb && usdThb > 0 ? usdThb : 35
-                  const thbVal = a.currency === 'USD' ? a.balance * rate : a.balance
-                  return (
-                    <div
-                      key={a.id}
-                      style={{
-                        width: `${cash > 0 ? (thbVal / cash) * 100 : 0}%`,
-                        background: CASH_COLORS[i % CASH_COLORS.length],
-                      }}
-                      title={`${a.name}: ${moneyCompact(a.balance, a.currency)}`}
-                    />
-                  )
-                })}
-              </div>
-
-              {/* Cash accounts list grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 pt-1">
-                {data.cashAccounts.map((a, i) => (
+          {/* Asset Distribution Bar & Legend */}
+          {nw > 0 && (
+            <div className="relative mt-4 pt-3 border-t border-white/10 space-y-2">
+              <div className="flex h-2 overflow-hidden rounded-full bg-white/10">
+                {alloc.map((a) => (
                   <div
-                    key={a.id}
-                    className="flex flex-col p-2.5 rounded-xl bg-surface-muted/50 border border-line/40 hover:bg-surface-muted transition-colors"
-                  >
-                    <span className="flex items-center gap-1.5 text-[11px] font-medium text-ink-muted truncate">
-                      <span
-                        className="h-2 w-2 shrink-0 rounded-full"
-                        style={{ background: CASH_COLORS[i % CASH_COLORS.length] }}
-                      />
-                      <span className="truncate">{a.name}</span>
-                    </span>
-                    <span className="mt-1 font-display font-bold tnum text-[13.5px] text-ink">
-                      {moneyCompact(a.balance, a.currency)}
-                    </span>
-                  </div>
+                    key={a.assetClass}
+                    style={{
+                      width: `${(a.value / nw) * 100}%`,
+                      background: ASSET_META[a.assetClass].cssVar,
+                    }}
+                    title={`${ASSET_META[a.assetClass].label}: ${thb(a.value)}`}
+                  />
                 ))}
+                {cash > 0 && (
+                  <div
+                    style={{
+                      width: `${(cash / nw) * 100}%`,
+                      background: 'var(--color-cash)',
+                    }}
+                    title={`Cash: ${thb(cash)}`}
+                  />
+                )}
               </div>
-            </div>
-          ) : (
-            <div className="py-4 text-center">
-              <p className="text-[12.5px] text-ink-muted">No cash accounts added yet.</p>
-              <button
-                type="button"
-                onClick={() => setCashOpen(true)}
-                className="mt-1 text-[12px] font-semibold text-brand hover:underline cursor-pointer"
-              >
-                + Add first account
-              </button>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                {alloc.map((a) => (
+                  <span
+                    key={a.assetClass}
+                    className="flex items-center gap-1 text-[11.5px] text-white/65 font-medium"
+                  >
+                    <span
+                      className="h-1.5 w-1.5 shrink-0 rounded-full"
+                      style={{ background: ASSET_META[a.assetClass].cssVar }}
+                    />
+                    {ASSET_META[a.assetClass].label} {Math.round((a.value / nw) * 100)}%
+                  </span>
+                ))}
+                {cash > 0 && (
+                  <span className="flex items-center gap-1 text-[11.5px] text-white/65 font-medium">
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'var(--color-cash)' }} />
+                    Cash {Math.round((cash / nw) * 100)}%
+                  </span>
+                )}
+              </div>
             </div>
           )}
         </Card>
