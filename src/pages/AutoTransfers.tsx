@@ -178,9 +178,10 @@ export function AutoTransfers() {
               setDeleteTarget(null)
             }}
             aria-label={`Confirm delete transfer for ${deleteTarget?.recipient ?? ''}`}
-            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-loss px-5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-loss px-5 text-sm font-bold text-white dark:text-[#4c0519] transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer shadow-sm"
           >
-            Yes, delete transfer
+            <TrashIcon className="h-4 w-4" strokeWidth={2.2} />
+            <span>Yes, delete transfer</span>
           </button>
           <button
             onClick={() => setDeleteTarget(null)}

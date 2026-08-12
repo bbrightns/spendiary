@@ -7,7 +7,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { Modal } from '../components/ui/Modal'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC } from '../lib/calc'
 import type { AssetClass, HoldingLog } from '../lib/types'
-import { ClockIcon } from '../components/icons'
+import { ClockIcon, UndoIcon } from '../components/icons'
 
 const ACTION_LABEL = {
   add: 'Added',
@@ -283,9 +283,10 @@ export function HoldingLogs() {
                 setUndoTarget(null)
               }}
               aria-label={`Confirm undo activity for ${undoTarget?.holdingName ?? ''}`}
-              className="inline-flex h-11 w-full items-center justify-center rounded-full bg-loss px-5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-loss px-5 text-sm font-bold text-white dark:text-[#4c0519] transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer shadow-sm"
             >
-              Yes, undo activity
+              <UndoIcon className="h-4 w-4" strokeWidth={2.4} />
+              <span>Yes, undo activity</span>
             </button>
             <button
               onClick={() => setUndoTarget(null)}
