@@ -4,7 +4,7 @@ import { NumberField, SelectField, TextField } from '../ui/Field'
 import { FormActions } from './FormActions'
 import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
-import { ASSET_META } from '../../lib/calc'
+import { ASSET_META, GRAMS_PER_BAHT_GOLD } from '../../lib/calc'
 import type { AssetClass, Holding } from '../../lib/types'
 import { localDateStr, thb } from '../../lib/format'
 import { searchSecurities, type Security } from '../../lib/securities'
@@ -640,8 +640,12 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                   <span className="font-semibold tnum text-ink">{thb(goldImpliedPrice)}</span>
                 </div>
                 <div className="mt-1 flex items-center justify-between text-[13px]">
+                  <span className="text-ink-soft">Implied cost / บาททองคำ</span>
+                  <span className="font-semibold tnum text-brand">{thb(goldImpliedPrice * GRAMS_PER_BAHT_GOLD)}</span>
+                </div>
+                <div className="mt-1 flex items-center justify-between text-[13px]">
                   <span className="text-ink-soft">Total weight</span>
-                  <span className="font-semibold tnum text-ink">{goldGrams.toFixed(2)} g</span>
+                  <span className="font-semibold tnum text-ink">{goldGrams.toFixed(4)} g ({(goldGrams / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาท)</span>
                 </div>
               </div>
             )}
@@ -654,31 +658,52 @@ export function HoldingForm({ open, editing, onClose }: Props) {
         {/* ── Gold: edit ── */}
         {isGold && editing && (
           <>
-            <NumberField
-              label="Weight held (grams)"
-              value={form.units}
-              error={showErrors && form.units === '' ? 'Weight is required' : undefined}
-              onChange={(units) => setForm((f) => ({ ...f, units }))}
-              placeholder="0"
-              step={0.01}
-            />
+            <div>
+              <NumberField
+                label="Weight held (grams)"
+                value={form.units}
+                error={showErrors && form.units === '' ? 'Weight is required' : undefined}
+                onChange={(units) => setForm((f) => ({ ...f, units }))}
+                placeholder="0"
+                step={0.01}
+              />
+              {Number(form.units) > 0 && (
+                <p className="mt-1 text-[11.5px] text-ink-muted">
+                  ≈ {(Number(form.units) / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททองคำ
+                </p>
+              )}
+            </div>
             <div className="grid grid-cols-1 gap-3 ">
-              <NumberField
-                label="Avg cost / gram"
-                prefix="฿"
-                value={form.avgCost}
-                error={showErrors && form.avgCost === '' ? 'Cost is required' : undefined}
-                onChange={(avgCost) => setForm((f) => ({ ...f, avgCost }))}
-                placeholder="0"
-              />
-              <NumberField
-                label="Current price / gram"
-                prefix="฿"
-                value={form.price}
-                error={showErrors && form.price === '' ? 'Price is required' : undefined}
-                onChange={(price) => setForm((f) => ({ ...f, price }))}
-                placeholder="0"
-              />
+              <div>
+                <NumberField
+                  label="Avg cost / gram"
+                  prefix="฿"
+                  value={form.avgCost}
+                  error={showErrors && form.avgCost === '' ? 'Cost is required' : undefined}
+                  onChange={(avgCost) => setForm((f) => ({ ...f, avgCost }))}
+                  placeholder="0"
+                />
+                {Number(form.avgCost) > 0 && (
+                  <p className="mt-1 text-[11.5px] text-ink-muted">
+                    ≈ {thb(Number(form.avgCost) * GRAMS_PER_BAHT_GOLD)} / บาททองคำ
+                  </p>
+                )}
+              </div>
+              <div>
+                <NumberField
+                  label="Current price / gram"
+                  prefix="฿"
+                  value={form.price}
+                  error={showErrors && form.price === '' ? 'Price is required' : undefined}
+                  onChange={(price) => setForm((f) => ({ ...f, price }))}
+                  placeholder="0"
+                />
+                {Number(form.price) > 0 && (
+                  <p className="mt-1 text-[11.5px] text-ink-muted">
+                    ≈ {thb(Number(form.price) * GRAMS_PER_BAHT_GOLD)} / บาททองคำ
+                  </p>
+                )}
+              </div>
             </div>
             <FormActions
               editing

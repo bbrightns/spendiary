@@ -91,6 +91,24 @@ export function portfolioSummary(holdings: Holding[]): PortfolioSummary {
   return { value, cost, pnl, pnlPct: cost > 0 ? (pnl / cost) * 100 : 0 }
 }
 
+/* ----------------------------- Gold Calculations ----------------------------- */
+
+/** 1 บาททองคำ (ทองคำแท่ง 96.5%) = 15.244 กรัม */
+export const GRAMS_PER_BAHT_GOLD = 15.244
+
+export function gramsToBahtGold(grams: number): number {
+  return grams / GRAMS_PER_BAHT_GOLD
+}
+
+export function bahtGoldToGrams(baht: number): number {
+  return baht * GRAMS_PER_BAHT_GOLD
+}
+
+export function goldCostPerBaht(thbSpent: number, grams: number): number {
+  if (grams <= 0) return 0
+  return (thbSpent / grams) * GRAMS_PER_BAHT_GOLD
+}
+
 /* ----------------------------- DCA ----------------------------- */
 
 /** Normalise a plan's per-period amount to a monthly equivalent for summary stats. */

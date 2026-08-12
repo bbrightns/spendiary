@@ -3,7 +3,7 @@ import { Modal } from '../ui/Modal'
 import { NumberField, TextField, SelectField } from '../ui/Field'
 import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
-import { ASSET_META, applyBuy, holdingMetrics } from '../../lib/calc'
+import { ASSET_META, GRAMS_PER_BAHT_GOLD, applyBuy, holdingMetrics } from '../../lib/calc'
 import type { Holding } from '../../lib/types'
 import { thb, localDateStr } from '../../lib/format'
 
@@ -389,8 +389,12 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
                 <span className="font-semibold tnum text-ink">{thb(impliedPrice, true)}</span>
               </div>
               <div className="mt-1 flex items-center justify-between text-[13px]">
+                <span className="text-ink-soft">Implied cost / บาททองคำ</span>
+                <span className="font-semibold tnum text-brand">{thb(impliedPrice * GRAMS_PER_BAHT_GOLD)}</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between text-[13px]">
                 <span className="text-ink-soft">Gold amount</span>
-                <span className="font-semibold tnum text-ink">{g.toFixed(4)} g</span>
+                <span className="font-semibold tnum text-ink">{g.toFixed(4)} g ({(g / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาท)</span>
               </div>
             </div>
           )}
