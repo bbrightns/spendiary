@@ -159,6 +159,8 @@ function AppContent() {
       </Routes>
     </Layout>
   )
+}
+
 // 💡 2. Component หลัก ทำหน้าที่หุ้มตัวแอปด้วย DataProvider
 export default function App() {
   useTheme() // initializes + syncs theme to <html> class
