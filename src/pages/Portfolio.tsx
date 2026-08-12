@@ -7,7 +7,6 @@ import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { AddButton } from '../components/ui/AddButton'
 import { DonutChart } from '../components/charts/DonutChart'
-import { BubbleChart } from '../components/charts/BubbleChart'
 import { PnLPill, PnLText } from '../components/ui/PnL'
 import { HoldingForm } from '../components/forms/HoldingForm'
 import { BuyMoreForm } from '../components/forms/BuyMoreForm'
@@ -52,7 +51,6 @@ export function Portfolio() {
   const [sortBy, setSortBy] = useState<'none' | 'value' | 'pnl' | 'type'>('value')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [search, setSearch] = useState('')
-  const [chartView, setChartView] = useState<'donut' | 'bubble'>('bubble')
 
   // Rebalancing states
   const [rebalanceOpen, setRebalanceOpen] = useState(false)
@@ -382,55 +380,15 @@ export function Portfolio() {
           <Card className="animate-rise">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-[16px] font-bold text-ink [text-wrap:balance]">Asset Allocation</h2>
-              <div className="inline-flex items-center gap-1 rounded-lg bg-surface-muted p-1 border border-line/40">
-                <button
-                  type="button"
-                  onClick={() => setChartView('donut')}
-                  className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-semibold transition-all cursor-pointer ${
-                    chartView === 'donut'
-                      ? 'bg-surface text-ink shadow-xs border border-line/60'
-                      : 'text-ink-muted hover:text-ink'
-                  }`}
-                  title="Donut Chart View"
-                >
-                  Donut
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setChartView('bubble')}
-                  className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-semibold transition-all cursor-pointer ${
-                    chartView === 'bubble'
-                      ? 'bg-surface text-ink shadow-xs border border-line/60'
-                      : 'text-ink-muted hover:text-ink'
-                  }`}
-                  title="Bubble View (Modern/Packed)"
-                >
-                  Bubble
-                </button>
-              </div>
             </div>
 
             <div className="mt-4 flex flex-col items-center gap-5">
-              {chartView === 'donut' ? (
-                <DonutChart
-                  segments={segments}
-                  ariaLabel={`Portfolio asset allocation, total value ${thb(summary.value)}`}
-                  centerLabel="Total"
-                  centerValue={thbCompact(summary.value)}
-                />
-              ) : (
-                <BubbleChart
-                  items={alloc.map((a) => ({
-                    id: a.assetClass,
-                    label: ASSET_META[a.assetClass].plural,
-                    value: a.value,
-                    pct: a.pct,
-                    color: ASSET_META[a.assetClass].color,
-                  }))}
-                  totalValue={summary.value}
-                  size={260}
-                />
-              )}
+              <DonutChart
+                segments={segments}
+                ariaLabel={`Portfolio asset allocation, total value ${thb(summary.value)}`}
+                centerLabel="Total"
+                centerValue={thbCompact(summary.value)}
+              />
               <ul className="w-full space-y-2 pt-2 border-t border-line">
                 {alloc.map((a) => (
                   <li key={a.assetClass} className="flex items-center gap-2.5 text-[13px]">
