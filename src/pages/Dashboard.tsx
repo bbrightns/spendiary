@@ -143,7 +143,7 @@ export function Dashboard() {
         {/* Net worth hero Bento (Left 7-8 cols) */}
         <div className="lg:col-span-7 xl:col-span-8">
           <Card
-            className="relative overflow-hidden text-white animate-rise h-full flex flex-col justify-between p-6 sm:p-7"
+            className="relative overflow-hidden text-white animate-rise h-full flex flex-col justify-between"
             style={{
               background: 'linear-gradient(135deg, #0b0d14 0%, #151928 100%)',
               borderColor: 'rgba(255, 255, 255, 0.08)',
@@ -153,23 +153,23 @@ export function Dashboard() {
             <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand/15 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
 
-            <div className="relative flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-white/70">
-                  <WalletIcon className="h-4 w-4 text-emerald-400" />
-                  <span className="text-[13.5px] font-semibold uppercase tracking-wider">Total Net Worth</span>
+            <div className="relative flex flex-col justify-between gap-4 sm:flex-row sm:items-start p-6">
+              <div>
+                <div className="flex items-center gap-2 text-white/60">
+                  <WalletIcon className="h-3.5 w-3.5" />
+                  <span className="text-[12.5px] font-medium tracking-wide">Total Net Worth</span>
                 </div>
-                <p className="font-display text-[34px] sm:text-[44px] xl:text-[48px] font-black leading-tight tracking-tight tnum text-white drop-shadow-sm">
+                <p className="mt-1.5 font-display text-[28px] sm:text-[32px] font-extrabold leading-none tracking-tight tnum text-white">
                   {thb(nw)}
                 </p>
 
-                <div className="pt-1 flex flex-wrap items-center gap-2.5">
-                  <PnLPill value={portfolio.pnl} size="md" />
-                  <span className="text-[12.5px] text-white/70 font-medium">unrealised</span>
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  <PnLPill value={portfolio.pnl} size="sm" />
+                  <span className="text-[11.5px] text-white/55 font-medium">unrealised</span>
                   {data.retirement?.monthlySpend && data.retirement.monthlySpend > 0 ? (
                     <Link
                       to="/retirement"
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-3 py-1 text-[12px] font-semibold text-white/90 shadow-sm border border-white/10 transition-colors hover:bg-white/20 hover:text-white"
+                      className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold text-white/80 transition-colors hover:bg-white/20 hover:text-white"
                       aria-label="View wealth runway details on retirement page"
                     >
                       ⏳ {((nw / (data.retirement.monthlySpend * 12))).toFixed(1)}y runway
@@ -177,7 +177,7 @@ export function Dashboard() {
                   ) : (
                     <Link
                       to="/retirement"
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11.5px] font-semibold text-white/60 transition-colors hover:bg-white/20 hover:text-white"
+                      className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-0.5 text-[10.5px] font-semibold text-white/40 transition-colors hover:bg-white/15 hover:text-white"
                       aria-label="Set up retirement spend to see runway"
                     >
                       ⏳ Set runway target
@@ -187,17 +187,17 @@ export function Dashboard() {
               </div>
 
               {/* Quick ratio box */}
-              <div className="rounded-2xl bg-white/10 p-3.5 px-4.5 backdrop-blur-md ring-1 ring-white/15 sm:min-w-[190px]">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-xl bg-white/5 p-2.5 px-3.5 ring-1 ring-white/10 sm:min-w-[170px]">
+                <div className="grid grid-cols-2 gap-3.5">
                   <div>
-                    <p className="text-[11.5px] font-bold text-white/60 uppercase tracking-wider">Invested</p>
-                    <p className="mt-1 font-display text-[18px] sm:text-[20px] font-extrabold tnum text-white">
+                    <p className="text-[11px] font-medium text-white/50">Invested</p>
+                    <p className="mt-0.5 font-display text-[15px] font-bold tnum text-white">
                       {thbCompact(portfolio.value)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11.5px] font-bold text-white/60 uppercase tracking-wider">Cash</p>
-                    <p className="mt-1 font-display text-[18px] sm:text-[20px] font-extrabold tnum text-white">
+                    <p className="text-[11px] font-medium text-white/50">Cash</p>
+                    <p className="mt-0.5 font-display text-[15px] font-bold tnum text-white">
                       {thbCompact(cash)}
                     </p>
                   </div>
@@ -207,8 +207,8 @@ export function Dashboard() {
 
             {/* Asset Distribution Bar & Legend */}
             {nw > 0 && (
-              <div className="relative mt-6 pt-3.5 border-t border-white/10 space-y-2.5">
-                <div className="flex h-2.5 overflow-hidden rounded-full bg-white/10">
+              <div className="relative mt-auto p-6 pt-0 space-y-2">
+                <div className="flex h-1.5 overflow-hidden rounded-full bg-white/10">
                   {alloc.map((a) => (
                     <div
                       key={a.assetClass}
@@ -229,22 +229,22 @@ export function Dashboard() {
                     />
                   )}
                 </div>
-                <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                <div className="flex flex-wrap gap-x-3.5 gap-y-1">
                   {alloc.map((a) => (
                     <span
                       key={a.assetClass}
-                      className="flex items-center gap-1.5 text-[12.5px] text-white/85 font-medium"
+                      className="flex items-center gap-1 text-[11px] text-white/65 font-medium"
                     >
                       <span
-                        className="h-2 w-2 shrink-0 rounded-full"
+                        className="h-1.5 w-1.5 shrink-0 rounded-full"
                         style={{ background: ASSET_META[a.assetClass].cssVar }}
                       />
                       {ASSET_META[a.assetClass].label} {Math.round((a.value / nw) * 100)}%
                     </span>
                   ))}
                   {cash > 0 && (
-                    <span className="flex items-center gap-1.5 text-[12.5px] text-white/85 font-medium">
-                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--color-cash)' }} />
+                    <span className="flex items-center gap-1 text-[11px] text-white/65 font-medium">
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'var(--color-cash)' }} />
                       Cash {Math.round((cash / nw) * 100)}%
                     </span>
                   )}
