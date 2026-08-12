@@ -11,6 +11,8 @@ interface ModalProps {
 
 export function Modal({ open, onClose, title, description, children }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
+  const titleId = useRef(`modal-title-${Math.random().toString(36).substring(2, 9)}`).current
+  const descId = useRef(`modal-desc-${Math.random().toString(36).substring(2, 9)}`).current
 
   const onCloseRef = useRef(onClose)
 
@@ -32,7 +34,11 @@ export function Modal({ open, onClose, title, description, children }: ModalProp
 
     const focusFirstElement = () => {
       const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(focusableSelector)
-      focusable?.[0]?.focus()
+      if (focusable && focusable.length > 0) {
+        focusable[0].focus()
+      } else {
+        dialogRef.current?.focus()
+      }
     }
 
     const onKey = (e: KeyboardEvent) => {
@@ -84,32 +90,34 @@ export function Modal({ open, onClose, title, description, children }: ModalProp
         className="absolute inset-0 bg-ink/35 dark:bg-black/60 backdrop-blur-sm"
         style={{ animation: 'fadeIn 0.2s ease both' }}
         onClick={onClose}
+        aria-hidden="true"
       />
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-labelledby={titleId}
+        aria-describedby={description ? descId : undefined}
         tabIndex={-1}
         className="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-[var(--shadow-lift)] sm:max-w-[440px] sm:rounded-[28px] sm:max-h-[85dvh]"
         style={{ animation: 'sheetUp 0.32s cubic-bezier(0.16,1,0.3,1) both' }}
       >
-        <div className="flex items-start justify-between gap-4 px-6 pb-3 pt-7 ">
+        <div className="flex items-start justify-between gap-4 px-6 pb-3 pt-7">
           <div>
-            <h2 className="font-display text-[20px] font-extrabold tracking-tight text-ink">{title}</h2>
-            {description && <p className="mt-0.5 text-[13px] text-ink-muted">{description}</p>}
+            <h2 id={titleId} className="font-display text-[20px] font-extrabold tracking-tight text-ink">{title}</h2>
+            {description && <p id={descId} className="mt-0.5 text-[13px] text-ink-muted">{description}</p>}
           </div>
           <button
             onClick={onClose}
-            aria-label="Close"
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-surface-muted text-ink-soft transition-colors hover:bg-line-strong hover:text-ink"
+            aria-label="Close modal"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-surface-muted text-ink-soft transition-colors hover:bg-line-strong hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <CloseIcon className="h-[18px] w-[18px]" />
           </button>
         </div>
-        <div className="no-scrollbar overflow-y-auto px-6 pt-3 ">
+        <div className="no-scrollbar overflow-y-auto px-6 pt-3">
           {children}
-          <div className="h-8  safe-bottom" />
+          <div className="h-8 safe-bottom" />
         </div>
       </div>
     </div>
