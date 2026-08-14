@@ -109,19 +109,19 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* Ambient gradient background for light mode (Fastwork aesthetic) */
+  /* Ambient gradient background for light mode (Fastwork exact color match) */
   body {
+    background-color: #faf8f6;
     background-image: 
-      radial-gradient(at 0% 0%, rgba(254, 237, 213, 0.65) 0px, transparent 45%),
-      radial-gradient(at 100% 0%, rgba(237, 233, 254, 0.55) 0px, transparent 45%),
-      radial-gradient(at 100% 100%, rgba(224, 231, 255, 0.4) 0px, transparent 50%),
-      radial-gradient(at 30% 60%, rgba(255, 247, 237, 0.5) 0px, transparent 50%);
+      radial-gradient(ellipse at 0% 0%, #fff3dd 0%, rgba(255, 243, 221, 0.7) 35%, transparent 70%),
+      radial-gradient(ellipse at 100% 100%, #efe5e8 0%, rgba(239, 229, 232, 0.8) 40%, transparent 75%);
     background-attachment: fixed;
     background-repeat: no-repeat;
   }
 
   .dark body {
     background-image: none;
+    background-color: var(--color-canvas);
   }
 
   h1, h2, h3, h4, h5, h6 {
