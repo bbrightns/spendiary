@@ -110,16 +110,17 @@
   }
 
   /* Ambient gradient background for light mode (Fastwork exact color match) */
-  body {
-    background-color: #faf8f6;
+  body, .app-canvas-bg {
+    background-color: #faf6f4;
     background-image: 
-      radial-gradient(ellipse at 0% 0%, #fff3dd 0%, rgba(255, 243, 221, 0.7) 35%, transparent 70%),
-      radial-gradient(ellipse at 100% 100%, #efe5e8 0%, rgba(239, 229, 232, 0.8) 40%, transparent 75%);
+      radial-gradient(circle at 10% 15%, #fff3dd 0%, rgba(255, 243, 221, 0.85) 30%, transparent 65%),
+      radial-gradient(circle at 90% 85%, #efe5e8 0%, rgba(239, 229, 232, 0.95) 40%, transparent 70%),
+      linear-gradient(140deg, #fff3dd 0%, #faf6f4 45%, #efe5e8 100%);
     background-attachment: fixed;
     background-repeat: no-repeat;
   }
 
-  .dark body {
+  .dark body, .dark .app-canvas-bg {
     background-image: none;
     background-color: var(--color-canvas);
   }
