@@ -31,7 +31,7 @@ export function Sidebar() {
   const userInitial = displayName.charAt(0).toUpperCase()
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-line bg-surface px-4 py-5 lg:flex flex-col justify-between select-none">
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-line bg-surface/85 backdrop-blur-xl px-4 py-5 lg:flex flex-col justify-between select-none">
       <div className="flex flex-col gap-6">
         {/* Brand Header */}
         <div className="flex items-center justify-between px-2 pt-1">
