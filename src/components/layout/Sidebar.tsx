@@ -38,7 +38,7 @@ export function Sidebar() {
             <img
               src="/logo.png"
               alt="Spendiary Logo"
-              className="h-9 w-9 rounded-xl object-contain shadow-xs transition-transform group-hover:scale-105"
+              className="h-9 w-9 object-contain transition-transform group-hover:scale-105"
             />
             <div>
               <span className="font-display text-[19px] font-extrabold tracking-tight text-ink leading-none">
