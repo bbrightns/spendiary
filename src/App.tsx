@@ -216,7 +216,7 @@ function AppContent() {
         </main>
 
         {/* ── Footer ── */}
-        <footer className="relative z-10 w-full text-center py-6 text-xs text-slate-500 font-medium border-t border-slate-200/50 bg-white/40 backdrop-blur-sm">
+        <footer className="relative z-10 w-full text-center py-5 px-4 text-[10.5px] sm:text-[11px] font-normal text-slate-400 border-t border-slate-200/40 bg-white/30 backdrop-blur-xs">
           © 2026 Spendiary by bbrightns. Every choice shapes your wealth.
         </footer>
       </div>
