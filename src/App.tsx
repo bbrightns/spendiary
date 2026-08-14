@@ -38,8 +38,8 @@ function AppContent() {
         {/* ── Top Header / Navbar ── */}
         <header className="relative z-10 w-full max-w-6xl mx-auto px-6 sm:px-8 py-5 sm:py-7 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-            <img src="/logo.png" alt="Spendiary Logo" className="w-[32px] h-[32px] sm:w-[36px] sm:h-[36px] object-contain shrink-0" />
-            <span className="font-display font-extrabold sm:font-black text-[23px] sm:text-[26px] tracking-tight leading-none text-slate-900 -translate-y-[2.5px] sm:-translate-y-[3px]">
+            <img src="/logo.png" alt="Spendiary Logo" className="w-8 h-8 sm:w-9 sm:h-9 object-contain shrink-0" />
+            <span className="font-display font-extrabold sm:font-black text-[22px] sm:text-[25px] tracking-tight leading-none text-slate-900">
               spendiary
             </span>
           </div>
