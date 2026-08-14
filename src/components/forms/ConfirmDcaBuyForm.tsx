@@ -161,44 +161,19 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const stockCurrentUsdInvested = holding?.totalUsdInvested ?? stockCurrentUnits * (holding?.avgCostUsd ?? (fxRateNum > 0 ? (holding?.avgCost ?? 0) / fxRateNum : 0))
 
   const stockNewTotalUnits = stockCurrentUnits + stockUnitsBoughtNum
-  const stockImpliedUsdSpent = fxRateNum > 0 ? amountThbNum / fxRateNum : 0
-  const stockImpliedPriceUsd = stockUnitsBoughtNum > 0 ? stockImpliedUsdSpent / stockUnitsBoughtNum : 0
-
-  const stockCurrentUnits = holding?.units ?? 0
-  const stockCurrentThbInvested = holding?.totalThbInvested ?? 0
-  const stockNewUnits = stockCurrentUnits + stockUnitsBoughtNum
   const stockNewTotalThbInvested = stockCurrentThbInvested + amountThbNum
-  const stockNewAvgCostThb = stockNewUnits > 0 ? stockNewTotalThbInvested / stockNewUnits : 0
-  const stockNewAvgCostUsd = stockNewAvgCostThb / fxRateNum
+  const stockNewTotalUsdInvested = stockCurrentUsdInvested + stockUsdSpentThisTx
 
-  const hasValidStock = stockUnitsBoughtNum > 0 && amountThbNum > 0 && fxRateNum > 0
+  const stockNewAvgCostUsd = stockNewTotalUnits > 0 ? stockNewTotalUsdInvested / stockNewTotalUnits : 0
+  const stockNewAvgCostThb = stockNewTotalUnits > 0 ? stockNewTotalThbInvested / stockNewTotalUnits : 0
 
-  // --------------------------------------------------------------------------
-  // 2. Mutual Fund Real-time Calculations
-  // --------------------------------------------------------------------------
-  const fundUnitsNum = Number(fundUnits) || 0
-  const fundImpliedNav = fundUnitsNum > 0 ? amountThbNum / fundUnitsNum : 0
-
-  const fundCurrentUnits = holding?.units ?? 0
-  const fundCurrentThbInvested = holding?.totalThbInvested ?? 0
-  const fundNewUnits = fundCurrentUnits + fundUnitsBoughtNum(fundUnitsNum)
-  const fundNewTotalThbInvested = fundCurrentThbInvested + amountThbNum
-  const fundNewAvgCostNav = fundNewUnits > 0 ? fundNewTotalThbInvested / fundNewUnits : 0
-
-  const hasValidFund = fundUnitsNum > 0 && amountThbNum > 0
-
-  // Helper for fundUnits rendering
-  function fundUnitsBoughtNum(unitsNum: number) {
-    return unitsNum
-  }
+  const hasValidStock = unitsBought !== '' && stockUnitsBoughtNum > 0 && amountThbNum > 0 && fxRateNum > 0
 
   // --------------------------------------------------------------------------
   // 3. Crypto / BTC Real-time Calculations
   // --------------------------------------------------------------------------
   const satsNum = Number(sats) || 0
   const btcImpliedPriceThbPerBtc = satsNum > 0 ? (amountThbNum / satsNum) * SATS_PER_BTC : 0
-
-  const selectedBtcLoc = btcLocations.find((l) => l.id === selectedLocId)
 
   const btcCurrentTotalSats = holding?.units ? Math.round(holding.units * SATS_PER_BTC) : btcLocations.reduce((s, l) => s + l.satoshi, 0)
   const btcCurrentTotalThb  = holding?.totalThbInvested ?? btcLocations.reduce((s, l) => s + l.thbSpent, 0)
