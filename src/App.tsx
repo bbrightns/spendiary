@@ -36,7 +36,7 @@ function AppContent() {
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden fastwork-canvas" />
 
         {/* ── Top Header / Navbar ── */}
-        <header className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-7 flex items-center justify-between gap-3">
+        <header className="relative z-10 w-full max-w-6xl mx-auto px-6 sm:px-8 py-5 sm:py-7 flex items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <img src="/logo.png" alt="Spendiary Logo" className="w-7 h-7 sm:w-[30px] sm:h-[30px] object-contain" />
             <span className="font-display font-extrabold text-[20px] sm:text-[22px] tracking-tight leading-none text-slate-900">
@@ -52,7 +52,7 @@ function AppContent() {
         </header>
 
         {/* ── Main Content / Hero + Features + Sign In ── */}
-        <main className="relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 pt-1 sm:pt-2 pb-10 sm:pb-12 flex flex-col items-center">
+        <main className="relative z-10 w-full max-w-4xl mx-auto px-6 sm:px-8 pt-2 sm:pt-4 pb-12 sm:pb-16 flex flex-col items-center">
           {/* Center Announcement Pill */}
           <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 py-1 sm:px-4 sm:py-1.5 rounded-full bg-white/85 border border-slate-200/80 shadow-xs text-[11px] sm:text-xs font-medium text-slate-700 mb-4 sm:mb-6 text-center">
             <span className="text-[#0066FF] font-bold">✦</span>
@@ -150,7 +150,7 @@ function AppContent() {
           </div>
 
           {/* ── 3 Feature Cards (Fastwork Translucent Style - Horizontal with Gradient Badge) ── */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4 w-full max-w-md md:max-w-4xl">
             {/* Card 1 */}
             <div className="bg-white/60 hover:bg-white/75 backdrop-blur-md rounded-[20px] border border-white/80 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
               <div 
