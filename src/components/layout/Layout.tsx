@@ -10,8 +10,8 @@ export function Layout({ children }: { children: ReactNode }) {
   const isTestMode = user?.id === 'test-user-local'
 
   return (
-    /* Outer shell: fills the entire viewport, neutral bg so the phone frame is visible on desktop, transitions to canvas bg on widescreen */
-    <div className="min-h-dvh bg-[#d1d5db] dark:bg-[#111318] flex justify-center lg:bg-canvas lg:dark:bg-canvas lg:block">
+    /* Outer shell: fills the entire viewport, neutral bg so the phone frame is visible on desktop preview, transparent on widescreen to show ambient gradient */
+    <div className="min-h-dvh bg-slate-200/80 dark:bg-[#111318] flex justify-center lg:bg-transparent lg:dark:bg-canvas lg:block relative">
       {/* Skip to main content (keyboard / screen reader) */}
       <a
         href="#main-content"
@@ -31,9 +31,13 @@ export function Layout({ children }: { children: ReactNode }) {
       </div>
 
       {/* ── Mobile/Tablet Simulator Layout (< lg) ── */}
-      <div className="relative w-full max-w-[420px] min-h-dvh bg-canvas flex flex-col shadow-2xl lg:hidden">
+      <div className="relative w-full max-w-[420px] min-h-dvh bg-canvas flex flex-col shadow-2xl lg:hidden overflow-hidden">
+        {/* Subtle ambient light aura inside mobile simulator */}
+        <div className="absolute top-0 left-0 -translate-x-12 -translate-y-12 w-64 h-64 bg-amber-200/40 rounded-full blur-3xl pointer-events-none dark:hidden" />
+        <div className="absolute top-1/3 right-0 translate-x-16 w-64 h-64 bg-violet-200/35 rounded-full blur-3xl pointer-events-none dark:hidden" />
+
         {/* Top brand bar */}
-        <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-line bg-canvas/85 px-5 py-3.5 backdrop-blur-xl">
+        <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-line bg-canvas/80 px-5 py-3.5 backdrop-blur-xl">
           <div className="grid h-8 w-8 place-items-center rounded-lg bg-ink text-white dark:bg-brand-soft dark:text-brand">
             <SparkleIcon className="h-[18px] w-[18px]" strokeWidth={1.8} />
           </div>
