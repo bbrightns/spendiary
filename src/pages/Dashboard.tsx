@@ -9,6 +9,7 @@ import { InteractiveNetWorthChart } from '../components/charts/InteractiveNetWor
 import { PnLPill } from '../components/ui/PnL'
 import { CashAccountsForm } from '../components/forms/CashAccountsForm'
 import {
+  PencilIcon,
   PortfolioIcon,
   SparkleIcon,
   WalletIcon,
@@ -373,9 +374,10 @@ export function Dashboard() {
                     type="button"
                     onClick={() => setCashOpen(true)}
                     aria-label="Manage cash accounts"
-                    className="text-[12.5px] font-semibold text-brand hover:underline cursor-pointer"
+                    className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-brand hover:underline cursor-pointer"
                   >
-                    Manage ✏️
+                    <span>Manage</span>
+                    <PencilIcon className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
