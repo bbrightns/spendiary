@@ -274,3 +274,33 @@ The primary financial signal component. Compact pill that communicates direction
 - **Don't** place a card inside another card. Nested cards break the elevation hierarchy and multiply shadow complexity.
 - **Don't** use gain/loss/warn semantic colors outside their financial contexts. `--color-gain` is not a general "success" color; `--color-warn` is not a general "caution" color. If you need a non-financial signal state, use ink scale colors instead.
 - **Don't** round cards, modals, or inputs beyond their defined radii. Cards at 24px, modals at 28px, inputs at 12px. Rounding beyond these reads as consumer-app softness, not instrument precision.
+
+## 7. Sign-In & Landing Page Specification (Fastwork Light Theme)
+
+The unauthenticated entry experience uses a bright, inviting **Fastwork.com-inspired Light Theme** aesthetic:
+
+### Ambient Canvas & Atmosphere
+- **Canvas Base:** `#faf6f4`
+- **Ambient Gradients:**
+  - Top-Left: Warm Sunrise Amber (`rgba(254, 243, 199, 0.75)` / `#fff3dd`)
+  - Bottom-Right: Soft Lavender Rose (`rgba(239, 229, 232, 0.85)` / `#efe5e8`)
+  - Directional Mesh: `linear-gradient(135deg, #fff3dd 0%, #faf6f4 45%, #efe5e8 100%)`
+
+### Brand & Typography Accents
+- **Logo Glyph:** Fastwork Electric Blue (`#0066FF`) rounded squircle with crisp white icon.
+- **Headline Highlight Gradient:** Linear gradient flowing from **Left `#405DFF` (Fastwork Blue)** to **Right `#DFAA41` (Golden Amber)**:
+  `linear-gradient(to right, #405DFF 0%, #DFAA41 100%)` with `bg-clip-text text-transparent`.
+- **Status Pill:** `rounded-full bg-white/85 border border-slate-200/80` with emerald pulsating indicator.
+
+### Sign-In Container & Action Elements
+- **Card Surface:** `bg-white/95 backdrop-blur-xl rounded-[22px] sm:rounded-[24px] border border-slate-200/90 shadow-[0_12px_40px_rgba(15,23,42,0.06)]`
+- **Google Sign-In CTA:** Clean white surface, 1px slate-200 hairline border, official multicolored Google SVG logo, full pill shape (`rounded-full`).
+- **Guest / Local Mode CTA:** Primary Fastwork Blue pill (`bg-[#0066FF] hover:bg-[#0052cc] text-white shadow-md shadow-blue-500/25`).
+- **Security Indicator:** `Secure Cloud Sync · 100% Client Privacy` aligned with hairline divider.
+
+### Translucent Benefit Cards (3-Column Grid)
+- **Container Surface:** `bg-white/60 hover:bg-white/75 backdrop-blur-md rounded-[18px] sm:rounded-[20px] border border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)]`
+- **Icon Badge:** 44×44px (`w-11 h-11 rounded-[14px]`) with Fastwork gradient fill:
+  `linear-gradient(140deg, #6079FE 0%, #765EFD 50%, #B875B4 100%)` and white outlined SVG icons.
+- **Content Hierarchy:** 14.5px bold title (`text-slate-800`) over 12.5px description (`text-slate-500 leading-relaxed`).
+
