@@ -32,9 +32,9 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {/* ── Mobile/Tablet Simulator Layout (< lg) ── */}
       <div className="relative w-full max-w-[420px] min-h-dvh bg-canvas flex flex-col shadow-2xl lg:hidden overflow-hidden">
-        {/* Subtle ambient light aura inside mobile simulator */}
-        <div className="absolute top-0 left-0 -translate-x-12 -translate-y-12 w-64 h-64 bg-amber-200/40 rounded-full blur-3xl pointer-events-none dark:hidden" />
-        <div className="absolute top-1/3 right-0 translate-x-16 w-64 h-64 bg-violet-200/35 rounded-full blur-3xl pointer-events-none dark:hidden" />
+        {/* Subtle ambient light aura inside mobile simulator matching Fastwork exact hex */}
+        <div className="absolute top-0 left-0 -translate-x-12 -translate-y-12 w-72 h-72 bg-[#FFF3DD] rounded-full blur-3xl opacity-85 pointer-events-none dark:hidden" />
+        <div className="absolute bottom-0 right-0 translate-x-12 translate-y-12 w-72 h-72 bg-[#EFE5E8] rounded-full blur-3xl opacity-90 pointer-events-none dark:hidden" />
 
         {/* Top brand bar */}
         <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-line bg-canvas/80 px-5 py-3.5 backdrop-blur-xl">
