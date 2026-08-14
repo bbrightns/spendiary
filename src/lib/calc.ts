@@ -109,6 +109,14 @@ export function goldCostPerBaht(thbSpent: number, grams: number): number {
   return (thbSpent / grams) * GRAMS_PER_BAHT_GOLD
 }
 
+export function goldPricePerGramFromBaht(pricePerBaht: number): number {
+  return pricePerBaht / GRAMS_PER_BAHT_GOLD
+}
+
+export function goldPricePerBahtFromGram(pricePerGram: number): number {
+  return pricePerGram * GRAMS_PER_BAHT_GOLD
+}
+
 /* ----------------------------- Bitcoin Calculations ----------------------------- */
 
 export const SATS_PER_BTC = 100_000_000
