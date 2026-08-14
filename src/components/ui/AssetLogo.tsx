@@ -186,17 +186,24 @@ export function AssetLogo({
     return (
       <div
         title="NVIDIA"
-        className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-[#09090b] text-[#76B900] border border-[#76B900]/30 ${sizeClasses[size]} ${className}`}
-        style={{ boxShadow: '0 2px 10px rgba(118, 185, 0, 0.25)' }}
+        className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-[#76B900] text-white ${sizeClasses[size]} ${className}`}
+        style={{ boxShadow: '0 2px 10px rgba(118, 185, 0, 0.4)' }}
       >
         <svg
-          viewBox="0 0 24 24"
-          width={iconSizes[size]}
+          viewBox="0 0 100 80"
+          width={iconSizes[size] + 4}
           height={iconSizes[size]}
-          fill="currentColor"
           className="shrink-0 block"
         >
-          <path d="M12.44 3.25c-4.49 0-8.29 3.03-9.52 7.15l2.25 1.05c.91-3.13 3.78-5.4 7.27-5.4 4.14 0 7.5 3.36 7.5 7.5 0 2.16-.91 4.11-2.37 5.48l1.66 1.66c1.82-1.71 2.96-4.44 2.96-7.5 0-5.43-4.4-9.84-9.75-9.84zm-.09 4.31c-2.73 0-5.04 1.83-5.78 4.33l2.21 1.03c.48-1.57 1.94-2.71 3.66-2.71 2.11 0 3.82 1.71 3.82 3.82 0 1.02-.4 1.95-1.06 2.64l1.66 1.66c1.23-1.16 2-2.79 2-4.6 0-3.52-2.85-6.37-6.51-6.37zm-.1 4.22c-.67 0-1.21.54-1.21 1.21 0 .28.1.53.26.73l1.68 1.68c.5-.34.82-.9.82-1.53 0-.67-.54-1.21-1.21-1.21z"/>
+          {/* Right White Box */}
+          <path d="M48 10 H86 V52 H48 Z" fill="#FFFFFF" />
+          {/* Green Eye Cutout inside White Box */}
+          <path d="M48 10 C62 10 76 18 86 31 C76 44 62 52 48 52 Z" fill="#76B900" />
+          <path d="M48 20 C56 20 66 25 72 31 C66 37 56 42 48 42 Z" fill="#FFFFFF" />
+          
+          {/* Left White Spiral Eye Curves */}
+          <path d="M48 10 C30 10 14 20 14 31 C14 42 30 52 48 52 V44 C34 44 22 37 22 31 C22 25 34 18 48 18 Z" fill="#FFFFFF" />
+          <path d="M48 23 C38 23 28 27 28 31 C28 35 38 39 48 39 V34 C42 34 35 33 35 31 C35 29 42 28 48 28 Z" fill="#FFFFFF" />
         </svg>
       </div>
     )
