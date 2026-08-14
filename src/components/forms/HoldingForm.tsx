@@ -86,7 +86,9 @@ export function HoldingForm({ open, editing, onClose }: Props) {
   const [locationName, setLocationName] = useState('')
 
   // Gold new-holding fields
+  const [goldUnit, setGoldUnit] = useState<'grams' | 'baht'>('grams')
   const [grams, setGrams] = useState<number | ''>('')
+  const [goldBaht, setGoldBaht] = useState<number | ''>('')
   const [goldThbSpent, setGoldThbSpent] = useState<number | ''>('')
   const [goldLocationName, setGoldLocationName] = useState('')
 
@@ -263,14 +265,50 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       
       const shares = Number(form.units) || 0
       const avgCost = Number(form.avgCost) || 0
-      const totalUsd = Number((shares * avgCost).toFixed(4))
-      if (totalUsd > 0) {
-        const calculatedFxRate = Number((formatted / totalUsd).toFixed(4))
-        setFxRateInput(formatCostOrFx(calculatedFxRate))
+  function handleUsdPriceChange(val: number | '') {
+    setForm((f) => ({ ...f, price: val }))
+  }
+
+  function handleAvgCostUsdChange(val: number | '') {
+    setForm((f) => ({ ...f, avgCost: val }))
+    if (!isThbInvestedManuallyEdited && val !== '' && form.units !== '' && fxRateInput !== '') {
+      const unitsNum = Number(form.units) || 0
+      const fxNum = Number(fxRateInput) || 0
+      const costUsd = Number(val) || 0
+      if (unitsNum > 0 && fxNum > 0 && costUsd > 0) {
+        setThbInvestedInput(Number((unitsNum * costUsd * fxNum).toFixed(2)))
       }
     }
   }
 
+  function handleUnitsChange(val: number | '') {
+    setForm((f) => ({ ...f, units: val }))
+    if (!isThbInvestedManuallyEdited && val !== '' && form.avgCost !== '' && fxRateInput !== '') {
+      const unitsNum = Number(val) || 0
+      const fxNum = Number(fxRateInput) || 0
+      const costUsd = Number(form.avgCost) || 0
+      if (unitsNum > 0 && fxNum > 0 && costUsd > 0) {
+        setThbInvestedInput(Number((unitsNum * costUsd * fxNum).toFixed(2)))
+      }
+    }
+  }
+
+  function handleFxRateInputChange(val: number | string | '') {
+    setFxRateInput(val)
+    if (!isThbInvestedManuallyEdited && form.units !== '' && form.avgCost !== '' && val !== '') {
+      const unitsNum = Number(form.units) || 0
+      const fxNum = Number(val) || 0
+      const costUsd = Number(form.avgCost) || 0
+      if (unitsNum > 0 && fxNum > 0 && costUsd > 0) {
+        setThbInvestedInput(Number((unitsNum * costUsd * fxNum).toFixed(2)))
+      }
+    }
+  }
+
+  function handleThbInvestedInputChange(val: number | string | '') {
+    setThbInvestedInput(val)
+    setIsThbInvestedManuallyEdited(true)
+  }
 
   // ── Save: BTC new holding ──
   function saveBtc() {
@@ -306,12 +344,15 @@ export function HoldingForm({ open, editing, onClose }: Props) {
 
   // ── Save: Gold new holding ──
   function saveGold() {
-    const g = Number(grams)
+    const g = goldUnit === 'baht'
+      ? (goldBaht !== '' ? Number(goldBaht) * GRAMS_PER_BAHT_GOLD : 0)
+      : Number(grams)
     const spent = Number(goldThbSpent)
     const locName = goldLocationName.trim()
     if (g <= 0 || spent <= 0 || !locName) { setShowErrors(true); return }
 
     const avgCostThb = spent / g
+    const bahtAmount = (g / GRAMS_PER_BAHT_GOLD).toFixed(4)
     upsertHolding({
       name: 'Gold',
       ticker: 'XAU',
@@ -330,7 +371,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       holdingName: 'Gold',
       ticker: 'XAU',
       assetClass: 'gold',
-      note: `${g.toFixed(4)} g · ฿${spent.toLocaleString()} spent · ${goldLocationName.trim()}`,
+      note: `${g.toFixed(4)} g (${bahtAmount} บาททอง) · ฿${spent.toLocaleString()} spent · ${goldLocationName.trim()}`,
     })
     onClose()
   }
@@ -410,7 +451,9 @@ export function HoldingForm({ open, editing, onClose }: Props) {
   const btcAmount = sats > 0 ? sats / SATS_PER_BTC : 0
   const btcImpliedPrice = btcAmount > 0 && btcSpent > 0 ? btcSpent / btcAmount : 0
 
-  const goldGrams = Number(grams)
+  const goldGrams = goldUnit === 'baht'
+    ? (goldBaht !== '' ? Number(goldBaht) * GRAMS_PER_BAHT_GOLD : 0)
+    : Number(grams)
   const goldSpent = Number(goldThbSpent)
   const goldImpliedPrice = goldGrams > 0 && goldSpent > 0 ? goldSpent / goldGrams : 0
 
@@ -620,17 +663,72 @@ export function HoldingForm({ open, editing, onClose }: Props) {
               placeholder="e.g. Home safe, Bank vault, Hua Seng Heng"
               error={showErrors && !goldLocationName.trim() ? 'Location is required' : undefined}
             />
-            <div className="grid grid-cols-1 gap-3 ">
+
+            {/* Unit selector tab */}
+            <div className="space-y-1">
+              <label className="text-[13px] font-medium text-ink-soft">Purchase Unit / หน่วยซื้อ</label>
+              <div className="flex rounded-xl bg-surface-muted p-1 gap-1">
+                <button
+                  type="button"
+                  onClick={() => setGoldUnit('grams')}
+                  className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
+                    goldUnit === 'grams'
+                      ? 'bg-surface text-ink shadow-sm'
+                      : 'text-ink-muted hover:text-ink'
+                  }`}
+                >
+                  กรัม (Grams)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGoldUnit('baht')}
+                  className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
+                    goldUnit === 'baht'
+                      ? 'bg-surface text-ink shadow-sm'
+                      : 'text-ink-muted hover:text-ink'
+                  }`}
+                >
+                  บาททองคำ (15.244g)
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              {goldUnit === 'grams' ? (
+                <NumberField
+                  label="Grams bought (กรัม)"
+                  value={grams}
+                  error={showErrors && (grams === '' || Number(grams) <= 0) ? 'Required (> 0)' : undefined}
+                  onChange={(val) => {
+                    setGrams(val)
+                    if (val !== '' && Number(val) > 0) {
+                      setGoldBaht(Number((Number(val) / GRAMS_PER_BAHT_GOLD).toFixed(6)))
+                    } else {
+                      setGoldBaht('')
+                    }
+                  }}
+                  placeholder="e.g. 15.244"
+                  step={0.0001}
+                />
+              ) : (
+                <NumberField
+                  label="Weight bought in บาททองคำ (ทองคำแท่ง)"
+                  value={goldBaht}
+                  error={showErrors && (goldBaht === '' || Number(goldBaht) <= 0) ? 'Required (> 0)' : undefined}
+                  onChange={(val) => {
+                    setGoldBaht(val)
+                    if (val !== '' && Number(val) > 0) {
+                      setGrams(Number((Number(val) * GRAMS_PER_BAHT_GOLD).toFixed(6)))
+                    } else {
+                      setGrams('')
+                    }
+                  }}
+                  placeholder="e.g. 1.0"
+                  step={0.0001}
+                />
+              )}
               <NumberField
-                label="Grams bought"
-                value={grams}
-                error={showErrors && (grams === '' || Number(grams) <= 0) ? 'Required (> 0)' : undefined}
-                onChange={setGrams}
-                placeholder="e.g. 15.2"
-                step={0.01}
-              />
-              <NumberField
-                label="THB spent"
+                label="THB spent (บาท)"
                 prefix="฿"
                 value={goldThbSpent}
                 error={showErrors && (goldThbSpent === '' || Number(goldThbSpent) <= 0) ? 'Required (> 0)' : undefined}
@@ -640,7 +738,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
             </div>
             {goldGrams > 0 && goldSpent > 0 && (
               <div
-                className="rounded-2xl border px-4 py-3"
+                className="rounded-2xl border px-4 py-3 space-y-1.5"
                 style={{
                   borderColor: `color-mix(in srgb, ${ASSET_META.gold.color} 35%, transparent)`,
                   background: `color-mix(in srgb, ${ASSET_META.gold.color} 10%, transparent)`,
@@ -650,11 +748,11 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                   <span className="text-ink-soft">Implied price / gram</span>
                   <span className="font-semibold tnum text-ink">{thb(goldImpliedPrice)}</span>
                 </div>
-                <div className="mt-1 flex items-center justify-between text-[13px]">
+                <div className="flex items-center justify-between text-[13px]">
                   <span className="text-ink-soft">Implied cost / บาททองคำ</span>
                   <span className="font-semibold tnum text-brand">{thb(goldImpliedPrice * GRAMS_PER_BAHT_GOLD)}</span>
                 </div>
-                <div className="mt-1 flex items-center justify-between text-[13px]">
+                <div className="flex items-center justify-between text-[13px]">
                   <span className="text-ink-soft">Total weight</span>
                   <span className="font-semibold tnum text-ink">{goldGrams.toFixed(4)} g ({(goldGrams / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง)</span>
                 </div>
@@ -676,7 +774,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
                 error={showErrors && form.units === '' ? 'Weight is required' : undefined}
                 onChange={(units) => setForm((f) => ({ ...f, units }))}
                 placeholder="0"
-                step={0.01}
+                step={0.0001}
               />
               {Number(form.units) > 0 && (
                 <p className="mt-1 text-[11.5px] text-ink-muted">
