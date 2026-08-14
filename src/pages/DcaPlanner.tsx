@@ -7,6 +7,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { DcaForm } from '../components/forms/DcaForm'
 import { ConfirmDcaBuyForm } from '../components/forms/ConfirmDcaBuyForm'
 import { CheckCircleIcon, CheckIcon, DcaIcon, PencilIcon, TrashIcon } from '../components/icons'
+import { AssetLogo } from '../components/ui/AssetLogo'
 import {
   ASSET_META, buyDayPassedThisPeriod, dcaThisMonth, isConfirmedForPeriod, isSkippedForPeriod,
   nextBuyDate, shouldConfirmBuy,
@@ -470,12 +471,11 @@ export function DcaPlanner() {
                               aria-label={`Edit ${p.name}`}
                               className="flex cursor-pointer items-center gap-3.5 px-5 py-4 transition-colors hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                             >
-                              <span
-                                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl"
-                                style={{ color: meta.color, background: `color-mix(in srgb, ${meta.color} 12%, transparent)` }}
-                              >
-                                <DcaIcon className="h-5 w-5" strokeWidth={1.8} />
-                              </span>
+                              <AssetLogo
+                                name={p.name}
+                                assetClass={p.assetClass}
+                                size="md"
+                              />
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center justify-between gap-2">
                                   <p className="truncate text-[14.5px] font-semibold text-ink">{p.name}</p>

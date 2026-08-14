@@ -14,6 +14,7 @@ import { BuyMoreForm } from '../components/forms/BuyMoreForm'
 import { Modal } from '../components/ui/Modal'
 import { NumberField, TextField } from '../components/ui/Field'
 import { Button } from '../components/ui/Button'
+import { AssetLogo } from '../components/ui/AssetLogo'
 import { PlusIcon, PortfolioIcon, TrashIcon, PencilIcon } from '../components/icons'
 import {
   ASSET_META,
@@ -688,16 +689,13 @@ export function Portfolio() {
                   const isExpandable = isBtc || isGold
                   const isExpanded = isExpandable && expandedId === h.id
 
-                  // Circular ticker badge (Google Finance style)
-                  const tickerLabel = h.ticker.slice(0, 4).toUpperCase()
-                  const tickerFontSize = tickerLabel.length <= 2 ? 'text-[13px]' : tickerLabel.length === 3 ? 'text-[11px]' : 'text-[10px]'
                   const badge = (
-                    <span
-                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full font-bold text-white ${tickerFontSize}`}
-                      style={{ background: ASSET_META[h.assetClass].color }}
-                    >
-                      {tickerLabel}
-                    </span>
+                    <AssetLogo
+                      ticker={h.ticker}
+                      name={h.name}
+                      assetClass={h.assetClass}
+                      size="md"
+                    />
                   )
 
                   const btcAvgCost = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost)
