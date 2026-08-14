@@ -40,9 +40,11 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const [fundUnits, setFundUnits] = useState<number | ''>('')
 
   // Gold specific state
-  const [goldInputMode, setGoldInputMode] = useState<'grams' | 'price'>('grams')
+  const [goldInputMode, setGoldInputMode] = useState<'grams' | 'baht' | 'price' | 'price_baht'>('grams')
   const [goldPricePerGram, setGoldPricePerGram] = useState<number | ''>('')
+  const [goldPricePerBaht, setGoldPricePerBaht] = useState<number | ''>('')
   const [goldGrams, setGoldGrams] = useState<number | ''>('')
+  const [goldBaht, setGoldBaht] = useState<number | ''>('')
 
   // Crypto / BTC specific state
   const [sats, setSats] = useState<number | ''>('')
@@ -159,24 +161,47 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const stockCurrentUsdInvested = holding?.totalUsdInvested ?? stockCurrentUnits * (holding?.avgCostUsd ?? (fxRateNum > 0 ? (holding?.avgCost ?? 0) / fxRateNum : 0))
 
   const stockNewTotalUnits = stockCurrentUnits + stockUnitsBoughtNum
+  const stockImpliedUsdSpent = fxRateNum > 0 ? amountThbNum / fxRateNum : 0
+  const stockImpliedPriceUsd = stockUnitsBoughtNum > 0 ? stockImpliedUsdSpent / stockUnitsBoughtNum : 0
+
+  const stockCurrentUnits = holding?.units ?? 0
+  const stockCurrentThbInvested = holding?.totalThbInvested ?? 0
+  const stockNewUnits = stockCurrentUnits + stockUnitsBoughtNum
   const stockNewTotalThbInvested = stockCurrentThbInvested + amountThbNum
-  const stockNewTotalUsdInvested = stockCurrentUsdInvested + stockUsdSpentThisTx
+  const stockNewAvgCostThb = stockNewUnits > 0 ? stockNewTotalThbInvested / stockNewUnits : 0
+  const stockNewAvgCostUsd = stockNewAvgCostThb / fxRateNum
 
-  const stockNewAvgCostUsd = stockNewTotalUnits > 0 ? stockNewTotalUsdInvested / stockNewTotalUnits : 0
-  const stockNewAvgCostThb = stockNewTotalUnits > 0 ? stockNewTotalThbInvested / stockNewTotalUnits : 0
+  const hasValidStock = stockUnitsBoughtNum > 0 && amountThbNum > 0 && fxRateNum > 0
 
-  const hasValidStock = unitsBought !== '' && stockUnitsBoughtNum > 0 && amountThbNum > 0 && fxRateNum > 0
+  // --------------------------------------------------------------------------
+  // 2. Mutual Fund Real-time Calculations
+  // --------------------------------------------------------------------------
+  const fundUnitsNum = Number(fundUnits) || 0
+  const fundImpliedNav = fundUnitsNum > 0 ? amountThbNum / fundUnitsNum : 0
+
+  const fundCurrentUnits = holding?.units ?? 0
+  const fundCurrentThbInvested = holding?.totalThbInvested ?? 0
+  const fundNewUnits = fundCurrentUnits + fundUnitsBoughtNum(fundUnitsNum)
+  const fundNewTotalThbInvested = fundCurrentThbInvested + amountThbNum
+  const fundNewAvgCostNav = fundNewUnits > 0 ? fundNewTotalThbInvested / fundNewUnits : 0
+
+  const hasValidFund = fundUnitsNum > 0 && amountThbNum > 0
+
+  // Helper for fundUnits rendering
+  function fundUnitsBoughtNum(unitsNum: number) {
+    return unitsNum
+  }
 
   // --------------------------------------------------------------------------
   // 3. Crypto / BTC Real-time Calculations
   // --------------------------------------------------------------------------
   const satsNum = Number(sats) || 0
-  const btcImpliedPrice = satsNum > 0 ? (amountThbNum / satsNum) * SATS_PER_BTC : 0
+  const btcImpliedPriceThbPerBtc = satsNum > 0 ? (amountThbNum / satsNum) * SATS_PER_BTC : 0
 
-  const btcCurrentTotalSats = holding?.btcLocations
-    ? holding.btcLocations.reduce((s, l) => s + l.satoshi, 0)
-    : Math.round((holding?.units ?? 0) * SATS_PER_BTC)
-  const btcCurrentTotalThb = holding?.totalThbInvested ?? (holding?.btcLocations ?? []).reduce((s, l) => s + l.thbSpent, 0)
+  const selectedBtcLoc = btcLocations.find((l) => l.id === selectedLocId)
+
+  const btcCurrentTotalSats = holding?.units ? Math.round(holding.units * SATS_PER_BTC) : btcLocations.reduce((s, l) => s + l.satoshi, 0)
+  const btcCurrentTotalThb  = holding?.totalThbInvested ?? btcLocations.reduce((s, l) => s + l.thbSpent, 0)
 
   const btcNewTotalSats = btcCurrentTotalSats + satsNum
   const btcNewTotalThbInvested = btcCurrentTotalThb + amountThbNum
@@ -188,14 +213,26 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   // 4. Gold Real-time Calculations
   // --------------------------------------------------------------------------
   const goldPriceNum = Number(goldPricePerGram) || 0
+  const goldPriceBahtNum = Number(goldPricePerBaht) || 0
   const goldGramsNum = Number(goldGrams) || 0
+  const goldBahtNum = Number(goldBaht) || 0
 
-  const goldGramsToAdd = goldInputMode === 'grams'
-    ? goldGramsNum
-    : goldPriceNum > 0 ? amountThbNum / goldPriceNum : 0
-  const goldImpliedPricePerGram = goldInputMode === 'price' && goldPriceNum > 0
-    ? goldPriceNum
-    : (goldGramsToAdd > 0 ? amountThbNum / goldGramsToAdd : 0)
+  let goldGramsToAdd = 0
+  let goldImpliedPricePerGram = 0
+
+  if (goldInputMode === 'grams') {
+    goldGramsToAdd = goldGramsNum
+    goldImpliedPricePerGram = goldGramsToAdd > 0 ? amountThbNum / goldGramsToAdd : 0
+  } else if (goldInputMode === 'baht') {
+    goldGramsToAdd = goldBahtNum * GRAMS_PER_BAHT_GOLD
+    goldImpliedPricePerGram = goldGramsToAdd > 0 ? amountThbNum / goldGramsToAdd : 0
+  } else if (goldInputMode === 'price') {
+    goldImpliedPricePerGram = goldPriceNum
+    goldGramsToAdd = goldPriceNum > 0 ? amountThbNum / goldPriceNum : 0
+  } else if (goldInputMode === 'price_baht') {
+    goldImpliedPricePerGram = goldPriceBahtNum > 0 ? goldPriceBahtNum / GRAMS_PER_BAHT_GOLD : 0
+    goldGramsToAdd = goldImpliedPricePerGram > 0 ? amountThbNum / goldImpliedPricePerGram : 0
+  }
 
   const goldCurrentTotalGrams = holding?.units ?? goldLocations.reduce((s, l) => s + l.grams, 0)
   const goldCurrentTotalThb = holding?.totalThbInvested ?? goldLocations.reduce((s, l) => s + l.thbSpent, 0)
@@ -204,7 +241,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const goldNewTotalThbInvested = goldCurrentTotalThb + amountThbNum
   const goldNewAvgCostThb = goldNewTotalGrams > 0 ? goldNewTotalThbInvested / goldNewTotalGrams : 0
 
-  const hasValidGold = ((goldInputMode === 'grams' && goldGrams !== '') || (goldInputMode === 'price' && goldPricePerGram !== '')) && goldGramsToAdd > 0 && amountThbNum > 0
+  const hasValidGold = goldGramsToAdd > 0 && amountThbNum > 0
 
   // --------------------------------------------------------------------------
   // Validation Logic
@@ -580,49 +617,95 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               error={showErrors && amountThbNum <= 0 ? 'Required (> 0)' : undefined}
             />
 
-            <div className="flex rounded-xl bg-surface-muted p-1 gap-1">
+            <div className="grid grid-cols-2 gap-1 rounded-xl bg-surface-muted p-1">
               <button
                 type="button"
                 onClick={() => setGoldInputMode('grams')}
-                className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition-all ${
+                className={`rounded-lg py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
                   goldInputMode === 'grams'
                     ? 'bg-surface text-ink shadow-sm'
                     : 'text-ink-muted hover:text-ink'
                 }`}
               >
-                Grams Bought
+                Weight (g)
+              </button>
+              <button
+                type="button"
+                onClick={() => setGoldInputMode('baht')}
+                className={`rounded-lg py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
+                  goldInputMode === 'baht'
+                    ? 'bg-surface text-ink shadow-sm'
+                    : 'text-ink-muted hover:text-ink'
+                }`}
+              >
+                Weight (บาททอง)
               </button>
               <button
                 type="button"
                 onClick={() => setGoldInputMode('price')}
-                className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition-all ${
+                className={`rounded-lg py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
                   goldInputMode === 'price'
                     ? 'bg-surface text-ink shadow-sm'
                     : 'text-ink-muted hover:text-ink'
                 }`}
               >
-                Price per Gram
+                Price / Gram (฿/g)
+              </button>
+              <button
+                type="button"
+                onClick={() => setGoldInputMode('price_baht')}
+                className={`rounded-lg py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
+                  goldInputMode === 'price_baht'
+                    ? 'bg-surface text-ink shadow-sm'
+                    : 'text-ink-muted hover:text-ink'
+                }`}
+              >
+                Price / บาท (฿/บาท)
               </button>
             </div>
 
-            {goldInputMode === 'grams' ? (
+            {goldInputMode === 'grams' && (
               <NumberField
                 label="Grams bought (g)"
                 value={goldGrams}
                 onChange={setGoldGrams}
-                placeholder="e.g. 0.1636"
+                placeholder="e.g. 15.244"
                 autoFocus
+                step={0.0001}
                 error={showErrors && goldGramsToAdd <= 0 ? 'Grams bought required (> 0)' : undefined}
               />
-            ) : (
+            )}
+            {goldInputMode === 'baht' && (
               <NumberField
-                label="Price per gram (฿)"
+                label="Weight bought in บาททองคำ (ทองคำแท่ง 15.244g)"
+                value={goldBaht}
+                onChange={setGoldBaht}
+                placeholder="e.g. 1.0"
+                autoFocus
+                step={0.0001}
+                error={showErrors && goldGramsToAdd <= 0 ? 'Weight in บาททองคำ required (> 0)' : undefined}
+              />
+            )}
+            {goldInputMode === 'price' && (
+              <NumberField
+                label="Price per gram (฿/g)"
                 prefix="฿"
                 value={goldPricePerGram}
                 onChange={setGoldPricePerGram}
-                placeholder="e.g. 3,200"
+                placeholder="e.g. 2,850"
                 autoFocus
                 error={showErrors && goldGramsToAdd <= 0 ? 'Price per gram required (> 0)' : undefined}
+              />
+            )}
+            {goldInputMode === 'price_baht' && (
+              <NumberField
+                label="Price per บาททองคำ (฿/บาททองคำ)"
+                prefix="฿"
+                value={goldPricePerBaht}
+                onChange={setGoldPricePerBaht}
+                placeholder="e.g. 43,500"
+                autoFocus
+                error={showErrors && goldGramsToAdd <= 0 ? 'Price per บาททองคำ required (> 0)' : undefined}
               />
             )}
 
