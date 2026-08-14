@@ -316,7 +316,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                 }
               : undefined
           })()
-      confirmDcaBuy(p.id, btcImpliedPrice, today, undefined, undefined, undefined, btcLocUpdate, undefined, undefined, undefined, resolvedTargetId)
+      confirmDcaBuy(p.id, btcImpliedPriceThbPerBtc, today, undefined, undefined, undefined, btcLocUpdate, undefined, undefined, undefined, resolvedTargetId)
     }
 
     showToast(`Confirmed DCA buy for "${holding?.name ?? plan.name}"`, 'success')
@@ -548,7 +548,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">Implied BTC Price</span>
                 <span className={valueStyle(hasValidBtc)}>
-                  {hasValidBtc ? `฿${fmtNum(Math.round(btcImpliedPrice), 0)} / BTC` : '฿0 / BTC'}
+                  {hasValidBtc ? `฿${fmtNum(Math.round(btcImpliedPriceThbPerBtc), 0)} / BTC` : '฿0 / BTC'}
                 </span>
               </div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import type { AssetClass } from '../../lib/types'
 import { ASSET_META } from '../../lib/calc'
 
@@ -40,7 +40,6 @@ export function AssetLogo({
   const currentAssetClass = assetClass || (cleanTicker === 'BTC' || cleanTicker === 'ETH' ? 'crypto' : 'stock')
 
   const metaColor = ASSET_META[currentAssetClass]?.color ?? '#6366f1'
-  const isDarkClass = currentAssetClass === 'crypto' || currentAssetClass === 'gold'
 
   // If user provided a valid logoUrl and it hasn't failed to load
   if (logoUrl && !imgError) {

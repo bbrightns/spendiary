@@ -273,51 +273,6 @@ export function HoldingForm({ open, editing, onClose }: Props) {
     }
   }
 
-  function handleUsdPriceChange(val: number | '') {
-    setForm((f) => ({ ...f, price: val }))
-  }
-
-  function handleAvgCostUsdChange(val: number | '') {
-    setForm((f) => ({ ...f, avgCost: val }))
-    if (!isThbInvestedManuallyEdited && val !== '' && form.units !== '' && fxRateInput !== '') {
-      const unitsNum = Number(form.units) || 0
-      const fxNum = Number(fxRateInput) || 0
-      const costUsd = Number(val) || 0
-      if (unitsNum > 0 && fxNum > 0 && costUsd > 0) {
-        setThbInvestedInput(Number((unitsNum * costUsd * fxNum).toFixed(2)))
-      }
-    }
-  }
-
-  function handleUnitsChange(val: number | '') {
-    setForm((f) => ({ ...f, units: val }))
-    if (!isThbInvestedManuallyEdited && val !== '' && form.avgCost !== '' && fxRateInput !== '') {
-      const unitsNum = Number(val) || 0
-      const fxNum = Number(fxRateInput) || 0
-      const costUsd = Number(form.avgCost) || 0
-      if (unitsNum > 0 && fxNum > 0 && costUsd > 0) {
-        setThbInvestedInput(Number((unitsNum * costUsd * fxNum).toFixed(2)))
-      }
-    }
-  }
-
-  function handleFxRateInputChange(val: number | string | '') {
-    setFxRateInput(val)
-    if (!isThbInvestedManuallyEdited && form.units !== '' && form.avgCost !== '' && val !== '') {
-      const unitsNum = Number(form.units) || 0
-      const fxNum = Number(val) || 0
-      const costUsd = Number(form.avgCost) || 0
-      if (unitsNum > 0 && fxNum > 0 && costUsd > 0) {
-        setThbInvestedInput(Number((unitsNum * costUsd * fxNum).toFixed(2)))
-      }
-    }
-  }
-
-  function handleThbInvestedInputChange(val: number | string | '') {
-    setThbInvestedInput(val)
-    setIsThbInvestedManuallyEdited(true)
-  }
-
   // ── Save: BTC new holding ──
   function saveBtc() {
     const sats = Number(satoshi)
