@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
 import { BottomNav } from './BottomNav'
 import { Sidebar } from './Sidebar'
-import { SettingsIcon, SparkleIcon } from '../icons'
+import { SettingsIcon } from '../icons'
 import { useData } from '../../store/DataContext'
 
 export function Layout({ children }: { children: ReactNode }) {
@@ -34,9 +34,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <div className="relative w-full max-w-[420px] min-h-dvh app-canvas-bg flex flex-col shadow-2xl lg:hidden">
         {/* Top brand bar */}
         <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-line bg-surface/75 px-5 py-3.5 backdrop-blur-xl">
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-ink text-white dark:bg-brand-soft dark:text-brand">
-            <SparkleIcon className="h-[18px] w-[18px]" strokeWidth={1.8} />
-          </div>
+          <img src="/logo.png" alt="Spendiary Logo" className="h-8 w-8 rounded-lg object-contain" />
           <p className="font-display text-[17px] font-extrabold tracking-tight text-ink">Spendiary</p>
           {isTestMode && (
             <span className="rounded-full bg-amber-500/10 text-amber-600 dark:bg-amber-400/15 dark:text-amber-300 border border-amber-500/20 px-2 py-0.5 text-[9.5px] font-bold tracking-wider uppercase">

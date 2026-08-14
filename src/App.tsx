@@ -38,11 +38,7 @@ function AppContent() {
         {/* ── Top Header / Navbar ── */}
         <header className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-7 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-            <div className="w-8 h-8 rounded-xl bg-[#0066FF] text-white flex items-center justify-center shadow-md shadow-blue-500/20">
-              <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </div>
+            <img src="/logo.png" alt="Spendiary Logo" className="w-8 h-8 rounded-xl object-contain shadow-md shadow-blue-500/20" />
             <span className="font-display font-extrabold text-[19px] sm:text-[21px] tracking-tight text-slate-900">
               spendiary
             </span>

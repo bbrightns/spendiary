@@ -1,6 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
 import { navItems, settingsItem } from './nav'
-import { SparkleIcon } from '../icons'
 import { useData } from '../../store/DataContext'
 import { useTheme } from '../../hooks/useTheme'
 
@@ -36,9 +35,11 @@ export function Sidebar() {
         {/* Brand Header */}
         <div className="flex items-center justify-between px-2 pt-1">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-ink text-white shadow-xs transition-transform group-hover:scale-105 dark:bg-brand-soft dark:text-brand">
-              <SparkleIcon className="h-5 w-5" strokeWidth={1.9} />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Spendiary Logo"
+              className="h-9 w-9 rounded-xl object-contain shadow-xs transition-transform group-hover:scale-105"
+            />
             <div>
               <span className="font-display text-[19px] font-extrabold tracking-tight text-ink leading-none">
                 Spendiary
