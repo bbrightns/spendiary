@@ -171,7 +171,9 @@ export function Portfolio() {
   const [locEditing, setLocEditing] = useState<BtcLocation | import('../lib/types').GoldLocation | null>(null)
   const [locName, setLocName] = useState('')
   const [locSatoshi, setLocSatoshi] = useState<number | ''>('')
+  const [locGoldUnit, setLocGoldUnit] = useState<'grams' | 'baht'>('grams')
   const [locGrams, setLocGrams] = useState<number | ''>('')
+  const [locGoldBaht, setLocGoldBaht] = useState<number | ''>('')
   const [locThbSpent, setLocThbSpent] = useState<number | ''>('')
   const [locErrors, setLocErrors] = useState(false)
 
@@ -189,11 +191,14 @@ export function Portfolio() {
     setLocEditHoldingId(holdingId)
     setLocEditing(loc)
     setLocName(loc.name)
+    setLocGoldUnit('grams')
     if ('satoshi' in loc) {
       setLocSatoshi(loc.satoshi)
       setLocGrams('')
+      setLocGoldBaht('')
     } else {
       setLocGrams(loc.grams)
+      setLocGoldBaht(Number((loc.grams / GRAMS_PER_BAHT_GOLD).toFixed(6)))
       setLocSatoshi('')
     }
     setLocThbSpent(loc.thbSpent)
@@ -206,11 +211,14 @@ export function Portfolio() {
       setLocErrors(true)
       return
     }
-    if ('satoshi' in locEditing && locSatoshi === '') {
+    if ('satoshi' in locEditing && (locSatoshi === '' || Number(locSatoshi) < 0)) {
       setLocErrors(true)
       return
     }
-    if (!('satoshi' in locEditing) && locGrams === '') {
+    const g = locGoldUnit === 'baht'
+      ? (locGoldBaht !== '' ? Number(locGoldBaht) * GRAMS_PER_BAHT_GOLD : 0)
+      : Number(locGrams)
+    if (!('satoshi' in locEditing) && g <= 0) {
       setLocErrors(true)
       return
     }
@@ -226,7 +234,7 @@ export function Portfolio() {
       upsertGoldLocation(locEditHoldingId, {
         id: locEditing.id,
         name: locName.trim(),
-        grams: Number(locGrams),
+        grams: g,
         thbSpent: Number(locThbSpent),
       })
     }
@@ -874,7 +882,37 @@ export function Portfolio() {
             placeholder="e.g. Ledger"
             error={locErrors && !locName.trim() ? 'Required' : undefined}
           />
-          <div className="grid grid-cols-1 gap-3 ">
+          {locEditing && !('satoshi' in locEditing) && (
+            <div className="space-y-1">
+              <label className="text-[13px] font-medium text-ink-soft">Unit / หน่วย</label>
+              <div className="flex rounded-xl bg-surface-muted p-1 gap-1">
+                <button
+                  type="button"
+                  onClick={() => setLocGoldUnit('grams')}
+                  className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
+                    locGoldUnit === 'grams'
+                      ? 'bg-surface text-ink shadow-sm'
+                      : 'text-ink-muted hover:text-ink'
+                  }`}
+                >
+                  กรัม (Grams)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLocGoldUnit('baht')}
+                  className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
+                    locGoldUnit === 'baht'
+                      ? 'bg-surface text-ink shadow-sm'
+                      : 'text-ink-muted hover:text-ink'
+                  }`}
+                >
+                  บาททองคำ (15.244g)
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-3">
             {locEditing && 'satoshi' in locEditing ? (
               <NumberField
                 label="Satoshi"
@@ -884,14 +922,37 @@ export function Portfolio() {
                 step={1}
                 error={locErrors && (locSatoshi === '' || Number(locSatoshi) < 0) ? 'Required' : undefined}
               />
-            ) : (
+            ) : locGoldUnit === 'grams' ? (
               <NumberField
-                label="Grams"
+                label="Grams (กรัม)"
                 value={locGrams}
-                onChange={setLocGrams}
+                onChange={(val) => {
+                  setLocGrams(val)
+                  if (val !== '' && Number(val) > 0) {
+                    setLocGoldBaht(Number((Number(val) / GRAMS_PER_BAHT_GOLD).toFixed(6)))
+                  } else {
+                    setLocGoldBaht('')
+                  }
+                }}
                 placeholder="0.00"
                 step={0.0001}
                 error={locErrors && (locGrams === '' || Number(locGrams) < 0) ? 'Required' : undefined}
+              />
+            ) : (
+              <NumberField
+                label="Weight in บาททองคำ (ทองคำแท่ง)"
+                value={locGoldBaht}
+                onChange={(val) => {
+                  setLocGoldBaht(val)
+                  if (val !== '' && Number(val) > 0) {
+                    setLocGrams(Number((Number(val) * GRAMS_PER_BAHT_GOLD).toFixed(6)))
+                  } else {
+                    setLocGrams('')
+                  }
+                }}
+                placeholder="0.00"
+                step={0.0001}
+                error={locErrors && (locGoldBaht === '' || Number(locGoldBaht) < 0) ? 'Required' : undefined}
               />
             )}
             <NumberField
