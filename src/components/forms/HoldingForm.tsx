@@ -265,6 +265,14 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       
       const shares = Number(form.units) || 0
       const avgCost = Number(form.avgCost) || 0
+      const totalUsd = Number((shares * avgCost).toFixed(4))
+      if (totalUsd > 0) {
+        const calculatedFxRate = Number((formatted / totalUsd).toFixed(4))
+        setFxRateInput(formatCostOrFx(calculatedFxRate))
+      }
+    }
+  }
+
   function handleUsdPriceChange(val: number | '') {
     setForm((f) => ({ ...f, price: val }))
   }
