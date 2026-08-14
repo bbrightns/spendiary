@@ -65,9 +65,9 @@ function AppContent() {
           <h1 className="font-display font-black text-4xl sm:text-5xl md:text-6xl text-slate-950 text-center tracking-tight leading-[1.12] max-w-2xl mb-4">
             Spend smarter.{' '}
             <span 
-              className="block mt-1 sm:mt-2 italic font-black bg-clip-text text-transparent bg-gradient-to-l from-[#405DFF] to-[#DFAA41]"
+              className="block mt-1 sm:mt-2 italic font-black bg-clip-text text-transparent bg-gradient-to-r from-[#405DFF] to-[#DFAA41]"
               style={{
-                backgroundImage: 'linear-gradient(to left, #405DFF 0%, #DFAA41 100%)',
+                backgroundImage: 'linear-gradient(to right, #405DFF 0%, #DFAA41 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
               }}
