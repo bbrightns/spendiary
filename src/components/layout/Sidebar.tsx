@@ -34,11 +34,11 @@ export function Sidebar() {
       <div className="flex flex-col gap-6">
         {/* Brand Header */}
         <div className="flex items-center justify-between px-2 pt-1">
-          <Link to="/" className="flex items-center gap-2.5 group">
+          <Link to="/" className="flex items-center gap-2 group">
             <img
               src="/logo.png"
               alt="Spendiary Logo"
-              className="h-9 w-9 object-contain transition-transform group-hover:scale-105"
+              className="h-8 w-8 object-contain transition-transform group-hover:scale-105"
             />
             <div>
               <span className="font-display text-[19px] font-extrabold tracking-tight text-ink leading-none">
