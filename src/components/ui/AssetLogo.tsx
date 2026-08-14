@@ -182,10 +182,17 @@ export function AssetLogo({
     return (
       <div
         title="NVIDIA"
-        className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-[#76B900] text-white ${sizeClasses[size]} ${className}`}
+        className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-[#76B900] text-black ${sizeClasses[size]} ${className}`}
         style={{ boxShadow: '0 2px 8px rgba(118, 185, 0, 0.4)' }}
       >
-        <span className="font-extrabold tracking-tighter text-[11px] scale-95">NV</span>
+        <svg
+          viewBox="0 0 24 24"
+          width={iconSizes[size] - 1}
+          height={iconSizes[size] - 1}
+          fill="currentColor"
+        >
+          <path d="M12.001 2C6.478 2 2 6.478 2 12c0 5.523 4.478 10 10.001 10 5.523 0 10-4.477 10-10 0-5.522-4.477-10-10-10zm-1.077 15.228c-3.141 0-5.688-2.547-5.688-5.688 0-1.84 0.874-3.477 2.23-4.522l1.246 1.482c-0.841 0.646-1.382 1.66-1.382 2.802 0 1.985 1.609 3.594 3.594 3.594 1.985 0 3.594-1.609 3.594-3.594 0-0.784-0.251-1.509-0.68-2.102l1.454-1.42c0.781 0.988 1.245 2.236 1.245 3.593 0 3.141-2.547 5.688-5.688 5.688zm0-3.344c-1.295 0-2.344-1.049-2.344-2.344 0-0.716 0.32-1.357 0.828-1.787l1.229 1.462c-0.035 0.101-0.057 0.21-0.057 0.325 0 0.552 0.448 1 1 1 0.115 0 0.224-0.022 0.325-0.057l1.462 1.229c-0.43 0.508-1.071 0.828-1.787 0.828z" />
+        </svg>
       </div>
     )
   }
