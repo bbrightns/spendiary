@@ -24,7 +24,8 @@ function AppContent() {
           .fastwork-canvas {
             background-color: #faf6f4;
             background-image: 
-              radial-gradient(circle at 10% 12%, rgba(254, 243, 199, 0.75) 0%, rgba(255, 248, 235, 0.9) 30%, transparent 60%),
+              radial-gradient(circle at 85% 18%, rgba(237, 233, 254, 0.8) 0%, transparent 50%),
+              radial-gradient(circle at 10% 12%, rgba(254, 243, 199, 0.85) 0%, rgba(255, 248, 235, 0.9) 30%, transparent 60%),
               radial-gradient(circle at 90% 88%, rgba(239, 229, 232, 0.85) 0%, rgba(243, 232, 255, 0.6) 35%, transparent 65%),
               linear-gradient(135deg, #fff3dd 0%, #faf6f4 45%, #efe5e8 100%);
             background-attachment: fixed;
