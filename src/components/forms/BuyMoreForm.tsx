@@ -63,7 +63,9 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
   const [newLocationName, setNewLocationName] = useState('')
 
   // Gold-specific state
+  const [goldUnit, setGoldUnit] = useState<'grams' | 'baht'>('grams')
   const [goldGrams, setGoldGrams] = useState<number | ''>('')
+  const [goldBaht, setGoldBaht] = useState<number | ''>('')
   const [goldThbSpent, setGoldThbSpent] = useState<number | ''>('')
   const [goldLocationId, setGoldLocationId] = useState('')
   const [goldNewLocationName, setGoldNewLocationName] = useState('')
@@ -259,7 +261,9 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
     setThbSpent('')
     setLocationId((holding.btcLocations ?? [])[0]?.id ?? '__new__')
     setNewLocationName('')
+    setGoldUnit('grams')
     setGoldGrams('')
+    setGoldBaht('')
     setGoldThbSpent('')
     setGoldLocationId((holding.goldLocations ?? [])[0]?.id ?? '__new__')
     setGoldNewLocationName('')
@@ -288,14 +292,17 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
     const goldLocName = isNewGoldLoc
       ? goldNewLocationName.trim()
       : (goldExistingLocations.find((l) => l.id === goldLocationId)?.name ?? '')
-    const goldValid =
-      goldGrams !== '' && Number(goldGrams) > 0 &&
-      goldThbSpent !== '' && Number(goldThbSpent) > 0 &&
-      goldLocName.length > 0
-    const g = Number(goldGrams)
+    const g = goldUnit === 'baht'
+      ? (goldBaht !== '' ? Number(goldBaht) * GRAMS_PER_BAHT_GOLD : 0)
+      : Number(goldGrams)
     const spent = Number(goldThbSpent)
+    const goldValid =
+      g > 0 &&
+      goldThbSpent !== '' && spent > 0 &&
+      goldLocName.length > 0
     const impliedPrice = g > 0 ? spent / g : 0
     const totalGrams = goldExistingLocations.reduce((s, l) => s + l.grams, 0)
+    const totalBaht = totalGrams / GRAMS_PER_BAHT_GOLD
 
     const goldLocOptions = [
       ...goldExistingLocations.map((l) => ({ value: l.id, label: l.name })),
@@ -315,14 +322,15 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
       } else {
         upsertGoldLocation(holding!.id, { name: goldLocName, grams: g, thbSpent: spent })
       }
+      const bahtAmount = (g / GRAMS_PER_BAHT_GOLD).toFixed(4)
       addHoldingLog({
         action: 'buy_more',
         holdingName: holding!.name,
         ticker: holding!.ticker,
         assetClass: 'gold',
-        note: `+${g.toFixed(4)} g · ฿${spent.toLocaleString()} spent · ${goldLocName}`,
+        note: `+${g.toFixed(4)} g (${bahtAmount} บาททอง) · ฿${spent.toLocaleString()} spent · ${goldLocName}`,
       })
-      showToast(`Bought ${g.toFixed(4)}g gold for ${holding!.name}`, 'success')
+      showToast(`Bought ${g.toFixed(4)}g (${bahtAmount} บาททอง) gold for ${holding!.name}`, 'success')
       onClose()
     }
 
@@ -331,14 +339,14 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         open={open}
         onClose={onClose}
         title={`Buy more · ${holding.name}`}
-        description="Log a purchase in grams. Choose or create a location."
+        description="Log a purchase in grams or บาททองคำ (ทองคำแท่ง 15.244g). Choose or create a location."
       >
         <div className="space-y-5">
           <div className="rounded-2xl bg-surface-muted px-4 py-3">
             <div className="flex items-center justify-between text-[13px]">
               <span className="text-ink-muted">Currently holding</span>
               <span className="font-semibold tnum text-ink">
-                {totalGrams.toFixed(2)} g
+                {totalGrams.toFixed(2)} g ({totalBaht.toFixed(4)} บาททองคำ)
               </span>
             </div>
           </div>
@@ -360,17 +368,71 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
             />
           )}
 
-          <div className="grid grid-cols-1 gap-3 ">
+          {/* Unit selector tab */}
+          <div className="space-y-1">
+            <label className="text-[13px] font-medium text-ink-soft">Purchase Unit / หน่วยซื้อ</label>
+            <div className="flex rounded-xl bg-surface-muted p-1 gap-1">
+              <button
+                type="button"
+                onClick={() => setGoldUnit('grams')}
+                className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
+                  goldUnit === 'grams'
+                    ? 'bg-surface text-ink shadow-sm'
+                    : 'text-ink-muted hover:text-ink'
+                }`}
+              >
+                กรัม (Grams)
+              </button>
+              <button
+                type="button"
+                onClick={() => setGoldUnit('baht')}
+                className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
+                  goldUnit === 'baht'
+                    ? 'bg-surface text-ink shadow-sm'
+                    : 'text-ink-muted hover:text-ink'
+                }`}
+              >
+                บาททองคำ (15.244g)
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3">
+            {goldUnit === 'grams' ? (
+              <NumberField
+                label="Grams bought (กรัม)"
+                value={goldGrams}
+                error={showErrors && (goldGrams === '' || Number(goldGrams) <= 0) ? 'Required (> 0)' : undefined}
+                onChange={(val) => {
+                  setGoldGrams(val)
+                  if (val !== '' && Number(val) > 0) {
+                    setGoldBaht(Number((Number(val) / GRAMS_PER_BAHT_GOLD).toFixed(6)))
+                  } else {
+                    setGoldBaht('')
+                  }
+                }}
+                placeholder="e.g. 15.244"
+                step={0.0001}
+              />
+            ) : (
+              <NumberField
+                label="Weight bought in บาททองคำ (ทองคำแท่ง)"
+                value={goldBaht}
+                error={showErrors && (goldBaht === '' || Number(goldBaht) <= 0) ? 'Required (> 0)' : undefined}
+                onChange={(val) => {
+                  setGoldBaht(val)
+                  if (val !== '' && Number(val) > 0) {
+                    setGoldGrams(Number((Number(val) * GRAMS_PER_BAHT_GOLD).toFixed(6)))
+                  } else {
+                    setGoldGrams('')
+                  }
+                }}
+                placeholder="e.g. 1.0"
+                step={0.0001}
+              />
+            )}
             <NumberField
-              label="Grams bought"
-              value={goldGrams}
-              error={showErrors && (goldGrams === '' || Number(goldGrams) <= 0) ? 'Required (> 0)' : undefined}
-              onChange={setGoldGrams}
-              placeholder="e.g. 5.0"
-              step={0.01}
-            />
-            <NumberField
-              label="THB spent"
+              label="THB spent (บาท)"
               prefix="฿"
               value={goldThbSpent}
               error={showErrors && (goldThbSpent === '' || Number(goldThbSpent) <= 0) ? 'Required (> 0)' : undefined}
@@ -381,7 +443,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
 
           {g > 0 && spent > 0 && (
             <div
-              className="rounded-2xl border px-4 py-3"
+              className="rounded-2xl border px-4 py-3 space-y-1.5"
               style={{
                 borderColor: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 35%, transparent)`,
                 background: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 10%, transparent)`,
@@ -391,11 +453,11 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
                 <span className="text-ink-soft">Implied price / gram</span>
                 <span className="font-semibold tnum text-ink">{thb(impliedPrice, true)}</span>
               </div>
-              <div className="mt-1 flex items-center justify-between text-[13px]">
+              <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-soft">Implied cost / บาททองคำ</span>
                 <span className="font-semibold tnum text-brand">{thb(impliedPrice * GRAMS_PER_BAHT_GOLD)}</span>
               </div>
-              <div className="mt-1 flex items-center justify-between text-[13px]">
+              <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-soft">Gold amount</span>
                 <span className="font-semibold tnum text-ink">{g.toFixed(4)} g ({(g / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง)</span>
               </div>
