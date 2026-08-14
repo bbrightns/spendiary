@@ -19,10 +19,10 @@ const sizeClasses = {
 }
 
 const iconSizes = {
-  sm: 18,
-  md: 26,
-  lg: 32,
-  xl: 38,
+  sm: 16,
+  md: 24,
+  lg: 28,
+  xl: 34,
 }
 
 export function AssetLogo({
@@ -77,9 +77,10 @@ export function AssetLogo({
       >
         <svg
           viewBox="0 0 32 32"
-          width={iconSizes[size] + 4}
-          height={iconSizes[size] + 4}
+          width={iconSizes[size] + 2}
+          height={iconSizes[size] + 2}
           fill="none"
+          className="shrink-0 block"
           xmlns="http://www.w3.org/2000/svg"
         >
           <path
@@ -106,9 +107,10 @@ export function AssetLogo({
       >
         <svg
           viewBox="0 0 32 32"
-          width={iconSizes[size] + 2}
-          height={iconSizes[size] + 2}
+          width={iconSizes[size]}
+          height={iconSizes[size]}
           fill="none"
+          className="shrink-0 block"
           xmlns="http://www.w3.org/2000/svg"
         >
           <path d="M16 4L15.8 4.7V20.4L16 20.6L23 16.5L16 4Z" fill="#FFFFFF" fillOpacity="0.8" />
@@ -141,13 +143,14 @@ export function AssetLogo({
       >
         <svg
           viewBox="0 0 24 24"
-          width={iconSizes[size] + 2}
-          height={iconSizes[size] + 2}
+          width={iconSizes[size]}
+          height={iconSizes[size]}
           fill="none"
           stroke="#FFFFFF"
           strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
+          className="shrink-0 block"
         >
           <path d="m19 13-4-8H9L5 13l7 8 7-8z" fill="rgba(255, 255, 255, 0.25)" />
           <path d="M5 13h14" />
@@ -167,9 +170,10 @@ export function AssetLogo({
       >
         <svg
           viewBox="0 0 24 24"
-          width={iconSizes[size] + 2}
-          height={iconSizes[size] + 2}
+          width={iconSizes[size]}
+          height={iconSizes[size]}
           fill="currentColor"
+          className="shrink-0 block"
         >
           <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.63-.77 1.06-1.85.94-2.93-.91.04-2.02.61-2.67 1.38-.58.68-1.09 1.77-.95 2.83 1.02.08 2.05-.51 2.68-1.28z" />
         </svg>
@@ -182,16 +186,17 @@ export function AssetLogo({
     return (
       <div
         title="NVIDIA"
-        className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-black text-[#76B900] border border-[#76B900]/30 ${sizeClasses[size]} ${className}`}
-        style={{ boxShadow: '0 2px 10px rgba(118, 185, 0, 0.4)' }}
+        className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-[#09090b] text-[#76B900] border border-[#76B900]/30 ${sizeClasses[size]} ${className}`}
+        style={{ boxShadow: '0 2px 10px rgba(118, 185, 0, 0.25)' }}
       >
         <svg
           viewBox="0 0 24 24"
-          width={iconSizes[size] + 3}
-          height={iconSizes[size] + 3}
+          width={iconSizes[size]}
+          height={iconSizes[size]}
           fill="currentColor"
+          className="shrink-0 block"
         >
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm.84 15.65c-2.48 0-4.5-1.95-4.5-4.35 0-1.36.65-2.58 1.67-3.36l1.24 1.24c-.58.49-.95 1.21-.95 2.02 0 1.41 1.16 2.55 2.59 2.55 1.43 0 2.59-1.14 2.59-2.55 0-.58-.2-1.11-.53-1.53l1.26-1.26c.79.77 1.27 1.83 1.27 3.01 0 2.4-2.02 4.35-4.5 4.35z"/>
+          <path d="M12.44 3.25c-4.49 0-8.29 3.03-9.52 7.15l2.25 1.05c.91-3.13 3.78-5.4 7.27-5.4 4.14 0 7.5 3.36 7.5 7.5 0 2.16-.91 4.11-2.37 5.48l1.66 1.66c1.82-1.71 2.96-4.44 2.96-7.5 0-5.43-4.4-9.84-9.75-9.84zm-.09 4.31c-2.73 0-5.04 1.83-5.78 4.33l2.21 1.03c.48-1.57 1.94-2.71 3.66-2.71 2.11 0 3.82 1.71 3.82 3.82 0 1.02-.4 1.95-1.06 2.64l1.66 1.66c1.23-1.16 2-2.79 2-4.6 0-3.52-2.85-6.37-6.51-6.37zm-.1 4.22c-.67 0-1.21.54-1.21 1.21 0 .28.1.53.26.73l1.68 1.68c.5-.34.82-.9.82-1.53 0-.67-.54-1.21-1.21-1.21z"/>
         </svg>
       </div>
     )
@@ -202,10 +207,10 @@ export function AssetLogo({
     return (
       <div
         title="Microsoft"
-        className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-[#00A4EF] text-white ${sizeClasses[size]} ${className}`}
-        style={{ boxShadow: '0 2px 8px rgba(0, 164, 239, 0.35)' }}
+        className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-zinc-900 text-white border border-zinc-800 ${sizeClasses[size]} ${className}`}
+        style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)' }}
       >
-        <div className="grid grid-cols-2 gap-0.5 w-3.5 h-3.5">
+        <div className="grid grid-cols-2 gap-0.5 w-4 h-4 shrink-0">
           <span className="bg-[#F25022] rounded-xs" />
           <span className="bg-[#7FBA00] rounded-xs" />
           <span className="bg-[#00A4EF] rounded-xs" />
@@ -223,7 +228,7 @@ export function AssetLogo({
         className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-[#E82127] text-white ${sizeClasses[size]} ${className}`}
         style={{ boxShadow: '0 2px 8px rgba(232, 33, 39, 0.35)' }}
       >
-        <span className="font-black tracking-wider text-[12px]">T</span>
+        <span className="font-black tracking-wider text-[12px] leading-none">T</span>
       </div>
     )
   }
