@@ -19,10 +19,10 @@ const sizeClasses = {
 }
 
 const iconSizes = {
-  sm: 16,
-  md: 22,
-  lg: 26,
-  xl: 32,
+  sm: 18,
+  md: 26,
+  lg: 32,
+  xl: 38,
 }
 
 export function AssetLogo({
@@ -77,8 +77,8 @@ export function AssetLogo({
       >
         <svg
           viewBox="0 0 32 32"
-          width={iconSizes[size]}
-          height={iconSizes[size]}
+          width={iconSizes[size] + 4}
+          height={iconSizes[size] + 4}
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -106,8 +106,8 @@ export function AssetLogo({
       >
         <svg
           viewBox="0 0 32 32"
-          width={iconSizes[size]}
-          height={iconSizes[size]}
+          width={iconSizes[size] + 2}
+          height={iconSizes[size] + 2}
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -141,8 +141,8 @@ export function AssetLogo({
       >
         <svg
           viewBox="0 0 24 24"
-          width={iconSizes[size]}
-          height={iconSizes[size]}
+          width={iconSizes[size] + 2}
+          height={iconSizes[size] + 2}
           fill="none"
           stroke="#FFFFFF"
           strokeWidth="1.8"
@@ -167,8 +167,8 @@ export function AssetLogo({
       >
         <svg
           viewBox="0 0 24 24"
-          width={iconSizes[size] - 2}
-          height={iconSizes[size] - 2}
+          width={iconSizes[size] + 2}
+          height={iconSizes[size] + 2}
           fill="currentColor"
         >
           <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.63-.77 1.06-1.85.94-2.93-.91.04-2.02.61-2.67 1.38-.58.68-1.09 1.77-.95 2.83 1.02.08 2.05-.51 2.68-1.28z" />
@@ -182,16 +182,16 @@ export function AssetLogo({
     return (
       <div
         title="NVIDIA"
-        className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-[#76B900] text-black ${sizeClasses[size]} ${className}`}
-        style={{ boxShadow: '0 2px 8px rgba(118, 185, 0, 0.4)' }}
+        className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-black text-[#76B900] border border-[#76B900]/30 ${sizeClasses[size]} ${className}`}
+        style={{ boxShadow: '0 2px 10px rgba(118, 185, 0, 0.4)' }}
       >
         <svg
           viewBox="0 0 24 24"
-          width={iconSizes[size] - 1}
-          height={iconSizes[size] - 1}
+          width={iconSizes[size] + 3}
+          height={iconSizes[size] + 3}
           fill="currentColor"
         >
-          <path d="M12.001 2C6.478 2 2 6.478 2 12c0 5.523 4.478 10 10.001 10 5.523 0 10-4.477 10-10 0-5.522-4.477-10-10-10zm-1.077 15.228c-3.141 0-5.688-2.547-5.688-5.688 0-1.84 0.874-3.477 2.23-4.522l1.246 1.482c-0.841 0.646-1.382 1.66-1.382 2.802 0 1.985 1.609 3.594 3.594 3.594 1.985 0 3.594-1.609 3.594-3.594 0-0.784-0.251-1.509-0.68-2.102l1.454-1.42c0.781 0.988 1.245 2.236 1.245 3.593 0 3.141-2.547 5.688-5.688 5.688zm0-3.344c-1.295 0-2.344-1.049-2.344-2.344 0-0.716 0.32-1.357 0.828-1.787l1.229 1.462c-0.035 0.101-0.057 0.21-0.057 0.325 0 0.552 0.448 1 1 1 0.115 0 0.224-0.022 0.325-0.057l1.462 1.229c-0.43 0.508-1.071 0.828-1.787 0.828z" />
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm.84 15.65c-2.48 0-4.5-1.95-4.5-4.35 0-1.36.65-2.58 1.67-3.36l1.24 1.24c-.58.49-.95 1.21-.95 2.02 0 1.41 1.16 2.55 2.59 2.55 1.43 0 2.59-1.14 2.59-2.55 0-.58-.2-1.11-.53-1.53l1.26-1.26c.79.77 1.27 1.83 1.27 3.01 0 2.4-2.02 4.35-4.5 4.35z"/>
         </svg>
       </div>
     )
