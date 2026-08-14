@@ -150,51 +150,68 @@ function AppContent() {
             </div>
           </div>
 
-          {/* ── 3 Feature Cards (Fastwork 3-Column Style - Placed Below Sign In) ── */}
+          {/* ── 3 Feature Cards (Fastwork Translucent Style - Horizontal with Gradient Badge) ── */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
             {/* Card 1 */}
-            <div className="bg-white/85 backdrop-blur-md rounded-2xl border border-slate-200/70 p-5 shadow-xs hover:shadow-md transition-shadow">
-              <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#0066FF] flex items-center justify-center mb-3.5 font-bold">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            <div className="bg-white/60 hover:bg-white/75 backdrop-blur-md rounded-[20px] border border-white/80 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
+              <div 
+                className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 text-white shadow-sm"
+                style={{ background: 'linear-gradient(140deg, #6079FE 0%, #765EFD 50%, #B875B4 100%)' }}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  <path d="m9 12 2 2 4-4" />
                 </svg>
               </div>
-              <h3 className="font-display font-bold text-slate-900 text-sm mb-1.5">
-                Bank-grade Privacy
-              </h3>
-              <p className="text-slate-500 text-xs leading-relaxed">
-                Your financial records stay local on your device or encrypted with secure Supabase cloud sync.
-              </p>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-display font-bold text-slate-800 text-[14.5px] leading-tight mb-1">
+                  Bank-grade Privacy
+                </h3>
+                <p className="text-slate-500 text-[12.5px] leading-relaxed">
+                  Your financial records stay local on your device or encrypted with secure Supabase cloud sync.
+                </p>
+              </div>
             </div>
 
             {/* Card 2 */}
-            <div className="bg-white/85 backdrop-blur-md rounded-2xl border border-slate-200/70 p-5 shadow-xs hover:shadow-md transition-shadow">
-              <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3.5 font-bold">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            <div className="bg-white/60 hover:bg-white/75 backdrop-blur-md rounded-[20px] border border-white/80 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
+              <div 
+                className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 text-white shadow-sm"
+                style={{ background: 'linear-gradient(140deg, #6079FE 0%, #765EFD 50%, #B875B4 100%)' }}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                 </svg>
               </div>
-              <h3 className="font-display font-bold text-slate-900 text-sm mb-1.5">
-                Smart Portfolio & DCA
-              </h3>
-              <p className="text-slate-500 text-xs leading-relaxed">
-                Track stocks, crypto, funds, and gold with automated rebalancing & smart buy notifications.
-              </p>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-display font-bold text-slate-800 text-[14.5px] leading-tight mb-1">
+                  Smart Portfolio & DCA
+                </h3>
+                <p className="text-slate-500 text-[12.5px] leading-relaxed">
+                  Track stocks, crypto, funds, and gold with automated rebalancing & smart buy notifications.
+                </p>
+              </div>
             </div>
 
             {/* Card 3 */}
-            <div className="bg-white/85 backdrop-blur-md rounded-2xl border border-slate-200/70 p-5 shadow-xs hover:shadow-md transition-shadow">
-              <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center mb-3.5 font-bold">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+            <div className="bg-white/60 hover:bg-white/75 backdrop-blur-md rounded-[20px] border border-white/80 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
+              <div 
+                className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 text-white shadow-sm"
+                style={{ background: 'linear-gradient(140deg, #6079FE 0%, #765EFD 50%, #B875B4 100%)' }}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="4" />
+                  <path d="m9 12 2 2 4-4" />
                 </svg>
               </div>
-              <h3 className="font-display font-bold text-slate-900 text-sm mb-1.5">
-                Retirement Freedom
-              </h3>
-              <p className="text-slate-500 text-xs leading-relaxed">
-                Simulate FIRE milestones, calculate dividend yields, and plan early financial freedom.
-              </p>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-display font-bold text-slate-800 text-[14.5px] leading-tight mb-1">
+                  Retirement Freedom
+                </h3>
+                <p className="text-slate-500 text-[12.5px] leading-relaxed">
+                  Simulate FIRE milestones, calculate dividend yields, and plan early financial freedom.
+                </p>
+              </div>
             </div>
           </div>
         </main>
