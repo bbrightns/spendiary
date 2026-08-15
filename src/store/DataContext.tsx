@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import type { AssetClass, BtcLocation, CashAccount, DcaPlan, FixedCostItem, GoldLocation, Holding, HoldingLog, NetWorthSnapshot, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
+import type { BtcLocation, CashAccount, DcaPlan, FixedCostItem, GoldLocation, Holding, HoldingLog, InvestAssetClass, NetWorthSnapshot, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
 import { localDateStr } from '../lib/format'
 import { seedData } from '../lib/seed'
 import { findMatchingHolding } from '../lib/calc'
@@ -140,7 +140,7 @@ interface DataContextValue {
   removeTransfer: (id: string) => void
 
   setRetirement: (settings: RetirementSettings) => void
-  setRebalanceTargets: (targets: Record<AssetClass, number>) => void
+  setRebalanceTargets: (targets: Record<InvestAssetClass, number>) => void
   recordNetWorthSnapshot: (value: number) => void
   recordPortfolioSnapshot: (value: number) => void
   /** ISO timestamp of the last successful cloud sync, or null */

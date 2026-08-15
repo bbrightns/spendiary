@@ -22,10 +22,11 @@ import {
   allocations,
   holdingMetrics,
   portfolioSummary,
-  totalCash,
 } from '../lib/calc'
-import type { AssetClass, BtcLocation, Holding, NetWorthSnapshot } from '../lib/types'
+import type { AssetClass, BtcLocation, Holding, InvestAssetClass, NetWorthSnapshot } from '../lib/types'
 import { thb, thbCompact, formatNumber } from '../lib/format'
+
+const REBALANCE_ASSETS: InvestAssetClass[] = ['fund', 'stock', 'crypto', 'gold']
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -60,33 +61,29 @@ export function Portfolio() {
   const [newCash, setNewCash] = useState<number | ''>('')
   const [smartRebalance, setSmartRebalance] = useState(false)
 
-  const initialTargets: Record<AssetClass, number> = data.rebalanceTargets ?? {
-    fund: 40,
-    stock: 30,
-    crypto: 20,
-    gold: 0,
-    cash: 10,
+  const initialTargets: Record<InvestAssetClass, number> = {
+    fund: data.rebalanceTargets?.fund ?? 40,
+    stock: data.rebalanceTargets?.stock ?? 40,
+    crypto: data.rebalanceTargets?.crypto ?? 20,
+    gold: data.rebalanceTargets?.gold ?? 0,
   }
-  const [targets, setLocalTargets] = useState<Record<AssetClass, number>>(initialTargets)
+  const [targets, setLocalTargets] = useState<Record<InvestAssetClass, number>>(initialTargets)
 
-  // Derived values for rebalancing
-  const totalCashVal = totalCash(data, usdThb)
+  // Derived values for rebalancing (Investments only, excluding cash)
   const portVal = data.holdings.reduce((sum, h) => sum + h.units * h.price, 0)
-  const currentNetWorth = totalCashVal + portVal
 
-  const actualVals: Record<AssetClass, number> = {
+  const actualVals: Record<InvestAssetClass, number> = {
     fund: data.holdings.filter(h => h.assetClass === 'fund').reduce((s, h) => s + h.units * h.price, 0),
     stock: data.holdings.filter(h => h.assetClass === 'stock').reduce((s, h) => s + h.units * h.price, 0),
     crypto: data.holdings.filter(h => h.assetClass === 'crypto').reduce((s, h) => s + h.units * h.price, 0),
     gold: data.holdings.filter(h => h.assetClass === 'gold').reduce((s, h) => s + h.units * h.price, 0),
-    cash: totalCashVal,
   }
 
   const targetsSum = Object.values(targets).reduce((s, x) => s + x, 0)
   const cashToDeploy = Number(newCash) || 0
-  const targetTotalValue = currentNetWorth + cashToDeploy
+  const targetTotalValue = portVal + cashToDeploy
 
-  const handleTargetChange = (key: AssetClass, val: number) => {
+  const handleTargetChange = (key: InvestAssetClass, val: number) => {
     const updated = { ...targets, [key]: val }
     setLocalTargets(updated)
     const sum = Object.values(updated).reduce((s, x) => s + x, 0)
@@ -95,10 +92,10 @@ export function Portfolio() {
     }
   }
 
-  const rebalanceRows = (Object.keys(targets) as AssetClass[]).map((key) => {
+  const rebalanceRows = REBALANCE_ASSETS.map((key) => {
     const actualVal = actualVals[key]
-    const actualPct = currentNetWorth > 0 ? (actualVal / currentNetWorth) * 100 : 0
-    const targetPct = targets[key]
+    const actualPct = portVal > 0 ? (actualVal / portVal) * 100 : 0
+    const targetPct = targets[key] ?? 0
     const targetVal = (targetPct / 100) * targetTotalValue
 
     let diff = targetVal - actualVal
@@ -132,9 +129,9 @@ export function Portfolio() {
 
   // Smart Rebalancing math pass
   if (targetsSum === 100 && smartRebalance && cashToDeploy > 0) {
-    const deficits = (Object.keys(targets) as AssetClass[]).map(key => {
+    const deficits = REBALANCE_ASSETS.map(key => {
       const actualVal = actualVals[key]
-      const targetVal = (targets[key] / 100) * targetTotalValue
+      const targetVal = ((targets[key] ?? 0) / 100) * targetTotalValue
       return { key, deficit: Math.max(0, targetVal - actualVal) }
     })
     const totalDeficit = deficits.reduce((s, d) => s + d.deficit, 0)
@@ -523,8 +520,8 @@ export function Portfolio() {
                     </thead>
                     <tbody>
                       {rebalanceRows.map((row) => {
-                        const color = ASSET_META[row.key]?.color ?? 'var(--color-cash)'
-                        const shortName = row.key === 'fund' ? 'Funds' : row.key === 'stock' ? 'Stocks' : row.key === 'crypto' ? 'Bitcoin' : row.key === 'gold' ? 'Gold' : 'Cash'
+                        const color = ASSET_META[row.key]?.color
+                        const shortName = ASSET_META[row.key]?.plural ?? row.key
 
                         return (
                           <tr key={row.key} className="border-b border-line last:border-0 align-middle">

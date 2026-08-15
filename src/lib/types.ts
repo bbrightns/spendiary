@@ -1,4 +1,5 @@
 export type AssetClass = 'fund' | 'stock' | 'crypto' | 'gold' | 'cash'
+export type InvestAssetClass = 'fund' | 'stock' | 'crypto' | 'gold'
 
 export interface BtcLocation {
   id: string
@@ -176,7 +177,7 @@ export interface SpendiaryData {
   dcaPlans: DcaPlan[]
   transfers: Transfer[]
   retirement?: RetirementSettings
-  rebalanceTargets?: Record<AssetClass, number>
+  rebalanceTargets?: Record<InvestAssetClass, number>
   /** Timestamp in ms when this data was last modified locally */
   lastUpdatedAt?: number
 }
