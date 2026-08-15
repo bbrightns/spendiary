@@ -26,7 +26,7 @@ import {
 import type { AssetClass, BtcLocation, Holding, InvestAssetClass, NetWorthSnapshot } from '../lib/types'
 import { thb, thbCompact, formatNumber } from '../lib/format'
 
-const REBALANCE_ASSETS: InvestAssetClass[] = ['fund', 'stock', 'crypto', 'gold']
+const REBALANCE_ASSETS: InvestAssetClass[] = ['fund', 'stock', 'gold', 'crypto']
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -62,10 +62,10 @@ export function Portfolio() {
   const [smartRebalance, setSmartRebalance] = useState(false)
 
   const initialTargets: Record<InvestAssetClass, number> = {
-    fund: data.rebalanceTargets?.fund ?? 40,
-    stock: data.rebalanceTargets?.stock ?? 40,
-    crypto: data.rebalanceTargets?.crypto ?? 20,
-    gold: data.rebalanceTargets?.gold ?? 0,
+    fund: data.rebalanceTargets?.fund ?? 50,
+    stock: data.rebalanceTargets?.stock ?? 30,
+    gold: data.rebalanceTargets?.gold ?? 15,
+    crypto: data.rebalanceTargets?.crypto ?? 5,
   }
   const [targets, setLocalTargets] = useState<Record<InvestAssetClass, number>>(initialTargets)
 
