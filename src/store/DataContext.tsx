@@ -272,39 +272,65 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // Auth setup
   useEffect(() => {
-    // If returning with hash tokens from OAuth redirect, explicitly get and set user
+    // If returning with hash tokens from OAuth redirect, extract user from JWT payload safely
     if (window.location.hash && window.location.hash.includes('access_token=')) {
-      const hashParams = new URLSearchParams(window.location.hash.substring(1))
-      const accessToken = hashParams.get('access_token')
+      try {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1))
+        const accessToken = hashParams.get('access_token')
 
-      if (accessToken) {
-        supabase.auth.getUser(accessToken).then(({ data, error }) => {
-          if (!error && data?.user) {
-            console.log('Explicitly restored user from token:', data.user.email)
-            setUser(data.user)
+        if (accessToken) {
+          // Parse JWT payload (Base64Url decode)
+          const base64Url = accessToken.split('.')[1]
+          if (base64Url) {
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+            const jsonPayload = decodeURIComponent(
+              atob(base64)
+                .split('')
+                .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                .join('')
+            )
+            const payload = JSON.parse(jsonPayload)
+            console.log('Restored user directly from token payload:', payload.email)
+
+            const restoredUser: User = {
+              id: payload.sub || payload.id || 'user-google',
+              app_metadata: payload.app_metadata || { provider: 'google' },
+              user_metadata: payload.user_metadata || {},
+              aud: payload.aud || 'authenticated',
+              created_at: new Date().toISOString(),
+              email: payload.email || '',
+              role: payload.role || 'authenticated'
+            }
+
+            setUser(restoredUser)
             window.history.replaceState(null, '', window.location.pathname)
           }
-        })
+        }
+      } catch (e) {
+        console.error('Error parsing token from hash:', e)
       }
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial Supabase session:', session?.user?.email ?? 'No user')
-      if (session?.user) {
-        setUser(session.user)
-      }
-    })
+    if (supabase?.auth?.getSession) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        console.log('Initial Supabase session:', session?.user?.email ?? 'No user')
+        if (session?.user) {
+          setUser(session.user)
+        }
+      })
+    }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Supabase onAuthStateChange:', event, session?.user?.email ?? 'No user')
-      if (session?.user) {
-        setUser(session.user)
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null)
-      }
-    })
-
-    return () => subscription.unsubscribe()
+    if (supabase?.auth?.onAuthStateChange) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        console.log('Supabase onAuthStateChange:', event, session?.user?.email ?? 'No user')
+        if (session?.user) {
+          setUser(session.user)
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null)
+        }
+      })
+      return () => subscription.unsubscribe()
+    }
   }, [])
 
   const loginWithGoogle = () => {
