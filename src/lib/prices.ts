@@ -107,21 +107,31 @@ export async function fetchStockPricesUsd(tickers: string[]): Promise<Record<str
 
   const symbols = tickers.map((t) => t.toUpperCase()).join(',')
 
-  const res = await fetch(`${supabaseUrl}/functions/v1/smart-responder`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${supabaseKey}`,
-      'apikey': supabaseKey,
-    },
-    body: JSON.stringify({ symbols }),
-  })
+  try {
+    const res = await fetch(`${supabaseUrl}/functions/v1/smart-responder`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseKey}`,
+        'apikey': supabaseKey,
+      },
+      body: JSON.stringify({ symbols }),
+    })
 
-  if (!res.ok) throw new Error(`stock-price Edge Function: ${res.status}`)
+    if (!res.ok) {
+      console.warn(`stock-price Edge Function returned status ${res.status}, using cached/last prices`)
+      return {}
+    }
 
-  const json = await res.json()
-  if (json.error) throw new Error(`stock-price Edge Function: ${json.error}`)
+    const json = await res.json()
+    if (json.error) {
+      console.warn(`stock-price Edge Function error: ${json.error}`)
+      return {}
+    }
 
-  // json.prices = { "SGOV": 100.43, "AAPL": 210.5, ... }
-  return (json.prices as Record<string, number>) ?? {}
+    return (json.prices as Record<string, number>) ?? {}
+  } catch (err) {
+    console.warn('Unable to reach smart-responder edge function:', err)
+    return {}
+  }
 }
