@@ -394,15 +394,19 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       }
     }
 
-    upsertHolding(updateObj as Holding)
+    const savedHolding = updateObj as Holding
+    upsertHolding(savedHolding)
     addHoldingLog({
       action: editing ? 'edit' : 'add',
+      holdingId: editing?.id ?? savedHolding.id,
       holdingName: name,
       ticker,
       assetClass: form.assetClass,
       note: editing
         ? `${unitsNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares · cost basis ฿${updateObj.totalThbInvested?.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
         : `${unitsNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ ${isUsd ? `$${avgCostInput.toLocaleString()}` : `฿${avgCostInput.toLocaleString()}`}/unit`,
+      previousHoldingState: editing ? JSON.parse(JSON.stringify(editing)) : undefined,
+      afterHoldingState: savedHolding,
     })
     showToast(editing ? `Updated ${name}` : `Added ${name} to portfolio`, 'success')
     onClose()

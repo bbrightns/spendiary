@@ -325,10 +325,12 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
       const bahtAmount = (g / GRAMS_PER_BAHT_GOLD).toFixed(4)
       addHoldingLog({
         action: 'buy_more',
+        holdingId: holding!.id,
         holdingName: holding!.name,
         ticker: holding!.ticker,
         assetClass: 'gold',
         note: `+${g.toFixed(4)} g (${bahtAmount} บาททอง) · ฿${spent.toLocaleString()} spent · ${goldLocName}`,
+        previousHoldingState: JSON.parse(JSON.stringify(holding!)),
       })
       showToast(`Bought ${g.toFixed(4)}g (${bahtAmount} บาททอง) gold for ${holding!.name}`, 'success')
       onClose()
@@ -508,10 +510,12 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
       }
       addHoldingLog({
         action: 'buy_more',
+        holdingId: holding!.id,
         holdingName: holding!.name,
         ticker: holding!.ticker,
         assetClass: 'crypto',
         note: `+${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} spent · ${locName}`,
+        previousHoldingState: JSON.parse(JSON.stringify(holding!)),
       })
       showToast(`Bought ${sats.toLocaleString()} sats for ${holding!.name}`, 'success')
       onClose()
@@ -634,13 +638,17 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         avgCostThb: newAvgCostThb,
       }
 
-      upsertHolding({ ...holding!, ...next, ...extra })
+      const updated = { ...holding!, ...next, ...extra }
+      upsertHolding(updated)
       addHoldingLog({
         action: 'buy_more',
+        holdingId: holding!.id,
         holdingName: holding!.name,
         ticker: holding!.ticker,
         assetClass: holding!.assetClass,
         note: `+${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${priceUsdNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/unit`,
+        previousHoldingState: JSON.parse(JSON.stringify(holding!)),
+        afterHoldingState: updated,
       })
       showToast(`Bought ${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares of ${holding!.name}`, 'success')
       onClose()
@@ -658,13 +666,17 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         totalThbInvested: newTotalThbInvested,
         avgCostThb: next.avgCost,
       }
-      upsertHolding({ ...holding!, ...next, ...extra })
+      const updated = { ...holding!, ...next, ...extra }
+      upsertHolding(updated)
       addHoldingLog({
         action: 'buy_more',
+        holdingId: holding!.id,
         holdingName: holding!.name,
         ticker: holding!.ticker,
         assetClass: holding!.assetClass,
         note: `+${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${label} @ ฿${Number(price).toLocaleString()}/unit`,
+        previousHoldingState: JSON.parse(JSON.stringify(holding!)),
+        afterHoldingState: updated,
       })
       showToast(`Bought ${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} units of ${holding!.name}`, 'success')
       onClose()
