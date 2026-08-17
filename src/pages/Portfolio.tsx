@@ -303,7 +303,9 @@ export function Portfolio() {
                 Live · updated {lastUpdated.toLocaleTimeString()}
                 {usdThb && <span className="text-ink-soft">· USD/THB {usdThb.toFixed(2)}</span>}
                 {goldThbPerGram !== null && (
-                  <span className="text-ink-soft">· Gold {formatNumber(goldThbPerGram, 4)} THB/g</span>
+                  <span className="text-ink-soft">
+                    · Gold ฿{Math.round(goldThbPerGram * GRAMS_PER_BAHT_GOLD).toLocaleString()} / บาททองคำ
+                  </span>
                 )}
               </>
             )}
@@ -313,7 +315,9 @@ export function Portfolio() {
                 Partial update · {lastUpdated.toLocaleTimeString()}
                 {usdThb && <span className="text-ink-soft">· USD/THB {usdThb.toFixed(2)}</span>}
                 {goldThbPerGram !== null && (
-                  <span className="text-ink-soft">· Gold {formatNumber(goldThbPerGram, 4)} THB/g</span>
+                  <span className="text-ink-soft">
+                    · Gold ฿{Math.round(goldThbPerGram * GRAMS_PER_BAHT_GOLD).toLocaleString()} / บาททองคำ
+                  </span>
                 )}
                 <span className="text-loss text-[12px]">{errorMsg}</span>
               </>
@@ -329,8 +333,8 @@ export function Portfolio() {
         }
       />
 
-      {/* Top 4-Card Metric Strip */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      {/* Top 2-Card Metric Strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         {/* Metric 1: Current Value */}
         <Card className="animate-rise p-4">
           <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Portfolio Value</span>
@@ -353,31 +357,6 @@ export function Portfolio() {
               {summary.pnl >= 0 ? '▲' : '▼'} {summary.pnlPct.toFixed(1)}% all-time
             </span>
           </div>
-        </Card>
-
-        {/* Metric 3: Positions & Classes */}
-        <Card className="animate-rise p-4">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Positions</span>
-          <p className="mt-1.5 font-display text-[22px] font-extrabold tracking-tight tnum text-ink leading-tight">
-            {data.holdings.length}
-          </p>
-          <p className="mt-1 text-[11.5px] text-ink-muted font-medium">
-            Across <span className="font-semibold text-ink-soft">{alloc.length} asset classes</span>
-          </p>
-        </Card>
-
-        {/* Metric 4: Live Market Status */}
-        <Card className="animate-rise p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Live Rates</span>
-            <span className="h-2 w-2 rounded-full bg-gain animate-pulse" />
-          </div>
-          <p className="mt-1.5 font-display text-[20px] font-bold tracking-tight tnum text-ink leading-tight">
-            {usdThb ? `฿${usdThb.toFixed(2)}` : 'Live'}
-          </p>
-          <p className="mt-1 text-[11.5px] text-ink-muted font-medium truncate">
-            {goldThbPerGram ? `Gold ฿${Math.round(goldThbPerGram * GRAMS_PER_BAHT_GOLD).toLocaleString()}/บาท` : 'USD / THB'}
-          </p>
         </Card>
       </div>
 
