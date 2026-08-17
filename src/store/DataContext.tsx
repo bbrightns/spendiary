@@ -89,7 +89,7 @@ interface DataContextValue {
   clearAll: () => void
   syncStatus: SyncStatus
   user: User | null
-  loginWithGoogle: () => Promise<void>
+  loginWithGoogle: () => void
   loginAsGuest: () => void
   loginAsTestMode: () => void
   authError: string | null
