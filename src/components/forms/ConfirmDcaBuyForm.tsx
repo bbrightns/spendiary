@@ -297,7 +297,24 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                 }
               : undefined
           })()
-      confirmDcaBuy(p.id, goldImpliedPricePerGram, today, undefined, undefined, undefined, undefined, goldLocUpdate, undefined, undefined, resolvedTargetId)
+      confirmDcaBuy(
+        p.id,
+        goldImpliedPricePerGram,
+        today,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        goldLocUpdate,
+        undefined,
+        undefined,
+        resolvedTargetId,
+        undefined,
+        {
+          gramsBought: goldGramsToAdd,
+          amountSpentThb: amountThbNum,
+        },
+      )
     } else if (isBtc) {
       const btcLocUpdate = selectedLocId === '__new__'
         ? {
@@ -316,7 +333,23 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                 }
               : undefined
           })()
-      confirmDcaBuy(p.id, btcImpliedPriceThbPerBtc, today, undefined, undefined, undefined, btcLocUpdate, undefined, undefined, undefined, resolvedTargetId)
+      confirmDcaBuy(
+        p.id,
+        btcImpliedPriceThbPerBtc,
+        today,
+        undefined,
+        undefined,
+        undefined,
+        btcLocUpdate,
+        undefined,
+        undefined,
+        undefined,
+        resolvedTargetId,
+        {
+          satsBought: satsNum,
+          amountSpentThb: amountThbNum,
+        },
+      )
     }
 
     showToast(`Confirmed DCA buy for "${holding?.name ?? plan.name}"`, 'success')

@@ -75,7 +75,7 @@ export function HoldingLogs() {
   // Helper to render before -> after comparison details
   const renderStateComparison = (log: typeof filtered[number]) => {
     const prev = log.previousHoldingState
-    const curr = log.holdingId ? data.holdings.find((h) => h.id === log.holdingId) : undefined
+    const curr = log.afterHoldingState ?? (log.holdingId ? data.holdings.find((h) => h.id === log.holdingId) : undefined)
 
     if (prev && curr) {
       const prevUnits = prev.units ?? prev.totalUnits ?? 0
@@ -87,10 +87,27 @@ export function HoldingLogs() {
       const basisDiff = currBasis - prevBasis
 
       const formatUnit = (val: number) => {
-        if (log.assetClass === 'crypto') return `${Math.round(val).toLocaleString()} sats (${(val / SATS_PER_BTC).toLocaleString(undefined, { maximumFractionDigits: 8 })} BTC)`
+        if (log.assetClass === 'crypto') {
+          const sats = Math.round(val * SATS_PER_BTC)
+          return `${sats.toLocaleString()} sats (${val.toLocaleString(undefined, { maximumFractionDigits: 8 })} BTC)`
+        }
         if (log.assetClass === 'gold') return `${val.toFixed(4)} g (${(val / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง)`
         if (log.assetClass === 'stock') return val.toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' shares'
         return val.toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' units'
+      }
+
+      const formatUnitDiff = (diff: number) => {
+        if (log.assetClass === 'crypto') {
+          const sats = Math.round(diff * SATS_PER_BTC)
+          return `+${sats.toLocaleString()} sats`
+        }
+        if (log.assetClass === 'gold') {
+          return `+${diff.toFixed(4)} g`
+        }
+        if (log.assetClass === 'stock') {
+          return `+${diff.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares`
+        }
+        return `+${diff.toLocaleString(undefined, { maximumFractionDigits: 4 })}`
       }
 
       return (
@@ -104,7 +121,7 @@ export function HoldingLogs() {
                 <span className="font-semibold text-brand">{formatUnit(currUnits)}</span>
                 {unitDiff > 0 && (
                   <span className="ml-1 text-[11px] font-bold text-gain">
-                    (+{log.assetClass === 'crypto' ? Math.round(unitDiff).toLocaleString() : unitDiff.toFixed(2)})
+                    ({formatUnitDiff(unitDiff)})
                   </span>
                 )}
               </div>

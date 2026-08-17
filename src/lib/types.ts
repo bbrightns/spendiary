@@ -135,6 +135,7 @@ export interface HoldingLog {
   note: string             // human-readable detail line
   holdingId?: string
   previousHoldingState?: Holding
+  afterHoldingState?: Holding
   previousCashAccountsState?: CashAccount[]
   dcaPlanId?: string
   dcaDate?: string
