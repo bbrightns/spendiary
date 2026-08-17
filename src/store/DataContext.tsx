@@ -272,21 +272,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // Auth setup
   useEffect(() => {
-    // If returning with hash tokens from OAuth redirect, explicitly setSession
+    // If returning with hash tokens from OAuth redirect, explicitly get and set user
     if (window.location.hash && window.location.hash.includes('access_token=')) {
       const hashParams = new URLSearchParams(window.location.hash.substring(1))
       const accessToken = hashParams.get('access_token')
-      const refreshToken = hashParams.get('refresh_token')
 
-      if (accessToken && refreshToken) {
-        supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        }).then(({ data, error }) => {
-          if (!error && data?.session?.user) {
-            console.log('Explicitly restored session from hash:', data.session.user.email)
-            setUser(data.session.user)
-            // Clean hash from address bar without reload
+      if (accessToken) {
+        supabase.auth.getUser(accessToken).then(({ data, error }) => {
+          if (!error && data?.user) {
+            console.log('Explicitly restored user from token:', data.user.email)
+            setUser(data.user)
             window.history.replaceState(null, '', window.location.pathname)
           }
         })
