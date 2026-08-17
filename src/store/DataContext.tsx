@@ -294,17 +294,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      console.log('Initiating Google sign-in with origin:', window.location.origin)
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.origin
         }
       })
       if (error) {
+        console.error('Supabase OAuth Error:', error)
         setAuthError(`ไม่สามารถเข้าสู่ระบบด้วย Google ได้: ${error.message}`)
+      } else if (data?.url) {
+        console.log('Redirecting to Supabase OAuth URL:', data.url)
+        window.location.href = data.url
       }
     } catch (err: any) {
-      console.error('Sign in error:', err)
+      console.error('Sign in exception:', err)
       setAuthError(`เกิดข้อผิดพลาดในการ Sign In: ${err?.message || 'ไม่สามารถติดต่อ Supabase ได้'}`)
     }
   }
