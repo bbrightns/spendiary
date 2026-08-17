@@ -14,7 +14,7 @@ import { HoldingLogs } from './pages/HoldingLogs'
 
 // 💡 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
 function AppContent() {
-  const { user, loginWithGoogle, loginAsGuest, loginAsTestMode, authError } = useData()
+  const { user, loginWithGoogle, loginAsTestMode, authError } = useData()
 
   // 💡 ถ้ายังไม่ได้ล็อกอิน ให้แสดงหน้าจอ Sign In ธีม Fastwork.com
   if (!user) {
@@ -101,7 +101,7 @@ function AppContent() {
               <button
                 type="button"
                 onClick={loginWithGoogle}
-                className="w-full py-3 sm:py-3.5 px-4 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-800 font-bold rounded-full shadow-xs hover:shadow transition-all duration-200 text-xs tracking-wider uppercase flex items-center justify-center gap-2.5 sm:gap-3 cursor-pointer"
+                className="w-full py-3.5 px-4 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-800 font-bold rounded-full shadow-sm hover:shadow transition-all duration-200 text-xs tracking-wider uppercase flex items-center justify-center gap-2.5 sm:gap-3 cursor-pointer"
               >
                 <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -110,18 +110,6 @@ function AppContent() {
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
                 </svg>
                 <span>Sign in with Google</span>
-              </button>
-
-              {/* Guest / Local Mode */}
-              <button
-                type="button"
-                onClick={loginAsGuest}
-                className="w-full py-3 sm:py-3.5 px-4 bg-[#0066FF] hover:bg-[#0052cc] text-white font-bold rounded-full shadow-md shadow-blue-500/25 active:scale-[0.98] transition-all duration-200 text-xs flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <svg className="w-4 h-4 text-blue-100 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                <span>เข้าใช้งานแบบ Guest / Local Mode</span>
               </button>
             </div>
 

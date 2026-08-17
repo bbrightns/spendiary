@@ -357,7 +357,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const supabaseKey = import.meta.env.VITE_API_TOKEN || ''
 
     if (!supabaseUrl || !supabaseKey) {
-      setAuthError('ยังไม่ได้ตั้งค่า Supabase URL หรือ Token ในไฟล์ .env (กรุณาดูไฟล์ .env.example หรือใช้โหมด Guest ด้านล่าง)')
+      setAuthError('ยังไม่ได้ตั้งค่า Supabase URL หรือ Token ในไฟล์ .env (กรุณาดูไฟล์ .env.example หรือใช้โหมดทดลองใช้งาน Test Mode ด้านล่าง)')
       return
     }
 
