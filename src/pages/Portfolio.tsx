@@ -24,7 +24,7 @@ import {
   portfolioSummary,
 } from '../lib/calc'
 import type { AssetClass, BtcLocation, Holding, InvestAssetClass, NetWorthSnapshot } from '../lib/types'
-import { thb, thbCompact, formatNumber } from '../lib/format'
+import { thb, thbCompact } from '../lib/format'
 
 const REBALANCE_ASSETS: InvestAssetClass[] = ['fund', 'stock', 'gold', 'crypto']
 
