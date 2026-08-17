@@ -457,20 +457,59 @@ export function DataProvider({ children }: { children: ReactNode }) {
     try {
       console.log('Fetching remote data for userId:', userId)
       setSyncStatus('syncing')
-      
+
+      const supabaseUrl = import.meta.env.VITE_API_URL || ''
+      const supabaseKey = import.meta.env.VITE_API_TOKEN || ''
+
+      // Attempt 1: Via supabase-js client
+      let remotePayload: SpendiaryData | null = null
+
       const { data: row, error } = await supabase
         .from('user_data')
         .select('payload')
         .eq('id', userId)
         .maybeSingle()
 
-      console.log('Fetch remote data response:', { row, error })
-      if (error) throw error
+      console.log('Fetch remote data response (client):', { row, error })
 
-      if (row && row.payload) {
+      if (!error && row?.payload) {
+        remotePayload = row.payload as SpendiaryData
+      } else {
+        // Attempt 2: Via direct REST call with Authorization Bearer header
+        // Retrieve token from Supabase localStorage or hash
+        const storageKey = `sb-dgxjifbsdpggoyyzhpeb-auth-token`
+        let token = supabaseKey
+        try {
+          const raw = localStorage.getItem(storageKey)
+          if (raw) {
+            const parsed = JSON.parse(raw)
+            if (parsed.access_token) token = parsed.access_token
+          }
+        } catch {}
+
+        try {
+          const restRes = await fetch(`${supabaseUrl}/rest/v1/user_data?id=eq.${encodeURIComponent(userId)}&select=payload`, {
+            headers: {
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            }
+          })
+          if (restRes.ok) {
+            const list = await restRes.json()
+            console.log('Fetch remote data response (REST API):', list)
+            if (Array.isArray(list) && list.length > 0 && list[0]?.payload) {
+              remotePayload = list[0].payload as SpendiaryData
+            }
+          }
+        } catch (restErr) {
+          console.warn('REST API fallback error:', restErr)
+        }
+      }
+
+      if (remotePayload) {
         console.log('Successfully loaded remote data from Supabase')
-        const remote = row.payload as SpendiaryData
-        const migrated = migrate(remote)
+        const migrated = migrate(remotePayload)
         const migratedStr = JSON.stringify(migrated)
         
         lastSynced.current = migratedStr
