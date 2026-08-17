@@ -273,17 +273,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // Auth setup
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial Supabase session:', session?.user?.email ?? 'No user')
       setUser(session?.user ?? null)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Supabase onAuthStateChange:', event, session?.user?.email ?? 'No user')
       setUser(session?.user ?? null)
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = () => {
     setAuthError(null)
     const supabaseUrl = import.meta.env.VITE_API_URL || ''
     const supabaseKey = import.meta.env.VITE_API_TOKEN || ''
@@ -294,20 +296,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      console.log('Initiating Google sign-in with origin:', window.location.origin)
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin
-        }
-      })
-      if (error) {
-        console.error('Supabase OAuth Error:', error)
-        setAuthError(`ไม่สามารถเข้าสู่ระบบด้วย Google ได้: ${error.message}`)
-      } else if (data?.url) {
-        console.log('Redirecting to Supabase OAuth URL:', data.url)
-        window.location.href = data.url
-      }
+      const redirectUri = encodeURIComponent(window.location.origin)
+      const targetUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${redirectUri}`
+      console.log('Navigating directly to Supabase Google OAuth URL:', targetUrl)
+      window.location.href = targetUrl
     } catch (err: any) {
       console.error('Sign in exception:', err)
       setAuthError(`เกิดข้อผิดพลาดในการ Sign In: ${err?.message || 'ไม่สามารถติดต่อ Supabase ได้'}`)
