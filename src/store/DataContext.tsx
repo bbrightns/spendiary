@@ -279,6 +279,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const accessToken = hashParams.get('access_token')
 
         if (accessToken) {
+          // Store token in Supabase standard localStorage key
+          const projectRef = 'dgxjifbsdpggoyyzhpeb'
+          const storageKey = `sb-${projectRef}-auth-token`
+          const refreshToken = hashParams.get('refresh_token') || ''
+          const expiresIn = Number(hashParams.get('expires_in')) || 3600
+
           // Parse JWT payload (Base64Url decode)
           const base64Url = accessToken.split('.')[1]
           if (base64Url) {
@@ -301,6 +307,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
               email: payload.email || '',
               role: payload.role || 'authenticated'
             }
+
+            const sessionObj = {
+              access_token: accessToken,
+              refresh_token: refreshToken,
+              expires_in: expiresIn,
+              expires_at: Math.floor(Date.now() / 1000) + expiresIn,
+              token_type: 'bearer',
+              user: restoredUser
+            }
+            try {
+              localStorage.setItem(storageKey, JSON.stringify(sessionObj))
+            } catch {}
 
             setUser(restoredUser)
             window.history.replaceState(null, '', window.location.pathname)
@@ -437,16 +455,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      console.log('Fetching remote data for userId:', userId)
       setSyncStatus('syncing')
+      
       const { data: row, error } = await supabase
         .from('user_data')
         .select('payload')
         .eq('id', userId)
         .maybeSingle()
 
+      console.log('Fetch remote data response:', { row, error })
       if (error) throw error
 
       if (row && row.payload) {
+        console.log('Successfully loaded remote data from Supabase')
         const remote = row.payload as SpendiaryData
         const migrated = migrate(remote)
         const migratedStr = JSON.stringify(migrated)
@@ -456,7 +478,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setSyncStatus('synced')
         updateLastSynced(new Date())
       } else {
-        // Cloud is empty
+        console.log('Cloud data is empty for user:', userId)
         lastSynced.current = JSON.stringify(emptyData)
         setDataState(emptyData)
         setSyncStatus('synced')
