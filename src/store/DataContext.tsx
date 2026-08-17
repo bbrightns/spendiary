@@ -272,14 +272,41 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // Auth setup
   useEffect(() => {
+    // If returning with hash tokens from OAuth redirect, explicitly setSession
+    if (window.location.hash && window.location.hash.includes('access_token=')) {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      const accessToken = hashParams.get('access_token')
+      const refreshToken = hashParams.get('refresh_token')
+
+      if (accessToken && refreshToken) {
+        supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        }).then(({ data, error }) => {
+          if (!error && data?.session?.user) {
+            console.log('Explicitly restored session from hash:', data.session.user.email)
+            setUser(data.session.user)
+            // Clean hash from address bar without reload
+            window.history.replaceState(null, '', window.location.pathname)
+          }
+        })
+      }
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial Supabase session:', session?.user?.email ?? 'No user')
-      setUser(session?.user ?? null)
+      if (session?.user) {
+        setUser(session.user)
+      }
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Supabase onAuthStateChange:', event, session?.user?.email ?? 'No user')
-      setUser(session?.user ?? null)
+      if (session?.user) {
+        setUser(session.user)
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null)
+      }
     })
 
     return () => subscription.unsubscribe()
