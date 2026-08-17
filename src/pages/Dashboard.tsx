@@ -121,34 +121,30 @@ export function Dashboard() {
       <div>
         <Card
           padded={false}
-          className="relative overflow-hidden text-white animate-rise h-full flex flex-col justify-between"
-          style={{
-            background: 'linear-gradient(135deg, #0b0d14 0%, #151928 100%)',
-            borderColor: 'rgba(255, 255, 255, 0.08)',
-          }}
+          className="relative overflow-hidden bg-gradient-to-br from-white via-white to-brand-soft/40 dark:from-[#0b0d14] dark:to-[#151928] border border-line dark:border-white/10 shadow-[var(--shadow-soft)] animate-rise h-full flex flex-col justify-between"
         >
           {/* Ambient subtle glow inside card */}
-          <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand/15 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
+          <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand/5 dark:bg-brand/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-emerald-500/5 dark:bg-emerald-500/10 blur-3xl" />
 
           {/* Top Main Stats Area */}
           <div className="relative flex flex-col justify-between gap-5 sm:flex-row sm:items-start p-6 sm:p-7">
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-white/70">
-                <WalletIcon className="h-4 w-4 text-emerald-400" />
+              <div className="flex items-center gap-2 text-ink-muted dark:text-white/70">
+                <WalletIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-[13.5px] font-semibold uppercase tracking-wider">Total Net Worth</span>
               </div>
-              <p className="font-display text-[36px] sm:text-[44px] xl:text-[48px] font-black leading-tight tracking-tight tnum text-white drop-shadow-sm">
+              <p className="font-display text-[36px] sm:text-[44px] xl:text-[48px] font-black leading-tight tracking-tight tnum text-ink dark:text-white">
                 {thb(nw)}
               </p>
 
               <div className="pt-1 flex flex-wrap items-center gap-2.5">
                 <PnLPill value={portfolio.pnl} size="md" />
-                <span className="text-[12.5px] text-white/70 font-medium">unrealised</span>
+                <span className="text-[12.5px] text-ink-muted dark:text-white/70 font-medium">unrealised</span>
                 {data.retirement?.monthlySpend && data.retirement.monthlySpend > 0 ? (
                   <Link
                     to="/retirement"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-3 py-1 text-[12px] font-semibold text-white/90 shadow-sm border border-white/10 transition-colors hover:bg-white/20 hover:text-white"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted dark:bg-white/12 px-3 py-1 text-[12px] font-semibold text-ink-soft dark:text-white/90 shadow-xs border border-line dark:border-white/10 transition-colors hover:bg-line/70 dark:hover:bg-white/20 hover:text-ink dark:hover:text-white"
                     aria-label="View wealth runway details on retirement page"
                   >
                     ⏳ {((nw / (data.retirement.monthlySpend * 12))).toFixed(1)}y runway
@@ -156,7 +152,7 @@ export function Dashboard() {
                 ) : (
                   <Link
                     to="/retirement"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11.5px] font-semibold text-white/60 transition-colors hover:bg-white/20 hover:text-white"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted/60 dark:bg-white/10 px-3 py-1 text-[11.5px] font-semibold text-ink-faint dark:text-white/60 transition-colors hover:bg-surface-muted dark:hover:bg-white/20 hover:text-ink dark:hover:text-white"
                     aria-label="Set up retirement spend to see runway"
                   >
                     ⏳ Set runway target
@@ -166,37 +162,37 @@ export function Dashboard() {
             </div>
 
             {/* Quick ratio box */}
-            <div className="rounded-2xl bg-white/10 p-3.5 px-4.5 ring-1 ring-white/15 backdrop-blur-md sm:min-w-[220px]">
-              <div className="flex items-center justify-between gap-3 text-[10.5px] font-bold tracking-wider uppercase text-white/50 pb-1.5 border-b border-white/10 mb-2">
+            <div className="rounded-2xl bg-surface-muted/80 dark:bg-white/10 p-3.5 px-4.5 border border-line/80 dark:border-white/15 backdrop-blur-md sm:min-w-[220px]">
+              <div className="flex items-center justify-between gap-3 text-[10.5px] font-bold tracking-wider uppercase text-ink-muted dark:text-white/50 pb-1.5 border-b border-line dark:border-white/10 mb-2">
                 <span>Ratio</span>
-                <span className="font-mono text-[11px] font-semibold text-white/80">
+                <span className="font-mono text-[11px] font-semibold text-ink-soft dark:text-white/80">
                   {nw > 0 ? `${Math.round((portfolio.value / nw) * 100)}% : ${Math.round((cash / nw) * 100)}%` : '0% : 0%'}
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-3.5">
                 <div>
-                  <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-indigo-300">
-                    <span className="h-2 w-2 rounded-full bg-indigo-400 shrink-0" />
+                  <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-indigo-600 dark:text-indigo-300">
+                    <span className="h-2 w-2 rounded-full bg-indigo-500 dark:bg-indigo-400 shrink-0" />
                     <span>Invested</span>
                   </div>
-                  <p className="mt-1 font-display text-[17px] sm:text-[19px] font-black tnum text-white">
+                  <p className="mt-1 font-display text-[17px] sm:text-[19px] font-black tnum text-ink dark:text-white">
                     {thbCompact(portfolio.value)}
                   </p>
-                  <p className="mt-0.5 text-[11.5px] font-semibold text-indigo-200/80 tnum">
+                  <p className="mt-0.5 text-[11.5px] font-semibold text-indigo-600/75 dark:text-indigo-200/80 tnum">
                     {nw > 0 ? `${((portfolio.value / nw) * 100).toFixed(1)}%` : '0%'}
                   </p>
                 </div>
 
-                <div className="pl-3.5 border-l border-white/10">
-                  <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-emerald-300">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
+                <div className="pl-3.5 border-l border-line dark:border-white/10">
+                  <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-emerald-600 dark:text-emerald-300">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 shrink-0" />
                     <span>Cash</span>
                   </div>
-                  <p className="mt-1 font-display text-[17px] sm:text-[19px] font-black tnum text-white">
+                  <p className="mt-1 font-display text-[17px] sm:text-[19px] font-black tnum text-ink dark:text-white">
                     {thbCompact(cash)}
                   </p>
-                  <p className="mt-0.5 text-[11.5px] font-semibold text-emerald-200/80 tnum">
+                  <p className="mt-0.5 text-[11.5px] font-semibold text-emerald-600/75 dark:text-emerald-200/80 tnum">
                     {nw > 0 ? `${((cash / nw) * 100).toFixed(1)}%` : '0%'}
                   </p>
                 </div>
@@ -204,14 +200,14 @@ export function Dashboard() {
 
               {/* Mini ratio split bar */}
               {nw > 0 && (
-                <div className="mt-2.5 flex h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                <div className="mt-2.5 flex h-1.5 w-full overflow-hidden rounded-full bg-line dark:bg-white/10">
                   <div
-                    className="bg-indigo-400 transition-all duration-500"
+                    className="bg-indigo-500 dark:bg-indigo-400 transition-all duration-500"
                     style={{ width: `${(portfolio.value / nw) * 100}%` }}
                     title={`Invested: ${thb(portfolio.value)} (${((portfolio.value / nw) * 100).toFixed(1)}%)`}
                   />
                   <div
-                    className="bg-emerald-400 transition-all duration-500"
+                    className="bg-emerald-500 dark:bg-emerald-400 transition-all duration-500"
                     style={{ width: `${(cash / nw) * 100}%` }}
                     title={`Cash: ${thb(cash)} (${((cash / nw) * 100).toFixed(1)}%)`}
                   />
@@ -222,8 +218,8 @@ export function Dashboard() {
 
           {/* Asset Distribution Bar & Legend */}
           {nw > 0 && (
-            <div className="relative mt-auto px-6 sm:px-7 pb-5 pt-3.5 border-t border-white/10 space-y-2.5">
-              <div className="flex h-2 overflow-hidden rounded-full bg-white/10">
+            <div className="relative mt-auto px-6 sm:px-7 pb-5 pt-3.5 border-t border-line dark:border-white/10 space-y-2.5">
+              <div className="flex h-2 overflow-hidden rounded-full bg-surface-muted dark:bg-white/10 border border-line/40 dark:border-transparent">
                 {alloc.map((a) => (
                   <div
                     key={a.assetClass}
@@ -248,7 +244,7 @@ export function Dashboard() {
                 {alloc.map((a) => (
                   <span
                     key={a.assetClass}
-                    className="flex items-center gap-1.5 text-[12px] text-white/85 font-semibold"
+                    className="flex items-center gap-1.5 text-[12px] text-ink-soft dark:text-white/85 font-semibold"
                   >
                     <span
                       className="h-2 w-2 shrink-0 rounded-full"
@@ -258,7 +254,7 @@ export function Dashboard() {
                   </span>
                 ))}
                 {cash > 0 && (
-                  <span className="flex items-center gap-1.5 text-[12px] text-white/85 font-semibold">
+                  <span className="flex items-center gap-1.5 text-[12px] text-ink-soft dark:text-white/85 font-semibold">
                     <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--color-cash)' }} />
                     Cash {Math.round((cash / nw) * 100)}%
                   </span>
