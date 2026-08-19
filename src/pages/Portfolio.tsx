@@ -15,7 +15,7 @@ import { Modal } from '../components/ui/Modal'
 import { NumberField, TextField } from '../components/ui/Field'
 import { Button } from '../components/ui/Button'
 import { AssetLogo } from '../components/ui/AssetLogo'
-import { PlusIcon, PortfolioIcon, TrashIcon, PencilIcon } from '../components/icons'
+import { PlusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon } from '../components/icons'
 import {
   ASSET_META,
   GRAMS_PER_BAHT_GOLD,
@@ -23,6 +23,7 @@ import {
   holdingMetrics,
   portfolioSummary,
 } from '../lib/calc'
+import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
 import type { AssetClass, BtcLocation, Holding, InvestAssetClass, NetWorthSnapshot } from '../lib/types'
 import { thb, thbCompact } from '../lib/format'
 
@@ -55,6 +56,19 @@ export function Portfolio() {
   const [sortBy, setSortBy] = useState<'none' | 'value' | 'pnl' | 'type'>('value')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [search, setSearch] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  const handleCopyMarkdown = async () => {
+    try {
+      const md = generatePortfolioMarkdown(data, usdThb, goldThbPerGram)
+      await navigator.clipboard.writeText(md)
+      setCopied(true)
+      showToast('คัดลอกข้อมูลพอร์ตในรูปแบบ Markdown สำเร็จแล้ว', 'success')
+      setTimeout(() => setCopied(false), 2500)
+    } catch {
+      showToast('ไม่สามารถคัดลอก Markdown ได้', 'error')
+    }
+  }
 
   // Rebalancing states
   const [rebalanceOpen, setRebalanceOpen] = useState(false)
@@ -330,6 +344,27 @@ export function Portfolio() {
             )}
             {priceStatus === 'idle' && "Valued at the latest prices you've filled in."}
           </span>
+        }
+        action={
+          <button
+            type="button"
+            onClick={handleCopyMarkdown}
+            aria-label="Copy portfolio markdown"
+            title="Copy Portfolio as Markdown"
+            className="inline-flex h-9 items-center gap-2 rounded-full border border-line-strong bg-surface px-3.5 text-[12.5px] font-semibold text-ink shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-surface-muted active:scale-95 cursor-pointer whitespace-nowrap"
+          >
+            {copied ? (
+              <>
+                <CheckIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.2} />
+                <span className="text-gain">Copied MD!</span>
+              </>
+            ) : (
+              <>
+                <CopyIcon className="h-4 w-4 text-ink-muted shrink-0" />
+                <span>Copy Portfolio MD</span>
+              </>
+            )}
+          </button>
         }
       />
 
