@@ -41,8 +41,10 @@ export function generatePortfolioMarkdown(
   })
 
   const rate = usdThb && usdThb > 0 ? usdThb : 35
-  const summary = portfolioSummary(data.holdings)
-  const totalCashThb = data.cashAccounts.reduce((sum, a) => {
+  const holdings = data.holdings ?? []
+  const cashAccounts = data.cashAccounts ?? []
+  const summary = portfolioSummary(holdings)
+  const totalCashThb = cashAccounts.reduce((sum, a) => {
     const isUsd = a.currency === 'USD'
     return sum + (isUsd ? a.balance * rate : a.balance)
   }, 0)
@@ -69,20 +71,20 @@ export function generatePortfolioMarkdown(
   lines.push(`- **มูลค่าพอร์ตการลงทุนรวม (Market Value)**: **${fmtMoney(summary.value, 'THB')}**`)
   lines.push(`- **ต้นทุนเงินลงทุนรวม (Total Cost)**: **${fmtMoney(summary.cost, 'THB')}**`)
   lines.push(`- **กำไร/ขาดทุนรวม (All-time PnL)**: **${fmtSignMoney(summary.pnl, 'THB')} (${fmtPct(summary.pnlPct)})**`)
-  if (data.cashAccounts && data.cashAccounts.length > 0) {
+  if (cashAccounts.length > 0) {
     lines.push(`- **เงินสดคงเหลือรวม (Liquid Cash)**: **${fmtMoney(totalCashThb, 'THB')}**`)
     lines.push(`- **มูลค่าทรัพย์สินสุทธิ (Net Worth)**: **${fmtMoney(totalNetWorth, 'THB')}**`)
   }
-  lines.push(`- **จำนวนรายการถือครอง (Holdings Count)**: **${data.holdings.length} รายการ**`)
+  lines.push(`- **จำนวนรายการถือครอง (Holdings Count)**: **${holdings.length} รายการ**`)
   lines.push('')
 
   // Summary Table
-  if (data.holdings.length > 0) {
+  if (holdings.length > 0) {
     lines.push(`## 📋 ตารางสรุปรายการถือครอง (Holdings Summary)`)
     lines.push(`| สินทรัพย์ (Asset) | ประเภท | จำนวนที่ถือ (Quantity) | ต้นทุนเฉลี่ย (Avg Cost) | ราคาปัจจุบัน (Price) | ต้นทุนรวม (Cost) | มูลค่าปัจจุบัน (Value) | กำไร/ขาดทุน (PnL) |`)
     lines.push(`| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |`)
 
-    for (const h of data.holdings) {
+    for (const h of holdings) {
       const isStock = h.assetClass === 'stock'
       const isCrypto = h.assetClass === 'crypto'
       const isGold = h.assetClass === 'gold'
@@ -134,10 +136,10 @@ export function generatePortfolioMarkdown(
   }
 
   // Detailed Section by Asset Class
-  const stocks = data.holdings.filter((h) => h.assetClass === 'stock')
-  const cryptos = data.holdings.filter((h) => h.assetClass === 'crypto')
-  const golds = data.holdings.filter((h) => h.assetClass === 'gold')
-  const funds = data.holdings.filter((h) => h.assetClass === 'fund')
+  const stocks = holdings.filter((h) => h.assetClass === 'stock')
+  const cryptos = holdings.filter((h) => h.assetClass === 'crypto')
+  const golds = holdings.filter((h) => h.assetClass === 'gold')
+  const funds = holdings.filter((h) => h.assetClass === 'fund')
 
   // 1. US Stocks
   if (stocks.length > 0) {
@@ -247,9 +249,9 @@ export function generatePortfolioMarkdown(
   }
 
   // 5. Cash Accounts
-  if (data.cashAccounts && data.cashAccounts.length > 0) {
+  if (cashAccounts.length > 0) {
     lines.push(`## 💵 บัญชีเงินสด (Cash Accounts)`)
-    for (const acc of data.cashAccounts) {
+    for (const acc of cashAccounts) {
       const isUsd = acc.currency === 'USD'
       const thbVal = isUsd ? acc.balance * rate : acc.balance
       const balStr = isUsd

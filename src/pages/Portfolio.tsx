@@ -61,7 +61,20 @@ export function Portfolio() {
   const handleCopyMarkdown = async () => {
     try {
       const md = generatePortfolioMarkdown(data, usdThb, goldThbPerGram)
-      await navigator.clipboard.writeText(md)
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(md)
+      } else {
+        const textarea = document.createElement('textarea')
+        textarea.value = md
+        textarea.style.position = 'fixed'
+        textarea.style.left = '-9999px'
+        textarea.style.top = '-9999px'
+        document.body.appendChild(textarea)
+        textarea.focus()
+        textarea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+      }
       setCopied(true)
       showToast('คัดลอกข้อมูลพอร์ตในรูปแบบ Markdown สำเร็จแล้ว', 'success')
       setTimeout(() => setCopied(false), 2500)
