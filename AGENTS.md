@@ -13,8 +13,12 @@
 3. **Verify Type Consistency**:
    - Ensure all type definitions, props, and function signatures across caller/callee components are 100% matched.
 
+## File Deletion & Safety Rules
+1. **Never delete files without explicit permission**: Strictly prohibited from deleting any files or directories without asking for and receiving explicit confirmation from the user (ห้ามลบไฟล์โดยไม่ถามเด็ดขาด).
+
 ## General Project Overview
 - **App Name**: Spendiary
 - **Stack**: React 18 + TypeScript + Vite + Tailwind CSS v4
 - **Storage**: `localStorage` (single-user dashboard)
+
 
