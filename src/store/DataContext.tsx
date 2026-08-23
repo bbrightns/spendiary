@@ -1045,11 +1045,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
             if (!isFinite(newAvgCost) || isNaN(newAvgCost)) newAvgCost = holding.avgCost
 
             const existingLoc = btcLocationUpdate.id ? holding.btcLocations?.find((l) => l.id === btcLocationUpdate.id) : undefined
-            const satsBought = btcUpdate?.satsBought ?? (existingLoc ? btcLocationUpdate.satoshi - existingLoc.satoshi : btcLocationUpdate.satoshi)
-            const amountSpent = btcUpdate?.amountSpentThb ?? (existingLoc ? btcLocationUpdate.thbSpent - existingLoc.thbSpent : btcLocationUpdate.thbSpent)
+            const satsBought = (btcUpdate && typeof btcUpdate.satsBought === 'number' && btcUpdate.satsBought > 0)
+              ? btcUpdate.satsBought
+              : (existingLoc ? btcLocationUpdate.satoshi - existingLoc.satoshi : btcLocationUpdate.satoshi)
+            const amountSpent = (btcUpdate && typeof btcUpdate.amountSpentThb === 'number' && btcUpdate.amountSpentThb > 0)
+              ? btcUpdate.amountSpentThb
+              : (existingLoc ? btcLocationUpdate.thbSpent - existingLoc.thbSpent : btcLocationUpdate.thbSpent)
             calculatedUnits = satsBought / 100_000_000
 
-            const impliedBtcPrice = satsBought > 0 ? (amountSpent / satsBought) * 100_000_000 : pricePerUnit
+            const impliedBtcPrice = satsBought > 0 ? (amountSpent / satsBought) * 100_000_000 : (pricePerUnit > 0 ? pricePerUnit : holding.price)
 
             updatedFields = {
               totalThbInvested: totalThb,
