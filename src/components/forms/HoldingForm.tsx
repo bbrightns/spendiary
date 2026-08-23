@@ -282,7 +282,8 @@ export function HoldingForm({ open, editing, onClose }: Props) {
 
     const btcUnits = sats / SATS_PER_BTC
     const avgCostThb = spent / btcUnits
-    upsertHolding({
+    const savedHolding: Holding = {
+      id: editing?.id ?? newId(),
       name: 'Bitcoin',
       ticker: 'BTC',
       assetClass: 'crypto',
@@ -294,13 +295,16 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       price: editing?.price ?? avgCostThb,
       btcLocations: [{ id: newId(), name: locName, satoshi: sats, thbSpent: spent }],
       updatedAt: localDateStr(),
-    })
+    }
+    upsertHolding(savedHolding)
     addHoldingLog({
       action: 'add',
+      holdingId: savedHolding.id,
       holdingName: 'Bitcoin',
       ticker: 'BTC',
       assetClass: 'crypto',
       note: `${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} spent · ${locationName.trim()}`,
+      afterHoldingState: savedHolding,
     })
     onClose()
   }
@@ -316,7 +320,8 @@ export function HoldingForm({ open, editing, onClose }: Props) {
 
     const avgCostThb = spent / g
     const bahtAmount = (g / GRAMS_PER_BAHT_GOLD).toFixed(4)
-    upsertHolding({
+    const savedHolding: Holding = {
+      id: editing?.id ?? newId(),
       name: 'Gold',
       ticker: 'XAU',
       assetClass: 'gold',
@@ -328,13 +333,16 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       price: avgCostThb,
       goldLocations: [{ id: newId(), name: locName, grams: g, thbSpent: spent }],
       updatedAt: localDateStr(),
-    })
+    }
+    upsertHolding(savedHolding)
     addHoldingLog({
       action: 'add',
+      holdingId: savedHolding.id,
       holdingName: 'Gold',
       ticker: 'XAU',
       assetClass: 'gold',
       note: `${g.toFixed(4)} g (${bahtAmount} บาททอง) · ฿${spent.toLocaleString()} spent · ${goldLocationName.trim()}`,
+      afterHoldingState: savedHolding,
     })
     onClose()
   }

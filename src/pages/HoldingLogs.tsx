@@ -75,7 +75,7 @@ export function HoldingLogs() {
   // Helper to render before -> after comparison details
   const renderStateComparison = (log: typeof filtered[number]) => {
     const prev = log.previousHoldingState
-    const curr = log.afterHoldingState ?? (log.holdingId ? data.holdings.find((h) => h.id === log.holdingId) : undefined)
+    const curr = log.afterHoldingState
 
     if (prev && curr) {
       const prevUnits = prev.units ?? prev.totalUnits ?? 0

@@ -4,8 +4,8 @@ import { NumberField, TextField, SelectField } from '../ui/Field'
 import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
-import { ASSET_META, GRAMS_PER_BAHT_GOLD, applyBuy, holdingMetrics } from '../../lib/calc'
-import type { Holding } from '../../lib/types'
+import { ASSET_META, GRAMS_PER_BAHT_GOLD, applyBuy, holdingMetrics, upsert } from '../../lib/calc'
+import type { BtcLocation, GoldLocation, Holding } from '../../lib/types'
 import { thb, localDateStr } from '../../lib/format'
 
 interface Props {
@@ -312,7 +312,14 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
     function saveGold() {
       if (!goldValid) { setShowErrors(true); return }
       const existingLoc = isNewGoldLoc ? null : goldExistingLocations.find((l) => l.id === goldLocationId)
+      let updatedLocations: GoldLocation[]
       if (existingLoc) {
+        updatedLocations = upsert(goldExistingLocations, {
+          id: existingLoc.id,
+          name: existingLoc.name,
+          grams: existingLoc.grams + g,
+          thbSpent: existingLoc.thbSpent + spent,
+        })
         upsertGoldLocation(holding!.id, {
           id: existingLoc.id,
           name: existingLoc.name,
@@ -320,7 +327,20 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
           thbSpent: existingLoc.thbSpent + spent,
         })
       } else {
+        updatedLocations = upsert(goldExistingLocations, { name: goldLocName, grams: g, thbSpent: spent })
         upsertGoldLocation(holding!.id, { name: goldLocName, grams: g, thbSpent: spent })
+      }
+      const totalGrams = updatedLocations.reduce((s, l) => s + l.grams, 0)
+      const totalThb = updatedLocations.reduce((s, l) => s + l.thbSpent, 0)
+      const avgCost = totalGrams > 0 ? totalThb / totalGrams : holding!.avgCost
+      const afterHoldingState: Holding = {
+        ...holding!,
+        goldLocations: updatedLocations,
+        units: totalGrams,
+        totalUnits: totalGrams,
+        avgCost,
+        totalThbInvested: totalThb,
+        avgCostThb: avgCost,
       }
       const bahtAmount = (g / GRAMS_PER_BAHT_GOLD).toFixed(4)
       addHoldingLog({
@@ -331,6 +351,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         assetClass: 'gold',
         note: `+${g.toFixed(4)} g (${bahtAmount} บาททอง) · ฿${spent.toLocaleString()} spent · ${goldLocName}`,
         previousHoldingState: JSON.parse(JSON.stringify(holding!)),
+        afterHoldingState,
       })
       showToast(`Bought ${g.toFixed(4)}g (${bahtAmount} บาททอง) gold for ${holding!.name}`, 'success')
       onClose()
@@ -498,7 +519,14 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
     function saveBtc() {
       if (!btcValid) { setShowErrors(true); return }
       const existingLoc = isNew ? null : existingLocations.find((l) => l.id === locationId)
+      let updatedLocations: BtcLocation[]
       if (existingLoc) {
+        updatedLocations = upsert(existingLocations, {
+          id: existingLoc.id,
+          name: existingLoc.name,
+          satoshi: existingLoc.satoshi + sats,
+          thbSpent: existingLoc.thbSpent + spent,
+        })
         upsertBtcLocation(holding!.id, {
           id: existingLoc.id,
           name: existingLoc.name,
@@ -506,7 +534,21 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
           thbSpent: existingLoc.thbSpent + spent,
         })
       } else {
+        updatedLocations = upsert(existingLocations, { name: locName, satoshi: sats, thbSpent: spent })
         upsertBtcLocation(holding!.id, { name: locName, satoshi: sats, thbSpent: spent })
+      }
+      const totalSatsAfter = updatedLocations.reduce((s, l) => s + l.satoshi, 0)
+      const totalThb = updatedLocations.reduce((s, l) => s + l.thbSpent, 0)
+      const units = totalSatsAfter / 100_000_000
+      const avgCost = units > 0 ? totalThb / units : holding!.avgCost
+      const afterHoldingState: Holding = {
+        ...holding!,
+        btcLocations: updatedLocations,
+        units,
+        totalUnits: units,
+        avgCost,
+        totalThbInvested: totalThb,
+        avgCostThb: avgCost,
       }
       addHoldingLog({
         action: 'buy_more',
@@ -516,6 +558,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         assetClass: 'crypto',
         note: `+${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} spent · ${locName}`,
         previousHoldingState: JSON.parse(JSON.stringify(holding!)),
+        afterHoldingState,
       })
       showToast(`Bought ${sats.toLocaleString()} sats for ${holding!.name}`, 'success')
       onClose()

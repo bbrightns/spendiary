@@ -387,3 +387,11 @@ export function findMatchingHolding(
 
   return null
 }
+
+export function upsert<T extends { id: string }>(list: T[], item: Omit<T, 'id'> & { id?: string }): T[] {
+  const newId = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
+  const id = item.id ?? newId()
+  const exists = list.some((x) => x.id === id)
+  const fullItem = { ...item, id } as T
+  return exists ? list.map((x) => (x.id === id ? fullItem : x)) : [...list, fullItem]
+}
