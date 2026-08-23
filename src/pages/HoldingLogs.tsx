@@ -89,7 +89,7 @@ export function HoldingLogs() {
       const formatUnit = (val: number) => {
         if (log.assetClass === 'crypto') {
           const sats = Math.round(val * SATS_PER_BTC)
-          return `${sats.toLocaleString()} sats (${val.toLocaleString(undefined, { maximumFractionDigits: 8 })} BTC)`
+          return `${sats.toLocaleString()} sats`
         }
         if (log.assetClass === 'gold') return `${val.toFixed(4)} g (${(val / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง)`
         if (log.assetClass === 'stock') return val.toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' shares'
