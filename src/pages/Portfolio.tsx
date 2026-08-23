@@ -25,7 +25,7 @@ import {
 } from '../lib/calc'
 import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
 import type { AssetClass, BtcLocation, Holding, InvestAssetClass, NetWorthSnapshot } from '../lib/types'
-import { thb, thbCompact } from '../lib/format'
+import { money, thb, thbCompact } from '../lib/format'
 
 const REBALANCE_ASSETS: InvestAssetClass[] = ['fund', 'stock', 'gold', 'crypto']
 
@@ -722,10 +722,12 @@ export function Portfolio() {
                     />
                   )
 
-                  const btcAvgCost = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost)
+                  const fxRate = usdThb && usdThb > 0 ? usdThb : 35
+                  const btcAvgCostThb = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost)
+                  const btcAvgCostUsd = fxRate > 0 ? btcAvgCostThb / fxRate : 0
                   const goldAvgCostPerBaht = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost) * GRAMS_PER_BAHT_GOLD
                   const unitsLabel = isBtc
-                    ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats · avg ${thb(btcAvgCost)}/BTC`
+                    ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats · avg ${money(btcAvgCostUsd, 'USD')}/BTC`
                     : isGold
                     ? `${h.units.toFixed(4)} g (${(h.units / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง) · avg ${thb(goldAvgCostPerBaht)}/บาททอง`
                     : `${h.units.toLocaleString()} ${unitLabel(h.assetClass)} · ${ASSET_META[h.assetClass].label}`
@@ -803,13 +805,14 @@ export function Portfolio() {
                               : (
                                 <ul className="space-y-1.5">
                                   {(h.btcLocations ?? []).map((loc) => {
-                                    const locCostPerBtc = loc.satoshi > 0 ? (loc.thbSpent / loc.satoshi) * SATS_PER_BTC : 0
+                                    const locCostPerBtcThb = loc.satoshi > 0 ? (loc.thbSpent / loc.satoshi) * SATS_PER_BTC : 0
+                                    const locCostPerBtcUsd = fxRate > 0 ? locCostPerBtcThb / fxRate : 0
                                     return (
                                       <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
                                         <div className="min-w-0 flex-1">
                                           <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
                                           <p className="tnum text-[12px] text-ink-muted">
-                                            {loc.satoshi.toLocaleString()} sats · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBtc)}/BTC
+                                            {loc.satoshi.toLocaleString()} sats · {thb(loc.thbSpent)} spent · avg {money(locCostPerBtcUsd, 'USD')}/BTC
                                           </p>
                                         </div>
                                         <button
@@ -994,7 +997,9 @@ export function Portfolio() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-ink-muted">Avg cost / BTC</span>
-                <span className="font-semibold text-brand tnum">{thb((Number(locThbSpent) / Number(locSatoshi)) * SATS_PER_BTC)}</span>
+                <span className="font-semibold text-brand tnum">
+                  {money(((Number(locThbSpent) / Number(locSatoshi)) * SATS_PER_BTC) / (usdThb && usdThb > 0 ? usdThb : 35), 'USD')} (≈ {thb((Number(locThbSpent) / Number(locSatoshi)) * SATS_PER_BTC)})
+                </span>
               </div>
             </div>
           )}

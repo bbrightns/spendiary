@@ -6,7 +6,7 @@ import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, applyBuy, holdingMetrics, upsert } from '../../lib/calc'
 import type { BtcLocation, GoldLocation, Holding } from '../../lib/types'
-import { thb, localDateStr } from '../../lib/format'
+import { money, thb, localDateStr } from '../../lib/format'
 
 interface Props {
   open: boolean
@@ -627,7 +627,9 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
             >
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-soft">Implied price / BTC</span>
-                <span className="font-semibold tnum text-ink">{thb(impliedPrice)}</span>
+                <span className="font-semibold tnum text-ink">
+                  {money(impliedPrice / (usdThb && usdThb > 0 ? usdThb : 35), 'USD')} (≈ {thb(impliedPrice)})
+                </span>
               </div>
               <div className="mt-1 flex items-center justify-between text-[13px]">
                 <span className="text-ink-soft">BTC amount</span>

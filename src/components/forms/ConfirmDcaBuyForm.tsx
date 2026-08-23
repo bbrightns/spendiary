@@ -604,7 +604,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               <div className="pt-2 border-t border-line flex items-center justify-between text-[13px]">
                 <span className="font-medium text-ink-muted">New Avg Cost</span>
                 <span className={`tnum ${hasValidBtc ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
-                  {hasValidBtc ? `฿${fmtNum(Math.round(btcNewAvgCostThb), 0)} / BTC` : '฿0 / BTC'}
+                  {hasValidBtc ? `$${fmtNum(Math.round(rate > 0 ? btcNewAvgCostThb / rate : 0), 0)} / BTC (≈ ฿${fmtNum(Math.round(btcNewAvgCostThb), 0)})` : '$0 / BTC'}
                 </span>
               </div>
             </div>

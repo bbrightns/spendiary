@@ -117,8 +117,10 @@ export function generatePortfolioMarkdown(
         const sats = Math.round(h.units * SATS_PER_BTC)
         qtyStr = `${sats.toLocaleString()} sats<br/>(${fmtNum(h.units, 8)} BTC)`
         const avgCostPerBtc = h.units > 0 ? costBasis / h.units : h.avgCost
-        avgCostStr = `${fmtMoney(avgCostPerBtc, 'THB', 0)}/BTC`
-        priceStr = `${fmtMoney(h.price, 'THB', 0)}/BTC`
+        const avgCostPerBtcUsd = rate > 0 ? avgCostPerBtc / rate : 0
+        const priceUsd = rate > 0 ? h.price / rate : 0
+        avgCostStr = `${fmtMoney(avgCostPerBtcUsd, 'USD', 0)}/BTC<br/>(${fmtMoney(avgCostPerBtc, 'THB', 0)})`
+        priceStr = `${fmtMoney(priceUsd, 'USD', 0)}/BTC<br/>(${fmtMoney(h.price, 'THB', 0)})`
       } else if (isGold) {
         typeLabel = 'ทองคำ (Gold)'
         const bahtGold = h.units / GRAMS_PER_BAHT_GOLD
@@ -176,11 +178,13 @@ export function generatePortfolioMarkdown(
       const pnl = marketValue - costBasis
       const pnlPct = costBasis > 0 ? (pnl / costBasis) * 100 : 0
       const avgCostPerBtc = h.units > 0 ? costBasis / h.units : h.avgCost
+      const avgCostPerBtcUsd = rate > 0 ? avgCostPerBtc / rate : 0
+      const priceUsd = rate > 0 ? h.price / rate : 0
 
       lines.push(`### 🔹 ${h.name} (\`${h.ticker}\`)`)
       lines.push(`- **จำนวนที่ถือครอง**: **${sats.toLocaleString()} sats** (${fmtNum(h.units, 8)} BTC)`)
-      lines.push(`- **ต้นทุนเฉลี่ย (Avg Cost)**: **${fmtMoney(avgCostPerBtc, 'THB', 0)} / BTC**`)
-      lines.push(`- **ราคาปัจจุบัน (Price)**: **${fmtMoney(h.price, 'THB', 0)} / BTC**`)
+      lines.push(`- **ต้นทุนเฉลี่ย (Avg Cost)**: **${fmtMoney(avgCostPerBtcUsd, 'USD', 0)} / BTC** (≈ ${fmtMoney(avgCostPerBtc, 'THB', 0)})`)
+      lines.push(`- **ราคาปัจจุบัน (Price)**: **${fmtMoney(priceUsd, 'USD', 0)} / BTC** (≈ ${fmtMoney(h.price, 'THB', 0)})`)
       lines.push(`- **ต้นทุนรวม (Total Cost)**: **${fmtMoney(costBasis, 'THB', 2)}**`)
       lines.push(`- **มูลค่าปัจจุบัน (Market Value)**: **${fmtMoney(marketValue, 'THB', 2)}**`)
       lines.push(`- **กำไร/ขาดทุน (PnL)**: **${fmtSignMoney(pnl, 'THB', 2)} (${fmtPct(pnlPct, 2)})**`)
@@ -189,7 +193,8 @@ export function generatePortfolioMarkdown(
         lines.push(`- **แหล่งจัดเก็บ / ซื้อ (Storage Locations)**:`)
         for (const loc of h.btcLocations) {
           const locCostPerBtc = loc.satoshi > 0 ? (loc.thbSpent / loc.satoshi) * SATS_PER_BTC : 0
-          lines.push(`  - 📍 **${loc.name}**: ${loc.satoshi.toLocaleString()} sats (${(loc.satoshi / SATS_PER_BTC).toFixed(8)} BTC) | ทุน: ${fmtMoney(loc.thbSpent, 'THB', 2)} | ทุนเฉลี่ย: ${fmtMoney(locCostPerBtc, 'THB', 0)}/BTC`)
+          const locCostPerBtcUsd = rate > 0 ? locCostPerBtc / rate : 0
+          lines.push(`  - 📍 **${loc.name}**: ${loc.satoshi.toLocaleString()} sats (${(loc.satoshi / SATS_PER_BTC).toFixed(8)} BTC) | ทุน: ${fmtMoney(loc.thbSpent, 'THB', 2)} | ทุนเฉลี่ย: ${fmtMoney(locCostPerBtcUsd, 'USD', 0)}/BTC (≈ ${fmtMoney(locCostPerBtc, 'THB', 0)})`)
         }
       }
       lines.push('')
