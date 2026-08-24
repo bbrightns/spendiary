@@ -159,8 +159,10 @@ export function HoldingLogs() {
             <button
               key={f.key}
               onClick={() => setAssetFilter(f.key)}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
-                assetFilter === f.key ? 'bg-ink text-white dark:bg-[#4f46e5] dark:text-white' : 'bg-surface-muted text-ink-soft hover:text-ink'
+              aria-label={`Filter by ${f.label}`}
+              aria-pressed={assetFilter === f.key}
+              className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors cursor-pointer ${
+                assetFilter === f.key ? 'bg-ink text-white dark:bg-brand dark:text-white' : 'bg-surface-muted text-ink-soft hover:text-ink'
               }`}
             >
               {f.label}
@@ -172,8 +174,10 @@ export function HoldingLogs() {
             <button
               key={f.key}
               onClick={() => setActionFilter(f.key)}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
-                actionFilter === f.key ? 'bg-ink text-white dark:bg-[#4f46e5] dark:text-white' : 'bg-surface-muted text-ink-soft hover:text-ink'
+              aria-label={`Filter by ${f.label}`}
+              aria-pressed={actionFilter === f.key}
+              className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors cursor-pointer ${
+                actionFilter === f.key ? 'bg-ink text-white dark:bg-brand dark:text-white' : 'bg-surface-muted text-ink-soft hover:text-ink'
               }`}
             >
               {f.label}
@@ -300,7 +304,7 @@ export function HoldingLogs() {
                 setUndoTarget(null)
               }}
               aria-label={`Confirm undo activity for ${undoTarget?.holdingName ?? ''}`}
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-loss px-5 text-sm font-bold text-white dark:text-[#4c0519] transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer shadow-sm"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-loss px-5 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer shadow-sm"
             >
               <UndoIcon className="h-4 w-4" strokeWidth={2.4} />
               <span>Yes, undo activity</span>
