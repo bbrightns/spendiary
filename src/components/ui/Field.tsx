@@ -1,4 +1,4 @@
-import { useState, type ReactNode, type SelectHTMLAttributes } from 'react'
+import { useState, useId, type ReactNode, type SelectHTMLAttributes } from 'react'
 
 const fieldBase =
   'h-11 w-full rounded-xl border bg-surface px-3.5 text-[15px] text-ink outline-none transition-colors placeholder:text-ink-faint'
@@ -13,18 +13,20 @@ function getFieldClass(hasError: boolean) {
 
 interface LabelWrapProps {
   label: string
+  htmlFor?: string
+  errorId?: string
   hint?: string
   error?: string
   children: ReactNode
 }
 
-function LabelWrap({ label, hint, error, children }: LabelWrapProps) {
+function LabelWrap({ label, htmlFor, errorId, hint, error, children }: LabelWrapProps) {
   return (
-    <label className="block">
+    <label htmlFor={htmlFor} className="block">
       <div className="mb-1.5 flex items-center justify-between gap-3">
         <span className="text-[13px] font-semibold text-ink-soft">{label}</span>
         {error ? (
-          <span className="text-[12px] font-semibold text-loss animate-fadeIn">{error}</span>
+          <span id={errorId} role="alert" className="text-[12px] font-semibold text-loss animate-fadeIn">{error}</span>
         ) : (
           hint && <span className="text-[12px] text-ink-muted">{hint}</span>
         )}
@@ -46,13 +48,18 @@ interface TextFieldProps {
 }
 
 export function TextField({ label, hint, error, value, onChange, onBlur, placeholder, type = 'text' }: TextFieldProps) {
+  const id = useId()
+  const errorId = `${id}-error`
   return (
-    <LabelWrap label={label} hint={hint} error={error}>
+    <LabelWrap label={label} htmlFor={id} errorId={errorId} hint={hint} error={error}>
       <input
+        id={id}
         type={type}
         className={getFieldClass(!!error)}
         value={value}
         placeholder={placeholder}
+        aria-invalid={!!error}
+        aria-describedby={error ? errorId : undefined}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
       />
@@ -133,8 +140,11 @@ export function NumberField({
     if (onBlur) onBlur()
   }
 
+  const id = useId()
+  const errorId = `${id}-error`
+
   return (
-    <LabelWrap label={label} hint={hint} error={error}>
+    <LabelWrap label={label} htmlFor={id} errorId={errorId} hint={hint} error={error}>
       <div className="relative">
         {prefix && (
           <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] font-medium text-ink-muted">
@@ -147,11 +157,14 @@ export function NumberField({
           </span>
         )}
         <input
+          id={id}
           type={allowString ? 'text' : 'number'}
           inputMode="decimal"
           min={min}
           step={step}
           autoFocus={autoFocus}
+          aria-invalid={!!error}
+          aria-describedby={error ? errorId : undefined}
           className={`${getFieldClass(!!error)} tnum ${prefix ? 'pl-8' : ''} ${suffix ? 'pr-8' : ''}`}
           value={getDisplayValue()}
           placeholder={placeholder}
@@ -183,12 +196,17 @@ interface SelectFieldProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>,
 }
 
 export function SelectField({ label, value, error, onChange, options }: SelectFieldProps) {
+  const id = useId()
+  const errorId = `${id}-error`
   return (
-    <LabelWrap label={label} error={error}>
+    <LabelWrap label={label} htmlFor={id} errorId={errorId} error={error}>
       <div className="relative">
         <select
+          id={id}
           className={`${getFieldClass(!!error)} cursor-pointer appearance-none pr-9`}
           value={value}
+          aria-invalid={!!error}
+          aria-describedby={error ? errorId : undefined}
           onChange={(e) => onChange(e.target.value)}
         >
           {options.map((o) => (
