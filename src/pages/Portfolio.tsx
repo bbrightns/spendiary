@@ -490,7 +490,7 @@ export function Portfolio() {
                 onClick={() => setRebalanceOpen(!rebalanceOpen)}
                 aria-label={rebalanceOpen ? 'Close rebalancing configuration' : 'Configure rebalancing targets'}
                 aria-expanded={rebalanceOpen}
-                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-ink px-3 text-[11.5px] font-semibold text-white shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] active:scale-95 cursor-pointer whitespace-nowrap"
+                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-ink px-3 text-[11.5px] font-semibold text-white shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-ink-hover dark:bg-brand dark:hover:bg-brand-ink active:scale-95 cursor-pointer whitespace-nowrap"
               >
                 {rebalanceOpen ? 'Close' : 'Configure'}
               </button>
@@ -661,7 +661,7 @@ export function Portfolio() {
                         aria-pressed={filter === f.key}
                         className={`rounded-full px-3 py-1 text-[12.5px] font-semibold transition-colors cursor-pointer ${
                           filter === f.key
-                            ? 'bg-ink text-white dark:bg-[#4f46e5] dark:text-white shadow-xs'
+                            ? 'bg-ink text-white dark:bg-brand dark:text-white shadow-xs'
                             : 'bg-surface-muted text-ink-soft hover:text-ink'
                         }`}
                       >
@@ -691,7 +691,7 @@ export function Portfolio() {
                           aria-pressed={active}
                           className={`flex shrink-0 items-center gap-0.5 rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold transition-colors cursor-pointer ${
                             active
-                              ? 'bg-brand text-white dark:bg-[#4f46e5]'
+                              ? 'bg-brand text-white dark:bg-brand'
                               : 'bg-surface-muted text-ink-soft hover:text-ink'
                           }`}
                         >
@@ -1039,7 +1039,7 @@ export function Portfolio() {
               setRemoveTarget(null)
             }}
             aria-label={`Confirm remove holding ${removeTarget?.name ?? ''}`}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-loss px-5 text-sm font-bold text-white dark:text-[#4c0519] transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer shadow-sm"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-loss px-5 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer shadow-sm"
           >
             <TrashIcon className="h-4 w-4" strokeWidth={2.2} />
             <span>Yes, remove holding</span>
