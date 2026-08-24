@@ -31,7 +31,7 @@ export function Layout({ children }: { children: ReactNode }) {
       </div>
 
       {/* ── Mobile/Tablet Simulator Layout (< lg) ── */}
-      <div className="relative w-full max-w-[420px] min-h-dvh app-canvas-bg flex flex-col shadow-2xl lg:hidden">
+      <div className="relative w-full max-w-[420px] md:max-w-[540px] min-h-dvh app-canvas-bg flex flex-col shadow-2xl lg:hidden transition-all duration-300">
         {/* Top brand bar */}
         <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-line bg-surface/75 px-5 py-3.5 backdrop-blur-xl">
           <img src="/logo.png" alt="Spendiary Logo" className="h-8 w-8 object-contain shrink-0" />
