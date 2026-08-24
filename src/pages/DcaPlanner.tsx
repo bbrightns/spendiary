@@ -95,6 +95,7 @@ function InlineEditStat({ label, value, editing, draft, inputRef, onOpen, onDraf
           <span className="text-[13px] font-semibold text-ink-muted">฿</span>
           <input
             ref={inputRef} type="number" min="0" value={draft}
+            aria-label={label}
             onChange={(e) => onDraftChange(e.target.value)}
             onBlur={onCommit}
             onKeyDown={(e) => { if (e.key === 'Enter') onCommit(); if (e.key === 'Escape') onCancel() }}
@@ -102,7 +103,11 @@ function InlineEditStat({ label, value, editing, draft, inputRef, onOpen, onDraf
           />
         </div>
       ) : (
-        <button onClick={onOpen} className="group mt-1 flex items-center gap-1.5 rounded-lg px-0 py-0.5 transition-colors hover:bg-surface-muted">
+        <button
+          onClick={onOpen}
+          aria-label={`Edit ${label}`}
+          className="group mt-1 flex items-center gap-1.5 rounded-lg px-1 py-1 transition-colors hover:bg-surface-muted min-h-[40px]"
+        >
           <span className="font-display text-[22px] font-extrabold tnum text-ink leading-none">{value}</span>
           <PencilIcon className="h-3.5 w-3.5 text-ink-muted opacity-0 transition-opacity group-hover:opacity-100" />
         </button>
@@ -119,20 +124,20 @@ function FixedCostRow({ item, onEdit, onDelete }: {
   item: FixedCostItem; onEdit: (item: FixedCostItem) => void; onDelete: (id: string) => void
 }) {
   return (
-    <div className="group flex items-center gap-3 py-2.5">
+    <div className="group flex items-center gap-3 py-2">
       <div className="min-w-0 flex-1">
         <span className="text-[14px] font-medium text-ink">{item.name}</span>
       </div>
       <span className="font-display text-[14px] font-bold tnum text-ink">{thb(item.amount)}</span>
-      <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
+      <div className="flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
         <button onClick={() => onEdit(item)}
           aria-label={`Edit fixed cost ${item.name}`}
-          className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink cursor-pointer">
+          className="rounded-lg p-2 text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink cursor-pointer min-h-[44px] min-w-[44px] inline-flex items-center justify-center">
           <PencilIcon className="h-3.5 w-3.5" />
         </button>
         <button onClick={() => onDelete(item.id)}
           aria-label={`Delete fixed cost ${item.name}`}
-          className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-loss-soft hover:text-loss cursor-pointer">
+          className="rounded-lg p-2 text-ink-muted transition-colors hover:bg-loss-soft hover:text-loss cursor-pointer min-h-[44px] min-w-[44px] inline-flex items-center justify-center">
           <TrashIcon className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -498,7 +503,7 @@ export function DcaPlanner() {
                                       {days <= 0 ? 'Today' : days === 1 ? 'Tomorrow' : `in ${days} days`}
                                     </span>
                                   ) : (
-                                    <span className="inline-block text-[11px] font-semibold text-[#0ea5e9]">in {days} days</span>
+                                    <span className="inline-block text-[11px] font-semibold text-stocks">in {days} days</span>
                                   )}
                                   </div>
                                   {needsAction && (
@@ -506,7 +511,7 @@ export function DcaPlanner() {
                                       <button
                                         onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
                                         aria-label={`Confirm DCA buy for ${p.name}`}
-                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#2ee68f] px-3 py-1.5 text-[12px] font-bold text-[#063327] transition-all hover:bg-[#28d683] hover:brightness-95 active:scale-95 cursor-pointer shadow-sm"
+                                        className="inline-flex items-center gap-1.5 rounded-lg bg-gain px-3 py-1.5 text-[12px] font-bold text-white transition-all hover:bg-emerald-600 active:scale-95 cursor-pointer shadow-xs min-h-[36px]"
                                       >
                                         <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
                                         <span>Confirm Buy</span>
@@ -518,7 +523,7 @@ export function DcaPlanner() {
                                           showToast(`Skipped DCA buy for "${p.name}" this period`, 'info')
                                         }}
                                         aria-label={`Skip DCA buy for ${p.name} this period`}
-                                        className="rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors active:scale-95 cursor-pointer text-ink-muted border-line hover:bg-surface-muted hover:text-ink"
+                                        className="rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors active:scale-95 cursor-pointer text-ink-muted border-line hover:bg-surface-muted hover:text-ink min-h-[36px]"
                                       >
                                         Skip
                                       </button>
