@@ -1,6 +1,7 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { ScrollToTop } from './components/ScrollToTop'
-import { DataProvider, useData } from './store/DataContext' // 💡 เพิ่ม useData เข้ามา
+import { DataProvider, useData } from './store/DataContext'
 import { ToastProvider } from './store/ToastContext'
 import { ToastContainer } from './components/ui/Toast'
 import { useTheme } from './hooks/useTheme'
@@ -8,9 +9,18 @@ import { Layout } from './components/layout/Layout'
 import { Dashboard } from './pages/Dashboard'
 import { Portfolio } from './pages/Portfolio'
 import { DcaPlanner } from './pages/DcaPlanner'
-import { Retirement } from './pages/Retirement'
-import { Settings } from './pages/Settings'
-import { HoldingLogs } from './pages/HoldingLogs'
+
+const Retirement = lazy(() => import('./pages/Retirement').then(m => ({ default: m.Retirement })))
+const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })))
+const HoldingLogs = lazy(() => import('./pages/HoldingLogs').then(m => ({ default: m.HoldingLogs })))
+
+function PageLoadingFallback() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+    </div>
+  )
+}
 
 // 💡 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
 function AppContent() {
@@ -60,7 +70,7 @@ function AppContent() {
           </div>
 
           {/* Hero Headline */}
-          <h1 className="font-display font-black text-3xl sm:text-5xl md:text-6xl text-slate-950 text-center tracking-tight leading-[1.15] max-w-2xl mb-3 sm:mb-4 px-2">
+          <h1 className="font-display font-black text-3xl sm:text-5xl md:text-6xl text-slate-950 text-center tracking-tight leading-[1.15] max-w-2xl mb-3 sm:mb-4 px-2 text-balance">
             Spend smarter.{' '}
             <span 
               className="block mt-1 sm:mt-2 italic font-black bg-clip-text text-transparent bg-gradient-to-r from-[#405DFF] to-[#DFAA41]"
@@ -75,7 +85,7 @@ function AppContent() {
           </h1>
 
           {/* Subtitle */}
-          <p className="text-slate-600 text-xs sm:text-base text-center max-w-[340px] sm:max-w-xl leading-relaxed mb-6 sm:mb-8 px-2">
+          <p className="text-slate-600 text-xs sm:text-base text-center max-w-[340px] sm:max-w-xl leading-relaxed mb-6 sm:mb-8 px-2 text-pretty">
             An intelligent personal wealth manager reinventing how you track portfolio assets, optimize DCA targets, and plan financial freedom.
           </p>
 
@@ -242,15 +252,17 @@ function AppContent() {
   return (
     <Layout>
       <ScrollToTop />
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/portfolio" element={<Portfolio />} />
-        <Route path="/dca" element={<DcaPlanner />} />
-        <Route path="/retirement" element={<Retirement />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/logs" element={<HoldingLogs />} />
-        <Route path="*" element={<Dashboard />} />
-      </Routes>
+      <Suspense fallback={<PageLoadingFallback />}>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/portfolio" element={<Portfolio />} />
+          <Route path="/dca" element={<DcaPlanner />} />
+          <Route path="/retirement" element={<Retirement />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/logs" element={<HoldingLogs />} />
+          <Route path="*" element={<Dashboard />} />
+        </Routes>
+      </Suspense>
     </Layout>
   )
 }
