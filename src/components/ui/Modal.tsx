@@ -103,7 +103,7 @@ export function Modal({ open, onClose, title, description, children, footer }: M
         className="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-[var(--shadow-lift)] sm:max-w-[440px] sm:rounded-[28px] sm:max-h-[85dvh]"
         style={{ animation: 'sheetUp 0.32s cubic-bezier(0.16,1,0.3,1) both' }}
       >
-        <div className="flex shrink-0 items-start justify-between gap-4 px-6 pb-3 pt-7">
+        <div className="flex shrink-0 items-start justify-between gap-4 px-6 pb-2.5 pt-6">
           <div>
             <h2 id={titleId} className="font-display text-[20px] font-extrabold tracking-tight text-ink">{title}</h2>
             {description && <p id={descId} className="mt-0.5 text-[13px] text-ink-muted">{description}</p>}
@@ -111,17 +111,20 @@ export function Modal({ open, onClose, title, description, children, footer }: M
           <button
             onClick={onClose}
             aria-label="Close modal"
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-surface-muted text-ink-soft transition-colors hover:bg-line-strong hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-surface-muted text-ink-soft transition-colors hover:bg-line-strong hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
           >
             <CloseIcon className="h-[18px] w-[18px]" />
           </button>
         </div>
-        <div className="no-scrollbar flex-1 min-h-0 overflow-y-auto px-6 pt-3">
+        <div className="no-scrollbar flex-1 min-h-0 overflow-y-auto px-6 pt-1 pb-3">
           {children}
-          {!footer && <div className="h-8 safe-bottom" />}
+          {!footer && <div className="h-8" />}
         </div>
         {footer && (
-          <div className="shrink-0 border-t border-line bg-surface px-6 pb-6 pt-3.5 safe-bottom">
+          <div
+            className="shrink-0 border-t border-line bg-surface px-6 pt-3.5"
+            style={{ paddingBottom: 'max(1.5rem, calc(0.75rem + env(safe-area-inset-bottom, 0px)))' }}
+          >
             {footer}
           </div>
         )}
