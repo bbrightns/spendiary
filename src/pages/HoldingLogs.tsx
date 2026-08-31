@@ -7,7 +7,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { Modal } from '../components/ui/Modal'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC } from '../lib/calc'
 import type { AssetClass, HoldingLog } from '../lib/types'
-import { ClockIcon, UndoIcon } from '../components/icons'
+import { ClockIcon, UndoIcon, WalletIcon } from '../components/icons'
 
 const ACTION_LABEL = {
   add: 'Added',
@@ -44,7 +44,7 @@ const ACTION_FILTERS = [
 ] as const
 
 export function HoldingLogs() {
-  const { data, undoHoldingLog } = useData()
+  const { data, undoHoldingLog, usdThb } = useData()
   const { showToast } = useToast()
   const logs = data.holdingLogs ?? []
 
@@ -72,6 +72,48 @@ export function HoldingLogs() {
     }
   }
 
+  // Helper to detect destination wallet / storage location
+  const getDestinationLocation = (log: typeof filtered[number]): string | null => {
+    const prev = log.previousHoldingState
+    const curr = log.afterHoldingState
+
+    if (log.assetClass === 'crypto') {
+      const prevLocs = prev?.btcLocations ?? []
+      const currLocs = curr?.btcLocations ?? []
+      for (const c of currLocs) {
+        const p = prevLocs.find((item) => item.id === c.id || item.name === c.name)
+        if (!p || c.satoshi > p.satoshi || c.thbSpent > p.thbSpent) {
+          return c.name
+        }
+      }
+      if (currLocs.length === 1) return currLocs[0].name
+    }
+
+    if (log.assetClass === 'gold') {
+      const prevLocs = prev?.goldLocations ?? []
+      const currLocs = curr?.goldLocations ?? []
+      for (const c of currLocs) {
+        const p = prevLocs.find((item) => item.id === c.id || item.name === c.name)
+        if (!p || c.grams > p.grams || c.thbSpent > p.thbSpent) {
+          return c.name
+        }
+      }
+      if (currLocs.length === 1) return currLocs[0].name
+    }
+
+    if (log.note) {
+      const match = log.note.match(/(?:·|→)\s*([A-Za-z0-9\s_-]+)$/)
+      if (match && match[1]) {
+        const name = match[1].trim()
+        if (!name.startsWith('(+') && !name.startsWith('฿') && !name.startsWith('$') && !name.endsWith('spent')) {
+          return name
+        }
+      }
+    }
+
+    return null
+  }
+
   // Helper to render before -> after comparison details
   const renderStateComparison = (log: typeof filtered[number]) => {
     const prev = log.previousHoldingState
@@ -84,7 +126,11 @@ export function HoldingLogs() {
 
       const prevBasis = prev.totalThbInvested ?? (prevUnits * (prev.avgCostThb ?? prev.avgCost ?? 0))
       const currBasis = curr.totalThbInvested ?? (currUnits * (curr.avgCostThb ?? curr.avgCost ?? 0))
-      const basisDiff = currBasis - prevBasis
+
+      const prevAvgCostThb = prevUnits > 0 ? prevBasis / prevUnits : (prev.avgCostThb ?? prev.avgCost ?? 0)
+      const currAvgCostThb = currUnits > 0 ? currBasis / currUnits : (curr.avgCostThb ?? curr.avgCost ?? 0)
+
+      const fx = usdThb && usdThb > 0 ? usdThb : 34
 
       const formatUnit = (val: number) => {
         if (log.assetClass === 'crypto') {
@@ -110,6 +156,61 @@ export function HoldingLogs() {
         return `+${diff.toLocaleString(undefined, { maximumFractionDigits: 4 })}`
       }
 
+      // Format average cost per asset class
+      let prevAvgCostDisplay = ''
+      let currAvgCostDisplay = ''
+      let avgCostDeltaBadge: { text: string; positive: boolean } | null = null
+
+      if (log.assetClass === 'crypto') {
+        const prevUsd = prev.avgCostUsd ?? (fx > 0 ? prevAvgCostThb / fx : 0)
+        const currUsd = curr.avgCostUsd ?? (fx > 0 ? currAvgCostThb / fx : 0)
+        prevAvgCostDisplay = `$${Math.round(prevUsd).toLocaleString()}/BTC`
+        currAvgCostDisplay = `$${Math.round(currUsd).toLocaleString()}/BTC`
+        const diffUsd = Math.round(currUsd - prevUsd)
+        if (diffUsd !== 0 && prevUnits > 0) {
+          const sign = diffUsd > 0 ? '+' : '-'
+          avgCostDeltaBadge = {
+            text: `${sign}$${Math.abs(diffUsd).toLocaleString()}/BTC`,
+            positive: diffUsd < 0,
+          }
+        }
+      } else if (log.assetClass === 'stock') {
+        const prevUsd = prev.avgCostUsd ?? (fx > 0 ? prevAvgCostThb / fx : 0)
+        const currUsd = curr.avgCostUsd ?? (fx > 0 ? currAvgCostThb / fx : 0)
+        prevAvgCostDisplay = `$${prevUsd.toFixed(2)}/share`
+        currAvgCostDisplay = `$${currUsd.toFixed(2)}/share`
+        const diff = Number((currUsd - prevUsd).toFixed(2))
+        if (diff !== 0 && prevUnits > 0) {
+          const sign = diff > 0 ? '+' : '-'
+          avgCostDeltaBadge = {
+            text: `${sign}$${Math.abs(diff).toFixed(2)}/share`,
+            positive: diff < 0,
+          }
+        }
+      } else if (log.assetClass === 'gold') {
+        prevAvgCostDisplay = `฿${prevAvgCostThb.toFixed(2)}/g`
+        currAvgCostDisplay = `฿${currAvgCostThb.toFixed(2)}/g`
+        const diff = Number((currAvgCostThb - prevAvgCostThb).toFixed(2))
+        if (diff !== 0 && prevUnits > 0) {
+          const sign = diff > 0 ? '+' : '-'
+          avgCostDeltaBadge = {
+            text: `${sign}฿${Math.abs(diff).toFixed(2)}/g`,
+            positive: diff < 0,
+          }
+        }
+      } else {
+        prevAvgCostDisplay = `฿${prevAvgCostThb.toFixed(2)}/unit`
+        currAvgCostDisplay = `฿${currAvgCostThb.toFixed(2)}/unit`
+        const diff = Number((currAvgCostThb - prevAvgCostThb).toFixed(2))
+        if (diff !== 0 && prevUnits > 0) {
+          const sign = diff > 0 ? '+' : '-'
+          avgCostDeltaBadge = {
+            text: `${sign}฿${Math.abs(diff).toFixed(2)}/unit`,
+            positive: diff < 0,
+          }
+        }
+      }
+
       return (
         <div className="mt-3 rounded-xl border border-line bg-surface-muted/50 p-3 text-[12.5px] space-y-2.5">
           {/* Holding Balance */}
@@ -127,16 +228,20 @@ export function HoldingLogs() {
             </div>
           </div>
 
-          {/* Total Cost Basis */}
+          {/* Average Cost */}
           <div className="pt-1.5 border-t border-line/60">
-            <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">Total Cost Basis</span>
+            <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">Average Cost</span>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
-              <span className="whitespace-nowrap">฿{prevBasis.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              <span className="whitespace-nowrap">{prevAvgCostDisplay}</span>
               <span className="text-ink-faint text-[11px]">→</span>
-              <span className="font-semibold text-brand whitespace-nowrap">฿{currBasis.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-              {basisDiff > 0 && (
-                <span className="rounded-md bg-gain/10 px-1.5 py-0.5 text-[11px] font-bold text-gain whitespace-nowrap">
-                  +฿{basisDiff.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              <span className="font-semibold text-brand whitespace-nowrap">{currAvgCostDisplay}</span>
+              {avgCostDeltaBadge && (
+                <span
+                  className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${
+                    avgCostDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-surface-muted text-ink-muted'
+                  }`}
+                >
+                  {avgCostDeltaBadge.text}
                 </span>
               )}
             </div>
@@ -202,49 +307,58 @@ export function HoldingLogs() {
               <p className="mb-2.5 px-1 text-[12.5px] font-bold text-ink-soft tracking-wide">{group.date}</p>
               <Card padded={false}>
                 <ul className="divide-y divide-line">
-                  {group.entries.map((log) => (
-                    <li key={log.id} className="flex items-start gap-3.5 px-5 py-4 transition-colors hover:bg-surface-muted/30">
-                      <span
-                        className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl text-[14px] font-bold shadow-sm"
-                        style={{
-                          color: ASSET_META[log.assetClass]?.color ?? '#6366f1',
-                          background: `color-mix(in srgb, ${ASSET_META[log.assetClass]?.color ?? '#6366f1'} 14%, transparent)`,
-                        }}
-                      >
-                        {ACTION_ICON[log.action]}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                          <span className="text-[14.5px] font-bold text-ink">{log.holdingName}</span>
-                          {log.ticker && log.ticker !== 'CASH' && log.ticker !== 'FIXED' && log.ticker !== 'DCA' && (
-                            <span className="rounded-md bg-surface-muted px-1.5 py-0.5 text-[11px] font-medium text-ink-muted">
-                              {log.ticker}
-                            </span>
-                          )}
-                          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${ACTION_STYLE[log.action]}`}>
-                            {ACTION_LABEL[log.action]}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-[13px] font-medium text-ink-muted leading-relaxed">{log.note}</p>
-                        
-                        {/* State comparison (Before -> After) */}
-                        {renderStateComparison(log)}
-                      </div>
-
-                      <div className="flex flex-col items-end gap-2 shrink-0 pt-0.5">
-                        <time className="text-[11.5px] font-medium text-ink-faint">
-                          {new Date(log.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                        </time>
-                        <button
-                          onClick={() => setUndoTarget(log)}
-                          aria-label={`Undo activity for ${log.holdingName}`}
-                          className="rounded-lg px-2 py-1 text-[11.5px] font-bold text-loss hover:bg-loss/10 transition-colors cursor-pointer"
+                  {group.entries.map((log) => {
+                    const locName = getDestinationLocation(log)
+                    return (
+                      <li key={log.id} className="flex items-start gap-3.5 px-5 py-4 transition-colors hover:bg-surface-muted/30">
+                        <span
+                          className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl text-[14px] font-bold shadow-sm"
+                          style={{
+                            color: ASSET_META[log.assetClass]?.color ?? '#6366f1',
+                            background: `color-mix(in srgb, ${ASSET_META[log.assetClass]?.color ?? '#6366f1'} 14%, transparent)`,
+                          }}
                         >
-                          Undo
-                        </button>
-                      </div>
-                    </li>
-                  ))}
+                          {ACTION_ICON[log.action]}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <span className="text-[14.5px] font-bold text-ink">{log.holdingName}</span>
+                            {log.ticker && log.ticker !== 'CASH' && log.ticker !== 'FIXED' && log.ticker !== 'DCA' && (
+                              <span className="rounded-md bg-surface-muted px-1.5 py-0.5 text-[11px] font-medium text-ink-muted">
+                                {log.ticker}
+                              </span>
+                            )}
+                            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${ACTION_STYLE[log.action]}`}>
+                              {ACTION_LABEL[log.action]}
+                            </span>
+                            {locName && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 border border-brand/20 px-2 py-0.5 text-[11px] font-semibold text-brand">
+                                <WalletIcon className="h-3 w-3" />
+                                {locName}
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-[13px] font-medium text-ink-muted leading-relaxed">{log.note}</p>
+                          
+                          {/* State comparison (Before -> After) */}
+                          {renderStateComparison(log)}
+                        </div>
+
+                        <div className="flex flex-col items-end gap-2 shrink-0 pt-0.5">
+                          <time className="text-[11.5px] font-medium text-ink-faint">
+                            {new Date(log.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                          </time>
+                          <button
+                            onClick={() => setUndoTarget(log)}
+                            aria-label={`Undo activity for ${log.holdingName}`}
+                            className="rounded-lg px-2 py-1 text-[11.5px] font-bold text-loss hover:bg-loss/10 transition-colors cursor-pointer"
+                          >
+                            Undo
+                          </button>
+                        </div>
+                      </li>
+                    )
+                  })}
                 </ul>
               </Card>
             </div>

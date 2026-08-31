@@ -1112,7 +1112,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
               price: impliedBtcPrice > 0 ? impliedBtcPrice : holding.price,
             }
 
-            logNote = `DCA Buy: ${satsBought.toLocaleString()} sats @ ฿${Math.round(impliedBtcPrice).toLocaleString()}/BTC (+฿${amountSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
+            const btcLocName = btcLocationUpdate.name || existingLoc?.name
+            logNote = `DCA Buy: ${satsBought.toLocaleString()} sats @ ฿${Math.round(impliedBtcPrice).toLocaleString()}/BTC (+฿${amountSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})${btcLocName ? ` · ${btcLocName}` : ''}`
           } else if (holding.assetClass === 'gold' && goldLocationUpdate) {
             finalGoldLocations = upsert(holding.goldLocations ?? [], goldLocationUpdate)
             const totalGrams = finalGoldLocations.reduce((s: number, l: GoldLocation) => s + l.grams, 0)
@@ -1137,7 +1138,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
               price: impliedPricePerGram > 0 ? impliedPricePerGram : holding.price,
             }
 
-            logNote = `DCA Buy: ${gramsBought.toFixed(4)} g @ ฿${impliedPricePerGram.toFixed(2)}/g (+฿${amountSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
+            const goldLocName = goldLocationUpdate.name || existingLoc?.name
+            logNote = `DCA Buy: ${gramsBought.toFixed(4)} g @ ฿${impliedPricePerGram.toFixed(2)}/g (+฿${amountSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})${goldLocName ? ` · ${goldLocName}` : ''}`
           } else if (holding.assetClass === 'fund') {
             const currentUnits = holding.units ?? holding.totalUnits ?? 0
             const currentThbInvested = holding.totalThbInvested ?? (currentUnits * (holding.avgCostThb ?? holding.avgCost ?? 0))
