@@ -162,8 +162,8 @@ export function HoldingLogs() {
       let avgCostDeltaBadge: { text: string; positive: boolean } | null = null
 
       if (log.assetClass === 'crypto') {
-        const prevUsd = prev.avgCostUsd ?? (fx > 0 ? prevAvgCostThb / fx : 0)
-        const currUsd = curr.avgCostUsd ?? (fx > 0 ? currAvgCostThb / fx : 0)
+        const prevUsd = (prev.avgCostUsd && prev.avgCostUsd > 0) ? prev.avgCostUsd : (fx > 0 ? prevAvgCostThb / fx : 0)
+        const currUsd = (curr.avgCostUsd && curr.avgCostUsd > 0) ? curr.avgCostUsd : (fx > 0 ? currAvgCostThb / fx : 0)
         prevAvgCostDisplay = `$${Math.round(prevUsd).toLocaleString()}/BTC`
         currAvgCostDisplay = `$${Math.round(currUsd).toLocaleString()}/BTC`
         const diffUsd = Math.round(currUsd - prevUsd)
@@ -175,8 +175,8 @@ export function HoldingLogs() {
           }
         }
       } else if (log.assetClass === 'stock') {
-        const prevUsd = prev.avgCostUsd ?? (fx > 0 ? prevAvgCostThb / fx : 0)
-        const currUsd = curr.avgCostUsd ?? (fx > 0 ? currAvgCostThb / fx : 0)
+        const prevUsd = (prev.avgCostUsd && prev.avgCostUsd > 0) ? prev.avgCostUsd : (fx > 0 ? prevAvgCostThb / fx : 0)
+        const currUsd = (curr.avgCostUsd && curr.avgCostUsd > 0) ? curr.avgCostUsd : (fx > 0 ? currAvgCostThb / fx : 0)
         prevAvgCostDisplay = `$${prevUsd.toFixed(2)}/share`
         currAvgCostDisplay = `$${currUsd.toFixed(2)}/share`
         const diff = Number((currUsd - prevUsd).toFixed(2))
