@@ -1,5 +1,5 @@
 import type { ComponentType, SVGProps } from 'react'
-import { DashboardIcon, DcaIcon, PortfolioIcon, RetirementIcon, SettingsIcon, ClockIcon } from '../icons'
+import { DashboardIcon, DcaIcon, PortfolioIcon, RetirementIcon, SettingsIcon, ClockIcon, ScaleIcon } from '../icons'
 
 export interface NavItem {
   to: string
@@ -11,9 +11,10 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { to: '/', label: 'Dashboard', short: 'Home', icon: DashboardIcon },
   { to: '/portfolio', label: 'Portfolio', short: 'Portfolio', icon: PortfolioIcon },
-  { to: '/logs', label: 'Activity Logs', short: 'Logs', icon: ClockIcon },
+  { to: '/rebalance', label: 'Rebalance', short: 'Rebalance', icon: ScaleIcon },
   { to: '/dca', label: 'DCA Planner', short: 'DCA', icon: DcaIcon },
   { to: '/retirement', label: 'Retirement', short: 'Retire', icon: RetirementIcon },
+  { to: '/logs', label: 'Activity Logs', short: 'Logs', icon: ClockIcon },
 ]
 
 export const settingsItem: NavItem = {
@@ -22,4 +23,5 @@ export const settingsItem: NavItem = {
   short: 'Settings',
   icon: SettingsIcon,
 }
+
 
