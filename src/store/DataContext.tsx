@@ -652,21 +652,41 @@ export function DataProvider({ children }: { children: ReactNode }) {
           for (const oldAcc of oldAccounts) {
             const newAcc = cashAccounts.find((a) => a.id === oldAcc.id)
             if (!newAcc) {
-              changes.push(`Removed "${oldAcc.name}"`)
-            } else if (newAcc.name !== oldAcc.name || newAcc.balance !== oldAcc.balance) {
-              if (newAcc.name !== oldAcc.name && newAcc.balance !== oldAcc.balance) {
-                changes.push(`Renamed "${oldAcc.name}" to "${newAcc.name}" and set balance to ฿${newAcc.balance.toLocaleString()}`)
-              } else if (newAcc.name !== oldAcc.name) {
-                changes.push(`Renamed "${oldAcc.name}" to "${newAcc.name}"`)
-              } else {
-                changes.push(`Updated "${oldAcc.name}" balance to ฿${newAcc.balance.toLocaleString()}`)
+              const oldSymbol = (oldAcc.currency ?? 'THB') === 'USD' ? '$' : '฿'
+              changes.push(`Removed "${oldAcc.name}" (${oldSymbol}${oldAcc.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })})`)
+            } else {
+              const oldCurr = oldAcc.currency ?? 'THB'
+              const newCurr = newAcc.currency ?? 'THB'
+              const symbol = newCurr === 'USD' ? '$' : '฿'
+              const nameChanged = newAcc.name !== oldAcc.name
+              const balanceChanged = newAcc.balance !== oldAcc.balance
+              const currChanged = newCurr !== oldCurr
+
+              if (nameChanged || balanceChanged || currChanged) {
+                const diff = newAcc.balance - oldAcc.balance
+                const diffSign = diff > 0 ? '+' : '-'
+                const diffFormatted = `${diffSign}${symbol}${Math.abs(diff).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+                const diffSuffix = balanceChanged && !currChanged ? ` (${diffFormatted})` : ''
+
+                if (nameChanged && balanceChanged) {
+                  changes.push(`Renamed "${oldAcc.name}" to "${newAcc.name}" and set balance to ${symbol}${newAcc.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}${diffSuffix}`)
+                } else if (currChanged && balanceChanged) {
+                  changes.push(`Changed "${oldAcc.name}" currency to ${newCurr} and set balance to ${symbol}${newAcc.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}`)
+                } else if (nameChanged) {
+                  changes.push(`Renamed "${oldAcc.name}" to "${newAcc.name}"`)
+                } else if (currChanged) {
+                  changes.push(`Changed "${oldAcc.name}" currency to ${newCurr}`)
+                } else if (balanceChanged) {
+                  changes.push(`Updated "${oldAcc.name}" balance to ${symbol}${newAcc.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}${diffSuffix}`)
+                }
               }
             }
           }
           
           for (const newAcc of cashAccounts) {
             if (!oldAccounts.some((a) => a.id === newAcc.id)) {
-              changes.push(`Added "${newAcc.name}" with balance ฿${newAcc.balance.toLocaleString()}`)
+              const symbol = (newAcc.currency ?? 'THB') === 'USD' ? '$' : '฿'
+              changes.push(`Added "${newAcc.name}" with balance ${symbol}${newAcc.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}`)
             }
           }
           
