@@ -6,7 +6,7 @@ import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD } from '../../lib/calc'
-import type { AssetClass, Holding } from '../../lib/types'
+import type { AssetClass, Holding, PlannedAsset } from '../../lib/types'
 import { localDateStr, thb } from '../../lib/format'
 import { searchSecurities, type Security } from '../../lib/securities'
 import { PencilIcon } from '../icons'
@@ -14,6 +14,7 @@ import { PencilIcon } from '../icons'
 interface Props {
   open: boolean
   editing: Holding | null
+  initialPlannedAsset?: PlannedAsset | null
   onClose: () => void
 }
 
@@ -61,8 +62,8 @@ const blank = {
   price: '' as number | string | '',
 }
 
-export function HoldingForm({ open, editing, onClose }: Props) {
-  const { upsertHolding, removeHolding, addHoldingLog, usdThb } = useData()
+export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Props) {
+  const { upsertHolding, removeHolding, removePlannedAsset, addHoldingLog, usdThb } = useData()
   const { showToast } = useToast()
 
   // Generic fields
@@ -141,6 +142,25 @@ export function HoldingForm({ open, editing, onClose }: Props) {
         setIsThbInvestedManuallyEdited(false)
         setIsEditingThb(false)
       }
+    } else if (initialPlannedAsset) {
+      setForm({
+        name: initialPlannedAsset.name,
+        ticker: initialPlannedAsset.ticker,
+        assetClass: initialPlannedAsset.assetClass,
+        units: '',
+        avgCost: '',
+        price: '',
+      })
+      setSatoshi('')
+      setBtcThbSpent('')
+      setLocationName('')
+      setGrams('')
+      setGoldThbSpent('')
+      setGoldLocationName('')
+      setFxRateInput(usdThb ? formatCostOrFx(usdThb) : '')
+      setThbInvestedInput('')
+      setIsThbInvestedManuallyEdited(false)
+      setIsEditingThb(false)
     } else {
       setForm(blank)
       setSatoshi('')
@@ -155,7 +175,7 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       setIsEditingThb(false)
     }
     setShowErrors(false)
-  }, [open, editing, usdThb])
+  }, [open, editing, initialPlannedAsset, usdThb])
 
   // Interactive handlers for dynamic dual-currency and FX rate recalculations
   const handleSharesChange = (newUnits: number | string | '') => {
@@ -297,6 +317,9 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       updatedAt: localDateStr(),
     }
     upsertHolding(savedHolding)
+    if (initialPlannedAsset?.id) {
+      removePlannedAsset(initialPlannedAsset.id)
+    }
     addHoldingLog({
       action: 'add',
       holdingId: savedHolding.id,
@@ -335,6 +358,9 @@ export function HoldingForm({ open, editing, onClose }: Props) {
       updatedAt: localDateStr(),
     }
     upsertHolding(savedHolding)
+    if (initialPlannedAsset?.id) {
+      removePlannedAsset(initialPlannedAsset.id)
+    }
     addHoldingLog({
       action: 'add',
       holdingId: savedHolding.id,
@@ -404,6 +430,9 @@ export function HoldingForm({ open, editing, onClose }: Props) {
 
     const savedHolding = updateObj as Holding
     upsertHolding(savedHolding)
+    if (!editing && initialPlannedAsset?.id) {
+      removePlannedAsset(initialPlannedAsset.id)
+    }
     addHoldingLog({
       action: editing ? 'edit' : 'add',
       holdingId: editing?.id ?? savedHolding.id,
