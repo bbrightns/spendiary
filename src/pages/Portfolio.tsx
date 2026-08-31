@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
@@ -9,7 +10,6 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { AddButton } from '../components/ui/AddButton'
 import { DonutChart } from '../components/charts/DonutChart'
 import { PnLPill, PnLText } from '../components/ui/PnL'
-import { RebalancingSection } from '../components/portfolio/RebalancingSection'
 import { HoldingForm } from '../components/forms/HoldingForm'
 import { BuyMoreForm } from '../components/forms/BuyMoreForm'
 import { Modal } from '../components/ui/Modal'
@@ -25,7 +25,7 @@ import {
   portfolioSummary,
 } from '../lib/calc'
 import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
-import type { AssetClass, BtcLocation, Holding, NetWorthSnapshot, PlannedAsset } from '../lib/types'
+import type { AssetClass, BtcLocation, Holding, NetWorthSnapshot } from '../lib/types'
 import { money, thb, thbCompact } from '../lib/format'
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
@@ -83,7 +83,6 @@ export function Portfolio() {
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Holding | null>(null)
-  const [plannedForHolding, setPlannedForHolding] = useState<PlannedAsset | null>(null)
   const [buyOpen, setBuyOpen] = useState(false)
   const [buying, setBuying] = useState<Holding | null>(null)
 
@@ -110,8 +109,8 @@ export function Portfolio() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (summary.value > 0) recordPortfolioSnapshot(summary.value) }, [summary.value])
 
-  const openAdd = () => { setEditing(null); setPlannedForHolding(null); setFormOpen(true) }
-  const openEdit = (h: Holding) => { setEditing(h); setPlannedForHolding(null); setFormOpen(true) }
+  const openAdd = () => { setEditing(null); setFormOpen(true) }
+  const openEdit = (h: Holding) => { setEditing(h); setFormOpen(true) }
   const openBuy = (h: Holding) => { setBuying(h); setBuyOpen(true) }
   function openLocEdit(holdingId: string, loc: BtcLocation | import('../lib/types').GoldLocation) {
     setLocEditHoldingId(holdingId)
@@ -182,15 +181,7 @@ export function Portfolio() {
             action={<AddButton onClick={openAdd} label="Add holding" />}
           />
         </Card>
-        <HoldingForm
-          open={formOpen}
-          editing={editing}
-          initialPlannedAsset={plannedForHolding}
-          onClose={() => {
-            setFormOpen(false)
-            setPlannedForHolding(null)
-          }}
-        />
+        <HoldingForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
       </>
     )
   }
@@ -376,23 +367,17 @@ export function Portfolio() {
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
-              <span>{data.holdings.length} total holding positions</span>
-              <span className="font-semibold text-ink-soft">
-                {alloc.length} asset classes
-              </span>
+            <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px]">
+              <span className="text-ink-muted">{data.holdings.length} holding positions</span>
+              <Link
+                to="/rebalance"
+                className="inline-flex items-center gap-1 font-bold text-brand hover:underline cursor-pointer"
+              >
+                <span>Rebalance Portfolio</span>
+                <span aria-hidden="true">→</span>
+              </Link>
             </div>
           </Card>
-
-          {/* Rebalancing Section */}
-          <RebalancingSection
-            onBuyHolding={openBuy}
-            onAddPlannedAsset={(planned) => {
-              setEditing(null)
-              setPlannedForHolding(planned)
-              setFormOpen(true)
-            }}
-          />
 
           {/* Portfolio Value Trend */}
           {(data.portfolioHistory?.length ?? 0) >= 1 && (
@@ -686,15 +671,7 @@ export function Portfolio() {
         </div>
       </div>
 
-      <HoldingForm
-        open={formOpen}
-        editing={editing}
-        initialPlannedAsset={plannedForHolding}
-        onClose={() => {
-          setFormOpen(false)
-          setPlannedForHolding(null)
-        }}
-      />
+      <HoldingForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
       <BuyMoreForm open={buyOpen} holding={buying} onClose={() => setBuyOpen(false)} />
 
       {/* BTC / Gold location edit modal */}
