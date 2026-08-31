@@ -156,6 +156,15 @@ export interface NetWorthSnapshot {
   value: number
 }
 
+export type RebalanceMode = 'class' | 'holding'
+
+export interface PlannedAsset {
+  id: string
+  name: string
+  ticker: string
+  assetClass: InvestAssetClass
+}
+
 export interface SpendiaryData {
   /** Display name shown in the Dashboard greeting */
   userName?: string
@@ -178,7 +187,10 @@ export interface SpendiaryData {
   dcaPlans: DcaPlan[]
   transfers: Transfer[]
   retirement?: RetirementSettings
+  rebalanceMode?: RebalanceMode
   rebalanceTargets?: Record<InvestAssetClass, number>
+  rebalanceHoldingTargets?: Record<string, number>
+  plannedAssets?: PlannedAsset[]
   /** Timestamp in ms when this data was last modified locally */
   lastUpdatedAt?: number
 }
