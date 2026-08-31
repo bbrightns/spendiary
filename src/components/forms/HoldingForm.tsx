@@ -389,13 +389,16 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
     const unitsNum = Number(form.units)
     const avgCostInput = Number(form.avgCost)
 
-    let updateObj: Partial<Holding> = {
-      id: editing?.id,
+    const targetId = editing?.id ?? newId()
+    let updateObj: Holding = {
+      id: targetId,
       name,
       ticker,
       assetClass: form.assetClass,
       units: unitsNum,
       totalUnits: unitsNum,
+      avgCost: avgCostInput,
+      price: Number(form.price) || 0,
       updatedAt: localDateStr(),
     }
 
@@ -428,14 +431,14 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
       }
     }
 
-    const savedHolding = updateObj as Holding
+    const savedHolding = updateObj
     upsertHolding(savedHolding)
     if (!editing && initialPlannedAsset?.id) {
       removePlannedAsset(initialPlannedAsset.id)
     }
     addHoldingLog({
       action: editing ? 'edit' : 'add',
-      holdingId: editing?.id ?? savedHolding.id,
+      holdingId: targetId,
       holdingName: name,
       ticker,
       assetClass: form.assetClass,
