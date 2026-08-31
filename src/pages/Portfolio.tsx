@@ -9,6 +9,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { AddButton } from '../components/ui/AddButton'
 import { DonutChart } from '../components/charts/DonutChart'
 import { PnLPill, PnLText } from '../components/ui/PnL'
+import { RebalancingSection } from '../components/portfolio/RebalancingSection'
 import { HoldingForm } from '../components/forms/HoldingForm'
 import { BuyMoreForm } from '../components/forms/BuyMoreForm'
 import { Modal } from '../components/ui/Modal'
@@ -24,10 +25,8 @@ import {
   portfolioSummary,
 } from '../lib/calc'
 import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
-import type { AssetClass, BtcLocation, Holding, InvestAssetClass, NetWorthSnapshot } from '../lib/types'
+import type { AssetClass, BtcLocation, Holding, NetWorthSnapshot, PlannedAsset } from '../lib/types'
 import { money, thb, thbCompact } from '../lib/format'
-
-const REBALANCE_ASSETS: InvestAssetClass[] = ['fund', 'stock', 'gold', 'crypto']
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -47,7 +46,6 @@ export function Portfolio() {
     removeBtcLocation,
     upsertGoldLocation,
     removeGoldLocation,
-    setRebalanceTargets,
     recordPortfolioSnapshot,
   } = useData()
   const { showToast } = useToast()
@@ -83,106 +81,9 @@ export function Portfolio() {
     }
   }
 
-  // Rebalancing states
-  const [rebalanceOpen, setRebalanceOpen] = useState(false)
-  const [newCash, setNewCash] = useState<number | ''>('')
-  const [smartRebalance, setSmartRebalance] = useState(false)
-
-  const initialTargets: Record<InvestAssetClass, number> = {
-    fund: data.rebalanceTargets?.fund ?? 50,
-    stock: data.rebalanceTargets?.stock ?? 30,
-    gold: data.rebalanceTargets?.gold ?? 15,
-    crypto: data.rebalanceTargets?.crypto ?? 5,
-  }
-  const [targets, setLocalTargets] = useState<Record<InvestAssetClass, number>>(initialTargets)
-
-  // Derived values for rebalancing (Investments only, excluding cash)
-  const portVal = data.holdings.reduce((sum, h) => sum + h.units * h.price, 0)
-
-  const actualVals: Record<InvestAssetClass, number> = {
-    fund: data.holdings.filter(h => h.assetClass === 'fund').reduce((s, h) => s + h.units * h.price, 0),
-    stock: data.holdings.filter(h => h.assetClass === 'stock').reduce((s, h) => s + h.units * h.price, 0),
-    crypto: data.holdings.filter(h => h.assetClass === 'crypto').reduce((s, h) => s + h.units * h.price, 0),
-    gold: data.holdings.filter(h => h.assetClass === 'gold').reduce((s, h) => s + h.units * h.price, 0),
-  }
-
-  const targetsSum = Object.values(targets).reduce((s, x) => s + x, 0)
-  const cashToDeploy = Number(newCash) || 0
-  const targetTotalValue = portVal + cashToDeploy
-
-  const handleTargetChange = (key: InvestAssetClass, val: number) => {
-    const updated = { ...targets, [key]: val }
-    setLocalTargets(updated)
-    const sum = Object.values(updated).reduce((s, x) => s + x, 0)
-    if (sum === 100) {
-      setRebalanceTargets(updated)
-    }
-  }
-
-  const rebalanceRows = REBALANCE_ASSETS.map((key) => {
-    const actualVal = actualVals[key]
-    const actualPct = portVal > 0 ? (actualVal / portVal) * 100 : 0
-    const targetPct = targets[key] ?? 0
-    const targetVal = (targetPct / 100) * targetTotalValue
-
-    let diff = targetVal - actualVal
-    let actionLabel = '-'
-    let actionCls = 'text-ink-muted'
-
-    if (targetsSum === 100) {
-      if (diff > 5) {
-        actionLabel = `Buy ${thbCompact(diff)}`
-        actionCls = 'text-gain font-semibold'
-      } else if (diff < -5) {
-        actionLabel = `Sell ${thbCompact(Math.abs(diff))}`
-        actionCls = 'text-loss font-semibold'
-      } else {
-        actionLabel = 'Balanced'
-        actionCls = 'text-ink-muted font-medium'
-      }
-    }
-
-    return {
-      key,
-      actualVal,
-      actualPct,
-      targetPct,
-      targetVal,
-      diff,
-      actionLabel,
-      actionCls,
-    }
-  })
-
-  // Smart Rebalancing math pass
-  if (targetsSum === 100 && smartRebalance && cashToDeploy > 0) {
-    const deficits = REBALANCE_ASSETS.map(key => {
-      const actualVal = actualVals[key]
-      const targetVal = ((targets[key] ?? 0) / 100) * targetTotalValue
-      return { key, deficit: Math.max(0, targetVal - actualVal) }
-    })
-    const totalDeficit = deficits.reduce((s, d) => s + d.deficit, 0)
-
-    rebalanceRows.forEach((row) => {
-      const def = deficits.find(d => d.key === row.key)
-      if (def && def.deficit > 0) {
-        const allocated = totalDeficit > 0 ? cashToDeploy * (def.deficit / totalDeficit) : 0
-        if (allocated > 5) {
-          row.actionLabel = `Add ${thbCompact(allocated)}`
-          row.actionCls = 'text-brand font-semibold'
-        } else {
-          row.actionLabel = 'Balanced'
-          row.actionCls = 'text-ink-muted font-medium'
-        }
-      } else {
-        row.actionLabel = 'Balanced'
-        row.actionCls = 'text-ink-muted font-medium'
-      }
-    })
-  }
-
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Holding | null>(null)
+  const [plannedForHolding, setPlannedForHolding] = useState<PlannedAsset | null>(null)
   const [buyOpen, setBuyOpen] = useState(false)
   const [buying, setBuying] = useState<Holding | null>(null)
 
@@ -209,8 +110,8 @@ export function Portfolio() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (summary.value > 0) recordPortfolioSnapshot(summary.value) }, [summary.value])
 
-  const openAdd = () => { setEditing(null); setFormOpen(true) }
-  const openEdit = (h: Holding) => { setEditing(h); setFormOpen(true) }
+  const openAdd = () => { setEditing(null); setPlannedForHolding(null); setFormOpen(true) }
+  const openEdit = (h: Holding) => { setEditing(h); setPlannedForHolding(null); setFormOpen(true) }
   const openBuy = (h: Holding) => { setBuying(h); setBuyOpen(true) }
   function openLocEdit(holdingId: string, loc: BtcLocation | import('../lib/types').GoldLocation) {
     setLocEditHoldingId(holdingId)
@@ -281,7 +182,15 @@ export function Portfolio() {
             action={<AddButton onClick={openAdd} label="Add holding" />}
           />
         </Card>
-        <HoldingForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
+        <HoldingForm
+          open={formOpen}
+          editing={editing}
+          initialPlannedAsset={plannedForHolding}
+          onClose={() => {
+            setFormOpen(false)
+            setPlannedForHolding(null)
+          }}
+        />
       </>
     )
   }
@@ -479,123 +388,15 @@ export function Portfolio() {
             </div>
           </Card>
 
-          {/* Rebalancing Calculator */}
-          <Card className="animate-rise">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-display text-[16px] font-bold text-ink">Rebalancing</h2>
-                <p className="text-[12px] text-ink-muted">Target asset allocation</p>
-              </div>
-              <button
-                onClick={() => setRebalanceOpen(!rebalanceOpen)}
-                aria-label={rebalanceOpen ? 'Close rebalancing configuration' : 'Configure rebalancing targets'}
-                aria-expanded={rebalanceOpen}
-                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-ink px-3 text-[11.5px] font-semibold text-white shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-ink-hover dark:bg-brand dark:hover:bg-brand-ink active:scale-95 cursor-pointer whitespace-nowrap"
-              >
-                {rebalanceOpen ? 'Close' : 'Configure'}
-              </button>
-            </div>
-            
-            {rebalanceOpen && (
-              <div className="mt-4 space-y-4 pt-3 border-t border-line">
-                <div className="space-y-3">
-                  <NumberField
-                    label="New Cash to Deploy"
-                    prefix="฿"
-                    value={newCash}
-                    onChange={setNewCash}
-                    placeholder="e.g. 50,000"
-                  />
-                  
-                  {Number(newCash) > 0 && (
-                    <div className="flex flex-col justify-end">
-                      <label className="flex items-center gap-2 text-[13px] font-semibold text-ink-soft cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={smartRebalance}
-                          onChange={(e) => setSmartRebalance(e.target.checked)}
-                          className="rounded border-line-strong text-brand focus:ring-brand/15 h-4 w-4"
-                        />
-                        Smart Rebalancing (Buy Only)
-                      </label>
-                      <p className="mt-1 text-[11px] text-ink-muted">
-                        Directs new cash solely to underweight classes. No sell recommendations.
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {targetsSum !== 100 && (
-                  <div className="rounded-xl border border-warn/25 bg-warn-soft px-3 py-2 text-[12px] text-warn font-semibold flex items-center gap-2">
-                    <svg className="h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8}>
-                      <path d="M8 5v4M8 11.5v.5" strokeLinecap="round" />
-                      <circle cx={8} cy={8} r={6.5} />
-                    </svg>
-                    <span>Targets sum to {targetsSum}%. Must equal 100%.</span>
-                  </div>
-                )}
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-[12px] border-collapse">
-                    <thead>
-                      <tr className="text-ink-muted border-b border-line pb-1.5 font-medium">
-                        <th className="pb-1.5 font-semibold text-left">Asset</th>
-                        <th className="pb-1.5 font-semibold text-right">Actual</th>
-                        <th className="pb-1.5 font-semibold text-center w-[70px]">Target</th>
-                        <th className="pb-1.5 font-semibold text-right">Advice</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rebalanceRows.map((row) => {
-                        const color = ASSET_META[row.key]?.color
-                        const shortName = ASSET_META[row.key]?.plural ?? row.key
-
-                        return (
-                          <tr key={row.key} className="border-b border-line last:border-0 align-middle">
-                            <td className="py-2 text-left font-medium text-ink">
-                              <div className="flex items-center gap-1.5">
-                                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} />
-                                <span className="truncate">{shortName}</span>
-                              </div>
-                            </td>
-                            
-                            <td className="py-2 text-right tnum text-ink-soft">
-                              <div className="font-semibold">{thbCompact(row.actualVal)}</div>
-                              <div className="text-[10px] text-ink-muted">{row.actualPct.toFixed(0)}%</div>
-                            </td>
-
-                            <td className="py-2 text-center">
-                              <div className="inline-flex items-center rounded-lg border border-line-strong px-1 py-0.5 bg-surface-muted max-w-[60px] mx-auto">
-                                <input
-                                  type="number"
-                                  min={0}
-                                  max={100}
-                                  value={row.targetPct}
-                                  onChange={(e) => handleTargetChange(row.key, Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
-                                  className="w-full text-center outline-none bg-transparent tnum text-[12px] font-bold text-ink"
-                                />
-                                <span className="text-[9.5px] text-ink-muted font-bold">%</span>
-                              </div>
-                            </td>
-
-                            <td className="py-2 text-right tnum font-bold text-[11.5px]">
-                              {targetsSum === 100 ? (
-                                <span className={row.diff > 5 ? 'text-gain' : row.diff < -5 ? 'text-loss' : 'text-ink-muted'}>
-                                  {row.actionLabel}
-                                </span>
-                              ) : (
-                                <span className="text-ink-muted">-</span>
-                              )}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </Card>
+          {/* Rebalancing Section */}
+          <RebalancingSection
+            onBuyHolding={openBuy}
+            onAddPlannedAsset={(planned) => {
+              setEditing(null)
+              setPlannedForHolding(planned)
+              setFormOpen(true)
+            }}
+          />
 
           {/* Portfolio Value Trend */}
           {(data.portfolioHistory?.length ?? 0) >= 1 && (
@@ -889,7 +690,15 @@ export function Portfolio() {
         </div>
       </div>
 
-      <HoldingForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
+      <HoldingForm
+        open={formOpen}
+        editing={editing}
+        initialPlannedAsset={plannedForHolding}
+        onClose={() => {
+          setFormOpen(false)
+          setPlannedForHolding(null)
+        }}
+      />
       <BuyMoreForm open={buyOpen} holding={buying} onClose={() => setBuyOpen(false)} />
 
       {/* BTC / Gold location edit modal */}
