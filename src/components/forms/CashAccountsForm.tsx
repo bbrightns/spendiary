@@ -190,13 +190,13 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
       title="Cash accounts"
       description="Track where your cash sits. Total cash is the sum of all accounts."
       footer={
-        <div className="space-y-3">
-          <div className="flex items-center justify-between rounded-2xl bg-surface-muted px-4 py-3 border border-line/40">
-            <span className="flex items-center gap-2 text-[13.5px] font-semibold text-ink-soft">
-              <WalletIcon className="h-[18px] w-[18px] text-cash" />
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between rounded-xl bg-surface-muted px-4 py-2.5 border border-line/40">
+            <span className="flex items-center gap-2 text-[13px] font-semibold text-ink-soft">
+              <WalletIcon className="h-[17px] w-[17px] text-cash" />
               Total cash (THB)
             </span>
-            <span className="font-display text-[18px] font-extrabold tnum text-ink">{thb(totalThb)}</span>
+            <span className="font-display text-[17px] font-extrabold tnum text-ink">{thb(totalThb)}</span>
           </div>
 
           <Button onClick={save} className="w-full">
