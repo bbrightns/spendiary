@@ -40,6 +40,7 @@ export function Dashboard() {
   const { data, recordNetWorthSnapshot, usdThb } = useData()
   const navigate = useNavigate()
   const [cashOpen, setCashOpen] = useState(false)
+  const [selectedCashAccountId, setSelectedCashAccountId] = useState<string | null>(null)
   const hasAnything =
     data.holdings.length > 0 || data.dcaPlans.length > 0
 
@@ -368,7 +369,10 @@ export function Dashboard() {
                   </span>
                   <button
                     type="button"
-                    onClick={() => setCashOpen(true)}
+                    onClick={() => {
+                      setSelectedCashAccountId(null)
+                      setCashOpen(true)
+                    }}
                     aria-label="Manage cash accounts"
                     className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-brand hover:underline cursor-pointer"
                   >
@@ -398,11 +402,16 @@ export function Dashboard() {
                       return (
                         <div
                           key={a.id}
+                          onClick={() => {
+                            setSelectedCashAccountId(a.id)
+                            setCashOpen(true)
+                          }}
                           style={{
                             width: `${cash > 0 ? (thbVal / cash) * 100 : 0}%`,
                             background: CASH_COLORS[i % CASH_COLORS.length],
                           }}
-                          title={`${a.name}: ${moneyCompact(a.balance, a.currency)}`}
+                          title={`${a.name}: ${moneyCompact(a.balance, a.currency)} (Click to edit)`}
+                          className="cursor-pointer hover:opacity-80 transition-opacity"
                         />
                       )
                     })}
@@ -411,21 +420,28 @@ export function Dashboard() {
                   {/* Cash accounts list grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
                     {data.cashAccounts.map((a, i) => (
-                      <div
+                      <button
                         key={a.id}
-                        className="flex flex-col p-2.5 rounded-xl bg-surface-muted/50 border border-line/40 hover:bg-surface-muted transition-colors"
+                        type="button"
+                        onClick={() => {
+                          setSelectedCashAccountId(a.id)
+                          setCashOpen(true)
+                        }}
+                        aria-label={`Edit ${a.name}, balance ${moneyCompact(a.balance, a.currency)}`}
+                        className="flex flex-col text-left p-2.5 rounded-xl bg-surface-muted/50 border border-line/40 hover:bg-surface-muted hover:border-brand/40 hover:shadow-xs group transition-all cursor-pointer active:scale-[0.98]"
+                        title={`Click to edit ${a.name}`}
                       >
-                        <span className="flex items-center gap-1.5 text-[11px] font-medium text-ink-muted truncate">
+                        <span className="flex items-center gap-1.5 text-[11px] font-medium text-ink-muted truncate w-full">
                           <span
                             className="h-2 w-2 shrink-0 rounded-full"
                             style={{ background: CASH_COLORS[i % CASH_COLORS.length] }}
                           />
-                          <span className="truncate">{a.name}</span>
+                          <span className="truncate group-hover:text-ink transition-colors">{a.name}</span>
                         </span>
                         <span className="mt-1 font-display font-bold tnum text-[13.5px] text-ink">
                           {moneyCompact(a.balance, a.currency)}
                         </span>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -434,7 +450,10 @@ export function Dashboard() {
                   <p className="text-[12.5px] text-ink-muted">No cash accounts added yet.</p>
                   <button
                     type="button"
-                    onClick={() => setCashOpen(true)}
+                    onClick={() => {
+                      setSelectedCashAccountId(null)
+                      setCashOpen(true)
+                    }}
                     aria-label="Add first cash account"
                     className="mt-1 text-[12px] font-semibold text-brand hover:underline cursor-pointer"
                   >
@@ -448,7 +467,10 @@ export function Dashboard() {
               <span>Emergency cash reserve</span>
               <button
                 type="button"
-                onClick={() => setCashOpen(true)}
+                onClick={() => {
+                  setSelectedCashAccountId(null)
+                  setCashOpen(true)
+                }}
                 aria-label="Add new cash account"
                 className="font-semibold text-brand hover:underline cursor-pointer"
               >
@@ -476,7 +498,14 @@ export function Dashboard() {
         </Card>
       </div>
 
-      <CashAccountsForm open={cashOpen} onClose={() => setCashOpen(false)} />
+      <CashAccountsForm
+        open={cashOpen}
+        onClose={() => {
+          setCashOpen(false)
+          setSelectedCashAccountId(null)
+        }}
+        initialAccountId={selectedCashAccountId}
+      />
     </div>
   )
 }
