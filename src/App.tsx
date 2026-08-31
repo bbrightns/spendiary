@@ -13,6 +13,7 @@ import { DcaPlanner } from './pages/DcaPlanner'
 const Retirement = lazy(() => import('./pages/Retirement').then(m => ({ default: m.Retirement })))
 const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })))
 const HoldingLogs = lazy(() => import('./pages/HoldingLogs').then(m => ({ default: m.HoldingLogs })))
+const Rebalance = lazy(() => import('./pages/Rebalance').then(m => ({ default: m.Rebalance })))
 
 function PageLoadingFallback() {
   return (
@@ -256,6 +257,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/portfolio" element={<Portfolio />} />
+          <Route path="/rebalance" element={<Rebalance />} />
           <Route path="/dca" element={<DcaPlanner />} />
           <Route path="/retirement" element={<Retirement />} />
           <Route path="/settings" element={<Settings />} />
