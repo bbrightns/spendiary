@@ -791,7 +791,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
       upsertHolding: (holding) =>
         updateData((prev) => ({ ...prev, holdings: upsert(prev.holdings, holding) })),
       removeHolding: (id) =>
-        updateData((prev) => ({ ...prev, holdings: prev.holdings.filter((h) => h.id !== id) })),
+        updateData((prev) => {
+          const { [id]: _, ...restTargets } = prev.rebalanceHoldingTargets ?? {}
+          return {
+            ...prev,
+            holdings: prev.holdings.filter((h) => h.id !== id),
+            rebalanceHoldingTargets: restTargets,
+          }
+        }),
 
       reorderHoldings: (ids) =>
         updateData((prev) => ({
@@ -1248,7 +1255,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
       upsertPlannedAsset: (asset) =>
         updateData((prev) => ({ ...prev, plannedAssets: upsert(prev.plannedAssets ?? [], asset) })),
       removePlannedAsset: (id) =>
-        updateData((prev) => ({ ...prev, plannedAssets: (prev.plannedAssets ?? []).filter((a) => a.id !== id) })),
+        updateData((prev) => {
+          const { [id]: _, ...restTargets } = prev.rebalanceHoldingTargets ?? {}
+          return {
+            ...prev,
+            plannedAssets: (prev.plannedAssets ?? []).filter((a) => a.id !== id),
+            rebalanceHoldingTargets: restTargets,
+          }
+        }),
 
       recordNetWorthSnapshot: (value) =>
         updateData((prev) => {
