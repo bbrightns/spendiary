@@ -340,13 +340,12 @@ export function Dashboard() {
 
             <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
               <span>{data.holdings.length} total holding positions</span>
-              <button
-                type="button"
-                onClick={() => navigate('/portfolio')}
+              <Link
+                to="/rebalance"
                 className="font-semibold text-brand hover:underline cursor-pointer"
               >
                 Rebalance
-              </button>
+              </Link>
             </div>
           </Card>
         </div>
