@@ -170,12 +170,16 @@ export function Rebalance() {
     return init
   })
 
-  const holdingTargetsSum = Object.values(localHoldingTargets).reduce((s, x) => s + (x || 0), 0)
+  const holdingTargetsSum =
+    data.holdings.reduce((s, h) => s + (localHoldingTargets[h.id] ?? 0), 0) +
+    activePlannedAssets.reduce((s, p) => s + (localHoldingTargets[p.id] ?? 0), 0)
 
   const handleHoldingTargetChange = (id: string, val: number) => {
     const updated = { ...localHoldingTargets, [id]: val }
     setLocalHoldingTargets(updated)
-    const sum = Object.values(updated).reduce((s, x) => s + (x || 0), 0)
+    const sum =
+      data.holdings.reduce((s, h) => s + (h.id === id ? val : (localHoldingTargets[h.id] ?? 0)), 0) +
+      activePlannedAssets.reduce((s, p) => s + (p.id === id ? val : (localHoldingTargets[p.id] ?? 0)), 0)
     if (sum === 100) {
       setRebalanceHoldingTargets(updated)
     }
@@ -860,7 +864,14 @@ export function Rebalance() {
                                   {row.isPlanned && (
                                     <button
                                       type="button"
-                                      onClick={() => removePlannedAsset(row.id)}
+                                      onClick={() => {
+                                        removePlannedAsset(row.id)
+                                        setLocalHoldingTargets((prev) => {
+                                          const next = { ...prev }
+                                          delete next[row.id]
+                                          return next
+                                        })
+                                      }}
                                       title="Remove planned asset"
                                       className="p-1.5 rounded-full text-ink-muted hover:text-loss hover:bg-loss-soft/30 transition-colors cursor-pointer"
                                     >
