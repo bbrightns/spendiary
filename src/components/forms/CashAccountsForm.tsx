@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { DragHandleIcon, PlusIcon, TrashIcon, WalletIcon } from '../icons'
@@ -10,6 +10,7 @@ import { thb } from '../../lib/format'
 interface Props {
   open: boolean
   onClose: () => void
+  initialAccountId?: string | null
 }
 
 interface Draft {
@@ -38,16 +39,23 @@ function formatWithCommas(value: string | number): string {
   return integerPart
 }
 
-export function CashAccountsForm({ open, onClose }: Props) {
+export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
   const { data, setCashAccounts, usdThb } = useData()
   const { showToast } = useToast()
   const [rows, setRows] = useState<Draft[]>([])
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null)
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
   const [dropPosition, setDropPosition] = useState<'top' | 'bottom' | null>(null)
+  const [highlightedId, setHighlightedId] = useState<string | null>(null)
+
+  const balanceInputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
+  const nameInputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
 
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      setHighlightedId(null)
+      return
+    }
     setRows(
       data.cashAccounts.length > 0
         ? data.cashAccounts.map((a) => ({
@@ -58,7 +66,26 @@ export function CashAccountsForm({ open, onClose }: Props) {
           }))
         : [{ id: tempId(), name: '', balance: '', currency: 'THB' }],
     )
-  }, [open, data.cashAccounts])
+
+    if (initialAccountId) {
+      setHighlightedId(initialAccountId)
+      const timer = setTimeout(() => {
+        const input = balanceInputRefs.current.get(initialAccountId)
+        if (input) {
+          input.focus()
+          input.select()
+          input.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        }
+      }, 80)
+      const clearTimer = setTimeout(() => {
+        setHighlightedId(null)
+      }, 2200)
+      return () => {
+        clearTimeout(timer)
+        clearTimeout(clearTimer)
+      }
+    }
+  }, [open, data.cashAccounts, initialAccountId])
 
   const rate = usdThb && usdThb > 0 ? usdThb : 35
 
@@ -71,7 +98,17 @@ export function CashAccountsForm({ open, onClose }: Props) {
   const update = (id: string, patch: Partial<Draft>) =>
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)))
   const remove = (id: string) => setRows((rs) => rs.filter((r) => r.id !== id))
-  const add = () => setRows((rs) => [...rs, { id: tempId(), name: '', balance: '', currency: 'THB' }])
+  const add = () => {
+    const id = tempId()
+    setRows((rs) => [...rs, { id, name: '', balance: '', currency: 'THB' }])
+    setTimeout(() => {
+      const nameInput = nameInputRefs.current.get(id)
+      if (nameInput) {
+        nameInput.focus()
+        nameInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }
+    }, 50)
+  }
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIdx(index)
@@ -152,13 +189,29 @@ export function CashAccountsForm({ open, onClose }: Props) {
       onClose={onClose}
       title="Cash accounts"
       description="Track where your cash sits. Total cash is the sum of all accounts."
+      footer={
+        <div className="space-y-3">
+          <div className="flex items-center justify-between rounded-2xl bg-surface-muted px-4 py-3 border border-line/40">
+            <span className="flex items-center gap-2 text-[13.5px] font-semibold text-ink-soft">
+              <WalletIcon className="h-[18px] w-[18px] text-cash" />
+              Total cash (THB)
+            </span>
+            <span className="font-display text-[18px] font-extrabold tnum text-ink">{thb(totalThb)}</span>
+          </div>
+
+          <Button onClick={save} className="w-full">
+            Save accounts
+          </Button>
+        </div>
+      }
     >
-      <div className="space-y-3.5">
+      <div className="space-y-3.5 pb-2">
         {rows.map((r, index) => {
           const isDragging = draggedIdx === index
           const isOver = dragOverIdx === index
           const showTopLine = isOver && dropPosition === 'top' && !isDragging
           const showBottomLine = isOver && dropPosition === 'bottom' && !isDragging
+          const isHighlighted = highlightedId === r.id
 
           return (
             <div
@@ -168,8 +221,12 @@ export function CashAccountsForm({ open, onClose }: Props) {
               onDragOver={(e) => handleDragOver(e, index)}
               onDrop={(e) => handleDrop(e, index)}
               onDragEnd={handleDragEnd}
-              className={`relative flex items-center gap-2 rounded-xl p-1 transition-all ${
+              className={`relative flex items-center gap-2 rounded-xl p-1 transition-all duration-300 ${
                 isDragging ? 'opacity-30 scale-[0.98]' : ''
+              } ${
+                isHighlighted
+                  ? 'ring-2 ring-brand/70 bg-brand-soft/50 dark:bg-brand-soft/30 shadow-xs'
+                  : ''
               }`}
             >
               {/* Insertion line indicator above */}
@@ -196,6 +253,10 @@ export function CashAccountsForm({ open, onClose }: Props) {
                 <DragHandleIcon className="h-5 w-5" />
               </div>
               <input
+                ref={(el) => {
+                  if (el) nameInputRefs.current.set(r.id, el)
+                  else nameInputRefs.current.delete(r.id)
+                }}
                 className="h-11 w-[38%] rounded-xl border border-line-strong bg-surface px-3.5 text-[15px] text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15"
                 placeholder="Bank / location"
                 value={r.name}
@@ -218,6 +279,10 @@ export function CashAccountsForm({ open, onClose }: Props) {
                   {r.currency === 'USD' ? '$' : '฿'}
                 </button>
                 <input
+                  ref={(el) => {
+                    if (el) balanceInputRefs.current.set(r.id, el)
+                    else balanceInputRefs.current.delete(r.id)
+                  }}
                   type="text"
                   inputMode="decimal"
                   className="h-11 w-full rounded-xl border border-line-strong bg-surface pl-10 pr-3 text-[15px] tnum text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15"
@@ -243,25 +308,11 @@ export function CashAccountsForm({ open, onClose }: Props) {
         <button
           type="button"
           onClick={add}
-          className="mt-1 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[13.5px] font-semibold text-brand transition-colors hover:text-brand-ink"
+          className="mt-1 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[13.5px] font-semibold text-brand transition-colors hover:text-brand-ink cursor-pointer"
         >
           <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
           Add account
         </button>
-
-        <div className="mt-3 flex items-center justify-between rounded-2xl bg-surface-muted px-4 py-3">
-          <span className="flex items-center gap-2 text-[13.5px] font-semibold text-ink-soft">
-            <WalletIcon className="h-[18px] w-[18px] text-cash" />
-            Total cash (THB)
-          </span>
-          <span className="font-display text-[18px] font-extrabold tnum text-ink">{thb(totalThb)}</span>
-        </div>
-
-        <div className="pt-4">
-          <Button onClick={save} className="w-full">
-            Save accounts
-          </Button>
-        </div>
       </div>
     </Modal>
   )
