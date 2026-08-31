@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import type { BtcLocation, CashAccount, DcaPlan, FixedCostItem, GoldLocation, Holding, HoldingLog, InvestAssetClass, NetWorthSnapshot, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
+import type { BtcLocation, CashAccount, DcaPlan, FixedCostItem, GoldLocation, Holding, HoldingLog, InvestAssetClass, NetWorthSnapshot, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
 import { localDateStr } from '../lib/format'
 import { seedData } from '../lib/seed'
 import { findMatchingHolding } from '../lib/calc'
@@ -79,6 +79,25 @@ export function validateSpendiaryData(obj: unknown): obj is SpendiaryData {
       if (typeof rt[k] !== 'number') return false
     }
   }
+  if (d.rebalanceMode !== undefined && !['class', 'holding'].includes(d.rebalanceMode as string)) {
+    return false
+  }
+  if (d.rebalanceHoldingTargets !== undefined) {
+    if (typeof d.rebalanceHoldingTargets !== 'object' || d.rebalanceHoldingTargets === null || Array.isArray(d.rebalanceHoldingTargets)) return false
+    const rht = d.rebalanceHoldingTargets as Record<string, unknown>
+    for (const k of Object.keys(rht)) {
+      if (typeof rht[k] !== 'number') return false
+    }
+  }
+  if (d.plannedAssets !== undefined) {
+    if (!Array.isArray(d.plannedAssets)) return false
+    for (const pa of d.plannedAssets as unknown[]) {
+      if (typeof pa !== 'object' || pa === null) return false
+      const paa = pa as Record<string, unknown>
+      if (typeof paa.id !== 'string' || typeof paa.name !== 'string' || typeof paa.ticker !== 'string') return false
+      if (!['fund', 'stock', 'crypto', 'gold'].includes(paa.assetClass as string)) return false
+    }
+  }
   return true
 }
 
@@ -148,7 +167,11 @@ interface DataContextValue {
   removeTransfer: (id: string) => void
 
   setRetirement: (settings: RetirementSettings) => void
+  setRebalanceMode: (mode: RebalanceMode) => void
   setRebalanceTargets: (targets: Record<InvestAssetClass, number>) => void
+  setRebalanceHoldingTargets: (targets: Record<string, number>) => void
+  upsertPlannedAsset: (asset: Omit<PlannedAsset, 'id'> & { id?: string }) => void
+  removePlannedAsset: (id: string) => void
   recordNetWorthSnapshot: (value: number) => void
   recordPortfolioSnapshot: (value: number) => void
   /** ISO timestamp of the last successful cloud sync, or null */
@@ -180,6 +203,11 @@ function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
   const merged = { ...emptyData, ...raw }
   if (typeof merged.monthlyIncome !== 'number') merged.monthlyIncome = 0
   if (!Array.isArray(merged.cashAccounts)) merged.cashAccounts = []
+  if (merged.rebalanceMode !== 'class' && merged.rebalanceMode !== 'holding') merged.rebalanceMode = 'class'
+  if (!Array.isArray(merged.plannedAssets)) merged.plannedAssets = []
+  if (typeof merged.rebalanceHoldingTargets !== 'object' || merged.rebalanceHoldingTargets === null || Array.isArray(merged.rebalanceHoldingTargets)) {
+    merged.rebalanceHoldingTargets = {}
+  }
   // Old single-cash field → a default account.
   if (merged.cashAccounts.length === 0 && typeof raw.cash === 'number' && raw.cash > 0) {
     merged.cashAccounts = [{ id: newId(), name: 'Cash', balance: raw.cash }]
@@ -1209,8 +1237,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       setRetirement: (retirement) =>
         updateData((prev) => ({ ...prev, retirement })),
+      setRebalanceMode: (rebalanceMode) =>
+        updateData((prev) => ({ ...prev, rebalanceMode })),
       setRebalanceTargets: (rebalanceTargets) =>
         updateData((prev) => ({ ...prev, rebalanceTargets })),
+      setRebalanceHoldingTargets: (rebalanceHoldingTargets) =>
+        updateData((prev) => ({ ...prev, rebalanceHoldingTargets })),
+      upsertPlannedAsset: (asset) =>
+        updateData((prev) => ({ ...prev, plannedAssets: upsert(prev.plannedAssets ?? [], asset) })),
+      removePlannedAsset: (id) =>
+        updateData((prev) => ({ ...prev, plannedAssets: (prev.plannedAssets ?? []).filter((a) => a.id !== id) })),
 
       recordNetWorthSnapshot: (value) =>
         updateData((prev) => {
