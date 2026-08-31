@@ -7,9 +7,10 @@ interface ModalProps {
   title: string
   description?: string
   children: ReactNode
+  footer?: ReactNode
 }
 
-export function Modal({ open, onClose, title, description, children }: ModalProps) {
+export function Modal({ open, onClose, title, description, children, footer }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
   const titleId = useRef(`modal-title-${Math.random().toString(36).substring(2, 9)}`).current
   const descId = useRef(`modal-desc-${Math.random().toString(36).substring(2, 9)}`).current
@@ -102,7 +103,7 @@ export function Modal({ open, onClose, title, description, children }: ModalProp
         className="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-[var(--shadow-lift)] sm:max-w-[440px] sm:rounded-[28px] sm:max-h-[85dvh]"
         style={{ animation: 'sheetUp 0.32s cubic-bezier(0.16,1,0.3,1) both' }}
       >
-        <div className="flex items-start justify-between gap-4 px-6 pb-3 pt-7">
+        <div className="flex shrink-0 items-start justify-between gap-4 px-6 pb-3 pt-7">
           <div>
             <h2 id={titleId} className="font-display text-[20px] font-extrabold tracking-tight text-ink">{title}</h2>
             {description && <p id={descId} className="mt-0.5 text-[13px] text-ink-muted">{description}</p>}
@@ -115,10 +116,15 @@ export function Modal({ open, onClose, title, description, children }: ModalProp
             <CloseIcon className="h-[18px] w-[18px]" />
           </button>
         </div>
-        <div className="no-scrollbar overflow-y-auto px-6 pt-3">
+        <div className="no-scrollbar flex-1 min-h-0 overflow-y-auto px-6 pt-3">
           {children}
-          <div className="h-8 safe-bottom" />
+          {!footer && <div className="h-8 safe-bottom" />}
         </div>
+        {footer && (
+          <div className="shrink-0 border-t border-line bg-surface px-6 pb-6 pt-3.5 safe-bottom">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   )
