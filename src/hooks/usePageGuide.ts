@@ -37,14 +37,14 @@ export function usePageGuide(key: PageGuideKey, autoStart = true) {
     if (!autoStart) return
 
     const seen = hasSeenPageGuide(key)
-    if (!seen && guideData && guideData.steps.length > 0) {
+    if (!seen && guideData && guideData.steps.length > 0 && !isRunning) {
       const timer = setTimeout(() => {
         setIsRunning(true)
         setCurrentStepIndex(0)
-      }, 500)
+      }, 400)
       return () => clearTimeout(timer)
     }
-  }, [key, autoStart, guideData])
+  }, [key, autoStart, guideData, isRunning])
 
   const startTour = useCallback(() => {
     setCurrentStepIndex(0)
