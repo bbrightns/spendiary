@@ -174,13 +174,13 @@ function MobileProjection({ projectedInvestment, projectedSavings, corpusNeeded,
   const targetPct  = corpusNeeded > 0 ? Math.min((corpusNeeded / maxY) * 100, 100) : null
   return (
     <div className="space-y-4 py-1">
-      <BarRow color={C_INVEST}  label="With returns"       value={thbCompact(projectedInvestment)} pct={investPct}  targetPct={targetPct} />
-      <BarRow color={C_SAVINGS} label="Contributions only" value={thbCompact(projectedSavings)}    pct={savingsPct} targetPct={targetPct} />
+      <BarRow color={C_INVEST}  label="พอร์ตลงทุนรวมผลตอบแทน" value={thbCompact(projectedInvestment)} pct={investPct}  targetPct={targetPct} />
+      <BarRow color={C_SAVINGS} label="เงินต้นสะสม (ไม่รวมผลตอบแทน)" value={thbCompact(projectedSavings)}    pct={savingsPct} targetPct={targetPct} />
       {corpusNeeded > 0 && (
         <div className="flex items-center justify-between text-[12px] pt-1 border-t border-line">
           <span className="flex items-center gap-1.5 text-ink-muted">
             <svg aria-hidden="true" width={16} height={2}><line x1={0} y1={1} x2={16} y2={1} stroke={C_TARGET} strokeWidth={1.5} strokeDasharray="3 2" /></svg>
-            Target corpus
+            เป้าหมายเงินก้อนเกษียณ
           </span>
           <span className="tnum font-semibold text-ink-soft">{thbCompact(corpusNeeded)}</span>
         </div>
@@ -329,13 +329,13 @@ export function Retirement() {
   const couldRetireAge = useMemo(() => {
     if (earliestViableAge !== null) {
       return {
-        label: 'Could retire at',
-        value: String(earliestViableAge),
+        label: 'เกษียณได้เร็วสุดที่อายุ',
+        value: `${earliestViableAge} ปี`,
         // Green if achievable on or before the planned date, red if needs to be later
         highlight: earliestViableAge <= plannedAge ? 'gain' as const : 'loss' as const,
       }
     }
-    return { label: 'Could retire at', value: 'Never', highlight: 'loss' as const }
+    return { label: 'เกษียณได้เร็วสุดที่อายุ', value: 'ยังไม่เพียงพอ', highlight: 'loss' as const }
   }, [earliestViableAge, plannedAge])
 
   const yearsLeft = plannedYearsLeft
@@ -372,32 +372,32 @@ export function Retirement() {
   const milestoneList = useMemo(() => [
     {
       id: 'runway_1y',
-      name: 'Foundational Runway',
-      desc: '1 year of planned retirement expenses covered.',
+      name: 'เงินสำรองพื้นฐาน 1 ปี (Foundational Runway)',
+      desc: 'มีทรัพย์สินครอบคลุมค่าใช้จ่าย 1 ปีหลังเกษียณ',
       valueLabel: thbCompact(monthlySpendVal * 12),
       completed: monthlySpendVal > 0 && currentNetWorth >= (monthlySpendVal * 12),
       progress: monthlySpendVal > 0 ? (currentNetWorth / (monthlySpendVal * 12)) * 100 : 0,
     },
     {
       id: 'coast_fi',
-      name: 'Coast FI',
-      desc: 'Enough saved today to compound to your target by retirement age.',
+      name: 'Coast FI (เงินต้นเติบโตเอง)',
+      desc: 'เงินลงทุนปัจจุบันมากพอที่จะปล่อยให้งอกเงยจนถึงเป้าหมายได้ โดยไม่ต้องเติมเงินเพิ่ม',
       valueLabel: thbCompact(coastFiTarget),
       completed: corpusNeeded > 0 && currentNetWorth >= coastFiTarget,
       progress: coastFiTarget > 0 ? (currentNetWorth / coastFiTarget) * 100 : 0,
     },
     {
       id: 'lean_fi',
-      name: 'Lean FI',
-      desc: '75% of your target retirement corpus covered.',
+      name: 'Lean FI (เกษียณแบบพอเพียง)',
+      desc: 'สะสมเงินได้ครบ 75% ของเป้าหมายเกษียณทั้งหมด',
       valueLabel: thbCompact(corpusNeeded * 0.75),
       completed: corpusNeeded > 0 && currentNetWorth >= (corpusNeeded * 0.75),
       progress: corpusNeeded > 0 ? (currentNetWorth / (corpusNeeded * 0.75)) * 100 : 0,
     },
     {
       id: 'fi',
-      name: 'Financial Independence (FI)',
-      desc: '100% of your target retirement corpus covered.',
+      name: 'Financial Independence (อิสรภาพทางการเงินสมบูรณ์)',
+      desc: 'สะสมเงินได้ครบ 100% ตามเป้าหมายเกษียณ',
       valueLabel: thbCompact(corpusNeeded),
       completed: corpusNeeded > 0 && currentNetWorth >= corpusNeeded,
       progress: corpusNeeded > 0 ? (currentNetWorth / corpusNeeded) * 100 : 0,
@@ -452,9 +452,9 @@ export function Retirement() {
   return (
     <>
       <PageHeader
-        eyebrow="Planning"
-        title="Retirement"
-        subtitle={`Age ${currentAge} · ${yearsLeft} year${yearsLeft !== 1 ? 's' : ''} to retirement`}
+        eyebrow="วางแผนการเงิน"
+        title="วางแผนเกษียณ"
+        subtitle={`อายุ ${currentAge} ปี · เหลือเวลาอีก ${yearsLeft} ปีก่อนเกษียณ`}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -462,25 +462,25 @@ export function Retirement() {
         <div className="lg:col-span-5 xl:col-span-5 space-y-6">
           {/* ── Left: Inputs ── */}
           <Card className="animate-rise">
-            <h2 className="font-display text-[17px] font-bold text-ink mb-5">Your Plan</h2>
+            <h2 className="font-display text-[17px] font-bold text-ink mb-5">แผนการเกษียณของคุณ</h2>
             <div className="space-y-4">
               <TextField
-                label="Date of birth"
+                label="วัน/เดือน/ปี เกิด"
                 type="date"
                 value={birthDate}
                 onChange={setBirthDate}
               />
               <NumberField
-                label="Monthly spend in retirement"
+                label="ค่าใช้จ่ายต่อเดือนหลังเกษียณ"
                 prefix="฿"
-                hint="In today's money"
+                hint="คำนวณตามมูลค่าเงินปัจจุบัน"
                 value={monthlySpend}
                 onChange={setMonthlySpend}
                 placeholder="50,000"
               />
               <div>
                 <span className="text-[13px] font-semibold text-ink-soft block mb-1.5">
-                  Payout Strategy
+                  รูปแบบการถอนเงินหลังเกษียณ
                 </span>
                 <div className="grid grid-cols-2 gap-1 p-1 bg-surface-muted rounded-xl border border-line-strong">
                   <button
@@ -492,7 +492,7 @@ export function Retirement() {
                         : 'text-ink-muted hover:text-ink'
                     }`}
                   >
-                    Lump Sum
+                    ถอนก้อนเดียว (Lump Sum)
                   </button>
                   <button
                     type="button"
@@ -503,25 +503,25 @@ export function Retirement() {
                         : 'text-ink-muted hover:text-ink'
                     }`}
                   >
-                    Drawdown
+                    ทยอยถอนรายปี (Drawdown)
                   </button>
                 </div>
                 <p className="mt-1 text-[11px] text-ink-muted leading-relaxed">
                   {withdrawalStrategy === 'lump_sum'
-                    ? 'Withdraw full amount at retirement; no reinvestment.'
-                    : 'Withdraw annual budget; keep the rest invested.'}
+                    ? 'ถอนเงินทั้งหมดออกมา ณ วันเกษียณ (ไม่ได้นำไปลงทุนต่อ)'
+                    : 'ทยอยถอนใช้รายปี เงินส่วนที่เหลือยังคงลงทุนสร้างผลตอบแทนต่อเนื่อง'}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <NumberField
-                  label="Retire at age"
+                  label="เกษียณตอนอายุ"
                   value={retireAge}
                   onChange={setRetireAge}
                   placeholder="40"
                   min={currentAge + 1}
                 />
                 <NumberField
-                  label="Plan until age"
+                  label="วางแผนใช้เงินถึงอายุ"
                   value={planUntilAge}
                   onChange={setPlanUntilAge}
                   placeholder="85"
@@ -530,14 +530,14 @@ export function Retirement() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <NumberField
-                  label="Monthly investment"
+                  label="ลงทุนเพิ่มต่อเดือน"
                   prefix="฿"
                   value={monthlyInvestField}
                   onChange={setMonthlyInvestField}
                   placeholder={dcaMonthly > 0 ? String(dcaMonthly) : '0'}
                 />
                 <NumberField
-                  label="Savings increase/year"
+                  label="เพิ่มเงินลงทุนปีละ"
                   suffix="%"
                   value={annualSavingsGrowth}
                   onChange={setAnnualSavingsGrowth}
@@ -547,7 +547,7 @@ export function Retirement() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <NumberField
-                  label="Expected return"
+                  label="ผลตอบแทนคาดหวัง"
                   suffix="%"
                   value={expectedReturn}
                   onChange={setExpectedReturn}
@@ -555,7 +555,7 @@ export function Retirement() {
                   min={0}
                 />
                 <NumberField
-                  label="Inflation"
+                  label="อัตราเงินเฟ้อ"
                   suffix="%"
                   value={inflationRate}
                   onChange={setInflationRate}
@@ -567,13 +567,13 @@ export function Retirement() {
 
             {/* Summary: simplified per user request */}
             <div className="mt-5 rounded-2xl bg-surface-muted px-4 py-3 space-y-2">
-              <Row label="Years to retirement"  value={`${yearsLeft} yr${yearsLeft !== 1 ? 's' : ''}`} />
+              <Row label="ระยะเวลาสะสมเงิน"  value={`${yearsLeft} ปี`} />
               <Row label={couldRetireAge.label} value={couldRetireAge.value} highlight={couldRetireAge.highlight} />
-              <Row label="Years in retirement"  value={`${retirementYears} yr${retirementYears !== 1 ? 's' : ''}`} />
+              <Row label="ระยะเวลาใช้ชีวิตหลังเกษียณ"  value={`${retirementYears} ปี`} />
               {Number(monthlySpend) > 0 && (
                 <Row
-                  label="Spend at retirement"
-                  value={`${thbCompact(futureMonthlySpend)}/mo`}
+                  label="ค่าใช้จ่ายต่อเดือน ณ วันเกษียณ"
+                  value={`${thbCompact(futureMonthlySpend)}/เดือน`}
                 />
               )}
             </div>
@@ -581,22 +581,22 @@ export function Retirement() {
 
           {/* ── Wealth Runway & Milestones ── */}
           <Card className="animate-rise">
-            <h2 className="font-display text-[17px] font-bold text-ink mb-1">Wealth Runway & Milestones</h2>
+            <h2 className="font-display text-[17px] font-bold text-ink mb-1">เงินสำรอง & ก้าวสำคัญทางการเงิน</h2>
             <p className="text-[13px] text-ink-muted mb-4">
-              How long your money lasts and your progress toward financial independence.
+              ประเมินความอยู่รอดทางการเงินและระดับอิสรภาพทางการเงิน (Financial Independence)
             </p>
 
             {/* Runway Large display */}
             <div className="rounded-2xl bg-surface-muted px-4 py-4 mb-4 flex items-center justify-between">
               <div>
-                <p className="text-[12.5px] font-medium text-ink-muted">Current Wealth Runway</p>
+                <p className="text-[12.5px] font-medium text-ink-muted">ระยะเวลาที่ทรัพย์สินปัจจุบันครอบคลุม</p>
                 <p className="mt-1 font-display text-[28px] font-extrabold tnum text-ink leading-none">
-                  {runwayYears !== null ? `${runwayYears.toFixed(1)} years` : '-'}
+                  {runwayYears !== null ? `${runwayYears.toFixed(1)} ปี` : '-'}
                 </p>
                 <p className="mt-1 text-[11px] text-ink-muted">
                   {runwayYears !== null
-                    ? `Covering ฿${(monthlySpendVal * 12).toLocaleString()}/yr of expenses`
-                    : 'Enter monthly spend to calculate'}
+                    ? `ครอบคลุมค่าใช้จ่าย ฿${(monthlySpendVal * 12).toLocaleString()}/ปี`
+                    : 'กรอกค่าใช้จ่ายต่อเดือนเพื่อคำนวณ'}
                 </p>
               </div>
               <div className="h-12 w-12 shrink-0 rounded-full bg-brand-soft text-brand flex items-center justify-center font-bold text-[18px]">
@@ -606,7 +606,7 @@ export function Retirement() {
 
             {/* Milestones list */}
             <div className="space-y-3.5">
-              <h3 className="text-[13.5px] font-bold text-ink">Financial Milestones</h3>
+              <h3 className="text-[13.5px] font-bold text-ink">ระดับอิสรภาพทางการเงิน (Milestones)</h3>
               <div className="space-y-2">
                 {milestoneList.map((m) => (
                   <div key={m.id} className="flex items-start gap-3 rounded-xl border border-line bg-surface p-3 transition-shadow hover:shadow-[var(--shadow-soft)]">
@@ -646,7 +646,7 @@ export function Retirement() {
             <div className="mb-5">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
-                  <p className="text-[12px] font-medium text-ink-muted">Projected at retirement</p>
+                  <p className="text-[12px] font-medium text-ink-muted">คาดการณ์เงินสะสม ณ วันเกษียณ</p>
                   <p className="mt-0.5 font-display text-[32px] font-extrabold tnum text-ink leading-none">
                     {thbCompact(projectedInvestment)}
                   </p>
@@ -663,14 +663,14 @@ export function Retirement() {
                       <svg aria-hidden="true" width={12} height={12} viewBox="0 0 12 12" fill="none">
                         <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
-                      On Track
+                      เป็นไปตามเป้าหมาย
                     </>
                   ) : (
                     <>
                       <svg aria-hidden="true" width={12} height={12} viewBox="0 0 12 12" fill="none">
                         <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
                       </svg>
-                      Shortfall
+                      ยังขาดเงินสะสม
                     </>
                   )}
                 </div>
@@ -680,25 +680,25 @@ export function Retirement() {
               {corpusNeeded > 0 && (
                 <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl bg-surface-muted px-3 py-3">
                   <HeroStat
-                    label={onTrack ? 'Surplus' : 'Shortfall'}
+                    label={onTrack ? 'เกินเป้าหมาย' : 'ส่วนต่างที่ยังขาด'}
                     value={thbCompact(Math.abs(gap))}
                     color={onTrack ? 'gain' : 'loss'}
                   />
                   <HeroStat
-                    label="Real return"
+                    label="ผลตอบแทนแท้จริง"
                     value={`${(realReturn * 100).toFixed(1)}%`}
-                    sub="after inflation"
+                    sub="หลังหักเงินเฟ้อ"
                     color={realReturn >= 0 ? 'gain' : 'loss'}
                   />
                   {minRate !== null ? (
                     <HeroStat
-                      label="Min. return"
+                      label="ผลตอบแทนขั้นต่ำ"
                       value={`${(minRate * 100).toFixed(1)}%`}
-                      sub={rateGap !== null ? `${rateGap >= 0 ? '+' : ''}${(rateGap * 100).toFixed(1)}% buffer` : undefined}
+                      sub={rateGap !== null ? `${rateGap >= 0 ? '+' : ''}${(rateGap * 100).toFixed(1)}% ส่วนเผื่อปลอดภัย` : undefined}
                       color={rateGap !== null ? (rateGap >= 0 ? 'gain' : 'loss') : 'neutral'}
                     />
                   ) : (
-                    <HeroStat label="Min. return" value="Unreachable" color="loss" />
+                    <HeroStat label="ผลตอบแทนขั้นต่ำ" value="เป็นไปไม่ได้" color="loss" />
                   )}
                 </div>
               )}
@@ -712,7 +712,7 @@ export function Retirement() {
                       <path d="M8 6v3M8 11.5v.5" strokeLinecap="round" />
                       <circle cx={8} cy={8} r={6.5} />
                     </svg>
-                    <p className="text-[13px] font-bold text-loss">To close the gap, pick a path:</p>
+                    <p className="text-[13px] font-bold text-loss">แนวทางปรับแผนเพื่อให้ถึงเป้าหมาย:</p>
                   </div>
                   {/* Path items */}
                   <div className="space-y-3">
@@ -721,9 +721,9 @@ export function Retirement() {
                         <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/20 text-[10px] font-bold text-loss">1</span>
                         <div className="min-w-0">
                           <p className="text-[13px] font-semibold text-loss leading-snug">
-                            Invest <span className="font-bold">{thbCompact(monthlyGap)}</span> more / month
+                            เพิ่มเงินลงทุนอีกเดือนละ <span className="font-bold">{thbCompact(monthlyGap)}</span>
                           </p>
-                          <p className="text-[11.5px] text-loss/60 mt-0.5">Total: {thbCompact(investMonthly + monthlyGap)}/mo</p>
+                          <p className="text-[11.5px] text-loss/60 mt-0.5">รวมเป็นเดือนละ: {thbCompact(investMonthly + monthlyGap)}</p>
                         </div>
                       </div>
                     )}
@@ -732,17 +732,17 @@ export function Retirement() {
                         <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/20 text-[10px] font-bold text-loss">2</span>
                         <div className="min-w-0">
                           <p className="text-[13px] font-semibold text-loss leading-snug">
-                            Retire at age <span className="font-bold">{earliestViableAge}</span> instead of {Number(retireAge) || 40}
+                            ขยับไปเกษียณตอนอายุ <span className="font-bold">{earliestViableAge}</span> ปี (จากเดิม {Number(retireAge) || 40} ปี)
                           </p>
                           <p className="text-[11.5px] text-loss/60 mt-0.5">
-                            {earliestViableAge - (Number(retireAge) || 40)} more year{earliestViableAge - (Number(retireAge) || 40) !== 1 ? 's' : ''} of compounding
+                            ให้เงินทำงานเพิ่มอีก {earliestViableAge - (Number(retireAge) || 40)} ปี เพื่อพลังดอกเบี้ยทบต้น
                           </p>
                         </div>
                       </div>
                     ) : (
                       <div className="flex items-start gap-3">
                         <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/10 text-[10px] font-bold text-loss/40">2</span>
-                        <p className="text-[12px] text-loss/50 leading-snug">Retiring later won't close the gap within the plan horizon.</p>
+                        <p className="text-[12px] text-loss/50 leading-snug">การขยายอายุเกษียณยังไม่เพียงพอภายในกรอบอายุขัยที่กำหนด</p>
                       </div>
                     )}
                   </div>
@@ -760,7 +760,7 @@ export function Retirement() {
                     mobileView === v ? 'bg-ink text-surface' : 'bg-surface-muted text-ink-soft'
                   }`}
                 >
-                  {v === 'chart' ? 'Line chart' : 'Bars'}
+                  {v === 'chart' ? 'กราฟเส้น' : 'แผนภูมิแท่ง'}
                 </button>
               ))}
             </div>
@@ -782,11 +782,11 @@ export function Retirement() {
               <svg
                 style={{ minWidth: 320 }}
                 role="img"
-                aria-label="Retirement growth projection chart"
+                aria-label="กราฟแสดงการเติบโตของเงินเกษียณ"
                 viewBox={`0 0 ${chartW} ${chartH}`}
                 className="w-full"
               >
-                <title>Retirement growth projection</title>
+                <title>กราฟแสดงการเติบโตของเงินเกษียณ</title>
                 {yTicks.map(({ v, y }) => (
                   <g key={v}>
                     <line x1={padL} y1={y} x2={chartW - padR} y2={y} stroke="var(--color-line)" strokeWidth={1} />
@@ -807,7 +807,7 @@ export function Retirement() {
                 <line x1={toX(investLine.length - 1, investLine.length)} x2={toX(investLine.length - 1, investLine.length)}
                   y1={padT} y2={chartH - padB} stroke="var(--color-line)" strokeWidth={1} strokeDasharray="4 3" opacity={0.45} />
                 <text x={(padL + chartW - padR) / 2} y={chartH - 4} textAnchor="middle" fontSize={14} fill="var(--color-ink-muted">
-                  Age
+                  อายุ (ปี)
                 </text>
                 {corpusNeeded > 0 && corpusNeeded <= maxY && (
                   <>
@@ -815,7 +815,7 @@ export function Retirement() {
                       stroke={C_TARGET} strokeWidth={1.5} strokeDasharray="5 4" opacity={0.6} />
                     <text x={chartW - padR - 2} y={toY(corpusNeeded) - 4}
                       textAnchor="end" fontSize={12} fill={C_TARGET} opacity={0.8}>
-                      Target {thbCompact(corpusNeeded)}
+                      เป้าหมาย {thbCompact(corpusNeeded)}
                     </text>
                   </>
                 )}
@@ -828,9 +828,9 @@ export function Retirement() {
 
             {/* Legend */}
             <div className={`mt-3 flex flex-wrap gap-4 ${mobileView === 'bars' ? 'hidden ' : ''}`}>
-              <LegendItem color={C_INVEST}  label={`With returns (${thbCompact(projectedInvestment)} projected)`} />
-              <LegendItem color={C_SAVINGS} label={`Contributions only (${thbCompact(projectedSavings)} projected)`} />
-              {corpusNeeded > 0 && <LegendItem color={C_TARGET} label={`Target corpus (${thbCompact(corpusNeeded)})`} dashed />}
+              <LegendItem color={C_INVEST}  label={`พอร์ตลงทุนรวมผลตอบแทน (คาดการณ์ ${thbCompact(projectedInvestment)})`} />
+              <LegendItem color={C_SAVINGS} label={`เงินต้นสะสม (คาดการณ์ ${thbCompact(projectedSavings)})`} />
+              {corpusNeeded > 0 && <LegendItem color={C_TARGET} label={`เป้าหมายเงินเกษียณ (${thbCompact(corpusNeeded)})`} dashed />}
             </div>
           </Card>
         </div>
