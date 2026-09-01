@@ -5,7 +5,7 @@ import { FormActions } from './FormActions'
 import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
-import { ASSET_META, GRAMS_PER_BAHT_GOLD } from '../../lib/calc'
+import { ASSET_META, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd } from '../../lib/calc'
 import type { AssetClass, Holding, PlannedAsset } from '../../lib/types'
 import { localDateStr, thb } from '../../lib/format'
 import { searchSecurities, type Security } from '../../lib/securities'
@@ -759,7 +759,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                   <span className="text-ink-soft">Implied cost / บาททองคำ</span>
                   <span className="font-semibold tnum text-brand">
                     {thb(goldImpliedPrice * GRAMS_PER_BAHT_GOLD)}
-                    {rate > 1 && ` ($${Math.round((goldImpliedPrice * GRAMS_PER_BAHT_GOLD) / rate).toLocaleString()})`}
+                    {rate > 1 && ` ($${Math.round(goldThbPerGramToXauUsd(goldImpliedPrice, rate)).toLocaleString()}/oz XAUUSD)`}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-[13px]">

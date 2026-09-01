@@ -5,7 +5,7 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Modal } from '../components/ui/Modal'
-import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC } from '../lib/calc'
+import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC, goldThbPerGramToXauUsd } from '../lib/calc'
 import type { AssetClass, HoldingLog } from '../lib/types'
 import { ClockIcon, UndoIcon, WalletIcon } from '../components/icons'
 
@@ -190,11 +190,11 @@ export function HoldingLogs() {
       } else if (log.assetClass === 'gold') {
         const prevBaht = prevAvgCostThb * GRAMS_PER_BAHT_GOLD
         const currBaht = currAvgCostThb * GRAMS_PER_BAHT_GOLD
-        const prevUsd = fx > 0 ? prevBaht / fx : 0
-        const currUsd = fx > 0 ? currBaht / fx : 0
+        const prevXauUsd = goldThbPerGramToXauUsd(prevAvgCostThb, fx)
+        const currXauUsd = goldThbPerGramToXauUsd(currAvgCostThb, fx)
 
-        prevAvgCostDisplay = `฿${Math.round(prevBaht).toLocaleString()} ($${Math.round(prevUsd).toLocaleString()})/บาททอง`
-        currAvgCostDisplay = `฿${Math.round(currBaht).toLocaleString()} ($${Math.round(currUsd).toLocaleString()})/บาททอง`
+        prevAvgCostDisplay = `฿${Math.round(prevBaht).toLocaleString()}/บาททอง ($${Math.round(prevXauUsd).toLocaleString()}/oz)`
+        currAvgCostDisplay = `฿${Math.round(currBaht).toLocaleString()}/บาททอง ($${Math.round(currXauUsd).toLocaleString()}/oz)`
         const diffBaht = Math.round(currBaht - prevBaht)
         if (diffBaht !== 0 && prevUnits > 0) {
           const sign = diffBaht > 0 ? '+' : '-'

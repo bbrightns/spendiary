@@ -21,6 +21,8 @@ import {
   ASSET_META,
   GRAMS_PER_BAHT_GOLD,
   allocations,
+  goldThbPerBahtToXauUsd,
+  goldThbPerGramToXauUsd,
   holdingMetrics,
   portfolioSummary,
 } from '../lib/calc'
@@ -508,11 +510,11 @@ export function Portfolio() {
                   const btcAvgCostThb = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost)
                   const btcAvgCostUsd = fxRate > 0 ? btcAvgCostThb / fxRate : 0
                   const goldAvgCostPerBaht = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost) * GRAMS_PER_BAHT_GOLD
-                  const goldAvgCostUsdPerBaht = fxRate > 0 ? goldAvgCostPerBaht / fxRate : 0
+                  const goldAvgCostXauUsd = goldThbPerBahtToXauUsd(goldAvgCostPerBaht, fxRate)
                   const unitsLabel = isBtc
                     ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats · avg ${money(btcAvgCostUsd, 'USD')}/BTC`
                     : isGold
-                    ? `${h.units.toFixed(4)} g (${(h.units / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง) · avg ${thb(goldAvgCostPerBaht)}/บาททอง ($${Math.round(goldAvgCostUsdPerBaht).toLocaleString()})`
+                    ? `${h.units.toFixed(4)} g (${(h.units / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง) · avg ${thb(goldAvgCostPerBaht)}/บาททอง ($${Math.round(goldAvgCostXauUsd).toLocaleString()}/oz)`
                     : `${h.units.toLocaleString()} ${unitLabel(h.assetClass)} · ${ASSET_META[h.assetClass].label}`
 
                   const staleIndicator = isPriceStale(h.updatedAt) && (
@@ -629,14 +631,14 @@ export function Portfolio() {
                                 <ul className="space-y-1.5">
                                   {(h.goldLocations ?? []).map((loc) => {
                                     const locCostPerBaht = loc.grams > 0 ? (loc.thbSpent / loc.grams) * GRAMS_PER_BAHT_GOLD : 0
-                                    const locCostUsdPerBaht = fxRate > 0 ? locCostPerBaht / fxRate : 0
+                                    const locCostXauUsd = goldThbPerBahtToXauUsd(locCostPerBaht, fxRate)
                                     const locBaht = loc.grams / GRAMS_PER_BAHT_GOLD
                                     return (
                                       <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
                                         <div className="min-w-0 flex-1">
                                           <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
                                           <p className="tnum text-[12px] text-ink-muted">
-                                            {loc.grams.toFixed(4)} g ({locBaht.toFixed(4)} บาททอง) · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBaht)}/บาททอง (${Math.round(locCostUsdPerBaht).toLocaleString()})
+                                            {loc.grams.toFixed(4)} g ({locBaht.toFixed(4)} บาททอง) · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBaht)}/บาททอง (${Math.round(locCostXauUsd).toLocaleString()}/oz)
                                           </p>
                                         </div>
                                         <button
@@ -797,7 +799,7 @@ export function Portfolio() {
                 <span className="text-ink-muted">Avg cost / บาททองคำ</span>
                 <span className="font-semibold text-brand tnum">
                   {thb((Number(locThbSpent) / Number(locGrams)) * GRAMS_PER_BAHT_GOLD)}
-                  {(usdThb && usdThb > 0 ? usdThb : 35) > 0 && ` ($${Math.round(((Number(locThbSpent) / Number(locGrams)) * GRAMS_PER_BAHT_GOLD) / (usdThb && usdThb > 0 ? usdThb : 35)).toLocaleString()})`}
+                  {(usdThb && usdThb > 0 ? usdThb : 35) > 0 && ` ($${Math.round(goldThbPerGramToXauUsd(Number(locThbSpent) / Number(locGrams), usdThb && usdThb > 0 ? usdThb : 35)).toLocaleString()}/oz XAUUSD)`}
                 </span>
               </div>
             </div>

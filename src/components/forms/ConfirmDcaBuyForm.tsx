@@ -6,7 +6,7 @@ import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import type { DcaPlan } from '../../lib/types'
 import { localDateStr } from '../../lib/format'
-import { findMatchingHolding, GRAMS_PER_BAHT_GOLD } from '../../lib/calc'
+import { findMatchingHolding, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd } from '../../lib/calc'
 
 interface Props {
   open: boolean
@@ -744,7 +744,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-muted">Price / Gram</span>
                 <span className={valueStyle(hasValidGold)}>
-                  {hasValidGold ? `฿${fmtNum(goldImpliedPricePerGram, 2)} / g (≈ ฿${fmtNum(goldImpliedPricePerGram * GRAMS_PER_BAHT_GOLD, 0)} / บาททอง)` : '฿0 / g'}
+                  {hasValidGold ? `฿${fmtNum(goldImpliedPricePerGram, 2)} / g (≈ ฿${fmtNum(goldImpliedPricePerGram * GRAMS_PER_BAHT_GOLD, 0)} / บาททอง | $${fmtNum(goldThbPerGramToXauUsd(goldImpliedPricePerGram, rate), 0)}/oz)` : '฿0 / g'}
                 </span>
               </div>
 
@@ -767,7 +767,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               <div className="pt-2 border-t border-line flex items-center justify-between text-[13px]">
                 <span className="font-medium text-ink-muted">New Avg Cost</span>
                 <span className={`tnum ${hasValidGold ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
-                  {hasValidGold ? `฿${fmtNum(goldNewAvgCostThb * GRAMS_PER_BAHT_GOLD, 0)} ($${fmtNum(rate > 0 ? (goldNewAvgCostThb * GRAMS_PER_BAHT_GOLD) / rate : 0, 0)}) / บาททอง` : '฿0 / บาททอง'}
+                  {hasValidGold ? `฿${fmtNum(goldNewAvgCostThb * GRAMS_PER_BAHT_GOLD, 0)}/บาททอง (≈ $${fmtNum(goldThbPerGramToXauUsd(goldNewAvgCostThb, rate), 0)}/oz XAUUSD)` : '฿0 / บาททอง'}
                 </span>
               </div>
             </div>

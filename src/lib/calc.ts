@@ -96,6 +96,12 @@ export function portfolioSummary(holdings: Holding[]): PortfolioSummary {
 /** 1 บาททองคำ (ทองคำแท่ง 96.5%) = 15.244 กรัม */
 export const GRAMS_PER_BAHT_GOLD = 15.244
 
+/** 1 Troy Ounce = 31.1035 กรัม (ทองคำสากล 99.99% 24K) */
+export const TROY_OUNCE_GRAMS = 31.1035
+
+/** ความบริสุทธิ์ทองคำมาตรฐานไทย (96.5%) */
+export const THAI_GOLD_PURITY = 0.965
+
 export function gramsToBahtGold(grams: number): number {
   return grams / GRAMS_PER_BAHT_GOLD
 }
@@ -115,6 +121,34 @@ export function goldPricePerGramFromBaht(pricePerBaht: number): number {
 
 export function goldPricePerBahtFromGram(pricePerGram: number): number {
   return pricePerGram * GRAMS_PER_BAHT_GOLD
+}
+
+/**
+ * แปลงต้นทุนหรือราคาทองคำไทย 96.5% (THB/g) เป็นราคาทองคำโลก Spot XAU/USD ($/oz 99.99%)
+ */
+export function goldThbPerGramToXauUsd(thbPerGram965: number, usdThbRate: number): number {
+  if (thbPerGram965 <= 0 || usdThbRate <= 0) return 0
+  const thbPerGramPure = thbPerGram965 / THAI_GOLD_PURITY
+  const thbPerOz = thbPerGramPure * TROY_OUNCE_GRAMS
+  return thbPerOz / usdThbRate
+}
+
+/**
+ * แปลงต้นทุนหรือราคาทองคำไทย 96.5% (THB/บาททองคำ) เป็นราคาทองคำโลก Spot XAU/USD ($/oz 99.99%)
+ */
+export function goldThbPerBahtToXauUsd(thbPerBaht: number, usdThbRate: number): number {
+  if (thbPerBaht <= 0 || usdThbRate <= 0) return 0
+  return goldThbPerGramToXauUsd(thbPerBaht / GRAMS_PER_BAHT_GOLD, usdThbRate)
+}
+
+/**
+ * แปลงราคาทองคำโลก Spot XAU/USD ($/oz) เป็นราคาทองคำไทย 96.5% (THB/บาททองคำ)
+ */
+export function xauUsdToThaiGoldPricePerBaht(xauUsd: number, usdThbRate: number): number {
+  if (xauUsd <= 0 || usdThbRate <= 0) return 0
+  const pricePerGramPureThb = (xauUsd * usdThbRate) / TROY_OUNCE_GRAMS
+  const pricePerGram965Thb = pricePerGramPureThb * THAI_GOLD_PURITY
+  return pricePerGram965Thb * GRAMS_PER_BAHT_GOLD
 }
 
 /* ----------------------------- Bitcoin Calculations ----------------------------- */

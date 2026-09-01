@@ -4,7 +4,7 @@ import { NumberField, TextField, SelectField } from '../ui/Field'
 import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
-import { ASSET_META, GRAMS_PER_BAHT_GOLD, applyBuy, holdingMetrics, upsert } from '../../lib/calc'
+import { ASSET_META, GRAMS_PER_BAHT_GOLD, applyBuy, goldThbPerGramToXauUsd, holdingMetrics, upsert } from '../../lib/calc'
 import type { BtcLocation, GoldLocation, Holding } from '../../lib/types'
 import { money, thb, localDateStr } from '../../lib/format'
 
@@ -480,7 +480,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
                 <span className="text-ink-soft">Implied cost / บาททองคำ</span>
                 <span className="font-semibold tnum text-brand">
                   {thb(impliedPrice * GRAMS_PER_BAHT_GOLD)}
-                  {rate > 1 && ` ($${Math.round((impliedPrice * GRAMS_PER_BAHT_GOLD) / rate).toLocaleString()})`}
+                  {rate > 1 && ` ($${Math.round(goldThbPerGramToXauUsd(impliedPrice, rate)).toLocaleString()}/oz XAUUSD)`}
                 </span>
               </div>
               <div className="flex items-center justify-between text-[13px]">
