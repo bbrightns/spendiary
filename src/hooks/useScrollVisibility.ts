@@ -5,8 +5,8 @@ import { useLocation } from 'react-router-dom'
  * Custom hook to control mobile header and bottom navigation bar visibility based on scroll direction.
  * 
  * Rules:
- * - Shows when user scrolls down
- * - Hides when user scrolls up
+ * - Hides when user scrolls down (reading content)
+ * - Shows when user scrolls up (navigating back up)
  * - Always visible when at top of page (scrollY <= 10)
  * - Resets to visible on route/pathname change
  */
@@ -42,11 +42,11 @@ export function useScrollVisibility(): boolean {
           // Threshold of 8px to prevent flickering on touch micro-jitter
           if (Math.abs(diff) > 8) {
             if (diff > 0) {
-              // Scrolling down -> show
-              setIsVisible(true)
-            } else {
-              // Scrolling up -> hide
+              // Scrolling down -> hide
               setIsVisible(false)
+            } else {
+              // Scrolling up -> show
+              setIsVisible(true)
             }
             lastScrollY.current = currentScrollY
           }
