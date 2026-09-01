@@ -627,7 +627,7 @@ export function Rebalance() {
                   <button
                     type="button"
                     onClick={() => setPlannedModalOpen(true)}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-full bg-brand px-3.5 text-[12px] font-bold text-white shadow-xs hover:bg-brand/90 active:scale-95 transition-all cursor-pointer"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-full bg-brand px-3.5 text-[12px] font-bold text-white dark:text-slate-950 shadow-xs hover:bg-brand/90 active:scale-95 transition-all cursor-pointer"
                   >
                     <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
                     <span>+ Add Target Asset</span>
@@ -856,7 +856,7 @@ export function Rebalance() {
                                         }
                                       }}
                                       title={row.isPlanned ? 'Add to portfolio' : 'Buy more'}
-                                      className="inline-flex items-center gap-1 rounded-full bg-brand px-3 py-1 text-[11px] font-bold text-white shadow-xs hover:bg-brand/90 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+                                      className="inline-flex items-center gap-1 rounded-full bg-brand px-3 py-1 text-[11px] font-bold text-white dark:text-slate-950 shadow-xs hover:bg-brand/90 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
                                     >
                                       {row.isPlanned ? '+ Add' : '+ Buy'}
                                     </button>

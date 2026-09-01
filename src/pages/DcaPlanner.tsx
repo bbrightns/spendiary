@@ -179,7 +179,7 @@ function FixedCostForm({ initial, onSave, onCancel }: {
         />
       </div>
       <button onClick={submit}
-        className="shrink-0 rounded-lg bg-brand px-3 py-1.5 text-[12px] font-bold text-white transition-colors hover:bg-brand-ink active:scale-95">
+        className="shrink-0 rounded-lg bg-brand px-3 py-1.5 text-[12px] font-bold text-white dark:text-slate-950 transition-colors hover:bg-brand-ink active:scale-95">
         Save
       </button>
       <button onClick={onCancel}

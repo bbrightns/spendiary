@@ -347,7 +347,7 @@ export function Settings() {
               <button
                 id="btn-export"
                 onClick={handleExport}
-                className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-brand active:scale-95"
+                className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-brand dark:hover:text-slate-950 active:scale-95"
               >
                 <DownloadIcon className="h-4 w-4" />
                 Export
@@ -393,7 +393,7 @@ export function Settings() {
                 onClick={handleImportClick}
                 disabled={importToast.kind === 'loading'}
                 aria-label="Import data from JSON backup file"
-                className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-brand active:scale-95 disabled:pointer-events-none disabled:opacity-50"
+                className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-brand dark:hover:text-slate-950 active:scale-95 disabled:pointer-events-none disabled:opacity-50"
               >
                 <UploadIcon className="h-4 w-4" />
                 Import
@@ -451,14 +451,14 @@ export function Settings() {
           {/* Offer to save current data first */}
           <button
             onClick={() => exportData()}
-            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-surface-muted text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-brand"
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-surface-muted text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-brand dark:hover:text-slate-950"
           >
             <DownloadIcon className="h-4 w-4" />
             Export current data first
           </button>
           <button
             onClick={() => pendingImport && commitImport(pendingImport)}
-            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-ink px-5 text-sm font-semibold text-white transition-all duration-200 hover:bg-ink-hover dark:bg-brand dark:hover:bg-brand-ink active:scale-[0.98]"
+            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-ink px-5 text-sm font-semibold text-white transition-all duration-200 hover:bg-ink-hover dark:bg-brand dark:text-slate-950 dark:font-bold dark:hover:bg-brand-ink active:scale-[0.98]"
           >
             Yes, replace with imported data
           </button>
@@ -484,7 +484,7 @@ export function Settings() {
         <div className="flex flex-col gap-3 pb-1">
           <button
             onClick={handleReset}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-loss px-5 text-sm font-bold text-white transition-all duration-200 hover:opacity-90 active:scale-[0.98] cursor-pointer shadow-sm"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-loss px-5 text-sm font-bold text-white dark:text-[#4c0519] transition-all duration-200 hover:opacity-90 active:scale-[0.98] cursor-pointer shadow-sm"
           >
             <TrashIcon className="h-4 w-4" strokeWidth={2.2} />
             <span>Yes, delete everything</span>
