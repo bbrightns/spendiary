@@ -192,60 +192,64 @@ export function Settings() {
 
   return (
     <>
-      <PageHeader eyebrow="App" title="Settings" />
+      <PageHeader eyebrow="App" title="Settings" onStartGuide={startTour} />
       <div className="flex flex-col gap-4">
 
         {/* ── Supabase Cloud Sync ─────────────────────────────── */}
-        <Card className="animate-rise">
-          <div className="flex items-start justify-between gap-3 mb-1">
-            <h2 className="font-display text-[17px] font-bold text-ink">Cloud Sync (Supabase)</h2>
-            {syncBadge && (
-              <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${syncBadge.cls}`}>
-                {syncBadge.text}
-              </span>
+        <div id="guide-settings-sync">
+          <Card className="animate-rise">
+            <div className="flex items-start justify-between gap-3 mb-1">
+              <h2 className="font-display text-[17px] font-bold text-ink">Cloud Sync (Supabase)</h2>
+              {syncBadge && (
+                <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${syncBadge.cls}`}>
+                  {syncBadge.text}
+                </span>
+              )}
+            </div>
+            <p className="text-[13px] text-ink-muted mb-4">
+              Your data is securely backed up and synchronized automatically.
+            </p>
+
+            <div className="flex flex-col gap-2 rounded-2xl bg-surface-muted p-4 text-[13.5px] mb-4">
+              <div className="flex justify-between">
+                <span className="text-ink-muted">Account</span>
+                <span className="font-semibold text-ink">{user?.email ?? 'Not signed in'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-ink-muted">Last synced</span>
+                <span className="font-semibold text-ink">
+                  {lastSyncedAt ? lastSyncedAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'Never'}
+                </span>
+              </div>
+            </div>
+
+            {user && (
+              <button
+                onClick={logout}
+                className="w-full py-2.5 px-4 rounded-xl border border-line bg-surface hover:bg-surface-muted text-[13px] font-semibold text-loss transition-colors duration-200 active:scale-[0.98]"
+              >
+                Sign out
+              </button>
             )}
-          </div>
-          <p className="text-[13px] text-ink-muted mb-4">
-            Your data is securely backed up and synchronized automatically.
-          </p>
-
-          <div className="flex flex-col gap-2 rounded-2xl bg-surface-muted p-4 text-[13.5px] mb-4">
-            <div className="flex justify-between">
-              <span className="text-ink-muted">Account</span>
-              <span className="font-semibold text-ink">{user?.email ?? 'Not signed in'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-ink-muted">Last synced</span>
-              <span className="font-semibold text-ink">
-                {lastSyncedAt ? lastSyncedAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'Never'}
-              </span>
-            </div>
-          </div>
-
-          {user && (
-            <button
-              onClick={logout}
-              className="w-full py-2.5 px-4 rounded-xl border border-line bg-surface hover:bg-surface-muted text-[13px] font-semibold text-loss transition-colors duration-200 active:scale-[0.98]"
-            >
-              Sign out
-            </button>
-          )}
-        </Card>
+          </Card>
+        </div>
 
         {/* ── Profile ─────────────────────────────────────────── */}
-        <Card className="animate-rise">
-          <h2 className="font-display text-[17px] font-bold text-ink mb-1">Profile</h2>
-          <p className="text-[13px] text-ink-muted mb-4">Used in the Dashboard greeting.</p>
-          <TextField
-            label="Your name"
-            value={nameDraft}
-            onChange={(v) => {
-              setNameDraft(v)
-              setUserName(v)
-            }}
-            placeholder="e.g. Praween"
-          />
-        </Card>
+        <div id="guide-settings-cashflow">
+          <Card className="animate-rise">
+            <h2 className="font-display text-[17px] font-bold text-ink mb-1">Profile</h2>
+            <p className="text-[13px] text-ink-muted mb-4">Used in the Dashboard greeting.</p>
+            <TextField
+              label="Your name"
+              value={nameDraft}
+              onChange={(v) => {
+                setNameDraft(v)
+                setUserName(v)
+              }}
+              placeholder="e.g. Praween"
+            />
+          </Card>
+        </div>
 
         {/* ── Appearance ──────────────────────────────────────── */}
         <Card className="animate-rise">
@@ -325,106 +329,152 @@ export function Settings() {
         </Card>
 
         {/* ── Data & Backup ───────────────────────────────────── */}
-        <Card className="animate-rise">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">
-                Data &amp; Backup
-              </h2>
-              <p className="mt-1 text-[13px] text-ink-muted [text-wrap:pretty]">
-                {dataSummary(data)} stored on this device.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-5 divide-y divide-line">
-
-            {/* Export row */}
-            <div className="flex items-start justify-between gap-4 py-4">
-              <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-semibold text-ink">Export data</p>
-                <p className="mt-0.5 text-[12.5px] text-ink-muted">
-                  Download all holdings, DCA plans, and transfers as a JSON file.
+        <div id="guide-settings-backup">
+          <Card className="animate-rise">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">
+                  Data &amp; Backup
+                </h2>
+                <p className="mt-1 text-[13px] text-ink-muted [text-wrap:pretty]">
+                  {dataSummary(data)} stored on this device.
                 </p>
-                {exportToast.kind !== 'idle' && (
-                  <p
-                    role="status"
-                    aria-live="polite"
-                    className={`mt-1.5 text-[12px] font-medium ${
-                      exportToast.kind === 'success' ? 'text-gain' : 'text-loss'
-                    }`}
-                  >
-                    {exportToast.msg}
-                  </p>
-                )}
               </div>
+            </div>
+
+            <div className="mt-5 divide-y divide-line">
+
+              {/* Export row */}
+              <div className="flex items-start justify-between gap-4 py-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-semibold text-ink">Export data</p>
+                  <p className="mt-0.5 text-[12.5px] text-ink-muted">
+                    Download all holdings, DCA plans, and transfers as a JSON file.
+                  </p>
+                  {exportToast.kind !== 'idle' && (
+                    <p
+                      role="status"
+                      aria-live="polite"
+                      className={`mt-1.5 text-[12px] font-medium ${
+                        exportToast.kind === 'success' ? 'text-gain' : 'text-loss'
+                      }`}
+                    >
+                      {exportToast.msg}
+                    </p>
+                  )}
+                </div>
+                <button
+                  id="btn-export"
+                  onClick={handleExport}
+                  className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95"
+                >
+                  <DownloadIcon className="h-4 w-4" />
+                  Export
+                </button>
+              </div>
+
+              {/* Import row */}
+              <div className="flex items-start justify-between gap-4 py-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-semibold text-ink">Import data</p>
+                  <p className="mt-0.5 text-[12.5px] text-ink-muted">
+                    Restore from a Spendiary JSON backup. This will overwrite current data.
+                  </p>
+                  {importToast.kind !== 'idle' && (
+                    <p
+                      role="status"
+                      aria-live="polite"
+                      className={`mt-1.5 flex items-center gap-1.5 text-[12px] font-medium ${
+                        importToast.kind === 'success'
+                          ? 'text-gain'
+                          : importToast.kind === 'error'
+                          ? 'text-loss'
+                          : 'text-ink-muted'
+                      }`}
+                    >
+                      {importToast.kind === 'loading' && (
+                        <svg
+                          className="h-3.5 w-3.5 animate-spin"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                        >
+                          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" strokeLinecap="round" />
+                        </svg>
+                      )}
+                      {importToast.msg}
+                    </p>
+                  )}
+                </div>
+                <button
+                  id="btn-import"
+                  onClick={handleImportClick}
+                  disabled={importToast.kind === 'loading'}
+                  aria-label="Import data from JSON backup file"
+                  className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  <UploadIcon className="h-4 w-4" />
+                  Import
+                </button>
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json,application/json"
+                  className="sr-only"
+                  aria-hidden="true"
+                  onChange={handleFileChange}
+                />
+              </div>
+
+            </div>
+          </Card>
+        </div>
+
+        {/* ── Interactive Tour Guides ───────────────────────────── */}
+        <div id="guide-settings-tour">
+          <Card className="animate-rise">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <HelpCircleIcon className="h-5 w-5 text-brand" strokeWidth={2.2} />
+                  <h2 className="font-display text-[17px] font-bold text-ink">
+                    คู่มือและคำแนะนำการใช้งาน (Tour Guides)
+                  </h2>
+                </div>
+                <p className="mt-1 text-[13px] text-ink-muted leading-relaxed">
+                  Spendiary มีระบบแนะนำฟังก์ชันการทำงานแบบทีละขั้นตอน (Spotlight Tour) หากต้องการเริ่มต้นดูคำแนะนำในทุกหน้าใหม่เหมือนเปิดแอพครั้งแรก สามารถกดรีเซ็ตได้ที่นี่
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
               <button
-                id="btn-export"
-                onClick={handleExport}
-                className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95"
+                type="button"
+                onClick={() => {
+                  resetAllPageGuides()
+                  showToast('รีเซ็ตคู่มือการใช้งานทุกหน้าเรียบร้อยแล้ว ระบบจะเริ่มแนะนำใหม่เมื่อเปิดแต่ละหน้า', 'info')
+                }}
+                className="inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-[13px] font-semibold text-white shadow-xs hover:bg-brand/90 active:scale-95 transition-all cursor-pointer"
               >
-                <DownloadIcon className="h-4 w-4" />
-                Export
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                </svg>
+                รีเซ็ตคู่มือทุกหน้า (Reset All Guides)
+              </button>
+
+              <button
+                type="button"
+                onClick={startTour}
+                className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-surface px-4 py-2 text-[13px] font-semibold text-ink-soft shadow-[var(--shadow-soft)] hover:bg-surface-muted hover:text-ink active:scale-95 transition-all cursor-pointer"
+              >
+                <HelpCircleIcon className="h-4 w-4 text-brand" strokeWidth={2.2} />
+                แนะนำหน้าการตั้งค่านี้
               </button>
             </div>
-
-            {/* Import row */}
-            <div className="flex items-start justify-between gap-4 py-4">
-              <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-semibold text-ink">Import data</p>
-                <p className="mt-0.5 text-[12.5px] text-ink-muted">
-                  Restore from a Spendiary JSON backup. This will overwrite current data.
-                </p>
-                {importToast.kind !== 'idle' && (
-                  <p
-                    role="status"
-                    aria-live="polite"
-                    className={`mt-1.5 flex items-center gap-1.5 text-[12px] font-medium ${
-                      importToast.kind === 'success'
-                        ? 'text-gain'
-                        : importToast.kind === 'error'
-                        ? 'text-loss'
-                        : 'text-ink-muted'
-                    }`}
-                  >
-                    {importToast.kind === 'loading' && (
-                      <svg
-                        className="h-3.5 w-3.5 animate-spin"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                      >
-                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" strokeLinecap="round" />
-                      </svg>
-                    )}
-                    {importToast.msg}
-                  </p>
-                )}
-              </div>
-              <button
-                id="btn-import"
-                onClick={handleImportClick}
-                disabled={importToast.kind === 'loading'}
-                aria-label="Import data from JSON backup file"
-                className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 disabled:pointer-events-none disabled:opacity-50"
-              >
-                <UploadIcon className="h-4 w-4" />
-                Import
-              </button>
-              {/* Hidden file input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".json,application/json"
-                className="sr-only"
-                aria-hidden="true"
-                onChange={handleFileChange}
-              />
-            </div>
-
-          </div>
-        </Card>
+          </Card>
+        </div>
 
         {/* ── Danger zone ─────────────────────────────────────── */}
         <Card className="animate-rise border-loss/20 bg-loss-soft/20">
@@ -511,6 +561,16 @@ export function Settings() {
           </button>
         </div>
       </Modal>
+
+      <GuideTour
+        isOpen={isRunning}
+        steps={steps}
+        currentStepIndex={currentStepIndex}
+        onNext={nextStep}
+        onPrev={prevStep}
+        onClose={endTour}
+        onFinish={finishTour}
+      />
     </>
   )
 }
