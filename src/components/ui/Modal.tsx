@@ -116,7 +116,7 @@ export function Modal({ open, onClose, title, description, children, footer }: M
             <CloseIcon className="h-[18px] w-[18px]" />
           </button>
         </div>
-        <div className="no-scrollbar flex-1 min-h-0 overflow-y-auto px-6 pt-1 pb-3">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-1 pb-3">
           {children}
           {!footer && <div className="h-8" />}
         </div>

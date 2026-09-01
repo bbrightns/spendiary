@@ -144,6 +144,58 @@
     font-variant-numeric: tabular-nums;
     font-feature-settings: 'tnum';
   }
+
+  /* ── Modern macOS-Style Slim Scrollbars ─────────────────────────────────── */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(100, 116, 139, 0.28) transparent;
+  }
+
+  .dark * {
+    scrollbar-color: rgba(160, 175, 205, 0.28) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+    background-color: transparent;
+  }
+
+  ::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 116, 139, 0.28);
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+    transition: background-color 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(100, 116, 139, 0.5);
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background-color: rgba(100, 116, 139, 0.7);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background-color: transparent;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background-color: rgba(160, 175, 205, 0.28);
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(160, 175, 205, 0.5);
+  }
+
+  .dark ::-webkit-scrollbar-thumb:active {
+    background-color: rgba(160, 175, 205, 0.7);
+  }
 }
 
 /* ── Custom Utilities ────────────────────────────────────────────────────── */
