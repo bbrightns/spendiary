@@ -235,7 +235,7 @@ export function Settings() {
         </div>
 
         {/* ── Profile ─────────────────────────────────────────── */}
-        <div id="guide-settings-cashflow">
+        <div id="guide-settings-profile">
           <Card className="animate-rise">
             <h2 className="font-display text-[17px] font-bold text-ink mb-1">Profile</h2>
             <p className="text-[13px] text-ink-muted mb-4">Used in the Dashboard greeting.</p>

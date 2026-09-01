@@ -409,11 +409,17 @@ export function HoldingLogs() {
       }
     }
 
-    const showTickerRow = tickerChanged
-    const showNameRow = nameChanged
-    const showBalanceRow = log.action === 'buy_more' ? true : unitsChanged
-    const showAvgCostRow = log.action === 'buy_more' ? true : (avgCostChanged || basisChanged)
-    const showPriceRow = (priceChanged || (log.action === 'edit' && !showBalanceRow && !showAvgCostRow && !showTickerRow && !showNameRow)) && prevPriceDisplay !== '' && currPriceDisplay !== '' && prevPriceDisplay !== currPriceDisplay
+    const showTickerRow = tickerChanged && prev.ticker !== curr.ticker
+    const showNameRow = nameChanged && prev.name !== curr.name
+    const showBalanceRow = log.action === 'buy_more'
+      ? formatUnit(prevUnits) !== formatUnit(currUnits)
+      : (unitsChanged && formatUnit(prevUnits) !== formatUnit(currUnits))
+
+    const showAvgCostRow = log.action === 'buy_more'
+      ? (prevAvgCostDisplay !== currAvgCostDisplay && prevAvgCostDisplay !== '' && currAvgCostDisplay !== '')
+      : (avgCostChanged && prevAvgCostDisplay !== currAvgCostDisplay && prevAvgCostDisplay !== '' && currAvgCostDisplay !== '')
+
+    const showPriceRow = priceChanged && prevPriceDisplay !== currPriceDisplay && prevPriceDisplay !== '' && currPriceDisplay !== ''
 
     if (!showTickerRow && !showNameRow && !showBalanceRow && !showAvgCostRow && !showPriceRow) {
       return null

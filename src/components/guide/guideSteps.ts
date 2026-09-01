@@ -248,11 +248,11 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         position: 'bottom',
       },
       {
-        targetId: 'guide-settings-cashflow',
+        targetId: 'guide-settings-profile',
         badge: 'โปรไฟล์',
         title: 'ข้อมูลผู้ใช้งาน (Profile)',
         description:
-          'ตั้งชื่อของคุณสำหรับแสดงข้อความต้อนรับในหน้า Dashboard',
+          'ตั้งชื่อของคุณสำหรับแสดงข้อความทักทายในหน้า Dashboard และการระบุตัวตนบนเครื่องนี้',
         position: 'bottom',
       },
       {
