@@ -69,10 +69,10 @@
   --color-line: #242839;
   --color-line-strong: #2c3048;
 
-  /* Brand: lighter for dark surfaces so text-brand is readable */
-  --color-brand: #818cf8;
+  /* Brand: Precision Indigo (#4f46e5) for crisp, high-contrast solid buttons */
+  --color-brand: #4f46e5;
   --color-brand-soft: #1e2245;
-  --color-brand-ink: #a5b4fc;
+  --color-brand-ink: #c7d2fe;
 
   /* Semantic: brighter for visibility on dark backgrounds */
   --color-gain: #34d399;

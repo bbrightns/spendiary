@@ -201,7 +201,7 @@ export function GuideTour({
         {/* Header Bar */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase bg-brand/10 text-brand border border-brand/20">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase bg-brand/10 text-brand border border-brand/20 dark:bg-[#4f46e5]/20 dark:text-[#c7d2fe] dark:border-[#4f46e5]/30">
               {currentStep.badge || 'แนะนำ'}
             </span>
             <span className="text-[12px] font-medium text-ink-muted">
@@ -257,7 +257,7 @@ export function GuideTour({
             <button
               type="button"
               onClick={isLastStep ? onFinish : onNext}
-              className="px-4 py-1.5 rounded-xl bg-brand text-white text-xs font-bold shadow-md shadow-brand/25 hover:bg-brand/90 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+              className="px-4 py-1.5 rounded-xl bg-ink text-white dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] hover:bg-ink-hover text-xs font-bold shadow-md shadow-brand/20 dark:shadow-[#4f46e5]/30 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
             >
               <span>{isLastStep ? 'เข้าใจแล้ว' : 'ถัดไป'}</span>
               {!isLastStep && (

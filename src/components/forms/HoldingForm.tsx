@@ -441,17 +441,26 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
     if (editing) {
       const prevUnits = editing.units ?? editing.totalUnits ?? 0
       const currUnits = unitsNum
-      const unitsChanged = Math.abs(currUnits - prevUnits) > 0.00001
+      const unitsChanged = Math.abs(currUnits - prevUnits) > 0.0001 && Number(currUnits.toFixed(4)) !== Number(prevUnits.toFixed(4))
 
       const prevBasis = editing.totalThbInvested ?? (prevUnits * (editing.avgCostThb ?? editing.avgCost ?? 0))
       const currBasis = updateObj.totalThbInvested ?? (currUnits * (updateObj.avgCostThb ?? updateObj.avgCost ?? 0))
-      const costChanged = Math.abs(currBasis - prevBasis) > 0.01
+      const costChanged = Math.abs(currBasis - prevBasis) > 1 && Number(currBasis.toFixed(2)) !== Number(prevBasis.toFixed(2))
 
       const prevPrice = editing.price ?? 0
       const currPrice = updateObj.price ?? 0
-      const priceChanged = Math.abs(currPrice - prevPrice) > 0.001
+      const priceChanged = Math.abs(currPrice - prevPrice) > 0.01 && Number(currPrice.toFixed(2)) !== Number(prevPrice.toFixed(2))
+
+      const nameChanged = editing.name.trim() !== name.trim()
+      const tickerChanged = editing.ticker.trim() !== ticker.trim()
 
       const changes: string[] = []
+      if (nameChanged) {
+        changes.push(`Name: "${editing.name}" → "${name}"`)
+      }
+      if (tickerChanged) {
+        changes.push(`Ticker: ${editing.ticker} → ${ticker}`)
+      }
       if (priceChanged && !unitsChanged && !costChanged) {
         if (form.assetClass === 'stock') {
           const currUsd = Number(form.price) || 0
@@ -465,28 +474,26 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
         } else {
           changes.push(`Updated price to ฿${currPrice.toLocaleString()}`)
         }
-      } else {
-        if (priceChanged) {
-          if (form.assetClass === 'stock') {
-            const currUsd = Number(form.price) || 0
-            changes.push(`Price: $${currUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`)
-          } else if (form.assetClass === 'fund') {
-            changes.push(`NAV: ฿${currPrice.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`)
-          } else {
-            changes.push(`Price: ฿${currPrice.toLocaleString()}`)
-          }
+      } else if (priceChanged) {
+        if (form.assetClass === 'stock') {
+          const currUsd = Number(form.price) || 0
+          changes.push(`Price: $${currUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`)
+        } else if (form.assetClass === 'fund') {
+          changes.push(`NAV: ฿${currPrice.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`)
+        } else {
+          changes.push(`Price: ฿${currPrice.toLocaleString()}`)
         }
-        if (unitsChanged) {
-          changes.push(`Units: ${prevUnits.toLocaleString(undefined, { maximumFractionDigits: 4 })} → ${currUnits.toLocaleString(undefined, { maximumFractionDigits: 4 })}`)
-        }
-        if (costChanged) {
-          changes.push(`Cost basis: ฿${prevBasis.toLocaleString(undefined, { maximumFractionDigits: 2 })} → ฿${currBasis.toLocaleString(undefined, { maximumFractionDigits: 2 })}`)
-        }
+      }
+      if (unitsChanged) {
+        changes.push(`Units: ${prevUnits.toLocaleString(undefined, { maximumFractionDigits: 4 })} → ${currUnits.toLocaleString(undefined, { maximumFractionDigits: 4 })}`)
+      }
+      if (costChanged) {
+        changes.push(`Cost basis: ฿${prevBasis.toLocaleString(undefined, { maximumFractionDigits: 2 })} → ฿${currBasis.toLocaleString(undefined, { maximumFractionDigits: 2 })}`)
       }
 
       logNote = changes.length > 0
         ? changes.join(' · ')
-        : `${unitsNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares · cost basis ฿${updateObj.totalThbInvested?.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+        : `Updated holding details`
     } else {
       logNote = `${unitsNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ ${isUsd ? `$${avgCostInput.toLocaleString()}` : `฿${avgCostInput.toLocaleString()}`}/unit`
     }

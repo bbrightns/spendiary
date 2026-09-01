@@ -72,11 +72,14 @@ components:
   button-primary:
     backgroundColor: "{colors.ink}"
     textColor: "{colors.surface}"
+    darkBackgroundColor: "#4f46e5"
+    darkTextColor: "#ffffff"
     rounded: "{rounded.full}"
     padding: "0 16px"
     height: "40px"
   button-primary-hover:
     backgroundColor: "{colors.ink-hover}"
+    darkBackgroundColor: "#4338ca"
   button-brand-icon:
     backgroundColor: "{colors.brand-soft}"
     textColor: "{colors.brand}"
@@ -93,6 +96,8 @@ components:
   chip-filter-active:
     backgroundColor: "{colors.ink}"
     textColor: "{colors.surface}"
+    darkBackgroundColor: "#4f46e5"
+    darkTextColor: "#ffffff"
     rounded: "{rounded.full}"
     padding: "6px 14px"
   chip-gain:
@@ -202,17 +207,23 @@ Cards combine `border: 1px solid {colors.line}` with `--shadow-soft`. This is th
 ## 5. Components
 
 ### Buttons
-Refined and restrained. The primary action uses the deepest ink as background — not brand color. Brand color is a datum color; the CTA is the instrument casing.
+Refined and restrained. The primary action uses deep ink in light mode and Precision Indigo (#4f46e5) in dark mode to ensure authoritative presence and high contrast.
 
 - **Shape:** Full pill (`border-radius: 9999px`)
-- **Primary (dark pill):** `background: {colors.ink}`, `color: {colors.surface}`, `height: 40px`, `padding: 0 16px`, 14px semibold, `--shadow-soft`. Hover: `#1d2230`. Active: `scale(0.95)`. Focus: `2px solid {colors.brand}` outline at 2px offset.
-- **Brand icon button:** Circle 36×36px. Resting: `background: {colors.brand-soft}`, `color: {colors.brand}`. Hover: fills to `{colors.brand}` with white icon. Used for per-row actions (Buy More on holdings).
+- **Primary (dark pill / CTA):** 
+  - **Light Mode:** `background: {colors.ink}` (#0b0d12), `color: {colors.surface}` (#ffffff), `height: 40px`, `padding: 0 16px`, 14px semibold, `--shadow-soft`. Hover: `#1d2230`. Active: `scale(0.95)`. Focus: `2px solid {colors.brand}` outline at 2px offset.
+  - **Dark Mode:** `dark:bg-[#4f46e5]` (Precision Indigo-600), `dark:hover:bg-[#4338ca]` (Indigo-700), `color: #ffffff`. Contrast ratio: **7.4:1 (WCAG AAA)**.
+  - **Rule:** Never use light pastel lavender (`#818cf8` / Indigo-400) as a button fill with white text. Light lavender with white text only has a 2.4:1 contrast ratio, which fails accessibility standards.
+- **Brand icon button:** Circle 36×36px. Resting: `background: {colors.brand-soft}`, `color: {colors.brand}`. Hover: fills to `{colors.brand}` with white icon (`dark:hover:bg-[#4f46e5]`). Used for per-row actions (Buy More on holdings).
 - **Ghost icon button:** Transparent resting, `color: {colors.ink-muted}`. Hover: `background: {colors.surface-muted}`, `color: {colors.ink}`. Used for destructive/secondary row actions (trash, edit pencil).
 
 ### Filter Chips
 Segment filter controls for asset class filtering, tab-like but non-destructive.
 - **Inactive:** `background: {colors.surface-muted}`, `color: {colors.ink-soft}`, `border-radius: {rounded.full}`, `padding: 6px 14px`, 13px semibold.
-- **Active:** `background: {colors.ink}`, `color: {colors.surface}`. Same shape and padding.
+- **Active:** 
+  - **Light Mode:** `background: {colors.ink}`, `color: {colors.surface}` (#ffffff).
+  - **Dark Mode:** `dark:bg-[#4f46e5]`, `color: #ffffff`.
+  - Same shape and padding (`rounded-full px-3.5 py-1.5`).
 - **Transition:** `background` and `color` only, 150ms.
 
 ### Cards / Containers

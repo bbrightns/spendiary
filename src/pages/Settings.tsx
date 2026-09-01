@@ -456,7 +456,7 @@ export function Settings() {
                   resetAllPageGuides()
                   showToast('รีเซ็ตคู่มือการใช้งานทุกหน้าเรียบร้อยแล้ว ระบบจะเริ่มแนะนำใหม่เมื่อเปิดแต่ละหน้า', 'info')
                 }}
-                className="inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-[13px] font-semibold text-white shadow-xs hover:bg-brand/90 active:scale-95 transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-full bg-ink text-white dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] hover:bg-ink-hover px-4 py-2 text-[13px] font-semibold shadow-xs active:scale-95 transition-all cursor-pointer"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
@@ -469,7 +469,7 @@ export function Settings() {
                 onClick={startTour}
                 className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-surface px-4 py-2 text-[13px] font-semibold text-ink-soft shadow-[var(--shadow-soft)] hover:bg-surface-muted hover:text-ink active:scale-95 transition-all cursor-pointer"
               >
-                <HelpCircleIcon className="h-4 w-4 text-brand" strokeWidth={2.2} />
+                <HelpCircleIcon className="h-4 w-4 text-brand dark:text-[#a5b4fc]" strokeWidth={2.2} />
                 แนะนำหน้าการตั้งค่านี้
               </button>
             </div>

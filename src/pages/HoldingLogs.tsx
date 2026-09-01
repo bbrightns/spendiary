@@ -44,17 +44,29 @@ function getLogActionMeta(log: HoldingLog): ActionMeta {
   if (prev && curr) {
     const prevUnits = prev.units ?? prev.totalUnits ?? 0
     const currUnits = curr.units ?? curr.totalUnits ?? 0
-    const unitDiff = Math.abs(currUnits - prevUnits)
+    const unitsChanged = Math.abs(currUnits - prevUnits) > 0.0001 && Number(currUnits.toFixed(4)) !== Number(prevUnits.toFixed(4))
 
     const prevBasis = prev.totalThbInvested ?? (prevUnits * (prev.avgCostThb ?? prev.avgCost ?? 0))
     const currBasis = curr.totalThbInvested ?? (currUnits * (curr.avgCostThb ?? curr.avgCost ?? 0))
-    const basisDiff = Math.abs(currBasis - prevBasis)
+    const costChanged = Math.abs(currBasis - prevBasis) > 1 && Number(currBasis.toFixed(2)) !== Number(prevBasis.toFixed(2))
 
     const prevPrice = prev.price ?? 0
     const currPrice = curr.price ?? 0
-    const priceDiff = Math.abs(currPrice - prevPrice)
+    const priceChanged = Math.abs(currPrice - prevPrice) > 0.01 && Number(currPrice.toFixed(2)) !== Number(prevPrice.toFixed(2))
 
-    if (priceDiff > 0.001 && unitDiff < 0.00001 && basisDiff < 0.01) {
+    const tickerChanged = !!prev.ticker && !!curr.ticker && prev.ticker !== curr.ticker
+    const nameChanged = !!prev.name && !!curr.name && prev.name !== curr.name
+
+    if (tickerChanged || nameChanged) {
+      return {
+        label: tickerChanged ? 'Ticker Updated' : 'Renamed',
+        style: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
+        icon: '🏷️',
+        isPriceUpdate: false,
+      }
+    }
+
+    if (priceChanged && !unitsChanged && !costChanged) {
       const isFund = log.assetClass === 'fund'
       return {
         label: isFund ? 'NAV Updated' : 'Price Updated',
@@ -62,6 +74,15 @@ function getLogActionMeta(log: HoldingLog): ActionMeta {
         icon: '🏷️',
         isPriceUpdate: true,
       }
+    }
+  }
+
+  if (log.note && (log.note.toLowerCase().includes('ticker') || log.note.toLowerCase().includes('renamed'))) {
+    return {
+      label: 'Renamed',
+      style: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
+      icon: '🏷️',
+      isPriceUpdate: false,
     }
   }
 
@@ -80,6 +101,34 @@ function getLogActionMeta(log: HoldingLog): ActionMeta {
     icon: '✎',
     isPriceUpdate: false,
   }
+}
+
+function getDisplayNote(log: HoldingLog): string {
+  const prev = log.previousHoldingState
+  const curr = log.afterHoldingState
+
+  if (prev && curr && log.action === 'edit') {
+    const tickerChanged = !!prev.ticker && !!curr.ticker && prev.ticker !== curr.ticker
+    const nameChanged = !!prev.name && !!curr.name && prev.name !== curr.name
+    const prevUnits = prev.units ?? prev.totalUnits ?? 0
+    const currUnits = curr.units ?? curr.totalUnits ?? 0
+    const unitsEqual = Math.abs(currUnits - prevUnits) <= 0.0001 || Number(currUnits.toFixed(4)) === Number(prevUnits.toFixed(4))
+
+    if (tickerChanged && nameChanged) {
+      return `Updated name to "${curr.name}" and ticker to ${curr.ticker}`
+    }
+    if (tickerChanged) {
+      return `Updated ticker from ${prev.ticker} → ${curr.ticker}`
+    }
+    if (nameChanged) {
+      return `Renamed from "${prev.name}" → "${curr.name}"`
+    }
+    if (log.note && (log.note.includes('Units: ') || log.note.includes('shares · cost basis')) && unitsEqual) {
+      return `Updated holding details`
+    }
+  }
+
+  return log.note
 }
 
 const ASSET_FILTERS: { key: AssetClass | 'all'; label: string }[] = [
