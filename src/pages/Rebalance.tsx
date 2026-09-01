@@ -7,15 +7,28 @@ import { DonutChart } from '../components/charts/DonutChart'
 import { HoldingForm } from '../components/forms/HoldingForm'
 import { BuyMoreForm } from '../components/forms/BuyMoreForm'
 import { PlannedAssetModal } from '../components/forms/PlannedAssetModal'
+import { GuideTour } from '../components/guide/GuideTour'
+import { usePageGuide } from '../hooks/usePageGuide'
 import { useData } from '../store/DataContext'
 import { ASSET_META, totalCash } from '../lib/calc'
 import { thb, thbCompact } from '../lib/format'
 import type { Holding, InvestAssetClass, PlannedAsset, RebalanceMode } from '../lib/types'
 import { CheckIcon, CopyIcon, PlusIcon, TrashIcon } from '../components/icons'
 
+
 const REBALANCE_ASSETS: InvestAssetClass[] = ['fund', 'stock', 'gold', 'crypto']
 
 export function Rebalance() {
+  const {
+    steps,
+    isRunning,
+    currentStepIndex,
+    startTour,
+    endTour,
+    finishTour,
+    nextStep,
+    prevStep,
+  } = usePageGuide('rebalance')
   const {
     data,
     setRebalanceMode,
@@ -135,16 +148,33 @@ export function Rebalance() {
     })
   }
 
-  // ── 2. SPECIFIC HOLDINGS CALCULATIONS ──
-  const plannedAssets = data.plannedAssets ?? []
-  const activePlannedAssets = plannedAssets.filter(
-    (pa) => !data.holdings.some((h) => h.ticker.toUpperCase() === pa.ticker.toUpperCase() || h.id === pa.id),
-  )
+  // ── 2. HOLDING CALCULATIONS ──
+  const initialHoldingTargets: Record<string, number> = {}
+  data.holdings.forEach((h) => {
+    initialHoldingTargets[h.id] = data.rebalanceHoldingTargets?.[h.id] ?? 0
+  })
+  ;(data.plannedAssets ?? []).forEach((p) => {
+    initialHoldingTargets[p.id] = data.rebalanceHoldingTargets?.[p.id] ?? 0
+  })
 
-  interface HoldingRowItem {
+  const [localHoldingTargets, setLocalHoldingTargets] = useState<Record<string, number>>(initialHoldingTargets)
+
+  const handleHoldingTargetChange = (id: string, val: number) => {
+    const updated = { ...localHoldingTargets, [id]: val }
+    setLocalHoldingTargets(updated)
+    const sum = Object.values(updated).reduce((s, x) => s + x, 0)
+    if (sum === 100) {
+      setRebalanceHoldingTargets(updated)
+    }
+  }
+
+  const holdingTargetsSum = Object.values(localHoldingTargets).reduce((s, x) => s + x, 0)
+
+  // Combined holding rows (actual holdings + planned assets)
+  type HoldingRowItem = {
     id: string
     name: string
-    ticker: string
+    ticker?: string
     assetClass: InvestAssetClass
     actualVal: number
     actualPct: number
@@ -153,48 +183,17 @@ export function Rebalance() {
     diff: number
     actionLabel: string
     actionCls: string
-    isPlanned: boolean
+    isPlanned?: boolean
     holdingObj?: Holding
     plannedObj?: PlannedAsset
   }
 
-  const [localHoldingTargets, setLocalHoldingTargets] = useState<Record<string, number>>(() => {
-    const saved = data.rebalanceHoldingTargets ?? {}
-    const init: Record<string, number> = {}
-    data.holdings.forEach((h) => {
-      init[h.id] = saved[h.id] ?? (portVal > 0 ? Math.round(((h.units * h.price) / portVal) * 100) : 0)
-    })
-    activePlannedAssets.forEach((p) => {
-      init[p.id] = saved[p.id] ?? 0
-    })
-    return init
-  })
-
-  const holdingTargetsSum =
-    data.holdings.reduce((s, h) => s + (localHoldingTargets[h.id] ?? 0), 0) +
-    activePlannedAssets.reduce((s, p) => s + (localHoldingTargets[p.id] ?? 0), 0)
-
-  const handleHoldingTargetChange = (id: string, val: number) => {
-    const updated = { ...localHoldingTargets, [id]: val }
-    setLocalHoldingTargets(updated)
-    const sum =
-      data.holdings.reduce((s, h) => s + (h.id === id ? val : (localHoldingTargets[h.id] ?? 0)), 0) +
-      activePlannedAssets.reduce((s, p) => s + (p.id === id ? val : (localHoldingTargets[p.id] ?? 0)), 0)
-    if (sum === 100) {
-      setRebalanceHoldingTargets(updated)
-    }
-  }
-
-  const holdingRows: HoldingRowItem[] = []
-
-  // 1. Add owned holdings
-  data.holdings.forEach((h) => {
+  const holdingRows: HoldingRowItem[] = data.holdings.map((h) => {
     const actualVal = h.units * h.price
     const actualPct = portVal > 0 ? (actualVal / portVal) * 100 : 0
     const targetPct = localHoldingTargets[h.id] ?? 0
     const targetVal = (targetPct / 100) * targetTotalValue
     const diff = targetVal - actualVal
-
     let actionLabel = '-'
     let actionCls = 'text-ink-muted'
 
@@ -211,7 +210,7 @@ export function Rebalance() {
       }
     }
 
-    holdingRows.push({
+    return {
       id: h.id,
       name: h.name,
       ticker: h.ticker,
@@ -225,17 +224,16 @@ export function Rebalance() {
       actionCls,
       isPlanned: false,
       holdingObj: h,
-    })
+    }
   })
 
-  // 2. Add planned assets
-  activePlannedAssets.forEach((p) => {
+  // Add planned assets to rows
+  ;(data.plannedAssets ?? []).forEach((p) => {
     const actualVal = 0
     const actualPct = 0
     const targetPct = localHoldingTargets[p.id] ?? 0
     const targetVal = (targetPct / 100) * targetTotalValue
-    const diff = targetVal
-
+    const diff = targetVal - actualVal
     let actionLabel = '-'
     let actionCls = 'text-ink-muted'
 
@@ -313,7 +311,7 @@ export function Rebalance() {
   // Filtered holding rows for display
   const searchLower = search.toLowerCase()
   const displayHoldingRows = holdingRows.filter(
-    (h) => !search || h.name.toLowerCase().includes(searchLower) || h.ticker.toLowerCase().includes(searchLower),
+    (h) => !search || h.name.toLowerCase().includes(searchLower) || (h.ticker ?? '').toLowerCase().includes(searchLower),
   )
 
   // ── Donut Chart Data ──
@@ -384,6 +382,7 @@ export function Rebalance() {
       <PageHeader
         eyebrow="Portfolio Management"
         title="Portfolio Rebalance"
+        onStartGuide={startTour}
         subtitle={
           <span className="flex items-center gap-2 flex-wrap text-[14px] text-ink-muted">
             <span>Portfolio: <strong className="text-ink">{thb(portVal)}</strong></span>
@@ -459,7 +458,7 @@ export function Rebalance() {
 
             <div className="space-y-4">
               {/* Mode Switcher */}
-              <div className="space-y-1.5">
+              <div id="guide-rebalance-mode" className="space-y-1.5">
                 <span className="text-[11.5px] font-bold uppercase tracking-wider text-ink-muted">
                   Allocation Mode
                 </span>
@@ -490,7 +489,7 @@ export function Rebalance() {
               </div>
 
               {/* Cash Deployment */}
-              <div className="space-y-2">
+              <div id="guide-rebalance-cash" className="space-y-2">
                 <NumberField
                   label="New Cash to Deploy"
                   prefix="฿"
@@ -608,7 +607,7 @@ export function Rebalance() {
         </div>
 
         {/* Right Column (7 cols): Full Interactive Target Table */}
-        <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+        <div id="guide-rebalance-weights" className="lg:col-span-7 xl:col-span-8 space-y-6">
           <Card className="animate-rise overflow-hidden" padded={false}>
             <div className="p-5">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -676,7 +675,7 @@ export function Rebalance() {
                         <th className="pb-2 font-semibold text-right">Current Value</th>
                         <th className="pb-2 font-semibold text-center w-[90px]">Target %</th>
                         <th className="pb-2 font-semibold text-right">Projected Value</th>
-                        <th className="pb-2 font-semibold text-right">Action Advice</th>
+                        <th id="guide-rebalance-suggestions" className="pb-2 font-semibold text-right">Action Advice</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -915,6 +914,16 @@ export function Rebalance() {
         }}
       />
       <BuyMoreForm open={buyOpen} holding={buying} onClose={() => setBuyOpen(false)} />
+
+      <GuideTour
+        isOpen={isRunning}
+        steps={steps}
+        currentStepIndex={currentStepIndex}
+        onNext={nextStep}
+        onPrev={prevStep}
+        onClose={endTour}
+        onFinish={finishTour}
+      />
     </>
   )
 }

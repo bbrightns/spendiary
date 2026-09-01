@@ -16,6 +16,8 @@ import { Modal } from '../components/ui/Modal'
 import { NumberField, TextField } from '../components/ui/Field'
 import { Button } from '../components/ui/Button'
 import { AssetLogo } from '../components/ui/AssetLogo'
+import { GuideTour } from '../components/guide/GuideTour'
+import { usePageGuide } from '../hooks/usePageGuide'
 import { PlusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon } from '../components/icons'
 import {
   ASSET_META,
@@ -42,7 +44,18 @@ const SATS_PER_BTC = 100_000_000
 
 export function Portfolio() {
   const {
+    steps,
+    isRunning,
+    currentStepIndex,
+    startTour,
+    endTour,
+    finishTour,
+    nextStep,
+    prevStep,
+  } = usePageGuide('portfolio')
+  const {
     data,
+
     removeHolding,
     upsertBtcLocation,
     removeBtcLocation,
@@ -260,31 +273,34 @@ export function Portfolio() {
             {priceStatus === 'idle' && "Valued at the latest prices you've filled in."}
           </span>
         }
+        onStartGuide={startTour}
         action={
-          <button
-            type="button"
-            onClick={handleCopyMarkdown}
-            aria-label="Copy portfolio markdown"
-            title="Copy Portfolio as Markdown"
-            className="inline-flex h-9 items-center gap-2 rounded-full border border-line-strong bg-surface px-3.5 text-[12.5px] font-semibold text-ink shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-surface-muted active:scale-95 cursor-pointer whitespace-nowrap"
-          >
-            {copied ? (
-              <>
-                <CheckIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.2} />
-                <span className="text-gain">Copied MD!</span>
-              </>
-            ) : (
-              <>
-                <CopyIcon className="h-4 w-4 text-ink-muted shrink-0" />
-                <span>Copy Portfolio MD</span>
-              </>
-            )}
-          </button>
+          <div id="guide-portfolio-actions" className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleCopyMarkdown}
+              aria-label="Copy portfolio markdown"
+              title="Copy Portfolio as Markdown"
+              className="inline-flex h-9 items-center gap-2 rounded-full border border-line-strong bg-surface px-3.5 text-[12.5px] font-semibold text-ink shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-surface-muted active:scale-95 cursor-pointer whitespace-nowrap"
+            >
+              {copied ? (
+                <>
+                  <CheckIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.2} />
+                  <span className="text-gain">Copied MD!</span>
+                </>
+              ) : (
+                <>
+                  <CopyIcon className="h-4 w-4 text-ink-muted shrink-0" />
+                  <span>Copy Portfolio MD</span>
+                </>
+              )}
+            </button>
+          </div>
         }
       />
 
       {/* Top 2-Card Metric Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+      <div id="guide-portfolio-summary" className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         {/* Metric 1: Current Value */}
         <Card className="animate-rise p-4">
           <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Portfolio Value</span>
@@ -388,7 +404,7 @@ export function Portfolio() {
         </div>
 
         {/* Right Column (7 cols): Holdings Hub & Management */}
-        <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+        <div id="guide-portfolio-holdings" className="lg:col-span-7 xl:col-span-8 space-y-6">
           <Card className="animate-rise overflow-hidden" padded={false}>
             <div className="pt-5">
               <div className="px-5">
@@ -434,7 +450,7 @@ export function Portfolio() {
                 </div>
 
                 {/* Filter pills & Sort controls */}
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
+                <div id="guide-portfolio-tabs" className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
                   {/* Filter pills */}
                   <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
                     {FILTERS.map((f) => (
@@ -842,6 +858,16 @@ export function Portfolio() {
           </button>
         </div>
       </Modal>
+
+      <GuideTour
+        isOpen={isRunning}
+        steps={steps}
+        currentStepIndex={currentStepIndex}
+        onNext={nextStep}
+        onPrev={prevStep}
+        onClose={endTour}
+        onFinish={finishTour}
+      />
     </>
   )
 }

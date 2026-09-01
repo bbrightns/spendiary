@@ -8,6 +8,8 @@ import { DonutChart } from '../components/charts/DonutChart'
 import { InteractiveNetWorthChart } from '../components/charts/InteractiveNetWorthChart'
 import { PnLPill } from '../components/ui/PnL'
 import { CashAccountsForm } from '../components/forms/CashAccountsForm'
+import { GuideTour } from '../components/guide/GuideTour'
+import { usePageGuide } from '../hooks/usePageGuide'
 import {
   PencilIcon,
   PortfolioIcon,
@@ -41,6 +43,17 @@ export function Dashboard() {
   const navigate = useNavigate()
   const [cashOpen, setCashOpen] = useState(false)
   const [selectedCashAccountId, setSelectedCashAccountId] = useState<string | null>(null)
+  const {
+    steps,
+    isRunning,
+    currentStepIndex,
+    startTour,
+    endTour,
+    finishTour,
+    nextStep,
+    prevStep,
+  } = usePageGuide('dashboard')
+
   const hasAnything =
     data.holdings.length > 0 || data.dcaPlans.length > 0
 
@@ -98,11 +111,12 @@ export function Dashboard() {
           eyebrow={today}
           title={`Good day${data.userName ? `, ${data.userName}` : ''}`}
           subtitle="Here's where your wealth and cash flow stand."
+          onStartGuide={startTour}
         />
 
         {/* Global actionable badges */}
         {dcaActions.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 pt-1 sm:pt-0">
+          <div id="guide-dashboard-dca" className="flex flex-wrap items-center gap-2 pt-1 sm:pt-0">
             <button
               type="button"
               onClick={() => navigate('/dca')}
@@ -119,7 +133,7 @@ export function Dashboard() {
       </div>
 
       {/* ── ROW 1: Net Worth Master Hero (Full Width Bento) ── */}
-      <div>
+      <div id="guide-dashboard-networth">
         <Card
           padded={false}
           className="relative overflow-hidden bg-gradient-to-br from-white via-white to-brand-soft/40 dark:from-[#0b0d14] dark:via-[#10131e] dark:to-[#151928] border border-line dark:border-white/10 shadow-[var(--shadow-soft)] animate-rise h-full flex flex-col justify-between"
@@ -269,7 +283,7 @@ export function Dashboard() {
       {/* ── ROW 2: Holdings Donut Breakdown (5 cols) & Cash & Liquidity Hub (7 cols) ── */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 items-stretch">
         {/* Portfolio asset breakdown card */}
-        <div className="lg:col-span-5">
+        <div id="guide-dashboard-alloc" className="lg:col-span-5">
           <Card className="animate-rise h-full flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
@@ -351,7 +365,7 @@ export function Dashboard() {
         </div>
 
         {/* Cash & Liquidity Hub */}
-        <div className="lg:col-span-7">
+        <div id="guide-dashboard-cash" className="lg:col-span-7">
           <Card className="animate-rise h-full flex flex-col justify-between">
             <div>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-line">
@@ -481,7 +495,7 @@ export function Dashboard() {
       </div>
 
       {/* ── ROW 3: Net Worth Performance Graph (Full Width at Bottom) ── */}
-      <div>
+      <div id="guide-dashboard-chart">
         <Card className="animate-rise overflow-hidden" padded={false}>
           {(data.netWorthHistory?.length ?? 0) >= 2 ? (
             <InteractiveNetWorthChart history={data.netWorthHistory!} />
@@ -505,8 +519,19 @@ export function Dashboard() {
         }}
         initialAccountId={selectedCashAccountId}
       />
+
+      <GuideTour
+        isOpen={isRunning}
+        steps={steps}
+        currentStepIndex={currentStepIndex}
+        onNext={nextStep}
+        onPrev={prevStep}
+        onClose={endTour}
+        onFinish={finishTour}
+      />
     </div>
   )
 }
+
 
 

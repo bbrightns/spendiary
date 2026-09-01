@@ -1,12 +1,15 @@
 import { useRef, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useData } from '../store/DataContext'
+import { useToast } from '../store/ToastContext'
 import { useTheme, type Theme } from '../hooks/useTheme'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Modal } from '../components/ui/Modal'
 import { TextField } from '../components/ui/Field'
-import { DownloadIcon, TrashIcon, UploadIcon } from '../components/icons'
+import { GuideTour } from '../components/guide/GuideTour'
+import { usePageGuide, resetAllPageGuides } from '../hooks/usePageGuide'
+import { DownloadIcon, TrashIcon, UploadIcon, HelpCircleIcon } from '../components/icons'
 import type { SpendiaryData } from '../lib/types'
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -38,6 +41,17 @@ type ToastState =
 // ─── component ────────────────────────────────────────────────────────────────
 
 export function Settings() {
+  const {
+    steps,
+    isRunning,
+    currentStepIndex,
+    startTour,
+    endTour,
+    finishTour,
+    nextStep,
+    prevStep,
+  } = usePageGuide('settings')
+  const { showToast } = useToast()
   const {
     data,
     clearAll,

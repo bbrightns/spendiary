@@ -6,7 +6,10 @@ import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { DcaForm } from '../components/forms/DcaForm'
 import { ConfirmDcaBuyForm } from '../components/forms/ConfirmDcaBuyForm'
+import { GuideTour } from '../components/guide/GuideTour'
+import { usePageGuide } from '../hooks/usePageGuide'
 import { CheckCircleIcon, CheckIcon, DcaIcon, PencilIcon, TrashIcon } from '../components/icons'
+
 import { AssetLogo } from '../components/ui/AssetLogo'
 import {
   ASSET_META, buyDayPassedThisPeriod, dcaThisMonth, isConfirmedForPeriod, isSkippedForPeriod,
@@ -220,6 +223,16 @@ function SectionHeader({ label, total, open, onToggle, action }: {
 
 export function DcaPlanner() {
   const {
+    steps,
+    isRunning,
+    currentStepIndex,
+    startTour,
+    endTour,
+    finishTour,
+    nextStep,
+    prevStep,
+  } = usePageGuide('dca')
+  const {
     data, setMonthlyIncome,
     upsertFixedCostItem, removeFixedCostItem,
     skipDcaBuy,
@@ -273,37 +286,45 @@ export function DcaPlanner() {
 
   return (
     <>
-      <PageHeader eyebrow="Strategy" title="Planner" subtitle="Your monthly money breakdown." />
+      <PageHeader
+        eyebrow="Strategy"
+        title="Planner"
+        subtitle="Your monthly money breakdown."
+        onStartGuide={startTour}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column (5 cols): Salary Budget & Fixed Costs */}
         <div className="lg:col-span-5 xl:col-span-4 space-y-6">
           {/* ── Income + Budget Bar ── */}
-          <Card className="animate-rise">
-            <div className="flex flex-wrap items-start justify-between gap-6">
-              <InlineEditStat
-                label="Monthly Salary"
-                value={salary > 0 ? thb(salary) : '-'}
-                editing={editingSalary}
-                draft={salaryDraft}
-                inputRef={salaryRef}
-                onOpen={openSalaryEdit}
-                onDraftChange={setSalaryDraft}
-                onCommit={commitSalary}
-                onCancel={() => setEditingSalary(false)}
-                hint={salary <= 0 ? 'Tap to set your salary' : undefined}
-              />
-            </div>
-            {salary > 0 && <BudgetBar salary={salary} fixed={fixedTotal} savings={savingsTotal} />}
-            {salary <= 0 && (
-              <button onClick={openSalaryEdit} className="mt-4 text-[13px] font-semibold text-brand hover:underline cursor-pointer">
-                + Add monthly salary to see breakdown
-              </button>
-            )}
-          </Card>
+          <div id="guide-dca-summary">
+            <Card className="animate-rise">
+              <div className="flex flex-wrap items-start justify-between gap-6">
+                <InlineEditStat
+                  label="Monthly Salary"
+                  value={salary > 0 ? thb(salary) : '-'}
+                  editing={editingSalary}
+                  draft={salaryDraft}
+                  inputRef={salaryRef}
+                  onOpen={openSalaryEdit}
+                  onDraftChange={setSalaryDraft}
+                  onCommit={commitSalary}
+                  onCancel={() => setEditingSalary(false)}
+                  hint={salary <= 0 ? 'Tap to set your salary' : undefined}
+                />
+              </div>
+              {salary > 0 && <BudgetBar salary={salary} fixed={fixedTotal} savings={savingsTotal} />}
+              {salary <= 0 && (
+                <button onClick={openSalaryEdit} className="mt-4 text-[13px] font-semibold text-brand hover:underline cursor-pointer">
+                  + Add monthly salary to see breakdown
+                </button>
+              )}
+            </Card>
+          </div>
 
           {/* ── Fixed Costs ── */}
-          <Card className="animate-rise">
+          <div id="guide-dca-transfers">
+            <Card className="animate-rise">
             <SectionHeader
               label="Fixed Costs"
               total={fixedTotal}
@@ -386,11 +407,12 @@ export function DcaPlanner() {
             )}
           </Card>
         </div>
+      </div>
 
-        {/* Right Column (7 cols): Savings & Invest / DCA Plans */}
-        <div className="lg:col-span-7 xl:col-span-8 space-y-6">
-          {/* ── Savings & Invest ── */}
-          <Card className="animate-rise overflow-hidden" padded={false}>
+      {/* Right Column (7 cols): Savings & Invest / DCA Plans */}
+      <div id="guide-dca-plans" className="lg:col-span-7 xl:col-span-8 space-y-6">
+        {/* ── Savings & Invest ── */}
+        <Card className="animate-rise overflow-hidden" padded={false}>
             <div className="p-5">
               <SectionHeader
                 label="Savings & Invest"
@@ -507,7 +529,7 @@ export function DcaPlanner() {
                                   )}
                                   </div>
                                   {needsAction && (
-                                    <div className="mt-2 flex items-center gap-2">
+                                    <div id="guide-dca-confirm" className="mt-2 flex items-center gap-2">
                                       <button
                                         onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
                                         aria-label={`Confirm DCA buy for ${p.name}`}
@@ -575,6 +597,16 @@ export function DcaPlanner() {
           open={confirmOpen}
           plan={confirming}
           onClose={() => setConfirmOpen(false)}
+        />
+
+        <GuideTour
+          isOpen={isRunning}
+          steps={steps}
+          currentStepIndex={currentStepIndex}
+          onNext={nextStep}
+          onPrev={prevStep}
+          onClose={endTour}
+          onFinish={finishTour}
         />
       </>
     )

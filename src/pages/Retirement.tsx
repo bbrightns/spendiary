@@ -3,8 +3,11 @@ import { useData } from '../store/DataContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { NumberField, TextField } from '../components/ui/Field'
+import { GuideTour } from '../components/guide/GuideTour'
+import { usePageGuide } from '../hooks/usePageGuide'
 import { dcaPerMonth, portfolioSummary, totalCash } from '../lib/calc'
 import { thbCompact } from '../lib/format'
+
 
 const C_INVEST  = 'var(--color-crypto)'
 const C_SAVINGS = 'var(--color-stocks)'
@@ -246,6 +249,16 @@ function LegendItem({ color, label, dashed }: { color: string; label: string; da
 const DEFAULT_BIRTH = '1996-10-16'
 
 export function Retirement() {
+  const {
+    steps,
+    isRunning,
+    currentStepIndex,
+    startTour,
+    endTour,
+    finishTour,
+    nextStep,
+    prevStep,
+  } = usePageGuide('retirement')
   const { data, setRetirement, syncStatus, usdThb } = useData()
   const saved = data.retirement
 
@@ -454,6 +467,7 @@ export function Retirement() {
       <PageHeader
         eyebrow="วางแผนการเงิน"
         title="วางแผนเกษียณ"
+        onStartGuide={startTour}
         subtitle={`อายุ ${currentAge} ปี · เหลือเวลาอีก ${yearsLeft} ปีก่อนเกษียณ`}
       />
 
@@ -461,7 +475,8 @@ export function Retirement() {
         {/* ── Left Column (5 cols): Inputs & Runway Milestones ── */}
         <div className="lg:col-span-5 xl:col-span-5 space-y-6">
           {/* ── Left: Inputs ── */}
-          <Card className="animate-rise">
+          <div id="guide-retirement-settings">
+            <Card className="animate-rise">
             <h2 className="font-display text-[17px] font-bold text-ink mb-5">แผนการเกษียณของคุณ</h2>
             <div className="space-y-4">
               <TextField
@@ -578,8 +593,10 @@ export function Retirement() {
               )}
             </div>
           </Card>
+        </div>
 
-          {/* ── Wealth Runway & Milestones ── */}
+        {/* ── Wealth Runway & Milestones ── */}
+        <div id="guide-retirement-freedom">
           <Card className="animate-rise">
             <h2 className="font-display text-[17px] font-bold text-ink mb-1">เงินสำรอง & ก้าวสำคัญทางการเงิน</h2>
             <p className="text-[13px] text-ink-muted mb-4">
@@ -637,6 +654,7 @@ export function Retirement() {
               </div>
             </div>
           </Card>
+        </div>
         </div>
 
         {/* ── Right Column (7 cols): Projection Chart ── */}
@@ -835,6 +853,16 @@ export function Retirement() {
           </Card>
         </div>
       </div>
+
+      <GuideTour
+        isOpen={isRunning}
+        steps={steps}
+        currentStepIndex={currentStepIndex}
+        onNext={nextStep}
+        onPrev={prevStep}
+        onClose={endTour}
+        onFinish={finishTour}
+      />
     </>
   )
 }
