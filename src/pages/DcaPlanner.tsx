@@ -511,7 +511,7 @@ export function DcaPlanner() {
                                       <button
                                         onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
                                         aria-label={`Confirm DCA buy for ${p.name}`}
-                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#00de9b] px-3 py-1.5 text-[12px] font-bold text-[#052e21] transition-all hover:bg-[#00c58a] active:scale-95 cursor-pointer shadow-xs min-h-[36px]"
+                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#00de9b] px-3 py-1.5 text-[12px] font-bold text-[#052e21] transition-all hover:bg-[#00a873] active:scale-95 cursor-pointer shadow-xs min-h-[36px]"
                                       >
                                         <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
                                         <span>Confirm Buy</span>
