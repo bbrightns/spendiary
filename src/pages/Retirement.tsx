@@ -658,7 +658,7 @@ export function Retirement() {
         </div>
 
         {/* ── Right Column (7 cols): Projection Chart ── */}
-        <div className="lg:col-span-7 xl:col-span-7 space-y-6">
+        <div id="guide-retirement-chart" className="lg:col-span-7 xl:col-span-7 space-y-6">
           <Card className="animate-rise">
             {/* Hero stats row */}
             <div className="mb-5">

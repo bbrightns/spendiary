@@ -44,14 +44,27 @@ export function GuideTour({
       document.querySelector(`[data-tour="${currentStep.targetId}"]`)
 
     if (targetEl) {
-      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
-      const r = targetEl.getBoundingClientRect()
-      setTargetRect({
-        top: r.top,
-        left: r.left,
-        width: r.width,
-        height: r.height,
-      })
+      const initialRect = targetEl.getBoundingClientRect()
+      const isTopVisible = initialRect.top >= 20 && initialRect.top <= window.innerHeight * 0.85
+
+      if (!isTopVisible) {
+        // Only scroll if top is not in visible range, using 'nearest' to avoid jumping to middle of tall lists
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+      }
+
+      const updateCoords = () => {
+        const r = targetEl.getBoundingClientRect()
+        setTargetRect({
+          top: r.top,
+          left: r.left,
+          width: r.width,
+          height: r.height,
+        })
+      }
+
+      updateCoords()
+      const timer = setTimeout(updateCoords, 250)
+      return () => clearTimeout(timer)
     } else {
       // If target element is not present on DOM (e.g. empty list), fallback to center
       setTargetRect(null)

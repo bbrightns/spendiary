@@ -28,6 +28,22 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         position: 'bottom',
       },
       {
+        targetId: 'guide-dashboard-dca',
+        badge: 'รอบลงทุนวันนี้',
+        title: 'แจ้งเตือน DCA ประจำรอบ (DCA Alerts)',
+        description:
+          'เมื่อถึงรอบวันที่คุณวางแผน DCA ไว้ ระบบจะแสดงรายการเตือนที่นี่ ให้คุณกด "บันทึกซื้อ" เข้าพอร์ตได้สะดวกรวดเร็ว',
+        position: 'bottom',
+      },
+      {
+        targetId: 'guide-dashboard-alloc',
+        badge: 'กระจายความเสี่ยง',
+        title: 'สัดส่วนสินทรัพย์ (Asset Allocation)',
+        description:
+          'กราฟแสดงสัดส่วนการลงทุนตามประเภทสินทรัพย์ เช่น หุ้น, กองทุนรวม, คริปโตเคอร์เรนซี และทองคำ เพื่อตรวจสอบความสมดุล',
+        position: 'top',
+      },
+      {
         targetId: 'guide-dashboard-cash',
         badge: 'เงินสดสำรอง',
         title: 'บัญชีเงินสด & สภาพคล่อง (Cash Accounts)',
@@ -41,22 +57,6 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         title: 'กราฟแนวโน้มความมั่งคั่ง (Net Worth Trend)',
         description:
           'บันทึกและพล็อตประวัติการเติบโตของความมั่งคั่งสุทธิย้อนหลัง ช่วยให้เห็นทิศทางและพัฒนาการทางการเงินของคุณ',
-        position: 'top',
-      },
-      {
-        targetId: 'guide-dashboard-alloc',
-        badge: 'กระจายความเสี่ยง',
-        title: 'สัดส่วนสินทรัพย์ (Asset Allocation)',
-        description:
-          'กราฟแสดงสัดส่วนการลงทุนตามประเภทสินทรัพย์ เช่น หุ้น, กองทุนรวม, คริปโตเคอร์เรนซี และทองคำ เพื่อตรวจสอบความสมดุล',
-        position: 'top',
-      },
-      {
-        targetId: 'guide-dashboard-dca',
-        badge: 'รอบลงทุนวันนี้',
-        title: 'แจ้งเตือน DCA ประจำรอบ (DCA Alerts)',
-        description:
-          'เมื่อถึงรอบวันที่คุณวางแผน DCA ไว้ ระบบจะแสดงรายการเตือนที่นี่ ให้คุณกด "บันทึกซื้อ" เข้าพอร์ตได้สะดวกรวดเร็ว',
         position: 'top',
       },
     ],
@@ -90,20 +90,20 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         position: 'bottom',
       },
       {
-        targetId: 'guide-portfolio-tabs',
-        badge: 'แยกหมวดหมู่',
-        title: 'ตัวกรองประเภทสินทรัพย์ (Asset Tabs)',
-        description:
-          'สลับแท็บเพื่อดูสินทรัพย์เฉพาะกลุ่ม เช่น หุ้นรายตัว, กองทุนรวม, คริปโต หรือทองคำ พร้อมแสดงสัดส่วนของแต่ละกลุ่ม',
-        position: 'bottom',
-      },
-      {
         targetId: 'guide-portfolio-holdings',
         badge: 'สินทรัพย์รายตัว',
         title: 'รายการสินทรัพย์ในพอร์ต (Holdings)',
         description:
           'รายการสินทรัพย์ของคุณพร้อมต้นทุนเฉลี่ยและราคาตลาด คุณสามารถคลิกเพื่อบันทึกการซื้อเพิ่ม, โยกย้าย หรือดูประวัติธุรกรรมย้อนหลังได้',
         position: 'top',
+      },
+      {
+        targetId: 'guide-portfolio-tabs',
+        badge: 'แยกหมวดหมู่',
+        title: 'ตัวกรองประเภทสินทรัพย์ (Asset Tabs)',
+        description:
+          'สลับแท็บเพื่อดูสินทรัพย์เฉพาะกลุ่ม เช่น หุ้นรายตัว, กองทุนรวม, คริปโต หรือทองคำ พร้อมแสดงสัดส่วนของแต่ละกลุ่ม',
+        position: 'bottom',
       },
     ],
   },
@@ -120,20 +120,20 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         position: 'bottom',
       },
       {
-        targetId: 'guide-dca-plans',
-        badge: 'แผนรายเดือน',
-        title: 'แผนการลงทุนประจำรอบ (DCA Plans)',
-        description:
-          'กำหนดสินทรัพย์ที่ต้องการสะสม ระบุวันที่ต้องการซื้อของแต่ละเดือน จำนวนเงิน และบัญชีเงินสดต้นทางที่จะใช้ตัดเงิน',
-        position: 'bottom',
-      },
-      {
         targetId: 'guide-dca-transfers',
         badge: 'ค่าใช้จ่ายคงที่',
         title: 'รายการค่าใช้จ่ายประจำ (Fixed Costs)',
         description:
           'บันทึกค่าใช้จ่ายคงที่รายเดือน เช่น ค่าเช่า ค่าน้ำ-ไฟ หรือเงินที่ต้องกันไว้ เพื่อให้เห็นเงินสุทธิที่เหลือสำหรับการลงทุน',
         position: 'top',
+      },
+      {
+        targetId: 'guide-dca-plans',
+        badge: 'แผนรายเดือน',
+        title: 'แผนการลงทุนประจำรอบ (DCA Plans)',
+        description:
+          'กำหนดสินทรัพย์ที่ต้องการสะสม ระบุวันที่ต้องการซื้อของแต่ละเดือน จำนวนเงิน และบัญชีเงินสดต้นทางที่จะใช้ตัดเงิน',
+        position: 'bottom',
       },
       {
         targetId: 'guide-dca-confirm',
@@ -158,20 +158,20 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         position: 'bottom',
       },
       {
-        targetId: 'guide-rebalance-weights',
-        badge: 'กำหนดเป้าหมาย',
-        title: 'สัดส่วนเป้าหมาย (Target Allocation)',
-        description:
-          'ปรับเปอร์เซ็นต์สัดส่วนที่คุณต้องการให้ครบ 100% เพื่อใช้เป็นเกณฑ์ในการเปรียบเทียบกับพอร์ตปัจจุบัน',
-        position: 'bottom',
-      },
-      {
         targetId: 'guide-rebalance-cash',
         badge: 'เงินเติมใหม่',
         title: 'จำลองการเติมเงินสด (Cash Injection)',
         description:
           'ใส่จำนวนเงินสดที่คุณต้องการเติมเพิ่มเข้าไปในพอร์ต ระบบจะช่วยวางแผนซื้อสินทรัพย์ที่สัดส่วนยังขาดอยู่ โดยที่คุณไม่ต้องขายสินทรัพย์เดิม',
         position: 'top',
+      },
+      {
+        targetId: 'guide-rebalance-weights',
+        badge: 'กำหนดเป้าหมาย',
+        title: 'สัดส่วนเป้าหมาย (Target Allocation)',
+        description:
+          'ปรับเปอร์เซ็นต์สัดส่วนที่คุณต้องการให้ครบ 100% เพื่อใช้เป็นเกณฑ์ในการเปรียบเทียบกับพอร์ตปัจจุบัน',
+        position: 'bottom',
       },
       {
         targetId: 'guide-rebalance-suggestions',

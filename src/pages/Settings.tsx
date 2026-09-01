@@ -1,5 +1,4 @@
 import { useRef, useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
 import { useTheme, type Theme } from '../hooks/useTheme'
@@ -304,27 +303,6 @@ export function Settings() {
                 {label}
               </button>
             ))}
-          </div>
-        </Card>
-
-        {/* ── Activity Logs ────────────────────────────────────── */}
-        <Card className="animate-rise">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="font-display text-[17px] font-bold text-ink">Activity Logs</h2>
-              <p className="mt-1 text-[13px] text-ink-muted">
-                View or undo actions you take in portfolio, plans, and fixed costs.
-              </p>
-            </div>
-            <Link
-              to="/logs"
-              className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-line-strong bg-surface px-4 py-2 text-[13px] font-semibold text-ink-soft shadow-[var(--shadow-soft)] transition-colors hover:bg-surface-muted hover:text-ink active:scale-95"
-            >
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="shrink-0">
-                <path d="M2 3.5h11M2 7.5h8M2 11.5h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-              </svg>
-              View Logs
-            </Link>
           </div>
         </Card>
 
