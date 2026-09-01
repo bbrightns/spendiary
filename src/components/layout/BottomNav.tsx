@@ -3,7 +3,11 @@ import { navItems } from './nav'
 import { useData } from '../../store/DataContext'
 import { shouldConfirmBuy } from '../../lib/calc'
 
-export function BottomNav() {
+interface BottomNavProps {
+  isVisible?: boolean
+}
+
+export function BottomNav({ isVisible = true }: BottomNavProps) {
   const location = useLocation()
   const pathname = location.pathname
   const { data } = useData()
@@ -12,7 +16,11 @@ export function BottomNav() {
   const dcaAlertCount = data.dcaPlans.filter((p) => shouldConfirmBuy(p)).length
 
   return (
-    <nav className="sticky bottom-0 z-40 border-t border-line bg-surface/85 backdrop-blur-xl safe-bottom">
+    <nav
+      className={`fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-surface/85 backdrop-blur-xl safe-bottom transition-transform duration-300 ease-in-out ${
+        isVisible ? 'translate-y-0' : 'translate-y-full pointer-events-none'
+      }`}
+    >
       <div className="flex items-stretch justify-around px-2">
         {navItems.map((item) => {
           // Custom active match matching subpaths

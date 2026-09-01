@@ -4,10 +4,12 @@ import { BottomNav } from './BottomNav'
 import { Sidebar } from './Sidebar'
 import { SettingsIcon } from '../icons'
 import { useData } from '../../store/DataContext'
+import { useScrollVisibility } from '../../hooks/useScrollVisibility'
 
 export function Layout({ children }: { children: ReactNode }) {
   const { user } = useData()
   const isTestMode = user?.id === 'test-user-local'
+  const isVisible = useScrollVisibility()
 
   return (
     <div className="min-h-dvh bg-transparent lg:dark:bg-canvas relative flex flex-col">
@@ -23,7 +25,11 @@ export function Layout({ children }: { children: ReactNode }) {
       <Sidebar />
 
       {/* ── Mobile Top Brand Bar (< lg) ── */}
-      <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-line bg-surface/75 px-5 py-3.5 backdrop-blur-xl lg:hidden">
+      <div
+        className={`sticky top-0 z-20 flex items-center gap-2 border-b border-line bg-surface/75 px-5 py-3.5 backdrop-blur-xl transition-transform duration-300 ease-in-out lg:hidden ${
+          isVisible ? 'translate-y-0' : '-translate-y-full pointer-events-none'
+        }`}
+      >
         <img src="/logo.png" alt="Spendiary Logo" className="h-8 w-8 object-contain shrink-0" />
         <p className="font-display text-[17.5px] font-extrabold tracking-tight leading-none text-ink -translate-y-[0.5px]">
           Spendiary
@@ -58,7 +64,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {/* ── Mobile Bottom Navigation (< lg) ── */}
       <div className="lg:hidden">
-        <BottomNav />
+        <BottomNav isVisible={isVisible} />
       </div>
     </div>
   )
