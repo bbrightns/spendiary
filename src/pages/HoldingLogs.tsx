@@ -238,17 +238,17 @@ export function HoldingLogs() {
     const prevUnits = prev.units ?? prev.totalUnits ?? 0
     const currUnits = curr.units ?? curr.totalUnits ?? 0
     const unitDiff = currUnits - prevUnits
-    const unitsChanged = Math.abs(unitDiff) > 0.00001
+    const unitsChanged = Math.abs(unitDiff) > 0.0001 && Number(currUnits.toFixed(4)) !== Number(prevUnits.toFixed(4))
 
     const prevBasis = prev.totalThbInvested ?? (prevUnits * (prev.avgCostThb ?? prev.avgCost ?? 0))
     const currBasis = curr.totalThbInvested ?? (currUnits * (curr.avgCostThb ?? curr.avgCost ?? 0))
     const basisDiff = currBasis - prevBasis
-    const basisChanged = Math.abs(basisDiff) > 0.01
+    const basisChanged = Math.abs(basisDiff) > 1 && Number(currBasis.toFixed(2)) !== Number(prevBasis.toFixed(2))
 
     const prevAvgCostThb = prevUnits > 0 ? prevBasis / prevUnits : (prev.avgCostThb ?? prev.avgCost ?? 0)
     const currAvgCostThb = currUnits > 0 ? currBasis / currUnits : (curr.avgCostThb ?? curr.avgCost ?? 0)
     const avgCostDiffThb = currAvgCostThb - prevAvgCostThb
-    const avgCostChanged = Math.abs(avgCostDiffThb) > 0.001
+    const avgCostChanged = Math.abs(avgCostDiffThb) > 0.01 && Number(currAvgCostThb.toFixed(2)) !== Number(prevAvgCostThb.toFixed(2))
 
     const fx = usdThb && usdThb > 0 ? usdThb : 34
 
@@ -256,7 +256,10 @@ export function HoldingLogs() {
     const prevPriceThb = prev.price ?? 0
     const currPriceThb = curr.price ?? 0
     const priceDiffThb = currPriceThb - prevPriceThb
-    const priceChanged = Math.abs(priceDiffThb) > 0.001
+    const priceChanged = Math.abs(priceDiffThb) > 0.01 && Number(currPriceThb.toFixed(2)) !== Number(prevPriceThb.toFixed(2))
+
+    const tickerChanged = !!prev.ticker && !!curr.ticker && prev.ticker !== curr.ticker
+    const nameChanged = !!prev.name && !!curr.name && prev.name !== curr.name
 
     const formatUnit = (val: number) => {
       if (log.assetClass === 'crypto') {
@@ -406,11 +409,13 @@ export function HoldingLogs() {
       }
     }
 
+    const showTickerRow = tickerChanged
+    const showNameRow = nameChanged
     const showBalanceRow = log.action === 'buy_more' ? true : unitsChanged
     const showAvgCostRow = log.action === 'buy_more' ? true : (avgCostChanged || basisChanged)
-    const showPriceRow = (priceChanged || (log.action === 'edit' && !showBalanceRow && !showAvgCostRow)) && prevPriceDisplay !== ''
+    const showPriceRow = (priceChanged || (log.action === 'edit' && !showBalanceRow && !showAvgCostRow && !showTickerRow && !showNameRow)) && prevPriceDisplay !== '' && currPriceDisplay !== '' && prevPriceDisplay !== currPriceDisplay
 
-    if (!showBalanceRow && !showAvgCostRow && !showPriceRow) {
+    if (!showTickerRow && !showNameRow && !showBalanceRow && !showAvgCostRow && !showPriceRow) {
       return null
     }
 
@@ -419,9 +424,33 @@ export function HoldingLogs() {
 
     return (
       <div className="mt-3 rounded-xl border border-line bg-surface-muted/50 p-3 text-[12.5px] space-y-2.5">
+        {/* Holding Name Row */}
+        {showNameRow && (
+          <div>
+            <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">Holding Name</span>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
+              <span className="whitespace-nowrap">{prev.name}</span>
+              <span className="text-ink-faint text-[11px]">→</span>
+              <span className="font-semibold text-brand whitespace-nowrap">{curr.name}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Ticker Symbol Row */}
+        {showTickerRow && (
+          <div className={showNameRow ? 'pt-1.5 border-t border-line/60' : ''}>
+            <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">Ticker Symbol</span>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
+              <span className="rounded-md bg-surface px-1.5 py-0.5 font-mono text-[11.5px] text-ink-muted border border-line">{prev.ticker}</span>
+              <span className="text-ink-faint text-[11px]">→</span>
+              <span className="rounded-md bg-brand/10 border border-brand/20 px-1.5 py-0.5 font-mono text-[11.5px] font-bold text-brand">{curr.ticker}</span>
+            </div>
+          </div>
+        )}
+
         {/* Price / NAV Row */}
         {showPriceRow && (
-          <div>
+          <div className={(showNameRow || showTickerRow) ? 'pt-1.5 border-t border-line/60' : ''}>
             <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">
               {priceLabel}
             </span>
@@ -444,13 +473,13 @@ export function HoldingLogs() {
 
         {/* Holding Balance */}
         {showBalanceRow && (
-          <div className={showPriceRow ? 'pt-1.5 border-t border-line/60' : ''}>
+          <div className={(showNameRow || showTickerRow || showPriceRow) ? 'pt-1.5 border-t border-line/60' : ''}>
             <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">Holding Balance</span>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
               <span className="whitespace-nowrap">{formatUnit(prevUnits)}</span>
               <span className="text-ink-faint text-[11px]">→</span>
               <span className="font-semibold text-brand whitespace-nowrap">{formatUnit(currUnits)}</span>
-              {Math.abs(unitDiff) > 0.00001 && (
+              {Math.abs(unitDiff) > 0.0001 && Number(currUnits.toFixed(4)) !== Number(prevUnits.toFixed(4)) && (
                 <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${unitDiff > 0 ? 'bg-gain/10 text-gain' : 'bg-surface-muted text-ink-muted'}`}>
                   {formatUnitDiff(unitDiff)}
                 </span>
@@ -461,7 +490,7 @@ export function HoldingLogs() {
 
         {/* Average Cost */}
         {showAvgCostRow && (
-          <div className={(showPriceRow || showBalanceRow) ? 'pt-1.5 border-t border-line/60' : ''}>
+          <div className={(showNameRow || showTickerRow || showPriceRow || showBalanceRow) ? 'pt-1.5 border-t border-line/60' : ''}>
             <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">Average Cost</span>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
               <span className="whitespace-nowrap">{prevAvgCostDisplay}</span>
@@ -574,7 +603,7 @@ export function HoldingLogs() {
                               </span>
                             )}
                           </div>
-                          <p className="mt-1 text-[13px] font-medium text-ink-muted leading-relaxed">{log.note}</p>
+                          <p className="mt-1 text-[13px] font-medium text-ink-muted leading-relaxed">{getDisplayNote(log)}</p>
                           
                           {/* State comparison (Before -> After) */}
                           {renderStateComparison(log)}
@@ -637,7 +666,7 @@ export function HoldingLogs() {
                     {undoMeta.label}
                   </span>
                 </div>
-                <p className="text-[12.5px] font-medium text-ink-muted leading-relaxed">{undoTarget.note}</p>
+                <p className="text-[12.5px] font-medium text-ink-muted leading-relaxed">{getDisplayNote(undoTarget)}</p>
                 <time className="block text-[11px] text-ink-faint">
                   {new Date(undoTarget.timestamp).toLocaleString('en-GB', {
                     dateStyle: 'medium',
