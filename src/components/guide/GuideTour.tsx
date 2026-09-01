@@ -35,24 +35,6 @@ export function GuideTour({
   const isFirstStep = currentStepIndex === 0
   const isLastStep = currentStepIndex === steps.length - 1
 
-  // Helper to check if element is already comfortably visible
-  const isElementComfortablyInView = (el: HTMLElement) => {
-    const rect = el.getBoundingClientRect()
-    const windowHeight = window.innerHeight || document.documentElement.clientHeight
-
-    // 1. Entire element is already within the visible viewport
-    if (rect.top >= 20 && rect.bottom <= windowHeight - 20) {
-      return true
-    }
-
-    // 2. Tall element whose top is already comfortably visible in the upper region
-    if (rect.height > windowHeight * 0.4 && rect.top >= 20 && rect.top <= windowHeight * 0.45) {
-      return true
-    }
-
-    return false
-  }
-
   // Update target bounding box
   const updateTargetRect = useCallback(() => {
     if (!isOpen || !currentStep) return
@@ -62,18 +44,12 @@ export function GuideTour({
       document.querySelector(`[data-tour="${currentStep.targetId}"]`)
 
     if (targetEl) {
-      const alreadyInView = isElementComfortablyInView(targetEl)
+      const initialRect = targetEl.getBoundingClientRect()
+      const isTopVisible = initialRect.top >= 20 && initialRect.top <= window.innerHeight * 0.85
 
-      // Only scroll if NOT already comfortably visible
-      if (!alreadyInView) {
-        const rect = targetEl.getBoundingClientRect()
-        const windowHeight = window.innerHeight || document.documentElement.clientHeight
-
-        if (rect.top < 0 || rect.height > windowHeight * 0.5) {
-          targetEl.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
-        } else {
-          targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
-        }
+      if (!isTopVisible) {
+        // Only scroll if top is not in visible range, using 'nearest' to avoid jumping to middle of tall lists
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
       }
 
       const updateCoords = () => {
@@ -87,14 +63,8 @@ export function GuideTour({
       }
 
       updateCoords()
-      const t1 = setTimeout(updateCoords, 100)
-      const t2 = setTimeout(updateCoords, 300)
-      const t3 = setTimeout(updateCoords, 500)
-      return () => {
-        clearTimeout(t1)
-        clearTimeout(t2)
-        clearTimeout(t3)
-      }
+      const timer = setTimeout(updateCoords, 250)
+      return () => clearTimeout(timer)
     } else {
       // If target element is not present on DOM (e.g. empty list), fallback to center
       setTargetRect(null)
