@@ -376,8 +376,13 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
       onClose={onClose}
       title={`Confirm Buy: ${holding?.name ?? plan.name}`}
       description={`Record DCA purchase into ${targetSubtitleText}`}
+      footer={
+        <Button onClick={confirm} className="w-full">
+          ✓ Confirm purchase
+        </Button>
+      }
     >
-      <div className="space-y-5">
+      <div className="space-y-4">
         {data.holdings.length > 0 && (
           <SelectField
             label="Target Holding in Portfolio"
@@ -773,12 +778,6 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
             </div>
           </div>
         )}
-
-        <div className="pt-1">
-          <Button onClick={confirm} className="w-full">
-            ✓ Confirm purchase
-          </Button>
-        </div>
       </div>
     </Modal>
   )
