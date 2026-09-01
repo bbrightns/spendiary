@@ -363,8 +363,13 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         onClose={onClose}
         title={`Buy more · ${holding.name}`}
         description="Log a purchase in grams or บาททองคำ (ทองคำแท่ง 15.244g). Choose or create a location."
+        footer={
+          <Button onClick={saveGold} className="w-full">
+            Add to holding
+          </Button>
+        }
       >
-        <div className="space-y-5">
+        <div className="space-y-4">
           <div className="rounded-2xl bg-surface-muted px-4 py-3">
             <div className="flex items-center justify-between text-[13px]">
               <span className="text-ink-muted">Currently holding</span>
@@ -489,10 +494,6 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
               </div>
             </div>
           )}
-
-          <div className="pt-3">
-            <Button onClick={saveGold} className="w-full">Add to holding</Button>
-          </div>
         </div>
       </Modal>
     )
@@ -573,8 +574,13 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         onClose={onClose}
         title={`Buy more · ${holding.name}`}
         description="Log a purchase in Satoshi. Choose or create a location."
+        footer={
+          <Button onClick={saveBtc} className="w-full">
+            Add to holding
+          </Button>
+        }
       >
-        <div className="space-y-5">
+        <div className="space-y-4">
           <div className="rounded-2xl bg-surface-muted px-4 py-3">
             <div className="flex items-center justify-between text-[13px]">
               <span className="text-ink-muted">Currently holding</span>
@@ -640,10 +646,6 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
               </div>
             </div>
           )}
-
-          <div className="pt-3">
-            <Button onClick={saveBtc} className="w-full">Add to holding</Button>
-          </div>
         </div>
       </Modal>
     )
@@ -743,8 +745,13 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
             : 'USD/THB rate loading…'
           : 'Log a purchase. Units grow and your average cost is recalculated.'
       }
+      footer={
+        <Button onClick={save} className="w-full" disabled={isStock ? !validStock : !valid}>
+          Add to holding
+        </Button>
+      }
     >
-      <div className="space-y-5">
+      <div className="space-y-4">
         {isStock && !usdThb && (
           <div className="rounded-xl bg-warn-soft px-4 py-3 text-[13px] font-medium text-warn">
             USD/THB rate is loading. Please wait before saving to avoid wrong values.
@@ -891,12 +898,6 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
             </div>
           </div>
         )}
-
-        <div className="pt-3">
-          <Button onClick={save} className="w-full" disabled={isStock ? !validStock : !valid}>
-            Add to holding
-          </Button>
-        </div>
       </div>
     </Modal>
   )

@@ -71,6 +71,16 @@ export function PlannedAssetModal({ open, onClose, onAdded }: Props) {
       onClose={onClose}
       title="Add Target Asset"
       description="Add a new position you plan to invest in to calculate target allocation and buy advice."
+      footer={
+        <div className="flex gap-2 w-full">
+          <Button variant="secondary" onClick={onClose} className="flex-1">
+            Cancel
+          </Button>
+          <Button onClick={handleSave} className="flex-1">
+            Add to Targets
+          </Button>
+        </div>
+      }
     >
       <div className="space-y-4">
         <SelectField
@@ -88,7 +98,7 @@ export function PlannedAssetModal({ open, onClose, onAdded }: Props) {
           }}
           options={[
             { value: 'stock', label: 'US Stock' },
-            { value: 'fund', label: 'Mutual Fund' },
+            { value: 'fund', label: 'Thai Fund' },
             { value: 'crypto', label: 'Bitcoin' },
             { value: 'gold', label: 'Gold' },
           ]}
@@ -149,15 +159,6 @@ export function PlannedAssetModal({ open, onClose, onAdded }: Props) {
           placeholder="e.g. 10"
           suffix="%"
         />
-
-        <div className="pt-2 flex gap-2">
-          <Button variant="secondary" onClick={onClose} className="flex-1">
-            Cancel
-          </Button>
-          <Button onClick={handleSave} className="flex-1">
-            Add to Targets
-          </Button>
-        </div>
       </div>
     </Modal>
   )

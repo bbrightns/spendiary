@@ -83,8 +83,24 @@ export function TransferForm({ open, editing, onClose }: Props) {
       onClose={onClose}
       title={editing ? 'Edit transfer' : 'Add transfer'}
       description="A recurring outgoing bank transfer schedule."
+      footer={
+        <FormActions
+          editing={!!editing}
+          canSave={true}
+          onSave={save}
+          onDelete={
+            editing
+              ? () => {
+                  removeTransfer(editing.id)
+                  showToast(`Removed transfer schedule for "${editing.recipient}"`, 'info')
+                  onClose()
+                }
+              : undefined
+          }
+        />
+      }
     >
-      <div className="space-y-5">
+      <div className="space-y-4">
         <TextField
           label="Recipient"
           value={form.recipient}
@@ -142,21 +158,6 @@ export function TransferForm({ open, editing, onClose }: Props) {
           value={form.expiryDate}
           error={showErrors && form.expiryDate === '' ? 'Expiry is required' : undefined}
           onChange={(expiryDate) => setForm((f) => ({ ...f, expiryDate }))}
-        />
-
-        <FormActions
-          editing={!!editing}
-          canSave={true}
-          onSave={save}
-          onDelete={
-            editing
-              ? () => {
-                  removeTransfer(editing.id)
-                  showToast(`Removed transfer schedule for "${editing.recipient}"`, 'info')
-                  onClose()
-                }
-              : undefined
-          }
         />
       </div>
     </Modal>

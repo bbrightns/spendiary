@@ -32,7 +32,7 @@ import { money, thb, thbCompact } from '../lib/format'
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
-  { key: 'fund', label: 'Mutual Funds' },
+  { key: 'fund', label: 'Thai Funds' },
   { key: 'stock', label: 'US Stocks' },
   { key: 'crypto', label: 'Bitcoin' },
   { key: 'gold', label: 'Gold' },
@@ -178,7 +178,7 @@ export function Portfolio() {
           <EmptyState
             icon={<PortfolioIcon className="h-7 w-7" />}
             title="No holdings yet"
-            description="Add your mutual funds, US stocks, and Bitcoin to see allocation, value, and profit/loss at a glance."
+            description="Add your Thai funds, US stocks, and Bitcoin to see allocation, value, and profit/loss at a glance."
             accent="var(--color-funds)"
             action={<AddButton onClick={openAdd} label="Add holding" />}
           />
@@ -684,6 +684,9 @@ export function Portfolio() {
         onClose={() => setLocEditOpen(false)}
         title="Edit location"
         description={locEditing && !('satoshi' in locEditing) ? "Update this location's name, grams, or THB spent." : "Update this location's name, satoshi amount, or THB spent."}
+        footer={
+          <Button onClick={saveLocEdit} className="w-full">Save changes</Button>
+        }
       >
         <div className="space-y-4 pb-2">
           <TextField
@@ -804,9 +807,6 @@ export function Portfolio() {
               </div>
             </div>
           )}
-          <div className="pt-2">
-            <Button onClick={saveLocEdit} className="w-full">Save changes</Button>
-          </div>
         </div>
       </Modal>
 

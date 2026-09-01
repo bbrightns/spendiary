@@ -33,7 +33,7 @@ export function FormActions({ editing, canSave, onSave, onDelete }: Props) {
   }
 
   return (
-    <div className="mt-4 flex items-center gap-3 pt-2">
+    <div className="flex items-center gap-3 w-full">
       {editing && onDelete && (
         <button
           type="button"

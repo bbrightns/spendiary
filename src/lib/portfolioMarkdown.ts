@@ -238,9 +238,9 @@ export function generatePortfolioMarkdown(
     }
   }
 
-  // 4. Mutual Funds
+  // 4. Thai Funds
   if (funds.length > 0) {
-    lines.push(`## 🏛️ กองทุนรวม (Mutual Funds)`)
+    lines.push(`## 🏛️ กองทุนรวมไทย (Thai Funds)`)
     for (const h of funds) {
       const marketValue = h.units * h.price
       const costBasis = h.totalThbInvested ?? (h.units * h.avgCost)

@@ -488,7 +488,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
     ? 'Log your first gold purchase in grams.'
     : isUsd
     ? `Prices in USD, converted to THB at ${usdThb ? `฿${usdThb.toFixed(2)}/USD` : 'live rate'}.`
-    : 'Mutual fund, valued in THB.'
+    : 'Thai fund, valued in THB.'
 
   return (
     <Modal
@@ -496,8 +496,30 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
       onClose={onClose}
       title={editing ? 'Edit holding' : 'Add holding'}
       description={modalDescription}
+      footer={
+        isBtc && !editing ? (
+          <Button onClick={saveBtc} className="w-full">
+            Add holding
+          </Button>
+        ) : isGold && !editing ? (
+          <Button onClick={saveGold} className="w-full">
+            Add holding
+          </Button>
+        ) : (
+          <FormActions
+            editing={!!editing}
+            canSave={true}
+            onSave={save}
+            onDelete={
+              editing
+                ? () => { removeHolding(editing.id); onClose() }
+                : undefined
+            }
+          />
+        )
+      }
     >
-      <div className="space-y-5">
+      <div className="space-y-4">
         {/* Asset class — always first */}
         <SelectField
           label="Asset class"
@@ -507,7 +529,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
             setSuggestions([])
           }}
           options={[
-            { value: 'fund', label: 'Mutual Fund' },
+            { value: 'fund', label: 'Thai Fund' },
             { value: 'stock', label: 'US Stock' },
             { value: 'crypto', label: 'Bitcoin' },
             { value: 'gold', label: 'Gold' },
@@ -608,9 +630,6 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                 </div>
               </div>
             )}
-            <div className="pt-3">
-              <Button onClick={saveBtc} className="w-full">Add holding</Button>
-            </div>
           </>
         )}
 
@@ -651,12 +670,6 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                 </div>
               </div>
             </div>
-            <FormActions
-              editing
-              canSave={true}
-              onSave={save}
-              onDelete={() => { removeHolding(editing.id); onClose() }}
-            />
           </>
         )}
 
@@ -768,9 +781,6 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                 </div>
               </div>
             )}
-            <div className="pt-3">
-              <Button onClick={saveGold} className="w-full">Add holding</Button>
-            </div>
           </>
         )}
 
@@ -824,12 +834,6 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                 )}
               </div>
             </div>
-            <FormActions
-              editing
-              canSave={true}
-              onSave={save}
-              onDelete={() => { removeHolding(editing.id); onClose() }}
-            />
           </>
         )}
 
@@ -991,17 +995,6 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                   allowString
                 />
               </div>
-
-              <FormActions
-                editing={!!editing}
-                canSave={true}
-                onSave={save}
-                onDelete={
-                  editing
-                    ? () => { removeHolding(editing.id); onClose() }
-                    : undefined
-                }
-              />
             </>
           ) : (
             <>
@@ -1031,16 +1024,6 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                   placeholder="0"
                 />
               </div>
-              <FormActions
-                editing={!!editing}
-                canSave={true}
-                onSave={save}
-                onDelete={
-                  editing
-                    ? () => { removeHolding(editing.id); onClose() }
-                    : undefined
-                }
-              />
             </>
           )
         )}

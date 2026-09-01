@@ -296,7 +296,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
                   value={form.assetClass}
                   onChange={(v) => setForm((f) => ({ ...f, assetClass: v as AssetClass }))}
                   options={[
-                    { value: 'fund',   label: 'Mutual Fund' },
+                    { value: 'fund',   label: 'Thai Fund' },
                     { value: 'stock',  label: 'US Stock' },
                     { value: 'crypto', label: 'Bitcoin' },
                     { value: 'gold',   label: 'Gold' },
