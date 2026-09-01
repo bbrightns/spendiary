@@ -329,7 +329,7 @@ export function Portfolio() {
       {/* Main Split-View Workspace Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column (5 cols): Allocation Donut + Rebalancer + Portfolio Trend */}
-        <div className="lg:col-span-5 xl:col-span-4 space-y-6">
+        <div id="guide-portfolio-alloc" className="lg:col-span-5 xl:col-span-4 space-y-6">
           {/* Asset Allocation card (Matching Dashboard Holdings & Assets card design) */}
           <Card className="animate-rise">
             <div className="flex items-center justify-between">

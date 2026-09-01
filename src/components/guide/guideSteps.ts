@@ -30,7 +30,7 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
       {
         targetId: 'guide-dashboard-cash',
         badge: 'เงินสดสำรอง',
-        title: 'บัญชีเงินสด & กระแสเงินสด (Cash Accounts)',
+        title: 'บัญชีเงินสด & สภาพคล่อง (Cash Accounts)',
         description:
           'จัดการบัญชีเงินฝาก บัญชีออมทรัพย์ดอกเบี้ยสูง หรือเงินสดสำรอง พร้อมกดแก้ไขยอดเงินหรือเพิ่มบัญชีใหม่ได้ทันที',
         position: 'bottom',
@@ -74,19 +74,27 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         position: 'bottom',
       },
       {
+        targetId: 'guide-portfolio-actions',
+        badge: 'เครื่องมือจัดการ',
+        title: 'ส่งออกข้อมูลพอร์ต (Export & Actions)',
+        description:
+          'คัดลอกสรุปพอร์ตทั้งหมดในรูปแบบ Markdown เพื่อนำไปใช้วิเคราะห์ต่อ หรือกดรีเฟรชราคาตลาดสดแบบ Real-time',
+        position: 'bottom',
+      },
+      {
+        targetId: 'guide-portfolio-alloc',
+        badge: 'สัดส่วนสินทรัพย์',
+        title: 'การกระจายพอร์ต (Asset Allocation)',
+        description:
+          'กราฟ Donut แสดงสัดส่วนมูลค่าและกำไรขาดทุนแยกตามกลุ่มสินทรัพย์ พร้อมปุ่มลัดไปยังหน้า Rebalance',
+        position: 'bottom',
+      },
+      {
         targetId: 'guide-portfolio-tabs',
         badge: 'แยกหมวดหมู่',
         title: 'ตัวกรองประเภทสินทรัพย์ (Asset Tabs)',
         description:
           'สลับแท็บเพื่อดูสินทรัพย์เฉพาะกลุ่ม เช่น หุ้นรายตัว, กองทุนรวม, คริปโต หรือทองคำ พร้อมแสดงสัดส่วนของแต่ละกลุ่ม',
-        position: 'bottom',
-      },
-      {
-        targetId: 'guide-portfolio-actions',
-        badge: 'จัดการพอร์ต',
-        title: 'เพิ่มสินทรัพย์ & อัปเดตราคา (Actions)',
-        description:
-          'กดปุ่ม "เพิ่มสินทรัพย์" เพื่อเริ่มบันทึก หรือกดปุ่มรีเฟรชราคาตลาดสด เพื่อดึงราคาล่าสุดของหุ้น กองทุน และคริปโตแบบ Real-time',
         position: 'bottom',
       },
       {
@@ -106,9 +114,9 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
       {
         targetId: 'guide-dca-summary',
         badge: 'งบประมาณลงทุน',
-        title: 'ยอดเงินลงทุน DCA ต่อเดือน',
+        title: 'ยอดเงินเดือนและงบประมาณ (Cashflow & Budget)',
         description:
-          'สรุปยอดเงินรวมทั้งหมดที่คุณวางแผนจะทยอยลงทุนสะสมในแต่ละเดือน ช่วยควบคุมวินัยทางการเงินได้อย่างแม่นยำ',
+          'สรุปรายได้ประจำและแถบสัดส่วนงบประมาณ ช่วยวางแผนและจัดสรรเงินออมเพื่อการลงทุนอย่างมีวินัย',
         position: 'bottom',
       },
       {
@@ -120,19 +128,19 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         position: 'bottom',
       },
       {
-        targetId: 'guide-dca-confirm',
-        badge: 'บันทึกอัตโนมัติ',
-        title: 'ยืนยันการซื้อเข้าพอร์ต (Confirm DCA Buy)',
+        targetId: 'guide-dca-transfers',
+        badge: 'ค่าใช้จ่ายคงที่',
+        title: 'รายการค่าใช้จ่ายประจำ (Fixed Costs)',
         description:
-          'เมื่อถึงกำหนดวันที่ตั้งไว้ ระบบจะไฮไลต์ให้กดยืนยัน โดยจะตัดยอดเงินสดและคำนวณจำนวนหน่วยเข้าพอร์ตให้ทันทีโดยไม่ต้องคำนวณเอง',
+          'บันทึกค่าใช้จ่ายคงที่รายเดือน เช่น ค่าเช่า ค่าน้ำ-ไฟ หรือเงินที่ต้องกันไว้ เพื่อให้เห็นเงินสุทธิที่เหลือสำหรับการลงทุน',
         position: 'top',
       },
       {
-        targetId: 'guide-dca-transfers',
-        badge: 'โอนเงินสะสม',
-        title: 'ตารางแผนการโยกย้ายเงิน (Transfers)',
+        targetId: 'guide-dca-confirm',
+        badge: 'บันทึกอัตโนมัติ',
+        title: 'ยืนยันการซื้อจริงเข้าพอร์ต (Confirm DCA Buy)',
         description:
-          'จัดการเป้าหมายการโอนเงินระหว่างบัญชี เช่น เงินสะสมรายงวด หรือการกันเงินไว้สำหรับเป้าหมายพิเศษ',
+          'เมื่อถึงกำหนดวันที่ตั้งไว้ ระบบจะไฮไลต์ให้กดยืนยัน โดยจะตัดยอดเงินสดและคำนวณจำนวนหน่วยเข้าพอร์ตให้ทันทีโดยไม่ต้องคำนวณเอง',
         position: 'top',
       },
     ],
@@ -146,7 +154,7 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         badge: 'เลือกรูปแบบ',
         title: 'โหมดปรับสมดุลพอร์ต (Rebalancing Mode)',
         description:
-          'สามารถเลือกปรับสมดุลตาม "กลุ่มสินทรัพย์" (Asset Class) เช่น หุ้น 50% กองทุน 30% หรือปรับตาม "รายตัวสินทรัพย์" (Holding) ได้ตามต้องการ',
+          'สามารถเลือกปรับสมดุลตาม "กลุ่มสินทรัพย์" (Asset Class) เช่น หุ้น 50% กองทุน 30% หรือปรับตาม "รายตัวสินทรัพย์" (Holdings) ได้ตามต้องการ',
         position: 'bottom',
       },
       {
@@ -154,7 +162,7 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         badge: 'กำหนดเป้าหมาย',
         title: 'สัดส่วนเป้าหมาย (Target Allocation)',
         description:
-          'เลื่อนปรับแถบเปอร์เซ็นต์สัดส่วนที่คุณต้องการให้ครบ 100% เพื่อใช้เป็นเกณฑ์ในการเปรียบเทียบกับพอร์ตปัจจุบัน',
+          'ปรับเปอร์เซ็นต์สัดส่วนที่คุณต้องการให้ครบ 100% เพื่อใช้เป็นเกณฑ์ในการเปรียบเทียบกับพอร์ตปัจจุบัน',
         position: 'bottom',
       },
       {
@@ -188,19 +196,19 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         position: 'bottom',
       },
       {
-        targetId: 'guide-retirement-freedom',
-        badge: 'อิสรภาพการเงิน',
-        title: 'เป้าหมายเงินก้อน (Freedom Number)',
-        description:
-          'คำนวณขนาดพอร์ตที่ต้องมีตามหลัก 4% Rule พร้อมประมาณการเงินปันผลรายปีที่คุณจะได้รับ เพื่อสร้างรายได้แบบ Passive Income',
-        position: 'bottom',
-      },
-      {
         targetId: 'guide-retirement-chart',
         badge: 'เส้นทางสู่อนาคต',
         title: 'กราฟจำลองการสะสมความมั่งคั่ง (Wealth Simulation)',
         description:
           'กราฟจำลองการเติบโตของพอร์ตจากเงินต้นและการลงทุนสม่ำเสมอ เทียบกับเป้าหมายอิสรภาพทางการเงินจนถึงวัยเกษียณ',
+        position: 'bottom',
+      },
+      {
+        targetId: 'guide-retirement-freedom',
+        badge: 'อิสรภาพการเงิน',
+        title: 'เงินสำรอง & ก้าวสำคัญ (Runway & Milestones)',
+        description:
+          'ประเมินความอยู่รอดทางการเงินและระดับอิสรภาพ (Coast FI, Lean FI, Full FI) เทียบกับทรัพย์สินที่มีอยู่จริงในปัจจุบัน',
         position: 'top',
       },
     ],
@@ -211,18 +219,18 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
     steps: [
       {
         targetId: 'guide-logs-header',
-        badge: 'ประวัติย้อนหลัง',
-        title: 'บันทึกธุรกรรมพอร์ต (Activity Records)',
+        badge: 'ตัวกรองประวัติ',
+        title: 'ตัวกรองธุรกรรมพอร์ต (Filter Actions)',
         description:
-          'รวบรวมประวัติการซื้อ-ขายสินทรัพย์, การเพิ่มเงินต้น และการปรับยอดเงินของพอร์ตที่เคยเกิดขึ้นทั้งหมด',
+          'กรองดูเฉพาะกลุ่มสินทรัพย์ หรือประเภทกิจกรรม เช่น ซื้อเพิ่ม, อัปเดตราคา, แก้ไขข้อมูล ได้อย่างสะดวก',
         position: 'bottom',
       },
       {
         targetId: 'guide-logs-list',
         badge: 'รายละเอียด',
-        title: 'รายการบันทึกย้อนหลัง (Transaction List)',
+        title: 'รายการบันทึกย้อนหลัง (Activity Timeline)',
         description:
-          'ตรวจสอบวันที่ทำรายการ, ราคาต้นทุน, จำนวนหน่วย และผลกำไรที่รับรู้แล้วในแต่ละรายการได้อย่างละเอียด',
+          'ตรวจสอบวันที่ทำรายการ, ราคาต้นทุน, จำนวนหน่วย, และประวัติการเปลี่ยนแปลง พร้อมปุ่ม Undo เพื่อยกเลิกรายการได้ทุกเมื่อ',
         position: 'top',
       },
     ],
@@ -232,11 +240,19 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
     title: 'แนะนำหน้าตั้งค่า (Settings)',
     steps: [
       {
-        targetId: 'guide-settings-cashflow',
-        badge: 'รายรับ-รายจ่าย',
-        title: 'ตั้งค่ากระแสเงินสด (Cashflow Setup)',
+        targetId: 'guide-settings-sync',
+        badge: 'เชื่อมต่อคลาวด์',
+        title: 'การซิงค์ข้อมูลผ่าน Cloud (Supabase)',
         description:
-          'กรอกรายได้ประจำต่อเดือน และรายการค่าใช้จ่ายคงที่ (Fixed Costs) เพื่อให้ระบบคำนวณเงินสดคงเหลือสุทธิสำหรับนำไปลงทุน',
+          'ล็อกอินด้วย Google Account เพื่อซิงค์ข้อมูลส่วนตัวบน Supabase Cloud ทำให้สามารถใช้งานร่วมกันได้ทุกเครื่องอย่างปลอดภัย',
+        position: 'bottom',
+      },
+      {
+        targetId: 'guide-settings-cashflow',
+        badge: 'โปรไฟล์',
+        title: 'ข้อมูลผู้ใช้งาน (Profile)',
+        description:
+          'ตั้งชื่อของคุณสำหรับแสดงข้อความต้อนรับในหน้า Dashboard',
         position: 'bottom',
       },
       {
@@ -246,14 +262,6 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         description:
           'ส่งออกไฟล์สำรองข้อมูล JSON เก็บไว้ หรือนำเข้าไฟล์เดิมเพื่อย้ายเครื่องหรือกู้คืนข้อมูลได้ตลอดเวลา',
         position: 'bottom',
-      },
-      {
-        targetId: 'guide-settings-sync',
-        badge: 'เชื่อมต่อคลาวด์',
-        title: 'การซิงค์ข้อมูลผ่าน Cloud (Supabase)',
-        description:
-          'ล็อกอินด้วย Google Account เพื่อซิงค์ข้อมูลส่วนตัวบน Supabase Cloud ทำให้สามารถใช้งานร่วมกันได้ทุกเครื่องอย่างปลอดภัย',
-        position: 'top',
       },
       {
         targetId: 'guide-settings-tour',
@@ -266,3 +274,4 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
     ],
   },
 }
+
