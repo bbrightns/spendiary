@@ -242,9 +242,6 @@ export function HoldingLogs() {
 
     const prevBasis = prev.totalThbInvested ?? (prevUnits * (prev.avgCostThb ?? prev.avgCost ?? 0))
     const currBasis = curr.totalThbInvested ?? (currUnits * (curr.avgCostThb ?? curr.avgCost ?? 0))
-    const basisDiff = currBasis - prevBasis
-    const basisChanged = Math.abs(basisDiff) > 1 && Number(currBasis.toFixed(2)) !== Number(prevBasis.toFixed(2))
-
     const prevAvgCostThb = prevUnits > 0 ? prevBasis / prevUnits : (prev.avgCostThb ?? prev.avgCost ?? 0)
     const currAvgCostThb = currUnits > 0 ? currBasis / currUnits : (curr.avgCostThb ?? curr.avgCost ?? 0)
     const avgCostDiffThb = currAvgCostThb - prevAvgCostThb
