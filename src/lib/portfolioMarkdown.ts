@@ -126,9 +126,11 @@ export function generatePortfolioMarkdown(
         const bahtGold = h.units / GRAMS_PER_BAHT_GOLD
         qtyStr = `${fmtNum(bahtGold, 4)} บาททอง<br/>(${fmtNum(h.units, 4)} g)`
         const avgCostPerBaht = (h.units > 0 ? costBasis / h.units : h.avgCost) * GRAMS_PER_BAHT_GOLD
+        const avgCostPerBahtUsd = rate > 0 ? avgCostPerBaht / rate : 0
         const pricePerBaht = h.price * GRAMS_PER_BAHT_GOLD
-        avgCostStr = `${fmtMoney(avgCostPerBaht, 'THB', 0)}/บาททอง`
-        priceStr = `${fmtMoney(pricePerBaht, 'THB', 0)}/บาททอง`
+        const pricePerBahtUsd = rate > 0 ? pricePerBaht / rate : 0
+        avgCostStr = `${fmtMoney(avgCostPerBaht, 'THB', 0)}/บาททอง<br/>(${fmtMoney(avgCostPerBahtUsd, 'USD', 0)})`
+        priceStr = `${fmtMoney(pricePerBaht, 'THB', 0)}/บาททอง<br/>(${fmtMoney(pricePerBahtUsd, 'USD', 0)})`
       }
 
       const pnlStr = `${fmtSignMoney(pnl, 'THB', 2)}<br/>(${fmtPct(pnlPct, 2)})`
@@ -211,12 +213,14 @@ export function generatePortfolioMarkdown(
       const pnl = marketValue - costBasis
       const pnlPct = costBasis > 0 ? (pnl / costBasis) * 100 : 0
       const avgCostPerBaht = (h.units > 0 ? costBasis / h.units : h.avgCost) * GRAMS_PER_BAHT_GOLD
+      const avgCostPerBahtUsd = rate > 0 ? avgCostPerBaht / rate : 0
       const pricePerBaht = h.price * GRAMS_PER_BAHT_GOLD
+      const pricePerBahtUsd = rate > 0 ? pricePerBaht / rate : 0
 
       lines.push(`### 🔹 ${h.name} (\`${h.ticker}\`)`)
       lines.push(`- **จำนวนที่ถือครอง**: **${fmtNum(bahtGold, 4)} บาททองคำ** (${fmtNum(h.units, 4)} กรัม / g)`)
-      lines.push(`- **ต้นทุนเฉลี่ย (Avg Cost)**: **${fmtMoney(avgCostPerBaht, 'THB', 0)} / บาททองคำ** (${fmtMoney(h.avgCost, 'THB', 2)} / g)`)
-      lines.push(`- **ราคาปัจจุบัน (Price)**: **${fmtMoney(pricePerBaht, 'THB', 0)} / บาททองคำ** (${fmtMoney(h.price, 'THB', 2)} / g)`)
+      lines.push(`- **ต้นทุนเฉลี่ย (Avg Cost)**: **${fmtMoney(avgCostPerBaht, 'THB', 0)} / บาททองคำ** (${fmtMoney(avgCostPerBahtUsd, 'USD', 0)} / บาททองคำ | ${fmtMoney(h.avgCost, 'THB', 2)} / g)`)
+      lines.push(`- **ราคาปัจจุบัน (Price)**: **${fmtMoney(pricePerBaht, 'THB', 0)} / บาททองคำ** (${fmtMoney(pricePerBahtUsd, 'USD', 0)} / บาททองคำ | ${fmtMoney(h.price, 'THB', 2)} / g)`)
       lines.push(`- **ต้นทุนรวม (Total Cost)**: **${fmtMoney(costBasis, 'THB', 2)}**`)
       lines.push(`- **มูลค่าปัจจุบัน (Market Value)**: **${fmtMoney(marketValue, 'THB', 2)}**`)
       lines.push(`- **กำไร/ขาดทุน (PnL)**: **${fmtSignMoney(pnl, 'THB', 2)} (${fmtPct(pnlPct, 2)})**`)
@@ -226,7 +230,8 @@ export function generatePortfolioMarkdown(
         for (const loc of h.goldLocations) {
           const locBaht = loc.grams / GRAMS_PER_BAHT_GOLD
           const locCostPerBaht = loc.grams > 0 ? (loc.thbSpent / loc.grams) * GRAMS_PER_BAHT_GOLD : 0
-          lines.push(`  - 📍 **${loc.name}**: ${fmtNum(locBaht, 4)} บาททอง (${fmtNum(loc.grams, 4)} g) | ทุน: ${fmtMoney(loc.thbSpent, 'THB', 2)} | ทุนเฉลี่ย: ${fmtMoney(locCostPerBaht, 'THB', 0)}/บาททอง`)
+          const locCostPerBahtUsd = rate > 0 ? locCostPerBaht / rate : 0
+          lines.push(`  - 📍 **${loc.name}**: ${fmtNum(locBaht, 4)} บาททอง (${fmtNum(loc.grams, 4)} g) | ทุน: ${fmtMoney(loc.thbSpent, 'THB', 2)} | ทุนเฉลี่ย: ${fmtMoney(locCostPerBaht, 'THB', 0)}/บาททอง (${fmtMoney(locCostPerBahtUsd, 'USD', 0)})`)
         }
       }
       lines.push('')

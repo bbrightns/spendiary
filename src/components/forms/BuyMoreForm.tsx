@@ -478,7 +478,10 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
               </div>
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-soft">Implied cost / บาททองคำ</span>
-                <span className="font-semibold tnum text-brand">{thb(impliedPrice * GRAMS_PER_BAHT_GOLD)}</span>
+                <span className="font-semibold tnum text-brand">
+                  {thb(impliedPrice * GRAMS_PER_BAHT_GOLD)}
+                  {rate > 1 && ` ($${Math.round((impliedPrice * GRAMS_PER_BAHT_GOLD) / rate).toLocaleString()})`}
+                </span>
               </div>
               <div className="flex items-center justify-between text-[13px]">
                 <span className="text-ink-soft">Gold amount</span>

@@ -757,7 +757,10 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                 </div>
                 <div className="flex items-center justify-between text-[13px]">
                   <span className="text-ink-soft">Implied cost / บาททองคำ</span>
-                  <span className="font-semibold tnum text-brand">{thb(goldImpliedPrice * GRAMS_PER_BAHT_GOLD)}</span>
+                  <span className="font-semibold tnum text-brand">
+                    {thb(goldImpliedPrice * GRAMS_PER_BAHT_GOLD)}
+                    {rate > 1 && ` ($${Math.round((goldImpliedPrice * GRAMS_PER_BAHT_GOLD) / rate).toLocaleString()})`}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-[13px]">
                   <span className="text-ink-soft">Total weight</span>

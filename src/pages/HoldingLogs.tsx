@@ -188,14 +188,19 @@ export function HoldingLogs() {
           }
         }
       } else if (log.assetClass === 'gold') {
-        prevAvgCostDisplay = `฿${prevAvgCostThb.toFixed(2)}/g`
-        currAvgCostDisplay = `฿${currAvgCostThb.toFixed(2)}/g`
-        const diff = Number((currAvgCostThb - prevAvgCostThb).toFixed(2))
-        if (diff !== 0 && prevUnits > 0) {
-          const sign = diff > 0 ? '+' : '-'
+        const prevBaht = prevAvgCostThb * GRAMS_PER_BAHT_GOLD
+        const currBaht = currAvgCostThb * GRAMS_PER_BAHT_GOLD
+        const prevUsd = fx > 0 ? prevBaht / fx : 0
+        const currUsd = fx > 0 ? currBaht / fx : 0
+
+        prevAvgCostDisplay = `฿${Math.round(prevBaht).toLocaleString()} ($${Math.round(prevUsd).toLocaleString()})/บาททอง`
+        currAvgCostDisplay = `฿${Math.round(currBaht).toLocaleString()} ($${Math.round(currUsd).toLocaleString()})/บาททอง`
+        const diffBaht = Math.round(currBaht - prevBaht)
+        if (diffBaht !== 0 && prevUnits > 0) {
+          const sign = diffBaht > 0 ? '+' : '-'
           avgCostDeltaBadge = {
-            text: `${sign}฿${Math.abs(diff).toFixed(2)}/g`,
-            positive: diff < 0,
+            text: `${sign}฿${Math.abs(diffBaht).toLocaleString()}/บาททอง`,
+            positive: diffBaht < 0,
           }
         }
       } else {

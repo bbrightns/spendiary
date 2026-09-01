@@ -767,7 +767,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               <div className="pt-2 border-t border-line flex items-center justify-between text-[13px]">
                 <span className="font-medium text-ink-muted">New Avg Cost</span>
                 <span className={`tnum ${hasValidGold ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
-                  {hasValidGold ? `฿${fmtNum(goldNewAvgCostThb, 2)} / g (≈ ฿${fmtNum(goldNewAvgCostThb * GRAMS_PER_BAHT_GOLD, 0)} / บาททอง)` : '฿0 / g'}
+                  {hasValidGold ? `฿${fmtNum(goldNewAvgCostThb * GRAMS_PER_BAHT_GOLD, 0)} ($${fmtNum(rate > 0 ? (goldNewAvgCostThb * GRAMS_PER_BAHT_GOLD) / rate : 0, 0)}) / บาททอง` : '฿0 / บาททอง'}
                 </span>
               </div>
             </div>
