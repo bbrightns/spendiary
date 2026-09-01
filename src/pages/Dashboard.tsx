@@ -107,9 +107,9 @@ export function Dashboard() {
               type="button"
               onClick={() => navigate('/dca')}
               aria-label={`View ${dcaActions.length} DCA ${dcaActions.length === 1 ? 'buy' : 'buys'} ready to confirm`}
-              className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand-soft px-3.5 py-1.5 text-[12.5px] font-semibold text-brand-ink transition-all hover:bg-brand hover:text-white dark:hover:bg-brand dark:hover:text-slate-950 active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand-soft px-3.5 py-1.5 text-[12.5px] font-semibold text-brand-ink transition-all hover:bg-brand hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 cursor-pointer"
             >
-              <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand dark:bg-brand text-[10.5px] font-bold text-white dark:text-slate-950">
+              <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand dark:bg-[#4f46e5] text-[10.5px] font-bold text-white">
                 {dcaActions.length}
               </span>
               <span>DCA {dcaActions.length === 1 ? 'buy ready' : 'buys ready'}</span>

@@ -315,7 +315,7 @@ export function RebalancingSection({ onBuyHolding, onAddPlannedAsset }: Props) {
           onClick={() => setOpen(!open)}
           aria-label={open ? 'Close rebalancing configuration' : 'Configure rebalancing targets'}
           aria-expanded={open}
-          className="inline-flex h-8 items-center gap-1.5 rounded-full bg-ink px-3 text-[11.5px] font-semibold text-white shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-ink-hover dark:bg-brand dark:text-slate-950 dark:font-bold dark:hover:bg-brand-ink active:scale-95 cursor-pointer whitespace-nowrap"
+          className="inline-flex h-8 items-center gap-1.5 rounded-full bg-ink px-3 text-[11.5px] font-semibold text-white shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] active:scale-95 cursor-pointer whitespace-nowrap"
         >
           {open ? 'Close' : 'Configure'}
         </button>
@@ -575,7 +575,7 @@ export function RebalancingSection({ onBuyHolding, onAddPlannedAsset }: Props) {
                                     }
                                   }}
                                   title={row.isPlanned ? 'Add to portfolio' : 'Buy more'}
-                                  className="inline-flex items-center gap-0.5 rounded-full bg-brand-soft px-2 py-0.5 text-[10.5px] font-bold text-brand hover:bg-brand hover:text-white dark:hover:text-slate-950 transition-all cursor-pointer"
+                                  className="inline-flex items-center gap-0.5 rounded-full bg-brand-soft px-2 py-0.5 text-[10.5px] font-bold text-brand hover:bg-brand hover:text-white dark:hover:bg-[#4f46e5] transition-all cursor-pointer"
                                 >
                                   {row.isPlanned ? 'Add' : 'Buy'}
                                 </button>

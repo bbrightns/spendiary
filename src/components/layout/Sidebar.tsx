@@ -102,7 +102,7 @@ export function Sidebar() {
 
                 {badgeCount > 0 && (
                   <span
-                    className="px-1.5 py-0.2 rounded-full text-[10.5px] font-bold leading-tight bg-brand text-white dark:text-slate-950"
+                    className="px-1.5 py-0.2 rounded-full text-[10.5px] font-bold leading-tight bg-brand text-white dark:bg-[#4f46e5]"
                   >
                     {badgeCount}
                   </span>

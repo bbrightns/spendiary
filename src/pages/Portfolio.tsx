@@ -445,7 +445,7 @@ export function Portfolio() {
                         aria-pressed={filter === f.key}
                         className={`rounded-full px-3 py-1 text-[12.5px] font-semibold transition-colors cursor-pointer ${
                           filter === f.key
-                            ? 'bg-ink text-white dark:bg-brand dark:text-slate-950 dark:font-bold shadow-xs'
+                            ? 'bg-ink text-white dark:bg-[#4f46e5] shadow-xs'
                             : 'bg-surface-muted text-ink-soft hover:text-ink'
                         }`}
                       >
@@ -475,7 +475,7 @@ export function Portfolio() {
                           aria-pressed={active}
                           className={`flex shrink-0 items-center gap-0.5 rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold transition-colors cursor-pointer ${
                             active
-                              ? 'bg-brand text-white dark:bg-brand dark:text-slate-950 dark:font-bold'
+                              ? 'bg-brand text-white dark:bg-[#4f46e5]'
                               : 'bg-surface-muted text-ink-soft hover:text-ink'
                           }`}
                         >
@@ -533,7 +533,7 @@ export function Portfolio() {
                       onClick={(e) => { e.stopPropagation(); openBuy(h) }}
                       aria-label={`Buy more ${h.name}`}
                       title="Buy more"
-                      className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-soft text-brand transition-all hover:bg-brand hover:text-white dark:hover:text-slate-950 active:scale-95 cursor-pointer"
+                      className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-soft text-brand transition-all hover:bg-brand hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 cursor-pointer"
                     >
                       <PlusIcon className="h-[16px] w-[16px]" strokeWidth={2.2} />
                     </button>
@@ -828,7 +828,7 @@ export function Portfolio() {
               setRemoveTarget(null)
             }}
             aria-label={`Confirm remove holding ${removeTarget?.name ?? ''}`}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-loss px-5 text-sm font-bold text-white dark:text-[#4c0519] transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer shadow-sm"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-loss px-5 text-sm font-bold text-white dark:bg-rose-600 dark:hover:bg-rose-700 transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer shadow-sm"
           >
             <TrashIcon className="h-4 w-4" strokeWidth={2.2} />
             <span>Yes, remove holding</span>

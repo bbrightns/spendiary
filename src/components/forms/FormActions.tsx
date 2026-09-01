@@ -41,7 +41,7 @@ export function FormActions({ editing, canSave, onSave, onDelete }: Props) {
           className={[
             'inline-flex h-11 shrink-0 items-center justify-center rounded-full transition-all duration-200 border text-sm font-semibold',
             confirm
-              ? 'px-4 bg-loss border-loss text-white dark:text-[#4c0519] dark:font-bold hover:opacity-90'
+              ? 'px-4 bg-loss border-loss text-white dark:bg-rose-600 dark:border-rose-600 dark:text-white hover:opacity-90'
               : 'w-11 border-loss/25 bg-loss-soft text-loss hover:bg-loss/15',
           ].join(' ')}
           aria-label={confirm ? 'Confirm Delete' : 'Delete'}
