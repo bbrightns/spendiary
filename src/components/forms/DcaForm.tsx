@@ -237,6 +237,14 @@ export function DcaForm({ open, editing, onClose }: Props) {
       onClose={onClose}
       title={editing ? 'Edit DCA plan' : 'Add DCA plan'}
       description="Set a recurring buy schedule for a holding."
+      footer={
+        <FormActions
+          editing={!!editing}
+          canSave={true}
+          onSave={save}
+          onDelete={editing ? () => { removePlan(editing.id); onClose() } : undefined}
+        />
+      }
     >
       <div className="space-y-5">
 
@@ -360,13 +368,6 @@ export function DcaForm({ open, editing, onClose }: Props) {
             />
           )}
         </div>
-
-        <FormActions
-          editing={!!editing}
-          canSave={true}
-          onSave={save}
-          onDelete={editing ? () => { removePlan(editing.id); onClose() } : undefined}
-        />
       </div>
     </Modal>
   )
