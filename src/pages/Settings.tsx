@@ -1,13 +1,12 @@
 import { useRef, useState, useEffect } from 'react'
 import { useData } from '../store/DataContext'
-import { useToast } from '../store/ToastContext'
 import { useTheme, type Theme } from '../hooks/useTheme'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Modal } from '../components/ui/Modal'
 import { TextField } from '../components/ui/Field'
 import { GuideTour } from '../components/guide/GuideTour'
-import { usePageGuide, resetAllPageGuides } from '../hooks/usePageGuide'
+import { usePageGuide } from '../hooks/usePageGuide'
 import { DownloadIcon, TrashIcon, UploadIcon, HelpCircleIcon } from '../components/icons'
 import type { SpendiaryData } from '../lib/types'
 
@@ -50,7 +49,6 @@ export function Settings() {
     nextStep,
     prevStep,
   } = usePageGuide('settings')
-  const { showToast } = useToast()
   const {
     data,
     clearAll,
@@ -422,7 +420,7 @@ export function Settings() {
                   </h2>
                 </div>
                 <p className="mt-1 text-[13px] text-ink-muted leading-relaxed">
-                  Spendiary มีระบบแนะนำฟังก์ชันการทำงานแบบทีละขั้นตอน (Spotlight Tour) หากต้องการเริ่มต้นดูคำแนะนำในทุกหน้าใหม่เหมือนเปิดแอพครั้งแรก สามารถกดรีเซ็ตได้ที่นี่
+                  Spendiary มีระบบแนะนำการทำงานแบบทีละขั้นตอน (Spotlight Tour) ในทุกหน้า โดยคุณสามารถกดปุ่ม <span className="font-semibold text-brand dark:text-[#a5b4fc]">"แนะนำหน้านี้"</span> ที่อยู่ด้านบนของแต่ละหน้าเพื่อดูคำแนะนำได้ตลอดเวลา
                 </p>
               </div>
             </div>
@@ -430,24 +428,10 @@ export function Settings() {
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                onClick={() => {
-                  resetAllPageGuides()
-                  showToast('รีเซ็ตคู่มือการใช้งานทุกหน้าเรียบร้อยแล้ว ระบบจะเริ่มแนะนำใหม่เมื่อเปิดแต่ละหน้า', 'info')
-                }}
+                onClick={startTour}
                 className="inline-flex items-center gap-2 rounded-full bg-ink text-white dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] hover:bg-ink-hover px-4 py-2 text-[13px] font-semibold shadow-xs active:scale-95 transition-all cursor-pointer"
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-                </svg>
-                รีเซ็ตคู่มือทุกหน้า (Reset All Guides)
-              </button>
-
-              <button
-                type="button"
-                onClick={startTour}
-                className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-surface px-4 py-2 text-[13px] font-semibold text-ink-soft shadow-[var(--shadow-soft)] hover:bg-surface-muted hover:text-ink active:scale-95 transition-all cursor-pointer"
-              >
-                <HelpCircleIcon className="h-4 w-4 text-brand dark:text-[#a5b4fc]" strokeWidth={2.2} />
+                <HelpCircleIcon className="h-4 w-4" strokeWidth={2.2} />
                 แนะนำหน้าการตั้งค่านี้
               </button>
             </div>

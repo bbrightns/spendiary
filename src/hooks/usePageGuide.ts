@@ -1,50 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { PAGE_GUIDES, type PageGuideKey } from '../components/guide/guideSteps'
 
-const GUIDE_STORAGE_PREFIX = 'spendiary_guide_seen_'
-
-export function hasSeenPageGuide(key: PageGuideKey): boolean {
-  if (typeof window === 'undefined') return false
-  return localStorage.getItem(`${GUIDE_STORAGE_PREFIX}${key}`) === 'true'
-}
-
-export function markPageGuideSeen(key: PageGuideKey): void {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(`${GUIDE_STORAGE_PREFIX}${key}`, 'true')
-}
-
-export function resetAllPageGuides(): void {
-  if (typeof window === 'undefined') return
-  const keys: PageGuideKey[] = [
-    'dashboard',
-    'portfolio',
-    'dca',
-    'rebalance',
-    'retirement',
-    'logs',
-    'settings',
-  ]
-  keys.forEach((k) => localStorage.removeItem(`${GUIDE_STORAGE_PREFIX}${k}`))
-}
-
-export function usePageGuide(key: PageGuideKey, autoStart = true) {
+export function usePageGuide(key: PageGuideKey) {
   const guideData = PAGE_GUIDES[key]
   const [isRunning, setIsRunning] = useState(false)
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
-
-  // Auto-start on first-time visit
-  useEffect(() => {
-    if (!autoStart) return
-
-    const seen = hasSeenPageGuide(key)
-    if (!seen && guideData && guideData.steps.length > 0 && !isRunning) {
-      const timer = setTimeout(() => {
-        setIsRunning(true)
-        setCurrentStepIndex(0)
-      }, 400)
-      return () => clearTimeout(timer)
-    }
-  }, [key, autoStart, guideData, isRunning])
 
   const startTour = useCallback(() => {
     setCurrentStepIndex(0)
@@ -53,13 +13,11 @@ export function usePageGuide(key: PageGuideKey, autoStart = true) {
 
   const endTour = useCallback(() => {
     setIsRunning(false)
-    markPageGuideSeen(key)
-  }, [key])
+  }, [])
 
   const finishTour = useCallback(() => {
     setIsRunning(false)
-    markPageGuideSeen(key)
-  }, [key])
+  }, [])
 
   const nextStep = useCallback(() => {
     if (guideData && currentStepIndex < guideData.steps.length - 1) {

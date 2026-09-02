@@ -266,9 +266,9 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
       {
         targetId: 'guide-settings-tour',
         badge: 'คู่มือใช้งาน',
-        title: 'รีเซ็ตคู่มือการใช้งาน (Reset Guides)',
+        title: 'คู่มือการใช้งาน (Tour Guides)',
         description:
-          'หากต้องการให้ระบบแสดงคำแนะนำการใช้งานในทุกหน้าใหม่อีกครั้ง สามารถกดปุ่มรีเซ็ตที่นี่ได้ทุกเมื่อ',
+          'คุณสามารถกดปุ่ม "แนะนำหน้านี้" ที่อยู่ด้านบนของแต่ละหน้าเพื่อดูคำแนะนำการใช้งานแบบทีละขั้นตอนได้ตลอดเวลา',
         position: 'top',
       },
     ],

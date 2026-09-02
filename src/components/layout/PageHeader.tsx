@@ -30,7 +30,7 @@ export function PageHeader({ eyebrow, title, subtitle, action, onStartGuide }: P
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold text-brand bg-brand/10 hover:bg-brand/20 dark:bg-[#4f46e5]/20 dark:text-[#c7d2fe] dark:border-[#4f46e5]/40 active:scale-95 transition-all border border-brand/20 cursor-pointer shadow-xs"
             >
               <HelpCircleIcon className="w-3.5 h-3.5" />
-              <span>แนะนำวิธีใช้</span>
+              <span>แนะนำหน้านี้</span>
             </button>
           )}
         </div>
