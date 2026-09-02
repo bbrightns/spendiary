@@ -75,6 +75,7 @@ export type DcaFrequency = 'daily' | 'weekly' | 'monthly'
 export interface DcaPlan {
   id: string
   name: string
+  ticker?: string
   assetClass: AssetClass
   /** How often the buy executes */
   frequency?: DcaFrequency   // defaults to 'monthly' for legacy plans

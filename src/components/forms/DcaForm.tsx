@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { NumberField, SelectField, TextField } from '../ui/Field'
+import { AssetLogo } from '../ui/AssetLogo'
 import { FormActions } from './FormActions'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
+import { ASSET_META } from '../../lib/calc'
+import { searchSecurities, type Security } from '../../lib/securities'
 import type { AssetClass, DcaFrequency, DcaPlan } from '../../lib/types'
 
 interface Props {
@@ -28,6 +31,7 @@ const blank = {
   btcLocationId: '' as string,
   goldLocationId: '' as string,
   name: '',
+  ticker: '',
   assetClass: 'fund' as AssetClass,
   frequency: 'monthly' as DcaFrequency,
   monthlyAmount: '' as number | '',
@@ -39,6 +43,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
   const { data, upsertPlan, removePlan } = useData()
   const { showToast } = useToast()
   const [form, setForm] = useState(blank)
+  const [suggestions, setSuggestions] = useState<Security[]>([])
   const [showErrors, setShowErrors] = useState(false)
 
   // Build holding options for the dropdown
@@ -47,6 +52,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
     label: `${h.name} (${h.ticker})`,
     assetClass: h.assetClass,
     name: h.name,
+    ticker: h.ticker,
   }))
 
   useEffect(() => {
@@ -59,6 +65,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
         btcLocationId: editing.btcLocationId ?? '',
         goldLocationId: editing.goldLocationId ?? '',
         name: editing.name,
+        ticker: editing.ticker ?? '',
         assetClass: editing.assetClass,
         frequency: freq,
         monthlyAmount: editing.monthlyAmount,
@@ -66,23 +73,28 @@ export function DcaForm({ open, editing, onClose }: Props) {
         weekday: freq === 'weekly' ? String(editing.dayOfMonth) : '1',
       })
     } else {
+      const hasHoldings = holdingOptions.length > 0
+      const defaultSource = hasHoldings ? 'portfolio' : 'custom'
       const firstHoldingId = holdingOptions[0]?.value ?? ''
       const firstHolding = data.holdings.find((h) => h.id === firstHoldingId)
       const firstLocId = firstHolding?.btcLocations?.[0]?.id ?? ''
       const firstGoldLocId = firstHolding?.goldLocations?.[0]?.id ?? ''
       setForm({
         ...blank,
+        source: defaultSource,
         holdingId: firstHoldingId,
         btcLocationId: firstLocId,
         goldLocationId: firstGoldLocId,
-        name: firstHolding?.name ?? '',
-        assetClass: firstHolding?.assetClass ?? 'fund',
+        name: defaultSource === 'portfolio' ? (firstHolding?.name ?? '') : '',
+        ticker: defaultSource === 'portfolio' ? (firstHolding?.ticker ?? '') : '',
+        assetClass: defaultSource === 'portfolio' ? (firstHolding?.assetClass ?? 'fund') : 'fund',
       })
     }
+    setSuggestions([])
     setShowErrors(false)
   }, [open, editing])
 
-  // When holding selection changes, sync name + assetClass + reset btcLocation
+  // When holding selection changes, sync name + ticker + assetClass + reset location
   function selectHolding(id: string) {
     const h = data.holdings.find((hh) => hh.id === id)
     const firstLocId = h?.btcLocations?.[0]?.id ?? ''
@@ -91,6 +103,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
       ...f,
       holdingId: id,
       name: h?.name ?? '',
+      ticker: h?.ticker ?? '',
       assetClass: h?.assetClass ?? 'fund',
       btcLocationId: firstLocId,
       goldLocationId: firstGoldLocId,
@@ -103,24 +116,43 @@ export function DcaForm({ open, editing, onClose }: Props) {
     freq === 'weekly' ? 'Amount / week' :
     'Amount / month'
 
-  // Detect if currently selected holding is BTC or Gold with locations
-  const selectedHolding =
-    data.holdings.find((h) => h.id === form.holdingId) ||
-    data.holdings.find((h) => h.assetClass === form.assetClass)
-  const currentAssetClass = editing ? editing.assetClass : (form.source === 'portfolio' ? (selectedHolding?.assetClass ?? form.assetClass) : form.assetClass)
-  const isBtcHolding = currentAssetClass === 'crypto'
-  const isGoldHolding = currentAssetClass === 'gold'
-  const btcLocations = selectedHolding?.btcLocations ?? []
-  const goldLocations = selectedHolding?.goldLocations ?? []
+  // Detect active asset class
+  const selectedPortfolioHolding = form.source === 'portfolio'
+    ? data.holdings.find((h) => h.id === form.holdingId)
+    : undefined
+
+  const activeAssetClass: AssetClass = editing
+    ? editing.assetClass
+    : form.source === 'portfolio'
+      ? (selectedPortfolioHolding?.assetClass ?? form.assetClass)
+      : form.assetClass
+
+  const isStock = activeAssetClass === 'stock'
+  const isBtc = activeAssetClass === 'crypto'
+  const isGold = activeAssetClass === 'gold'
+  const isFund = activeAssetClass === 'fund'
+
+  // Resolve BTC/Gold locations from portfolio
+  const btcHolding = data.holdings.find((h) => h.assetClass === 'crypto')
+  const goldHolding = data.holdings.find((h) => h.assetClass === 'gold')
+  const btcLocations = (form.source === 'portfolio' ? selectedPortfolioHolding?.btcLocations : btcHolding?.btcLocations) ?? []
+  const goldLocations = (form.source === 'portfolio' ? selectedPortfolioHolding?.goldLocations : goldHolding?.goldLocations) ?? []
 
   function save() {
     const nameToUse = editing
-      ? editing.name  // editing: keep existing name
+      ? editing.name
       : form.source === 'portfolio'
-        ? (data.holdings.find((h) => h.id === form.holdingId)?.name ?? '')
-        : form.name.trim()
+        ? (selectedPortfolioHolding?.name ?? '')
+        : isBtc ? 'Bitcoin' : isGold ? 'Gold' : form.name.trim()
 
-    if (!nameToUse || form.monthlyAmount === '') {
+    const tickerToUse = editing
+      ? editing.ticker
+      : form.source === 'portfolio'
+        ? (selectedPortfolioHolding?.ticker ?? '')
+        : isBtc ? 'BTC' : isGold ? 'GOLD' : (form.ticker.trim() || undefined)
+
+    const amountNum = Number(form.monthlyAmount)
+    if (!nameToUse || form.monthlyAmount === '' || isNaN(amountNum) || amountNum <= 0) {
       setShowErrors(true)
       return
     }
@@ -133,13 +165,14 @@ export function DcaForm({ open, editing, onClose }: Props) {
     upsertPlan({
       id: editing?.id,
       name: nameToUse,
-      assetClass: editing ? editing.assetClass : form.assetClass,
+      ticker: tickerToUse,
+      assetClass: activeAssetClass,
       frequency: freq,
-      monthlyAmount: Number(form.monthlyAmount),
+      monthlyAmount: amountNum,
       dayOfMonth,
-      holdingId: editing ? (editing.holdingId || selectedHolding?.id) : (form.source === 'portfolio' ? form.holdingId : undefined),
-      btcLocationId: (isBtcHolding && form.btcLocationId) ? form.btcLocationId : undefined,
-      goldLocationId: (isGoldHolding && form.goldLocationId) ? form.goldLocationId : undefined,
+      holdingId: editing ? (editing.holdingId || selectedPortfolioHolding?.id) : (form.source === 'portfolio' ? form.holdingId : undefined),
+      btcLocationId: (isBtc && form.btcLocationId) ? form.btcLocationId : undefined,
+      goldLocationId: (isGold && form.goldLocationId) ? form.goldLocationId : undefined,
       confirmedDates: editing?.confirmedDates,
       skippedDates: editing?.skippedDates,
     })
@@ -150,12 +183,12 @@ export function DcaForm({ open, editing, onClose }: Props) {
   const locationPicker = (
     <>
       {/* BTC location picker */}
-      {isBtcHolding && (
-        <div>
-          <p className="mb-2 text-[13px] font-semibold text-ink">Buy into location</p>
+      {isBtc && (
+        <div className="space-y-2">
+          <p className="text-[13px] font-semibold text-ink-soft">Buy into location</p>
           {btcLocations.length === 0 ? (
             <p className="rounded-xl bg-warn-soft px-4 py-3 text-[12.5px] text-warn">
-              No BTC locations set up yet. Add a location in Portfolio → Bitcoin first.
+              No BTC locations set up yet. You can choose or create a location when confirming a buy.
             </p>
           ) : (
             <div className="space-y-2">
@@ -190,12 +223,12 @@ export function DcaForm({ open, editing, onClose }: Props) {
       )}
 
       {/* Gold location picker */}
-      {isGoldHolding && (
-        <div>
-          <p className="mb-2 text-[13px] font-semibold text-ink">Buy into location</p>
+      {isGold && (
+        <div className="space-y-2">
+          <p className="text-[13px] font-semibold text-ink-soft">Buy into location</p>
           {goldLocations.length === 0 ? (
             <p className="rounded-xl bg-warn-soft px-4 py-3 text-[12.5px] text-warn">
-              No Gold locations set up yet. Add a location in Portfolio → Gold first.
+              No Gold locations set up yet. You can choose or create a location when confirming a buy.
             </p>
           ) : (
             <div className="space-y-2">
@@ -236,7 +269,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
       open={open}
       onClose={onClose}
       title={editing ? 'Edit DCA plan' : 'Add DCA plan'}
-      description="Set a recurring buy schedule for a holding."
+      description={editing ? 'Update recurring buy schedule for this holding.' : 'Set a recurring buy schedule for a portfolio holding or a new asset.'}
       footer={
         <FormActions
           editing={!!editing}
@@ -247,126 +280,219 @@ export function DcaForm({ open, editing, onClose }: Props) {
       }
     >
       <div className="space-y-5">
-
-        {/* ── ADD mode ── */}
+        {/* ── ADD mode: Source toggle ── */}
         {!editing && (
-          <>
-            {/* Source toggle */}
-            <div className="flex rounded-xl bg-surface-muted p-1 gap-1">
-              {(['portfolio', 'custom'] as const).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setForm((f) => ({ ...f, source: s }))}
-                  className={`flex-1 rounded-lg py-2 text-[13px] font-semibold transition-all ${
-                    form.source === s
-                      ? 'bg-surface text-ink shadow-sm'
-                      : 'text-ink-muted hover:text-ink'
-                  }`}
-                >
-                  {s === 'portfolio' ? 'From my portfolio' : 'Custom plan'}
-                </button>
-              ))}
+          <div className="flex rounded-xl bg-surface-muted p-1 gap-1">
+            {(['portfolio', 'custom'] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => {
+                  setForm((f) => ({
+                    ...f,
+                    source: s,
+                    name: s === 'portfolio' ? (selectedPortfolioHolding?.name ?? '') : (f.assetClass === 'crypto' ? 'Bitcoin' : f.assetClass === 'gold' ? 'Gold' : ''),
+                    ticker: s === 'portfolio' ? (selectedPortfolioHolding?.ticker ?? '') : (f.assetClass === 'crypto' ? 'BTC' : f.assetClass === 'gold' ? 'GOLD' : ''),
+                  }))
+                  setSuggestions([])
+                }}
+                className={`flex-1 rounded-lg py-2 text-[13px] font-semibold transition-all cursor-pointer ${
+                  form.source === s
+                    ? 'bg-surface text-ink shadow-sm'
+                    : 'text-ink-muted hover:text-ink'
+                }`}
+              >
+                {s === 'portfolio' ? 'From my portfolio' : 'Custom plan'}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ── EDIT mode: Header card ── */}
+        {editing && (
+          <div className="flex items-center gap-3.5 rounded-2xl bg-surface-muted p-3.5 border border-line">
+            <AssetLogo assetClass={editing.assetClass} ticker={editing.ticker} name={editing.name} size="md" />
+            <div className="min-w-0 flex-1">
+              <span
+                className="inline-block rounded px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider mb-0.5"
+                style={{
+                  color: ASSET_META[editing.assetClass]?.color ?? '#6366f1',
+                  background: `color-mix(in srgb, ${ASSET_META[editing.assetClass]?.color ?? '#6366f1'} 15%, transparent)`,
+                }}
+              >
+                {ASSET_META[editing.assetClass]?.label}
+              </span>
+              <p className="text-[15px] font-bold text-ink truncate leading-snug">{editing.name}</p>
+              {editing.ticker && <p className="text-[12px] text-ink-muted font-medium">{editing.ticker}</p>}
             </div>
+          </div>
+        )}
 
-            {/* From portfolio — holding picker */}
-            {form.source === 'portfolio' && (
-              holdingOptions.length === 0 ? (
-                <p className="rounded-xl bg-warn-soft px-4 py-3 text-[13px] text-warn">
-                  No holdings yet. Add holdings in Portfolio first, or use Custom plan.
-                </p>
-              ) : (
-                <>
-                  <SelectField
-                    label="Holding"
-                    value={form.holdingId}
-                    onChange={selectHolding}
-                    options={holdingOptions}
-                  />
+        {/* ── Section A: Asset selection ── */}
+        {!editing && form.source === 'portfolio' && (
+          holdingOptions.length === 0 ? (
+            <div className="rounded-xl bg-warn-soft p-4 text-[13px] text-warn space-y-2">
+              <p className="font-semibold">No holdings in your portfolio yet.</p>
+              <p className="text-[12px] opacity-90">Switch to <strong>Custom plan</strong> above to start DCAing into a new stock, fund, crypto, or gold position.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <SelectField
+                label="Holding"
+                value={form.holdingId}
+                onChange={selectHolding}
+                options={holdingOptions}
+              />
+              {locationPicker}
+            </div>
+          )
+        )}
 
-                  {locationPicker}
-                </>
-              )
-            )}
+        {/* ── Section A (Custom Plan): Asset Class First -> Specific Asset Details ── */}
+        {!editing && form.source === 'custom' && (
+          <div className="space-y-4">
+            {/* 1. Asset Class always on top */}
+            <SelectField
+              label="Asset class"
+              value={form.assetClass}
+              onChange={(v) => {
+                const ac = v as AssetClass
+                setForm((f) => ({
+                  ...f,
+                  assetClass: ac,
+                  name: ac === 'crypto' ? 'Bitcoin' : ac === 'gold' ? 'Gold' : (f.assetClass === 'crypto' || f.assetClass === 'gold' ? '' : f.name),
+                  ticker: ac === 'crypto' ? 'BTC' : ac === 'gold' ? 'GOLD' : (f.assetClass === 'crypto' || f.assetClass === 'gold' ? '' : f.ticker),
+                }))
+                setSuggestions([])
+              }}
+              options={[
+                { value: 'fund',   label: 'Thai Fund' },
+                { value: 'stock',  label: 'US Stock' },
+                { value: 'crypto', label: 'Bitcoin' },
+                { value: 'gold',   label: 'Gold' },
+              ]}
+            />
 
-            {/* Custom plan — free text + asset class */}
-            {form.source === 'custom' && (
+            {/* 2. Dynamic fields based on Asset Class */}
+            {(isFund || isStock) && (
               <>
+                <div className="relative">
+                  <TextField
+                    label="Name"
+                    value={form.name}
+                    error={showErrors && form.name.trim() === '' ? 'Name is required' : undefined}
+                    onChange={(name) => {
+                      setForm((f) => ({ ...f, name }))
+                      setSuggestions(searchSecurities(name, form.assetClass))
+                    }}
+                    onBlur={() => setTimeout(() => setSuggestions([]), 150)}
+                    placeholder={isStock ? 'e.g. Apple Inc.' : 'e.g. SCB S&P 500 Index'}
+                  />
+                  {suggestions.length > 0 && (
+                    <ul className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-line bg-surface shadow-lg">
+                      {suggestions.map((s) => (
+                        <li key={s.ticker}>
+                          <button
+                            type="button"
+                            aria-label={`Select ${s.ticker} - ${s.name}`}
+                            className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left hover:bg-surface-muted cursor-pointer transition-colors"
+                            onMouseDown={() => {
+                              setForm((f) => ({ ...f, name: s.name, ticker: s.ticker }))
+                              setSuggestions([])
+                            }}
+                          >
+                            <span className="min-w-[52px] rounded-md bg-surface-muted px-1.5 py-0.5 text-center text-[11px] font-bold tracking-wide text-ink-muted">
+                              {s.ticker}
+                            </span>
+                            <span className="text-[13.5px] text-ink truncate">{s.name}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
                 <TextField
-                  label="Plan name"
-                  value={form.name}
-                  error={showErrors && form.name.trim() === '' ? 'Name is required' : undefined}
-                  onChange={(name) => setForm((f) => ({ ...f, name }))}
-                  placeholder="e.g. S&P 500 Index"
-                />
-                <SelectField
-                  label="Asset class"
-                  value={form.assetClass}
-                  onChange={(v) => setForm((f) => ({ ...f, assetClass: v as AssetClass }))}
-                  options={[
-                    { value: 'fund',   label: 'Thai Fund' },
-                    { value: 'stock',  label: 'US Stock' },
-                    { value: 'crypto', label: 'Bitcoin' },
-                    { value: 'gold',   label: 'Gold' },
-                  ]}
+                  label="Ticker / Symbol"
+                  hint="optional"
+                  value={form.ticker}
+                  onChange={(ticker) => setForm((f) => ({ ...f, ticker: ticker.toUpperCase() }))}
+                  placeholder={isStock ? 'e.g. AAPL' : 'e.g. SCBSP500'}
                 />
               </>
             )}
-          </>
+
+            {isBtc && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface-muted p-3.5">
+                  <AssetLogo assetClass="crypto" ticker="BTC" size="md" />
+                  <div>
+                    <p className="text-[14px] font-bold text-ink">Bitcoin (BTC)</p>
+                    <p className="text-[12px] text-ink-muted">Recurring buy plan in Satoshis</p>
+                  </div>
+                </div>
+                {locationPicker}
+              </div>
+            )}
+
+            {isGold && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface-muted p-3.5">
+                  <AssetLogo assetClass="gold" ticker="GOLD" size="md" />
+                  <div>
+                    <p className="text-[14px] font-bold text-ink">Gold (ทองคำ / XAU)</p>
+                    <p className="text-[12px] text-ink-muted">Recurring buy plan for physical gold / grams</p>
+                  </div>
+                </div>
+                {locationPicker}
+              </div>
+            )}
+          </div>
         )}
 
-        {/* ── EDIT mode: show plan name as read-only, no asset class ── */}
-        {editing && (
-          <>
-            <div className="rounded-xl bg-surface-muted px-4 py-3">
-              <p className="text-[11.5px] font-semibold uppercase tracking-wider text-ink-faint">Plan</p>
-              <p className="mt-0.5 text-[15px] font-bold text-ink">{editing.name}</p>
-            </div>
-            {locationPicker}
-          </>
-        )}
-
-        {/* Frequency */}
-        <SelectField
-          label="Frequency"
-          value={form.frequency}
-          onChange={(v) => setForm((f) => ({ ...f, frequency: v as DcaFrequency }))}
-          options={[
-            { value: 'daily',   label: 'Every day' },
-            { value: 'weekly',  label: 'Every week' },
-            { value: 'monthly', label: 'Every month' },
-          ]}
-        />
-
-        {/* Amount + day */}
-        <div className="grid grid-cols-1 gap-3 ">
-          <NumberField
-            label={amountLabel}
-            prefix="฿"
-            value={form.monthlyAmount}
-            error={showErrors && form.monthlyAmount === '' ? 'Amount is required' : undefined}
-            onChange={(monthlyAmount) => setForm((f) => ({ ...f, monthlyAmount }))}
-            placeholder="0"
+        {/* ── Section B: DCA Schedule & Financial Parameters ── */}
+        <div className="space-y-4 border-t border-line pt-4">
+          {/* Frequency */}
+          <SelectField
+            label="Frequency"
+            value={form.frequency}
+            onChange={(v) => setForm((f) => ({ ...f, frequency: v as DcaFrequency }))}
+            options={[
+              { value: 'daily',   label: 'Every day' },
+              { value: 'weekly',  label: 'Every week' },
+              { value: 'monthly', label: 'Every month' },
+            ]}
           />
-          {freq === 'weekly' && (
-            <SelectField
-              label="Buy on"
-              value={form.weekday}
-              onChange={(v) => setForm((f) => ({ ...f, weekday: v }))}
-              options={WEEKDAY_OPTIONS}
-            />
-          )}
-          {freq === 'monthly' && (
+
+          {/* Amount + day */}
+          <div className="grid grid-cols-1 gap-3">
             <NumberField
-              label="Buy on day"
-              hint="1–28"
-              value={form.dayOfMonth}
-              onChange={(dayOfMonth) => setForm((f) => ({ ...f, dayOfMonth }))}
-              placeholder="1"
-              min={1}
-              step={1}
+              label={amountLabel}
+              prefix="฿"
+              value={form.monthlyAmount}
+              error={showErrors && (form.monthlyAmount === '' || Number(form.monthlyAmount) <= 0) ? 'Amount is required (> 0)' : undefined}
+              onChange={(monthlyAmount) => setForm((f) => ({ ...f, monthlyAmount }))}
+              placeholder="0"
             />
-          )}
+            {freq === 'weekly' && (
+              <SelectField
+                label="Buy on"
+                value={form.weekday}
+                onChange={(v) => setForm((f) => ({ ...f, weekday: v }))}
+                options={WEEKDAY_OPTIONS}
+              />
+            )}
+            {freq === 'monthly' && (
+              <NumberField
+                label="Buy on day"
+                hint="1–28"
+                value={form.dayOfMonth}
+                onChange={(dayOfMonth) => setForm((f) => ({ ...f, dayOfMonth }))}
+                placeholder="1"
+                min={1}
+                step={1}
+              />
+            )}
+          </div>
         </div>
       </div>
     </Modal>

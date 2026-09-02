@@ -965,7 +965,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const createdHolding: import('../lib/types').Holding = {
               id: newId(),
               name: plan.name,
-              ticker: plan.name.toUpperCase().slice(0, 6),
+              ticker: plan.ticker || plan.name.toUpperCase().slice(0, 6),
               assetClass: plan.assetClass,
               units: 0,
               totalUnits: 0,
