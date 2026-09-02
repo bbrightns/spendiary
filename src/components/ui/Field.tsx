@@ -80,6 +80,7 @@ interface NumberFieldProps {
   suffix?: string
   min?: number
   step?: number
+  decimals?: number
   autoFocus?: boolean
   allowString?: boolean
 }
@@ -97,6 +98,7 @@ export function NumberField({
   suffix,
   min = 0,
   step,
+  decimals,
   autoFocus,
   allowString = true,
 }: NumberFieldProps) {
@@ -113,21 +115,66 @@ export function NumberField({
     const num = Number(rawVal)
     if (isNaN(num)) return value.toString()
 
+    if (decimals !== undefined) {
+      return num.toLocaleString(undefined, {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      })
+    }
+
+    const isIntegerStep = step === 1 || (step !== undefined && Number.isInteger(step) && step > 0)
+    const isIntegerLabel =
+      label.toLowerCase().includes('day') ||
+      label.toLowerCase().includes('sats') ||
+      label.toLowerCase().includes('satoshi') ||
+      label.toLowerCase().includes('completed') ||
+      label.toLowerCase().includes('transfers')
+
+    if (isIntegerStep || isIntegerLabel) {
+      return num.toLocaleString(undefined, { maximumFractionDigits: 0 })
+    }
+
     const dotIdx = rawVal.indexOf('.')
+
     if (prefix === '฿') {
-      return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      if (dotIdx === -1) {
+        return num.toLocaleString(undefined, { maximumFractionDigits: 0 })
+      }
+      const decLength = rawVal.length - dotIdx - 1
+      return num.toLocaleString(undefined, {
+        minimumFractionDigits: Math.min(2, decLength),
+        maximumFractionDigits: 2,
+      })
+    }
+
+    if (prefix === '$') {
+      if (dotIdx === -1) {
+        return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      }
+      const decLength = rawVal.length - dotIdx - 1
+      return num.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: Math.max(2, decLength),
+      })
     }
 
     if (suffix === 'shares' || label.toLowerCase().includes('shares') || label.toLowerCase().includes('units')) {
-      return num.toLocaleString(undefined, { maximumFractionDigits: 4 })
+      if (dotIdx === -1) {
+        return num.toLocaleString(undefined, { maximumFractionDigits: 0 })
+      }
+      const decLength = rawVal.length - dotIdx - 1
+      return num.toLocaleString(undefined, {
+        maximumFractionDigits: Math.min(6, Math.max(2, decLength)),
+      })
     }
 
     if (dotIdx === -1) {
-      return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      return num.toLocaleString(undefined, { maximumFractionDigits: 0 })
     }
+
     const decLength = rawVal.length - dotIdx - 1
-    const maxDec = Math.min(4, Math.max(2, decLength))
-    return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: maxDec })
+    const maxDec = Math.min(6, Math.max(2, decLength))
+    return num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: maxDec })
   }
 
   const handleFocus = () => {

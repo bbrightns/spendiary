@@ -556,6 +556,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               onChange={setSats}
               placeholder="e.g. 22222"
               autoFocus
+              step={1}
               error={showErrors && satsNum <= 0 ? 'Sats bought required (> 0)' : undefined}
             />
 

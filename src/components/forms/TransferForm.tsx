@@ -142,6 +142,7 @@ export function TransferForm({ open, editing, onClose }: Props) {
             value={form.completed}
             onChange={(completed) => setForm((f) => ({ ...f, completed }))}
             placeholder="0"
+            step={1}
           />
           <NumberField
             label="Total transfers"
@@ -150,6 +151,7 @@ export function TransferForm({ open, editing, onClose }: Props) {
             onChange={(total) => setForm((f) => ({ ...f, total }))}
             placeholder="0"
             min={1}
+            step={1}
           />
         </div>
         <TextField

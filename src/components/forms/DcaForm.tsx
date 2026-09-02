@@ -356,6 +356,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
               onChange={(dayOfMonth) => setForm((f) => ({ ...f, dayOfMonth }))}
               placeholder="1"
               min={1}
+              step={1}
             />
           )}
         </div>
