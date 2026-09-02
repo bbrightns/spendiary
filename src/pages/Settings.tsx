@@ -420,7 +420,7 @@ export function Settings() {
                   </h2>
                 </div>
                 <p className="mt-1 text-[13px] text-ink-muted leading-relaxed">
-                  Spendiary มีระบบแนะนำการทำงานแบบทีละขั้นตอน (Spotlight Tour) ในทุกหน้า โดยคุณสามารถกดปุ่ม <span className="font-semibold text-brand dark:text-[#a5b4fc]">"แนะนำหน้านี้"</span> ที่อยู่ด้านบนของแต่ละหน้าเพื่อดูคำแนะนำได้ตลอดเวลา
+                  Spendiary มีระบบแนะนำการทำงานแบบทีละขั้นตอน (Spotlight Tour) ในทุกหน้า โดยคุณสามารถกดปุ่ม <span className="font-semibold text-brand dark:text-[#a5b4fc]">"Guide"</span> ที่อยู่ด้านบนของแต่ละหน้าเพื่อดูคำแนะนำได้ตลอดเวลา
                 </p>
               </div>
             </div>
