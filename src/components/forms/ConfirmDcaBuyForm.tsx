@@ -7,6 +7,7 @@ import { useToast } from '../../store/ToastContext'
 import type { DcaPlan } from '../../lib/types'
 import { localDateStr } from '../../lib/format'
 import { findMatchingHolding, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd } from '../../lib/calc'
+import { fetchStockPricesUsd } from '../../lib/prices'
 
 interface Props {
   open: boolean
@@ -35,6 +36,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   // US Stock specific state
   const [fxRate, setFxRate] = useState<number | ''>('')
   const [unitsBought, setUnitsBought] = useState<number | ''>('')
+  const [liveStockPrice, setLiveStockPrice] = useState<number | null>(null)
 
   // Mutual Fund specific state
   const [fundUnits, setFundUnits] = useState<number | ''>('')
@@ -88,6 +90,21 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     // US Stock initialization
     setFxRate(rate)
     setUnitsBought('')
+    setLiveStockPrice(null)
+
+    if (plan.assetClass === 'stock') {
+      const ticker = initialMatched?.ticker || plan.ticker || plan.name
+      if (ticker) {
+        fetchStockPricesUsd([ticker])
+          .then((prices) => {
+            const p = prices[ticker.toUpperCase()]
+            if (p && p > 0) {
+              setLiveStockPrice(p)
+            }
+          })
+          .catch((err) => console.warn('Could not fetch stock price in DCA confirm modal:', err))
+      }
+    }
 
     // Mutual Fund initialization
     setFundUnits('')
@@ -465,6 +482,19 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         {/* ------------------------------------------------------------------ */}
         {isStock && (
           <div className="space-y-4">
+            {/* Live Market Price Banner if fetched */}
+            {liveStockPrice !== null && liveStockPrice > 0 && (
+              <div className="flex items-center justify-between rounded-xl border border-line bg-surface-muted px-4 py-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] font-semibold text-ink-soft">Market Price</span>
+                  <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[10.5px] font-bold text-brand">Live</span>
+                </div>
+                <span className="text-[14px] font-bold tnum text-ink">
+                  ${liveStockPrice.toFixed(2)} <span className="text-[11.5px] font-normal text-ink-muted">/ share</span>
+                </span>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <NumberField
                 label="Amount spent (THB)"
@@ -476,6 +506,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               />
               <NumberField
                 label="FX Rate (USD/THB)"
+                hint="Auto-filled live rate"
                 value={fxRate}
                 onChange={setFxRate}
                 placeholder="33.40"
@@ -483,14 +514,33 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               />
             </div>
 
-            <NumberField
-              label="Shares bought"
-              value={unitsBought}
-              onChange={setUnitsBought}
-              placeholder="e.g. 0.3000"
-              autoFocus
-              error={showErrors && stockUnitsBoughtNum <= 0 ? 'Shares bought required (> 0)' : undefined}
-            />
+            <div>
+              <NumberField
+                label="Shares bought"
+                value={unitsBought}
+                onChange={setUnitsBought}
+                placeholder="e.g. 0.3000"
+                autoFocus
+                error={showErrors && stockUnitsBoughtNum <= 0 ? 'Shares bought required (> 0)' : undefined}
+              />
+              {/* Quick fill estimated shares button if live price available and user hasn't typed shares yet */}
+              {liveStockPrice !== null && liveStockPrice > 0 && amountThbNum > 0 && fxRateNum > 0 && (
+                <div className="mt-1.5 flex items-center justify-between">
+                  <span className="text-[11.5px] text-ink-muted">
+                    ≈ {((amountThbNum / fxRateNum) / liveStockPrice).toFixed(4)} shares @ ${liveStockPrice.toFixed(2)}
+                  </span>
+                  {unitsBought === '' && (
+                    <button
+                      type="button"
+                      onClick={() => setUnitsBought(Number(((amountThbNum / fxRateNum) / liveStockPrice).toFixed(4)))}
+                      className="text-[11.5px] font-bold text-brand hover:underline cursor-pointer"
+                    >
+                      Fill estimated
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Static PURCHASE SUMMARY Preview Section: Stock */}
             <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-3 shadow-sm">

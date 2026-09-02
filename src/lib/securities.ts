@@ -87,10 +87,15 @@ const US_STOCKS: Security[] = [
   { name: 'S&P 500 ETF (VOO)', ticker: 'VOO', assetClass: 'stock' },
   { name: 'Nasdaq 100 ETF (QQQ)', ticker: 'QQQ', assetClass: 'stock' },
   { name: 'Total Market ETF (VTI)', ticker: 'VTI', assetClass: 'stock' },
+  { name: 'Schwab US Dividend Equity (SCHD)', ticker: 'SCHD', assetClass: 'stock' },
+  { name: 'First Trust Clean Edge Smart Grid (GRID)', ticker: 'GRID', assetClass: 'stock' },
+  { name: 'VanEck Semiconductor (SMH)', ticker: 'SMH', assetClass: 'stock' },
+  { name: 'Vanguard Total World Stock (VT)', ticker: 'VT', assetClass: 'stock' },
   { name: 'International ETF (VXUS)', ticker: 'VXUS', assetClass: 'stock' },
   { name: 'Emerging Markets ETF (VWO)', ticker: 'VWO', assetClass: 'stock' },
   { name: 'Gold ETF (GLD)', ticker: 'GLD', assetClass: 'stock' },
   { name: 'Bitcoin ETF (IBIT)', ticker: 'IBIT', assetClass: 'stock' },
+  { name: 'iShares 20+ Year Treasury (TLT)', ticker: 'TLT', assetClass: 'stock' },
   { name: 'iShares 0-3 Month Treasury Bond ETF (SGOV)', ticker: 'SGOV', assetClass: 'stock' },
 ]
 
