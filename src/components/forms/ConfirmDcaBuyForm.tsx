@@ -37,6 +37,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const [fxRate, setFxRate] = useState<number | ''>('')
   const [unitsBought, setUnitsBought] = useState<number | ''>('')
   const [liveStockPrice, setLiveStockPrice] = useState<number | null>(null)
+  const [showFxEdit, setShowFxEdit] = useState(false)
 
   // Mutual Fund specific state
   const [fundUnits, setFundUnits] = useState<number | ''>('')
@@ -91,6 +92,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     setFxRate(rate)
     setUnitsBought('')
     setLiveStockPrice(null)
+    setShowFxEdit(false)
 
     if (plan.assetClass === 'stock') {
       const ticker = initialMatched?.ticker || plan.ticker || plan.name
@@ -495,7 +497,8 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* Amount spent with inline conversion & non-intrusive FX info */}
+            <div className="space-y-1.5">
               <NumberField
                 label="Amount spent (THB)"
                 prefix="฿"
@@ -504,16 +507,47 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                 placeholder="2,000"
                 error={showErrors && amountThbNum <= 0 ? 'Required (> 0)' : undefined}
               />
-              <NumberField
-                label="FX Rate (USD/THB)"
-                hint="Auto-filled live rate"
-                value={fxRate}
-                onChange={setFxRate}
-                placeholder="33.40"
-                error={showErrors && fxRateNum <= 0 ? 'Required (> 0)' : undefined}
-              />
+              <div className="flex items-center justify-between px-1 text-[12px] text-ink-muted">
+                <span>
+                  ≈ <strong className="font-semibold text-ink">${fxRateNum > 0 ? (amountThbNum / fxRateNum).toFixed(2) : '0.00'} USD</strong>
+                  {' · '}
+                  Live FX: ฿{fxRateNum.toFixed(2)}
+                </span>
+                {!showFxEdit ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowFxEdit(true)}
+                    className="font-semibold text-brand hover:underline cursor-pointer"
+                  >
+                    Adjust FX rate
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowFxEdit(false)}
+                    className="font-medium text-ink-muted hover:text-ink cursor-pointer"
+                  >
+                    Hide
+                  </button>
+                )}
+              </div>
             </div>
 
+            {/* Optional Collapsible FX Rate editor */}
+            {showFxEdit && (
+              <div className="rounded-xl border border-line bg-surface-muted p-3 transition-all">
+                <NumberField
+                  label="Custom FX Rate (USD/THB)"
+                  hint="Override if broker used different rate"
+                  value={fxRate}
+                  onChange={setFxRate}
+                  placeholder="33.40"
+                  error={showErrors && fxRateNum <= 0 ? 'Required (> 0)' : undefined}
+                />
+              </div>
+            )}
+
+            {/* Shares bought - The primary field user fills */}
             <div>
               <NumberField
                 label="Shares bought"
