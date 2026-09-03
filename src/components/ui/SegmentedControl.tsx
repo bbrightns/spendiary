@@ -13,6 +13,7 @@ interface SegmentedControlProps<T extends string> {
   onChange: (value: T) => void
   size?: 'sm' | 'md'
   fullWidth?: boolean
+  gridCols?: 2 | 3 | 4
   className?: string
   ariaLabel?: string
 }
@@ -23,6 +24,7 @@ export function SegmentedControl<T extends string>({
   onChange,
   size = 'md',
   fullWidth = true,
+  gridCols,
   className = '',
   ariaLabel,
 }: SegmentedControlProps<T>) {
@@ -31,13 +33,23 @@ export function SegmentedControl<T extends string>({
     md: 'py-2 px-3 text-[12.5px] sm:text-[13px]',
   }
 
+  const gridClasses: Record<number, string> = {
+    2: 'grid grid-cols-2 gap-1 rounded-xl bg-surface-muted p-1 border border-line-strong/30 w-full',
+    3: 'grid grid-cols-3 gap-1 rounded-xl bg-surface-muted p-1 border border-line-strong/30 w-full',
+    4: 'grid grid-cols-4 gap-1 rounded-xl bg-surface-muted p-1 border border-line-strong/30 w-full',
+  }
+
+  const containerClasses = gridCols && gridClasses[gridCols]
+    ? gridClasses[gridCols]
+    : `flex items-center rounded-xl bg-surface-muted p-1 gap-1 border border-line-strong/30 ${
+        fullWidth ? 'w-full' : 'inline-flex'
+      }`
+
   return (
     <div
       role="group"
       aria-label={ariaLabel}
-      className={`flex items-center rounded-xl bg-surface-muted p-1 gap-1 border border-line-strong/30 ${
-        fullWidth ? 'w-full' : 'inline-flex'
-      } ${className}`}
+      className={`${containerClasses} ${className}`}
     >
       {options.map((opt) => {
         const isSelected = opt.value === value

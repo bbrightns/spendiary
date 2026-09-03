@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Modal } from '../ui/Modal'
+import { SegmentedControl } from '../ui/SegmentedControl'
 import { NumberField, SelectField, TextField } from '../ui/Field'
 import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
@@ -729,52 +730,18 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               error={showErrors && amountThbNum <= 0 ? 'Required (> 0)' : undefined}
             />
 
-            <div className="grid grid-cols-2 gap-1 rounded-xl bg-surface-muted p-1">
-              <button
-                type="button"
-                onClick={() => setGoldInputMode('grams')}
-                className={`rounded-lg py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
-                  goldInputMode === 'grams'
-                    ? 'bg-surface text-ink shadow-sm'
-                    : 'text-ink-muted hover:text-ink'
-                }`}
-              >
-                Weight (g)
-              </button>
-              <button
-                type="button"
-                onClick={() => setGoldInputMode('baht')}
-                className={`rounded-lg py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
-                  goldInputMode === 'baht'
-                    ? 'bg-surface text-ink shadow-sm'
-                    : 'text-ink-muted hover:text-ink'
-                }`}
-              >
-                Weight (บาททอง)
-              </button>
-              <button
-                type="button"
-                onClick={() => setGoldInputMode('price')}
-                className={`rounded-lg py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
-                  goldInputMode === 'price'
-                    ? 'bg-surface text-ink shadow-sm'
-                    : 'text-ink-muted hover:text-ink'
-                }`}
-              >
-                Price / Gram (฿/g)
-              </button>
-              <button
-                type="button"
-                onClick={() => setGoldInputMode('price_baht')}
-                className={`rounded-lg py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
-                  goldInputMode === 'price_baht'
-                    ? 'bg-surface text-ink shadow-sm'
-                    : 'text-ink-muted hover:text-ink'
-                }`}
-              >
-                Price / บาท (฿/บาท)
-              </button>
-            </div>
+            <SegmentedControl
+              size="sm"
+              gridCols={2}
+              value={goldInputMode}
+              onChange={setGoldInputMode}
+              options={[
+                { value: 'grams', label: 'Weight (g)' },
+                { value: 'baht', label: 'Weight (บาททอง)' },
+                { value: 'price', label: 'Price / Gram (฿/g)' },
+                { value: 'price_baht', label: 'Price / บาท (฿/บาท)' },
+              ]}
+            />
 
             {goldInputMode === 'grams' && (
               <NumberField
