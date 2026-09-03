@@ -399,6 +399,106 @@ export function Settings() {
         </div>
 
 
+        {/* ── About Spendiary ─────────────────────────────────── */}
+        <Card className="animate-rise">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-line/60">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand to-indigo-500 text-white flex items-center justify-center font-display font-extrabold text-lg shadow-sm shrink-0">
+                B
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="font-display text-[17px] font-bold text-ink">About Spendiary</h2>
+                  <span className="rounded-full bg-brand-soft text-brand-ink border border-brand/20 px-2 py-0.5 text-[10.5px] font-semibold">
+                    v{__APP_VERSION__}
+                  </span>
+                </div>
+                <p className="text-[12.5px] text-ink-muted mt-0.5">
+                  Personal Wealth Cockpit · Every choice shapes your wealth.
+                </p>
+              </div>
+            </div>
+
+            {/* Social / External Links */}
+            <div className="flex items-center gap-2">
+              <a
+                href="https://github.com/bbrightns"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line/80 bg-surface text-xs font-semibold text-ink-muted hover:text-ink hover:border-line hover:bg-surface-muted transition-all cursor-pointer shadow-2xs"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                  <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                </svg>
+                <span>GitHub</span>
+              </a>
+              <a
+                href="https://www.facebook.com/bbrightns/"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line/80 bg-surface text-xs font-semibold text-ink-muted hover:text-ink hover:border-line hover:bg-surface-muted transition-all cursor-pointer shadow-2xs"
+              >
+                <svg className="w-3.5 h-3.5 text-[#1877F2]" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
+                <span>Facebook</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Author Details */}
+          <div className="py-4 space-y-3">
+            <div className="rounded-2xl bg-surface-muted/60 p-4 border border-line/50">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-1.5">
+                <span className="text-[13px] font-bold text-ink">
+                  Praween Piyaprapaphan (Bright)
+                </span>
+                <span className="text-[11.5px] font-mono text-brand font-semibold">
+                  Alias: bbrightns
+                </span>
+              </div>
+              <p className="text-[12.5px] text-ink-muted leading-relaxed">
+                Electrical Engineer ผู้หลงใหลใน computer & tech มุ่งมั่นพัฒนาเครื่องมือบริหารการเงินส่วนบุคคลที่ทรงพลัง เรียบง่าย และให้ความสำคัญกับความปลอดภัยของข้อมูลสูงสุด
+              </p>
+            </div>
+
+            {/* Release Notes & Issue Report */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div className="p-3.5 rounded-xl border border-line/60 bg-surface">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <h3 className="text-xs font-bold text-ink">Release Highlights</h3>
+                </div>
+                <p className="text-[11.5px] text-ink-muted leading-relaxed">
+                  v{__APP_VERSION__} (build <span className="font-mono">{__COMMIT_HASH__}</span>) · ระบบคำนวณดอกเบี้ยเงินฝากเพดานสูง (Max cap), DCA rebalancing, และการปรับปรุง Dark Mode ครบวงจร
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-line/60 bg-surface flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    <h3 className="text-xs font-bold text-ink">ช่องทางแจ้งปัญหา (Feedback & Issues)</h3>
+                  </div>
+                  <p className="text-[11.5px] text-ink-muted leading-relaxed">
+                    พบข้อผิดพลาดหรือมีข้อเสนอแนะเพิ่มเติม สามารถเปิด Issue บน GitHub หรือส่งข้อความทาง Facebook ได้โดยตรง
+                  </p>
+                </div>
+                <div className="mt-2.5 pt-2 border-t border-line/50 flex items-center gap-2">
+                  <a
+                    href="https://github.com/bbrightns/spendiary/issues"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="text-[11.5px] font-semibold text-brand hover:underline"
+                  >
+                    Report on GitHub →
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
         {/* ── Danger zone ─────────────────────────────────────── */}
         <Card className="animate-rise border-loss/20 bg-loss-soft/20">
           <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">

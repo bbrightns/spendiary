@@ -62,7 +62,7 @@ export function Footer({ className = '', lightOnly = false }: FooterProps) {
             style={{ background: 'linear-gradient(to right, #405DFF, #DFAA41)' }}
           />
           <span className={`text-[11.5px] font-medium ${textClass}`}>
-            Personal Wealth Cockpit
+            Designed & Built by bbrightns
           </span>
         </div>
       </div>
