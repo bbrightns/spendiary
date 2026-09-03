@@ -220,7 +220,7 @@ function AppContent() {
         {/* ── Footer ── */}
         <div className="relative z-10 w-full mt-6 px-6 sm:px-8">
           <div className="max-w-md md:max-w-4xl mx-auto">
-            <Footer className="mt-0 pt-7 pb-9 border-t-slate-200/80" />
+            <Footer className="mt-0 pt-7 pb-9" lightOnly />
           </div>
         </div>
       </div>
