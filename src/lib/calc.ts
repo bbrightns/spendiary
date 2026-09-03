@@ -459,22 +459,24 @@ export const CASH_CATEGORIES: Record<
 export interface BankPreset {
   id: string
   name: string
+  shortName: string
   color: string
   bg: string
   keywords: string[]
 }
 
 export const BANK_PRESETS: BankPreset[] = [
-  { id: 'kept', name: 'Kept', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', keywords: ['kept', 'grow', 'fun', 'together'] },
-  { id: 'dime', name: 'Dime', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', keywords: ['dime', 'kkp', 'fcd'] },
-  { id: 'truemoney', name: 'TrueMoney', color: '#ea580c', bg: 'rgba(234, 88, 12, 0.15)', keywords: ['true', 'truemoney', 'tmn'] },
-  { id: 'kbank', name: 'KBank', color: '#16a34a', bg: 'rgba(22, 163, 74, 0.15)', keywords: ['kbank', 'กสิกร', 'make'] },
-  { id: 'scb', name: 'SCB', color: '#7c3aed', bg: 'rgba(124, 58, 237, 0.15)', keywords: ['scb', 'ไทยพาณิชย์', 'easy'] },
-  { id: 'ttb', name: 'ttb', color: '#2563eb', bg: 'rgba(37, 99, 235, 0.15)', keywords: ['ttb', 'ทีทีบี', 'me'] },
-  { id: 'ktb', name: 'Krungthai', color: '#0284c7', bg: 'rgba(2, 132, 199, 0.15)', keywords: ['ktb', 'กรุงไทย', 'เป๋าตัง'] },
-  { id: 'bbl', name: 'BBL', color: '#1e3a8a', bg: 'rgba(30, 58, 138, 0.15)', keywords: ['bbl', 'กรุงเทพ', 'bangkok'] },
-  { id: 'sahakorn', name: 'สหกรณ์', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.15)', keywords: ['สหกรณ์', 'sahakorn', 'coop'] },
-  { id: 'pvd', name: 'PVD / กองทุนสำรองฯ', color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)', keywords: ['สำรองเลี้ยงชีพ', 'pvd', 'provident'] },
+  { id: 'kept', name: 'Kept', shortName: 'K', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', keywords: ['kept', 'grow', 'fun', 'together'] },
+  { id: 'click', name: 'Click', shortName: 'C', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', keywords: ['click'] },
+  { id: 'dime', name: 'Dime', shortName: 'D', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', keywords: ['dime', 'kkp', 'fcd'] },
+  { id: 'truemoney', name: 'TrueMoney', shortName: 'TM', color: '#ea580c', bg: 'rgba(234, 88, 12, 0.15)', keywords: ['true', 'truemoney', 'tmn'] },
+  { id: 'kbank', name: 'KBank', shortName: 'KB', color: '#16a34a', bg: 'rgba(22, 163, 74, 0.15)', keywords: ['kbank', 'กสิกร', 'make'] },
+  { id: 'scb', name: 'SCB', shortName: 'SCB', color: '#7c3aed', bg: 'rgba(124, 58, 237, 0.15)', keywords: ['scb', 'ไทยพาณิชย์', 'easy'] },
+  { id: 'ttb', name: 'ttb', shortName: 'TTB', color: '#2563eb', bg: 'rgba(37, 99, 235, 0.15)', keywords: ['ttb', 'ทีทีบี', 'me'] },
+  { id: 'ktb', name: 'Krungthai', shortName: 'KTB', color: '#0284c7', bg: 'rgba(2, 132, 199, 0.15)', keywords: ['ktb', 'กรุงไทย', 'เป๋าตัง'] },
+  { id: 'bbl', name: 'BBL', shortName: 'BBL', color: '#1e3a8a', bg: 'rgba(30, 58, 138, 0.15)', keywords: ['bbl', 'กรุงเทพ', 'bangkok'] },
+  { id: 'sahakorn', name: 'สหกรณ์', shortName: 'สห', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.15)', keywords: ['สหกรณ์', 'sahakorn', 'coop', 'ออมทรัพย์ หุ้น'] },
+  { id: 'pvd', name: 'PVD', shortName: 'PVD', color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)', keywords: ['สำรองเลี้ยงชีพ', 'pvd', 'provident'] },
 ]
 
 export function detectBankPreset(name: string): BankPreset | undefined {
@@ -490,10 +492,10 @@ export function detectBankPreset(name: string): BankPreset | undefined {
 
 export function inferCashCategory(name: string): CashAccountCategory {
   const s = name.toLowerCase().trim()
-  if (s.includes('สำรองเลี้ยงชีพ') || s.includes('pvd') || s.includes('สหกรณ์') || s.includes('ประจำ') || s.includes('locked')) {
+  if (s.includes('สำรองเลี้ยงชีพ') || s.includes('pvd') || s.includes('สหกรณ์') || s.includes('ประจำ') || s.includes('locked') || s.includes('ออมทรัพย์ หุ้น') || s.includes('หุ้นสหกรณ์')) {
     return 'locked'
   }
-  if (s.includes('dime') || s.includes('หุ้น') || s.includes('fcd') || s.includes('invest') || s.includes('crypto')) {
+  if (s.includes('dime') || s.includes('fcd') || s.includes('invest') || s.includes('crypto') || s.includes('พอร์ต')) {
     return 'invest'
   }
   if (s.includes('kept') || s.includes('ฉุกเฉิน') || s.includes('emergency') || s.includes('click') || s.includes('reserve')) {
@@ -525,6 +527,7 @@ export function calculateMonthlyCashInterest(
   usdThb?: number | null,
 ): {
   totalAnnual: number
+  totalCompounded: number
   byMonth: Record<number, number>
 } {
   const rate = usdThb && usdThb > 0 ? usdThb : 35
@@ -532,6 +535,7 @@ export function calculateMonthlyCashInterest(
     1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0,
   }
   let totalAnnual = 0
+  let totalCompounded = 0
 
   for (const a of accounts) {
     if (!a.interestRate || a.interestRate <= 0) continue
@@ -544,12 +548,16 @@ export function calculateMonthlyCashInterest(
 
     if (schedule === 'monthly') {
       months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+      totalCompounded += thbVal * (Math.pow(1 + a.interestRate / 1200, 12) - 1)
     } else if (schedule === 'semi_annual') {
       months = [6, 12]
+      totalCompounded += thbVal * (Math.pow(1 + a.interestRate / 200, 2) - 1)
     } else if (schedule === 'annual') {
-      months = [a.payoutMonths?.[0] ?? 12]
+      months = [a.payoutMonths?.[0] ?? 2]
+      totalCompounded += annualInterest
     } else if (schedule === 'custom') {
       months = a.payoutMonths && a.payoutMonths.length > 0 ? a.payoutMonths : [12]
+      totalCompounded += annualInterest
     }
 
     if (months.length > 0) {
@@ -562,7 +570,7 @@ export function calculateMonthlyCashInterest(
     }
   }
 
-  return { totalAnnual, byMonth }
+  return { totalAnnual, totalCompounded, byMonth }
 }
 
 export function getCashLiquidityBreakdown(
