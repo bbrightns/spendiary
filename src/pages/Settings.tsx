@@ -403,8 +403,8 @@ export function Settings() {
         <Card className="animate-rise">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-line/60">
             <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand to-indigo-500 text-white flex items-center justify-center font-display font-extrabold text-lg shadow-sm shrink-0">
-                B
+              <div className="w-12 h-12 rounded-2xl bg-surface-muted/80 border border-line/60 flex items-center justify-center p-2.5 shadow-xs shrink-0">
+                <img src="/logo.png" alt="Spendiary Logo" className="w-full h-full object-contain" />
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -449,13 +449,20 @@ export function Settings() {
           {/* Author Details */}
           <div className="py-4 space-y-3">
             <div className="rounded-2xl bg-surface-muted/60 p-4 border border-line/50">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-1.5">
-                <span className="text-[13px] font-bold text-ink">
-                  Praween Piyaprapaphan (Bright)
-                </span>
-                <span className="text-[11.5px] font-mono text-brand font-semibold">
-                  Alias: bbrightns
-                </span>
+              <div className="flex items-center gap-3.5 mb-3">
+                <img
+                  src="/bbrightns.jpg"
+                  alt="Praween Piyaprapaphan (Bright)"
+                  className="w-12 h-12 rounded-full object-cover border-2 border-surface shadow-xs shrink-0"
+                />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[14px] font-bold text-ink leading-tight">
+                    Praween Piyaprapaphan (Bright)
+                  </span>
+                  <span className="text-[12px] font-mono text-brand font-semibold leading-normal mt-0.5">
+                    Alias: bbrightns
+                  </span>
+                </div>
               </div>
               <p className="text-[12.5px] text-ink-muted leading-relaxed">
                 Electrical Engineer ผู้หลงใหลใน computer & tech มุ่งมั่นพัฒนาเครื่องมือบริหารการเงินส่วนบุคคลที่ทรงพลัง เรียบง่าย และให้ความสำคัญกับความปลอดภัยของข้อมูลสูงสุด
