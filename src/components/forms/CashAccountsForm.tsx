@@ -546,14 +546,21 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                     </div>
                   )}
 
-                  {/* Brand preset badge */}
-                  {preset && (
+                  {/* Institution brand avatar / icon */}
+                  {preset ? (
                     <div
-                      title={`Detected institution: ${preset.name}`}
-                      className="h-7 px-2 rounded-lg text-[10.5px] font-bold shrink-0 flex items-center select-none shadow-2xs"
-                      style={{ background: preset.bg, color: preset.color }}
+                      title={`สถาบัน: ${preset.name}`}
+                      className="h-8 w-8 rounded-xl text-[11px] font-extrabold shrink-0 flex items-center justify-center select-none shadow-2xs"
+                      style={{ background: preset.bg, color: preset.color, border: `1px solid ${preset.color}35` }}
                     >
-                      {preset.name}
+                      {preset.shortName}
+                    </div>
+                  ) : (
+                    <div
+                      title="บัญชีทั่วไป"
+                      className="h-8 w-8 rounded-xl bg-surface-muted border border-line/50 text-ink-muted text-[11px] font-bold shrink-0 flex items-center justify-center"
+                    >
+                      <WalletIcon className="h-4 w-4 opacity-50" />
                     </div>
                   )}
 
@@ -563,8 +570,8 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                       if (el) nameInputRefs.current.set(r.id, el)
                       else nameInputRefs.current.delete(r.id)
                     }}
-                    className="h-10 min-w-0 flex-1 rounded-xl border border-line bg-surface-muted/40 px-3 text-[14px] font-medium text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:bg-surface focus:ring-2 focus:ring-brand/15"
-                    placeholder="Bank / location name"
+                    className="h-10 min-w-0 flex-1 rounded-xl border border-line bg-surface-muted/40 px-3 text-[14.5px] font-semibold text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:bg-surface focus:ring-2 focus:ring-brand/15"
+                    placeholder="ชื่อบัญชี / สถาบัน"
                     value={r.name}
                     onChange={(e) => {
                       const newName = e.target.value
@@ -577,7 +584,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                   />
 
                   {/* Balance input with currency toggle */}
-                  <div className="relative w-[42%] sm:w-[38%] shrink-0">
+                  <div className="relative w-[130px] sm:w-[160px] shrink-0">
                     <button
                       type="button"
                       onClick={() =>
@@ -589,7 +596,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                           ? 'bg-sky-500/15 text-sky-500 hover:bg-sky-500/25 ring-1 ring-sky-500/30'
                           : 'bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25 ring-1 ring-emerald-500/30'
                       }`}
-                      title="Click to toggle currency (THB / USD)"
+                      title="คลิกเพื่อสลับสกุลเงิน (THB / USD)"
                     >
                       {r.currency === 'USD' ? '$' : '฿'}
                     </button>
@@ -679,7 +686,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                       <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted block mb-1.5">
                         หมวดหมู่ / วัตถุประสงค์
                       </span>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {(['spending', 'emergency', 'invest', 'locked'] as CashAccountCategory[]).map((catKey) => {
                           const meta = CASH_CATEGORIES[catKey]
                           const isCatActive = r.category === catKey
@@ -688,13 +695,13 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                               key={catKey}
                               type="button"
                               onClick={() => update(r.id, { category: catKey })}
-                              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-all text-left cursor-pointer border ${
+                              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-medium transition-all text-left cursor-pointer border ${
                                 isCatActive
                                   ? 'bg-brand text-white border-brand shadow-xs font-semibold'
                                   : 'bg-surface text-ink-muted border-line/60 hover:text-ink hover:border-line'
                               }`}
                             >
-                              <span>{meta.icon}</span>
+                              <span className="text-base">{meta.icon}</span>
                               <span className="truncate">{meta.labelTh}</span>
                             </button>
                           )
@@ -703,10 +710,10 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                     </div>
 
                     {/* 2. Yield Booster & Payout Schedule */}
-                    <div className="space-y-2 pt-1 border-t border-line/30">
+                    <div className="space-y-2.5 pt-1 border-t border-line/30">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div>
-                          <span className="text-[12px] font-bold text-ink">
+                          <span className="text-[12.5px] font-bold text-ink">
                             Yield Booster (อัตราดอกเบี้ย & รอบการจ่าย)
                           </span>
                           <p className="text-[11px] text-ink-muted">
@@ -739,12 +746,12 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                         </div>
                       </div>
 
-                      {/* Payout Schedule Presets */}
+                      {/* Payout Schedule Presets (No Parentheses) */}
                       <div>
                         <span className="text-[11px] font-semibold text-ink-muted block mb-1">
                           รอบดอกเบี้ยเข้าบัญชี:
                         </span>
-                        <div className="flex flex-wrap gap-1.5 text-[11.5px]">
+                        <div className="flex flex-wrap gap-1.5 text-[12px]">
                           <button
                             type="button"
                             onClick={() =>
@@ -753,13 +760,13 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                                 payoutMonths: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
                               })
                             }
-                            className={`px-2.5 py-1 rounded-md border transition-all cursor-pointer ${
+                            className={`px-3 py-1.5 rounded-lg border transition-all cursor-pointer font-medium ${
                               r.payoutSchedule === 'monthly'
-                                ? 'bg-ink text-surface border-ink font-semibold shadow-2xs'
-                                : 'bg-surface text-ink-muted border-line/60 hover:text-ink'
+                                ? 'bg-ink text-surface border-ink font-bold shadow-2xs'
+                                : 'bg-surface text-ink-muted border-line/60 hover:text-ink hover:border-line'
                             }`}
                           >
-                            ทุกเดือน (Kept, Dime, MAKE)
+                            ทุกเดือน
                           </button>
                           <button
                             type="button"
@@ -769,13 +776,13 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                                 payoutMonths: [6, 12],
                               })
                             }
-                            className={`px-2.5 py-1 rounded-md border transition-all cursor-pointer ${
+                            className={`px-3 py-1.5 rounded-lg border transition-all cursor-pointer font-medium ${
                               r.payoutSchedule === 'semi_annual'
-                                ? 'bg-ink text-surface border-ink font-semibold shadow-2xs'
-                                : 'bg-surface text-ink-muted border-line/60 hover:text-ink'
+                                ? 'bg-ink text-surface border-ink font-bold shadow-2xs'
+                                : 'bg-surface text-ink-muted border-line/60 hover:text-ink hover:border-line'
                             }`}
                           >
-                            ปีละ 2 ครั้ง (มิ.ย. & ธ.ค.)
+                            ปีละ 2 ครั้ง
                           </button>
                           <button
                             type="button"
@@ -785,21 +792,21 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                                 payoutMonths: r.payoutMonths.length > 0 ? [r.payoutMonths[0]] : [2],
                               })
                             }
-                            className={`px-2.5 py-1 rounded-md border transition-all cursor-pointer ${
+                            className={`px-3 py-1.5 rounded-lg border transition-all cursor-pointer font-medium ${
                               r.payoutSchedule === 'annual'
-                                ? 'bg-ink text-surface border-ink font-semibold shadow-2xs'
-                                : 'bg-surface text-ink-muted border-line/60 hover:text-ink'
+                                ? 'bg-ink text-surface border-ink font-bold shadow-2xs'
+                                : 'bg-surface text-ink-muted border-line/60 hover:text-ink hover:border-line'
                             }`}
                           >
-                            ปีละ 1 ครั้ง (สหกรณ์/ฝากประจำ)
+                            ปีละ 1 ครั้ง
                           </button>
                           <button
                             type="button"
                             onClick={() => update(r.id, { payoutSchedule: 'custom' })}
-                            className={`px-2.5 py-1 rounded-md border transition-all cursor-pointer ${
+                            className={`px-3 py-1.5 rounded-lg border transition-all cursor-pointer font-medium ${
                               r.payoutSchedule === 'custom'
-                                ? 'bg-ink text-surface border-ink font-semibold shadow-2xs'
-                                : 'bg-surface text-ink-muted border-line/60 hover:text-ink'
+                                ? 'bg-ink text-surface border-ink font-bold shadow-2xs'
+                                : 'bg-surface text-ink-muted border-line/60 hover:text-ink hover:border-line'
                             }`}
                           >
                             กำหนดเอง
@@ -807,73 +814,82 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                         </div>
                       </div>
 
-                      {/* Annual Single Month Picker */}
-                      {r.payoutSchedule === 'annual' && (
-                        <div className="flex items-center gap-2 pt-1 text-[12px]">
-                          <span className="text-ink-muted">เลือกเดือนที่เงินเข้า:</span>
-                          <select
-                            value={r.payoutMonths[0] ?? 2}
-                            onChange={(e) => update(r.id, { payoutMonths: [Number(e.target.value)] })}
-                            className="h-8 rounded-lg border border-line bg-surface px-2.5 font-semibold text-ink outline-none focus:border-brand"
-                          >
-                            {THAI_MONTHS_SHORT.map((name, idx) => (
-                              <option key={idx + 1} value={idx + 1}>
-                                {name} ({idx + 1})
-                              </option>
-                            ))}
-                          </select>
+                      {/* Interactive Month Selection Pills (Replaces unreadable dropdown) */}
+                      <div className="space-y-1.5 pt-1">
+                        <div className="flex items-center justify-between text-[11.5px] text-ink-muted">
+                          <span>
+                            {r.payoutSchedule === 'annual'
+                              ? 'แตะเลือกเดือนที่ดอกเบี้ยเข้า:'
+                              : r.payoutSchedule === 'semi_annual'
+                              ? 'ดอกเบี้ยเข้าเดือน มิ.ย. และ ธ.ค.:'
+                              : r.payoutSchedule === 'monthly'
+                              ? 'ดอกเบี้ยเข้าทุกเดือน (ม.ค. - ธ.ค.):'
+                              : 'แตะเลือกเดือนที่ดอกเบี้ยเข้า (เลือกได้หลายเดือน):'}
+                          </span>
+                          {r.payoutSchedule === 'annual' && (
+                            <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                              {THAI_MONTHS_SHORT[(r.payoutMonths[0] ?? 2) - 1]}
+                            </span>
+                          )}
                         </div>
-                      )}
 
-                      {/* Custom 12-Month Pills Selector */}
-                      {r.payoutSchedule === 'custom' && (
-                        <div className="space-y-1 pt-1">
-                          <span className="text-[11px] text-ink-muted">แตะเพื่อเลือกเดือนที่ดอกเบี้ยเข้า:</span>
-                          <div className="grid grid-cols-6 sm:grid-cols-12 gap-1 text-[11px]">
-                            {THAI_MONTHS_SHORT.map((mName, idx) => {
-                              const mNum = idx + 1
-                              const isSelected = r.payoutMonths.includes(mNum)
-                              return (
-                                <button
-                                  key={mNum}
-                                  type="button"
-                                  onClick={() => {
+                        <div className="grid grid-cols-6 sm:grid-cols-12 gap-1 text-[11px]">
+                          {THAI_MONTHS_SHORT.map((mName, idx) => {
+                            const mNum = idx + 1
+                            const isSelected = r.payoutMonths.includes(mNum)
+                            const isInteractive = r.payoutSchedule === 'annual' || r.payoutSchedule === 'custom'
+
+                            return (
+                              <button
+                                key={mNum}
+                                type="button"
+                                disabled={!isInteractive}
+                                onClick={() => {
+                                  if (r.payoutSchedule === 'annual') {
+                                    update(r.id, { payoutMonths: [mNum] })
+                                  } else if (r.payoutSchedule === 'custom') {
                                     const next = isSelected
                                       ? r.payoutMonths.filter((m) => m !== mNum)
                                       : [...r.payoutMonths, mNum].sort((a, b) => a - b)
                                     update(r.id, { payoutMonths: next })
-                                  }}
-                                  className={`py-1 rounded font-semibold transition-all cursor-pointer border ${
-                                    isSelected
-                                      ? 'bg-emerald-500 text-white border-emerald-500 shadow-2xs'
-                                      : 'bg-surface text-ink-muted border-line hover:text-ink'
-                                  }`}
-                                >
-                                  {mName}
-                                </button>
-                              )
-                            })}
-                          </div>
+                                  }
+                                }}
+                                className={`py-1.5 rounded-lg font-bold transition-all border ${
+                                  isSelected
+                                    ? 'bg-emerald-500 text-white border-emerald-500 shadow-2xs scale-105'
+                                    : 'bg-surface text-ink-muted border-line hover:text-ink hover:border-line-strong'
+                                } ${isInteractive ? 'cursor-pointer' : 'opacity-80 cursor-default'}`}
+                              >
+                                {mName}
+                              </button>
+                            )
+                          })}
                         </div>
-                      )}
+                      </div>
 
                       {/* Live Calculation Preview Box for this account */}
                       {rateNum > 0 && balNum > 0 && (
-                        <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-[12px] text-emerald-700 dark:text-emerald-300">
-                          {r.payoutSchedule === 'monthly' ? (
+                        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-[12px] space-y-1.5 text-emerald-700 dark:text-emerald-300">
+                          <div className="flex flex-wrap items-center justify-between gap-1 font-semibold">
                             <span>
-                              💰 ได้รับดอกเบี้ยประมาณ <strong>{thb(annualEarned / 12)}</strong> ต่อเดือน (รวม <strong>{thb(annualEarned)}</strong> / ปี)
+                              {r.payoutSchedule === 'monthly'
+                                ? `💰 ได้รับดอกเบี้ยประมาณ ${thb(annualEarned / 12)} / เดือน`
+                                : r.payoutSchedule === 'semi_annual'
+                                ? `💰 ได้รับดอกเบี้ยประมาณ ${thb(annualEarned / 2)} ในเดือน มิ.ย. และ ธ.ค.`
+                                : `💰 ได้รับดอกเบี้ยประมาณ ${thb(annualEarned)} ในเดือน ${THAI_MONTHS_SHORT[(r.payoutMonths[0] ?? 2) - 1]}`}
                             </span>
-                          ) : r.payoutSchedule === 'semi_annual' ? (
-                            <span>
-                              💰 ได้รับดอกเบี้ยประมาณ <strong>{thb(annualEarned / 2)}</strong> ในเดือน มิ.ย. และ ธ.ค. (รวม <strong>{thb(annualEarned)}</strong> / ปี)
+                            <span className="font-display font-bold text-[13px]">
+                              รวม {thb(annualEarned)} / ปี
                             </span>
-                          ) : (
-                            <span>
-                              💰 ได้รับดอกเบี้ยประมาณ <strong>{thb(annualEarned)}</strong> ในเดือน{' '}
-                              <strong>{r.payoutMonths.map((m) => THAI_MONTHS_SHORT[m - 1]).join(', ') || 'สิ้นปี'}</strong>
-                            </span>
-                          )}
+                          </div>
+                          <div className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 pt-1 border-t border-emerald-500/15 flex flex-wrap items-center justify-between gap-1">
+                            <span>💡 ดอกเบี้ยที่ได้รับจะทบเข้าเป็นเงินต้นในบัญชีให้อัตโนมัติ (Compounding)</span>
+                            {r.payoutSchedule === 'monthly' && (
+                              <span className="font-semibold text-emerald-700 dark:text-emerald-300">
+                                ทบต้นรวม ≈ {thb(thbEquivalent * (Math.pow(1 + rateNum / 1200, 12) - 1))} / ปี
+                              </span>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
