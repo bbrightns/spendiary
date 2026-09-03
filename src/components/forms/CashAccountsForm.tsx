@@ -353,6 +353,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
     <Modal
       open={open}
       onClose={onClose}
+      size="lg"
       title="Cash & Liquidity Accounts"
       description="Track cash balances, interest yields, and organize liquidity buckets."
       footer={
@@ -398,33 +399,43 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
 
             {/* Passive Yield Forecast Pill */}
             {hasAnyInterest && (
-              <div className="mt-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-[12px]">
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                  <span>💰</span>
-                  <span>Est. Passive Interest: <strong>{thb(interestSummary.totalAnnual)} / year</strong></span>
-                  <span className="text-[11px] opacity-75">(avg. {thb(interestSummary.totalAnnual / 12)}/mo)</span>
-                </span>
+              <div className="mt-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-2.5 space-y-1 text-[12px]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                    <span>💰</span>
+                    <span>ดอกเบี้ยรับรวมคาดการณ์: <strong>{thb(interestSummary.totalAnnual)} / ปี</strong></span>
+                    <span className="text-[11px] opacity-75 font-normal">(เฉลี่ยเดือนละ {thb(interestSummary.totalAnnual / 12)})</span>
+                  </span>
+                  {interestSummary.totalCompounded > interestSummary.totalAnnual + 1 && (
+                    <span className="text-[10.5px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-md self-start sm:self-auto">
+                      ทบต้นเพิ่ม ≈ +{thb(interestSummary.totalCompounded - interestSummary.totalAnnual)}
+                    </span>
+                  )}
+                </div>
 
-                {/* Mini monthly payout indicators */}
-                <div className="flex items-center gap-1">
-                  {THAI_MONTHS_SHORT.map((mName, idx) => {
-                    const mNum = idx + 1
-                    const payoutThisMonth = interestSummary.byMonth[mNum] ?? 0
-                    const hasPayout = payoutThisMonth > 0
-                    return (
-                      <div
-                        key={mNum}
-                        title={`${mName}: ${hasPayout ? thb(payoutThisMonth) : 'ไม่มีดอกเบี้ยเข้า'}`}
-                        className={`text-[9px] px-1 py-0.5 rounded font-mono font-bold transition-all ${
-                          hasPayout
-                            ? 'bg-emerald-500 text-white shadow-2xs scale-105'
-                            : 'bg-surface-muted text-ink-muted/40'
-                        }`}
-                      >
-                        {mName.slice(0, 1)}
-                      </div>
-                    )
-                  })}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pt-1 border-t border-emerald-500/15 text-[11px] text-emerald-700/80 dark:text-emerald-300/80">
+                  <span>💡 ดอกเบี้ยจะถูกทบเข้าเป็นเงินต้นในบัญชีให้อัตโนมัติ</span>
+                  {/* Mini monthly payout indicators */}
+                  <div className="flex items-center gap-1">
+                    {THAI_MONTHS_SHORT.map((mName, idx) => {
+                      const mNum = idx + 1
+                      const payoutThisMonth = interestSummary.byMonth[mNum] ?? 0
+                      const hasPayout = payoutThisMonth > 0
+                      return (
+                        <div
+                          key={mNum}
+                          title={`${mName}: ${hasPayout ? thb(payoutThisMonth) : 'ไม่มีดอกเบี้ยเข้า'}`}
+                          className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold transition-all ${
+                            hasPayout
+                              ? 'bg-emerald-500 text-white shadow-2xs'
+                              : 'bg-surface-muted text-ink-muted/40'
+                          }`}
+                        >
+                          {mName.slice(0, 1)}
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
             )}
@@ -438,7 +449,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
     >
       <div className="space-y-3 pb-2">
         {/* Category Filter Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[12px] no-scrollbar">
+        <div className="flex flex-wrap items-center gap-1.5 pb-1 text-[12px]">
           <button
             type="button"
             onClick={() => setActiveCategoryFilter('all')}
