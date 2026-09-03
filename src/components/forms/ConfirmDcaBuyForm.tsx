@@ -68,13 +68,18 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     : (targetHoldingId === '__new__' ? null : matchedHolding)
 
   const assetClass = plan?.assetClass ?? holding?.assetClass
-  const isStock = assetClass === 'stock'
-  const isBtc   = assetClass === 'crypto'
-  const isGold  = assetClass === 'gold'
-  const isFund  = assetClass === 'fund'
+  const isCash  = assetClass === 'cash' || !!plan?.cashAccountId
+  const isStock = !isCash && assetClass === 'stock'
+  const isBtc   = !isCash && assetClass === 'crypto'
+  const isGold  = !isCash && assetClass === 'gold'
+  const isFund  = !isCash && assetClass === 'fund'
   const rate = usdThb && usdThb > 0 ? usdThb : 33.40
   const btcLocations = holding?.btcLocations ?? []
   const goldLocations = holding?.goldLocations ?? []
+
+  const targetCashAccount = plan?.cashAccountId
+    ? data.cashAccounts.find((a) => a.id === plan.cashAccountId)
+    : data.cashAccounts.find((a) => a.name.toLowerCase() === plan?.name.toLowerCase())
 
   useEffect(() => {
     const justOpened = !wasOpen.current && open
@@ -149,9 +154,11 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     ? newLocName.trim() || 'New Location'
     : (isBtc ? selectedBtcLoc?.name : selectedGoldLoc?.name) ?? holding?.name ?? plan.name
 
-  const targetSubtitleText = (isBtc || isGold)
-    ? resolvedLocationName
-    : holding?.name ?? plan.name
+  const targetSubtitleText = isCash
+    ? (targetCashAccount?.name ?? plan.name)
+    : (isBtc || isGold)
+      ? resolvedLocationName
+      : holding?.name ?? plan.name
 
   // --------------------------------------------------------------------------
   // 1. Mutual Fund Real-time Calculations
@@ -262,6 +269,27 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     const today = localDateStr()
 
     const resolvedTargetId = targetHoldingId !== '__new__' ? (holding?.id ?? targetHoldingId) : undefined
+
+    if (isCash) {
+      confirmDcaBuy(
+        p.id,
+        amountThbNum,
+        today,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      )
+      showToast(`Deposited ฿${amountThbNum.toLocaleString()} into ${targetCashAccount?.name || p.name}`, 'success')
+      onClose()
+      return
+    }
 
     if (isStock) {
       confirmDcaBuy(
@@ -408,16 +436,16 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     <Modal
       open={open}
       onClose={onClose}
-      title={`Confirm Buy: ${holding?.name ?? plan.name}`}
-      description={`Record DCA purchase into ${targetSubtitleText}`}
+      title={isCash ? `Confirm Deposit: ${targetCashAccount?.name ?? plan.name}` : `Confirm Buy: ${holding?.name ?? plan.name}`}
+      description={isCash ? `Record DCA savings deposit into ${targetSubtitleText}` : `Record DCA purchase into ${targetSubtitleText}`}
       footer={
         <Button onClick={confirm} className="w-full">
-          ✓ Confirm purchase
+          {isCash ? '✓ Confirm deposit' : '✓ Confirm purchase'}
         </Button>
       }
     >
       <div className="space-y-4">
-        {data.holdings.length > 0 && (
+        {data.holdings.length > 0 && !isCash && (
           <SelectField
             label="Target Holding in Portfolio"
             value={targetHoldingId}
@@ -429,6 +457,43 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               { value: '__new__', label: `+ Create new holding "${plan?.name ?? 'New'}"` },
             ]}
           />
+        )}
+
+        {/* ------------------------------------------------------------------ */}
+        {/* 0. Cash / Savings Deposit Form */}
+        {/* ------------------------------------------------------------------ */}
+        {isCash && (
+          <div className="space-y-4">
+            <div className="rounded-2xl bg-surface-muted p-4 border border-line/50 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[12px] font-semibold text-ink-muted">Destination Account</span>
+                <span className="text-[13.5px] font-bold text-ink">{targetCashAccount?.name || plan.name}</span>
+              </div>
+              <div className="flex items-center justify-between text-[12.5px]">
+                <span className="text-ink-muted">Current Balance</span>
+                <span className="font-display font-semibold text-ink tnum">
+                  {targetCashAccount?.currency === 'USD' ? '$' : '฿'}
+                  {(targetCashAccount?.balance ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[12.5px] border-t border-line/40 pt-2">
+                <span className="text-cash font-semibold">New Balance After Deposit</span>
+                <span className="font-display font-extrabold text-cash tnum">
+                  {targetCashAccount?.currency === 'USD' ? '$' : '฿'}
+                  {((targetCashAccount?.balance ?? 0) + (typeof amountSpentThb === 'number' ? amountSpentThb : 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+
+            <NumberField
+              label="Deposit amount (THB)"
+              prefix="฿"
+              value={amountSpentThb}
+              onChange={setAmountSpentThb}
+              placeholder="5,000"
+              error={showErrors && amountThbNum <= 0 ? 'Required (> 0)' : undefined}
+            />
+          </div>
         )}
 
         {/* ------------------------------------------------------------------ */}
