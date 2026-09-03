@@ -263,14 +263,6 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
           'ส่งออกไฟล์สำรองข้อมูล JSON เก็บไว้ หรือนำเข้าไฟล์เดิมเพื่อย้ายเครื่องหรือกู้คืนข้อมูลได้ตลอดเวลา',
         position: 'bottom',
       },
-      {
-        targetId: 'guide-settings-tour',
-        badge: 'คู่มือใช้งาน',
-        title: 'คู่มือการใช้งาน (Tour Guides)',
-        description:
-          'คุณสามารถกดปุ่ม "Guide" ที่อยู่ด้านบนของแต่ละหน้าเพื่อดูคำแนะนำการใช้งานแบบทีละขั้นตอนได้ตลอดเวลา',
-        position: 'top',
-      },
     ],
   },
 }
