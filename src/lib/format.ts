@@ -89,8 +89,8 @@ export function localDateStr(d = new Date()): string {
   return `${y}-${m}-${day}`
 }
 
-export function daysUntil(iso: string): number {
-  const now = new Date()
+export function daysUntil(iso: string, fromDate = new Date()): number {
+  const now = new Date(fromDate)
   now.setHours(0, 0, 0, 0)
   // Parse YYYY-MM-DD as local midnight (not UTC) to avoid timezone shift
   const [y, mo, d] = iso.split('-').map(Number)

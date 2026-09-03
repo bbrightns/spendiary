@@ -1,5 +1,5 @@
 import type { AssetClass, DcaPlan, Holding, SpendiaryData, Transfer } from './types'
-import { localDateStr } from './format'
+import { daysUntil, localDateStr } from './format'
 
 export interface HoldingMetrics extends Holding {
   marketValue: number
@@ -344,6 +344,47 @@ export function dcaThisMonth(plans: DcaPlan[], now = new Date()): DcaMonth {
     pct: total > 0 ? (invested / total) * 100 : 0,
     count: plans.length,
   }
+}
+
+/**
+ * Sort DCA plans by priority:
+ * 1. Overdue / near to the due:
+ *    - Overdue plans (buy day passed this period and not yet confirmed/skipped) come first.
+ *    - Followed by upcoming plans sorted by days until due ascending (today, tomorrow, in 4 days, etc.).
+ * 2. Value:
+ *    - When urgency is tied (both overdue, or same days until due), sort by monthly amount descending.
+ */
+export function sortDcaPlans(plans: DcaPlan[], now = new Date()): DcaPlan[] {
+  return [...plans].sort((a, b) => {
+    const overdueA = shouldConfirmBuy(a, now)
+    const overdueB = shouldConfirmBuy(b, now)
+
+    // 1. Overdue plans come first
+    if (overdueA && !overdueB) return -1
+    if (!overdueA && overdueB) return 1
+
+    if (overdueA && overdueB) {
+      if (b.monthlyAmount !== a.monthlyAmount) {
+        return b.monthlyAmount - a.monthlyAmount
+      }
+      return a.name.localeCompare(b.name)
+    }
+
+    // Neither is overdue -> near to the due (days until due date ascending)
+    const daysA = daysUntil(localDateStr(nextBuyDate(a, now)), now)
+    const daysB = daysUntil(localDateStr(nextBuyDate(b, now)), now)
+
+    if (daysA !== daysB) {
+      return daysA - daysB
+    }
+
+    // Same days until due -> priority 2: Value (monthlyAmount descending)
+    if (b.monthlyAmount !== a.monthlyAmount) {
+      return b.monthlyAmount - a.monthlyAmount
+    }
+
+    return a.name.localeCompare(b.name)
+  })
 }
 
 /* --------------------------- Transfers -------------------------- */

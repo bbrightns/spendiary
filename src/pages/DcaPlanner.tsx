@@ -13,7 +13,7 @@ import { CheckCircleIcon, CheckIcon, DcaIcon, PencilIcon, TrashIcon } from '../c
 import { AssetLogo } from '../components/ui/AssetLogo'
 import {
   ASSET_META, buyDayPassedThisPeriod, dcaThisMonth, isConfirmedForPeriod, isSkippedForPeriod,
-  nextBuyDate, shouldConfirmBuy,
+  nextBuyDate, shouldConfirmBuy, sortDcaPlans,
 } from '../lib/calc'
 import type { DcaPlan, FixedCostItem } from '../lib/types'
 import { daysUntil, localDateStr, ordinal, thb } from '../lib/format'
@@ -266,8 +266,8 @@ export function DcaPlanner() {
   const savingsTotal = dcaMonth.total
   const salary = data.monthlyIncome
 
-  // DCA plans sorted by amount desc
-  const plans = [...data.dcaPlans].sort((a, b) => b.monthlyAmount - a.monthlyAmount)
+  // DCA plans sorted by: 1. Overdue / near to the due, 2. Value
+  const plans = sortDcaPlans(data.dcaPlans)
 
   // ── Salary handlers ──
   function openSalaryEdit() {
