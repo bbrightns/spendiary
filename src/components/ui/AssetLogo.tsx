@@ -265,26 +265,7 @@ export function AssetLogo({
     )
   }
 
-  // 10. SPY / VOO / S&P500 / ETFs
-  if (
-    cleanTicker === 'SPY' ||
-    cleanTicker === 'VOO' ||
-    cleanTicker === 'IVV' ||
-    cleanTicker === 'QQQ' ||
-    cleanName.includes('S&P') ||
-    cleanName.includes('500')
-  ) {
-    return (
-      <div
-        title={cleanTicker || 'ETF'}
-        className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-gradient-to-br from-[#1e3a8a] to-[#3b82f6] text-white ${sizeClasses[size]} ${className}`}
-      >
-        <span className="font-bold text-[10px] tracking-tight">{cleanTicker.slice(0, 3)}</span>
-      </div>
-    )
-  }
-
-  // 11. Thai Mutual Funds Special Branding (SCB, K-Asset, BBL, ONE, KTAM, etc.)
+  // 10. Thai Mutual Funds Special Branding (SCB, K-Asset, BBL, ONE, KTAM, etc.)
   if (cleanTicker.startsWith('SCB') || cleanName.startsWith('SCB')) {
     return (
       <div
@@ -297,7 +278,7 @@ export function AssetLogo({
     )
   }
 
-  if (cleanTicker.startsWith('K-') || cleanTicker.startsWith('KF') || cleanTicker.startsWith('K') && currentAssetClass === 'fund') {
+  if (cleanTicker.startsWith('K-') || cleanTicker.startsWith('KF') || (cleanTicker.startsWith('K') && currentAssetClass === 'fund') || (cleanName.startsWith('K') && currentAssetClass === 'fund')) {
     return (
       <div
         title={ticker || name}
@@ -349,6 +330,28 @@ export function AssetLogo({
         className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-[#002D62] text-[#00A4E4] border border-[#00A4E4]/30 ${sizeClasses[size]} ${className}`}
       >
         <span className="font-black text-[9.5px]">ttb</span>
+      </div>
+    )
+  }
+
+  // 11. SPY / VOO / S&P500 / Direct US ETFs
+  if (
+    currentAssetClass !== 'fund' && (
+      cleanTicker === 'SPY' ||
+      cleanTicker === 'VOO' ||
+      cleanTicker === 'IVV' ||
+      cleanTicker === 'QQQ' ||
+      cleanTicker === 'QQQM' ||
+      cleanName.includes('S&P') ||
+      cleanName.includes('500')
+    )
+  ) {
+    return (
+      <div
+        title={cleanTicker || 'ETF'}
+        className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-gradient-to-br from-[#1e3a8a] to-[#3b82f6] text-white ${sizeClasses[size]} ${className}`}
+      >
+        <span className="font-bold text-[10px] tracking-tight">{cleanTicker.slice(0, 4) || 'ETF'}</span>
       </div>
     )
   }
