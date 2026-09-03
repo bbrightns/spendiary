@@ -93,6 +93,8 @@ export interface DcaPlan {
   btcLocationId?: string
   /** For Gold plans: preferred location id to add grams to when confirming */
   goldLocationId?: string
+  /** For Cash plans: linked cash account id to deposit funds into when confirming */
+  cashAccountId?: string
   /** ISO date strings of confirmed buys, newest first */
   confirmedDates?: string[]
   /** ISO date strings of skipped periods, newest first */
@@ -100,6 +102,8 @@ export interface DcaPlan {
 }
 
 export type Frequency = 'weekly' | 'biweekly' | 'monthly' | 'quarterly'
+export type CashAccountCategory = 'spending' | 'emergency' | 'invest' | 'locked'
+export type CashPayoutSchedule = 'monthly' | 'semi_annual' | 'annual' | 'custom'
 
 export interface Transfer {
   id: string
@@ -124,6 +128,18 @@ export interface CashAccount {
   balance: number
   /** Currency of the account: THB or USD (defaults to THB if undefined) */
   currency?: 'THB' | 'USD'
+  /** Purpose / Liquidity bucket */
+  category?: CashAccountCategory
+  /** Bank / institution preset key */
+  bankPreset?: string
+  /** Optional custom color */
+  color?: string
+  /** Annual interest rate in percentage (e.g. 2.22 or 5.50) */
+  interestRate?: number
+  /** Payout schedule pattern */
+  payoutSchedule?: CashPayoutSchedule
+  /** Specific months (1-12) when interest is paid */
+  payoutMonths?: number[]
 }
 
 export interface HoldingLog {
