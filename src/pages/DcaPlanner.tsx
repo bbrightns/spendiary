@@ -143,14 +143,14 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
             className="shrink-0 flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-all"
             style={{
               background: 'var(--color-brand-soft)',
-              borderColor: 'color-mix(in srgb, var(--color-brand) 30%, transparent)',
-              color: 'var(--color-brand)',
+              borderColor: 'color-mix(in srgb, var(--color-brand-ink) 30%, transparent)',
+              color: 'var(--color-brand-ink)',
             }}
             title={`+${thb(cashDrawdown)} drawn from cash reserves`}
           >
             <span className="text-[12px] leading-none">+</span>
             <span className="tnum">{thb(cashDrawdown)}</span>
-            <span className="text-[10px] font-medium opacity-80">Cash</span>
+            <span className="text-[10px] font-medium opacity-85">Cash</span>
           </div>
         )}
       </div>
@@ -161,7 +161,7 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
           <span className="text-[13px] mt-0.5">💡</span>
           <p className="leading-snug">
             <span className="font-semibold text-ink">100% of salary deployed</span>
-            {' '}— plus <span className="font-semibold text-brand">+{thb(cashDrawdown)}</span> drawn from cash reserves
+            {' '}— plus <span className="font-semibold text-brand dark:text-brand-ink">+{thb(cashDrawdown)}</span> drawn from cash reserves
             <span className="text-ink-faint"> (total monthly savings: {thb(savings)})</span>
           </p>
         </div>
