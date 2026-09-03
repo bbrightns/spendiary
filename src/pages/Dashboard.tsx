@@ -149,7 +149,7 @@ export function Dashboard() {
                 <WalletIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-[13.5px] font-semibold uppercase tracking-wider">Total Net Worth</span>
               </div>
-              <p className="font-display text-[36px] sm:text-[44px] xl:text-[48px] font-black leading-tight tracking-tight tnum text-ink dark:text-white">
+              <p className="font-display text-[36px] sm:text-[44px] xl:text-[48px] font-extrabold leading-tight tracking-tight tnum text-ink dark:text-white">
                 {thb(nw)}
               </p>
 
@@ -180,34 +180,34 @@ export function Dashboard() {
             <div className="rounded-2xl bg-surface-muted/80 dark:bg-white/10 p-3.5 px-4.5 border border-line/80 dark:border-white/15 backdrop-blur-md sm:min-w-[220px]">
               <div className="flex items-center justify-between gap-3 text-[10.5px] font-bold tracking-wider uppercase text-ink-muted dark:text-white/50 pb-1.5 border-b border-line dark:border-white/10 mb-2">
                 <span>Ratio</span>
-                <span className="font-mono text-[11px] font-semibold text-ink-soft dark:text-white/80">
+                <span className="tnum text-[11.5px] font-semibold text-ink-soft dark:text-white/80">
                   {nw > 0 ? `${Math.round((portfolio.value / nw) * 100)}% : ${Math.round((cash / nw) * 100)}%` : '0% : 0%'}
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-3.5">
                 <div>
-                  <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-indigo-600 dark:text-indigo-300">
-                    <span className="h-2 w-2 rounded-full bg-indigo-500 dark:bg-indigo-400 shrink-0" />
+                  <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-brand">
+                    <span className="h-2 w-2 rounded-full bg-brand shrink-0" />
                     <span>Invested</span>
                   </div>
-                  <p className="mt-1 font-display text-[17px] sm:text-[19px] font-black tnum text-ink dark:text-white">
+                  <p className="mt-1 font-display text-[17px] sm:text-[19px] font-extrabold tnum text-ink dark:text-white">
                     {thbCompact(portfolio.value)}
                   </p>
-                  <p className="mt-0.5 text-[11.5px] font-semibold text-indigo-600/75 dark:text-indigo-200/80 tnum">
+                  <p className="mt-0.5 text-[11.5px] font-semibold text-brand/80 tnum">
                     {nw > 0 ? `${((portfolio.value / nw) * 100).toFixed(1)}%` : '0%'}
                   </p>
                 </div>
 
                 <div className="pl-3.5 border-l border-line dark:border-white/10">
-                  <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-emerald-600 dark:text-emerald-300">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 shrink-0" />
+                  <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-gain">
+                    <span className="h-2 w-2 rounded-full bg-gain shrink-0" />
                     <span>Cash</span>
                   </div>
-                  <p className="mt-1 font-display text-[17px] sm:text-[19px] font-black tnum text-ink dark:text-white">
+                  <p className="mt-1 font-display text-[17px] sm:text-[19px] font-extrabold tnum text-ink dark:text-white">
                     {thbCompact(cash)}
                   </p>
-                  <p className="mt-0.5 text-[11.5px] font-semibold text-emerald-600/75 dark:text-emerald-200/80 tnum">
+                  <p className="mt-0.5 text-[11.5px] font-semibold text-gain/80 tnum">
                     {nw > 0 ? `${((cash / nw) * 100).toFixed(1)}%` : '0%'}
                   </p>
                 </div>
@@ -217,12 +217,12 @@ export function Dashboard() {
               {nw > 0 && (
                 <div className="mt-2.5 flex h-1.5 w-full overflow-hidden rounded-full bg-line dark:bg-white/10">
                   <div
-                    className="bg-indigo-500 dark:bg-indigo-400 transition-all duration-500"
+                    className="bg-brand transition-all duration-500"
                     style={{ width: `${(portfolio.value / nw) * 100}%` }}
                     title={`Invested: ${thb(portfolio.value)} (${((portfolio.value / nw) * 100).toFixed(1)}%)`}
                   />
                   <div
-                    className="bg-emerald-500 dark:bg-emerald-400 transition-all duration-500"
+                    className="bg-gain transition-all duration-500"
                     style={{ width: `${(cash / nw) * 100}%` }}
                     title={`Cash: ${thb(cash)} (${((cash / nw) * 100).toFixed(1)}%)`}
                   />
