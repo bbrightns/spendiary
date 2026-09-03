@@ -78,6 +78,13 @@ export function Settings() {
   // ── inline toast ───────────────────────────────────────────────
   const [exportToast, setExportToast] = useState<ToastState>({ kind: 'idle' })
   const [importToast, setImportToast] = useState<ToastState>({ kind: 'idle' })
+  const [copiedBuild, setCopiedBuild] = useState(false)
+
+  function handleCopyBuild() {
+    navigator.clipboard.writeText(`Spendiary v${__APP_VERSION__} (build ${__COMMIT_HASH__})`)
+    setCopiedBuild(true)
+    setTimeout(() => setCopiedBuild(false), 2000)
+  }
 
   function flashToast(
     set: React.Dispatch<React.SetStateAction<ToastState>>,
@@ -431,6 +438,33 @@ export function Settings() {
             </button>
           </div>
         </Card>
+        
+        {/* ── Version & build info ─────────────────────────────── */}
+        <div className="mt-2 flex justify-center pb-6">
+          <button
+            type="button"
+            onClick={handleCopyBuild}
+            title={`Built on ${new Date(__BUILD_TIME__).toLocaleString()} • Click to copy build info`}
+            className="group inline-flex items-center gap-2 rounded-full border border-line/60 bg-surface-muted/40 px-3.5 py-1.5 text-[12px] text-ink-muted transition-all duration-150 hover:border-line hover:bg-surface-muted hover:text-ink active:scale-95 cursor-pointer"
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                copiedBuild ? 'bg-gain animate-pulse' : 'bg-gain/80'
+              }`}
+            />
+            <span>
+              {copiedBuild ? 'Copied to clipboard!' : `Version ${__APP_VERSION__}`}
+            </span>
+            {!copiedBuild && (
+              <>
+                <span className="text-ink-muted/40">•</span>
+                <span className="font-mono text-[11px] text-ink-soft">
+                  build {__COMMIT_HASH__}
+                </span>
+              </>
+            )}
+          </button>
+        </div>
 
       </div>
 
