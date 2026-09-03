@@ -2,8 +2,18 @@
 
 ## Git Workflow Rules
 1. **Commit after every file modification**: Every time you modify, add, or delete files in this project, you MUST perform a `git commit` with a clear commit message detailing the changes.
-2. **NEVER PUSH**: Do **NOT** execute `git push` under any circumstances unless the user explicitly requests/commands it.
-3. **Report Commit Details in Responses**: Every time you perform a commit, you MUST explicitly report the commit hash (short SHA) and the exact commit message in your response to the user so the user is always informed of the changes (ต้องรายงาน commit hash และ commit message ทุกครั้งในคำตอบ).
+2. **NEVER PUSH WITHOUT EXPLICIT COMMAND**: Do **NOT** execute `git push` under any circumstances unless the user explicitly requests/commands it.
+3. **Auto-Bump Version on User Push Command**: When the user explicitly requests to push (e.g., "push", "git push", "ช่วย push ให้หน่อย"):
+   - Inspect all unpushed commits (`git log origin/main..HEAD --oneline`).
+   - Determine the next Semantic Version based on Conventional Commits in the unpushed batch:
+     - Contains breaking changes (`feat!:`, `fix!:`, or `BREAKING CHANGE`) ➜ Bump **MAJOR** (e.g., `1.5.0` ➜ `2.0.0`)
+     - Contains any `feat(...)` ➜ Bump **MINOR** (e.g., `1.5.0` ➜ `1.6.0`)
+     - Contains only `fix(...)`, `refactor(...)`, `style(...)`, `perf(...)`, `chore(...)` ➜ Bump **PATCH** (e.g., `1.5.0` ➜ `1.5.1`)
+   - Update `version` in both `package.json` and `package-lock.json`.
+   - Run verification (`npm run build`).
+   - Commit the version bump: `git commit -am "chore(release): bump app version to X.Y.Z"`.
+   - Only then execute `git push`.
+4. **Report Commit Details in Responses**: Every time you perform a commit, you MUST explicitly report the commit hash (short SHA) and the exact commit message in your response to the user so the user is always informed of the changes (ต้องรายงาน commit hash และ commit message ทุกครั้งในคำตอบ).
 
 ## Quality & Pre-Commit Verification Rules
 1. **Strict TypeScript & Unused Import Checking**:
