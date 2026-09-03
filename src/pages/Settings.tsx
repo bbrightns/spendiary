@@ -433,7 +433,7 @@ export function Settings() {
               <div>
                 <h2 className="font-display text-[17px] font-bold text-ink">About Spendiary</h2>
                 <p className="text-[12.5px] text-ink-muted mt-0.5">
-                  Personal Wealth Cockpit · Every choice shapes your wealth.
+                  Designed & Built by bbrightns
                 </p>
               </div>
             </div>
