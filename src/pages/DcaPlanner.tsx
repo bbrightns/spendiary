@@ -9,7 +9,7 @@ import { ConfirmDcaBuyForm } from '../components/forms/ConfirmDcaBuyForm'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { CheckCircleIcon, CheckIcon, DcaIcon, PencilIcon, TrashIcon } from '../components/icons'
-
+import { IconButton } from '../components/ui/IconButton'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import {
   ASSET_META, dcaThisMonth, isBuyDayOverdue, isBuyDayToday, isConfirmedForPeriod, isSkippedForPeriod,
@@ -239,16 +239,20 @@ function FixedCostRow({ item, onEdit, onDelete }: {
       </div>
       <span className="font-display text-[14px] font-bold tnum text-ink">{thb(item.amount)}</span>
       <div className="flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
-        <button onClick={() => onEdit(item)}
-          aria-label={`Edit fixed cost ${item.name}`}
-          className="rounded-lg p-2 text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink cursor-pointer min-h-[44px] min-w-[44px] inline-flex items-center justify-center">
-          <PencilIcon className="h-3.5 w-3.5" />
-        </button>
-        <button onClick={() => onDelete(item.id)}
-          aria-label={`Delete fixed cost ${item.name}`}
-          className="rounded-lg p-2 text-ink-muted transition-colors hover:bg-loss-soft hover:text-loss cursor-pointer min-h-[44px] min-w-[44px] inline-flex items-center justify-center">
-          <TrashIcon className="h-3.5 w-3.5" />
-        </button>
+        <IconButton
+          icon={<PencilIcon className="h-3.5 w-3.5" />}
+          label={`Edit fixed cost ${item.name}`}
+          variant="ghost"
+          size="sm"
+          onClick={() => onEdit(item)}
+        />
+        <IconButton
+          icon={<TrashIcon className="h-3.5 w-3.5" />}
+          label={`Delete fixed cost ${item.name}`}
+          variant="danger"
+          size="sm"
+          onClick={() => onDelete(item.id)}
+        />
       </div>
     </div>
   )
@@ -452,12 +456,7 @@ export function DcaPlanner() {
                   <button
                     onClick={() => setAddingItem(true)}
                     aria-label="Add fixed expense"
-                    className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[12px] font-semibold transition-colors active:scale-95 cursor-pointer"
-                    style={{
-                      borderColor: 'color-mix(in srgb, var(--color-loss) 35%, transparent)',
-                      color: 'var(--color-loss)',
-                      background: 'var(--color-loss-soft)',
-                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-loss/30 bg-loss-soft px-3 py-1.5 text-[12px] font-semibold text-loss transition-colors hover:bg-loss/20 active:scale-95 cursor-pointer"
                   >
                     + Add expense
                   </button>
@@ -541,12 +540,7 @@ export function DcaPlanner() {
                     <button
                       onClick={openAdd}
                       aria-label="Add DCA investment plan"
-                      className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[12px] font-semibold transition-colors active:scale-95 cursor-pointer"
-                      style={{
-                        borderColor: 'color-mix(in srgb, var(--color-gain) 35%, transparent)',
-                        color: 'var(--color-gain)',
-                        background: 'var(--color-gain-soft)',
-                      }}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-gain/30 bg-gain-soft px-3 py-1.5 text-[12px] font-semibold text-gain transition-colors hover:bg-gain/20 active:scale-95 cursor-pointer"
                     >
                       + Add plan
                     </button>
@@ -567,12 +561,7 @@ export function DcaPlanner() {
                         action={
                           <button
                             onClick={openAdd}
-                            className="flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12.5px] font-semibold transition-colors cursor-pointer"
-                            style={{
-                              borderColor: 'color-mix(in srgb, var(--color-gain) 35%, transparent)',
-                              color: 'var(--color-gain)',
-                              background: 'var(--color-gain-soft)',
-                            }}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-gain/30 bg-gain-soft px-3.5 py-1.5 text-[12.5px] font-semibold text-gain transition-colors hover:bg-gain/20 cursor-pointer"
                           >
                             + Add plan
                           </button>
@@ -653,7 +642,7 @@ export function DcaPlanner() {
                                       <button
                                         onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
                                         aria-label={`Confirm DCA buy for ${p.name}`}
-                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#00de9b] px-3 py-1.5 text-[12px] font-bold text-[#052e21] transition-all hover:bg-[#38efb6] active:scale-95 cursor-pointer shadow-xs min-h-[36px]"
+                                        className="inline-flex items-center gap-1.5 rounded-full bg-gain hover:bg-gain/90 text-white px-3.5 py-1.5 text-[12px] font-bold shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
                                       >
                                         <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
                                         <span>Confirm Buy</span>
@@ -665,7 +654,7 @@ export function DcaPlanner() {
                                           showToast(`Skipped DCA buy for "${p.name}" this period`, 'info')
                                         }}
                                         aria-label={`Skip DCA buy for ${p.name} this period`}
-                                        className="rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors active:scale-95 cursor-pointer text-ink-muted border-line hover:bg-surface-muted hover:text-ink min-h-[36px]"
+                                        className="inline-flex items-center rounded-full border border-line-strong bg-surface hover:bg-surface-muted text-ink-muted hover:text-ink px-3.5 py-1.5 text-[12px] font-semibold active:scale-95 transition-all cursor-pointer min-h-[34px]"
                                       >
                                         Skip
                                       </button>
