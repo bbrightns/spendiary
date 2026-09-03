@@ -584,7 +584,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                     </button>
                     <input
                       ref={(el) => {
-                        if (el) balanceInputRefs.current.get(r.id, el)
+                        if (el) balanceInputRefs.current.set(r.id, el)
                         else balanceInputRefs.current.delete(r.id)
                       }}
                       type="text"
@@ -914,6 +914,4 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
       </div>
     </Modal>
   )
-}
-
 }
