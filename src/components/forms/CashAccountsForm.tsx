@@ -91,6 +91,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<CashAccountCategory | 'all'>('all')
   const [highlightedId, setHighlightedId] = useState<string | null>(null)
+  const [showSummaryDetails, setShowSummaryDetails] = useState(false)
 
   const balanceInputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
   const nameInputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
@@ -102,6 +103,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
       setHighlightedId(null)
       setExpandedId(null)
       setActiveCategoryFilter('all')
+      setShowSummaryDetails(false)
       return
     }
 
@@ -320,7 +322,27 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                 <WalletIcon className="h-[17px] w-[17px] text-cash" />
                 Total Cash
               </span>
-              <span className="font-display text-[18px] font-extrabold tnum text-ink">{thb(totalThb)}</span>
+              <div className="flex items-center gap-2">
+                <span className="font-display text-[18px] font-extrabold tnum text-ink">{thb(totalThb)}</span>
+                <button
+                  type="button"
+                  onClick={() => setShowSummaryDetails((v) => !v)}
+                  title={showSummaryDetails ? 'ซ่อนรายละเอียด' : 'แสดงรายละเอียดเต็ม (หมวดหมู่ & ดอกเบี้ย)'}
+                  className="grid h-7 w-7 place-items-center rounded-lg hover:bg-surface text-ink-muted hover:text-ink transition-colors cursor-pointer"
+                >
+                  <svg
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={`h-4 w-4 transition-transform duration-200 ${showSummaryDetails ? 'rotate-180 text-brand' : 'text-ink-muted'}`}
+                  >
+                    <path d="M4 10l4-4 4 4" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {/* Currency Subtotals if both THB and USD exist */}
@@ -333,33 +355,38 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
               </div>
             )}
 
-            {/* Liquidity Tiers Badges */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1 text-[11px]">
-              {(['spending', 'emergency', 'invest', 'locked'] as CashAccountCategory[]).map((catKey) => {
-                const meta = CASH_CATEGORIES[catKey]
-                const val = categoryTotals[catKey]
-                return (
-                  <div key={catKey} className="flex flex-col rounded-lg bg-surface/70 px-2 py-1 border border-line/30">
-                    <span className="text-ink-muted flex items-center gap-1 truncate font-medium">
-                      <span>{meta.icon}</span>
-                      <span className="truncate">{meta.labelTh}</span>
-                    </span>
-                    <span className="font-display font-bold tnum text-ink text-[12px] mt-0.5">
-                      {thb(val)}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Passive Yield Forecast Banner */}
-            {hasAnyInterest && (
-              <div className="mt-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-[12px]">
-                <div className="flex flex-wrap items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
-                  <span>💰</span>
-                  <span>ดอกเบี้ยรับรวมคาดการณ์: <strong>{thb(interestSummary.totalAnnual)} / ปี</strong></span>
-                  <span className="text-[11px] opacity-75 font-normal">(เฉลี่ยเดือนละ {thb(interestSummary.totalAnnual / 12)})</span>
+            {/* Expandable full details (4 categories + interest banner) */}
+            {showSummaryDetails && (
+              <div className="space-y-2 pt-1 border-t border-line/40">
+                {/* Liquidity Tiers Badges */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px]">
+                  {(['spending', 'emergency', 'invest', 'locked'] as CashAccountCategory[]).map((catKey) => {
+                    const meta = CASH_CATEGORIES[catKey]
+                    const val = categoryTotals[catKey]
+                    return (
+                      <div key={catKey} className="flex flex-col rounded-lg bg-surface/70 px-2 py-1 border border-line/30">
+                        <span className="text-ink-muted flex items-center gap-1 truncate font-medium">
+                          <span>{meta.icon}</span>
+                          <span className="truncate">{meta.labelTh}</span>
+                        </span>
+                        <span className="font-display font-bold tnum text-ink text-[12px] mt-0.5">
+                          {thb(val)}
+                        </span>
+                      </div>
+                    )
+                  })}
                 </div>
+
+                {/* Passive Yield Forecast Banner */}
+                {hasAnyInterest && (
+                  <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-[12px]">
+                    <div className="flex flex-wrap items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
+                      <span>💰</span>
+                      <span>ดอกเบี้ยรับรวมคาดการณ์: <strong>{thb(interestSummary.totalAnnual)} / ปี</strong></span>
+                      <span className="text-[11px] opacity-75 font-normal">(เฉลี่ยเดือนละ {thb(interestSummary.totalAnnual / 12)})</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
