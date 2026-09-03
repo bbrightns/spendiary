@@ -951,6 +951,54 @@ export function DataProvider({ children }: { children: ReactNode }) {
           const plan = prev.dcaPlans.find((p) => p.id === planId)
           if (!plan) return prev
 
+          // If this is a Cash Account DCA plan, deposit directly into cash account balance
+          if (plan.assetClass === 'cash' || plan.cashAccountId) {
+            const oldAccounts = prev.cashAccounts ?? []
+            const depositAmount =
+              (fundUpdate as { amountSpentThb?: number } | undefined)?.amountSpentThb ||
+              (stockUpdate as { amountSpentThb?: number } | undefined)?.amountSpentThb ||
+              (pricePerUnit > 0 ? pricePerUnit : plan.monthlyAmount)
+            const targetAcc = plan.cashAccountId
+              ? oldAccounts.find((a) => a.id === plan.cashAccountId)
+              : oldAccounts.find((a) => a.name.toLowerCase() === plan.name.toLowerCase())
+
+            const updatedCashAccounts = targetAcc
+              ? oldAccounts.map((a) =>
+                  a.id === targetAcc.id ? { ...a, balance: a.balance + depositAmount } : a,
+                )
+              : oldAccounts
+
+            const updatedPlans = prev.dcaPlans.map((p) =>
+              p.id !== planId
+                ? p
+                : {
+                    ...p,
+                    cashAccountId: targetAcc ? targetAcc.id : p.cashAccountId,
+                    confirmedDates: [date, ...(p.confirmedDates ?? [])],
+                  },
+            )
+
+            const logEntry: import('../lib/types').HoldingLog = {
+              id: newId(),
+              timestamp: new Date().toISOString(),
+              action: 'buy_more',
+              holdingName: targetAcc ? targetAcc.name : plan.name,
+              ticker: 'CASH',
+              assetClass: 'cash',
+              note: `Deposited ฿${depositAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })} via DCA into ${targetAcc ? targetAcc.name : plan.name}`,
+              dcaPlanId: plan.id,
+              dcaDate: date,
+              previousCashAccountsState: oldAccounts,
+            }
+
+            return {
+              ...prev,
+              cashAccounts: updatedCashAccounts,
+              dcaPlans: updatedPlans,
+              holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+            }
+          }
+
           // Check if holding already existed before this transaction (via targetHoldingId or findMatchingHolding)
           const existingHolding = targetHoldingId
             ? prev.holdings.find((h) => h.id === targetHoldingId)
