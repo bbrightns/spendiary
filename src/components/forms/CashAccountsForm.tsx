@@ -357,29 +357,8 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                   )}
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pt-1 border-t border-emerald-500/15 text-[11px] text-emerald-700/80 dark:text-emerald-300/80">
+                <div className="pt-1 border-t border-emerald-500/15 text-[11px] text-emerald-700/80 dark:text-emerald-300/80">
                   <span>💡 ดอกเบี้ยจะถูกทบเข้าเป็นเงินต้นในบัญชีให้อัตโนมัติ</span>
-                  {/* Mini monthly payout indicators */}
-                  <div className="flex items-center gap-1">
-                    {THAI_MONTHS_SHORT.map((mName, idx) => {
-                      const mNum = idx + 1
-                      const payoutThisMonth = interestSummary.byMonth[mNum] ?? 0
-                      const hasPayout = payoutThisMonth > 0
-                      return (
-                        <div
-                          key={mNum}
-                          title={`${mName}: ${hasPayout ? thb(payoutThisMonth) : 'ไม่มีดอกเบี้ยเข้า'}`}
-                          className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold transition-all ${
-                            hasPayout
-                              ? 'bg-emerald-500 text-white shadow-2xs'
-                              : 'bg-surface-muted text-ink-muted/40'
-                          }`}
-                        >
-                          {mName.slice(0, 1)}
-                        </div>
-                      )
-                    })}
-                  </div>
                 </div>
               </div>
             )}
@@ -731,58 +710,41 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                         </div>
                       </div>
 
-                      {/* Interactive Month Selection Pills (Replaces unreadable dropdown) */}
-                      <div className="space-y-1.5 pt-1">
-                        <div className="flex items-center justify-between text-[11.5px] text-ink-muted">
-                          <span>
-                            {r.payoutSchedule === 'annual'
-                              ? 'แตะเลือกเดือนที่ดอกเบี้ยเข้า:'
-                              : r.payoutSchedule === 'semi_annual'
-                              ? 'ดอกเบี้ยเข้าเดือน มิ.ย. และ ธ.ค.:'
-                              : r.payoutSchedule === 'monthly'
-                              ? 'ดอกเบี้ยเข้าทุกเดือน (ม.ค. - ธ.ค.):'
-                              : 'แตะเลือกเดือนที่ดอกเบี้ยเข้า (เลือกได้หลายเดือน):'}
+                      {/* Interactive Month Selection Pills (Only shown when "กำหนดเอง" is selected) */}
+                      {r.payoutSchedule === 'custom' && (
+                        <div className="space-y-1.5 pt-1">
+                          <span className="text-[11.5px] text-ink-muted">
+                            แตะเลือกเดือนที่ดอกเบี้ยเข้า (เลือกได้หลายเดือน):
                           </span>
-                          {r.payoutSchedule === 'annual' && (
-                            <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                              {THAI_MONTHS_SHORT[(r.payoutMonths[0] ?? 2) - 1]}
-                            </span>
-                          )}
-                        </div>
 
-                        <div className="grid grid-cols-6 sm:grid-cols-12 gap-1 text-[11px]">
-                          {THAI_MONTHS_SHORT.map((mName, idx) => {
-                            const mNum = idx + 1
-                            const isSelected = r.payoutMonths.includes(mNum)
-                            const isInteractive = r.payoutSchedule === 'annual' || r.payoutSchedule === 'custom'
+                          <div className="grid grid-cols-6 sm:grid-cols-12 gap-1 text-[11px]">
+                            {THAI_MONTHS_SHORT.map((mName, idx) => {
+                              const mNum = idx + 1
+                              const isSelected = r.payoutMonths.includes(mNum)
 
-                            return (
-                              <button
-                                key={mNum}
-                                type="button"
-                                disabled={!isInteractive}
-                                onClick={() => {
-                                  if (r.payoutSchedule === 'annual') {
-                                    update(r.id, { payoutMonths: [mNum] })
-                                  } else if (r.payoutSchedule === 'custom') {
+                              return (
+                                <button
+                                  key={mNum}
+                                  type="button"
+                                  onClick={() => {
                                     const next = isSelected
                                       ? r.payoutMonths.filter((m) => m !== mNum)
                                       : [...r.payoutMonths, mNum].sort((a, b) => a - b)
                                     update(r.id, { payoutMonths: next })
-                                  }
-                                }}
-                                className={`py-1.5 rounded-lg font-bold transition-all border ${
-                                  isSelected
-                                    ? 'bg-emerald-500 text-white border-emerald-500 shadow-2xs scale-105'
-                                    : 'bg-surface text-ink-muted border-line hover:text-ink hover:border-line-strong'
-                                } ${isInteractive ? 'cursor-pointer' : 'opacity-80 cursor-default'}`}
-                              >
-                                {mName}
-                              </button>
-                            )
-                          })}
+                                  }}
+                                  className={`py-1.5 rounded-lg font-bold transition-all cursor-pointer border ${
+                                    isSelected
+                                      ? 'bg-emerald-500 text-white border-emerald-500 shadow-2xs scale-105'
+                                      : 'bg-surface text-ink-muted border-line hover:text-ink hover:border-line-strong'
+                                  }`}
+                                >
+                                  {mName}
+                                </button>
+                              )
+                            })}
+                          </div>
                         </div>
-                      </div>
+                      )}
 
                       {/* Live Calculation Preview Box for this account */}
                       {rateNum > 0 && balNum > 0 && (
@@ -793,7 +755,9 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                                 ? `💰 ได้รับดอกเบี้ยประมาณ ${thb(annualEarned / 12)} / เดือน`
                                 : r.payoutSchedule === 'semi_annual'
                                 ? `💰 ได้รับดอกเบี้ยประมาณ ${thb(annualEarned / 2)} ในเดือน มิ.ย. และ ธ.ค.`
-                                : `💰 ได้รับดอกเบี้ยประมาณ ${thb(annualEarned)} ในเดือน ${THAI_MONTHS_SHORT[(r.payoutMonths[0] ?? 2) - 1]}`}
+                                : r.payoutSchedule === 'annual'
+                                ? `💰 ได้รับดอกเบี้ยประมาณ ${thb(annualEarned)} / ปี`
+                                : `💰 ได้รับดอกเบี้ยประมาณ ${thb(annualEarned / (r.payoutMonths.length || 1))} ในเดือน ${r.payoutMonths.map((m) => THAI_MONTHS_SHORT[m - 1]).join(', ') || 'สิ้นปี'}`}
                             </span>
                             <span className="font-display font-bold text-[13px]">
                               รวม {thb(annualEarned)} / ปี
