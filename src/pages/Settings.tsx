@@ -77,6 +77,7 @@ export function Settings() {
   const [importConfirmOpen, setImportConfirmOpen] = useState(false)
   const [pendingImport, setPendingImport] = useState<string | null>(null)  // raw json string
   const [pendingImportSummary, setPendingImportSummary] = useState('')
+  const [aboutExpanded, setAboutExpanded] = useState(false)
 
   // ── inline toast ───────────────────────────────────────────────
   const [exportToast, setExportToast] = useState<ToastState>({ kind: 'idle' })
@@ -399,9 +400,32 @@ export function Settings() {
         </div>
 
 
+        {/* ── Danger zone ─────────────────────────────────────── */}
+        <Card className="animate-rise border-loss/20 bg-loss-soft/20">
+          <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">
+            Danger zone
+          </h2>
+          <div className="mt-4 flex items-center justify-between">
+            <div>
+              <p className="text-[14px] font-semibold text-ink">Reset all data</p>
+              <p className="mt-0.5 text-[12.5px] text-ink-muted">
+                Permanently clears every holding, plan, and transfer. Cannot be undone.
+              </p>
+            </div>
+            <button
+              id="btn-reset"
+              onClick={() => setResetOpen(true)}
+              className="ml-4 inline-flex shrink-0 items-center gap-2 rounded-full bg-loss-soft px-4 py-2 text-[13px] font-semibold text-loss transition-colors hover:bg-loss hover:text-white active:scale-95 cursor-pointer"
+            >
+              <TrashIcon className="h-4 w-4" />
+              Reset
+            </button>
+          </div>
+        </Card>
+
         {/* ── About Spendiary ─────────────────────────────────── */}
-        <Card className="animate-rise">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-line/60">
+        <Card className="animate-rise overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
               <div className="w-12 h-12 rounded-2xl bg-surface-muted/80 border border-line/60 flex items-center justify-center p-2.5 shadow-xs shrink-0">
                 <img src="/logo.png" alt="Spendiary Logo" className="w-full h-full object-contain" />
@@ -419,7 +443,7 @@ export function Settings() {
               </div>
             </div>
 
-            {/* Social / External Links */}
+            {/* Social / External Links + Toggle Chevron */}
             <div className="flex items-center gap-2">
               <a
                 href="https://github.com/bbrightns"
@@ -443,90 +467,88 @@ export function Settings() {
                 </svg>
                 <span>Facebook</span>
               </a>
+              <button
+                type="button"
+                onClick={() => setAboutExpanded((v) => !v)}
+                aria-label={aboutExpanded ? 'ย่อรายละเอียด' : 'แสดงเพิ่มเติม'}
+                title={aboutExpanded ? 'ย่อรายละเอียด' : 'แสดงเพิ่มเติม'}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-xl border border-line/80 bg-surface text-ink-muted hover:text-ink hover:border-line hover:bg-surface-muted transition-all cursor-pointer shadow-2xs"
+              >
+                <svg
+                  className={`w-4 h-4 transition-transform duration-200 ${aboutExpanded ? 'rotate-180' : ''}`}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
             </div>
           </div>
 
-          {/* Author Details */}
-          <div className="py-4 space-y-3">
-            <div className="rounded-2xl bg-surface-muted/60 p-4 border border-line/50">
-              <div className="flex items-center gap-3.5 mb-3">
-                <img
-                  src="/bbrightns.jpg"
-                  alt="Praween Piyaprapaphan (Bright)"
-                  className="w-12 h-12 rounded-full object-cover border-2 border-surface shadow-xs shrink-0"
-                />
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[14px] font-bold text-ink leading-tight">
-                    Praween Piyaprapaphan (Bright)
-                  </span>
-                  <span className="text-[12px] font-mono text-brand font-semibold leading-normal mt-0.5">
-                    Alias: bbrightns
-                  </span>
+          {/* Author Details & Release Highlights (Collapsible) */}
+          {aboutExpanded && (
+            <div className="pt-4 mt-4 border-t border-line/60 space-y-3 animate-fade-in">
+              <div className="rounded-2xl bg-surface-muted/60 p-4 border border-line/50">
+                <div className="flex items-center gap-3.5 mb-3">
+                  <img
+                    src="/bbrightns.jpg"
+                    alt="Praween Piyaprapaphan (Bright)"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-surface shadow-xs shrink-0"
+                  />
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[14px] font-bold text-ink leading-tight">
+                      Praween Piyaprapaphan (Bright)
+                    </span>
+                    <span className="text-[12px] font-mono text-brand font-semibold leading-normal mt-0.5">
+                      Alias: bbrightns
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <p className="text-[12.5px] text-ink-muted leading-relaxed">
-                Electrical Engineer ผู้หลงใหลใน computer & tech มุ่งมั่นพัฒนาเครื่องมือบริหารการเงินส่วนบุคคลที่ทรงพลัง เรียบง่าย และให้ความสำคัญกับความปลอดภัยของข้อมูลสูงสุด
-              </p>
-            </div>
-
-            {/* Release Notes & Issue Report */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <div className="p-3.5 rounded-xl border border-line/60 bg-surface">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <h3 className="text-xs font-bold text-ink">Release Highlights</h3>
-                </div>
-                <p className="text-[11.5px] text-ink-muted leading-relaxed">
-                  v{__APP_VERSION__} (build <span className="font-mono">{__COMMIT_HASH__}</span>) · ระบบคำนวณดอกเบี้ยเงินฝากเพดานสูง (Max cap), DCA rebalancing, และการปรับปรุง Dark Mode ครบวงจร
+                <p className="text-[12.5px] text-ink-muted leading-relaxed">
+                  Electrical Engineer ผู้หลงใหลใน computer & tech มุ่งมั่นพัฒนาเครื่องมือบริหารการเงินส่วนบุคคลที่ทรงพลัง เรียบง่าย และให้ความสำคัญกับความปลอดภัยของข้อมูลสูงสุด
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-xl border border-line/60 bg-surface flex flex-col justify-between">
-                <div>
+              {/* Release Notes & Issue Report */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="p-3.5 rounded-xl border border-line/60 bg-surface">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="w-2 h-2 rounded-full bg-amber-500" />
-                    <h3 className="text-xs font-bold text-ink">ช่องทางแจ้งปัญหา (Feedback & Issues)</h3>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <h3 className="text-xs font-bold text-ink">Release Highlights</h3>
                   </div>
                   <p className="text-[11.5px] text-ink-muted leading-relaxed">
-                    พบข้อผิดพลาดหรือมีข้อเสนอแนะเพิ่มเติม สามารถเปิด Issue บน GitHub หรือส่งข้อความทาง Facebook ได้โดยตรง
+                    v{__APP_VERSION__} (build <span className="font-mono">{__COMMIT_HASH__}</span>) · ระบบคำนวณดอกเบี้ยเงินฝากเพดานสูง (Max cap), DCA rebalancing, และการปรับปรุง Dark Mode ครบวงจร
                   </p>
                 </div>
-                <div className="mt-2.5 pt-2 border-t border-line/50 flex items-center gap-2">
-                  <a
-                    href="https://github.com/bbrightns/spendiary/issues"
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="text-[11.5px] font-semibold text-brand hover:underline"
-                  >
-                    Report on GitHub →
-                  </a>
+
+                <div className="p-3.5 rounded-xl border border-line/60 bg-surface flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-2 h-2 rounded-full bg-amber-500" />
+                      <h3 className="text-xs font-bold text-ink">ช่องทางแจ้งปัญหา (Feedback & Issues)</h3>
+                    </div>
+                    <p className="text-[11.5px] text-ink-muted leading-relaxed">
+                      พบข้อผิดพลาดหรือมีข้อเสนอแนะเพิ่มเติม สามารถเปิด Issue บน GitHub หรือส่งข้อความทาง Facebook ได้โดยตรง
+                    </p>
+                  </div>
+                  <div className="mt-2.5 pt-2 border-t border-line/50 flex items-center gap-2">
+                    <a
+                      href="https://github.com/bbrightns/spendiary/issues"
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="text-[11.5px] font-semibold text-brand hover:underline"
+                    >
+                      Report on GitHub →
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </Card>
-
-        {/* ── Danger zone ─────────────────────────────────────── */}
-        <Card className="animate-rise border-loss/20 bg-loss-soft/20">
-          <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">
-            Danger zone
-          </h2>
-          <div className="mt-4 flex items-center justify-between">
-            <div>
-              <p className="text-[14px] font-semibold text-ink">Reset all data</p>
-              <p className="mt-0.5 text-[12.5px] text-ink-muted">
-                Permanently clears every holding, plan, and transfer. Cannot be undone.
-              </p>
-            </div>
-            <button
-              id="btn-reset"
-              onClick={() => setResetOpen(true)}
-              className="ml-4 inline-flex shrink-0 items-center gap-2 rounded-full bg-loss-soft px-4 py-2 text-[13px] font-semibold text-loss transition-colors hover:bg-loss hover:text-white active:scale-95"
-            >
-              <TrashIcon className="h-4 w-4" />
-              Reset
-            </button>
-          </div>
+          )}
         </Card>
       </div>
 
