@@ -508,6 +508,27 @@ export function Settings() {
                 </p>
               </div>
 
+              {/* ที่มาของแอป (The Story & Motivation) */}
+              <div className="rounded-2xl bg-surface-muted/40 p-4 border border-line/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-base">💡</span>
+                  <h3 className="text-[13px] font-bold text-ink">ที่มาของ Spendiary</h3>
+                </div>
+                <div className="space-y-2 text-[12.5px] text-ink-muted leading-relaxed">
+                  <p>
+                    โปรเจกต์นี้เริ่มต้นขึ้นมาเพื่อแก้ Pain Point ของตัวเองล้วนๆ ครับ เพราะมีเงินเก็บและพอร์ตการลงทุนกระจายอยู่หลายธนาคารและหลายแอป จนช่วงหลังเริ่มจำไม่ได้และสับสนว่าเงินทั้งหมดของตัวเองอยู่ที่ไหนบ้าง เลยตัดสินใจพัฒนาเว็บนี้ขึ้นมาเพื่อรวบรวมภาพรวมความมั่งคั่งไว้ในที่เดียวแบบ One-Stop Cockpit:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 pl-1 text-[12px] text-ink-soft">
+                    <li><strong className="font-semibold text-ink">ราคาตลาดแบบ Real-time:</strong> เชื่อมต่อราคาของหุ้น US, ทองคำ (Gold), และ Bitcoin (BTC) แบบสดๆ เพื่อประเมินมูลค่าพอร์ตแม่นยำ (ยังไม่รองรับหุ้นไทย)</li>
+                    <li><strong className="font-semibold text-ink">วางแผนเกษียณเชิงลึก (Retirement FIRE):</strong> คำนวณเงินเฟ้อ ผลตอบแทน และเป้าหมายอิสรภาพทางการเงินแบบละเอียด</li>
+                    <li><strong className="font-semibold text-ink">เน้นความเป็นส่วนตัว (Privacy-first):</strong> ข้อมูลทั้งหมดบันทึกอยู่บนอุปกรณ์ของคุณ พร้อมระบบ Cloud Sync เข้ารหัส</li>
+                  </ul>
+                  <p className="text-[12px] text-ink-muted pt-1">
+                    เปิดให้ใช้งานฟรี 100% ครับ ใครที่มีพอร์ตกระจายอยู่หลายที่เหมือนกัน ลองเข้ามาใช้งานเล่นดูได้เลยครับ หากมีฟีเจอร์ไหนอยากให้ปรับปรุงหรือเพิ่มเติม สามารถบอกเข้ามาได้เสมอครับ ยินดีรับฟังทุกข้อเสนอแนะ!
+                  </p>
+                </div>
+              </div>
+
               {/* Release Notes & Issue Report */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <div className="p-3.5 rounded-xl border border-line/60 bg-surface">
