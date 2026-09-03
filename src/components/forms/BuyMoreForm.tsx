@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Modal } from '../ui/Modal'
+import { SegmentedControl } from '../ui/SegmentedControl'
 import { NumberField, TextField, SelectField } from '../ui/Field'
 import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
@@ -399,30 +400,15 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
           {/* Unit selector tab */}
           <div className="space-y-1">
             <label className="text-[13px] font-medium text-ink-soft">Purchase Unit / หน่วยซื้อ</label>
-            <div className="flex rounded-xl bg-surface-muted p-1 gap-1">
-              <button
-                type="button"
-                onClick={() => setGoldUnit('grams')}
-                className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
-                  goldUnit === 'grams'
-                    ? 'bg-surface text-ink shadow-sm'
-                    : 'text-ink-muted hover:text-ink'
-                }`}
-              >
-                กรัม (Grams)
-              </button>
-              <button
-                type="button"
-                onClick={() => setGoldUnit('baht')}
-                className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
-                  goldUnit === 'baht'
-                    ? 'bg-surface text-ink shadow-sm'
-                    : 'text-ink-muted hover:text-ink'
-                }`}
-              >
-                บาททองคำ (15.244g)
-              </button>
-            </div>
+            <SegmentedControl
+              size="sm"
+              value={goldUnit}
+              onChange={setGoldUnit}
+              options={[
+                { value: 'grams', label: 'กรัม (Grams)' },
+                { value: 'baht', label: 'บาททองคำ (15.244g)' },
+              ]}
+            />
           </div>
 
           <div className="grid grid-cols-1 gap-3">
