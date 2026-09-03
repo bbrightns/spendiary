@@ -6,7 +6,7 @@ import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { DonutChart } from '../components/charts/DonutChart'
 import { InteractiveNetWorthChart } from '../components/charts/InteractiveNetWorthChart'
-import { PnLPill } from '../components/ui/PnL'
+import { PnLPill, PnLText } from '../components/ui/PnL'
 import { CashAccountsForm } from '../components/forms/CashAccountsForm'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
@@ -291,7 +291,7 @@ export function Dashboard() {
                   <div className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-500/10 text-indigo-500">
                     <PortfolioIcon className="h-4 w-4" />
                   </div>
-                  <h2 className="font-display text-[16px] font-bold text-ink">Holdings & Assets</h2>
+                  <h2 className="font-display text-[16px] font-bold text-ink">Asset Allocation</h2>
                 </div>
                 <Link
                   to="/portfolio"
@@ -302,17 +302,28 @@ export function Dashboard() {
                 </Link>
               </div>
 
-              {/* Value & Gain */}
-              <div className="mt-4 flex items-baseline justify-between">
-                <div>
-                  <span className="text-[11.5px] font-medium text-ink-muted">Portfolio Value</span>
-                  <p className="font-display text-[24px] font-extrabold tnum text-ink leading-tight">
-                    {thb(portfolio.value)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <PnLPill value={portfolio.pnlPct} asPct />
-                  <span className="text-[11.5px] text-ink-muted">all-time</span>
+              {/* Value & PnL Hero Summary */}
+              <div id="guide-portfolio-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Portfolio Value</span>
+                    <p className="mt-1 font-display text-[22px] sm:text-[24px] font-extrabold tracking-tight tnum text-ink leading-tight">
+                      {thb(portfolio.value)}
+                    </p>
+                    <p className="mt-1 text-[11.5px] text-ink-muted font-medium">
+                      Invested: <span className="font-semibold tnum text-ink-soft">{thbCompact(portfolio.cost)}</span>
+                    </p>
+                  </div>
+                  <div className="text-right flex flex-col items-end shrink-0">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">All-Time PnL</span>
+                    <div className="mt-1 flex items-baseline justify-end">
+                      <PnLText value={portfolio.pnl} className="font-display text-[18px] sm:text-[20px] !font-extrabold tracking-tight leading-tight" />
+                    </div>
+                    <div className="mt-1 flex items-center justify-end gap-1">
+                      <PnLPill value={portfolio.pnlPct} asPct size="sm" />
+                      <span className="text-[11px] text-ink-muted font-medium">all-time</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -337,7 +348,7 @@ export function Dashboard() {
                             className="h-2.5 w-2.5 rounded-full shrink-0"
                             style={{ background: ASSET_META[a.assetClass].color }}
                           />
-                          {ASSET_META[a.assetClass].label}
+                          {ASSET_META[a.assetClass].plural}
                         </span>
                         <span className="font-bold tnum text-ink">
                           {thb(a.value)}{' '}
@@ -352,13 +363,14 @@ export function Dashboard() {
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
-              <span>{data.holdings.length} total holding positions</span>
+            <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px]">
+              <span className="text-ink-muted">{data.holdings.length} holding positions</span>
               <Link
                 to="/rebalance"
-                className="font-semibold text-brand hover:underline cursor-pointer"
+                className="inline-flex items-center gap-1 font-bold text-brand hover:underline cursor-pointer"
               >
-                Rebalance
+                <span>Rebalance Portfolio</span>
+                <span aria-hidden="true">→</span>
               </Link>
             </div>
           </Card>
