@@ -42,10 +42,10 @@ interface BudgetSegment {
   pct: number
   amount: number
   label: string
-  subtext?: string
   textColor: string
   bg: string
   barColor: string
+  isStriped?: boolean
 }
 
 function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; savings: number }) {
@@ -55,114 +55,131 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
   const isOverflow = totalAllocated > salary
   const cashDrawdown = isOverflow ? totalAllocated - salary : 0
 
-  // Allocations from salary (always bounded to salary)
+  // Dual-Source Bar:
+  // If isOverflow: total bar scale = totalAllocated (100% of planned deployment)
+  // If not: total bar scale = salary
+  const barScale = isOverflow ? totalAllocated : salary
+  const salaryPct = Math.min(100, (salary / barScale) * 100)
+
+  // Breakdowns from salary
   const fixedFromSalary = Math.min(fixed, salary)
   const savingsFromSalary = Math.max(0, Math.min(savings, salary - fixedFromSalary))
   const remainingSalary = Math.max(0, salary - fixedFromSalary - savingsFromSalary)
 
-  // Percentages inside the 100% salary track
-  const fixedPct = (fixedFromSalary / salary) * 100
-  const savingsPct = (savingsFromSalary / salary) * 100
-  const freePct = (remainingSalary / salary) * 100
+  // Striped pattern for cash reserve injection (high contrast in both light & dark mode)
+  const cashBarColor =
+    'repeating-linear-gradient(-45deg, var(--color-brand) 0px, var(--color-brand) 6px, color-mix(in srgb, var(--color-brand) 35%, white) 6px, color-mix(in srgb, var(--color-brand) 35%, white) 12px)'
 
-  const salarySegments: BudgetSegment[] = [
-    {
-      pct: fixedPct,
-      amount: fixed,
-      label: 'Fixed',
-      subtext: isOverflow && fixed > salary ? `${thb(fixedFromSalary)} salary` : undefined,
-      textColor: 'var(--color-loss)',
-      bg: 'var(--color-loss-soft)',
-      barColor: 'var(--color-loss)',
-    },
-    {
-      pct: savingsPct,
-      amount: savings,
-      label: 'Savings',
-      subtext: isOverflow && savingsFromSalary > 0 ? `${thb(savingsFromSalary)} salary` : undefined,
-      textColor: 'var(--color-gain)',
-      bg: 'var(--color-gain-soft)',
-      barColor: 'var(--color-cash)',
-    },
-    {
-      pct: freePct,
-      amount: remainingSalary,
-      label: 'Free',
-      textColor: 'var(--color-ink-faint)',
-      bg: 'var(--color-surface-muted)',
-      barColor: 'var(--color-ink-faint)',
-    },
-  ].filter((s) => s.pct > 0)
+  const segments: BudgetSegment[] = isOverflow
+    ? [
+        {
+          pct: (fixed / totalAllocated) * 100,
+          amount: fixed,
+          label: 'Fixed',
+          textColor: 'var(--color-loss)',
+          bg: 'var(--color-loss-soft)',
+          barColor: 'var(--color-loss)',
+        },
+        {
+          pct: (savingsFromSalary / totalAllocated) * 100,
+          amount: savingsFromSalary,
+          label: 'Savings (Salary)',
+          textColor: 'var(--color-gain)',
+          bg: 'var(--color-gain-soft)',
+          barColor: 'var(--color-cash)',
+        },
+        {
+          pct: (cashDrawdown / totalAllocated) * 100,
+          amount: cashDrawdown,
+          label: 'From Cash',
+          textColor: 'var(--color-brand-ink)',
+          bg: 'var(--color-brand-soft)',
+          barColor: cashBarColor,
+          isStriped: true,
+        },
+      ].filter((s) => s.pct > 0)
+    : [
+        {
+          pct: (fixed / salary) * 100,
+          amount: fixed,
+          label: 'Fixed',
+          textColor: 'var(--color-loss)',
+          bg: 'var(--color-loss-soft)',
+          barColor: 'var(--color-loss)',
+        },
+        {
+          pct: (savings / salary) * 100,
+          amount: savings,
+          label: 'Savings',
+          textColor: 'var(--color-gain)',
+          bg: 'var(--color-gain-soft)',
+          barColor: 'var(--color-cash)',
+        },
+        {
+          pct: (remainingSalary / salary) * 100,
+          amount: remainingSalary,
+          label: 'Free',
+          textColor: 'var(--color-ink-faint)',
+          bg: 'var(--color-surface-muted)',
+          barColor: 'var(--color-ink-faint)',
+        },
+      ].filter((s) => s.pct > 0)
 
   return (
     <div className="mt-5">
-      {/* Labels: aligned with the salary bar */}
-      <div className="flex items-end gap-2 mb-2.5">
-        <div className="flex-1 flex">
-          {salarySegments.map((seg) => (
-            <div key={seg.label} style={{ width: `${seg.pct}%` }} className="flex justify-center">
-              <div className="rounded-xl px-2.5 py-1.5 text-center min-h-[46px] flex flex-col justify-center" style={{ background: seg.bg }}>
-                <p className="text-[10px] font-semibold leading-none" style={{ color: seg.textColor }}>{seg.label}</p>
-                <p className="mt-1 font-display text-[13px] font-extrabold tnum leading-none" style={{ color: seg.textColor }}>
-                  {thb(seg.amount)}
-                </p>
-                {seg.subtext && (
-                  <p className="mt-0.5 text-[9.5px] font-medium leading-none opacity-80" style={{ color: seg.textColor }}>
-                    {seg.subtext}
-                  </p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Spacer matching the Cash extension pill width so badges align above the salary bar */}
-        {isOverflow && (
-          <div aria-hidden="true" className="shrink-0 invisible flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold select-none">
-            <span>+{thb(cashDrawdown)} Cash</span>
-          </div>
-        )}
-      </div>
-
-      {/* Bar Row with 100% Salary Track + Overflow Extension */}
-      <div className="flex items-center gap-2">
-        {/* 100% Salary Track */}
-        <div className="flex-1 flex h-4 overflow-hidden rounded-full bg-surface-muted gap-0.5">
-          {salarySegments.map((seg) => (
+      {/* Labels: each section has the same proportional width as its bar segment */}
+      <div className="flex mb-2.5">
+        {segments.map((seg) => (
+          <div key={seg.label} style={{ width: `${seg.pct}%` }} className="flex justify-center min-w-0">
             <div
-              key={seg.label}
-              className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${seg.pct}%`, background: seg.barColor }}
-            />
-          ))}
-        </div>
-
-        {/* Overflow Extension Capsule (Cash) */}
-        {isOverflow && (
-          <div
-            className="shrink-0 flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-all"
-            style={{
-              background: 'var(--color-brand-soft)',
-              borderColor: 'color-mix(in srgb, var(--color-brand-ink) 30%, transparent)',
-              color: 'var(--color-brand-ink)',
-            }}
-            title={`+${thb(cashDrawdown)} drawn from cash reserves`}
-          >
-            <span className="text-[12px] leading-none">+</span>
-            <span className="tnum">{thb(cashDrawdown)}</span>
-            <span className="text-[10px] font-medium opacity-85">Cash</span>
+              className="rounded-xl px-2 py-1.5 text-center min-h-[46px] flex flex-col justify-center max-w-full overflow-hidden"
+              style={{ background: seg.bg }}
+            >
+              <p className="text-[10px] font-semibold leading-none truncate" style={{ color: seg.textColor }}>
+                {seg.label}
+              </p>
+              <p className="mt-1 font-display text-[13px] font-extrabold tnum leading-none" style={{ color: seg.textColor }}>
+                {seg.isStriped ? `+${thb(seg.amount)}` : thb(seg.amount)}
+              </p>
+            </div>
           </div>
-        )}
+        ))}
       </div>
 
-      {/* Explanatory note when deploying cash on top of salary */}
+      {/* Bar */}
+      <div className="flex h-4 overflow-hidden rounded-full bg-surface-muted gap-0.5">
+        {segments.map((seg) => (
+          <div
+            key={seg.label}
+            className="h-full rounded-full transition-all duration-500"
+            style={{
+              width: `${seg.pct}%`,
+              background: seg.barColor,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Salary boundary bracket (Idea 1: Monthly Salary span) */}
+      {isOverflow && (
+        <div className="mt-2 text-[11px] text-ink-muted">
+          <div
+            style={{ width: `${salaryPct}%` }}
+            className="border-b-2 border-l border-r border-line-strong rounded-b-md pt-1 pb-0.5 text-center transition-all duration-500"
+          >
+            <span className="font-semibold text-ink-soft">Monthly Salary ({thb(salary)})</span>
+          </div>
+        </div>
+      )}
+
+      {/* Explanatory summary note */}
       {isOverflow && (
         <div className="mt-3 flex items-start gap-2 rounded-xl bg-surface-muted px-3 py-2 text-[12px] text-ink-muted">
           <span className="text-[13px] mt-0.5">💡</span>
           <p className="leading-snug">
-            <span className="font-semibold text-ink">100% of salary deployed</span>
-            {' '}— plus <span className="font-semibold text-brand dark:text-brand-ink">+{thb(cashDrawdown)}</span> drawn from cash reserves
-            <span className="text-ink-faint"> (total monthly savings: {thb(savings)})</span>
+            <span className="font-semibold text-ink">Total planned: {thb(totalAllocated)}</span>
+            {' '}— includes <span className="font-semibold text-gain">{thb(savings)}</span> in savings/investments
+            (<span className="text-gain">{thb(savingsFromSalary)} from salary</span> + <span className="font-semibold text-brand dark:text-brand-ink">+{thb(cashDrawdown)} from cash</span>).
           </p>
         </div>
       )}
@@ -388,7 +405,7 @@ export function DcaPlanner() {
           {/* ── Income + Budget Bar ── */}
           <div id="guide-dca-summary">
             <Card className="animate-rise">
-              <div className="flex flex-wrap items-start justify-between gap-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
                 <InlineEditStat
                   label="Monthly Salary"
                   value={salary > 0 ? thb(salary) : '-'}
@@ -401,6 +418,17 @@ export function DcaPlanner() {
                   onCancel={() => setEditingSalary(false)}
                   hint={salary <= 0 ? 'Tap to set your salary' : undefined}
                 />
+                {salary > 0 && fixedTotal + savingsTotal > salary && (
+                  <div className="text-right">
+                    <p className="text-[12px] font-medium text-ink-muted">Total Planned</p>
+                    <p className="mt-1 font-display text-[22px] font-extrabold tnum text-ink leading-none">
+                      {thb(fixedTotal + savingsTotal)}
+                    </p>
+                    <p className="mt-0.5 text-[11.5px] font-semibold text-brand dark:text-brand-ink">
+                      +{thb(fixedTotal + savingsTotal - salary)} from Cash
+                    </p>
+                  </div>
+                )}
               </div>
               {salary > 0 && <BudgetBar salary={salary} fixed={fixedTotal} savings={savingsTotal} />}
               {salary <= 0 && (
