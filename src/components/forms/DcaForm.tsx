@@ -27,8 +27,9 @@ const WEEKDAY_OPTIONS = [
 ]
 
 const blank = {
-  source: 'portfolio' as 'portfolio' | 'custom',
+  source: 'portfolio' as 'portfolio' | 'cash' | 'custom',
   holdingId: '',
+  cashAccountId: '',
   btcLocationId: '' as string,
   goldLocationId: '' as string,
   name: '',
@@ -60,9 +61,11 @@ export function DcaForm({ open, editing, onClose }: Props) {
     if (!open) return
     if (editing) {
       const freq = editing.frequency ?? 'monthly'
+      const isCashPlan = editing.assetClass === 'cash' || !!editing.cashAccountId
       setForm({
-        source: 'portfolio',
+        source: isCashPlan ? 'cash' : editing.holdingId ? 'portfolio' : 'custom',
         holdingId: editing.holdingId ?? '',
+        cashAccountId: editing.cashAccountId ?? '',
         btcLocationId: editing.btcLocationId ?? '',
         goldLocationId: editing.goldLocationId ?? '',
         name: editing.name,
@@ -75,8 +78,9 @@ export function DcaForm({ open, editing, onClose }: Props) {
       })
     } else {
       const hasHoldings = holdingOptions.length > 0
-      const defaultSource = hasHoldings ? 'portfolio' : 'custom'
+      const defaultSource = hasHoldings ? 'portfolio' : data.cashAccounts.length > 0 ? 'cash' : 'custom'
       const firstHoldingId = holdingOptions[0]?.value ?? ''
+      const firstCash = data.cashAccounts[0]
       const firstHolding = data.holdings.find((h) => h.id === firstHoldingId)
       const firstLocId = firstHolding?.btcLocations?.[0]?.id ?? ''
       const firstGoldLocId = firstHolding?.goldLocations?.[0]?.id ?? ''
@@ -84,11 +88,12 @@ export function DcaForm({ open, editing, onClose }: Props) {
         ...blank,
         source: defaultSource,
         holdingId: firstHoldingId,
+        cashAccountId: firstCash?.id ?? '',
         btcLocationId: firstLocId,
         goldLocationId: firstGoldLocId,
-        name: defaultSource === 'portfolio' ? (firstHolding?.name ?? '') : '',
-        ticker: defaultSource === 'portfolio' ? (firstHolding?.ticker ?? '') : '',
-        assetClass: defaultSource === 'portfolio' ? (firstHolding?.assetClass ?? 'fund') : 'fund',
+        name: defaultSource === 'portfolio' ? (firstHolding?.name ?? '') : defaultSource === 'cash' ? (firstCash?.name ?? '') : '',
+        ticker: defaultSource === 'portfolio' ? (firstHolding?.ticker ?? '') : defaultSource === 'cash' ? 'CASH' : '',
+        assetClass: defaultSource === 'portfolio' ? (firstHolding?.assetClass ?? 'fund') : defaultSource === 'cash' ? 'cash' : 'fund',
       })
     }
     setSuggestions([])
@@ -124,14 +129,17 @@ export function DcaForm({ open, editing, onClose }: Props) {
 
   const activeAssetClass: AssetClass = editing
     ? editing.assetClass
-    : form.source === 'portfolio'
-      ? (selectedPortfolioHolding?.assetClass ?? form.assetClass)
-      : form.assetClass
+    : form.source === 'cash'
+      ? 'cash'
+      : form.source === 'portfolio'
+        ? (selectedPortfolioHolding?.assetClass ?? form.assetClass)
+        : form.assetClass
 
   const isStock = activeAssetClass === 'stock'
   const isBtc = activeAssetClass === 'crypto'
   const isGold = activeAssetClass === 'gold'
   const isFund = activeAssetClass === 'fund'
+  const isCash = activeAssetClass === 'cash'
 
   // Resolve BTC/Gold locations from portfolio
   const btcHolding = data.holdings.find((h) => h.assetClass === 'crypto')
@@ -140,17 +148,24 @@ export function DcaForm({ open, editing, onClose }: Props) {
   const goldLocations = (form.source === 'portfolio' ? selectedPortfolioHolding?.goldLocations : goldHolding?.goldLocations) ?? []
 
   function save() {
+    const isCashSource = form.source === 'cash' || activeAssetClass === 'cash'
+    const selectedCashAcc = data.cashAccounts.find((a) => a.id === form.cashAccountId)
+
     const nameToUse = editing
       ? editing.name
-      : form.source === 'portfolio'
-        ? (selectedPortfolioHolding?.name ?? '')
-        : isBtc ? 'Bitcoin' : isGold ? 'Gold' : form.name.trim()
+      : isCashSource
+        ? (selectedCashAcc?.name || form.name.trim())
+        : form.source === 'portfolio'
+          ? (selectedPortfolioHolding?.name ?? '')
+          : isBtc ? 'Bitcoin' : isGold ? 'Gold' : form.name.trim()
 
     const tickerToUse = editing
       ? editing.ticker
-      : form.source === 'portfolio'
-        ? (selectedPortfolioHolding?.ticker ?? '')
-        : isBtc ? 'BTC' : isGold ? 'GOLD' : (form.ticker.trim() || undefined)
+      : isCashSource
+        ? 'CASH'
+        : form.source === 'portfolio'
+          ? (selectedPortfolioHolding?.ticker ?? '')
+          : isBtc ? 'BTC' : isGold ? 'GOLD' : (form.ticker.trim() || undefined)
 
     const amountNum = Number(form.monthlyAmount)
     if (!nameToUse || form.monthlyAmount === '' || isNaN(amountNum) || amountNum <= 0) {
@@ -167,11 +182,12 @@ export function DcaForm({ open, editing, onClose }: Props) {
       id: editing?.id,
       name: nameToUse,
       ticker: tickerToUse,
-      assetClass: activeAssetClass,
+      assetClass: isCashSource ? 'cash' : activeAssetClass,
       frequency: freq,
       monthlyAmount: amountNum,
       dayOfMonth,
-      holdingId: editing ? (editing.holdingId || selectedPortfolioHolding?.id) : (form.source === 'portfolio' ? form.holdingId : undefined),
+      holdingId: isCashSource ? undefined : (editing ? (editing.holdingId || selectedPortfolioHolding?.id) : (form.source === 'portfolio' ? form.holdingId : undefined)),
+      cashAccountId: isCashSource ? (form.cashAccountId || editing?.cashAccountId || selectedCashAcc?.id) : undefined,
       btcLocationId: (isBtc && form.btcLocationId) ? form.btcLocationId : undefined,
       goldLocationId: (isGold && form.goldLocationId) ? form.goldLocationId : undefined,
       confirmedDates: editing?.confirmedDates,
@@ -286,17 +302,23 @@ export function DcaForm({ open, editing, onClose }: Props) {
           <SegmentedControl
             value={form.source}
             onChange={(s) => {
+              const src = s as 'portfolio' | 'cash' | 'custom'
+              const firstCash = data.cashAccounts[0]
+              const targetCash = data.cashAccounts.find((a) => a.id === (form.cashAccountId || firstCash?.id))
               setForm((f) => ({
                 ...f,
-                source: s,
-                name: s === 'portfolio' ? (selectedPortfolioHolding?.name ?? '') : (f.assetClass === 'crypto' ? 'Bitcoin' : f.assetClass === 'gold' ? 'Gold' : ''),
-                ticker: s === 'portfolio' ? (selectedPortfolioHolding?.ticker ?? '') : (f.assetClass === 'crypto' ? 'BTC' : f.assetClass === 'gold' ? 'GOLD' : ''),
+                source: src,
+                cashAccountId: src === 'cash' ? (targetCash?.id ?? '') : '',
+                assetClass: src === 'cash' ? 'cash' : (src === 'portfolio' ? (selectedPortfolioHolding?.assetClass ?? 'fund') : f.assetClass),
+                name: src === 'portfolio' ? (selectedPortfolioHolding?.name ?? '') : src === 'cash' ? (targetCash?.name ?? '') : (f.assetClass === 'crypto' ? 'Bitcoin' : f.assetClass === 'gold' ? 'Gold' : ''),
+                ticker: src === 'portfolio' ? (selectedPortfolioHolding?.ticker ?? '') : src === 'cash' ? 'CASH' : (f.assetClass === 'crypto' ? 'BTC' : f.assetClass === 'gold' ? 'GOLD' : ''),
               }))
               setSuggestions([])
             }}
             options={[
-              { value: 'portfolio', label: 'From my portfolio' },
-              { value: 'custom', label: 'Custom plan' },
+              { value: 'portfolio', label: 'Portfolio' },
+              { value: 'cash', label: 'Cash / Savings' },
+              { value: 'custom', label: 'Custom' },
             ]}
           />
         )}
@@ -321,12 +343,52 @@ export function DcaForm({ open, editing, onClose }: Props) {
           </div>
         )}
 
-        {/* ── Section A: Asset selection ── */}
+        {/* ── Section A (Cash / Savings Account): Destination ── */}
+        {!editing && form.source === 'cash' && (
+          data.cashAccounts.length === 0 ? (
+            <div className="rounded-xl bg-warn-soft p-4 text-[13px] text-warn space-y-2">
+              <p className="font-semibold">No cash accounts added yet.</p>
+              <p className="text-[12px] opacity-90">Please add a cash account in the Cash Accounts Hub first.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <SelectField
+                label="Target Cash / Savings Account"
+                value={form.cashAccountId}
+                onChange={(id) => {
+                  const acc = data.cashAccounts.find((a) => a.id === id)
+                  setForm((f) => ({
+                    ...f,
+                    cashAccountId: id,
+                    name: acc?.name ?? '',
+                    ticker: 'CASH',
+                    assetClass: 'cash',
+                  }))
+                }}
+                options={data.cashAccounts.map((a) => {
+                  const symbol = a.currency === 'USD' ? '$' : '฿'
+                  return {
+                    value: a.id,
+                    label: `${a.name} (${symbol}${a.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })})`,
+                  }
+                })}
+              />
+              <div className="rounded-xl bg-surface-muted/70 p-3.5 border border-line/50 text-[12.5px] text-ink-muted leading-relaxed">
+                💡 <strong>Automatic Savings DCA</strong>: When you confirm this plan each period, Spendiary will directly increment the balance of{' '}
+                <span className="font-semibold text-ink">
+                  {data.cashAccounts.find((a) => a.id === form.cashAccountId)?.name || 'the selected account'}
+                </span>.
+              </div>
+            </div>
+          )
+        )}
+
+        {/* ── Section A: Portfolio selection ── */}
         {!editing && form.source === 'portfolio' && (
           holdingOptions.length === 0 ? (
             <div className="rounded-xl bg-warn-soft p-4 text-[13px] text-warn space-y-2">
               <p className="font-semibold">No holdings in your portfolio yet.</p>
-              <p className="text-[12px] opacity-90">Switch to <strong>Custom plan</strong> above to start DCAing into a new stock, fund, crypto, or gold position.</p>
+              <p className="text-[12px] opacity-90">Switch to <strong>Custom plan</strong> or <strong>Cash / Savings</strong> above to start DCAing.</p>
             </div>
           ) : (
             <div className="space-y-4">
