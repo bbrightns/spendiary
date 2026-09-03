@@ -526,7 +526,7 @@ export function HoldingLogs() {
 
       {/* Filters */}
       <div id="guide-logs-header" className="mb-5 space-y-2.5">
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
           {ASSET_FILTERS.map((f) => (
             <FilterChip
               key={f.key}
@@ -538,7 +538,7 @@ export function HoldingLogs() {
             </FilterChip>
           ))}
         </div>
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
           {ACTION_FILTERS.map((f) => (
             <FilterChip
               key={f.key}

@@ -440,7 +440,7 @@ export function Portfolio() {
                 {/* Filter pills & Sort controls */}
                 <div id="guide-portfolio-tabs" className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
                   {/* Filter pills */}
-                  <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
                     {FILTERS.map((f) => (
                       <FilterChip
                         key={f.key}
@@ -454,7 +454,7 @@ export function Portfolio() {
                   </div>
 
                   {/* Sort controls */}
-                  <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5">
+                  <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
                     <span className="shrink-0 text-[11px] font-medium text-ink-faint mr-1">Sort:</span>
                     {([ ['value','Value'], ['pnl','Profit %'], ['type','Type'] ] as const).map(([key, label]) => {
                       const active = sortBy === key
@@ -472,7 +472,7 @@ export function Portfolio() {
                           }}
                           aria-label={`Sort by ${label}${active && key !== 'type' ? ` (${sortDir === 'desc' ? 'descending' : 'ascending'})` : ''}`}
                           aria-pressed={active}
-                          className={`flex shrink-0 items-center gap-0.5 rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold transition-colors cursor-pointer ${
+                          className={`flex shrink-0 items-center justify-center gap-0.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold transition-colors cursor-pointer select-none ${
                             active
                               ? 'bg-brand text-white dark:bg-[#4f46e5]'
                               : 'bg-surface-muted text-ink-soft hover:text-ink'
