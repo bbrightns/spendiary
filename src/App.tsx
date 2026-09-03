@@ -6,6 +6,7 @@ import { ToastProvider } from './store/ToastContext'
 import { ToastContainer } from './components/ui/Toast'
 import { useTheme } from './hooks/useTheme'
 import { Layout } from './components/layout/Layout'
+import { Footer } from './components/layout/Footer'
 import { Dashboard } from './pages/Dashboard'
 import { Portfolio } from './pages/Portfolio'
 import { DcaPlanner } from './pages/DcaPlanner'
@@ -217,34 +218,11 @@ function AppContent() {
         </main>
 
         {/* ── Footer ── */}
-        <footer className="relative z-10 w-full mt-6 pt-7 pb-9 px-6 sm:px-8 border-t border-slate-200/80 bg-white/75 backdrop-blur-md">
-          <div className="max-w-md md:max-w-4xl mx-auto flex flex-col items-start gap-3">
-            {/* Operator / Info Pill */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-slate-200/90 shadow-xs text-xs text-slate-700 font-medium">
-              <svg className="w-3.5 h-3.5 text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 16v-4M12 8h.01" />
-              </svg>
-              <span>Designed & Built by bbrightns · Private Edition</span>
-            </div>
-
-            {/* Copyright */}
-            <p className="text-xs font-normal text-slate-500 antialiased">
-              © 2026 Spendiary. Every choice shapes your wealth.
-            </p>
-
-            {/* Gradient Accent Bar + Tag */}
-            <div className="flex items-center gap-3 pt-0.5">
-              <span 
-                className="w-7 h-[2px] rounded-full"
-                style={{ background: 'linear-gradient(to right, #405DFF, #DFAA41)' }}
-              />
-              <span className="text-[11.5px] text-slate-500 font-medium">
-                Personal Wealth Cockpit
-              </span>
-            </div>
+        <div className="relative z-10 w-full mt-6 px-6 sm:px-8">
+          <div className="max-w-md md:max-w-4xl mx-auto">
+            <Footer className="mt-0 pt-7 pb-9 border-t-slate-200/80" />
           </div>
-        </footer>
+        </div>
       </div>
     )
   }
