@@ -525,6 +525,55 @@ export function inferCashCategory(name: string): CashAccountCategory {
   return 'spending'
 }
 
+/**
+ * Sorts cash accounts:
+ * 1st priority: Bank Avatar / Institution Preset (A-Z by preset name; accounts with a detected bank preset come first)
+ * 2nd priority: Account Value / Balance in THB equivalent (descending: highest balance first)
+ */
+export function sortCashAccounts<T extends { name: string; balance: number | string; currency?: string }>(
+  accounts: T[],
+  usdThbRate = 35,
+): T[] {
+  return [...accounts].sort((a, b) => {
+    const presetA = detectBankPreset(a.name)
+    const presetB = detectBankPreset(b.name)
+
+    const hasPresetA = Boolean(presetA)
+    const hasPresetB = Boolean(presetB)
+
+    // 1st priority: Bank Avatar / Mini-Badge
+    if (hasPresetA && !hasPresetB) return -1
+    if (!hasPresetA && hasPresetB) return 1
+
+    if (presetA && presetB) {
+      const nameCompare = presetA.name.localeCompare(presetB.name, 'th', { sensitivity: 'base' })
+      if (nameCompare !== 0) {
+        return nameCompare
+      }
+    }
+
+    // 2nd priority: Value in THB equivalent (descending: highest balance first)
+    const parseBal = (raw: number | string): number => {
+      if (typeof raw === 'number') return isNaN(raw) ? 0 : raw
+      const cleaned = String(raw).replace(/[^0-9.]/g, '')
+      return cleaned === '' ? 0 : Number(cleaned)
+    }
+
+    const balA = parseBal(a.balance)
+    const balB = parseBal(b.balance)
+
+    const valA = a.currency === 'USD' ? balA * usdThbRate : balA
+    const valB = b.currency === 'USD' ? balB * usdThbRate : balB
+
+    if (valB !== valA) {
+      return valB - valA
+    }
+
+    // Tie breaker: account name A-Z
+    return a.name.localeCompare(b.name, 'th', { sensitivity: 'base' })
+  })
+}
+
 export function totalCash(data: SpendiaryData, usdThb?: number | null): number {
   const rate = usdThb && usdThb > 0 ? usdThb : 35
   return data.cashAccounts.reduce((sum, a) => {
