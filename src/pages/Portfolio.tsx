@@ -13,6 +13,10 @@ import { PnLPill, PnLText } from '../components/ui/PnL'
 import { HoldingForm } from '../components/forms/HoldingForm'
 import { BuyMoreForm } from '../components/forms/BuyMoreForm'
 import { Modal } from '../components/ui/Modal'
+import { ConfirmModal } from '../components/ui/ConfirmModal'
+import { FilterChip } from '../components/ui/FilterChip'
+import { SegmentedControl } from '../components/ui/SegmentedControl'
+import { IconButton } from '../components/ui/IconButton'
 import { NumberField, TextField } from '../components/ui/Field'
 import { Button } from '../components/ui/Button'
 import { AssetLogo } from '../components/ui/AssetLogo'
@@ -438,19 +442,14 @@ export function Portfolio() {
                   {/* Filter pills */}
                   <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
                     {FILTERS.map((f) => (
-                      <button
+                      <FilterChip
                         key={f.key}
+                        active={filter === f.key}
                         onClick={() => setFilter(f.key)}
                         aria-label={`Filter holdings by ${f.label}`}
-                        aria-pressed={filter === f.key}
-                        className={`rounded-full px-3 py-1 text-[12.5px] font-semibold transition-colors cursor-pointer ${
-                          filter === f.key
-                            ? 'bg-ink text-white dark:bg-[#4f46e5] shadow-xs'
-                            : 'bg-surface-muted text-ink-soft hover:text-ink'
-                        }`}
                       >
                         {f.label}
-                      </button>
+                      </FilterChip>
                     ))}
                   </div>
 
@@ -600,23 +599,23 @@ export function Portfolio() {
                                             {loc.satoshi.toLocaleString()} sats · {thb(loc.thbSpent)} spent · avg {money(locCostPerBtcUsd, 'USD')}/BTC
                                           </p>
                                         </div>
-                                        <button
+                                        <IconButton
+                                          icon={<PencilIcon className="h-3.5 w-3.5" />}
+                                          label={`Edit location ${loc.name}`}
+                                          variant="ghost"
+                                          size="sm"
                                           onClick={() => openLocEdit(h.id, loc)}
-                                          aria-label={`Edit location ${loc.name}`}
-                                          className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink cursor-pointer"
-                                        >
-                                          <PencilIcon className="h-[14px] w-[14px]" />
-                                        </button>
-                                        <button
+                                        />
+                                        <IconButton
+                                          icon={<TrashIcon className="h-3.5 w-3.5" />}
+                                          label={`Remove location ${loc.name}`}
+                                          variant="danger"
+                                          size="sm"
                                           onClick={() => {
                                             removeBtcLocation(h.id, loc.id)
                                             showToast(`Removed location "${loc.name}"`, 'info')
                                           }}
-                                          aria-label={`Remove location ${loc.name}`}
-                                          className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss cursor-pointer"
-                                        >
-                                          <TrashIcon className="h-[14px] w-[14px]" />
-                                        </button>
+                                        />
                                       </li>
                                     )
                                   })}
@@ -641,23 +640,23 @@ export function Portfolio() {
                                             {loc.grams.toFixed(4)} g ({locBaht.toFixed(4)} บาททอง) · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBaht)}/บาททอง (${Math.round(locCostXauUsd).toLocaleString()}/oz)
                                           </p>
                                         </div>
-                                        <button
+                                        <IconButton
+                                          icon={<PencilIcon className="h-3.5 w-3.5" />}
+                                          label={`Edit location ${loc.name}`}
+                                          variant="ghost"
+                                          size="sm"
                                           onClick={() => openLocEdit(h.id, loc)}
-                                          aria-label={`Edit location ${loc.name}`}
-                                          className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink cursor-pointer"
-                                        >
-                                          <PencilIcon className="h-[14px] w-[14px]" />
-                                        </button>
-                                        <button
+                                        />
+                                        <IconButton
+                                          icon={<TrashIcon className="h-3.5 w-3.5" />}
+                                          label={`Remove location ${loc.name}`}
+                                          variant="danger"
+                                          size="sm"
                                           onClick={() => {
                                             removeGoldLocation(h.id, loc.id)
                                             showToast(`Removed location "${loc.name}"`, 'info')
                                           }}
-                                          aria-label={`Remove location ${loc.name}`}
-                                          className="relative grid h-8 w-8 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-loss/10 hover:text-loss cursor-pointer"
-                                        >
-                                          <TrashIcon className="h-[14px] w-[14px]" />
-                                        </button>
+                                        />
                                       </li>
                                     )
                                   })}
@@ -699,30 +698,15 @@ export function Portfolio() {
           {locEditing && !('satoshi' in locEditing) && (
             <div className="space-y-1">
               <label className="text-[13px] font-medium text-ink-soft">Unit / หน่วย</label>
-              <div className="flex rounded-xl bg-surface-muted p-1 gap-1">
-                <button
-                  type="button"
-                  onClick={() => setLocGoldUnit('grams')}
-                  className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
-                    locGoldUnit === 'grams'
-                      ? 'bg-surface text-ink shadow-sm'
-                      : 'text-ink-muted hover:text-ink'
-                  }`}
-                >
-                  กรัม (Grams)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLocGoldUnit('baht')}
-                  className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition-all cursor-pointer ${
-                    locGoldUnit === 'baht'
-                      ? 'bg-surface text-ink shadow-sm'
-                      : 'text-ink-muted hover:text-ink'
-                  }`}
-                >
-                  บาททองคำ (15.244g)
-                </button>
-              </div>
+              <SegmentedControl
+                size="sm"
+                value={locGoldUnit}
+                onChange={setLocGoldUnit}
+                options={[
+                  { value: 'grams', label: 'กรัม (Grams)' },
+                  { value: 'baht', label: 'บาททองคำ (15.244g)' },
+                ]}
+              />
             </div>
           )}
 
@@ -811,37 +795,24 @@ export function Portfolio() {
       </Modal>
 
       {/* Remove holding confirmation */}
-      <Modal
+      <ConfirmModal
         open={removeConfirmOpen}
         onClose={() => { setRemoveConfirmOpen(false); setRemoveTarget(null) }}
         title={`Remove "${removeTarget?.name}"?`}
         description="This will permanently delete the holding and all its transaction history. This cannot be undone."
-      >
-        <div className="flex flex-col gap-3 pb-1">
-          <button
-            onClick={() => {
-              if (removeTarget) {
-                removeHolding(removeTarget.id)
-                showToast(`Removed "${removeTarget.name}" from portfolio`, 'info')
-              }
-              setRemoveConfirmOpen(false)
-              setRemoveTarget(null)
-            }}
-            aria-label={`Confirm remove holding ${removeTarget?.name ?? ''}`}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-loss px-5 text-sm font-bold text-white dark:bg-rose-600 dark:hover:bg-rose-700 transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer shadow-sm"
-          >
-            <TrashIcon className="h-4 w-4" strokeWidth={2.2} />
-            <span>Yes, remove holding</span>
-          </button>
-          <button
-            onClick={() => { setRemoveConfirmOpen(false); setRemoveTarget(null) }}
-            aria-label="Cancel removal"
-            className="w-full rounded-full py-2.5 text-[14px] font-semibold text-ink-muted transition-colors hover:text-ink cursor-pointer"
-          >
-            Cancel
-          </button>
-        </div>
-      </Modal>
+        confirmText="Yes, remove holding"
+        confirmVariant="danger"
+        confirmIcon={<TrashIcon className="h-4 w-4" strokeWidth={2.2} />}
+        cancelText="Cancel"
+        onConfirm={() => {
+          if (removeTarget) {
+            removeHolding(removeTarget.id)
+            showToast(`Removed "${removeTarget.name}" from portfolio`, 'info')
+          }
+          setRemoveConfirmOpen(false)
+          setRemoveTarget(null)
+        }}
+      />
 
       <GuideTour
         isOpen={isRunning}
