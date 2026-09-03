@@ -7,7 +7,7 @@ import { Modal } from '../components/ui/Modal'
 import { TextField } from '../components/ui/Field'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import { DownloadIcon, TrashIcon, UploadIcon, HelpCircleIcon } from '../components/icons'
+import { DownloadIcon, TrashIcon, UploadIcon } from '../components/icons'
 import type { SpendiaryData } from '../lib/types'
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -408,35 +408,6 @@ export function Settings() {
           </Card>
         </div>
 
-        {/* ── Interactive Tour Guides ───────────────────────────── */}
-        <div id="guide-settings-tour">
-          <Card className="animate-rise">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <HelpCircleIcon className="h-5 w-5 text-brand" strokeWidth={2.2} />
-                  <h2 className="font-display text-[17px] font-bold text-ink">
-                    คู่มือและคำแนะนำการใช้งาน (Tour Guides)
-                  </h2>
-                </div>
-                <p className="mt-1 text-[13px] text-ink-muted leading-relaxed">
-                  Spendiary มีระบบแนะนำการทำงานแบบทีละขั้นตอน (Spotlight Tour) ในทุกหน้า โดยคุณสามารถกดปุ่ม <span className="font-semibold text-brand dark:text-[#a5b4fc]">"Guide"</span> ที่อยู่ด้านบนของแต่ละหน้าเพื่อดูคำแนะนำได้ตลอดเวลา
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={startTour}
-                className="inline-flex items-center gap-2 rounded-full bg-ink text-white dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] hover:bg-ink-hover px-4 py-2 text-[13px] font-semibold shadow-xs active:scale-95 transition-all cursor-pointer"
-              >
-                <HelpCircleIcon className="h-4 w-4" strokeWidth={2.2} />
-                แนะนำหน้าการตั้งค่านี้
-              </button>
-            </div>
-          </Card>
-        </div>
 
         {/* ── Danger zone ─────────────────────────────────────── */}
         <Card className="animate-rise border-loss/20 bg-loss-soft/20">
