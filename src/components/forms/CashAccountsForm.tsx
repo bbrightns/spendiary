@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
-import { DragHandleIcon, PlusIcon, TrashIcon, WalletIcon } from '../icons'
+import { PlusIcon, TrashIcon, WalletIcon } from '../icons'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import type { CashAccount, CashAccountCategory, CashPayoutSchedule } from '../../lib/types'
@@ -10,6 +10,7 @@ import {
   calculateMonthlyCashInterest,
   detectBankPreset,
   inferCashCategory,
+  sortCashAccounts,
 } from '../../lib/calc'
 import { thb } from '../../lib/format'
 
@@ -88,13 +89,12 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
   const [rows, setRows] = useState<Draft[]>([])
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<CashAccountCategory | 'all'>('all')
-  const [draggedIdx, setDraggedIdx] = useState<number | null>(null)
-  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
-  const [dropPosition, setDropPosition] = useState<'top' | 'bottom' | null>(null)
   const [highlightedId, setHighlightedId] = useState<string | null>(null)
 
   const balanceInputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
   const nameInputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
+
+  const rate = usdThb && usdThb > 0 ? usdThb : 35
 
   useEffect(() => {
     if (!open) {
@@ -103,41 +103,42 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
       setActiveCategoryFilter('all')
       return
     }
-    setRows(
-      data.cashAccounts.length > 0
-        ? data.cashAccounts.map((a) => {
-            const inferred = inferCashCategory(a.name)
-            const cat = a.category ?? inferred
-            const schedule = a.payoutSchedule ?? (a.payoutMonths && a.payoutMonths.length > 0 ? 'custom' : 'monthly')
-            const months = a.payoutMonths && a.payoutMonths.length > 0
-              ? a.payoutMonths
-              : schedule === 'semi_annual'
-                ? [6, 12]
-                : schedule === 'annual'
-                  ? [2]
-                  : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-            return {
-              id: a.id,
-              name: a.name,
-              balance: formatWithCommas(a.balance),
-              currency: a.currency ?? 'THB',
-              category: cat,
-              interestRate: a.interestRate !== undefined ? String(a.interestRate) : '',
-              payoutSchedule: schedule,
-              payoutMonths: months,
-            }
-          })
-        : [{
-            id: tempId(),
-            name: '',
-            balance: '',
-            currency: 'THB',
-            category: 'spending',
-            interestRate: '',
-            payoutSchedule: 'monthly',
-            payoutMonths: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-          }],
-    )
+
+    const mappedDrafts: Draft[] = data.cashAccounts.length > 0
+      ? data.cashAccounts.map((a) => {
+          const inferred = inferCashCategory(a.name)
+          const cat = a.category ?? inferred
+          const schedule = a.payoutSchedule ?? (a.payoutMonths && a.payoutMonths.length > 0 ? 'custom' : 'monthly')
+          const months = a.payoutMonths && a.payoutMonths.length > 0
+            ? a.payoutMonths
+            : schedule === 'semi_annual'
+              ? [6, 12]
+              : schedule === 'annual'
+                ? [2]
+                : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+          return {
+            id: a.id,
+            name: a.name,
+            balance: formatWithCommas(a.balance),
+            currency: a.currency ?? 'THB',
+            category: cat,
+            interestRate: a.interestRate !== undefined ? String(a.interestRate) : '',
+            payoutSchedule: schedule,
+            payoutMonths: months,
+          }
+        })
+      : [{
+          id: tempId(),
+          name: '',
+          balance: '',
+          currency: 'THB',
+          category: 'spending',
+          interestRate: '',
+          payoutSchedule: 'monthly',
+          payoutMonths: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        }]
+
+    setRows(sortCashAccounts(mappedDrafts, rate))
 
     if (initialAccountId) {
       setHighlightedId(initialAccountId)
@@ -157,9 +158,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
         clearTimeout(clearTimer)
       }
     }
-  }, [open, data.cashAccounts, initialAccountId])
-
-  const rate = usdThb && usdThb > 0 ? usdThb : 35
+  }, [open, data.cashAccounts, initialAccountId, rate])
 
   const totalThb = rows.reduce((sum, r) => {
     const clean = r.balance.replace(/[^0-9.]/g, '')
@@ -256,7 +255,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
       payoutSchedule: p.schedule ?? 'monthly',
       payoutMonths: p.months && p.months.length > 0 ? p.months : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
     }
-    setRows((rs) => [...rs, newDraft])
+    setRows((rs) => sortCashAccounts([...rs, newDraft], rate))
     setExpandedId(id)
     setTimeout(() => {
       const balanceInput = balanceInputRefs.current.get(id)
@@ -265,62 +264,6 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
         balanceInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
       }
     }, 60)
-  }
-
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedIdx(index)
-    e.dataTransfer.effectAllowed = 'move'
-  }
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-
-    const rect = e.currentTarget.getBoundingClientRect()
-    const midY = rect.top + rect.height / 2
-    const pos = e.clientY < midY ? 'top' : 'bottom'
-
-    if (dragOverIdx !== index || dropPosition !== pos) {
-      setDragOverIdx(index)
-      setDropPosition(pos)
-    }
-  }
-
-  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
-    e.preventDefault()
-    if (draggedIdx === null) {
-      setDraggedIdx(null)
-      setDragOverIdx(null)
-      setDropPosition(null)
-      return
-    }
-
-    let insertIndex = targetIndex
-    if (dropPosition === 'bottom') {
-      insertIndex += 1
-    }
-    if (draggedIdx < insertIndex) {
-      insertIndex -= 1
-    }
-
-    if (draggedIdx !== insertIndex) {
-      setRows((prev) => {
-        const next = [...prev]
-        const [moved] = next.splice(draggedIdx, 1)
-        next.splice(insertIndex, 0, moved)
-        return next
-      })
-    }
-
-    setDraggedIdx(null)
-    setDragOverIdx(null)
-    setDropPosition(null)
-  }
-
-  const handleDragEnd = () => {
-    setDraggedIdx(null)
-    setDragOverIdx(null)
-    setDropPosition(null)
   }
 
   function save() {
@@ -340,7 +283,8 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
           payoutMonths: r.payoutMonths && r.payoutMonths.length > 0 ? r.payoutMonths : undefined,
         }
       })
-    setCashAccounts(cleaned)
+    const sorted = sortCashAccounts(cleaned, rate)
+    setCashAccounts(sorted)
     showToast('Cash accounts updated', 'success')
     onClose()
   }
@@ -448,49 +392,55 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
       }
     >
       <div className="space-y-3 pb-2">
-        {/* Category Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 pb-1 text-[12px]">
+        {/* Category Filter Tabs & Sorting Indicator */}
+        <div className="flex flex-wrap items-center justify-between gap-1.5 pb-1 text-[12px]">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setActiveCategoryFilter('all')}
+              className={`px-3 py-1 rounded-full font-semibold transition-colors cursor-pointer shrink-0 ${
+                activeCategoryFilter === 'all'
+                  ? 'bg-ink text-surface shadow-xs'
+                  : 'bg-surface-muted text-ink-muted hover:text-ink'
+              }`}
+            >
+              All ({rows.length})
+            </button>
+            {(['spending', 'emergency', 'invest', 'locked'] as CashAccountCategory[]).map((catKey) => {
+              const meta = CASH_CATEGORIES[catKey]
+              const count = rows.filter((r) => r.category === catKey).length
+              const isSelected = activeCategoryFilter === catKey
+              return (
+                <button
+                  key={catKey}
+                  type="button"
+                  onClick={() => setActiveCategoryFilter(catKey)}
+                  className={`px-2.5 py-1 rounded-full font-medium transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-brand text-white shadow-xs font-semibold'
+                      : 'bg-surface-muted text-ink-muted hover:text-ink'
+                  }`}
+                >
+                  <span>{meta.icon}</span>
+                  <span>{meta.labelTh}</span>
+                  <span className="text-[10px] opacity-75">({count})</span>
+                </button>
+              )
+            })}
+          </div>
+
           <button
             type="button"
-            onClick={() => setActiveCategoryFilter('all')}
-            className={`px-3 py-1 rounded-full font-semibold transition-colors cursor-pointer shrink-0 ${
-              activeCategoryFilter === 'all'
-                ? 'bg-ink text-surface shadow-xs'
-                : 'bg-surface-muted text-ink-muted hover:text-ink'
-            }`}
+            onClick={() => setRows((rs) => sortCashAccounts(rs, rate))}
+            title="จัดเรียงบัญชี: สถาบัน (Bank Avatar) เป็นหลัก และยอดเงินคงเหลือจากมากไปน้อย"
+            className="hidden sm:inline-flex items-center gap-1 text-[11px] text-ink-muted hover:text-ink bg-surface-muted/60 hover:bg-surface-muted px-2.5 py-1 rounded-full border border-line/40 transition-colors cursor-pointer"
           >
-            All ({rows.length})
+            <span>⚡ จัดเรียง: สถาบัน & ยอดเงิน</span>
           </button>
-          {(['spending', 'emergency', 'invest', 'locked'] as CashAccountCategory[]).map((catKey) => {
-            const meta = CASH_CATEGORIES[catKey]
-            const count = rows.filter((r) => r.category === catKey).length
-            const isSelected = activeCategoryFilter === catKey
-            return (
-              <button
-                key={catKey}
-                type="button"
-                onClick={() => setActiveCategoryFilter(catKey)}
-                className={`px-2.5 py-1 rounded-full font-medium transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
-                  isSelected
-                    ? 'bg-brand text-white shadow-xs font-semibold'
-                    : 'bg-surface-muted text-ink-muted hover:text-ink'
-                }`}
-              >
-                <span>{meta.icon}</span>
-                <span>{meta.labelTh}</span>
-                <span className="text-[10px] opacity-75">({count})</span>
-              </button>
-            )
-          })}
         </div>
 
         {/* Account Rows List */}
         {filteredRows.map((r) => {
-          const index = rows.findIndex((item) => item.id === r.id)
-          const isDragging = draggedIdx === index
-          const isOver = dragOverIdx === index
-          const showTopLine = isOver && dropPosition === 'top' && !isDragging
-          const showBottomLine = isOver && dropPosition === 'bottom' && !isDragging
           const isHighlighted = highlightedId === r.id
           const isExpanded = expandedId === r.id
 
@@ -504,48 +454,15 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
           return (
             <div
               key={r.id}
-              draggable={activeCategoryFilter === 'all'}
-              onDragStart={(e) => handleDragStart(e, index)}
-              onDragOver={(e) => handleDragOver(e, index)}
-              onDrop={(e) => handleDrop(e, index)}
-              onDragEnd={handleDragEnd}
               className={`relative rounded-xl border border-line/60 bg-surface transition-all duration-200 ${
-                isDragging ? 'opacity-30 scale-[0.98]' : ''
-              } ${
                 isHighlighted
                   ? 'ring-2 ring-brand/70 bg-brand-soft/40 shadow-xs'
                   : 'hover:border-line-strong'
               }`}
             >
-              {/* Insertion lines for drag */}
-              {showTopLine && (
-                <div className="absolute -top-2 left-0 right-0 z-10 flex items-center">
-                  <div className="h-2 w-2 rounded-full bg-brand" />
-                  <div className="h-0.5 flex-1 bg-brand" />
-                  <div className="h-2 w-2 rounded-full bg-brand" />
-                </div>
-              )}
-              {showBottomLine && (
-                <div className="absolute -bottom-2 left-0 right-0 z-10 flex items-center">
-                  <div className="h-2 w-2 rounded-full bg-brand" />
-                  <div className="h-0.5 flex-1 bg-brand" />
-                  <div className="h-2 w-2 rounded-full bg-brand" />
-                </div>
-              )}
-
               {/* Main row card content */}
               <div className="p-2.5 space-y-2">
                 <div className="flex items-center gap-2">
-                  {/* Drag handle */}
-                  {activeCategoryFilter === 'all' && (
-                    <div
-                      className="grid h-10 w-5 shrink-0 cursor-grab active:cursor-grabbing place-items-center text-ink-muted hover:text-ink select-none"
-                      title="Drag to reorder"
-                    >
-                      <DragHandleIcon className="h-4 w-4" />
-                    </div>
-                  )}
-
                   {/* Institution brand avatar / icon */}
                   {preset ? (
                     <div
