@@ -4,7 +4,8 @@ import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
-import { Modal } from '../components/ui/Modal'
+import { ConfirmModal } from '../components/ui/ConfirmModal'
+import { FilterChip } from '../components/ui/FilterChip'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC, goldThbPerGramToXauUsd } from '../lib/calc'
@@ -444,9 +445,9 @@ export function HoldingLogs() {
           <div className={showNameRow ? 'pt-1.5 border-t border-line/60' : ''}>
             <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">Ticker Symbol</span>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
-              <span className="rounded-md bg-surface px-1.5 py-0.5 font-mono text-[11.5px] text-ink-muted border border-line">{prev.ticker}</span>
+              <span className="rounded-md bg-surface px-1.5 py-0.5 tnum text-[11.5px] font-medium text-ink-muted border border-line">{prev.ticker}</span>
               <span className="text-ink-faint text-[11px]">→</span>
-              <span className="rounded-md bg-brand/10 border border-brand/20 px-1.5 py-0.5 font-mono text-[11.5px] font-bold text-brand">{curr.ticker}</span>
+              <span className="rounded-md bg-brand/10 border border-brand/20 px-1.5 py-0.5 tnum text-[11.5px] font-bold text-brand">{curr.ticker}</span>
             </div>
           </div>
         )}
@@ -527,32 +528,26 @@ export function HoldingLogs() {
       <div id="guide-logs-header" className="mb-5 space-y-2.5">
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
           {ASSET_FILTERS.map((f) => (
-            <button
+            <FilterChip
               key={f.key}
+              active={assetFilter === f.key}
               onClick={() => setAssetFilter(f.key)}
               aria-label={`Filter by ${f.label}`}
-              aria-pressed={assetFilter === f.key}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors cursor-pointer ${
-                assetFilter === f.key ? 'bg-ink text-white dark:bg-[#4f46e5]' : 'bg-surface-muted text-ink-soft hover:text-ink'
-              }`}
             >
               {f.label}
-            </button>
+            </FilterChip>
           ))}
         </div>
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
           {ACTION_FILTERS.map((f) => (
-            <button
+            <FilterChip
               key={f.key}
+              active={actionFilter === f.key}
               onClick={() => setActionFilter(f.key)}
               aria-label={`Filter by ${f.label}`}
-              aria-pressed={actionFilter === f.key}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors cursor-pointer ${
-                actionFilter === f.key ? 'bg-ink text-white dark:bg-[#4f46e5]' : 'bg-surface-muted text-ink-soft hover:text-ink'
-              }`}
             >
               {f.label}
-            </button>
+            </FilterChip>
           ))}
         </div>
       </div>
@@ -636,75 +631,60 @@ export function HoldingLogs() {
       </div>
 
       {/* Custom Undo Confirmation Modal */}
-      <Modal
+      <ConfirmModal
         open={!!undoTarget}
         onClose={() => setUndoTarget(null)}
         title={`Undo "${undoTarget?.holdingName}"?`}
         description="This will revert your portfolio balance and holdings state to before this activity was recorded."
+        confirmText="Yes, undo activity"
+        confirmVariant="danger"
+        confirmIcon={<UndoIcon className="h-4 w-4" strokeWidth={2.4} />}
+        cancelText="Cancel"
+        onConfirm={() => {
+          if (undoTarget) {
+            undoHoldingLog(undoTarget.id)
+            showToast(`Undid activity for "${undoTarget.holdingName}"`, 'info')
+          }
+          setUndoTarget(null)
+        }}
       >
-        <div className="space-y-4 pb-1">
-          {undoTarget && (() => {
-            const undoMeta = getLogActionMeta(undoTarget)
-            return (
-              <div className="rounded-2xl border border-line bg-surface-muted p-4 space-y-2.5">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span
-                      className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[12px] font-bold"
-                      style={{
-                        color: ASSET_META[undoTarget.assetClass]?.color ?? '#6366f1',
-                        background: `color-mix(in srgb, ${ASSET_META[undoTarget.assetClass]?.color ?? '#6366f1'} 14%, transparent)`,
-                      }}
-                    >
-                      {undoMeta.icon}
-                    </span>
-                    <span className="font-bold text-[14px] text-ink truncate">{undoTarget.holdingName}</span>
-                    {undoTarget.ticker && undoTarget.ticker !== 'CASH' && undoTarget.ticker !== 'FIXED' && undoTarget.ticker !== 'DCA' && (
-                      <span className="rounded-md bg-surface px-1.5 py-0.5 text-[11px] font-medium text-ink-muted">
-                        {undoTarget.ticker}
-                      </span>
-                    )}
-                  </div>
-                  <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${undoMeta.style}`}>
-                    {undoMeta.label}
+        {undoTarget && (() => {
+          const undoMeta = getLogActionMeta(undoTarget)
+          return (
+            <div className="rounded-2xl border border-line bg-surface-muted p-4 space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[12px] font-bold"
+                    style={{
+                      color: ASSET_META[undoTarget.assetClass]?.color ?? '#6366f1',
+                      background: `color-mix(in srgb, ${ASSET_META[undoTarget.assetClass]?.color ?? '#6366f1'} 14%, transparent)`,
+                    }}
+                  >
+                    {undoMeta.icon}
                   </span>
+                  <span className="font-bold text-[14px] text-ink truncate">{undoTarget.holdingName}</span>
+                  {undoTarget.ticker && undoTarget.ticker !== 'CASH' && undoTarget.ticker !== 'FIXED' && undoTarget.ticker !== 'DCA' && (
+                    <span className="rounded-md bg-surface px-1.5 py-0.5 text-[11px] font-medium text-ink-muted">
+                      {undoTarget.ticker}
+                    </span>
+                  )}
                 </div>
-                <p className="text-[12.5px] font-medium text-ink-muted leading-relaxed">{getDisplayNote(undoTarget)}</p>
-                <time className="block text-[11px] text-ink-faint">
-                  {new Date(undoTarget.timestamp).toLocaleString('en-GB', {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  })}
-                </time>
+                <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${undoMeta.style}`}>
+                  {undoMeta.label}
+                </span>
               </div>
-            )
-          })()}
-
-          <div className="flex flex-col gap-2.5 pt-1">
-            <button
-              onClick={() => {
-                if (undoTarget) {
-                  undoHoldingLog(undoTarget.id)
-                  showToast(`Undid activity for "${undoTarget.holdingName}"`, 'info')
-                }
-                setUndoTarget(null)
-              }}
-              aria-label={`Confirm undo activity for ${undoTarget?.holdingName ?? ''}`}
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-loss px-5 text-sm font-bold text-white dark:bg-rose-600 dark:hover:bg-rose-700 transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer shadow-sm"
-            >
-              <UndoIcon className="h-4 w-4" strokeWidth={2.4} />
-              <span>Yes, undo activity</span>
-            </button>
-            <button
-              onClick={() => setUndoTarget(null)}
-              aria-label="Cancel undo"
-              className="w-full rounded-full py-2.5 text-[14px] font-semibold text-ink-muted transition-colors hover:text-ink cursor-pointer"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </Modal>
+              <p className="text-[12.5px] font-medium text-ink-muted leading-relaxed">{getDisplayNote(undoTarget)}</p>
+              <time className="block text-[11px] text-ink-faint">
+                {new Date(undoTarget.timestamp).toLocaleString('en-GB', {
+                  dateStyle: 'medium',
+                  timeStyle: 'short',
+                })}
+              </time>
+            </div>
+          )
+        })()}
+      </ConfirmModal>
 
       <GuideTour
         isOpen={isRunning}
