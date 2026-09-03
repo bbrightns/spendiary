@@ -4,6 +4,9 @@ import { useTheme, type Theme } from '../hooks/useTheme'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Modal } from '../components/ui/Modal'
+import { ConfirmModal } from '../components/ui/ConfirmModal'
+import { SegmentedControl } from '../components/ui/SegmentedControl'
+import { Button } from '../components/ui/Button'
 import { TextField } from '../components/ui/Field'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
@@ -261,54 +264,41 @@ export function Settings() {
           <p className="text-[13px] text-ink-muted mb-4">
             Choose how Spendiary looks on this device.
           </p>
-          <div className="flex rounded-2xl bg-surface-muted p-1 gap-1">
-            {(
-              [
-                {
-                  value: 'light' as Theme,
-                  label: 'Light',
-                  icon: (
-                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                      <circle cx="10" cy="10" r="3.5" />
-                      <path d="M10 2v1.5M10 16.5V18M2 10h1.5M16.5 10H18M4.1 4.1l1.1 1.1M14.8 14.8l1.1 1.1M15.9 4.1l-1.1 1.1M5.2 14.8l-1.1 1.1" />
-                    </svg>
-                  ),
-                },
-                {
-                  value: 'system' as Theme,
-                  label: 'System',
-                  icon: (
-                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                      <rect x="2" y="3" width="16" height="11" rx="2" />
-                      <path d="M6 17h8M10 14v3" />
-                    </svg>
-                  ),
-                },
-                {
-                  value: 'dark' as Theme,
-                  label: 'Dark',
-                  icon: (
-                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                      <path d="M17 11.5A7 7 0 1 1 8.5 3a5 5 0 0 0 8.5 8.5Z" />
-                    </svg>
-                  ),
-                },
-              ] as const
-            ).map(({ value, label, icon }) => (
-              <button
-                key={value}
-                onClick={() => setTheme(value)}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-semibold transition-all duration-200 ${
-                  theme === value
-                    ? 'bg-surface text-ink shadow-[var(--shadow-soft)]'
-                    : 'text-ink-muted hover:text-ink'
-                }`}
-              >
-                {icon}
-                {label}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            value={theme}
+            onChange={setTheme}
+            options={[
+              {
+                value: 'light' as Theme,
+                label: 'Light',
+                icon: (
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                    <circle cx="10" cy="10" r="3.5" />
+                    <path d="M10 2v1.5M10 16.5V18M2 10h1.5M16.5 10H18M4.1 4.1l1.1 1.1M14.8 14.8l1.1 1.1M15.9 4.1l-1.1 1.1M5.2 14.8l-1.1 1.1" />
+                  </svg>
+                ),
+              },
+              {
+                value: 'system' as Theme,
+                label: 'System',
+                icon: (
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                    <rect x="2" y="3" width="16" height="11" rx="2" />
+                    <path d="M6 17h8M10 14v3" />
+                  </svg>
+                ),
+              },
+              {
+                value: 'dark' as Theme,
+                label: 'Dark',
+                icon: (
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                    <path d="M17 11.5A7 7 0 1 1 8.5 3a5 5 0 0 0 8.5 8.5Z" />
+                  </svg>
+                ),
+              },
+            ]}
+          />
         </Card>
 
         {/* ── Data & Backup ───────────────────────────────────── */}
@@ -477,57 +467,51 @@ export function Settings() {
         }}
         title="Replace your current data?"
         description={`Your current data has ${dataSummary(data)}. The file contains ${pendingImportSummary}. Importing will overwrite everything on this device and push to cloud immediately.`}
+        footer={
+          <div className="flex flex-col gap-2.5 w-full">
+            <Button
+              variant="primary"
+              onClick={() => pendingImport && commitImport(pendingImport)}
+              className="w-full cursor-pointer"
+            >
+              Yes, replace with imported data
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => exportData()}
+              className="w-full cursor-pointer gap-2"
+            >
+              <DownloadIcon className="h-4 w-4" />
+              <span>Export current data first</span>
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setImportConfirmOpen(false)
+                setPendingImport(null)
+              }}
+              className="w-full cursor-pointer text-ink-muted hover:text-ink"
+            >
+              Cancel
+            </Button>
+          </div>
+        }
       >
-        <div className="flex flex-col gap-3 pb-1">
-          {/* Offer to save current data first */}
-          <button
-            onClick={() => exportData()}
-            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-surface-muted text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5]"
-          >
-            <DownloadIcon className="h-4 w-4" />
-            Export current data first
-          </button>
-          <button
-            onClick={() => pendingImport && commitImport(pendingImport)}
-            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-ink px-5 text-sm font-semibold text-white transition-all duration-200 hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] active:scale-[0.98]"
-          >
-            Yes, replace with imported data
-          </button>
-          <button
-            onClick={() => {
-              setImportConfirmOpen(false)
-              setPendingImport(null)
-            }}
-            className="w-full rounded-full py-2.5 text-[14px] font-semibold text-ink-muted transition-colors hover:text-ink"
-          >
-            Cancel
-          </button>
-        </div>
+        <div className="py-1" />
       </Modal>
 
       {/* ── Reset confirmation modal ───────────────────────────── */}
-      <Modal
+      <ConfirmModal
         open={resetOpen}
         onClose={() => setResetOpen(false)}
         title="Reset all data?"
         description="This will permanently delete all holdings, DCA plans, transfers, and cash accounts. Export a backup first if you want to keep anything."
-      >
-        <div className="flex flex-col gap-3 pb-1">
-          <button
-            onClick={handleReset}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-loss px-5 text-sm font-bold text-white dark:bg-rose-600 dark:hover:bg-rose-700 transition-all duration-200 hover:opacity-90 active:scale-[0.98] cursor-pointer shadow-sm"
-          >
-            <TrashIcon className="h-4 w-4" strokeWidth={2.2} />
-            <span>Yes, delete everything</span>
-          </button>
-          <button
-            onClick={() => setResetOpen(false)}
-            className="w-full rounded-full py-2.5 text-[14px] font-semibold text-ink-muted transition-colors hover:text-ink"
-          >
-            Cancel
-          </button>
-        </div>
-      </Modal>
+        confirmText="Yes, delete everything"
+        confirmVariant="danger"
+        confirmIcon={<TrashIcon className="h-4 w-4" strokeWidth={2.2} />}
+        cancelText="Cancel"
+        onConfirm={handleReset}
+      />
 
       <GuideTour
         isOpen={isRunning}
