@@ -645,7 +645,7 @@ export function DcaPlanner() {
                                         className="inline-flex items-center gap-1.5 rounded-full bg-[#00de9b] hover:bg-[#00c58a] text-[#052e21] px-3.5 py-1.5 text-[12px] font-bold shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
                                       >
                                         <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
-                                        <span>Confirm Buy</span>
+                                        <span>{p.assetClass === 'cash' ? 'Confirm Deposit' : 'Confirm Buy'}</span>
                                       </button>
                                       <button
                                         onClick={(e) => {
