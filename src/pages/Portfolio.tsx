@@ -299,54 +299,38 @@ export function Portfolio() {
         }
       />
 
-      {/* Top 2-Card Metric Strip */}
-      <div id="guide-portfolio-summary" className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        {/* Metric 1: Current Value */}
-        <Card className="animate-rise p-4">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Portfolio Value</span>
-          <p className="mt-1.5 font-display text-[22px] font-extrabold tracking-tight tnum text-ink leading-tight">
-            {thb(summary.value)}
-          </p>
-          <p className="mt-1 text-[11.5px] text-ink-muted font-medium">
-            Invested: <span className="font-semibold tnum text-ink-soft">{thbCompact(summary.cost)}</span>
-          </p>
-        </Card>
-
-        {/* Metric 2: Profit / Loss */}
-        <Card className="animate-rise p-4">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">All-Time PnL</span>
-          <div className="mt-1.5 flex items-baseline gap-1.5">
-            <PnLText value={summary.pnl} className="font-display text-[22px] !font-extrabold tracking-tight leading-tight" />
-          </div>
-          <div className="mt-1">
-            <span className={`text-[11.5px] font-bold inline-block ${summary.pnl >= 0 ? 'text-gain' : 'text-loss'}`}>
-              {summary.pnl >= 0 ? '▲' : '▼'} {summary.pnlPct.toFixed(1)}% all-time
-            </span>
-          </div>
-        </Card>
-      </div>
-
       {/* Main Split-View Workspace Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column (5 cols): Allocation Donut + Rebalancer + Portfolio Trend */}
         <div id="guide-portfolio-alloc" className="lg:col-span-5 xl:col-span-4 space-y-6">
-          {/* Asset Allocation card (Matching Dashboard Holdings & Assets card design) */}
+          {/* Asset Allocation card (Hero Overview & Allocation) */}
           <Card className="animate-rise">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-[16px] font-bold text-ink">Asset Allocation</h2>
             </div>
 
-            {/* Value & PnL Header */}
-            <div className="mt-4 flex items-baseline justify-between">
-              <div>
-                <span className="text-[11.5px] font-medium text-ink-muted">Portfolio Value</span>
-                <p className="font-display text-[24px] font-extrabold tnum text-ink leading-tight">
-                  {thb(summary.value)}
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <PnLPill value={summary.pnlPct} asPct />
-                <span className="text-[11.5px] text-ink-muted">all-time</span>
+            {/* Value & PnL Hero Summary */}
+            <div id="guide-portfolio-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Portfolio Value</span>
+                  <p className="mt-1 font-display text-[22px] sm:text-[24px] font-black tracking-tight tnum text-ink leading-tight">
+                    {thb(summary.value)}
+                  </p>
+                  <p className="mt-1 text-[11.5px] text-ink-muted font-medium">
+                    Invested: <span className="font-semibold tnum text-ink-soft">{thbCompact(summary.cost)}</span>
+                  </p>
+                </div>
+                <div className="text-right flex flex-col items-end shrink-0">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">All-Time PnL</span>
+                  <div className="mt-1 flex items-baseline justify-end">
+                    <PnLText value={summary.pnl} className="font-display text-[18px] sm:text-[20px] !font-black tracking-tight leading-tight" />
+                  </div>
+                  <div className="mt-1 flex items-center justify-end gap-1">
+                    <PnLPill value={summary.pnlPct} asPct size="sm" />
+                    <span className="text-[11px] text-ink-muted font-medium">all-time</span>
+                  </div>
+                </div>
               </div>
             </div>
 
