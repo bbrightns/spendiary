@@ -431,12 +431,7 @@ export function Settings() {
                 <img src="/logo.png" alt="Spendiary Logo" className="w-full h-full object-contain" />
               </div>
               <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="font-display text-[17px] font-bold text-ink">About Spendiary</h2>
-                  <span className="rounded-full bg-brand-soft text-brand-ink border border-brand/20 px-2 py-0.5 text-[10.5px] font-semibold">
-                    v{__APP_VERSION__}
-                  </span>
-                </div>
+                <h2 className="font-display text-[17px] font-bold text-ink">About Spendiary</h2>
                 <p className="text-[12.5px] text-ink-muted mt-0.5">
                   Personal Wealth Cockpit · Every choice shapes your wealth.
                 </p>
