@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { mobileNavItems, strategySubItems } from './nav'
 import { useData } from '../../store/DataContext'
 import { shouldConfirmBuy } from '../../lib/calc'
-import { CloseIcon } from '../icons'
+import { Modal } from '../ui/Modal'
 
 interface BottomNavProps {
   isVisible?: boolean
@@ -118,106 +118,75 @@ export function BottomNav({ isVisible = true }: BottomNavProps) {
       </nav>
 
       {/* ── Strategies Bottom Sheet Modal ── */}
-      {isStrategySheetOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex flex-col justify-end">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/45 backdrop-blur-xs transition-opacity duration-200"
-            onClick={() => setIsStrategySheetOpen(false)}
-            aria-hidden="true"
-          />
+      <Modal
+        open={isStrategySheetOpen}
+        onClose={() => setIsStrategySheetOpen(false)}
+        title="Strategies"
+        description="Select an investment planning engine"
+      >
+        <div className="flex flex-col gap-2.5 py-1">
+          {strategySubItems.map((subItem) => {
+            const isSelected = pathname.startsWith(subItem.to)
 
-          {/* Drawer Sheet */}
-          <div className="relative z-10 w-full rounded-t-3xl border-t border-line bg-surface/95 backdrop-blur-2xl px-5 pt-3.5 pb-8 safe-bottom shadow-2xl animate-in fade-in slide-in-from-bottom duration-250">
-            {/* Grab handle */}
-            <div className="mx-auto h-1 w-10 rounded-full bg-ink-muted/30 mb-3.5" />
-
-            {/* Header */}
-            <div className="flex items-center justify-between pb-3.5 mb-2 border-b border-line/60">
-              <div>
-                <h3 className="font-display font-bold text-[16px] text-ink leading-tight">
-                  Strategies
-                </h3>
-                <p className="text-[11.5px] font-medium text-ink-muted">
-                  Select an investment planning engine
-                </p>
-              </div>
+            return (
               <button
+                key={subItem.to}
                 type="button"
-                onClick={() => setIsStrategySheetOpen(false)}
-                className="grid h-8 w-8 place-items-center rounded-full text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer"
-                aria-label="Close"
+                onClick={() => {
+                  setIsStrategySheetOpen(false)
+                  navigate(subItem.to)
+                }}
+                className={[
+                  'w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-200 text-left cursor-pointer active:scale-[0.99]',
+                  isSelected
+                    ? 'border-brand/40 bg-brand-soft/70 shadow-xs'
+                    : 'border-line/70 bg-surface-muted/50 hover:bg-surface-muted hover:border-line',
+                ].join(' ')}
               >
-                <CloseIcon className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Strategy Options List */}
-            <div className="flex flex-col gap-2.5 py-1">
-              {strategySubItems.map((subItem) => {
-                const isSelected = pathname.startsWith(subItem.to)
-
-                return (
-                  <button
-                    key={subItem.to}
-                    type="button"
-                    onClick={() => {
-                      setIsStrategySheetOpen(false)
-                      navigate(subItem.to)
-                    }}
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div
                     className={[
-                      'w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-200 text-left cursor-pointer active:scale-[0.99]',
+                      'grid h-10 w-10 shrink-0 place-items-center rounded-xl transition-colors',
                       isSelected
-                        ? 'border-brand/40 bg-brand-soft/70 shadow-xs'
-                        : 'border-line/70 bg-surface-muted/50 hover:bg-surface-muted hover:border-line',
+                        ? 'bg-brand text-white shadow-xs'
+                        : 'bg-surface text-ink-muted border border-line',
                     ].join(' ')}
                   >
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <div
-                        className={[
-                          'grid h-10 w-10 shrink-0 place-items-center rounded-xl transition-colors',
-                          isSelected
-                            ? 'bg-brand text-white shadow-xs'
-                            : 'bg-surface text-ink-muted border border-line',
-                        ].join(' ')}
-                      >
-                        <subItem.icon className="h-5 w-5" strokeWidth={isSelected ? 2.2 : 1.8} />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-display font-bold text-[14px] text-ink leading-tight">
-                            {subItem.label}
-                          </p>
-                          {isSelected && (
-                            <span className="rounded-full bg-brand/15 text-brand-ink px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider">
-                              Active
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11.5px] text-ink-muted leading-tight mt-1 truncate">
-                          {subItem.description}
-                        </p>
-                      </div>
+                    <subItem.icon className="h-5 w-5" strokeWidth={isSelected ? 2.2 : 1.8} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-display font-bold text-[14px] text-ink leading-tight">
+                        {subItem.label}
+                      </p>
+                      {isSelected && (
+                        <span className="rounded-full bg-brand/15 text-brand-ink px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider">
+                          Active
+                        </span>
+                      )}
                     </div>
+                    <p className="text-[11.5px] text-ink-muted leading-tight mt-1 truncate">
+                      {subItem.description}
+                    </p>
+                  </div>
+                </div>
 
-                    <svg
-                      className={`h-4 w-4 shrink-0 transition-transform ${
-                        isSelected ? 'text-brand-ink translate-x-0.5' : 'text-ink-muted/50'
-                      }`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+                <svg
+                  className={`h-4 w-4 shrink-0 transition-transform ${
+                    isSelected ? 'text-brand-ink translate-x-0.5' : 'text-ink-muted/50'
+                  }`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )
+          })}
         </div>
-      )}
+      </Modal>
     </>
   )
 }
