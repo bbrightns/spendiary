@@ -136,6 +136,8 @@ export interface CashAccount {
   color?: string
   /** Annual interest rate in percentage (e.g. 2.22 or 5.50) */
   interestRate?: number
+  /** Maximum principal amount eligible for the interest rate (e.g. 10000 for Dime 3%) */
+  maxEligibleBalance?: number
   /** Payout schedule pattern */
   payoutSchedule?: CashPayoutSchedule
   /** Specific months (1-12) when interest is paid */
