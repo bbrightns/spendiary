@@ -352,24 +352,13 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
               })}
             </div>
 
-            {/* Passive Yield Forecast Pill */}
+            {/* Passive Yield Forecast Banner */}
             {hasAnyInterest && (
-              <div className="mt-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-2.5 space-y-1 text-[12px]">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                    <span>💰</span>
-                    <span>ดอกเบี้ยรับรวมคาดการณ์: <strong>{thb(interestSummary.totalAnnual)} / ปี</strong></span>
-                    <span className="text-[11px] opacity-75 font-normal">(เฉลี่ยเดือนละ {thb(interestSummary.totalAnnual / 12)})</span>
-                  </span>
-                  {interestSummary.totalCompounded > interestSummary.totalAnnual + 1 && (
-                    <span className="text-[10.5px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-md self-start sm:self-auto">
-                      ทบต้นเพิ่ม ≈ +{thb(interestSummary.totalCompounded - interestSummary.totalAnnual)}
-                    </span>
-                  )}
-                </div>
-
-                <div className="pt-1 border-t border-emerald-500/15 text-[11px] text-emerald-700/80 dark:text-emerald-300/80">
-                  <span>💡 ดอกเบี้ยจะถูกทบเข้าเป็นเงินต้นในบัญชีให้อัตโนมัติ</span>
+              <div className="mt-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-[12px]">
+                <div className="flex flex-wrap items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
+                  <span>💰</span>
+                  <span>ดอกเบี้ยรับรวมคาดการณ์: <strong>{thb(interestSummary.totalAnnual)} / ปี</strong></span>
+                  <span className="text-[11px] opacity-75 font-normal">(เฉลี่ยเดือนละ {thb(interestSummary.totalAnnual / 12)})</span>
                 </div>
               </div>
             )}
