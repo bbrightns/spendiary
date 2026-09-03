@@ -8,9 +8,17 @@ interface ModalProps {
   description?: string
   children: ReactNode
   footer?: ReactNode
+  size?: 'sm' | 'md' | 'lg' | 'xl'
 }
 
-export function Modal({ open, onClose, title, description, children, footer }: ModalProps) {
+const SIZE_CLASSES = {
+  sm: 'sm:max-w-[400px]',
+  md: 'sm:max-w-[460px]',
+  lg: 'sm:max-w-[620px]',
+  xl: 'sm:max-w-[760px]',
+}
+
+export function Modal({ open, onClose, title, description, children, footer, size = 'md' }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
   const titleId = useRef(`modal-title-${Math.random().toString(36).substring(2, 9)}`).current
   const descId = useRef(`modal-desc-${Math.random().toString(36).substring(2, 9)}`).current
@@ -100,7 +108,7 @@ export function Modal({ open, onClose, title, description, children, footer }: M
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
         tabIndex={-1}
-        className="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-[var(--shadow-lift)] sm:max-w-[440px] sm:rounded-[28px] sm:max-h-[85dvh]"
+        className={`relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-[var(--shadow-lift)] sm:rounded-[28px] sm:max-h-[85dvh] ${SIZE_CLASSES[size]}`}
         style={{ animation: 'sheetUp 0.32s cubic-bezier(0.16,1,0.3,1) both' }}
       >
         <div className="flex shrink-0 items-start justify-between gap-4 px-6 pb-2.5 pt-6">
