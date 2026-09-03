@@ -103,3 +103,58 @@ export function ordinal(n: number): string {
   const v = n % 100
   return n + (s[(v - 20) % 10] || s[v] || s[0])
 }
+
+/**
+ * Returns a randomized greeting appropriate for the current time of day.
+ */
+export function getRandomGreeting(date = new Date()): string {
+  const hour = date.getHours()
+
+  // 04:00 - 11:59: Morning
+  // 12:00 - 17:59: Afternoon
+  // 18:00 - 22:59: Evening
+  // 23:00 - 03:59: Night / Late Night
+  let pool: string[]
+  if (hour >= 4 && hour < 12) {
+    pool = [
+      'Good morning',
+      'Morning',
+      'Rise and shine',
+      'Top of the morning',
+      'Bright morning',
+      'Have a wonderful morning',
+      'Good day',
+    ]
+  } else if (hour >= 12 && hour < 18) {
+    pool = [
+      'Good afternoon',
+      'Good day',
+      'Afternoon',
+      'Hope your day is going well',
+      'Pleasant afternoon',
+      'Welcome back',
+    ]
+  } else if (hour >= 18 && hour < 23) {
+    pool = [
+      'Good evening',
+      'Evening',
+      'Pleasant evening',
+      'Hope you had a productive day',
+      'Welcome back',
+      'Good day',
+    ]
+  } else {
+    pool = [
+      'Good evening',
+      'Late night hustle',
+      'Burning the midnight oil',
+      'Working late',
+      'Good night',
+      'Still up',
+      'Welcome back',
+    ]
+  }
+
+  const index = Math.floor(Math.random() * pool.length)
+  return pool[index]
+}

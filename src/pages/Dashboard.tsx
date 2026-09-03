@@ -27,7 +27,7 @@ import {
   shouldConfirmBuy,
   totalCash,
 } from '../lib/calc'
-import { moneyCompact, thb, thbCompact } from '../lib/format'
+import { getRandomGreeting, moneyCompact, thb, thbCompact } from '../lib/format'
 
 // Distinct colors for cash account segments — cycles if >8 accounts
 const CASH_COLORS = [
@@ -88,6 +88,9 @@ export function Dashboard() {
     month: 'long',
   })
 
+  // Randomized time-aware greeting
+  const greeting = useMemo(() => getRandomGreeting(), [])
+
   // Record today's net worth snapshot whenever nw updates
   useEffect(() => {
     if (nw > 0) recordNetWorthSnapshot(nw)
@@ -120,7 +123,7 @@ export function Dashboard() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader
           eyebrow={today}
-          title={`Good day${data.userName ? `, ${data.userName}` : ''}`}
+          title={`${greeting}${data.userName ? `, ${data.userName}` : ''}`}
           subtitle="Here's where your wealth and cash flow stand."
           onStartGuide={startTour}
         />
