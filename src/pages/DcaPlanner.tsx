@@ -38,45 +38,134 @@ function ChevronIcon({ open }: { open: boolean }) {
 
 // ─── Budget Bar ──────────────────────────────────────────────────────────────
 
+interface BudgetSegment {
+  pct: number
+  amount: number
+  label: string
+  subtext?: string
+  textColor: string
+  bg: string
+  barColor: string
+}
+
 function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; savings: number }) {
   if (salary <= 0) return null
-  const total = salary
-  const remaining = Math.max(0, total - fixed - savings)
 
-  const fixedPct   = Math.min((fixed   / total) * 100, 100)
-  const savingsPct = Math.min((savings / total) * 100, Math.max(0, 100 - fixedPct))
-  const freePct    = Math.max(0, (remaining / total) * 100)
+  const totalAllocated = fixed + savings
+  const isOverflow = totalAllocated > salary
+  const cashDrawdown = isOverflow ? totalAllocated - salary : 0
 
-  const segments = [
-    { pct: fixedPct,   amount: fixed,     label: 'Fixed',   textColor: 'var(--color-loss)',      bg: 'var(--color-loss-soft)',      barColor: 'var(--color-loss)' },
-    { pct: savingsPct, amount: savings,   label: 'Savings', textColor: 'var(--color-gain)',      bg: 'var(--color-gain-soft)',      barColor: 'var(--color-cash)' },
-    { pct: freePct,    amount: remaining, label: 'Free',    textColor: 'var(--color-ink-faint)', bg: 'var(--color-surface-muted)', barColor: 'var(--color-ink-faint)' },
+  // Allocations from salary (always bounded to salary)
+  const fixedFromSalary = Math.min(fixed, salary)
+  const savingsFromSalary = Math.max(0, Math.min(savings, salary - fixedFromSalary))
+  const remainingSalary = Math.max(0, salary - fixedFromSalary - savingsFromSalary)
+
+  // Percentages inside the 100% salary track
+  const fixedPct = (fixedFromSalary / salary) * 100
+  const savingsPct = (savingsFromSalary / salary) * 100
+  const freePct = (remainingSalary / salary) * 100
+
+  const salarySegments: BudgetSegment[] = [
+    {
+      pct: fixedPct,
+      amount: fixed,
+      label: 'Fixed',
+      subtext: isOverflow && fixed > salary ? `${thb(fixedFromSalary)} salary` : undefined,
+      textColor: 'var(--color-loss)',
+      bg: 'var(--color-loss-soft)',
+      barColor: 'var(--color-loss)',
+    },
+    {
+      pct: savingsPct,
+      amount: savings,
+      label: 'Savings',
+      subtext: isOverflow && savingsFromSalary > 0 ? `${thb(savingsFromSalary)} salary` : undefined,
+      textColor: 'var(--color-gain)',
+      bg: 'var(--color-gain-soft)',
+      barColor: 'var(--color-cash)',
+    },
+    {
+      pct: freePct,
+      amount: remainingSalary,
+      label: 'Free',
+      textColor: 'var(--color-ink-faint)',
+      bg: 'var(--color-surface-muted)',
+      barColor: 'var(--color-ink-faint)',
+    },
   ].filter((s) => s.pct > 0)
 
   return (
     <div className="mt-5">
-      {/* Labels: each section has the same proportional width as its bar segment */}
-      <div className="flex mb-2.5">
-        {segments.map((seg) => (
-          <div key={seg.label} style={{ width: `${seg.pct}%` }} className="flex justify-center">
-            <div className="rounded-xl px-2.5 py-1.5 text-center" style={{ background: seg.bg }}>
-              <p className="text-[10px] font-semibold leading-none" style={{ color: seg.textColor }}>{seg.label}</p>
-              <p className="mt-1 font-display text-[13px] font-extrabold tnum leading-none" style={{ color: seg.textColor }}>{thb(seg.amount)}</p>
+      {/* Labels: aligned with the salary bar */}
+      <div className="flex items-end gap-2 mb-2.5">
+        <div className="flex-1 flex">
+          {salarySegments.map((seg) => (
+            <div key={seg.label} style={{ width: `${seg.pct}%` }} className="flex justify-center">
+              <div className="rounded-xl px-2.5 py-1.5 text-center min-h-[46px] flex flex-col justify-center" style={{ background: seg.bg }}>
+                <p className="text-[10px] font-semibold leading-none" style={{ color: seg.textColor }}>{seg.label}</p>
+                <p className="mt-1 font-display text-[13px] font-extrabold tnum leading-none" style={{ color: seg.textColor }}>
+                  {thb(seg.amount)}
+                </p>
+                {seg.subtext && (
+                  <p className="mt-0.5 text-[9.5px] font-medium leading-none opacity-80" style={{ color: seg.textColor }}>
+                    {seg.subtext}
+                  </p>
+                )}
+              </div>
             </div>
+          ))}
+        </div>
+
+        {/* Spacer matching the Cash extension pill width so badges align above the salary bar */}
+        {isOverflow && (
+          <div aria-hidden="true" className="shrink-0 invisible flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold select-none">
+            <span>+{thb(cashDrawdown)} Cash</span>
           </div>
-        ))}
+        )}
       </div>
 
-      {/* Bar */}
-      <div className="flex h-4 overflow-hidden rounded-full bg-surface-muted gap-0.5">
-        {segments.map((seg) => (
+      {/* Bar Row with 100% Salary Track + Overflow Extension */}
+      <div className="flex items-center gap-2">
+        {/* 100% Salary Track */}
+        <div className="flex-1 flex h-4 overflow-hidden rounded-full bg-surface-muted gap-0.5">
+          {salarySegments.map((seg) => (
+            <div
+              key={seg.label}
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${seg.pct}%`, background: seg.barColor }}
+            />
+          ))}
+        </div>
+
+        {/* Overflow Extension Capsule (Cash) */}
+        {isOverflow && (
           <div
-            key={seg.label}
-            className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${seg.pct}%`, background: seg.barColor }}
-          />
-        ))}
+            className="shrink-0 flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-all"
+            style={{
+              background: 'var(--color-brand-soft)',
+              borderColor: 'color-mix(in srgb, var(--color-brand) 30%, transparent)',
+              color: 'var(--color-brand)',
+            }}
+            title={`+${thb(cashDrawdown)} drawn from cash reserves`}
+          >
+            <span className="text-[12px] leading-none">+</span>
+            <span className="tnum">{thb(cashDrawdown)}</span>
+            <span className="text-[10px] font-medium opacity-80">Cash</span>
+          </div>
+        )}
       </div>
+
+      {/* Explanatory note when deploying cash on top of salary */}
+      {isOverflow && (
+        <div className="mt-3 flex items-start gap-2 rounded-xl bg-surface-muted px-3 py-2 text-[12px] text-ink-muted">
+          <span className="text-[13px] mt-0.5">💡</span>
+          <p className="leading-snug">
+            <span className="font-semibold text-ink">100% of salary deployed</span>
+            {' '}— plus <span className="font-semibold text-brand">+{thb(cashDrawdown)}</span> drawn from cash reserves
+            <span className="text-ink-faint"> (total monthly savings: {thb(savings)})</span>
+          </p>
+        </div>
+      )}
     </div>
   )
 }
