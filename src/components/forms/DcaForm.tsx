@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Modal } from '../ui/Modal'
+import { SegmentedControl } from '../ui/SegmentedControl'
 import { NumberField, SelectField, TextField } from '../ui/Field'
 import { AssetLogo } from '../ui/AssetLogo'
 import { FormActions } from './FormActions'
@@ -282,30 +283,22 @@ export function DcaForm({ open, editing, onClose }: Props) {
       <div className="space-y-5">
         {/* ── ADD mode: Source toggle ── */}
         {!editing && (
-          <div className="flex rounded-xl bg-surface-muted p-1 gap-1">
-            {(['portfolio', 'custom'] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => {
-                  setForm((f) => ({
-                    ...f,
-                    source: s,
-                    name: s === 'portfolio' ? (selectedPortfolioHolding?.name ?? '') : (f.assetClass === 'crypto' ? 'Bitcoin' : f.assetClass === 'gold' ? 'Gold' : ''),
-                    ticker: s === 'portfolio' ? (selectedPortfolioHolding?.ticker ?? '') : (f.assetClass === 'crypto' ? 'BTC' : f.assetClass === 'gold' ? 'GOLD' : ''),
-                  }))
-                  setSuggestions([])
-                }}
-                className={`flex-1 rounded-lg py-2 text-[13px] font-semibold transition-all cursor-pointer ${
-                  form.source === s
-                    ? 'bg-surface text-ink shadow-sm'
-                    : 'text-ink-muted hover:text-ink'
-                }`}
-              >
-                {s === 'portfolio' ? 'From my portfolio' : 'Custom plan'}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            value={form.source}
+            onChange={(s) => {
+              setForm((f) => ({
+                ...f,
+                source: s,
+                name: s === 'portfolio' ? (selectedPortfolioHolding?.name ?? '') : (f.assetClass === 'crypto' ? 'Bitcoin' : f.assetClass === 'gold' ? 'Gold' : ''),
+                ticker: s === 'portfolio' ? (selectedPortfolioHolding?.ticker ?? '') : (f.assetClass === 'crypto' ? 'BTC' : f.assetClass === 'gold' ? 'GOLD' : ''),
+              }))
+              setSuggestions([])
+            }}
+            options={[
+              { value: 'portfolio', label: 'From my portfolio' },
+              { value: 'custom', label: 'Custom plan' },
+            ]}
+          />
         )}
 
         {/* ── EDIT mode: Header card ── */}
