@@ -139,7 +139,6 @@ export function DcaForm({ open, editing, onClose }: Props) {
   const isBtc = activeAssetClass === 'crypto'
   const isGold = activeAssetClass === 'gold'
   const isFund = activeAssetClass === 'fund'
-  const isCash = activeAssetClass === 'cash'
 
   // Resolve BTC/Gold locations from portfolio
   const btcHolding = data.holdings.find((h) => h.assetClass === 'crypto')
