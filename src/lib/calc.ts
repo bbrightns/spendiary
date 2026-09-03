@@ -587,7 +587,10 @@ export function calculateAnnualCashInterest(accounts: CashAccount[], usdThb?: nu
   const rate = usdThb && usdThb > 0 ? usdThb : 35
   return accounts.reduce((sum, a) => {
     if (!a.interestRate || a.interestRate <= 0) return sum
-    const thbVal = a.currency === 'USD' ? a.balance * rate : a.balance
+    const eligibleBalance = a.maxEligibleBalance && a.maxEligibleBalance > 0
+      ? Math.min(a.balance, a.maxEligibleBalance)
+      : a.balance
+    const thbVal = a.currency === 'USD' ? eligibleBalance * rate : eligibleBalance
     return sum + (thbVal * (a.interestRate / 100))
   }, 0)
 }
@@ -609,7 +612,10 @@ export function calculateMonthlyCashInterest(
 
   for (const a of accounts) {
     if (!a.interestRate || a.interestRate <= 0) continue
-    const thbVal = a.currency === 'USD' ? a.balance * rate : a.balance
+    const eligibleBalance = a.maxEligibleBalance && a.maxEligibleBalance > 0
+      ? Math.min(a.balance, a.maxEligibleBalance)
+      : a.balance
+    const thbVal = a.currency === 'USD' ? eligibleBalance * rate : eligibleBalance
     const annualInterest = thbVal * (a.interestRate / 100)
     totalAnnual += annualInterest
 
