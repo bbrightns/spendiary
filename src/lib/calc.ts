@@ -187,6 +187,15 @@ export function dcaPerMonth(plans: DcaPlan[], now = new Date()): number {
   return plans.reduce((s, p) => s + planMonthlyEquivalent(p, now), 0)
 }
 
+/**
+ * Calculate the effective buy day of month for a given year and month (0-indexed).
+ * If dayOfMonth is 31 (or exceeds days in that month), it executes on the last day of the month.
+ */
+export function getEffectiveDayOfMonth(dayOfMonth: number, year: number, monthIndex: number): number {
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
+  return Math.min(Math.max(dayOfMonth, 1), daysInMonth)
+}
+
 /** How many times this plan has executed so far this calendar month. */
 export function planExecutionsThisMonth(plan: DcaPlan, now = new Date()): number {
   const freq = plan.frequency ?? 'monthly'
@@ -206,7 +215,8 @@ export function planExecutionsThisMonth(plan: DcaPlan, now = new Date()): number
   }
 
   // monthly — 1 if buy day has passed
-  return plan.dayOfMonth <= today ? 1 : 0
+  const targetDay = getEffectiveDayOfMonth(plan.dayOfMonth, now.getFullYear(), now.getMonth())
+  return targetDay <= today ? 1 : 0
 }
 
 /** Total executions planned for the full calendar month. */
@@ -270,7 +280,7 @@ export function isSkippedForPeriod(plan: DcaPlan, now = new Date()): boolean {
  * Has the current period's buy day actually arrived yet?
  * - daily:   always true
  * - weekly:  today's DOW >= target DOW within the current Mon–Sun week
- * - monthly: today's date >= dayOfMonth
+ * - monthly: today's date >= effective dayOfMonth
  */
 export function buyDayPassedThisPeriod(plan: DcaPlan, now = new Date()): boolean {
   const freq = plan.frequency ?? 'monthly'
@@ -282,14 +292,15 @@ export function buyDayPassedThisPeriod(plan: DcaPlan, now = new Date()): boolean
     const toMonScale = (d: number) => (d + 6) % 7
     return toMonScale(todayDow) >= toMonScale(targetDow)
   }
-  return plan.dayOfMonth <= now.getDate()
+  const targetDay = getEffectiveDayOfMonth(plan.dayOfMonth, now.getFullYear(), now.getMonth())
+  return targetDay <= now.getDate()
 }
 
 /**
  * Is today the scheduled buy day for this plan?
  * - daily:   always true
  * - weekly:  today's DOW equals the target DOW
- * - monthly: today's date equals dayOfMonth
+ * - monthly: today's date equals effective dayOfMonth
  */
 export function isBuyDayToday(plan: DcaPlan, now = new Date()): boolean {
   const freq = plan.frequency ?? 'monthly'
@@ -298,14 +309,15 @@ export function isBuyDayToday(plan: DcaPlan, now = new Date()): boolean {
     const targetDow = plan.dayOfMonth % 7
     return now.getDay() === targetDow
   }
-  return plan.dayOfMonth === now.getDate()
+  const targetDay = getEffectiveDayOfMonth(plan.dayOfMonth, now.getFullYear(), now.getMonth())
+  return targetDay === now.getDate()
 }
 
 /**
  * Has the buy day strictly passed before today within the current period?
  * - daily:   never overdue from prior days in current period
  * - weekly:  today's DOW strictly after target DOW (within Mon–Sun week)
- * - monthly: today's date strictly after dayOfMonth
+ * - monthly: today's date strictly after effective dayOfMonth
  */
 export function isBuyDayOverdue(plan: DcaPlan, now = new Date()): boolean {
   const freq = plan.frequency ?? 'monthly'
@@ -316,7 +328,8 @@ export function isBuyDayOverdue(plan: DcaPlan, now = new Date()): boolean {
     const toMonScale = (d: number) => (d + 6) % 7
     return toMonScale(todayDow) > toMonScale(targetDow)
   }
-  return plan.dayOfMonth < now.getDate()
+  const targetDay = getEffectiveDayOfMonth(plan.dayOfMonth, now.getFullYear(), now.getMonth())
+  return targetDay < now.getDate()
 }
 
 /** Should the "Confirm buy" button be shown? Buy day passed THIS period + not yet confirmed/skipped. */
@@ -345,10 +358,18 @@ export function nextBuyDate(plan: DcaPlan, now = new Date()): Date {
     return d
   }
   // monthly
-  const day = Math.min(Math.max(plan.dayOfMonth, 1), 28)
-  const next = new Date(now.getFullYear(), now.getMonth(), day)
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  if (next.getTime() <= today.getTime()) next.setMonth(next.getMonth() + 1)
+  const y = now.getFullYear()
+  const m = now.getMonth()
+  const currentTarget = getEffectiveDayOfMonth(plan.dayOfMonth, y, m)
+  const next = new Date(y, m, currentTarget)
+  const today = new Date(y, m, now.getDate())
+  if (next.getTime() <= today.getTime()) {
+    const nextDate = new Date(y, m + 1, 1)
+    const nextY = nextDate.getFullYear()
+    const nextM = nextDate.getMonth()
+    const nextTarget = getEffectiveDayOfMonth(plan.dayOfMonth, nextY, nextM)
+    return new Date(nextY, nextM, nextTarget)
+  }
   return next
 }
 

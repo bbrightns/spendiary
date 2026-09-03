@@ -724,6 +724,7 @@ function freqLabel(p: { frequency?: string; dayOfMonth: number }): string {
   const freq = p.frequency ?? 'monthly'
   if (freq === 'daily')  return 'Every day'
   if (freq === 'weekly') return `Every ${WEEKDAY_NAMES[p.dayOfMonth] ?? 'week'}`
+  if (p.dayOfMonth === 31) return 'Buys on the last day of month'
   return `Buys on the ${ordinal(p.dayOfMonth)}`
 }
 

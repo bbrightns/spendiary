@@ -167,7 +167,10 @@ export function DcaForm({ open, editing, onClose }: Props) {
           : isBtc ? 'BTC' : isGold ? 'GOLD' : (form.ticker.trim() || undefined)
 
     const amountNum = Number(form.monthlyAmount)
-    if (!nameToUse || form.monthlyAmount === '' || isNaN(amountNum) || amountNum <= 0) {
+    const dayNum = Number(form.dayOfMonth)
+    const isDayInvalid = freq === 'monthly' && (form.dayOfMonth === '' || isNaN(dayNum) || dayNum < 1 || dayNum > 31)
+
+    if (!nameToUse || form.monthlyAmount === '' || isNaN(amountNum) || amountNum <= 0 || isDayInvalid) {
       setShowErrors(true)
       return
     }
@@ -175,7 +178,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
     const dayOfMonth =
       freq === 'daily' ? 1 :
       freq === 'weekly' ? Number(form.weekday) :
-      Math.min(Math.max(Number(form.dayOfMonth || 1), 1), 28)
+      Math.min(Math.max(Number(form.dayOfMonth || 1), 1), 31)
 
     upsertPlan({
       id: editing?.id,
@@ -536,15 +539,26 @@ export function DcaForm({ open, editing, onClose }: Props) {
               />
             )}
             {freq === 'monthly' && (
-              <NumberField
-                label="Buy on day"
-                hint="1–28"
-                value={form.dayOfMonth}
-                onChange={(dayOfMonth) => setForm((f) => ({ ...f, dayOfMonth }))}
-                placeholder="1"
-                min={1}
-                step={1}
-              />
+              <div>
+                <NumberField
+                  label="Buy on day"
+                  hint="1–31"
+                  value={form.dayOfMonth}
+                  error={
+                    showErrors && (form.dayOfMonth === '' || Number(form.dayOfMonth) < 1 || Number(form.dayOfMonth) > 31)
+                      ? 'Day must be between 1 and 31'
+                      : undefined
+                  }
+                  onChange={(dayOfMonth) => setForm((f) => ({ ...f, dayOfMonth }))}
+                  placeholder="1"
+                  min={1}
+                  max={31}
+                  step={1}
+                />
+                <p className="mt-1.5 text-[11.5px] text-ink-muted leading-relaxed">
+                  💡 Note: หากกรอก 31 จะหมายถึงวันสุดท้ายของแต่ละเดือน (เช่น 28/29 ก.พ. หรือ 30 ในเดือนที่มี 30 วัน)
+                </p>
+              </div>
             )}
           </div>
         </div>

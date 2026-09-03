@@ -79,6 +79,7 @@ interface NumberFieldProps {
   prefix?: string
   suffix?: string
   min?: number
+  max?: number
   step?: number
   decimals?: number
   autoFocus?: boolean
@@ -97,6 +98,7 @@ export function NumberField({
   prefix,
   suffix,
   min = 0,
+  max,
   step,
   decimals,
   autoFocus,
@@ -208,6 +210,7 @@ export function NumberField({
           type={allowString ? 'text' : 'number'}
           inputMode="decimal"
           min={min}
+          max={max}
           step={step}
           autoFocus={autoFocus}
           aria-invalid={!!error}
