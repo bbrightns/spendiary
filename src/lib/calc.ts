@@ -285,6 +285,40 @@ export function buyDayPassedThisPeriod(plan: DcaPlan, now = new Date()): boolean
   return plan.dayOfMonth <= now.getDate()
 }
 
+/**
+ * Is today the scheduled buy day for this plan?
+ * - daily:   always true
+ * - weekly:  today's DOW equals the target DOW
+ * - monthly: today's date equals dayOfMonth
+ */
+export function isBuyDayToday(plan: DcaPlan, now = new Date()): boolean {
+  const freq = plan.frequency ?? 'monthly'
+  if (freq === 'daily') return true
+  if (freq === 'weekly') {
+    const targetDow = plan.dayOfMonth % 7
+    return now.getDay() === targetDow
+  }
+  return plan.dayOfMonth === now.getDate()
+}
+
+/**
+ * Has the buy day strictly passed before today within the current period?
+ * - daily:   never overdue from prior days in current period
+ * - weekly:  today's DOW strictly after target DOW (within Mon–Sun week)
+ * - monthly: today's date strictly after dayOfMonth
+ */
+export function isBuyDayOverdue(plan: DcaPlan, now = new Date()): boolean {
+  const freq = plan.frequency ?? 'monthly'
+  if (freq === 'daily') return false
+  if (freq === 'weekly') {
+    const targetDow = plan.dayOfMonth % 7
+    const todayDow = now.getDay()
+    const toMonScale = (d: number) => (d + 6) % 7
+    return toMonScale(todayDow) > toMonScale(targetDow)
+  }
+  return plan.dayOfMonth < now.getDate()
+}
+
 /** Should the "Confirm buy" button be shown? Buy day passed THIS period + not yet confirmed/skipped. */
 export function shouldConfirmBuy(plan: DcaPlan, now = new Date()): boolean {
   return buyDayPassedThisPeriod(plan, now) && !isConfirmedForPeriod(plan, now)
@@ -348,29 +382,35 @@ export function dcaThisMonth(plans: DcaPlan[], now = new Date()): DcaMonth {
 
 /**
  * Sort DCA plans by priority:
- * 1. Overdue / near to the due:
- *    - Overdue plans (buy day passed this period and not yet confirmed/skipped) come first.
- *    - Followed by upcoming plans sorted by days until due ascending (today, tomorrow, in 4 days, etc.).
+ * 1. Actionable plans (strictly overdue, then due today):
+ *    - Strictly overdue plans (buy day passed before today and not confirmed/skipped) come first.
+ *    - Followed by plans due today.
+ *    - Followed by upcoming plans sorted by days until due ascending (tomorrow, in 2 days, etc.).
  * 2. Value:
- *    - When urgency is tied (both overdue, or same days until due), sort by monthly amount descending.
+ *    - When urgency is tied (both overdue, both due today, or same days until due), sort by monthly amount descending.
  */
 export function sortDcaPlans(plans: DcaPlan[], now = new Date()): DcaPlan[] {
   return [...plans].sort((a, b) => {
-    const overdueA = shouldConfirmBuy(a, now)
-    const overdueB = shouldConfirmBuy(b, now)
+    const actionableA = shouldConfirmBuy(a, now)
+    const actionableB = shouldConfirmBuy(b, now)
 
-    // 1. Overdue plans come first
-    if (overdueA && !overdueB) return -1
-    if (!overdueA && overdueB) return 1
+    // 1. Actionable plans come first
+    if (actionableA && !actionableB) return -1
+    if (!actionableA && actionableB) return 1
 
-    if (overdueA && overdueB) {
+    if (actionableA && actionableB) {
+      const overdueA = isBuyDayOverdue(a, now)
+      const overdueB = isBuyDayOverdue(b, now)
+      if (overdueA && !overdueB) return -1
+      if (!overdueA && overdueB) return 1
+
       if (b.monthlyAmount !== a.monthlyAmount) {
         return b.monthlyAmount - a.monthlyAmount
       }
       return a.name.localeCompare(b.name)
     }
 
-    // Neither is overdue -> near to the due (days until due date ascending)
+    // Neither is actionable -> near to the due (days until due date ascending)
     const daysA = daysUntil(localDateStr(nextBuyDate(a, now)), now)
     const daysB = daysUntil(localDateStr(nextBuyDate(b, now)), now)
 

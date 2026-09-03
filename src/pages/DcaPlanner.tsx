@@ -12,7 +12,7 @@ import { CheckCircleIcon, CheckIcon, DcaIcon, PencilIcon, TrashIcon } from '../c
 
 import { AssetLogo } from '../components/ui/AssetLogo'
 import {
-  ASSET_META, buyDayPassedThisPeriod, dcaThisMonth, isConfirmedForPeriod, isSkippedForPeriod,
+  ASSET_META, dcaThisMonth, isBuyDayOverdue, isBuyDayToday, isConfirmedForPeriod, isSkippedForPeriod,
   nextBuyDate, shouldConfirmBuy, sortDcaPlans,
 } from '../lib/calc'
 import type { DcaPlan, FixedCostItem } from '../lib/types'
@@ -466,9 +466,10 @@ export function DcaPlanner() {
                     <ul className="divide-y divide-line">
                       {plans.map((p) => {
                         const meta = ASSET_META[p.assetClass]
-                        const bought = buyDayPassedThisPeriod(p)
                         const confirmed = isConfirmedForPeriod(p)
                         const skipped = isSkippedForPeriod(p)
+                        const isOverdue = isBuyDayOverdue(p) && !confirmed && !skipped
+                        const isToday = isBuyDayToday(p) && !confirmed && !skipped
                         const needsAction = shouldConfirmBuy(p)
                         const next = nextBuyDate(p)
                         const days = daysUntil(localDateStr(next))
@@ -518,11 +519,13 @@ export function DcaPlanner() {
                                     <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-[11px] font-semibold text-gain">
                                       <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Confirmed
                                     </span>
-                                  ) : bought && !confirmed && !skipped ? (
+                                  ) : isOverdue ? (
                                     <span className="inline-block text-[11px] font-bold text-loss">Overdue</span>
+                                  ) : isToday || days <= 0 ? (
+                                    <span className="inline-block text-[11px] font-bold text-warn">Today</span>
                                   ) : days < 3 ? (
                                     <span className="inline-block text-[11px] font-semibold text-warn">
-                                      {days <= 0 ? 'Today' : days === 1 ? 'Tomorrow' : `in ${days} days`}
+                                      {days === 1 ? 'Tomorrow' : `in ${days} days`}
                                     </span>
                                   ) : (
                                     <span className="inline-block text-[11px] font-semibold text-stocks">in {days} days</span>

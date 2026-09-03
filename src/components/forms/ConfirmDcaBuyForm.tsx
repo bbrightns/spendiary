@@ -369,6 +369,20 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
           amountSpentThb: amountThbNum,
         },
       )
+    } else {
+      confirmDcaBuy(
+        p.id,
+        0,
+        today,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        resolvedTargetId,
+      )
     }
 
     showToast(`Confirmed DCA buy for "${holding?.name ?? plan.name}"`, 'success')
