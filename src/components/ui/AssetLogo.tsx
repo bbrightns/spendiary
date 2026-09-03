@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { AssetClass } from '../../lib/types'
-import { ASSET_META } from '../../lib/calc'
+import { ASSET_META, detectBankPreset } from '../../lib/calc'
+import { WalletIcon } from '../icons'
 
 interface AssetLogoProps {
   ticker?: string
@@ -53,6 +54,25 @@ export function AssetLogo({
           onError={() => setImgError(true)}
           className="w-full h-full object-contain p-1"
         />
+      </div>
+    )
+  }
+
+  // 0. Cash / Bank Accounts
+  if (currentAssetClass === 'cash') {
+    const preset = detectBankPreset(name || ticker)
+    const bg = preset?.color ?? metaColor
+    const iconClass = size === 'sm' ? 'w-3.5 h-3.5' : size === 'lg' || size === 'xl' ? 'w-6 h-6' : 'w-4 h-4'
+    return (
+      <div
+        title={name || ticker || 'Cash'}
+        className={`relative inline-flex items-center justify-center shrink-0 rounded-full font-bold shadow-xs select-none ${sizeClasses[size]} ${className}`}
+        style={{
+          background: `linear-gradient(135deg, ${bg} 0%, color-mix(in srgb, ${bg} 70%, #000) 100%)`,
+          color: '#ffffff',
+        }}
+      >
+        <WalletIcon className={iconClass} />
       </div>
     )
   }
