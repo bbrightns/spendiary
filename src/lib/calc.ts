@@ -1,4 +1,4 @@
-import type { AssetClass, DcaPlan, Holding, SpendiaryData, Transfer } from './types'
+import type { AssetClass, CashAccount, CashAccountCategory, CashPayoutSchedule, DcaPlan, Holding, SpendiaryData, Transfer } from './types'
 import { daysUntil, localDateStr } from './format'
 
 export interface HoldingMetrics extends Holding {
@@ -446,6 +446,62 @@ export const FREQUENCY_LABEL: Record<Transfer['frequency'], string> = {
 
 /* ----------------------------- Cash ---------------------------- */
 
+export const CASH_CATEGORIES: Record<
+  CashAccountCategory,
+  { label: string; labelTh: string; color: string; icon: string; desc: string }
+> = {
+  spending: { label: 'Spending & Bills', labelTh: 'ใช้จ่าย/หมุนเวียน', color: '#10b981', icon: '🟢', desc: 'เงินใช้จ่ายประจำวัน และตัดบิล' },
+  emergency: { label: 'Emergency Fund', labelTh: 'สำรองฉุกเฉิน', color: '#f59e0b', icon: '🛡️', desc: 'เงินสำรอง 3-12 เดือน ยามฉุกเฉิน' },
+  invest: { label: 'Investment Powder', labelTh: 'เงินรอลงทุน', color: '#3b82f6', icon: '🎯', desc: 'เงินพักรอซื้อหุ้น กองทุน หรือเหรียญ' },
+  locked: { label: 'Committed / Locked', labelTh: 'ออมระยะยาว/มีเงื่อนไข', color: '#8b5cf6', icon: '🔒', desc: 'สหกรณ์, กองทุนสำรองเลี้ยงชีพ (PVD), ฝากประจำ' },
+}
+
+export interface BankPreset {
+  id: string
+  name: string
+  color: string
+  bg: string
+  keywords: string[]
+}
+
+export const BANK_PRESETS: BankPreset[] = [
+  { id: 'kept', name: 'Kept', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', keywords: ['kept', 'grow', 'fun', 'together'] },
+  { id: 'dime', name: 'Dime', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', keywords: ['dime', 'kkp', 'fcd'] },
+  { id: 'truemoney', name: 'TrueMoney', color: '#ea580c', bg: 'rgba(234, 88, 12, 0.15)', keywords: ['true', 'truemoney', 'tmn'] },
+  { id: 'kbank', name: 'KBank', color: '#16a34a', bg: 'rgba(22, 163, 74, 0.15)', keywords: ['kbank', 'กสิกร', 'make'] },
+  { id: 'scb', name: 'SCB', color: '#7c3aed', bg: 'rgba(124, 58, 237, 0.15)', keywords: ['scb', 'ไทยพาณิชย์', 'easy'] },
+  { id: 'ttb', name: 'ttb', color: '#2563eb', bg: 'rgba(37, 99, 235, 0.15)', keywords: ['ttb', 'ทีทีบี', 'me'] },
+  { id: 'ktb', name: 'Krungthai', color: '#0284c7', bg: 'rgba(2, 132, 199, 0.15)', keywords: ['ktb', 'กรุงไทย', 'เป๋าตัง'] },
+  { id: 'bbl', name: 'BBL', color: '#1e3a8a', bg: 'rgba(30, 58, 138, 0.15)', keywords: ['bbl', 'กรุงเทพ', 'bangkok'] },
+  { id: 'sahakorn', name: 'สหกรณ์', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.15)', keywords: ['สหกรณ์', 'sahakorn', 'coop'] },
+  { id: 'pvd', name: 'PVD / กองทุนสำรองฯ', color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)', keywords: ['สำรองเลี้ยงชีพ', 'pvd', 'provident'] },
+]
+
+export function detectBankPreset(name: string): BankPreset | undefined {
+  const s = name.toLowerCase().trim()
+  if (!s) return undefined
+  for (const p of BANK_PRESETS) {
+    if (p.keywords.some((k) => s.includes(k))) {
+      return p
+    }
+  }
+  return undefined
+}
+
+export function inferCashCategory(name: string): CashAccountCategory {
+  const s = name.toLowerCase().trim()
+  if (s.includes('สำรองเลี้ยงชีพ') || s.includes('pvd') || s.includes('สหกรณ์') || s.includes('ประจำ') || s.includes('locked')) {
+    return 'locked'
+  }
+  if (s.includes('dime') || s.includes('หุ้น') || s.includes('fcd') || s.includes('invest') || s.includes('crypto')) {
+    return 'invest'
+  }
+  if (s.includes('kept') || s.includes('ฉุกเฉิน') || s.includes('emergency') || s.includes('click') || s.includes('reserve')) {
+    return 'emergency'
+  }
+  return 'spending'
+}
+
 export function totalCash(data: SpendiaryData, usdThb?: number | null): number {
   const rate = usdThb && usdThb > 0 ? usdThb : 35
   return data.cashAccounts.reduce((sum, a) => {
@@ -453,6 +509,83 @@ export function totalCash(data: SpendiaryData, usdThb?: number | null): number {
     const thbVal = isUsd ? a.balance * rate : a.balance
     return sum + thbVal
   }, 0)
+}
+
+export function calculateAnnualCashInterest(accounts: CashAccount[], usdThb?: number | null): number {
+  const rate = usdThb && usdThb > 0 ? usdThb : 35
+  return accounts.reduce((sum, a) => {
+    if (!a.interestRate || a.interestRate <= 0) return sum
+    const thbVal = a.currency === 'USD' ? a.balance * rate : a.balance
+    return sum + (thbVal * (a.interestRate / 100))
+  }, 0)
+}
+
+export function calculateMonthlyCashInterest(
+  accounts: CashAccount[],
+  usdThb?: number | null,
+): {
+  totalAnnual: number
+  byMonth: Record<number, number>
+} {
+  const rate = usdThb && usdThb > 0 ? usdThb : 35
+  const byMonth: Record<number, number> = {
+    1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0,
+  }
+  let totalAnnual = 0
+
+  for (const a of accounts) {
+    if (!a.interestRate || a.interestRate <= 0) continue
+    const thbVal = a.currency === 'USD' ? a.balance * rate : a.balance
+    const annualInterest = thbVal * (a.interestRate / 100)
+    totalAnnual += annualInterest
+
+    const schedule = a.payoutSchedule ?? (a.payoutMonths && a.payoutMonths.length > 0 ? 'custom' : 'monthly')
+    let months: number[] = []
+
+    if (schedule === 'monthly') {
+      months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    } else if (schedule === 'semi_annual') {
+      months = [6, 12]
+    } else if (schedule === 'annual') {
+      months = [a.payoutMonths?.[0] ?? 12]
+    } else if (schedule === 'custom') {
+      months = a.payoutMonths && a.payoutMonths.length > 0 ? a.payoutMonths : [12]
+    }
+
+    if (months.length > 0) {
+      const perPayout = annualInterest / months.length
+      for (const m of months) {
+        if (m >= 1 && m <= 12) {
+          byMonth[m] = (byMonth[m] ?? 0) + perPayout
+        }
+      }
+    }
+  }
+
+  return { totalAnnual, byMonth }
+}
+
+export function getCashLiquidityBreakdown(
+  accounts: CashAccount[],
+  usdThb?: number | null,
+): {
+  spending: number
+  emergency: number
+  invest: number
+  locked: number
+  total: number
+} {
+  const rate = usdThb && usdThb > 0 ? usdThb : 35
+  const res = { spending: 0, emergency: 0, invest: 0, locked: 0, total: 0 }
+
+  for (const a of accounts) {
+    const thbVal = a.currency === 'USD' ? a.balance * rate : a.balance
+    const cat = a.category ?? inferCashCategory(a.name)
+    res[cat] = (res[cat] ?? 0) + thbVal
+    res.total += thbVal
+  }
+
+  return res
 }
 
 /* --------------------------- Net worth -------------------------- */
