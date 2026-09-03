@@ -681,29 +681,24 @@ export function DcaPlanner() {
 
                     {/* Footer */}
                     {plans.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-6 border-t border-line py-4 px-5 bg-surface-muted/30">
+                      <div className="flex items-center border-t border-line py-4 px-5 bg-surface-muted/30">
                         <div>
-                          <p className="text-[11.5px] text-ink-muted">Total savings</p>
-                          <p className="font-display text-[17px] font-extrabold tnum text-ink">{thb(savingsTotal)}</p>
+                          <p className="text-[11.5px] text-ink-muted">Invest rate</p>
+                          <p className="font-display text-[17px] font-extrabold tnum leading-tight mt-0.5">
+                            {salary > 0 ? (
+                              <>
+                                <span className="text-gain">{Math.round((savingsTotal / salary) * 100)}%</span>
+                                <span className="text-[13px] font-medium text-ink dark:text-white ml-1.5">
+                                  of Monthly Income
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-[13px] text-ink-muted font-normal">
+                                Set monthly income above to see invest rate
+                              </span>
+                            )}
+                          </p>
                         </div>
-                        {salary > 0 && (
-                          <>
-                            <div className="h-7 w-px bg-line" />
-                            <div>
-                              <p className="text-[11.5px] text-ink-muted">Invest rate</p>
-                              <p className="font-display text-[17px] font-extrabold tnum text-gain">
-                                {Math.round((savingsTotal / salary) * 100)}%
-                              </p>
-                            </div>
-                            <div className="h-7 w-px bg-line" />
-                            <div>
-                              <p className="text-[11.5px] text-ink-muted">Progress this month</p>
-                              <p className="font-display text-[17px] font-extrabold tnum text-ink">
-                                {Math.round(dcaMonth.pct)}%
-                              </p>
-                            </div>
-                          </>
-                        )}
                       </div>
                     )}
                   </div>
