@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react'
 import { useData } from '../store/DataContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
+import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { NumberField, TextField } from '../components/ui/Field'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
@@ -497,30 +498,14 @@ export function Retirement() {
                 <span className="text-[13px] font-semibold text-ink-soft block mb-1.5">
                   รูปแบบการถอนเงินหลังเกษียณ
                 </span>
-                <div className="grid grid-cols-2 gap-1 p-1 bg-surface-muted rounded-xl border border-line-strong">
-                  <button
-                    type="button"
-                    onClick={() => setWithdrawalStrategy('lump_sum')}
-                    className={`py-2 px-3 rounded-lg text-[13.5px] font-semibold transition-all duration-200 cursor-pointer ${
-                      withdrawalStrategy === 'lump_sum'
-                        ? 'bg-surface text-ink shadow-sm'
-                        : 'text-ink-muted hover:text-ink'
-                    }`}
-                  >
-                    ถอนก้อนเดียว (Lump Sum)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setWithdrawalStrategy('drawdown')}
-                    className={`py-2 px-3 rounded-lg text-[13.5px] font-semibold transition-all duration-200 cursor-pointer ${
-                      withdrawalStrategy === 'drawdown'
-                        ? 'bg-surface text-ink shadow-sm'
-                        : 'text-ink-muted hover:text-ink'
-                    }`}
-                  >
-                    ทยอยถอนรายปี (Drawdown)
-                  </button>
-                </div>
+                <SegmentedControl
+                  value={withdrawalStrategy}
+                  onChange={setWithdrawalStrategy}
+                  options={[
+                    { value: 'lump_sum', label: 'ถอนก้อนเดียว (Lump Sum)' },
+                    { value: 'drawdown', label: 'ทยอยถอนรายปี (Drawdown)' },
+                  ]}
+                />
                 <p className="mt-1 text-[11px] text-ink-muted leading-relaxed">
                   {withdrawalStrategy === 'lump_sum'
                     ? 'ถอนเงินทั้งหมดออกมา ณ วันเกษียณ (ไม่ได้นำไปลงทุนต่อ)'
