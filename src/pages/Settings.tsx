@@ -504,27 +504,27 @@ export function Settings() {
                   </div>
                 </div>
                 <p className="text-[12.5px] text-ink-muted leading-relaxed">
-                  วิศวกรไฟฟ้าที่ชอบเขียนโค้ดและชอบเรื่องคอม/ไอทีเป็นชีวิตจิตใจ ชอบทำ tools สนุกๆ เอาไว้ใช้เองเพื่อแก้ปัญหาในชีวิตประจำวันครับ
+                  An Electrical Engineer who loves writing code and exploring computer & tech. Building handy tools to solve everyday challenges.
                 </p>
               </div>
 
-              {/* ที่มาของแอป (The Story & Motivation) */}
+              {/* The Story Behind Spendiary */}
               <div className="rounded-2xl bg-surface-muted/40 p-4 border border-line/50">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-base">💡</span>
-                  <h3 className="text-[13px] font-bold text-ink">ที่มาของ Spendiary</h3>
+                  <h3 className="text-[13px] font-bold text-ink">Why I Built Spendiary</h3>
                 </div>
                 <div className="space-y-2 text-[12.5px] text-ink-muted leading-relaxed">
                   <p>
-                    โปรเจกต์นี้เริ่มต้นขึ้นมาเพื่อแก้ Pain Point ของตัวเองล้วนๆ ครับ เพราะมีเงินเก็บและพอร์ตการลงทุนกระจายอยู่หลายธนาคารและหลายแอป จนช่วงหลังเริ่มจำไม่ได้และสับสนว่าเงินทั้งหมดของตัวเองอยู่ที่ไหนบ้าง เลยตัดสินใจพัฒนาเว็บนี้ขึ้นมาเพื่อรวบรวมภาพรวมความมั่งคั่งไว้ในที่เดียวแบบ One-Stop Cockpit:
+                    This project started purely to solve my own personal headache: having savings and investments scattered across multiple banks and apps to the point where I lost track of where my money actually was! So I decided to build this web app to bring everything together into a clean, single cockpit:
                   </p>
                   <ul className="list-disc list-inside space-y-1 pl-1 text-[12px] text-ink-soft">
-                    <li><strong className="font-semibold text-ink">ราคาตลาดแบบ Real-time:</strong> เชื่อมต่อราคาของหุ้น US, ทองคำ (Gold), และ Bitcoin (BTC) แบบสดๆ เพื่อประเมินมูลค่าพอร์ตแม่นยำ (ยังไม่รองรับหุ้นไทย)</li>
-                    <li><strong className="font-semibold text-ink">วางแผนเกษียณเชิงลึก (Retirement FIRE):</strong> คำนวณเงินเฟ้อ ผลตอบแทน และเป้าหมายอิสรภาพทางการเงินแบบละเอียด</li>
-                    <li><strong className="font-semibold text-ink">เน้นความเป็นส่วนตัว (Privacy-first):</strong> ข้อมูลทั้งหมดบันทึกอยู่บนอุปกรณ์ของคุณ พร้อมระบบ Cloud Sync เข้ารหัส</li>
+                    <li><strong className="font-semibold text-ink">Real-time Market Prices:</strong> Live price feeds for US Stocks, Gold, and Bitcoin (Thai stocks not included yet).</li>
+                    <li><strong className="font-semibold text-ink">Comprehensive Retirement FIRE Planner:</strong> In-depth milestone modeling with inflation adjustments and dividend calculations.</li>
+                    <li><strong className="font-semibold text-ink">Privacy-First Architecture:</strong> Your financial data stays locally on your device with optional encrypted cloud backup.</li>
                   </ul>
                   <p className="text-[12px] text-ink-muted pt-1">
-                    เปิดให้ใช้งานฟรี 100% ครับ ใครที่มีพอร์ตกระจายอยู่หลายที่เหมือนกัน ลองเข้ามาใช้งานเล่นดูได้เลยครับ หากมีฟีเจอร์ไหนอยากให้ปรับปรุงหรือเพิ่มเติม สามารถบอกเข้ามาได้เสมอครับ ยินดีรับฟังทุกข้อเสนอแนะ!
+                    It's 100% free to use. If your portfolio is scattered like mine, feel free to give it a spin! Any feedback or feature requests are always welcome.
                   </p>
                 </div>
               </div>
@@ -537,7 +537,7 @@ export function Settings() {
                     <h3 className="text-xs font-bold text-ink">Release Highlights</h3>
                   </div>
                   <p className="text-[11.5px] text-ink-muted leading-relaxed">
-                    v{__APP_VERSION__} (build <span className="font-mono">{__COMMIT_HASH__}</span>) · ระบบคำนวณดอกเบี้ยเงินฝากเพดานสูง (Max cap), DCA rebalancing, และการปรับปรุง Dark Mode ครบวงจร
+                    v{__APP_VERSION__} (build <span className="font-mono">{__COMMIT_HASH__}</span>) · High-yield savings max principal cap, DCA smart rebalancing, and complete dark mode optimization.
                   </p>
                 </div>
 
@@ -545,10 +545,10 @@ export function Settings() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="w-2 h-2 rounded-full bg-amber-500" />
-                      <h3 className="text-xs font-bold text-ink">ช่องทางแจ้งปัญหา (Feedback & Issues)</h3>
+                      <h3 className="text-xs font-bold text-ink">Feedback & Issues</h3>
                     </div>
                     <p className="text-[11.5px] text-ink-muted leading-relaxed">
-                      พบข้อผิดพลาดหรือมีข้อเสนอแนะเพิ่มเติม สามารถเปิด Issue บน GitHub หรือส่งข้อความทาง Facebook ได้โดยตรง
+                      Encountered a bug or have a suggestion? Feel free to open an issue on GitHub or drop a message via Facebook.
                     </p>
                   </div>
                   <div className="mt-2.5 pt-2 border-t border-line/50 flex items-center gap-2">
