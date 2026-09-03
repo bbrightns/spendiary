@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
+import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { NumberField } from '../components/ui/Field'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { DonutChart } from '../components/charts/DonutChart'
@@ -462,30 +464,14 @@ export function Rebalance() {
                 <span className="text-[11.5px] font-bold uppercase tracking-wider text-ink-muted">
                   Allocation Mode
                 </span>
-                <div className="flex rounded-xl bg-surface-muted p-1 gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setRebalanceMode('class')}
-                    className={`flex-1 rounded-lg py-2 text-[12.5px] font-bold transition-all cursor-pointer ${
-                      mode === 'class'
-                        ? 'bg-surface text-ink shadow-sm'
-                        : 'text-ink-muted hover:text-ink'
-                    }`}
-                  >
-                    Asset Class (Macro)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRebalanceMode('holding')}
-                    className={`flex-1 rounded-lg py-2 text-[12.5px] font-bold transition-all cursor-pointer ${
-                      mode === 'holding'
-                        ? 'bg-surface text-ink shadow-sm'
-                        : 'text-ink-muted hover:text-ink'
-                    }`}
-                  >
-                    Holdings ({holdingRows.length})
-                  </button>
-                </div>
+                <SegmentedControl
+                  value={mode}
+                  onChange={(v) => setRebalanceMode(v as RebalanceMode)}
+                  options={[
+                    { value: 'class', label: 'Asset Class (Macro)' },
+                    { value: 'holding', label: `Holdings (${holdingRows.length})` },
+                  ]}
+                />
               </div>
 
               {/* Cash Deployment */}
@@ -623,14 +609,15 @@ export function Rebalance() {
                 </div>
 
                 {mode === 'holding' && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={() => setPlannedModalOpen(true)}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-full bg-brand px-3.5 text-[12px] font-bold text-white dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] shadow-xs hover:bg-brand/90 active:scale-95 transition-all cursor-pointer"
+                    className="gap-1.5 text-[12px] cursor-pointer"
                   >
                     <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
-                    <span>+ Add Target Asset</span>
-                  </button>
+                    <span>Add Target Asset</span>
+                  </Button>
                 )}
               </div>
 
