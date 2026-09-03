@@ -27,6 +27,7 @@ interface Draft {
   currency: 'THB' | 'USD'
   category: CashAccountCategory
   interestRate: string
+  maxEligibleBalance: string
   payoutSchedule: CashPayoutSchedule
   payoutMonths: number[]
 }
@@ -39,7 +40,7 @@ const THAI_MONTHS_SHORT = [
 const QUICK_PRESETS = [
   { name: 'Kept', rate: '2.22', category: 'emergency' as CashAccountCategory, schedule: 'monthly' as CashPayoutSchedule, months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
   { name: 'Click', rate: '1.50', category: 'emergency' as CashAccountCategory, schedule: 'monthly' as CashPayoutSchedule, months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
-  { name: 'Dime THB', rate: '3.00', category: 'invest' as CashAccountCategory, schedule: 'monthly' as CashPayoutSchedule, months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
+  { name: 'Dime THB', rate: '3.00', maxBalance: '10,000', category: 'invest' as CashAccountCategory, schedule: 'monthly' as CashPayoutSchedule, months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
   { name: 'Dime USD', currency: 'USD' as const, category: 'invest' as CashAccountCategory, schedule: 'monthly' as CashPayoutSchedule, months: [] },
   { name: 'TrueMoney', category: 'spending' as CashAccountCategory, schedule: 'monthly' as CashPayoutSchedule, months: [] },
   { name: 'KBank', category: 'spending' as CashAccountCategory, schedule: 'semi_annual' as CashPayoutSchedule, months: [6, 12] },
@@ -123,6 +124,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
             currency: a.currency ?? 'THB',
             category: cat,
             interestRate: a.interestRate !== undefined ? String(a.interestRate) : '',
+            maxEligibleBalance: a.maxEligibleBalance !== undefined && a.maxEligibleBalance > 0 ? formatWithCommas(a.maxEligibleBalance) : '',
             payoutSchedule: schedule,
             payoutMonths: months,
           }
@@ -134,6 +136,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
           currency: 'THB',
           category: 'spending',
           interestRate: '',
+          maxEligibleBalance: '',
           payoutSchedule: 'monthly',
           payoutMonths: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         }]
@@ -197,6 +200,8 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
   const simulatedAccounts: CashAccount[] = rows.map((r) => {
     const clean = r.balance.replace(/[^0-9.]/g, '')
     const rateNum = r.interestRate.trim() !== '' ? Number(r.interestRate) : undefined
+    const capClean = r.maxEligibleBalance ? r.maxEligibleBalance.replace(/[^0-9.]/g, '') : ''
+    const capNum = capClean !== '' ? Number(capClean) : undefined
     return {
       id: r.id,
       name: r.name,
@@ -204,6 +209,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
       currency: r.currency,
       category: r.category,
       interestRate: rateNum !== undefined && !isNaN(rateNum) && rateNum > 0 ? rateNum : undefined,
+      maxEligibleBalance: capNum !== undefined && !isNaN(capNum) && capNum > 0 ? capNum : undefined,
       payoutSchedule: r.payoutSchedule,
       payoutMonths: r.payoutMonths,
     }
@@ -230,6 +236,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
         currency: 'THB',
         category: 'spending',
         interestRate: '',
+        maxEligibleBalance: '',
         payoutSchedule: 'monthly',
         payoutMonths: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
       },
@@ -252,6 +259,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
       currency: p.currency ?? 'THB',
       category: p.category,
       interestRate: p.rate ?? '',
+      maxEligibleBalance: ('maxBalance' in p && typeof p.maxBalance === 'string') ? p.maxBalance : '',
       payoutSchedule: p.schedule ?? 'monthly',
       payoutMonths: p.months && p.months.length > 0 ? p.months : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
     }
@@ -272,6 +280,8 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
       .map((r) => {
         const clean = r.balance.replace(/[^0-9.]/g, '')
         const rateNum = r.interestRate.trim() !== '' ? Number(r.interestRate) : undefined
+        const capClean = r.maxEligibleBalance ? r.maxEligibleBalance.replace(/[^0-9.]/g, '') : ''
+        const capNum = capClean !== '' ? Number(capClean) : undefined
         return {
           id: r.id.startsWith('tmp-') ? tempId().replace('tmp-', 'cash-') : r.id,
           name: r.name.trim(),
@@ -279,6 +289,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
           currency: r.currency,
           category: r.category,
           interestRate: rateNum !== undefined && !isNaN(rateNum) && rateNum > 0 ? rateNum : undefined,
+          maxEligibleBalance: capNum !== undefined && !isNaN(capNum) && capNum > 0 ? capNum : undefined,
           payoutSchedule: r.payoutSchedule,
           payoutMonths: r.payoutMonths && r.payoutMonths.length > 0 ? r.payoutMonths : undefined,
         }
@@ -427,8 +438,11 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
           const cleanBal = r.balance.replace(/[^0-9.]/g, '')
           const balNum = cleanBal === '' ? 0 : Number(cleanBal)
           const rateNum = r.interestRate.trim() !== '' ? Number(r.interestRate) : 0
-          const thbEquivalent = r.currency === 'USD' ? balNum * rate : balNum
-          const annualEarned = (rateNum > 0 && thbEquivalent > 0) ? (thbEquivalent * (rateNum / 100)) : 0
+          const capClean = r.maxEligibleBalance ? r.maxEligibleBalance.replace(/[^0-9.]/g, '') : ''
+          const capNum = capClean !== '' ? Number(capClean) : undefined
+          const eligibleBal = (capNum !== undefined && capNum > 0) ? Math.min(balNum, capNum) : balNum
+          const eligibleThb = r.currency === 'USD' ? eligibleBal * rate : eligibleBal
+          const annualEarned = (rateNum > 0 && eligibleThb > 0) ? (eligibleThb * (rateNum / 100)) : 0
 
           return (
             <div
@@ -552,7 +566,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                     {/* Yield / Interest snippet */}
                     {rateNum > 0 ? (
                       <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
-                        <span>📈 {rateNum.toFixed(2)}%</span>
+                        <span>📈 {rateNum.toFixed(2)}%{capNum && capNum > 0 ? ` (สูงสุด ${r.currency === 'USD' ? '$' : '฿'}${formatWithCommas(capNum)})` : ''}</span>
                         <span>• ≈ {thb(annualEarned)}/yr</span>
                       </span>
                     ) : (
@@ -617,27 +631,53 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                           </p>
                         </div>
 
-                        {/* Interest Rate % Input */}
-                        <div className="flex items-center gap-1.5">
-                          <label htmlFor={`rate-${r.id}`} className="text-[12px] font-medium text-ink-muted">
-                            อัตราดอกเบี้ย:
-                          </label>
-                          <div className="relative w-24">
-                            <input
-                              id={`rate-${r.id}`}
-                              type="text"
-                              inputMode="decimal"
-                              placeholder="0.00"
-                              value={r.interestRate}
-                              onChange={(e) => {
-                                const clean = e.target.value.replace(/[^0-9.]/g, '')
-                                update(r.id, { interestRate: clean })
-                              }}
-                              className="h-8 w-full rounded-lg border border-line bg-surface px-2.5 pr-6 text-[13px] font-bold tnum text-ink outline-none focus:border-brand"
-                            />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-bold text-ink-muted pointer-events-none">
-                              %
-                            </span>
+                        {/* Rate and Cap Inputs */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          {/* Interest Rate % Input */}
+                          <div className="flex items-center gap-1.5 bg-surface-muted/40 p-1 rounded-lg border border-line/50">
+                            <label htmlFor={`rate-${r.id}`} className="text-[11.5px] font-medium text-ink-muted pl-1">
+                              อัตราดอกเบี้ย:
+                            </label>
+                            <div className="relative w-20">
+                              <input
+                                id={`rate-${r.id}`}
+                                type="text"
+                                inputMode="decimal"
+                                placeholder="0.00"
+                                value={r.interestRate}
+                                onChange={(e) => {
+                                  const clean = e.target.value.replace(/[^0-9.]/g, '')
+                                  update(r.id, { interestRate: clean })
+                                }}
+                                className="h-7 w-full rounded-md border border-line bg-surface px-2 pr-5 text-[12.5px] font-bold tnum text-ink outline-none focus:border-brand"
+                              />
+                              <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10.5px] font-bold text-ink-muted pointer-events-none">
+                                %
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Max Principal Cap Input */}
+                          <div className="flex items-center gap-1.5 bg-surface-muted/40 p-1 rounded-lg border border-line/50">
+                            <label htmlFor={`cap-${r.id}`} className="text-[11.5px] font-medium text-ink-muted pl-1" title="จำกัดวงเงินต้นสูงสุดที่นำมาคิดดอกเบี้ย เช่น Dime 3% ไม่เกิน 10,000">
+                              คิดเงินต้นไม่เกิน:
+                            </label>
+                            <div className="relative w-24">
+                              <input
+                                id={`cap-${r.id}`}
+                                type="text"
+                                inputMode="decimal"
+                                placeholder="ไม่จำกัด"
+                                value={r.maxEligibleBalance}
+                                onChange={(e) => {
+                                  update(r.id, { maxEligibleBalance: formatWithCommas(e.target.value) })
+                                }}
+                                className="h-7 w-full rounded-md border border-line bg-surface px-2 pr-5 text-[12.5px] font-bold tnum text-ink outline-none focus:border-brand placeholder:text-ink-muted/50 placeholder:font-normal"
+                              />
+                              <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10.5px] font-bold text-ink-muted pointer-events-none">
+                                {r.currency === 'USD' ? '$' : '฿'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -763,11 +803,18 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                               รวม {thb(annualEarned)} / ปี
                             </span>
                           </div>
+
+                          {capNum && capNum > 0 && balNum > capNum && (
+                            <div className="text-[11px] text-emerald-800/90 dark:text-emerald-200/90 bg-emerald-500/15 px-2.5 py-1 rounded-lg">
+                              ℹ️ คิดดอกเบี้ยจากเงินต้นสูงสุด {r.currency === 'USD' ? '$' : '฿'}{formatWithCommas(capNum)} (ยอดในบัญชี {r.currency === 'USD' ? '$' : '฿'}{formatWithCommas(balNum)} • ส่วนเกิน {r.currency === 'USD' ? '$' : '฿'}{formatWithCommas(balNum - capNum)} ไม่ได้นำมาคิดดอกเบี้ย)
+                            </div>
+                          )}
+
                           <div className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 pt-1 border-t border-emerald-500/15 flex flex-wrap items-center justify-between gap-1">
                             <span>💡 ดอกเบี้ยที่ได้รับจะทบเข้าเป็นเงินต้นในบัญชีให้อัตโนมัติ (Compounding)</span>
                             {r.payoutSchedule === 'monthly' && (
                               <span className="font-semibold text-emerald-700 dark:text-emerald-300">
-                                ทบต้นรวม ≈ {thb(thbEquivalent * (Math.pow(1 + rateNum / 1200, 12) - 1))} / ปี
+                                ทบต้นรวม ≈ {thb(eligibleThb * (Math.pow(1 + rateNum / 1200, 12) - 1))} / ปี
                               </span>
                             )}
                           </div>
