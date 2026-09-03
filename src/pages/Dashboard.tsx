@@ -19,6 +19,9 @@ import {
 import {
   ASSET_META,
   allocations,
+  calculateAnnualCashInterest,
+  detectBankPreset,
+  getCashLiquidityBreakdown,
   netWorth,
   portfolioSummary,
   shouldConfirmBuy,
@@ -70,6 +73,14 @@ export function Dashboard() {
   )
   const cash = useMemo(() => totalCash(data, usdThb), [data.cashAccounts, usdThb])
   const nw = useMemo(() => netWorth(data, usdThb), [data.cashAccounts, data.holdings, usdThb])
+  const cashInterest = useMemo(
+    () => calculateAnnualCashInterest(data.cashAccounts, usdThb),
+    [data.cashAccounts, usdThb],
+  )
+  const cashBreakdown = useMemo(
+    () => getCashLiquidityBreakdown(data.cashAccounts, usdThb),
+    [data.cashAccounts, usdThb],
+  )
 
   const today = new Date().toLocaleDateString('en-GB', {
     weekday: 'long',
@@ -388,8 +399,13 @@ export function Dashboard() {
                   <h2 className="font-display text-[16px] font-bold text-ink">Cash & Liquidity Hub</h2>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {cashInterest > 0 && (
+                    <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      💰 ~{thbCompact(cashInterest)}/yr
+                    </span>
+                  )}
+                  <span className="rounded-full bg-surface-muted px-2.5 py-0.5 text-[11px] font-bold text-ink-muted border border-line/50">
                     {data.cashAccounts.length} {data.cashAccounts.length === 1 ? 'Account' : 'Accounts'}
                   </span>
                   <button
@@ -407,14 +423,22 @@ export function Dashboard() {
                 </div>
               </div>
 
-              <div className="mt-4 flex items-baseline justify-between">
+              <div className="mt-4 flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
                 <div>
                   <span className="text-[11.5px] font-medium text-ink-muted">Available Cash</span>
                   <p className="font-display text-[24px] font-extrabold tnum text-ink leading-tight">
                     {thb(cash)}
                   </p>
                 </div>
-                <span className="text-[12px] text-ink-muted">Instant liquidity</span>
+                <div className="text-[12px] text-ink-muted sm:text-right">
+                  {cashBreakdown.locked > 0 ? (
+                    <span>
+                      Instant: <strong className="text-ink">{thb(cashBreakdown.spending + cashBreakdown.emergency + cashBreakdown.invest)}</strong> • Locked: <strong className="text-ink">{thb(cashBreakdown.locked)}</strong>
+                    </span>
+                  ) : (
+                    <span>Instant liquidity</span>
+                  )}
+                </div>
               </div>
 
               {/* Cash accounts visual bar & account pills */}
@@ -424,6 +448,8 @@ export function Dashboard() {
                     {data.cashAccounts.map((a, i) => {
                       const rate = usdThb && usdThb > 0 ? usdThb : 35
                       const thbVal = a.currency === 'USD' ? a.balance * rate : a.balance
+                      const preset = detectBankPreset(a.name)
+                      const color = preset?.color ?? CASH_COLORS[i % CASH_COLORS.length]
                       return (
                         <div
                           key={a.id}
@@ -433,7 +459,7 @@ export function Dashboard() {
                           }}
                           style={{
                             width: `${cash > 0 ? (thbVal / cash) * 100 : 0}%`,
-                            background: CASH_COLORS[i % CASH_COLORS.length],
+                            background: color,
                           }}
                           title={`${a.name}: ${moneyCompact(a.balance, a.currency)} (Click to edit)`}
                           className="cursor-pointer hover:opacity-80 transition-opacity"
@@ -444,30 +470,41 @@ export function Dashboard() {
 
                   {/* Cash accounts list grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
-                    {data.cashAccounts.map((a, i) => (
-                      <button
-                        key={a.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedCashAccountId(a.id)
-                          setCashOpen(true)
-                        }}
-                        aria-label={`Edit ${a.name}, balance ${moneyCompact(a.balance, a.currency)}`}
-                        className="flex flex-col text-left p-2.5 rounded-xl bg-surface-muted/50 border border-line/40 hover:bg-surface-muted hover:border-brand/40 hover:shadow-xs group transition-all cursor-pointer active:scale-[0.98]"
-                        title={`Click to edit ${a.name}`}
-                      >
-                        <span className="flex items-center gap-1.5 text-[11px] font-medium text-ink-muted truncate w-full">
-                          <span
-                            className="h-2 w-2 shrink-0 rounded-full"
-                            style={{ background: CASH_COLORS[i % CASH_COLORS.length] }}
-                          />
-                          <span className="truncate group-hover:text-ink transition-colors">{a.name}</span>
-                        </span>
-                        <span className="mt-1 font-display font-bold tnum text-[13.5px] text-ink">
-                          {moneyCompact(a.balance, a.currency)}
-                        </span>
-                      </button>
-                    ))}
+                    {data.cashAccounts.map((a, i) => {
+                      const preset = detectBankPreset(a.name)
+                      const color = preset?.color ?? CASH_COLORS[i % CASH_COLORS.length]
+                      return (
+                        <button
+                          key={a.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCashAccountId(a.id)
+                            setCashOpen(true)
+                          }}
+                          aria-label={`Edit ${a.name}, balance ${moneyCompact(a.balance, a.currency)}`}
+                          className="flex flex-col text-left p-2.5 rounded-xl bg-surface-muted/50 border border-line/40 hover:bg-surface-muted hover:border-brand/40 hover:shadow-xs group transition-all cursor-pointer active:scale-[0.98]"
+                          title={`Click to edit ${a.name}`}
+                        >
+                          <span className="flex items-center justify-between gap-1.5 text-[11px] font-medium text-ink-muted truncate w-full">
+                            <span className="flex items-center gap-1.5 truncate">
+                              <span
+                                className="h-2 w-2 shrink-0 rounded-full"
+                                style={{ background: color }}
+                              />
+                              <span className="truncate group-hover:text-ink transition-colors">{a.name}</span>
+                            </span>
+                            {a.interestRate !== undefined && a.interestRate > 0 && (
+                              <span className="shrink-0 text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded font-mono">
+                                {a.interestRate}%
+                              </span>
+                            )}
+                          </span>
+                          <span className="mt-1 font-display font-bold tnum text-[13.5px] text-ink">
+                            {moneyCompact(a.balance, a.currency)}
+                          </span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
               ) : (
