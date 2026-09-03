@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { SegmentedControl } from '../ui/SegmentedControl'
 import type { NetWorthSnapshot } from '../../lib/types'
 import { thb, thbCompact } from '../../lib/format'
 
@@ -144,24 +145,19 @@ export function InteractiveNetWorthChart({ history }: InteractiveNetWorthChartPr
             </span>
           </div>
 
-          <div className="flex items-center rounded-xl bg-surface-muted p-0.5 border border-line/60">
-            {(['1M', '3M', '6M', '1Y', 'ALL'] as TimeFrame[]).map((tf) => (
-              <button
-                key={tf}
-                type="button"
-                onClick={() => setTimeframe(tf)}
-                aria-label={`Select timeframe ${tf}`}
-                aria-pressed={timeframe === tf}
-                className={`px-2.5 py-1 text-[11.5px] font-semibold rounded-lg transition-all cursor-pointer ${
-                  timeframe === tf
-                    ? 'bg-surface text-ink shadow-xs font-bold'
-                    : 'text-ink-muted hover:text-ink'
-                }`}
-              >
-                {tf}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            size="sm"
+            fullWidth={false}
+            value={timeframe}
+            onChange={(tf) => setTimeframe(tf as TimeFrame)}
+            options={([
+              { value: '1M', label: '1M' },
+              { value: '3M', label: '3M' },
+              { value: '6M', label: '6M' },
+              { value: '1Y', label: '1Y' },
+              { value: 'ALL', label: 'ALL' },
+            ] as const)}
+          />
         </div>
       </div>
 
