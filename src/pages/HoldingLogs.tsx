@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { FilterChip } from '../components/ui/FilterChip'
@@ -10,7 +11,15 @@ import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC, goldThbPerGramToXauUsd } from '../lib/calc'
 import type { AssetClass, HoldingLog } from '../lib/types'
-import { ClockIcon, UndoIcon, WalletIcon } from '../components/icons'
+import {
+  ClockIcon,
+  DownloadIcon,
+  ListIcon,
+  SearchIcon,
+  TableIcon,
+  UndoIcon,
+  WalletIcon,
+} from '../components/icons'
 
 
 interface ActionMeta {
@@ -132,6 +141,188 @@ function getDisplayNote(log: HoldingLog): string {
   return log.note
 }
 
+function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null): {
+  priceDisplay: string
+  sharesDisplay: string
+  amountThbDisplay: string
+  amountThbValue: number | null
+} {
+  const prev = log.previousHoldingState
+  const curr = log.afterHoldingState
+  const fx = usdThb && usdThb > 0 ? usdThb : 34
+
+  if (curr) {
+    const prevUnits = prev ? (prev.units ?? prev.totalUnits ?? 0) : 0
+    const currUnits = curr.units ?? curr.totalUnits ?? 0
+    const unitDiff = log.action === 'add' ? currUnits : (currUnits - prevUnits)
+
+    const prevBasis = prev ? (prev.totalThbInvested ?? (prevUnits * (prev.avgCostThb ?? prev.avgCost ?? 0))) : 0
+    const currBasis = curr.totalThbInvested ?? (currUnits * (curr.avgCostThb ?? curr.avgCost ?? 0))
+    let costDiff = log.action === 'add' ? currBasis : (currBasis - prevBasis)
+
+    // Format units
+    let sharesDisplay = '-'
+    if (Math.abs(unitDiff) > 0.00001) {
+      const sign = unitDiff > 0 ? '+' : ''
+      if (log.assetClass === 'crypto') {
+        const sats = Math.round(unitDiff * SATS_PER_BTC)
+        sharesDisplay = `${sign}${sats.toLocaleString()} sats`
+      } else if (log.assetClass === 'gold') {
+        sharesDisplay = `${sign}${unitDiff.toFixed(4)} g`
+      } else if (log.assetClass === 'stock') {
+        sharesDisplay = `${sign}${unitDiff.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares`
+      } else {
+        sharesDisplay = `${sign}${unitDiff.toLocaleString(undefined, { maximumFractionDigits: 4 })} units`
+      }
+    }
+
+    // Format price
+    let priceDisplay = '-'
+    if (log.action === 'buy_more' || log.action === 'add') {
+      if (log.assetClass === 'stock') {
+        const notePriceMatch = log.note.match(/@\s*\$([0-9,.]+)/)
+        if (notePriceMatch) {
+          priceDisplay = `$${notePriceMatch[1]}`
+        } else if (curr.avgCostUsd && curr.avgCostUsd > 0) {
+          priceDisplay = `$${curr.avgCostUsd.toFixed(2)}`
+        } else if (curr.price && curr.price > 0) {
+          priceDisplay = `$${(curr.price / fx).toFixed(2)}`
+        }
+      } else if (log.assetClass === 'crypto') {
+        const noteSpentMatch = log.note.match(/฿([0-9,.]+)\s*spent/)
+        if (noteSpentMatch && Math.abs(unitDiff) > 0) {
+          const spent = parseFloat(noteSpentMatch[1].replace(/,/g, ''))
+          costDiff = spent
+          const pricePerBtc = spent / unitDiff
+          priceDisplay = `฿${Math.round(pricePerBtc).toLocaleString()}`
+        } else if (curr.price && curr.price > 0) {
+          priceDisplay = `฿${Math.round(curr.price).toLocaleString()}`
+        }
+      } else if (log.assetClass === 'gold') {
+        const noteSpentMatch = log.note.match(/฿([0-9,.]+)\s*spent/)
+        if (noteSpentMatch && Math.abs(unitDiff) > 0) {
+          const spent = parseFloat(noteSpentMatch[1].replace(/,/g, ''))
+          costDiff = spent
+          const pricePerGram = spent / unitDiff
+          priceDisplay = `฿${pricePerGram.toFixed(2)}/g`
+        } else if (curr.price && curr.price > 0) {
+          priceDisplay = `฿${curr.price.toFixed(2)}/g`
+        }
+      } else {
+        const notePriceMatch = log.note.match(/@\s*฿([0-9,.]+)/)
+        if (notePriceMatch) {
+          priceDisplay = `฿${notePriceMatch[1]}`
+        } else if (unitDiff > 0 && costDiff > 0) {
+          priceDisplay = `฿${(costDiff / unitDiff).toFixed(2)}`
+        } else if (curr.price && curr.price > 0) {
+          priceDisplay = `฿${curr.price.toFixed(2)}`
+        }
+      }
+    } else if (log.action === 'edit') {
+      const prevPrice = prev?.price ?? 0
+      const currPrice = curr.price ?? 0
+      if (Math.abs(currPrice - prevPrice) > 0.001) {
+        if (log.assetClass === 'stock') {
+          priceDisplay = `$${(currPrice / fx).toFixed(2)}`
+        } else if (log.assetClass === 'crypto') {
+          priceDisplay = `฿${Math.round(currPrice).toLocaleString()}`
+        } else {
+          priceDisplay = `฿${currPrice.toFixed(2)}`
+        }
+      }
+    }
+
+    // Format amount THB
+    let amountThbDisplay = '-'
+    let amountThbValue: number | null = null
+
+    const spentMatch = log.note.match(/฿([0-9,.]+)\s*spent/)
+    const depositMatch = log.note.match(/Deposited\s*฿([0-9,.]+)/)
+    const costMatch = log.note.match(/\(\+฿([0-9,.]+)\)/)
+
+    if (spentMatch) {
+      amountThbValue = parseFloat(spentMatch[1].replace(/,/g, ''))
+    } else if (depositMatch) {
+      amountThbValue = parseFloat(depositMatch[1].replace(/,/g, ''))
+    } else if (costMatch) {
+      amountThbValue = parseFloat(costMatch[1].replace(/,/g, ''))
+    } else if (Math.abs(costDiff) > 1) {
+      amountThbValue = Math.abs(costDiff)
+    } else if (log.assetClass === 'stock' && Math.abs(unitDiff) > 0) {
+      const notePriceMatch = log.note.match(/@\s*\$([0-9,.]+)/)
+      if (notePriceMatch) {
+        const pUsd = parseFloat(notePriceMatch[1].replace(/,/g, ''))
+        amountThbValue = Math.abs(unitDiff) * pUsd * fx
+      }
+    }
+
+    if (amountThbValue !== null && amountThbValue > 0) {
+      amountThbDisplay = `฿${amountThbValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    }
+
+    return {
+      priceDisplay,
+      sharesDisplay,
+      amountThbDisplay,
+      amountThbValue,
+    }
+  }
+
+  // Fallback for logs without holding state
+  const depositMatch = log.note.match(/฿([0-9,.]+)/)
+  const amountThbValue = depositMatch ? parseFloat(depositMatch[1].replace(/,/g, '')) : null
+  const amountThbDisplay = amountThbValue ? `฿${amountThbValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'
+
+  return {
+    priceDisplay: '-',
+    sharesDisplay: '-',
+    amountThbDisplay,
+    amountThbValue,
+  }
+}
+
+// Helper to detect destination wallet / storage location
+function getDestinationLocation(log: HoldingLog): string | null {
+  const prev = log.previousHoldingState
+  const curr = log.afterHoldingState
+
+  if (log.assetClass === 'crypto') {
+    const prevLocs = prev?.btcLocations ?? []
+    const currLocs = curr?.btcLocations ?? []
+    for (const c of currLocs) {
+      const p = prevLocs.find((item) => item.id === c.id || item.name === c.name)
+      if (!p || c.satoshi > p.satoshi || c.thbSpent > p.thbSpent) {
+        return c.name
+      }
+    }
+    if (currLocs.length === 1) return currLocs[0].name
+  }
+
+  if (log.assetClass === 'gold') {
+    const prevLocs = prev?.goldLocations ?? []
+    const currLocs = curr?.goldLocations ?? []
+    for (const c of currLocs) {
+      const p = prevLocs.find((item) => item.id === c.id || item.name === c.name)
+      if (!p || c.grams > p.grams || c.thbSpent > p.thbSpent) {
+        return c.name
+      }
+    }
+    if (currLocs.length === 1) return currLocs[0].name
+  }
+
+  if (log.note) {
+    const match = log.note.match(/(?:·|→)\s*([A-Za-z0-9\s_-]+)$/)
+    if (match && match[1]) {
+      const name = match[1].trim()
+      if (!name.startsWith('(+') && !name.startsWith('฿') && !name.startsWith('$') && !name.endsWith('spent')) {
+        return name
+      }
+    }
+  }
+
+  return null
+}
+
 const ASSET_FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'fund', label: 'Funds' },
@@ -166,12 +357,106 @@ export function HoldingLogs() {
   const [undoTarget, setUndoTarget] = useState<HoldingLog | null>(null)
   const [assetFilter, setAssetFilter] = useState<AssetClass | 'all'>('all')
   const [actionFilter, setActionFilter] = useState<'all' | 'add' | 'buy_more' | 'edit'>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [viewMode, setViewMode] = useState<'table' | 'timeline'>(() => {
+    const saved = localStorage.getItem('spendiary_logs_view_mode')
+    if (saved === 'timeline' || saved === 'table') return saved
+    return 'table'
+  })
+  const [expandedLogId, setExpandedLogId] = useState<string | null>(null)
+
+  const handleViewModeChange = (mode: 'table' | 'timeline') => {
+    setViewMode(mode)
+    localStorage.setItem('spendiary_logs_view_mode', mode)
+  }
 
   const filtered = logs.filter((l) => {
     if (assetFilter !== 'all' && l.assetClass !== assetFilter) return false
     if (actionFilter !== 'all' && l.action !== actionFilter) return false
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      const loc = getDestinationLocation(l)?.toLowerCase() || ''
+      const actionMeta = getLogActionMeta(l)
+      const match =
+        l.ticker?.toLowerCase().includes(q) ||
+        l.holdingName.toLowerCase().includes(q) ||
+        l.note.toLowerCase().includes(q) ||
+        l.assetClass.toLowerCase().includes(q) ||
+        actionMeta.label.toLowerCase().includes(q) ||
+        loc.includes(q)
+      if (!match) return false
+    }
+
     return true
   })
+
+  const handleExportCsv = () => {
+    if (filtered.length === 0) {
+      showToast('No transactions to export', 'error')
+      return
+    }
+
+    const headers = [
+      'Date',
+      'Time',
+      'Action',
+      'Asset Class',
+      'Ticker',
+      'Holding Name',
+      'Units / Shares',
+      'Price',
+      'Total Amount (THB)',
+      'Wallet / Location',
+      'Note',
+    ]
+
+    const escapeCsv = (val: string | number | null | undefined): string => {
+      if (val === null || val === undefined) return ''
+      const str = String(val).trim()
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`
+      }
+      return str
+    }
+
+    const rows = filtered.map((log) => {
+      const dt = new Date(log.timestamp)
+      const dateStr = dt.toISOString().slice(0, 10)
+      const timeStr = dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+      const actionMeta = getLogActionMeta(log)
+      const locName = getDestinationLocation(log)
+      const tx = getLogTransactionDetails(log, usdThb)
+      const noteStr = getDisplayNote(log)
+
+      return [
+        escapeCsv(dateStr),
+        escapeCsv(timeStr),
+        escapeCsv(actionMeta.label),
+        escapeCsv(log.assetClass),
+        escapeCsv(log.ticker || ''),
+        escapeCsv(log.holdingName),
+        escapeCsv(tx.sharesDisplay !== '-' ? tx.sharesDisplay : ''),
+        escapeCsv(tx.priceDisplay !== '-' ? tx.priceDisplay : ''),
+        escapeCsv(tx.amountThbValue !== null ? tx.amountThbValue.toFixed(2) : ''),
+        escapeCsv(locName || ''),
+        escapeCsv(noteStr),
+      ].join(',')
+    })
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `spendiary-activity-logs-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+
+    showToast(`Exported ${filtered.length} transaction${filtered.length === 1 ? '' : 's'} to CSV`, 'success')
+  }
 
   // Group by date
   const groups: { date: string; entries: typeof filtered }[] = []
@@ -185,48 +470,6 @@ export function HoldingLogs() {
     } else {
       groups.push({ date, entries: [log] })
     }
-  }
-
-  // Helper to detect destination wallet / storage location
-  const getDestinationLocation = (log: typeof filtered[number]): string | null => {
-    const prev = log.previousHoldingState
-    const curr = log.afterHoldingState
-
-    if (log.assetClass === 'crypto') {
-      const prevLocs = prev?.btcLocations ?? []
-      const currLocs = curr?.btcLocations ?? []
-      for (const c of currLocs) {
-        const p = prevLocs.find((item) => item.id === c.id || item.name === c.name)
-        if (!p || c.satoshi > p.satoshi || c.thbSpent > p.thbSpent) {
-          return c.name
-        }
-      }
-      if (currLocs.length === 1) return currLocs[0].name
-    }
-
-    if (log.assetClass === 'gold') {
-      const prevLocs = prev?.goldLocations ?? []
-      const currLocs = curr?.goldLocations ?? []
-      for (const c of currLocs) {
-        const p = prevLocs.find((item) => item.id === c.id || item.name === c.name)
-        if (!p || c.grams > p.grams || c.thbSpent > p.thbSpent) {
-          return c.name
-        }
-      }
-      if (currLocs.length === 1) return currLocs[0].name
-    }
-
-    if (log.note) {
-      const match = log.note.match(/(?:·|→)\s*([A-Za-z0-9\s_-]+)$/)
-      if (match && match[1]) {
-        const name = match[1].trim()
-        if (!name.startsWith('(+') && !name.startsWith('฿') && !name.startsWith('$') && !name.endsWith('spent')) {
-          return name
-        }
-      }
-    }
-
-    return null
   }
 
   // Helper to render before -> after comparison details
@@ -524,8 +767,81 @@ export function HoldingLogs() {
         onStartGuide={startTour}
       />
 
-      {/* Filters */}
-      <div id="guide-logs-header" className="mb-5 space-y-2.5">
+      {/* Toolbar: Search + View Switcher + Export */}
+      <div id="guide-logs-header" className="mb-5 space-y-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="relative flex-1 min-w-[220px]">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-ink-faint">
+              <SearchIcon className="h-4 w-4" />
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search ticker, asset, note, wallet..."
+              className="h-10 w-full rounded-xl border border-line bg-surface pl-9 pr-8 text-[13px] text-ink placeholder:text-ink-faint outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                aria-label="Clear search"
+                className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-ink-faint hover:text-ink cursor-pointer"
+              >
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-surface-muted text-[11px] font-bold">
+                  ✕
+                </span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {/* View Switcher */}
+            <div className="inline-flex rounded-xl bg-surface-muted p-1 border border-line-strong/30 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleViewModeChange('table')}
+                title="Table statement view"
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all cursor-pointer ${
+                  viewMode === 'table'
+                    ? 'bg-surface text-ink shadow-xs font-bold border border-line/40'
+                    : 'text-ink-muted hover:text-ink'
+                }`}
+              >
+                <TableIcon className="h-3.5 w-3.5" />
+                <span>Table</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleViewModeChange('timeline')}
+                title="Timeline feed view"
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all cursor-pointer ${
+                  viewMode === 'timeline'
+                    ? 'bg-surface text-ink shadow-xs font-bold border border-line/40'
+                    : 'text-ink-muted hover:text-ink'
+                }`}
+              >
+                <ListIcon className="h-3.5 w-3.5" />
+                <span>Timeline</span>
+              </button>
+            </div>
+
+            {/* Export CSV */}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleExportCsv}
+              disabled={filtered.length === 0}
+              title="Export activity logs to CSV"
+              className="cursor-pointer shrink-0 h-9"
+            >
+              <DownloadIcon className="h-3.5 w-3.5" />
+              <span>Export CSV</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Filter Chips */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
           {ASSET_FILTERS.map((f) => (
             <FilterChip
@@ -538,22 +854,33 @@ export function HoldingLogs() {
             </FilterChip>
           ))}
         </div>
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
-          {ACTION_FILTERS.map((f) => (
-            <FilterChip
-              key={f.key}
-              active={actionFilter === f.key}
-              onClick={() => setActionFilter(f.key)}
-              aria-label={`Filter by ${f.label}`}
-            >
-              {f.label}
-            </FilterChip>
-          ))}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
+            {ACTION_FILTERS.map((f) => (
+              <FilterChip
+                key={f.key}
+                active={actionFilter === f.key}
+                onClick={() => setActionFilter(f.key)}
+                aria-label={`Filter by ${f.label}`}
+              >
+                {f.label}
+              </FilterChip>
+            ))}
+          </div>
+
+          <div className="text-[12px] text-ink-muted font-medium px-1">
+            {filtered.length} {filtered.length === 1 ? 'item' : 'items'}
+            {(searchQuery || assetFilter !== 'all' || actionFilter !== 'all') && (
+              <span className="text-ink-faint ml-1">
+                (filtered from {logs.length})
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
       <div id="guide-logs-list">
-        {filtered.length === 0 ? (
+        {logs.length === 0 ? (
           <Card>
             <EmptyState
               icon={<ClockIcon className="h-7 w-7" />}
@@ -561,6 +888,161 @@ export function HoldingLogs() {
               description="Actions you take in Portfolio (adding, buying more, or editing holdings) will appear here."
               accent="var(--color-brand)"
             />
+          </Card>
+        ) : filtered.length === 0 ? (
+          <Card>
+            <EmptyState
+              icon={<SearchIcon className="h-7 w-7" />}
+              title="No transactions match your search"
+              description="Try adjusting your keywords or clearing the active filters."
+              accent="var(--color-brand)"
+              action={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setSearchQuery('')
+                    setAssetFilter('all')
+                    setActionFilter('all')
+                  }}
+                  className="mt-2 cursor-pointer"
+                >
+                  Clear all filters
+                </Button>
+              }
+            />
+          </Card>
+        ) : viewMode === 'table' ? (
+          <Card padded={false} className="overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-[13px] border-collapse min-w-[840px]">
+                <thead>
+                  <tr className="border-b border-line bg-surface-muted/60 text-[11px] font-bold text-ink-muted uppercase tracking-wider">
+                    <th className="py-3 px-4">Date & Time</th>
+                    <th className="py-3 px-3">Action</th>
+                    <th className="py-3 px-3">Asset / Ticker</th>
+                    <th className="py-3 px-3 text-right">Price / NAV</th>
+                    <th className="py-3 px-3 text-right">Shares / Qty</th>
+                    <th className="py-3 px-3 text-right">Amount (THB)</th>
+                    <th className="py-3 px-3">Location</th>
+                    <th className="py-3 px-4 min-w-[200px]">Note</th>
+                    <th className="py-3 px-4 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {filtered.map((log) => {
+                    const actionMeta = getLogActionMeta(log)
+                    const locName = getDestinationLocation(log)
+                    const tx = getLogTransactionDetails(log, usdThb)
+                    const dt = new Date(log.timestamp)
+                    const dateStr = dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                    const timeStr = dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+                    const isExpanded = expandedLogId === log.id
+                    const hasComparison = !!(log.previousHoldingState && log.afterHoldingState)
+
+                    return (
+                      <Fragment key={log.id}>
+                        <tr
+                          onClick={() => {
+                            if (hasComparison) {
+                              setExpandedLogId(isExpanded ? null : log.id)
+                            }
+                          }}
+                          className={`transition-colors ${
+                            hasComparison ? 'cursor-pointer hover:bg-surface-muted/50' : 'hover:bg-surface-muted/30'
+                          } ${isExpanded ? 'bg-surface-muted/40' : ''}`}
+                        >
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <div className="font-semibold text-ink text-[12.5px] tnum">{dateStr}</div>
+                            <div className="text-[11px] text-ink-faint tnum">{timeStr}</div>
+                          </td>
+                          <td className="py-3 px-3 whitespace-nowrap">
+                            <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold ${actionMeta.style}`}>
+                              {actionMeta.label}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-ink text-[13.5px]">{log.holdingName}</span>
+                              {log.ticker && log.ticker !== 'CASH' && log.ticker !== 'FIXED' && log.ticker !== 'DCA' && (
+                                <span className="rounded-md bg-surface-muted px-1.5 py-0.5 text-[10.5px] font-medium text-ink-muted">
+                                  {log.ticker}
+                                </span>
+                              )}
+                            </div>
+                            <span
+                              className="inline-block mt-0.5 text-[10.5px] font-semibold uppercase tracking-wider"
+                              style={{ color: ASSET_META[log.assetClass]?.color ?? '#6366f1' }}
+                            >
+                              {log.assetClass}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-right whitespace-nowrap tnum font-semibold text-ink">
+                            {tx.priceDisplay}
+                          </td>
+                          <td className="py-3 px-3 text-right whitespace-nowrap tnum font-bold text-brand">
+                            {tx.sharesDisplay}
+                          </td>
+                          <td className="py-3 px-3 text-right whitespace-nowrap tnum font-semibold text-ink">
+                            {tx.amountThbDisplay}
+                          </td>
+                          <td className="py-3 px-3 whitespace-nowrap">
+                            {locName ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 border border-brand/20 px-2 py-0.5 text-[10.5px] font-semibold text-brand">
+                                <WalletIcon className="h-3 w-3" />
+                                {locName}
+                              </span>
+                            ) : (
+                              <span className="text-ink-faint text-[12px]">-</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-[12px] text-ink-muted max-w-[260px]">
+                            <div className="flex items-center gap-1.5">
+                              <span className="truncate" title={getDisplayNote(log)}>
+                                {getDisplayNote(log)}
+                              </span>
+                              {hasComparison && (
+                                <span
+                                  className="text-[10px] text-brand hover:underline shrink-0 font-medium"
+                                  title="Click row to view Before/After comparison"
+                                >
+                                  {isExpanded ? '▲ Hide' : '▼ Diff'}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-center whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setUndoTarget(log)
+                              }}
+                              aria-label={`Undo activity for ${log.holdingName}`}
+                              className="rounded-lg px-2 py-1 text-[11px] font-bold text-loss hover:bg-loss/10 transition-colors cursor-pointer"
+                            >
+                              Undo
+                            </button>
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr className="bg-surface-muted/20 border-b border-line">
+                            <td colSpan={9} className="p-4 pl-8 sm:pl-12">
+                              <div className="max-w-xl">
+                                <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-1">
+                                  State Comparison (Before → After)
+                                </p>
+                                {renderStateComparison(log)}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </Card>
         ) : (
           <div className="space-y-6">
