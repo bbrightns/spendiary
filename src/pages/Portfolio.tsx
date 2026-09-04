@@ -753,9 +753,9 @@ export function Portfolio() {
                                   setActiveMenuHoldingId(null)
                                   openBuy(h)
                                 }}
-                                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-ink hover:bg-brand/10 hover:text-brand transition-colors cursor-pointer text-left"
+                                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
                               >
-                                <PlusIcon className="h-4 w-4 text-brand shrink-0" strokeWidth={2.4} />
+                                <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
                                 <span>ซื้อเพิ่ม (Buy)</span>
                               </button>
                               <button
