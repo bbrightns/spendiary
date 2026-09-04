@@ -23,7 +23,7 @@ import { Button } from '../components/ui/Button'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import { PlusIcon, MinusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon, DownloadIcon } from '../components/icons'
+import { PlusIcon, MinusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon, DownloadIcon, DotsHorizontalIcon } from '../components/icons'
 import {
   ASSET_META,
   GRAMS_PER_BAHT_GOLD,
@@ -107,6 +107,15 @@ export function Portfolio() {
   const [buying, setBuying] = useState<Holding | null>(null)
   const [sellOpen, setSellOpen] = useState(false)
   const [selling, setSelling] = useState<Holding | null>(null)
+  const [activeMenuHoldingId, setActiveMenuHoldingId] = useState<string | null>(null)
+
+  // Close action dropdown menu when clicking outside
+  useEffect(() => {
+    if (!activeMenuHoldingId) return
+    const handleClickOutside = () => setActiveMenuHoldingId(null)
+    window.addEventListener('click', handleClickOutside)
+    return () => window.removeEventListener('click', handleClickOutside)
+  }, [activeMenuHoldingId])
 
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false)
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null)
@@ -133,8 +142,36 @@ export function Portfolio() {
 
   const openAdd = () => { setEditing(null); setFormOpen(true) }
   const openEdit = (h: Holding) => { setEditing(h); setFormOpen(true) }
-  const openBuy = (h: Holding) => { setBuying(h); setBuyOpen(true) }
-  const openSell = (h: Holding) => { setSelling(h); setSellOpen(true) }
+  const openBuy = (h: Holding) => {
+    setSelling(null)
+    setSellOpen(false)
+    setBuying(h)
+    setBuyOpen(true)
+  }
+  const openSell = (h: Holding) => {
+    setBuying(null)
+    setBuyOpen(false)
+    setSelling(h)
+    setSellOpen(true)
+  }
+  const switchToSell = () => {
+    if (buying) {
+      const h = buying
+      setBuying(null)
+      setBuyOpen(false)
+      setSelling(h)
+      setSellOpen(true)
+    }
+  }
+  const switchToBuy = () => {
+    if (selling) {
+      const h = selling
+      setSelling(null)
+      setSellOpen(false)
+      setBuying(h)
+      setBuyOpen(true)
+    }
+  }
   function openLocEdit(holdingId: string, loc: BtcLocation | import('../lib/types').GoldLocation) {
     setLocEditHoldingId(holdingId)
     setLocEditing(loc)
@@ -652,28 +689,6 @@ export function Portfolio() {
                     </svg>
                   )
 
-                  const buyBtn = (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); openBuy(h) }}
-                      aria-label={`Buy more ${h.name}`}
-                      title="Buy more / ซื้อเพิ่ม"
-                      className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-soft text-brand transition-all hover:bg-brand hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 cursor-pointer"
-                    >
-                      <PlusIcon className="h-[16px] w-[16px]" strokeWidth={2.2} />
-                    </button>
-                  )
-
-                  const sellBtn = (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); openSell(h) }}
-                      aria-label={`Sell ${h.name}`}
-                      title="Sell / ขายออก"
-                      className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-all hover:bg-rose-600 hover:text-white dark:hover:bg-rose-600 active:scale-95 cursor-pointer"
-                    >
-                      <MinusIcon className="h-[16px] w-[16px]" strokeWidth={2.2} />
-                    </button>
-                  )
-
                   const rowClick = () => {
                     if (isExpandable) setExpandedId(isExpanded ? null : h.id)
                     else openEdit(h)
@@ -682,7 +697,7 @@ export function Portfolio() {
                   return (
                     <li
                       key={h.id}
-                      className="overflow-hidden transition-colors hover:bg-surface-muted/50"
+                      className="transition-colors hover:bg-surface-muted/50"
                     >
                       {/* ── Compact & Desktop Unified Row ── */}
                       <div
@@ -711,9 +726,63 @@ export function Portfolio() {
                             <PnLPill value={h.pnlPct} asPct />
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {buyBtn}
-                          {sellBtn}
+                        
+                        {/* ── Action Dropdown Menu [ ⋯ ] ── */}
+                        <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => setActiveMenuHoldingId((curr) => (curr === h.id ? null : h.id))}
+                            aria-label={`Actions for ${h.name}`}
+                            title="Actions / เมนูจัดการ"
+                            className={`relative grid h-8 w-8 place-items-center rounded-full transition-all cursor-pointer ${
+                              activeMenuHoldingId === h.id
+                                ? 'bg-ink text-white dark:bg-[#4f46e5] shadow-xs'
+                                : 'bg-surface-muted text-ink-muted hover:bg-surface-elevated hover:text-ink active:scale-95'
+                            }`}
+                          >
+                            <DotsHorizontalIcon className="h-4 w-4" />
+                          </button>
+
+                          {activeMenuHoldingId === h.id && (
+                            <div
+                              className="absolute right-0 top-full mt-1.5 z-40 min-w-[165px] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMenuHoldingId(null)
+                                  openBuy(h)
+                                }}
+                                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-ink hover:bg-brand/10 hover:text-brand transition-colors cursor-pointer text-left"
+                              >
+                                <PlusIcon className="h-4 w-4 text-brand shrink-0" strokeWidth={2.4} />
+                                <span>ซื้อเพิ่ม (Buy)</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMenuHoldingId(null)
+                                  openSell(h)
+                                }}
+                                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
+                              >
+                                <MinusIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.4} />
+                                <span>ขายออก (Sell)</span>
+                              </button>
+                              <div className="my-1 border-t border-line/60" />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMenuHoldingId(null)
+                                  openEdit(h)
+                                }}
+                                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer text-left"
+                              >
+                                <PencilIcon className="h-3.5 w-3.5 shrink-0" />
+                                <span>แก้ไข (Edit)</span>
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -814,8 +883,24 @@ export function Portfolio() {
       </div>
 
       <HoldingForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
-      <BuyMoreForm open={buyOpen} holding={buying} onClose={() => setBuyOpen(false)} />
-      <SellHoldingModal open={sellOpen} holding={selling} onClose={() => setSellOpen(false)} />
+      <BuyMoreForm
+        open={buyOpen}
+        holding={buying}
+        onClose={() => {
+          setBuyOpen(false)
+          setBuying(null)
+        }}
+        onSwitchToSell={switchToSell}
+      />
+      <SellHoldingModal
+        open={sellOpen}
+        holding={selling}
+        onClose={() => {
+          setSellOpen(false)
+          setSelling(null)
+        }}
+        onSwitchToBuy={switchToBuy}
+      />
 
       {/* BTC / Gold location edit modal */}
       <Modal
