@@ -12,6 +12,7 @@ import { DonutChart } from '../components/charts/DonutChart'
 import { PnLPill, PnLText } from '../components/ui/PnL'
 import { HoldingForm } from '../components/forms/HoldingForm'
 import { BuyMoreForm } from '../components/forms/BuyMoreForm'
+import { SellHoldingModal } from '../components/forms/SellHoldingModal'
 import { Modal } from '../components/ui/Modal'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { FilterChip } from '../components/ui/FilterChip'
@@ -22,7 +23,7 @@ import { Button } from '../components/ui/Button'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import { PlusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon, DownloadIcon } from '../components/icons'
+import { PlusIcon, MinusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon, DownloadIcon } from '../components/icons'
 import {
   ASSET_META,
   GRAMS_PER_BAHT_GOLD,
@@ -104,6 +105,8 @@ export function Portfolio() {
   const [editing, setEditing] = useState<Holding | null>(null)
   const [buyOpen, setBuyOpen] = useState(false)
   const [buying, setBuying] = useState<Holding | null>(null)
+  const [sellOpen, setSellOpen] = useState(false)
+  const [selling, setSelling] = useState<Holding | null>(null)
 
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false)
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null)
@@ -131,6 +134,7 @@ export function Portfolio() {
   const openAdd = () => { setEditing(null); setFormOpen(true) }
   const openEdit = (h: Holding) => { setEditing(h); setFormOpen(true) }
   const openBuy = (h: Holding) => { setBuying(h); setBuyOpen(true) }
+  const openSell = (h: Holding) => { setSelling(h); setSellOpen(true) }
   function openLocEdit(holdingId: string, loc: BtcLocation | import('../lib/types').GoldLocation) {
     setLocEditHoldingId(holdingId)
     setLocEditing(loc)
@@ -652,10 +656,21 @@ export function Portfolio() {
                     <button
                       onClick={(e) => { e.stopPropagation(); openBuy(h) }}
                       aria-label={`Buy more ${h.name}`}
-                      title="Buy more"
+                      title="Buy more / ซื้อเพิ่ม"
                       className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-soft text-brand transition-all hover:bg-brand hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 cursor-pointer"
                     >
                       <PlusIcon className="h-[16px] w-[16px]" strokeWidth={2.2} />
+                    </button>
+                  )
+
+                  const sellBtn = (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openSell(h) }}
+                      aria-label={`Sell ${h.name}`}
+                      title="Sell / ขายออก"
+                      className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-all hover:bg-rose-600 hover:text-white dark:hover:bg-rose-600 active:scale-95 cursor-pointer"
+                    >
+                      <MinusIcon className="h-[16px] w-[16px]" strokeWidth={2.2} />
                     </button>
                   )
 
@@ -696,7 +711,10 @@ export function Portfolio() {
                             <PnLPill value={h.pnlPct} asPct />
                           </div>
                         </div>
-                        {buyBtn}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {buyBtn}
+                          {sellBtn}
+                        </div>
                       </div>
 
                       {/* BTC / Gold sub-breakdown panel */}
@@ -797,6 +815,7 @@ export function Portfolio() {
 
       <HoldingForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
       <BuyMoreForm open={buyOpen} holding={buying} onClose={() => setBuyOpen(false)} />
+      <SellHoldingModal open={sellOpen} holding={selling} onClose={() => setSellOpen(false)} />
 
       {/* BTC / Gold location edit modal */}
       <Modal
