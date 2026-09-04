@@ -722,15 +722,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
             return { ...prev, cashAccounts }
           }
           
+          const isOnlyAdd = changes.length > 0 && changes.every((c) => c.startsWith('Added "'))
+
           const logEntry: HoldingLog = {
             id: newId(),
             timestamp: new Date().toISOString(),
-            action: 'edit',
+            action: isOnlyAdd ? 'add' : 'edit',
             holdingName: 'Cash Accounts',
             ticker: 'CASH',
             assetClass: 'cash',
             note: changes.join(', '),
             previousCashAccountsState: oldAccounts,
+            afterCashAccountsState: cashAccounts,
           }
           
           return {
@@ -989,6 +992,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
               dcaPlanId: plan.id,
               dcaDate: date,
               previousCashAccountsState: oldAccounts,
+              afterCashAccountsState: updatedCashAccounts,
             }
 
             return {
