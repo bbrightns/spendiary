@@ -1195,40 +1195,57 @@ export function HoldingLogs() {
           </div>
         </div>
 
-        {/* Filter Chips */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
-          {ASSET_FILTERS.map((f) => (
-            <FilterChip
-              key={f.key}
-              active={assetFilter === f.key}
-              onClick={() => setAssetFilter(f.key)}
-              aria-label={`Filter by ${f.label}`}
-            >
-              {f.label}
-            </FilterChip>
-          ))}
-        </div>
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
-            {ACTION_FILTERS.map((f) => (
-              <FilterChip
-                key={f.key}
-                active={actionFilter === f.key}
-                onClick={() => setActionFilter(f.key)}
-                aria-label={`Filter by ${f.label}`}
-              >
-                {f.label}
-              </FilterChip>
-            ))}
+        {/* Filter Rows */}
+        <div className="space-y-2.5 pt-1">
+          {/* Asset Category */}
+          <div className="flex items-center gap-2.5">
+            <span className="shrink-0 text-[11px] font-bold uppercase tracking-wider text-ink-faint w-14">
+              Asset
+            </span>
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+              {ASSET_FILTERS.map((f) => (
+                <FilterChip
+                  key={f.key}
+                  active={assetFilter === f.key}
+                  onClick={() => setAssetFilter(f.key)}
+                  aria-label={`Filter by ${f.label}`}
+                  className="text-[12px] py-1 px-3"
+                >
+                  {f.label}
+                </FilterChip>
+              ))}
+            </div>
           </div>
 
-          <div className="text-[12px] text-ink-muted font-medium px-1">
-            {filtered.length} {filtered.length === 1 ? 'item' : 'items'}
-            {(searchQuery || assetFilter !== 'all' || actionFilter !== 'all') && (
-              <span className="text-ink-faint ml-1">
-                (filtered from {logs.length})
+          {/* Action Type & Count */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2.5">
+              <span className="shrink-0 text-[11px] font-bold uppercase tracking-wider text-ink-faint w-14">
+                Action
               </span>
-            )}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                {ACTION_FILTERS.map((f) => (
+                  <FilterChip
+                    key={f.key}
+                    active={actionFilter === f.key}
+                    onClick={() => setActionFilter(f.key)}
+                    aria-label={`Filter by ${f.label}`}
+                    className="text-[12px] py-1 px-3"
+                  >
+                    {f.label}
+                  </FilterChip>
+                ))}
+              </div>
+            </div>
+
+            <div className="text-[12px] text-ink-muted font-medium px-1 ml-auto">
+              {filtered.length} {filtered.length === 1 ? 'item' : 'items'}
+              {(searchQuery || assetFilter !== 'all' || actionFilter !== 'all') && (
+                <span className="text-ink-faint ml-1">
+                  (filtered from {logs.length})
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
