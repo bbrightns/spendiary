@@ -3,11 +3,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { DonutChart } from '../components/charts/DonutChart'
 import { InteractiveNetWorthChart } from '../components/charts/InteractiveNetWorthChart'
 import { PnLPill, PnLText } from '../components/ui/PnL'
 import { CashAccountsForm } from '../components/forms/CashAccountsForm'
+import { AiImportModal } from '../components/forms/AiImportModal'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import {
@@ -46,6 +48,7 @@ export function Dashboard() {
   const navigate = useNavigate()
   const [cashOpen, setCashOpen] = useState(false)
   const [selectedCashAccountId, setSelectedCashAccountId] = useState<string | null>(null)
+  const [aiImportOpen, setAiImportOpen] = useState(false)
   const {
     steps,
     isRunning,
@@ -58,7 +61,7 @@ export function Dashboard() {
   } = usePageGuide('dashboard')
 
   const hasAnything =
-    data.holdings.length > 0 || data.dcaPlans.length > 0
+    data.holdings.length > 0 || data.dcaPlans.length > 0 || data.cashAccounts.length > 0
 
   const portfolio = useMemo(() => portfolioSummary(data.holdings), [data.holdings])
   const alloc = useMemo(() => allocations(data.holdings), [data.holdings])
@@ -111,8 +114,20 @@ export function Dashboard() {
             icon={<SparkleIcon className="h-7 w-7" />}
             title="Welcome to Spendiary"
             description="Your private cockpit for investments, DCA plans, and transfer schedules, all in Thai Baht."
+            action={
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <Button variant="primary" onClick={() => setAiImportOpen(true)}>
+                  <SparkleIcon className="h-4 w-4 mr-1.5" />
+                  Import Portfolio & Cash (AI)
+                </Button>
+                <Button variant="secondary" onClick={() => navigate('/portfolio')}>
+                  Go to Portfolio
+                </Button>
+              </div>
+            }
           />
         </Card>
+        <AiImportModal open={aiImportOpen} onClose={() => setAiImportOpen(false)} />
       </>
     )
   }
@@ -128,22 +143,34 @@ export function Dashboard() {
           onStartGuide={startTour}
         />
 
-        {/* Global actionable badges */}
-        {dcaActions.length > 0 && (
-          <div id="guide-dashboard-dca" className="flex flex-wrap items-center gap-2 pt-1 sm:pt-0">
-            <button
-              type="button"
-              onClick={() => navigate('/dca')}
-              aria-label={`View ${dcaActions.length} DCA ${dcaActions.length === 1 ? 'buy' : 'buys'} ready to confirm`}
-              className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand-soft px-3.5 py-1.5 text-[12.5px] font-semibold text-brand-ink transition-all hover:bg-brand hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 cursor-pointer"
-            >
-              <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand dark:bg-[#4f46e5] text-[10.5px] font-bold text-white">
-                {dcaActions.length}
-              </span>
-              <span>DCA {dcaActions.length === 1 ? 'buy ready' : 'buys ready'}</span>
-            </button>
-          </div>
-        )}
+        {/* Global actionable badges & Quick Import */}
+        <div className="flex flex-wrap items-center gap-2 pt-1 sm:pt-0">
+          <button
+            type="button"
+            onClick={() => setAiImportOpen(true)}
+            title="Import Portfolio & Cash with AI"
+            className="inline-flex items-center gap-1.5 rounded-full border border-brand/25 bg-brand-soft/80 hover:bg-brand hover:text-white dark:bg-brand/20 dark:hover:bg-brand px-3.5 py-1.5 text-[12.5px] font-semibold text-brand-ink dark:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
+          >
+            <SparkleIcon className="h-3.5 w-3.5" />
+            <span>Import (AI/JSON)</span>
+          </button>
+
+          {dcaActions.length > 0 && (
+            <div id="guide-dashboard-dca">
+              <button
+                type="button"
+                onClick={() => navigate('/dca')}
+                aria-label={`View ${dcaActions.length} DCA ${dcaActions.length === 1 ? 'buy' : 'buys'} ready to confirm`}
+                className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand-soft px-3.5 py-1.5 text-[12.5px] font-semibold text-brand-ink transition-all hover:bg-brand hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 cursor-pointer"
+              >
+                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand dark:bg-[#4f46e5] text-[10.5px] font-bold text-white">
+                  {dcaActions.length}
+                </span>
+                <span>DCA {dcaActions.length === 1 ? 'buy ready' : 'buys ready'}</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── ROW 1: Net Worth Master Hero (Full Width Bento) ── */}
@@ -570,6 +597,11 @@ export function Dashboard() {
           setSelectedCashAccountId(null)
         }}
         initialAccountId={selectedCashAccountId}
+      />
+
+      <AiImportModal
+        open={aiImportOpen}
+        onClose={() => setAiImportOpen(false)}
       />
 
       <GuideTour

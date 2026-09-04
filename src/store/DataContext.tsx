@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import type { BtcLocation, CashAccount, DcaPlan, FixedCostItem, GoldLocation, Holding, HoldingLog, InvestAssetClass, NetWorthSnapshot, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
 import { localDateStr } from '../lib/format'
 import { seedData } from '../lib/seed'
-import { findMatchingHolding } from '../lib/calc'
+import { detectBankPreset, findMatchingHolding, inferCashCategory } from '../lib/calc'
 
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
@@ -27,6 +27,39 @@ function newId(): string {
 export type ImportResult =
   | { ok: true }
   | { ok: false; error: string }
+
+/** Result returned by importPortfolioAndCash */
+export type ImportPortfolioAndCashResult =
+  | { ok: true; count: { holdings: number; cashAccounts: number } }
+  | { ok: false; error: string }
+
+export function inferAssetClass(ticker: string, name: string, rawClass?: string): InvestAssetClass {
+  const normClass = (rawClass ?? '').toLowerCase().trim()
+  if (normClass === 'fund' || normClass === 'stock' || normClass === 'crypto' || normClass === 'gold') {
+    return normClass
+  }
+  const str = `${ticker} ${name}`.toUpperCase()
+  if (/\b(BTC|ETH|SOL|DOGE|ADA|XRP|BNB|USDT|USDC|CRYPTO|BITCOIN)\b/.test(str)) {
+    return 'crypto'
+  }
+  if (/\b(GOLD|XAU|ทอง)\b/i.test(str)) {
+    return 'gold'
+  }
+  if (/(-A|-SSF|-RMF|\bFUND\b|\bกองทุน\b)/i.test(str)) {
+    return 'fund'
+  }
+  return 'stock'
+}
+
+export function parseCleanNumber(val: unknown, fallback = 0): number {
+  if (typeof val === 'number' && !Number.isNaN(val)) return val
+  if (typeof val === 'string') {
+    const cleaned = val.replace(/,/g, '').trim()
+    const n = parseFloat(cleaned)
+    if (!Number.isNaN(n)) return n
+  }
+  return fallback
+}
 
 /** Strict runtime validation of an incoming JSON object as SpendiaryData. */
 export function validateSpendiaryData(obj: unknown): obj is SpendiaryData {
@@ -192,6 +225,13 @@ interface DataContextValue {
    * Returns { ok: true } on success or { ok: false; error } on failure.
    */
   importData: (jsonString: string) => ImportResult
+  /**
+   * Import portfolio holdings and cash accounts, either merging with or replacing existing data.
+   */
+  importPortfolioAndCash: (
+    payload: { holdings?: unknown[]; cashAccounts?: unknown[] },
+    mode: 'merge' | 'replace',
+  ) => ImportPortfolioAndCashResult
 }
 
 const DataContext = createContext<DataContextValue | null>(null)
@@ -1406,6 +1446,141 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
 
         return { ok: true }
+      },
+
+      importPortfolioAndCash: (payload, mode) => {
+        try {
+          const rawHoldings = Array.isArray(payload.holdings) ? payload.holdings : []
+          const rawCash = Array.isArray(payload.cashAccounts) ? payload.cashAccounts : []
+
+          if (rawHoldings.length === 0 && rawCash.length === 0) {
+            return { ok: false, error: 'No holdings or cash accounts found in the provided data.' }
+          }
+
+          const today = localDateStr(new Date())
+
+          const sanitizedHoldings: Holding[] = []
+          for (const item of rawHoldings) {
+            if (typeof item !== 'object' || item === null) continue
+            const r = item as Record<string, unknown>
+            const rawTicker = typeof r.ticker === 'string' ? r.ticker.trim() : ''
+            const rawName = typeof r.name === 'string' ? r.name.trim() : ''
+            if (!rawTicker && !rawName) continue
+
+            const ticker = (rawTicker || rawName).toUpperCase()
+            const name = rawName || rawTicker
+            const assetClass = inferAssetClass(ticker, name, typeof r.assetClass === 'string' ? r.assetClass : undefined)
+            const units = Math.max(0, parseCleanNumber(r.units ?? r.totalUnits, 0))
+            const avgCost = Math.max(0, parseCleanNumber(r.avgCost ?? r.avgCostThb ?? r.price, 0))
+            const rawPrice = parseCleanNumber(r.price, 0)
+            const price = rawPrice > 0 ? rawPrice : avgCost
+            const totalThbInvested = units * avgCost
+
+            sanitizedHoldings.push({
+              id: typeof r.id === 'string' && r.id ? r.id : newId(),
+              ticker,
+              name,
+              assetClass,
+              units,
+              totalUnits: units,
+              avgCost,
+              avgCostThb: avgCost,
+              totalThbInvested,
+              price,
+              updatedAt: today,
+            })
+          }
+
+          const sanitizedCash: CashAccount[] = []
+          for (const item of rawCash) {
+            if (typeof item !== 'object' || item === null) continue
+            const r = item as Record<string, unknown>
+            const rawName = typeof r.name === 'string' ? r.name.trim() : ''
+            if (!rawName) continue
+
+            const balance = parseCleanNumber(r.balance, 0)
+            const rawCurr = typeof r.currency === 'string' ? r.currency.toUpperCase().trim() : 'THB'
+            const currency: 'THB' | 'USD' = rawCurr === 'USD' ? 'USD' : 'THB'
+            const preset = detectBankPreset(rawName)
+            const category = inferCashCategory(rawName)
+
+            sanitizedCash.push({
+              id: typeof r.id === 'string' && r.id ? r.id : newId(),
+              name: rawName,
+              balance,
+              currency,
+              bankPreset: preset?.id,
+              category,
+            })
+          }
+
+          if (sanitizedHoldings.length === 0 && sanitizedCash.length === 0) {
+            return { ok: false, error: 'Could not extract any valid holdings or cash accounts. Please check your JSON format.' }
+          }
+
+          const logEntry: HoldingLog = {
+            id: newId(),
+            timestamp: new Date().toISOString(),
+            action: 'add',
+            holdingName: `AI Import (${sanitizedHoldings.length} holdings, ${sanitizedCash.length} cash accounts)`,
+            ticker: 'IMPORT',
+            assetClass: 'stock',
+            note: `Imported via AI/JSON Assistant (${mode === 'replace' ? 'Replaced' : 'Merged'})`,
+          }
+
+          updateData((prev) => {
+            let nextHoldings: Holding[] = []
+            if (mode === 'replace') {
+              nextHoldings = sanitizedHoldings
+            } else {
+              const existing = [...prev.holdings]
+              for (const h of sanitizedHoldings) {
+                const idx = existing.findIndex(
+                  (e) => e.ticker.toUpperCase() === h.ticker.toUpperCase() && e.assetClass === h.assetClass,
+                )
+                if (idx >= 0) {
+                  existing[idx] = { ...existing[idx], ...h, id: existing[idx].id }
+                } else {
+                  existing.push(h)
+                }
+              }
+              nextHoldings = existing
+            }
+
+            let nextCash: CashAccount[] = []
+            if (mode === 'replace') {
+              nextCash = sanitizedCash
+            } else {
+              const existing = [...prev.cashAccounts]
+              for (const c of sanitizedCash) {
+                const idx = existing.findIndex((e) => e.name.toLowerCase() === c.name.toLowerCase())
+                if (idx >= 0) {
+                  existing[idx] = { ...existing[idx], ...c, id: existing[idx].id }
+                } else {
+                  existing.push(c)
+                }
+              }
+              nextCash = existing
+            }
+
+            return {
+              ...prev,
+              holdings: nextHoldings,
+              cashAccounts: nextCash,
+              holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+            }
+          })
+
+          return {
+            ok: true,
+            count: {
+              holdings: sanitizedHoldings.length,
+              cashAccounts: sanitizedCash.length,
+            },
+          }
+        } catch (err) {
+          return { ok: false, error: err instanceof Error ? err.message : 'Unknown error during import.' }
+        }
       },
 
       upsertBtcLocation: (holdingId, loc) =>
