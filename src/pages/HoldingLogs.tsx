@@ -10,6 +10,7 @@ import { FilterChip } from '../components/ui/FilterChip'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC, goldThbPerGramToXauUsd } from '../lib/calc'
+import { thb } from '../lib/format'
 import type { AssetClass, HoldingLog } from '../lib/types'
 import {
   ClockIcon,
@@ -69,15 +70,6 @@ function getLogActionMeta(log: HoldingLog): ActionMeta {
       label: log.dcaPlanId ? 'DCA Buy' : 'Bought more',
       style: 'bg-brand/10 text-brand',
       icon: '↑',
-      isPriceUpdate: false,
-    }
-  }
-
-  if (log.action === 'sell') {
-    return {
-      label: 'Sold',
-      style: 'bg-rose-500/10 text-rose-500 border border-rose-500/20',
-      icon: '↓',
       isPriceUpdate: false,
     }
   }
@@ -415,6 +407,62 @@ function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null): {
     }
   }
 
+  if (log.action === 'sell') {
+    const prevUnits = prev ? (prev.units ?? prev.totalUnits ?? 0) : 0
+    const currUnits = curr ? (curr.units ?? curr.totalUnits ?? 0) : 0
+    const soldUnits = log.soldUnits ?? (prevUnits > 0 ? prevUnits - currUnits : 0)
+
+    let sharesDisplay = '-'
+    if (soldUnits > 0) {
+      if (log.assetClass === 'crypto') {
+        const sats = Math.round(soldUnits * SATS_PER_BTC)
+        sharesDisplay = `-${sats.toLocaleString()} sats`
+      } else if (log.assetClass === 'gold') {
+        sharesDisplay = `-${soldUnits.toFixed(4)} g`
+      } else if (log.assetClass === 'stock') {
+        sharesDisplay = `-${soldUnits.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares`
+      } else {
+        sharesDisplay = `-${soldUnits.toLocaleString(undefined, { maximumFractionDigits: 4 })} units`
+      }
+    }
+
+    let priceDisplay = '-'
+    if (log.assetClass === 'stock') {
+      const notePriceMatch = log.note.match(/@\s*\$([0-9,.]+)/)
+      if (notePriceMatch) {
+        priceDisplay = `$${notePriceMatch[1]}`
+      } else if (log.soldPrice && log.soldPrice > 0) {
+        priceDisplay = `$${(log.soldPrice / fx).toFixed(2)}`
+      }
+    } else {
+      const notePriceMatch = log.note.match(/@\s*฿([0-9,.]+)/)
+      if (notePriceMatch) {
+        priceDisplay = `฿${notePriceMatch[1]}`
+      } else if (log.soldPrice && log.soldPrice > 0) {
+        priceDisplay = `฿${Math.round(log.soldPrice).toLocaleString()}`
+      }
+    }
+
+    let proceedsThb = log.proceeds ?? null
+    if (proceedsThb === null) {
+      const proceedsMatch = log.note.match(/Proceeds:\s*฿([0-9,.]+)/)
+      if (proceedsMatch) {
+        proceedsThb = parseFloat(proceedsMatch[1].replace(/,/g, ''))
+      }
+    }
+
+    const amountThbDisplay = proceedsThb !== null
+      ? `฿${proceedsThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : '-'
+
+    return {
+      priceDisplay,
+      sharesDisplay,
+      amountThbDisplay,
+      amountThbValue: proceedsThb,
+    }
+  }
+
   if (curr) {
     const prevUnits = prev ? (prev.units ?? prev.totalUnits ?? 0) : 0
     const currUnits = curr.units ?? curr.totalUnits ?? 0
@@ -599,6 +647,22 @@ function getDestinationLocation(log: HoldingLog): string | null {
   }
 
   if (log.note) {
+    const depMatch = log.note.match(/Deposited to\s*([^·\n]+)/)
+    const fromMatch = log.note.match(/from\s*([^·\n]+?)\s*·\s*Proceeds/)
+    if (fromMatch && depMatch) {
+      return `${fromMatch[1].trim()} → ${depMatch[1].trim()}`
+    }
+    if (depMatch) {
+      return depMatch[1].trim()
+    }
+    const paidMatch = log.note.match(/Paid from\s*([^·\n]+)/)
+    if (paidMatch) {
+      return paidMatch[1].trim()
+    }
+    if (log.action === 'sell' && fromMatch) {
+      return fromMatch[1].trim()
+    }
+
     const match = log.note.match(/(?:·|→)\s*([A-Za-z0-9\s_-]+)$/)
     if (match && match[1]) {
       const name = match[1].trim()
@@ -696,6 +760,7 @@ export function HoldingLogs() {
       'Units / Shares',
       'Price',
       'Total Amount (THB)',
+      'Realized PnL (THB)',
       'Wallet / Location',
       'Note',
     ]
@@ -717,6 +782,9 @@ export function HoldingLogs() {
       const locName = getDestinationLocation(log)
       const tx = getLogTransactionDetails(log, usdThb)
       const noteStr = getDisplayNote(log)
+      const realizedPnLStr = log.realizedPnL !== undefined
+        ? log.realizedPnL.toFixed(2)
+        : (log.note.match(/Realized PnL:\s*([+-]?฿[0-9,.]+)/) ? log.note.match(/Realized PnL:\s*([+-]?฿[0-9,.]+)/)![1].replace(/[฿,]/g, '') : '')
 
       return [
         escapeCsv(dateStr),
@@ -728,6 +796,7 @@ export function HoldingLogs() {
         escapeCsv(tx.sharesDisplay !== '-' ? tx.sharesDisplay : ''),
         escapeCsv(tx.priceDisplay !== '-' ? tx.priceDisplay : ''),
         escapeCsv(tx.amountThbValue !== null ? tx.amountThbValue.toFixed(2) : ''),
+        escapeCsv(realizedPnLStr),
         escapeCsv(locName || ''),
         escapeCsv(noteStr),
       ].join(',')
@@ -764,7 +833,7 @@ export function HoldingLogs() {
   // Helper to render before -> after comparison details
   const renderStateComparison = (log: typeof filtered[number]) => {
     const prev = log.previousHoldingState
-    const curr = log.afterHoldingState
+    const curr = log.afterHoldingState ?? (log.action === 'sell' && prev ? { ...prev, units: 0, totalUnits: 0, totalThbInvested: 0 } : null)
 
     if (!prev || !curr) {
       const cashItems = getCashDiffItems(log)
@@ -1025,17 +1094,17 @@ export function HoldingLogs() {
 
     const showTickerRow = tickerChanged && prev.ticker !== curr.ticker
     const showNameRow = nameChanged && prev.name !== curr.name
-    const showBalanceRow = log.action === 'buy_more'
-      ? formatUnit(prevUnits) !== formatUnit(currUnits)
+    const showBalanceRow = (log.action === 'buy_more' || log.action === 'sell')
+      ? (formatUnit(prevUnits) !== formatUnit(currUnits) || currUnits === 0)
       : (unitsChanged && formatUnit(prevUnits) !== formatUnit(currUnits))
 
-    const showAvgCostRow = log.action === 'buy_more'
+    const showAvgCostRow = (log.action === 'buy_more' || log.action === 'sell')
       ? (prevAvgCostDisplay !== currAvgCostDisplay && prevAvgCostDisplay !== '' && currAvgCostDisplay !== '')
       : (avgCostChanged && prevAvgCostDisplay !== currAvgCostDisplay && prevAvgCostDisplay !== '' && currAvgCostDisplay !== '')
 
     const showPriceRow = priceChanged && prevPriceDisplay !== currPriceDisplay && prevPriceDisplay !== '' && currPriceDisplay !== ''
 
-    if (!showTickerRow && !showNameRow && !showBalanceRow && !showAvgCostRow && !showPriceRow) {
+    if (!showTickerRow && !showNameRow && !showBalanceRow && !showAvgCostRow && !showPriceRow && log.action !== 'sell') {
       return null
     }
 
@@ -1098,9 +1167,13 @@ export function HoldingLogs() {
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
               <span className="whitespace-nowrap">{formatUnit(prevUnits)}</span>
               <span className="text-ink-faint text-[11px]">→</span>
-              <span className="font-semibold text-brand whitespace-nowrap">{formatUnit(currUnits)}</span>
-              {Math.abs(unitDiff) > 0.0001 && Number(currUnits.toFixed(4)) !== Number(prevUnits.toFixed(4)) && (
-                <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${unitDiff > 0 ? 'bg-gain/10 text-gain' : 'bg-surface-muted text-ink-muted'}`}>
+              {currUnits === 0 && log.action === 'sell' ? (
+                <span className="font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">0 (Position Closed / Sold all)</span>
+              ) : (
+                <span className="font-semibold text-brand whitespace-nowrap">{formatUnit(currUnits)}</span>
+              )}
+              {Math.abs(unitDiff) > 0.0001 && (
+                <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${unitDiff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
                   {formatUnitDiff(unitDiff)}
                 </span>
               )}
@@ -1128,6 +1201,60 @@ export function HoldingLogs() {
             </div>
           </div>
         )}
+
+        {/* Realized Gain / Loss */}
+        {log.action === 'sell' && (log.realizedPnL !== undefined || log.note.includes('Realized PnL:')) && (
+          <div className={(showNameRow || showTickerRow || showPriceRow || showBalanceRow || showAvgCostRow) ? 'pt-1.5 border-t border-line/60' : ''}>
+            <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">Realized Gain / Loss</span>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
+              {(() => {
+                const pnl = log.realizedPnL ?? (log.note.match(/Realized PnL:\s*([+-]?฿[0-9,.]+)/) ? parseFloat(log.note.match(/Realized PnL:\s*([+-]?฿[0-9,.]+)/)![1].replace(/[฿,]/g, '')) : null)
+                const pct = log.realizedPnLPercent ?? (log.note.match(/\(([+-]?[0-9.]+)%\)/) ? parseFloat(log.note.match(/\(([+-]?[0-9.]+)%\)/)![1]) : null)
+                if (pnl === null) return null
+                const isGain = pnl >= 0
+                return (
+                  <span className={`rounded-md px-2 py-0.5 text-[11px] font-bold whitespace-nowrap ${isGain ? 'bg-gain/15 text-gain border border-gain/20' : 'bg-loss/15 text-loss border border-loss/20'}`}>
+                    {isGain ? '+' : ''}{thb(pnl)} {pct !== null && `(${isGain ? '+' : ''}${pct.toFixed(1)}%)`}
+                  </span>
+                )
+              })()}
+            </div>
+          </div>
+        )}
+
+        {/* Linked Cash Account Row */}
+        {(() => {
+          const cashItems = getCashDiffItems(log)
+          if (cashItems.length === 0) return null
+          return (
+            <div className="pt-1.5 border-t border-line/60 space-y-1.5">
+              {cashItems.map((item, idx) => {
+                const sym = item.currencySymbol
+                return (
+                  <div key={idx}>
+                    <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">
+                      {item.diff && item.diff > 0 ? 'Cash Deposit' : 'Cash Deduction'}: {item.accountName}
+                    </span>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
+                      {item.prevBalance !== undefined && (
+                        <>
+                          <span className="whitespace-nowrap">{sym}{item.prevBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          <span className="text-ink-faint text-[11px]">→</span>
+                        </>
+                      )}
+                      <span className="font-bold text-brand whitespace-nowrap">{sym}{item.currBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      {item.diff !== undefined && (
+                        <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${item.diff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                          {item.diff > 0 ? '+' : ''}{sym}{Math.abs(item.diff).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })()}
       </div>
     )
   }
@@ -1343,6 +1470,7 @@ export function HoldingLogs() {
                     const isExpanded = expandedLogId === log.id
                     const hasComparison =
                       !!(log.previousHoldingState && log.afterHoldingState) ||
+                      (log.action === 'sell' && !!log.previousHoldingState) ||
                       getCashDiffItems(log).length > 0
 
                     return (
@@ -1401,8 +1529,24 @@ export function HoldingLogs() {
                           >
                             {tx.sharesDisplay}
                           </td>
-                          <td className="py-3 px-3 text-right whitespace-nowrap tnum font-semibold text-ink">
-                            {tx.amountThbDisplay}
+                          <td className="py-3 px-3 text-right whitespace-nowrap tnum">
+                            <div className="font-semibold text-ink">
+                              {tx.amountThbDisplay}
+                            </div>
+                            {log.action === 'sell' && log.realizedPnL !== undefined && (
+                              <div
+                                className={`text-[10.5px] font-bold mt-0.5 ${
+                                  log.realizedPnL >= 0 ? 'text-gain' : 'text-loss'
+                                }`}
+                              >
+                                {log.realizedPnL >= 0 ? '+' : ''}{thb(log.realizedPnL)}
+                                {log.realizedPnLPercent !== undefined && (
+                                  <span className="font-normal opacity-90 ml-1">
+                                    ({log.realizedPnLPercent >= 0 ? '+' : ''}{log.realizedPnLPercent.toFixed(1)}%)
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </td>
                           <td className="py-3 px-3 whitespace-nowrap">
                             {locName ? (
