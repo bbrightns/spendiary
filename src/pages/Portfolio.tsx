@@ -597,9 +597,9 @@ export function Portfolio() {
                           }}
                           aria-label={`Sort by ${label}${active && key !== 'type' ? ` (${sortDir === 'desc' ? 'descending' : 'ascending'})` : ''}`}
                           aria-pressed={active}
-                          className={`flex shrink-0 items-center justify-center gap-0.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold transition-colors cursor-pointer select-none ${
+                          className={`flex shrink-0 items-center justify-center gap-0.5 rounded-full h-[30px] px-2.5 text-[12px] font-semibold transition-colors cursor-pointer select-none leading-none ${
                             active
-                              ? 'bg-brand text-white dark:bg-[#4f46e5]'
+                              ? 'bg-ink text-white dark:bg-[#4f46e5] shadow-xs'
                               : 'bg-surface-muted text-ink-soft hover:text-ink'
                           }`}
                         >

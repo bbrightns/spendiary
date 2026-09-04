@@ -1351,7 +1351,6 @@ export function HoldingLogs() {
                 active={assetFilter === f.key}
                 onClick={() => setAssetFilter(f.key)}
                 aria-label={`Filter by ${f.label}`}
-                className="text-[12px] py-1 px-3"
               >
                 {f.label}
               </FilterChip>
@@ -1361,25 +1360,16 @@ export function HoldingLogs() {
           {/* Right: Action Type pills */}
           <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
             <span className="shrink-0 text-[11px] font-medium text-ink-faint mr-1">Action:</span>
-            {ACTION_FILTERS.map((f) => {
-              const active = actionFilter === f.key
-              return (
-                <button
-                  key={f.key}
-                  type="button"
-                  onClick={() => setActionFilter(f.key)}
-                  aria-label={`Filter by action ${f.label}`}
-                  aria-pressed={active}
-                  className={`flex shrink-0 items-center justify-center rounded-full px-2.5 py-1 text-[11.5px] font-semibold transition-colors cursor-pointer select-none ${
-                    active
-                      ? 'bg-brand text-white dark:bg-[#4f46e5]'
-                      : 'bg-surface-muted text-ink-soft hover:text-ink'
-                  }`}
-                >
-                  <span>{f.label}</span>
-                </button>
-              )
-            })}
+            {ACTION_FILTERS.map((f) => (
+              <FilterChip
+                key={f.key}
+                active={actionFilter === f.key}
+                onClick={() => setActionFilter(f.key)}
+                aria-label={`Filter by action ${f.label}`}
+              >
+                {f.label}
+              </FilterChip>
+            ))}
           </div>
         </div>
 

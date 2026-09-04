@@ -17,9 +17,9 @@ export function FilterChip({
     <button
       type="button"
       aria-pressed={active}
-      className={`shrink-0 inline-flex items-center justify-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] leading-5 font-semibold transition-colors cursor-pointer select-none ${
+      className={`shrink-0 inline-flex items-center justify-center gap-1.5 rounded-full px-3 h-[30px] text-[12px] font-semibold transition-colors cursor-pointer select-none leading-none ${
         active
-          ? 'bg-ink text-white dark:bg-brand shadow-xs'
+          ? 'bg-ink text-white dark:bg-[#4f46e5] shadow-xs'
           : 'bg-surface-muted text-ink-soft hover:text-ink'
       } ${className}`}
       {...rest}
