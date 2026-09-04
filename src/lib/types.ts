@@ -156,6 +156,7 @@ export interface HoldingLog {
   previousHoldingState?: Holding
   afterHoldingState?: Holding
   previousCashAccountsState?: CashAccount[]
+  afterCashAccountsState?: CashAccount[]
   dcaPlanId?: string
   dcaDate?: string
 }
