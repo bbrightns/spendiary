@@ -39,6 +39,22 @@ function getLogActionMeta(log: HoldingLog): ActionMeta {
     }
   }
 
+  // If note indicates Added (e.g. Added "SCB EZ" with balance...)
+  if (
+    log.note &&
+    (log.note.startsWith('Added ') || log.note.startsWith('Created ')) &&
+    !log.note.includes('Updated ') &&
+    !log.note.includes('Renamed ') &&
+    !log.note.includes('Removed ')
+  ) {
+    return {
+      label: 'Added',
+      style: 'bg-gain/10 text-gain',
+      icon: '+',
+      isPriceUpdate: false,
+    }
+  }
+
   if (log.action === 'buy_more') {
     return {
       label: log.dcaPlanId ? 'DCA Buy' : 'Bought more',
@@ -141,6 +157,203 @@ function getDisplayNote(log: HoldingLog): string {
   return log.note
 }
 
+interface CashDiffItem {
+  accountName: string
+  prevName?: string
+  currName?: string
+  prevBalance?: number
+  currBalance?: number
+  diff?: number
+  currencySymbol: string
+  actionType: 'add' | 'update' | 'rename' | 'remove' | 'deposit'
+}
+
+function getCashDiffItems(log: HoldingLog): CashDiffItem[] {
+  if (log.assetClass !== 'cash' && log.ticker !== 'CASH' && log.holdingName !== 'Cash Accounts') {
+    return []
+  }
+
+  const items: CashDiffItem[] = []
+  const oldAccounts = log.previousCashAccountsState ?? []
+  const newAccounts = log.afterCashAccountsState ?? []
+
+  // 1. Check if both before and after states exist
+  if (oldAccounts.length > 0 && newAccounts.length > 0) {
+    for (const newAcc of newAccounts) {
+      const oldAcc = oldAccounts.find((a) => a.id === newAcc.id)
+      const sym = (newAcc.currency ?? 'THB') === 'USD' ? '$' : '฿'
+      if (!oldAcc) {
+        items.push({
+          accountName: newAcc.name,
+          currName: newAcc.name,
+          prevBalance: 0,
+          currBalance: newAcc.balance,
+          diff: newAcc.balance,
+          currencySymbol: sym,
+          actionType: 'add',
+        })
+      } else if (
+        newAcc.balance !== oldAcc.balance ||
+        newAcc.name !== oldAcc.name ||
+        newAcc.currency !== oldAcc.currency
+      ) {
+        items.push({
+          accountName: newAcc.name,
+          prevName: oldAcc.name,
+          currName: newAcc.name,
+          prevBalance: oldAcc.balance,
+          currBalance: newAcc.balance,
+          diff: newAcc.balance - oldAcc.balance,
+          currencySymbol: sym,
+          actionType: newAcc.name !== oldAcc.name ? 'rename' : 'update',
+        })
+      }
+    }
+    for (const oldAcc of oldAccounts) {
+      if (!newAccounts.some((a) => a.id === oldAcc.id)) {
+        const sym = (oldAcc.currency ?? 'THB') === 'USD' ? '$' : '฿'
+        items.push({
+          accountName: oldAcc.name,
+          prevName: oldAcc.name,
+          prevBalance: oldAcc.balance,
+          currBalance: 0,
+          diff: -oldAcc.balance,
+          currencySymbol: sym,
+          actionType: 'remove',
+        })
+      }
+    }
+    if (items.length > 0) return items
+  }
+
+  // 2. Parse from note (for historical logs)
+  // "Added \"SCB EZ\" with balance ฿6.2"
+  const addMatches = [...log.note.matchAll(/Added\s*"([^"]+)"\s*with\s*balance\s*([฿$])([0-9,.]+)/g)]
+  for (const m of addMatches) {
+    const sym = m[2]
+    const bal = parseFloat(m[3].replace(/,/g, ''))
+    items.push({
+      accountName: m[1],
+      currName: m[1],
+      prevBalance: 0,
+      currBalance: bal,
+      diff: bal,
+      currencySymbol: sym,
+      actionType: 'add',
+    })
+  }
+
+  // "Updated \"Kept\" balance to ฿259,915.93 (+฿10,000)" or without diff suffix
+  const updateMatches = [...log.note.matchAll(/Updated\s*"([^"]+)"\s*balance\s*to\s*([฿$])([0-9,.]+)(?:\s*\(([+-][฿$]?)([0-9,.]+)\))?/g)]
+  for (const m of updateMatches) {
+    const accName = m[1]
+    const sym = m[2]
+    const currBal = parseFloat(m[3].replace(/,/g, ''))
+    let diff: number | undefined
+    let prevBal: number | undefined
+
+    if (m[4] && m[5]) {
+      const sign = m[4].includes('-') ? -1 : 1
+      diff = sign * parseFloat(m[5].replace(/,/g, ''))
+      prevBal = currBal - diff
+    } else {
+      const oldAcc = oldAccounts.find((a) => a.name === accName)
+      if (oldAcc) {
+        prevBal = oldAcc.balance
+        diff = currBal - prevBal
+      }
+    }
+
+    items.push({
+      accountName: accName,
+      currName: accName,
+      prevBalance: prevBal,
+      currBalance: currBal,
+      diff,
+      currencySymbol: sym,
+      actionType: 'update',
+    })
+  }
+
+  // "Renamed \"Click\" to \"Click 2%\" and set balance to ฿300,230.14 (-฿5,000)"
+  const renameBalMatches = [...log.note.matchAll(/Renamed\s*"([^"]+)"\s*to\s*"([^"]+)"\s*and\s*set\s*balance\s*to\s*([฿$])([0-9,.]+)(?:\s*\(([+-][฿$]?)([0-9,.]+)\))?/g)]
+  for (const m of renameBalMatches) {
+    const prevName = m[1]
+    const currName = m[2]
+    const sym = m[3]
+    const currBal = parseFloat(m[4].replace(/,/g, ''))
+    let diff: number | undefined
+    let prevBal: number | undefined
+
+    if (m[5] && m[6]) {
+      const sign = m[5].includes('-') ? -1 : 1
+      diff = sign * parseFloat(m[6].replace(/,/g, ''))
+      prevBal = currBal - diff
+    } else {
+      const oldAcc = oldAccounts.find((a) => a.name === prevName)
+      if (oldAcc) {
+        prevBal = oldAcc.balance
+        diff = currBal - prevBal
+      }
+    }
+
+    items.push({
+      accountName: currName,
+      prevName,
+      currName,
+      prevBalance: prevBal,
+      currBalance: currBal,
+      diff,
+      currencySymbol: sym,
+      actionType: 'rename',
+    })
+  }
+
+  // "Renamed \"Click\" to \"Click 2%\"" (no balance change)
+  const renameOnlyMatches = [...log.note.matchAll(/Renamed\s*"([^"]+)"\s*to\s*"([^"]+)"(?!\s*and\s*set)/g)]
+  for (const m of renameOnlyMatches) {
+    items.push({
+      accountName: m[2],
+      prevName: m[1],
+      currName: m[2],
+      currencySymbol: '฿',
+      actionType: 'rename',
+    })
+  }
+
+  // "Removed \"Old Wallet\" (฿500.00)"
+  const removeMatches = [...log.note.matchAll(/Removed\s*"([^"]+)"\s*\(([฿$])([0-9,.]+)\)/g)]
+  for (const m of removeMatches) {
+    const bal = parseFloat(m[3].replace(/,/g, ''))
+    items.push({
+      accountName: m[1],
+      prevName: m[1],
+      prevBalance: bal,
+      currBalance: 0,
+      diff: -bal,
+      currencySymbol: m[2],
+      actionType: 'remove',
+    })
+  }
+
+  // "Deposited ฿2,500 via DCA into Kept"
+  const dcaDepositMatch = log.note.match(/Deposited\s*([฿$])([0-9,.]+)\s*via\s*DCA\s*into\s*([^·\n]+)/)
+  if (dcaDepositMatch) {
+    const sym = dcaDepositMatch[1]
+    const amount = parseFloat(dcaDepositMatch[2].replace(/,/g, ''))
+    const accName = dcaDepositMatch[3].trim()
+    items.push({
+      accountName: accName,
+      currName: accName,
+      diff: amount,
+      currencySymbol: sym,
+      actionType: 'deposit',
+    })
+  }
+
+  return items
+}
+
 function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null): {
   priceDisplay: string
   sharesDisplay: string
@@ -150,6 +363,39 @@ function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null): {
   const prev = log.previousHoldingState
   const curr = log.afterHoldingState
   const fx = usdThb && usdThb > 0 ? usdThb : 34
+
+  // Check if it is a cash log
+  if (log.assetClass === 'cash' || log.ticker === 'CASH' || log.holdingName === 'Cash Accounts') {
+    const cashItems = getCashDiffItems(log)
+    if (cashItems.length > 0) {
+      const diffStrings: string[] = []
+      let totalChangeThb = 0
+      for (const item of cashItems) {
+        if (item.diff !== undefined && Math.abs(item.diff) > 0.001) {
+          const sign = item.diff > 0 ? '+' : '-'
+          const formatted = `${sign}${item.currencySymbol}${Math.abs(item.diff).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          diffStrings.push(formatted)
+          totalChangeThb += Math.abs(item.diff) * (item.currencySymbol === '$' ? fx : 1)
+        } else if (item.currBalance !== undefined && item.actionType === 'add') {
+          const formatted = `+${item.currencySymbol}${item.currBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          diffStrings.push(formatted)
+          totalChangeThb += item.currBalance * (item.currencySymbol === '$' ? fx : 1)
+        }
+      }
+
+      const sharesDisplay = diffStrings.length > 0 ? diffStrings.join(', ') : '-'
+      const amountThbDisplay = totalChangeThb > 0
+        ? `฿${totalChangeThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : '-'
+
+      return {
+        priceDisplay: '-',
+        sharesDisplay,
+        amountThbDisplay,
+        amountThbValue: totalChangeThb > 0 ? totalChangeThb : null,
+      }
+    }
+  }
 
   if (curr) {
     const prevUnits = prev ? (prev.units ?? prev.totalUnits ?? 0) : 0
@@ -283,6 +529,30 @@ function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null): {
 
 // Helper to detect destination wallet / storage location
 function getDestinationLocation(log: HoldingLog): string | null {
+  // Cash Accounts / Wallet names
+  if (log.assetClass === 'cash' || log.ticker === 'CASH' || log.holdingName === 'Cash Accounts') {
+    // 1. Check for Renamed "X" to "Y"
+    const renameMatches = [...log.note.matchAll(/Renamed\s*"[^"]+"\s*to\s*"([^"]+)"/g)]
+    if (renameMatches.length > 0) {
+      return renameMatches.map((m) => m[1]).join(', ')
+    }
+
+    // 2. Check for Added / Updated / Changed / Removed "X"
+    const quoteMatches = [...log.note.matchAll(/(?:Added|Updated|Changed|Removed)\s*"([^"]+)"/g)]
+    if (quoteMatches.length > 0) {
+      return quoteMatches.map((m) => m[1]).join(', ')
+    }
+
+    // 3. Check for DCA into X
+    const dcaMatch = log.note.match(/into\s+([^·\n]+)$/)
+    if (dcaMatch) return dcaMatch[1].trim()
+  }
+
+  // Fixed Costs
+  if (log.ticker === 'FIXED' || log.holdingName.startsWith('Fixed Cost:')) {
+    return 'Fixed Cost'
+  }
+
   const prev = log.previousHoldingState
   const curr = log.afterHoldingState
 
@@ -477,7 +747,91 @@ export function HoldingLogs() {
     const prev = log.previousHoldingState
     const curr = log.afterHoldingState
 
-    if (!prev || !curr) return null
+    if (!prev || !curr) {
+      const cashItems = getCashDiffItems(log)
+      if (cashItems.length > 0) {
+        return (
+          <div className="mt-3 rounded-xl border border-line bg-surface-muted/50 p-3 text-[12.5px] space-y-3">
+            {cashItems.map((item, idx) => {
+              const sym = item.currencySymbol
+              const hasNameChange = item.prevName && item.currName && item.prevName !== item.currName
+
+              return (
+                <div key={idx} className={idx > 0 ? 'pt-2.5 border-t border-line/60 space-y-2' : 'space-y-2'}>
+                  {/* Account Name Row */}
+                  {hasNameChange && (
+                    <div>
+                      <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">
+                        Account Name
+                      </span>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
+                        <span className="whitespace-nowrap">{item.prevName}</span>
+                        <span className="text-ink-faint text-[11px]">→</span>
+                        <span className="font-semibold text-brand whitespace-nowrap">{item.currName}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Account Balance Row */}
+                  <div>
+                    <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">
+                      {item.actionType === 'add' ? `New Account: ${item.accountName}` : `Balance: ${item.accountName}`}
+                    </span>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
+                      {item.actionType === 'add' ? (
+                        <>
+                          <span className="text-ink-muted text-[12px]">(New Account)</span>
+                          <span className="text-ink-faint text-[11px]">→</span>
+                          <span className="font-bold text-gain whitespace-nowrap">
+                            {sym}{item.currBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <span className="rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap bg-gain/10 text-gain">
+                            +{sym}{item.currBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </>
+                      ) : item.actionType === 'remove' ? (
+                        <>
+                          <span className="whitespace-nowrap">
+                            {sym}{item.prevBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <span className="text-ink-faint text-[11px]">→</span>
+                          <span className="font-bold text-loss whitespace-nowrap">(Removed)</span>
+                        </>
+                      ) : (
+                        <>
+                          {item.prevBalance !== undefined && (
+                            <>
+                              <span className="whitespace-nowrap">
+                                {sym}{item.prevBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                              <span className="text-ink-faint text-[11px]">→</span>
+                            </>
+                          )}
+                          <span className="font-bold text-brand whitespace-nowrap">
+                            {sym}{item.currBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          {item.diff !== undefined && Math.abs(item.diff) > 0.001 && (
+                            <span
+                              className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${
+                                item.diff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'
+                              }`}
+                            >
+                              {item.diff > 0 ? '+' : ''}{sym}{Math.abs(item.diff).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )
+      }
+
+      return null
+    }
 
     const prevUnits = prev.units ?? prev.totalUnits ?? 0
     const currUnits = curr.units ?? curr.totalUnits ?? 0
@@ -938,7 +1292,9 @@ export function HoldingLogs() {
                     const dateStr = dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
                     const timeStr = dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
                     const isExpanded = expandedLogId === log.id
-                    const hasComparison = !!(log.previousHoldingState && log.afterHoldingState)
+                    const hasComparison =
+                      !!(log.previousHoldingState && log.afterHoldingState) ||
+                      getCashDiffItems(log).length > 0
 
                     return (
                       <Fragment key={log.id}>
@@ -972,15 +1328,28 @@ export function HoldingLogs() {
                             </div>
                             <span
                               className="inline-block mt-0.5 text-[10.5px] font-semibold uppercase tracking-wider"
-                              style={{ color: ASSET_META[log.assetClass]?.color ?? '#6366f1' }}
+                              style={{
+                                color:
+                                  log.ticker === 'FIXED'
+                                    ? '#f59e0b'
+                                    : (ASSET_META[log.assetClass]?.color ?? '#6366f1'),
+                              }}
                             >
-                              {log.assetClass}
+                              {log.ticker === 'FIXED' ? 'expense' : log.assetClass}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-right whitespace-nowrap tnum font-semibold text-ink">
                             {tx.priceDisplay}
                           </td>
-                          <td className="py-3 px-3 text-right whitespace-nowrap tnum font-bold text-brand">
+                          <td
+                            className={`py-3 px-3 text-right whitespace-nowrap tnum font-bold ${
+                              tx.sharesDisplay.startsWith('+')
+                                ? 'text-gain'
+                                : tx.sharesDisplay.startsWith('-')
+                                ? 'text-loss'
+                                : 'text-brand'
+                            }`}
+                          >
                             {tx.sharesDisplay}
                           </td>
                           <td className="py-3 px-3 text-right whitespace-nowrap tnum font-semibold text-ink">
