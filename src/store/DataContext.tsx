@@ -160,6 +160,24 @@ interface DataContextValue {
   upsertHolding: (holding: Omit<Holding, 'id'> & { id?: string }) => void
   removeHolding: (id: string) => void
   reorderHoldings: (ids: string[]) => void
+  sellHolding: (params: {
+    holdingId: string
+    soldUnits: number
+    soldPrice: number
+    proceeds: number
+    realizedPnL: number
+    realizedPnLPercent: number
+    remainingHolding?: Holding | null
+    cashAccountId?: string
+    cashDepositAmount?: number
+    note: string
+  }) => void
+  buyMoreHolding: (params: {
+    updatedHolding: Holding
+    cashAccountId?: string
+    cashDeductAmount?: number
+    note: string
+  }) => void
   addHoldingLog: (log: Omit<HoldingLog, 'id' | 'timestamp'>) => void
   undoHoldingLog: (logId: string) => void
 
@@ -849,6 +867,110 @@ export function DataProvider({ children }: { children: ReactNode }) {
           holdings: ids.map((id) => prev.holdings.find((h) => h.id === id)!).filter(Boolean),
         })),
 
+      sellHolding: (params) =>
+        updateData((prev) => {
+          const holding = prev.holdings.find((h) => h.id === params.holdingId)
+          if (!holding) return prev
+
+          const previousHoldingState = JSON.parse(JSON.stringify(holding))
+          const previousCashAccountsState = prev.cashAccounts ? JSON.parse(JSON.stringify(prev.cashAccounts)) : []
+
+          let updatedHoldings: Holding[]
+          let restTargets = prev.rebalanceHoldingTargets ?? {}
+
+          if (params.remainingHolding && params.remainingHolding.units > 0) {
+            updatedHoldings = prev.holdings.map((h) =>
+              h.id === params.holdingId ? params.remainingHolding! : h
+            )
+          } else {
+            // 100% sold: remove holding
+            updatedHoldings = prev.holdings.filter((h) => h.id !== params.holdingId)
+            const { [params.holdingId]: _, ...cleanedTargets } = restTargets
+            restTargets = cleanedTargets
+          }
+
+          let updatedCashAccounts = prev.cashAccounts ? [...prev.cashAccounts] : []
+          if (params.cashAccountId && params.cashDepositAmount && params.cashDepositAmount > 0) {
+            updatedCashAccounts = updatedCashAccounts.map((c) =>
+              c.id === params.cashAccountId
+                ? { ...c, balance: Number((c.balance + params.cashDepositAmount!).toFixed(2)) }
+                : c
+            )
+          }
+
+          const logEntry: HoldingLog = {
+            id: newId(),
+            timestamp: new Date().toISOString(),
+            action: 'sell',
+            holdingId: holding.id,
+            holdingName: holding.name,
+            ticker: holding.ticker,
+            assetClass: holding.assetClass,
+            note: params.note,
+            soldUnits: params.soldUnits,
+            soldPrice: params.soldPrice,
+            proceeds: params.proceeds,
+            realizedPnL: params.realizedPnL,
+            realizedPnLPercent: params.realizedPnLPercent,
+            cashAccountId: params.cashAccountId,
+            previousHoldingState,
+            afterHoldingState: params.remainingHolding && params.remainingHolding.units > 0 ? params.remainingHolding : undefined,
+            previousCashAccountsState: params.cashAccountId ? previousCashAccountsState : undefined,
+            afterCashAccountsState: params.cashAccountId ? updatedCashAccounts : undefined,
+          }
+
+          return {
+            ...prev,
+            holdings: updatedHoldings,
+            rebalanceHoldingTargets: restTargets,
+            cashAccounts: updatedCashAccounts,
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+          }
+        }),
+
+      buyMoreHolding: (params) =>
+        updateData((prev) => {
+          const holding = prev.holdings.find((h) => h.id === params.updatedHolding.id)
+          const previousHoldingState = holding ? JSON.parse(JSON.stringify(holding)) : undefined
+          const previousCashAccountsState = prev.cashAccounts ? JSON.parse(JSON.stringify(prev.cashAccounts)) : []
+
+          const updatedHoldings = prev.holdings.map((h) =>
+            h.id === params.updatedHolding.id ? params.updatedHolding : h
+          )
+
+          let updatedCashAccounts = prev.cashAccounts ? [...prev.cashAccounts] : []
+          if (params.cashAccountId && params.cashDeductAmount && params.cashDeductAmount > 0) {
+            updatedCashAccounts = updatedCashAccounts.map((c) =>
+              c.id === params.cashAccountId
+                ? { ...c, balance: Number((c.balance - params.cashDeductAmount!).toFixed(2)) }
+                : c
+            )
+          }
+
+          const logEntry: HoldingLog = {
+            id: newId(),
+            timestamp: new Date().toISOString(),
+            action: 'buy_more',
+            holdingId: params.updatedHolding.id,
+            holdingName: params.updatedHolding.name,
+            ticker: params.updatedHolding.ticker,
+            assetClass: params.updatedHolding.assetClass,
+            note: params.note,
+            previousHoldingState,
+            afterHoldingState: params.updatedHolding,
+            previousCashAccountsState: params.cashAccountId ? previousCashAccountsState : undefined,
+            afterCashAccountsState: params.cashAccountId ? updatedCashAccounts : undefined,
+            cashAccountId: params.cashAccountId,
+          }
+
+          return {
+            ...prev,
+            holdings: updatedHoldings,
+            cashAccounts: updatedCashAccounts,
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+          }
+        }),
+
       addHoldingLog: (log) =>
         updateData((prev) => {
           const holding = log.holdingId
@@ -898,6 +1020,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
               // Ignore simple DCA plan add revert for now
             } else {
               updatedHoldings = updatedHoldings.filter((h) => h.id !== log.holdingId && h.ticker !== log.ticker)
+            }
+          } else if (log.action === 'sell' && !updatedHoldings.some((h) => h.id === log.holdingId || (h.ticker && h.ticker === log.ticker))) {
+            // Holding was completely removed upon 100% sell, re-insert the previous holding state
+            if (log.previousHoldingState) {
+              updatedHoldings.push(log.previousHoldingState)
             }
           } else if (log.previousHoldingState) {
             // Restore previous state
