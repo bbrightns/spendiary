@@ -30,6 +30,15 @@ interface ActionMeta {
 }
 
 function getLogActionMeta(log: HoldingLog): ActionMeta {
+  if (log.action === 'sell') {
+    return {
+      label: 'Sold',
+      style: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20',
+      icon: '↓',
+      isPriceUpdate: false,
+    }
+  }
+
   if (log.action === 'add') {
     return {
       label: 'Added',
@@ -60,6 +69,15 @@ function getLogActionMeta(log: HoldingLog): ActionMeta {
       label: log.dcaPlanId ? 'DCA Buy' : 'Bought more',
       style: 'bg-brand/10 text-brand',
       icon: '↑',
+      isPriceUpdate: false,
+    }
+  }
+
+  if (log.action === 'sell') {
+    return {
+      label: 'Sold',
+      style: 'bg-rose-500/10 text-rose-500 border border-rose-500/20',
+      icon: '↓',
       isPriceUpdate: false,
     }
   }
@@ -603,9 +621,10 @@ const ASSET_FILTERS: { key: AssetClass | 'all'; label: string }[] = [
 ]
 
 const ACTION_FILTERS = [
-  { key: 'all', label: 'All actions' },
+  { key: 'all', label: 'All' },
   { key: 'add', label: 'Added' },
   { key: 'buy_more', label: 'Bought more' },
+  { key: 'sell', label: 'Sold' },
   { key: 'edit', label: 'Edited' },
 ] as const
 
@@ -626,7 +645,7 @@ export function HoldingLogs() {
 
   const [undoTarget, setUndoTarget] = useState<HoldingLog | null>(null)
   const [assetFilter, setAssetFilter] = useState<AssetClass | 'all'>('all')
-  const [actionFilter, setActionFilter] = useState<'all' | 'add' | 'buy_more' | 'edit'>('all')
+  const [actionFilter, setActionFilter] = useState<'all' | 'add' | 'buy_more' | 'sell' | 'edit'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'table' | 'timeline'>(() => {
     const saved = localStorage.getItem('spendiary_logs_view_mode')
@@ -1195,58 +1214,71 @@ export function HoldingLogs() {
           </div>
         </div>
 
-        {/* Filter Rows */}
-        <div className="space-y-2.5 pt-1">
-          {/* Asset Category */}
-          <div className="flex items-center gap-2.5">
-            <span className="shrink-0 text-[11px] font-bold uppercase tracking-wider text-ink-faint w-14">
-              Asset
-            </span>
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-              {ASSET_FILTERS.map((f) => (
-                <FilterChip
+        {/* Filter bar: Asset filters (Left) & Action filters (Right) */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+          {/* Left: Asset Category pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
+            {ASSET_FILTERS.map((f) => (
+              <FilterChip
+                key={f.key}
+                active={assetFilter === f.key}
+                onClick={() => setAssetFilter(f.key)}
+                aria-label={`Filter by ${f.label}`}
+                className="text-[12px] py-1 px-3"
+              >
+                {f.label}
+              </FilterChip>
+            ))}
+          </div>
+
+          {/* Right: Action Type pills */}
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
+            <span className="shrink-0 text-[11px] font-medium text-ink-faint mr-1">Action:</span>
+            {ACTION_FILTERS.map((f) => {
+              const active = actionFilter === f.key
+              return (
+                <button
                   key={f.key}
-                  active={assetFilter === f.key}
-                  onClick={() => setAssetFilter(f.key)}
-                  aria-label={`Filter by ${f.label}`}
-                  className="text-[12px] py-1 px-3"
+                  type="button"
+                  onClick={() => setActionFilter(f.key)}
+                  aria-label={`Filter by action ${f.label}`}
+                  aria-pressed={active}
+                  className={`flex shrink-0 items-center justify-center rounded-full px-2.5 py-1 text-[11.5px] font-semibold transition-colors cursor-pointer select-none ${
+                    active
+                      ? 'bg-brand text-white dark:bg-[#4f46e5]'
+                      : 'bg-surface-muted text-ink-soft hover:text-ink'
+                  }`}
                 >
-                  {f.label}
-                </FilterChip>
-              ))}
-            </div>
+                  <span>{f.label}</span>
+                </button>
+              )
+            })}
           </div>
+        </div>
 
-          {/* Action Type & Count */}
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2.5">
-              <span className="shrink-0 text-[11px] font-bold uppercase tracking-wider text-ink-faint w-14">
-                Action
+        {/* Results summary & Active filter reset */}
+        <div className="flex items-center justify-between text-[11.5px] text-ink-muted px-0.5">
+          <span>
+            {filtered.length} {filtered.length === 1 ? 'transaction' : 'transactions'}
+            {(searchQuery || assetFilter !== 'all' || actionFilter !== 'all') && (
+              <span className="text-ink-faint ml-1">
+                (filtered from {logs.length})
               </span>
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-                {ACTION_FILTERS.map((f) => (
-                  <FilterChip
-                    key={f.key}
-                    active={actionFilter === f.key}
-                    onClick={() => setActionFilter(f.key)}
-                    aria-label={`Filter by ${f.label}`}
-                    className="text-[12px] py-1 px-3"
-                  >
-                    {f.label}
-                  </FilterChip>
-                ))}
-              </div>
-            </div>
-
-            <div className="text-[12px] text-ink-muted font-medium px-1 ml-auto">
-              {filtered.length} {filtered.length === 1 ? 'item' : 'items'}
-              {(searchQuery || assetFilter !== 'all' || actionFilter !== 'all') && (
-                <span className="text-ink-faint ml-1">
-                  (filtered from {logs.length})
-                </span>
-              )}
-            </div>
-          </div>
+            )}
+          </span>
+          {(searchQuery || assetFilter !== 'all' || actionFilter !== 'all') && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('')
+                setAssetFilter('all')
+                setActionFilter('all')
+              }}
+              className="text-brand hover:underline font-medium cursor-pointer"
+            >
+              Reset filters
+            </button>
+          )}
         </div>
       </div>
 
