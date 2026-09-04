@@ -423,7 +423,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
                 setSuggestions([])
               }}
               options={[
-                { value: 'fund',   label: 'Thai Fund' },
+                { value: 'fund',   label: 'Thai Fund/Stock/DR' },
                 { value: 'stock',  label: 'US Stock' },
                 { value: 'crypto', label: 'Bitcoin' },
                 { value: 'gold',   label: 'Gold' },

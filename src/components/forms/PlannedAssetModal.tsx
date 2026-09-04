@@ -98,7 +98,7 @@ export function PlannedAssetModal({ open, onClose, onAdded }: Props) {
           }}
           options={[
             { value: 'stock', label: 'US Stock' },
-            { value: 'fund', label: 'Thai Fund' },
+            { value: 'fund', label: 'Thai Fund/Stock/DR' },
             { value: 'crypto', label: 'Bitcoin' },
             { value: 'gold', label: 'Gold' },
           ]}

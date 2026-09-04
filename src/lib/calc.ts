@@ -41,7 +41,7 @@ export const ASSET_META: Record<
   AssetClass,
   { label: string; plural: string; color: string; cssVar: string }
 > = {
-  fund: { label: 'Thai Fund', plural: 'Thai Funds', color: '#6366f1', cssVar: 'var(--color-funds)' },
+  fund: { label: 'Thai Fund/Stock/DR', plural: 'Thai Funds/Stocks/DR', color: '#6366f1', cssVar: 'var(--color-funds)' },
   stock: { label: 'US Stock', plural: 'US Stocks', color: '#0ea5e9', cssVar: 'var(--color-stocks)' },
   crypto: { label: 'Bitcoin', plural: 'Bitcoin', color: '#f59e0b', cssVar: 'var(--color-crypto)' },
   gold: { label: 'Gold', plural: 'Gold', color: '#ca8a04', cssVar: 'var(--color-gold)' },

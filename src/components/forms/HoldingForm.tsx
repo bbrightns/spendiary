@@ -548,7 +548,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
     ? 'Log your first gold purchase in grams.'
     : isUsd
     ? `Prices in USD, converted to THB at ${usdThb ? `฿${usdThb.toFixed(2)}/USD` : 'live rate'}.`
-    : 'Thai fund, valued in THB.'
+    : 'Thai fund, stock, or DR, valued in THB.'
 
   return (
     <Modal
@@ -589,7 +589,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
             setSuggestions([])
           }}
           options={[
-            { value: 'fund', label: 'Thai Fund' },
+            { value: 'fund', label: 'Thai Fund/Stock/DR' },
             { value: 'stock', label: 'US Stock' },
             { value: 'crypto', label: 'Bitcoin' },
             { value: 'gold', label: 'Gold' },
