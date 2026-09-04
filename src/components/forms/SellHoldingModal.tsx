@@ -13,11 +13,12 @@ interface Props {
   open: boolean
   holding: Holding | null
   onClose: () => void
+  onSwitchToBuy?: () => void
 }
 
 const SATS_PER_BTC = 100_000_000
 
-export function SellHoldingModal({ open, holding, onClose }: Props) {
+export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Props) {
   const { sellHolding, data, usdThb } = useData()
   const { showToast } = useToast()
 
@@ -340,6 +341,20 @@ export function SellHoldingModal({ open, holding, onClose }: Props) {
       }
     >
       <div className="space-y-4">
+        {onSwitchToBuy && (
+          <div className="mb-2">
+            <SegmentedControl
+              value="sell"
+              onChange={(val) => {
+                if (val === 'buy') onSwitchToBuy()
+              }}
+              options={[
+                { value: 'buy', label: '+ ซื้อเพิ่ม (Buy)' },
+                { value: 'sell', label: '− ขายออก (Sell)' },
+              ]}
+            />
+          </div>
+        )}
         {/* Context: Current holding */}
         <div className="rounded-2xl bg-surface-muted px-4 py-3">
           <div className="flex items-center justify-between text-[13px]">
