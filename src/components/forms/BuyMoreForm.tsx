@@ -13,6 +13,7 @@ interface Props {
   open: boolean
   holding: Holding | null
   onClose: () => void
+  onSwitchToSell?: () => void
 }
 
 const SATS_PER_BTC = 100_000_000
@@ -48,7 +49,7 @@ function formatCostOrFx(val: number | string): string {
   return roundedStr
 }
 
-export function BuyMoreForm({ open, holding, onClose }: Props) {
+export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
   const { buyMoreHolding, upsertBtcLocation, upsertGoldLocation, usdThb, data } = useData()
   const { showToast } = useToast()
 
@@ -381,6 +382,20 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         }
       >
         <div className="space-y-4">
+          {onSwitchToSell && (
+            <div className="mb-2">
+              <SegmentedControl
+                value="buy"
+                onChange={(val) => {
+                  if (val === 'sell') onSwitchToSell()
+                }}
+                options={[
+                  { value: 'buy', label: '+ ซื้อเพิ่ม (Buy)' },
+                  { value: 'sell', label: '− ขายออก (Sell)' },
+                ]}
+              />
+            </div>
+          )}
           <div className="rounded-2xl bg-surface-muted px-4 py-3">
             <div className="flex items-center justify-between text-[13px]">
               <span className="text-ink-muted">Currently holding</span>
@@ -582,6 +597,20 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         }
       >
         <div className="space-y-4">
+          {onSwitchToSell && (
+            <div className="mb-2">
+              <SegmentedControl
+                value="buy"
+                onChange={(val) => {
+                  if (val === 'sell') onSwitchToSell()
+                }}
+                options={[
+                  { value: 'buy', label: '+ ซื้อเพิ่ม (Buy)' },
+                  { value: 'sell', label: '− ขายออก (Sell)' },
+                ]}
+              />
+            </div>
+          )}
           <div className="rounded-2xl bg-surface-muted px-4 py-3">
             <div className="flex items-center justify-between text-[13px]">
               <span className="text-ink-muted">Currently holding</span>
@@ -754,6 +783,20 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
       }
     >
       <div className="space-y-4">
+        {onSwitchToSell && (
+          <div className="mb-2">
+            <SegmentedControl
+              value="buy"
+              onChange={(val) => {
+                if (val === 'sell') onSwitchToSell()
+              }}
+              options={[
+                { value: 'buy', label: '+ ซื้อเพิ่ม (Buy)' },
+                { value: 'sell', label: '− ขายออก (Sell)' },
+              ]}
+            />
+          </div>
+        )}
         {isStock && !usdThb && (
           <div className="rounded-xl bg-warn-soft px-4 py-3 text-[13px] font-medium text-warn">
             USD/THB rate is loading. Please wait before saving to avoid wrong values.
