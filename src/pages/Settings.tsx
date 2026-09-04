@@ -77,7 +77,6 @@ export function Settings() {
   const [importConfirmOpen, setImportConfirmOpen] = useState(false)
   const [pendingImport, setPendingImport] = useState<string | null>(null)  // raw json string
   const [pendingImportSummary, setPendingImportSummary] = useState('')
-  const [aboutExpanded, setAboutExpanded] = useState(false)
 
   // ── inline toast ───────────────────────────────────────────────
   const [exportToast, setExportToast] = useState<ToastState>({ kind: 'idle' })
@@ -438,7 +437,7 @@ export function Settings() {
               </div>
             </div>
 
-            {/* Social / External Links + Toggle Chevron */}
+            {/* Social / External Links */}
             <div className="flex items-center gap-2">
               <a
                 href="https://github.com/bbrightns"
@@ -462,109 +461,88 @@ export function Settings() {
                 </svg>
                 <span>Facebook</span>
               </a>
-              <button
-                type="button"
-                onClick={() => setAboutExpanded((v) => !v)}
-                aria-label={aboutExpanded ? 'ย่อรายละเอียด' : 'แสดงเพิ่มเติม'}
-                title={aboutExpanded ? 'ย่อรายละเอียด' : 'แสดงเพิ่มเติม'}
-                className="inline-flex items-center justify-center w-8 h-8 rounded-xl border border-line/80 bg-surface text-ink-muted hover:text-ink hover:border-line hover:bg-surface-muted transition-all cursor-pointer shadow-2xs"
-              >
-                <svg
-                  className={`w-4 h-4 transition-transform duration-200 ${aboutExpanded ? 'rotate-180' : ''}`}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
             </div>
           </div>
 
-          {/* Author Details & Release Highlights (Collapsible) */}
-          {aboutExpanded && (
-            <div className="pt-4 mt-4 border-t border-line/60 space-y-3 animate-fade-in">
-              <div className="rounded-2xl bg-surface-muted/60 p-4 border border-line/50">
-                <div className="flex items-center gap-3.5 mb-3">
-                  <img
-                    src="/bbrightns.jpg"
-                    alt="Praween Piyaprapaphan (Bright)"
-                    className="w-12 h-12 rounded-full object-cover border-2 border-surface shadow-xs shrink-0"
-                  />
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[14px] font-bold text-ink leading-tight">
-                      Praween Piyaprapaphan (Bright)
-                    </span>
-                    <span className="text-[12px] font-mono text-brand font-semibold leading-normal mt-0.5">
-                      Alias: bbrightns
-                    </span>
-                  </div>
+          {/* Author Details & Release Highlights (Always Visible) */}
+          <div className="pt-4 mt-4 border-t border-line/60 space-y-3">
+            <div className="rounded-2xl bg-surface-muted/60 p-4 border border-line/50">
+              <div className="flex items-center gap-3.5 mb-3">
+                <img
+                  src="/bbrightns.jpg"
+                  alt="Praween Piyaprapaphan (Bright)"
+                  className="w-12 h-12 rounded-full object-cover border-2 border-surface shadow-xs shrink-0"
+                />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[14px] font-bold text-ink leading-tight">
+                    Praween Piyaprapaphan (Bright)
+                  </span>
+                  <span className="text-[12px] font-mono text-brand font-semibold leading-normal mt-0.5">
+                    Alias: bbrightns
+                  </span>
                 </div>
-                <p className="text-[12.5px] text-ink-muted leading-relaxed">
-                  An Electrical Engineer who loves writing code and exploring computer & tech. Building handy tools to solve everyday challenges.
+              </div>
+              <p className="text-[12.5px] text-ink-muted leading-relaxed">
+                An Electrical Engineer who loves writing code and exploring computer & tech. Building handy tools to solve everyday challenges.
+              </p>
+            </div>
+
+            {/* The Story Behind Spendiary */}
+            <div className="rounded-2xl bg-surface-muted/40 p-4 border border-line/50">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-base">💡</span>
+                <h3 className="text-[13px] font-bold text-ink">Why I Built Spendiary</h3>
+              </div>
+              <div className="space-y-2 text-[12.5px] text-ink-muted leading-relaxed">
+                <p>
+                  This project started purely to solve my own personal headache: having savings and investments scattered across multiple banks and apps to the point where I lost track of where my money actually was! So I decided to build this web app to bring everything together into a clean, single cockpit:
+                </p>
+                <ul className="list-disc list-inside space-y-1 pl-1 text-[12px] text-ink-soft">
+                  <li><strong className="font-semibold text-ink">Real-time Market Prices:</strong> Live price feeds for US Stocks, Gold, and Bitcoin (Thai stocks not included yet).</li>
+                  <li><strong className="font-semibold text-ink">Comprehensive Retirement FIRE Planner:</strong> In-depth milestone modeling with inflation adjustments and dividend calculations.</li>
+                  <li><strong className="font-semibold text-ink">Privacy-First Architecture:</strong> Your financial data stays locally on your device with optional encrypted cloud backup.</li>
+                </ul>
+                <p className="text-[12px] text-ink-muted pt-1">
+                  It's 100% free to use. If your portfolio is scattered like mine, feel free to give it a spin! Any feedback or feature requests are always welcome.
+                </p>
+              </div>
+            </div>
+
+            {/* Release Notes & Issue Report */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div className="p-3.5 rounded-xl border border-line/60 bg-surface">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <h3 className="text-xs font-bold text-ink">Release Highlights</h3>
+                </div>
+                <p className="text-[11.5px] text-ink-muted leading-relaxed">
+                  v{__APP_VERSION__} (build <span className="font-mono">{__COMMIT_HASH__}</span>) · High-yield savings max principal cap, DCA smart rebalancing, and complete dark mode optimization.
                 </p>
               </div>
 
-              {/* The Story Behind Spendiary */}
-              <div className="rounded-2xl bg-surface-muted/40 p-4 border border-line/50">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-base">💡</span>
-                  <h3 className="text-[13px] font-bold text-ink">Why I Built Spendiary</h3>
-                </div>
-                <div className="space-y-2 text-[12.5px] text-ink-muted leading-relaxed">
-                  <p>
-                    This project started purely to solve my own personal headache: having savings and investments scattered across multiple banks and apps to the point where I lost track of where my money actually was! So I decided to build this web app to bring everything together into a clean, single cockpit:
-                  </p>
-                  <ul className="list-disc list-inside space-y-1 pl-1 text-[12px] text-ink-soft">
-                    <li><strong className="font-semibold text-ink">Real-time Market Prices:</strong> Live price feeds for US Stocks, Gold, and Bitcoin (Thai stocks not included yet).</li>
-                    <li><strong className="font-semibold text-ink">Comprehensive Retirement FIRE Planner:</strong> In-depth milestone modeling with inflation adjustments and dividend calculations.</li>
-                    <li><strong className="font-semibold text-ink">Privacy-First Architecture:</strong> Your financial data stays locally on your device with optional encrypted cloud backup.</li>
-                  </ul>
-                  <p className="text-[12px] text-ink-muted pt-1">
-                    It's 100% free to use. If your portfolio is scattered like mine, feel free to give it a spin! Any feedback or feature requests are always welcome.
-                  </p>
-                </div>
-              </div>
-
-              {/* Release Notes & Issue Report */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div className="p-3.5 rounded-xl border border-line/60 bg-surface">
+              <div className="p-3.5 rounded-xl border border-line/60 bg-surface flex flex-col justify-between">
+                <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <h3 className="text-xs font-bold text-ink">Release Highlights</h3>
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    <h3 className="text-xs font-bold text-ink">Feedback & Issues</h3>
                   </div>
                   <p className="text-[11.5px] text-ink-muted leading-relaxed">
-                    v{__APP_VERSION__} (build <span className="font-mono">{__COMMIT_HASH__}</span>) · High-yield savings max principal cap, DCA smart rebalancing, and complete dark mode optimization.
+                    Encountered a bug or have a suggestion? Feel free to open an issue on GitHub or drop a message via Facebook.
                   </p>
                 </div>
-
-                <div className="p-3.5 rounded-xl border border-line/60 bg-surface flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="w-2 h-2 rounded-full bg-amber-500" />
-                      <h3 className="text-xs font-bold text-ink">Feedback & Issues</h3>
-                    </div>
-                    <p className="text-[11.5px] text-ink-muted leading-relaxed">
-                      Encountered a bug or have a suggestion? Feel free to open an issue on GitHub or drop a message via Facebook.
-                    </p>
-                  </div>
-                  <div className="mt-2.5 pt-2 border-t border-line/50 flex items-center gap-2">
-                    <a
-                      href="https://github.com/bbrightns/spendiary/issues"
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="text-[11.5px] font-semibold text-brand hover:underline"
-                    >
-                      Report on GitHub →
-                    </a>
-                  </div>
+                <div className="mt-2.5 pt-2 border-t border-line/50 flex items-center gap-2">
+                  <a
+                    href="https://github.com/bbrightns/spendiary/issues"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="text-[11.5px] font-semibold text-brand hover:underline"
+                  >
+                    Report on GitHub →
+                  </a>
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </Card>
       </div>
 
