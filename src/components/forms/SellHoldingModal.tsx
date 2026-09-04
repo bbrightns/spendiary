@@ -219,9 +219,9 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
       soldPriceDisplay = sellUnitsCount > 0 ? totalProceedsThb / sellUnitsCount : holding.price
 
       if (!isFullSell) {
-        let updatedLocs: BtcLocation[] = []
+        let updatedLocs: BtcLocation[] = holding.btcLocations ?? []
         if (loc) {
-          updatedLocs = (holding.btcLocations ?? []).map((l) => {
+          updatedLocs = updatedLocs.map((l) => {
             if (l.id !== loc.id) return l
             const remSats = Math.max(0, l.satoshi - sSats)
             const remSpent = Math.max(0, l.thbSpent - costBasisSoldThb)
@@ -256,9 +256,9 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
       soldPriceDisplay = sGrams > 0 ? totalProceedsThb / sGrams : holding.price
 
       if (!isFullSell) {
-        let updatedLocs: GoldLocation[] = []
+        let updatedLocs: GoldLocation[] = holding.goldLocations ?? []
         if (loc) {
-          updatedLocs = (holding.goldLocations ?? []).map((l) => {
+          updatedLocs = updatedLocs.map((l) => {
             if (l.id !== loc.id) return l
             const remGrams = Math.max(0, l.grams - sGrams)
             const remSpent = Math.max(0, l.thbSpent - costBasisSoldThb)
