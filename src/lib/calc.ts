@@ -29,6 +29,55 @@ export function applyBuy(
   }
 }
 
+export interface SellResult {
+  units: number
+  avgCost: number
+  price: number
+  updatedAt: string
+  proceeds: number
+  costBasisSold: number
+  realizedPnL: number
+  realizedPnLPercent: number
+  remainingUnits: number
+  remainingCostBasis: number
+}
+
+/**
+ * Apply a "sell" order to a holding: units reduce and total cost basis reduces
+ * proportionally. Average cost per unit remains unchanged. Calculates realized gain/loss.
+ */
+export function applySell(
+  h: Holding,
+  unitsSold: number,
+  sellPricePerUnit: number,
+  on = new Date(),
+): SellResult {
+  const currentUnits = h.units ?? h.totalUnits ?? 0
+  const currentCostBasis = h.totalThbInvested ?? (currentUnits * (h.avgCostThb ?? h.avgCost ?? 0))
+  const avgCostPerUnit = currentUnits > 0 ? currentCostBasis / currentUnits : (h.avgCostThb ?? h.avgCost ?? 0)
+
+  const safeUnitsSold = Math.min(unitsSold, currentUnits)
+  const remainingUnits = Math.max(0, currentUnits - safeUnitsSold)
+  const proceeds = safeUnitsSold * sellPricePerUnit
+  const costBasisSold = safeUnitsSold * avgCostPerUnit
+  const realizedPnL = proceeds - costBasisSold
+  const realizedPnLPercent = costBasisSold > 0 ? (realizedPnL / costBasisSold) * 100 : 0
+  const remainingCostBasis = Math.max(0, currentCostBasis - costBasisSold)
+
+  return {
+    units: remainingUnits,
+    avgCost: avgCostPerUnit,
+    price: sellPricePerUnit,
+    updatedAt: localDateStr(on),
+    proceeds,
+    costBasisSold,
+    realizedPnL,
+    realizedPnLPercent,
+    remainingUnits,
+    remainingCostBasis,
+  }
+}
+
 export function holdingMetrics(h: Holding): HoldingMetrics {
   const marketValue = h.units * h.price
   const costBasis = h.totalThbInvested ?? (h.units * h.avgCost)

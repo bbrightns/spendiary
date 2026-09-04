@@ -147,7 +147,7 @@ export interface CashAccount {
 export interface HoldingLog {
   id: string
   timestamp: string        // ISO datetime
-  action: 'add' | 'buy_more' | 'edit'
+  action: 'add' | 'buy_more' | 'edit' | 'sell'
   holdingName: string
   ticker: string
   assetClass: AssetClass
@@ -159,6 +159,12 @@ export interface HoldingLog {
   afterCashAccountsState?: CashAccount[]
   dcaPlanId?: string
   dcaDate?: string
+  soldUnits?: number
+  soldPrice?: number
+  proceeds?: number
+  realizedPnL?: number
+  realizedPnLPercent?: number
+  cashAccountId?: string
 }
 
 export interface FixedCostItem {
