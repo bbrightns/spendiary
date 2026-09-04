@@ -49,8 +49,11 @@ function formatCostOrFx(val: number | string): string {
 }
 
 export function BuyMoreForm({ open, holding, onClose }: Props) {
-  const { upsertHolding, upsertBtcLocation, upsertGoldLocation, addHoldingLog, usdThb } = useData()
+  const { buyMoreHolding, upsertBtcLocation, upsertGoldLocation, usdThb, data } = useData()
   const { showToast } = useToast()
+
+  // Cash Account integration
+  const [cashAccountId, setCashAccountId] = useState<string>('none')
 
   // Shared state
   const [units, setUnits] = useState<number | ''>('')
@@ -258,6 +261,7 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
     if (!justOpened || !holding) return
     setUnits('')
     setShowErrors(false)
+    setCashAccountId('none')
     setSatoshi('')
     setThbSpent('')
     setLocationId((holding.btcLocations ?? [])[0]?.id ?? '__new__')
@@ -285,6 +289,14 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
   }, [open, holding])
 
   if (!holding) return null
+
+  const cashAccountOptions = [
+    { value: 'none', label: 'None · Do not deduct / ไม่หักเงินสด' },
+    ...(data.cashAccounts ?? []).map((c) => ({
+      value: c.id,
+      label: `${c.name} (${c.currency === 'USD' ? '$' : '฿'}${c.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`,
+    })),
+  ]
 
   // ── Gold path ──
   if (isGold) {
@@ -344,15 +356,13 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         avgCostThb: avgCost,
       }
       const bahtAmount = (g / GRAMS_PER_BAHT_GOLD).toFixed(4)
-      addHoldingLog({
-        action: 'buy_more',
-        holdingId: holding!.id,
-        holdingName: holding!.name,
-        ticker: holding!.ticker,
-        assetClass: 'gold',
-        note: `+${g.toFixed(4)} g (${bahtAmount} บาททอง) · ฿${spent.toLocaleString()} spent · ${goldLocName}`,
-        previousHoldingState: JSON.parse(JSON.stringify(holding!)),
-        afterHoldingState,
+      const chosenCash = cashAccountId !== 'none' ? data.cashAccounts.find((c) => c.id === cashAccountId) : undefined
+      const cashSuffix = chosenCash ? ` · Paid from ${chosenCash.name}` : ''
+      buyMoreHolding({
+        updatedHolding: afterHoldingState,
+        cashAccountId: cashAccountId !== 'none' ? cashAccountId : undefined,
+        cashDeductAmount: cashAccountId !== 'none' ? spent : undefined,
+        note: `+${g.toFixed(4)} g (${bahtAmount} บาททอง) · ฿${spent.toLocaleString()} spent · ${goldLocName}${cashSuffix}`,
       })
       showToast(`Bought ${g.toFixed(4)}g (${bahtAmount} บาททอง) gold for ${holding!.name}`, 'success')
       onClose()
@@ -455,6 +465,13 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
             />
           </div>
 
+          <SelectField
+            label="Deduct payment from Cash (หักเงินจากกระเป๋าเงินสด)"
+            value={cashAccountId}
+            onChange={setCashAccountId}
+            options={cashAccountOptions}
+          />
+
           {g > 0 && spent > 0 && (
             <div
               className="rounded-2xl border px-4 py-3 space-y-1.5"
@@ -540,15 +557,13 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         totalThbInvested: totalThb,
         avgCostThb: avgCost,
       }
-      addHoldingLog({
-        action: 'buy_more',
-        holdingId: holding!.id,
-        holdingName: holding!.name,
-        ticker: holding!.ticker,
-        assetClass: 'crypto',
-        note: `+${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} spent · ${locName}`,
-        previousHoldingState: JSON.parse(JSON.stringify(holding!)),
-        afterHoldingState,
+      const chosenCash = cashAccountId !== 'none' ? data.cashAccounts.find((c) => c.id === cashAccountId) : undefined
+      const cashSuffix = chosenCash ? ` · Paid from ${chosenCash.name}` : ''
+      buyMoreHolding({
+        updatedHolding: afterHoldingState,
+        cashAccountId: cashAccountId !== 'none' ? cashAccountId : undefined,
+        cashDeductAmount: cashAccountId !== 'none' ? spent : undefined,
+        note: `+${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} spent · ${locName}${cashSuffix}`,
       })
       showToast(`Bought ${sats.toLocaleString()} sats for ${holding!.name}`, 'success')
       onClose()
@@ -611,6 +626,13 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
               placeholder="0"
             />
           </div>
+
+          <SelectField
+            label="Deduct payment from Cash (หักเงินจากกระเป๋าเงินสด)"
+            value={cashAccountId}
+            onChange={setCashAccountId}
+            options={cashAccountOptions}
+          />
 
           {satoshi !== '' && Number(satoshi) > 0 && thbSpent !== '' && Number(thbSpent) > 0 && (
             <div
@@ -675,16 +697,13 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
       }
 
       const updated = { ...holding!, ...next, ...extra }
-      upsertHolding(updated)
-      addHoldingLog({
-        action: 'buy_more',
-        holdingId: holding!.id,
-        holdingName: holding!.name,
-        ticker: holding!.ticker,
-        assetClass: holding!.assetClass,
-        note: `+${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${priceUsdNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/unit`,
-        previousHoldingState: JSON.parse(JSON.stringify(holding!)),
-        afterHoldingState: updated,
+      const chosenCash = cashAccountId !== 'none' ? data.cashAccounts.find((c) => c.id === cashAccountId) : undefined
+      const cashSuffix = chosenCash ? ` · Paid from ${chosenCash.name}` : ''
+      buyMoreHolding({
+        updatedHolding: updated,
+        cashAccountId: cashAccountId !== 'none' ? cashAccountId : undefined,
+        cashDeductAmount: cashAccountId !== 'none' ? amountSpentThbNum : undefined,
+        note: `+${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${priceUsdNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/unit${cashSuffix}`,
       })
       showToast(`Bought ${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares of ${holding!.name}`, 'success')
       onClose()
@@ -703,16 +722,13 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
         avgCostThb: next.avgCost,
       }
       const updated = { ...holding!, ...next, ...extra }
-      upsertHolding(updated)
-      addHoldingLog({
-        action: 'buy_more',
-        holdingId: holding!.id,
-        holdingName: holding!.name,
-        ticker: holding!.ticker,
-        assetClass: holding!.assetClass,
-        note: `+${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${label} @ ฿${Number(price).toLocaleString()}/unit`,
-        previousHoldingState: JSON.parse(JSON.stringify(holding!)),
-        afterHoldingState: updated,
+      const chosenCash = cashAccountId !== 'none' ? data.cashAccounts.find((c) => c.id === cashAccountId) : undefined
+      const cashSuffix = chosenCash ? ` · Paid from ${chosenCash.name}` : ''
+      buyMoreHolding({
+        updatedHolding: updated,
+        cashAccountId: cashAccountId !== 'none' ? cashAccountId : undefined,
+        cashDeductAmount: cashAccountId !== 'none' ? amountSpentThb : undefined,
+        note: `+${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${label} @ ฿${Number(price).toLocaleString()}/unit${cashSuffix}`,
       })
       showToast(`Bought ${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} units of ${holding!.name}`, 'success')
       onClose()
@@ -824,6 +840,13 @@ export function BuyMoreForm({ open, holding, onClose }: Props) {
             />
           </div>
         )}
+
+        <SelectField
+          label="Deduct payment from Cash (หักเงินจากกระเป๋าเงินสด)"
+          value={cashAccountId}
+          onChange={setCashAccountId}
+          options={cashAccountOptions}
+        />
 
         {isStock && validStock && (
           <div
