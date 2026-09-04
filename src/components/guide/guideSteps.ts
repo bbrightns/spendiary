@@ -78,7 +78,7 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         badge: 'เครื่องมือจัดการ',
         title: 'ส่งออกข้อมูลพอร์ต (Export & Actions)',
         description:
-          'คัดลอกสรุปพอร์ตทั้งหมดในรูปแบบ Markdown เพื่อนำไปใช้วิเคราะห์ต่อ หรือกดรีเฟรชราคาตลาดสดแบบ Real-time',
+          'ส่งออกข้อมูลพอร์ตการลงทุนเป็นไฟล์ CSV หรือคัดลอกสรุปพอร์ตทั้งหมดในรูปแบบ Markdown เพื่อนำไปใช้วิเคราะห์ต่อ',
         position: 'bottom',
       },
       {

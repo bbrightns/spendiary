@@ -22,7 +22,7 @@ import { Button } from '../components/ui/Button'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import { PlusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon } from '../components/icons'
+import { PlusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon, DownloadIcon } from '../components/icons'
 import {
   ASSET_META,
   GRAMS_PER_BAHT_GOLD,
@@ -231,6 +231,116 @@ export function Portfolio() {
     color: ASSET_META[a.assetClass].color,
   }))
 
+  const handleExportCsv = () => {
+    if (rows.length === 0) {
+      showToast('No holdings to export', 'error')
+      return
+    }
+
+    const headers = [
+      'Asset Class',
+      'Ticker',
+      'Holding Name',
+      'Quantity',
+      'Unit',
+      'Avg Cost (THB)',
+      'Current Price (THB)',
+      'Total Cost (THB)',
+      'Market Value (THB)',
+      'Unrealized PnL (THB)',
+      'Unrealized PnL (%)',
+      'Portfolio Weight (%)',
+      'Foreign / Native Currency Details',
+      'Storage Locations',
+      'Last Updated',
+    ]
+
+    const escapeCsv = (val: string | number | null | undefined): string => {
+      if (val === null || val === undefined) return ''
+      const str = String(val).trim()
+      if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+        return `"${str.replace(/"/g, '""')}"`
+      }
+      return str
+    }
+
+    const rate = usdThb && usdThb > 0 ? usdThb : 35
+
+    const csvRows = rows.map((h) => {
+      const isStock = h.assetClass === 'stock'
+      const isCrypto = h.assetClass === 'crypto'
+      const isGold = h.assetClass === 'gold'
+      const isFund = h.assetClass === 'fund'
+
+      const assetClassLabel = ASSET_META[h.assetClass]?.label ?? h.assetClass
+      const uLabel = unitLabel(h.assetClass)
+      const avgCostThb = h.units > 0 ? h.costBasis / h.units : h.avgCost
+
+      let nativeDetails = ''
+      let locationsStr = ''
+
+      if (isStock) {
+        const avgUsd = h.avgCostUsd ?? (rate > 0 ? h.avgCost / rate : 0)
+        const priceUsd = rate > 0 ? h.price / rate : 0
+        const totalCostUsd = h.totalUsdInvested ?? (avgUsd * h.units)
+        const marketValUsd = rate > 0 ? h.marketValue / rate : 0
+        const pnlUsd = marketValUsd - totalCostUsd
+        nativeDetails = `Avg: $${avgUsd.toFixed(2)} | Price: $${priceUsd.toFixed(2)} | Cost: $${totalCostUsd.toFixed(2)} | Value: $${marketValUsd.toFixed(2)} | PnL: ${pnlUsd >= 0 ? '+' : ''}$${pnlUsd.toFixed(2)}`
+      } else if (isCrypto) {
+        const sats = Math.round(h.units * SATS_PER_BTC)
+        const avgCostPerBtc = h.units > 0 ? h.costBasis / h.units : h.avgCost
+        const avgCostPerBtcUsd = rate > 0 ? avgCostPerBtc / rate : 0
+        const priceUsd = rate > 0 ? h.price / rate : 0
+        nativeDetails = `${sats.toLocaleString()} sats | Avg: $${Math.round(avgCostPerBtcUsd).toLocaleString()}/BTC | Price: $${Math.round(priceUsd).toLocaleString()}/BTC`
+        locationsStr = (h.btcLocations ?? []).map((loc) => `${loc.name}: ${loc.satoshi.toLocaleString()} sats (฿${loc.thbSpent.toLocaleString()})`).join('; ')
+      } else if (isGold) {
+        const bahtGold = h.units / GRAMS_PER_BAHT_GOLD
+        const avgCostPerBaht = (h.units > 0 ? h.costBasis / h.units : h.avgCost) * GRAMS_PER_BAHT_GOLD
+        const avgCostXauUsd = goldThbPerBahtToXauUsd(avgCostPerBaht, rate)
+        const pricePerBaht = h.price * GRAMS_PER_BAHT_GOLD
+        const priceXauUsd = goldThbPerBahtToXauUsd(pricePerBaht, rate)
+        nativeDetails = `${bahtGold.toFixed(4)} บาททอง | Avg: ฿${Math.round(avgCostPerBaht).toLocaleString()}/บาท ($${Math.round(avgCostXauUsd).toLocaleString()}/oz) | Price: ฿${Math.round(pricePerBaht).toLocaleString()}/บาท ($${Math.round(priceXauUsd).toLocaleString()}/oz)`
+        locationsStr = (h.goldLocations ?? []).map((loc) => `${loc.name}: ${(loc.grams / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง (${loc.grams}g, ฿${loc.thbSpent.toLocaleString()})`).join('; ')
+      } else if (isFund) {
+        nativeDetails = `Avg NAV: ฿${h.avgCost.toFixed(4)} | Current NAV: ฿${h.price.toFixed(4)}`
+      }
+
+      const weightPct = summary.value > 0 ? (h.marketValue / summary.value) * 100 : 0
+      const qty = isCrypto ? Number(h.units.toFixed(8)) : Number(h.units.toFixed(4))
+
+      return [
+        escapeCsv(assetClassLabel),
+        escapeCsv(h.ticker),
+        escapeCsv(h.name),
+        escapeCsv(qty),
+        escapeCsv(uLabel),
+        escapeCsv(avgCostThb.toFixed(2)),
+        escapeCsv(h.price.toFixed(2)),
+        escapeCsv(h.costBasis.toFixed(2)),
+        escapeCsv(h.marketValue.toFixed(2)),
+        escapeCsv(h.pnl.toFixed(2)),
+        escapeCsv(`${h.pnlPct >= 0 ? '+' : ''}${h.pnlPct.toFixed(2)}%`),
+        escapeCsv(`${weightPct.toFixed(2)}%`),
+        escapeCsv(nativeDetails),
+        escapeCsv(locationsStr),
+        escapeCsv(h.updatedAt || ''),
+      ].join(',')
+    })
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...csvRows].join('\r\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `spendiary-portfolio-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+
+    showToast(`Exported ${rows.length} holding${rows.length === 1 ? '' : 's'} to CSV`, 'success')
+  }
+
   return (
     <>
       <PageHeader
@@ -279,7 +389,18 @@ export function Portfolio() {
         }
         onStartGuide={startTour}
         action={
-          <div id="guide-portfolio-actions" className="flex items-center gap-2">
+          <div id="guide-portfolio-actions" className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleExportCsv}
+              disabled={rows.length === 0}
+              title="Export portfolio holdings to CSV"
+              className="cursor-pointer shrink-0 h-9"
+            >
+              <DownloadIcon className="h-3.5 w-3.5" />
+              <span>Export CSV</span>
+            </Button>
             <button
               type="button"
               onClick={handleCopyMarkdown}
