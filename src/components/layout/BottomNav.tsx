@@ -5,11 +5,7 @@ import { useData } from '../../store/DataContext'
 import { shouldConfirmBuy } from '../../lib/calc'
 import { Modal } from '../ui/Modal'
 
-interface BottomNavProps {
-  isVisible?: boolean
-}
-
-export function BottomNav({ isVisible = true }: BottomNavProps) {
+export function BottomNav() {
   const location = useLocation()
   const navigate = useNavigate()
   const pathname = location.pathname
@@ -40,11 +36,7 @@ export function BottomNav({ isVisible = true }: BottomNavProps) {
   return (
     <>
       {/* ── Bottom Navigation Bar ── */}
-      <nav
-        className={`fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-surface/85 backdrop-blur-xl safe-bottom transition-transform duration-300 ease-in-out ${
-          isVisible ? 'translate-y-0' : 'translate-y-full pointer-events-none'
-        }`}
-      >
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-surface/85 backdrop-blur-xl safe-bottom">
         <div className="flex items-stretch justify-around px-2">
           {mobileNavItems.map((item) => {
             if (item.isAction) {

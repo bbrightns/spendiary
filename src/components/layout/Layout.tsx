@@ -83,7 +83,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {/* ── Mobile Bottom Navigation (< lg) ── */}
       <div className="lg:hidden">
-        <BottomNav isVisible={isVisible} />
+        <BottomNav />
       </div>
     </div>
   )

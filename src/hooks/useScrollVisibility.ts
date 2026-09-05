@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 
 /**
- * Custom hook to control mobile header and bottom navigation bar visibility based on scroll direction.
+ * Custom hook to control mobile header visibility based on scroll direction.
  * 
  * Rules:
  * - Hides when user scrolls down (reading content)
