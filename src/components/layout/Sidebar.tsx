@@ -1,24 +1,35 @@
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { navItems, settingsItem } from './nav'
 import { useData } from '../../store/DataContext'
 import { useTheme } from '../../hooks/useTheme'
+import { ChevronDownIcon } from '../icons'
 
 import { shouldConfirmBuy } from '../../lib/calc'
 
 export function Sidebar() {
   const location = useLocation()
   const pathname = location.pathname
-  const { data, user, usdThb } = useData()
+  const { data, user } = useData()
   const { setTheme } = useTheme()
   const isTestMode = user?.id === 'test-user-local'
 
   // Calculate live badge counts
   const dcaAlertCount = data.dcaPlans.filter((p) => shouldConfirmBuy(p)).length
 
-  const getBadgeCount = (path: string) => {
+  const getBadgeCount = (path?: string) => {
     if (path === '/dca') return dcaAlertCount
     return 0
   }
+
+  const isStrategyActive = pathname.startsWith('/rebalance') || pathname.startsWith('/retirement')
+  const [isStrategiesOpen, setIsStrategiesOpen] = useState(isStrategyActive)
+
+  useEffect(() => {
+    if (isStrategyActive) {
+      setIsStrategiesOpen(true)
+    }
+  }, [isStrategyActive])
 
   const toggleTheme = () => {
     // If currently dark (or system evaluating to dark), toggle to light, else dark
@@ -56,35 +67,85 @@ export function Sidebar() {
           )}
         </div>
 
-        {/* Live Market Bar */}
-        {usdThb && usdThb > 0 && (
-          <div className="mx-1 px-3 py-2 rounded-xl bg-surface-muted/70 border border-line/60 flex items-center justify-between text-[11.5px]">
-            <div className="flex items-center gap-1.5 font-medium text-ink-muted">
-              <span className="h-2 w-2 rounded-full bg-gain animate-pulse shrink-0" />
-              <span>USD/THB</span>
-            </div>
-            <span className="font-display font-bold tnum text-ink">
-              ฿{usdThb.toFixed(2)}
-            </span>
-          </div>
-        )}
-
         {/* Navigation Items */}
         <nav className="flex flex-col gap-1">
           <span className="px-3 text-[11px] font-semibold tracking-normal text-ink-muted mb-1">
             Navigation
           </span>
           {navItems.map((item) => {
+            if (item.subItems) {
+              const isChildActive = item.subItems.some((sub) => pathname.startsWith(sub.to))
+
+              return (
+                <div key={item.label} className="flex flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsStrategiesOpen((prev) => !prev)}
+                    className={[
+                      'w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-[13.5px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset cursor-pointer select-none',
+                      isChildActive
+                        ? 'text-brand-ink bg-brand-soft/50 font-bold'
+                        : 'text-ink-muted hover:bg-surface-muted hover:text-ink',
+                    ].join(' ')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <item.icon
+                        className={`h-[19px] w-[19px] ${isChildActive ? 'text-brand-ink' : 'text-ink-muted'}`}
+                        strokeWidth={isChildActive ? 2.2 : 1.7}
+                      />
+                      <span>{item.label}</span>
+                    </div>
+
+                    <ChevronDownIcon
+                      className={`h-4 w-4 transition-transform duration-200 ${
+                        isStrategiesOpen ? 'rotate-180 text-ink' : 'text-ink-muted'
+                      }`}
+                      strokeWidth={2}
+                    />
+                  </button>
+
+                  {isStrategiesOpen && (
+                    <div className="flex flex-col gap-1 pl-3.5 ml-3 border-l border-line/70 py-0.5">
+                      {item.subItems.map((sub) => {
+                        const isSubActive = pathname.startsWith(sub.to)
+
+                        return (
+                          <Link
+                            key={sub.to}
+                            to={sub.to}
+                            title={sub.description}
+                            className={[
+                              'flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
+                              isSubActive
+                                ? 'text-brand-ink bg-brand-soft/80 shadow-xs font-bold'
+                                : 'text-ink-muted hover:bg-surface-muted hover:text-ink',
+                            ].join(' ')}
+                          >
+                            <sub.icon
+                              className={`h-[17px] w-[17px] shrink-0 ${isSubActive ? 'text-brand-ink' : 'text-ink-muted'}`}
+                              strokeWidth={isSubActive ? 2.2 : 1.7}
+                            />
+                            <span className="truncate">{sub.label}</span>
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
+            const toPath = item.to || '/'
             const isActive =
-              item.to === '/'
+              toPath === '/'
                 ? pathname === '/'
-                : pathname.startsWith(item.to)
-            const badgeCount = getBadgeCount(item.to)
+                : pathname.startsWith(toPath)
+            const badgeCount = getBadgeCount(toPath)
 
             return (
               <Link
-                key={item.to}
-                to={item.to}
+                key={toPath}
+                to={toPath}
                 className={[
                   'flex items-center justify-between px-3 py-2.5 rounded-xl text-[13.5px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
                   isActive
@@ -117,10 +178,10 @@ export function Sidebar() {
       <div className="flex flex-col gap-2 pt-4 border-t border-line">
         {/* Settings link */}
         <Link
-          to={settingsItem.to}
+          to={settingsItem.to || '/settings'}
           className={[
             'flex items-center justify-between px-3 py-2.5 rounded-xl text-[13.5px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
-            pathname.startsWith(settingsItem.to)
+            pathname.startsWith(settingsItem.to || '/settings')
               ? 'text-brand-ink bg-brand-soft/70 shadow-xs font-bold'
               : 'text-ink-muted hover:bg-surface-muted hover:text-ink',
           ].join(' ')}

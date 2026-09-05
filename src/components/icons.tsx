@@ -339,3 +339,12 @@ export function ListIcon(p: IconProps) {
     </svg>
   )
 }
+
+export function ChevronDownIcon(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  )
+}
+
