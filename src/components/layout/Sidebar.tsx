@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { navItems, settingsItem } from './nav'
+import { navItems, settingsItem, strategySubItems } from './nav'
 import { useData } from '../../store/DataContext'
 import { useTheme } from '../../hooks/useTheme'
 import { ChevronDownIcon } from '../icons'
@@ -22,7 +22,7 @@ export function Sidebar() {
     return 0
   }
 
-  const isStrategyActive = pathname.startsWith('/rebalance') || pathname.startsWith('/retirement')
+  const isStrategyActive = strategySubItems.some((sub) => pathname.startsWith(sub.to))
   const [isStrategiesOpen, setIsStrategiesOpen] = useState(isStrategyActive)
 
   useEffect(() => {
