@@ -18,12 +18,13 @@ const AI_PROMPT_TEMPLATE = `Convert my investment portfolio and cash records int
 [Instructions]:
 1. Output RAW JSON ONLY. Do not wrap with conversational text or markdown explanation.
 2. If there are investment assets, put them in the "holdings" array:
-   - "ticker": string (e.g. "AAPL", "BTC", "SCBDV", "GOLD")
-   - "name": string (e.g. "Apple Inc.", "Bitcoin")
+   - "ticker": string (e.g. "MSFT", "AAPL", "BTC", "SCBDV", "GOLD")
+   - "name": string (e.g. "Microsoft Corporation", "Bitcoin")
    - "assetClass": must be one of "stock" | "fund" | "crypto" | "gold"
    - "units": number (positive, no commas, e.g. 10.5)
-   - "avgCost": number (average cost per unit in THB or local currency, no commas)
-   - "price": number (current price per unit if known, or same as avgCost)
+   - "avgCost": number (average cost per unit, no commas)
+   - "currency": "USD" or "THB" (specify "USD" if cost/price is in US Dollars, "THB" if Thai Baht. Defaults to "USD" for US stocks, "THB" for funds/crypto/gold)
+   - "price": number (OPTIONAL. Do NOT include for US stocks, BTC, or Gold since Spendiary fetches real-time prices automatically. Only include for Thai mutual funds or unlisted assets if known)
 3. If there are bank accounts or cash, put them in the "cashAccounts" array:
    - "name": string (e.g. "KBank Savings", "SCB", "Cash")
    - "balance": number (no commas, e.g. 50000)
@@ -40,12 +41,21 @@ const AI_PROMPT_TEMPLATE = `Convert my investment portfolio and cash records int
   ],
   "holdings": [
     {
-      "ticker": "AAPL",
-      "name": "Apple Inc.",
+      "ticker": "MSFT",
+      "name": "Microsoft Corporation",
       "assetClass": "stock",
-      "units": 10,
-      "avgCost": 180.5,
-      "price": 185.0
+      "units": 135,
+      "avgCost": 186.81,
+      "currency": "USD"
+    },
+    {
+      "ticker": "SCBCE",
+      "name": "SCB China Equity",
+      "assetClass": "fund",
+      "units": 500,
+      "avgCost": 12.5,
+      "price": 13.2,
+      "currency": "THB"
     }
   ]
 }

@@ -1598,10 +1598,35 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const name = rawName || rawTicker
             const assetClass = inferAssetClass(ticker, name, typeof r.assetClass === 'string' ? r.assetClass : undefined)
             const units = Math.max(0, parseCleanNumber(r.units ?? r.totalUnits, 0))
-            const avgCost = Math.max(0, parseCleanNumber(r.avgCost ?? r.avgCostThb ?? r.price, 0))
+            const rawCost = Math.max(0, parseCleanNumber(r.avgCost ?? r.avgCostThb ?? r.avgCostUsd ?? r.price, 0))
             const rawPrice = parseCleanNumber(r.price, 0)
-            const price = rawPrice > 0 ? rawPrice : avgCost
-            const totalThbInvested = units * avgCost
+            const rawCurr = typeof r.currency === 'string' ? r.currency.toUpperCase().trim() : ''
+
+            const fx = usdThb && usdThb > 0 ? usdThb : 35
+            // If currency is explicitly USD, or if assetClass is 'stock' and currency is not explicitly 'THB'
+            const isUsd = rawCurr === 'USD' || (assetClass === 'stock' && rawCurr !== 'THB')
+
+            let avgCostThb: number
+            let avgCostUsd: number | undefined
+            let totalThbInvested: number
+            let totalUsdInvested: number | undefined
+            let price: number
+
+            if (isUsd) {
+              avgCostUsd = rawCost
+              avgCostThb = parseFloat((rawCost * fx).toFixed(4))
+              totalUsdInvested = parseFloat((units * rawCost).toFixed(4))
+              totalThbInvested = parseFloat((units * avgCostThb).toFixed(2))
+              price = rawPrice > 0 ? parseFloat((rawPrice * fx).toFixed(2)) : avgCostThb
+            } else {
+              avgCostThb = rawCost
+              totalThbInvested = parseFloat((units * avgCostThb).toFixed(2))
+              if (assetClass === 'stock') {
+                avgCostUsd = fx > 0 ? parseFloat((rawCost / fx).toFixed(4)) : rawCost
+                totalUsdInvested = fx > 0 ? parseFloat((totalThbInvested / fx).toFixed(4)) : 0
+              }
+              price = rawPrice > 0 ? rawPrice : avgCostThb
+            }
 
             sanitizedHoldings.push({
               id: typeof r.id === 'string' && r.id ? r.id : newId(),
@@ -1610,9 +1635,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
               assetClass,
               units,
               totalUnits: units,
-              avgCost,
-              avgCostThb: avgCost,
+              avgCost: avgCostThb,
+              avgCostThb,
+              avgCostUsd,
               totalThbInvested,
+              totalUsdInvested,
               price,
               updatedAt: today,
             })
