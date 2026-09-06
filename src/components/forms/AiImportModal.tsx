@@ -84,9 +84,7 @@ function cleanJsonString(raw: string): string {
   }
   s = s.trim()
   // Strip trailing comma if present (e.g. when copying an item from an array)
-  if (s.endsWith(',')) {
-    s = s.slice(0, -1).trim()
-  }
+  s = s.replace(/,\s*$/, '').trim()
   return s
 }
 
@@ -128,7 +126,14 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
     if (!cleaned) return null
 
     try {
-      const obj = JSON.parse(cleaned)
+      let obj: unknown
+      try {
+        obj = JSON.parse(cleaned)
+      } catch {
+        // Fallback: try wrapping with brackets if user pasted a list of comma-separated objects
+        obj = JSON.parse(`[${cleaned}]`)
+      }
+
       if (typeof obj !== 'object' || obj === null) {
         return null
       }
