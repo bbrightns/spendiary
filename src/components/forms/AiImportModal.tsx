@@ -17,18 +17,20 @@ const AI_PROMPT_TEMPLATE = `Convert my investment portfolio and cash records int
 
 [Instructions]:
 1. Output RAW JSON ONLY. Do not wrap with conversational text or markdown explanation.
+   * Exception: If any unit of measurement (shares, units, grams vs baht gold, satoshi vs BTC), currency (USD vs THB), or price/cost figure is unclear or not specified in my data, DO NOT GUESS — ask me directly to clarify before outputting the JSON!
 2. If there are investment assets, put them in the "holdings" array:
    - "ticker": string (e.g. "MSFT", "AAPL", "BTC", "SCBDV", "GOLD")
    - "name": string (e.g. "Microsoft Corporation", "Bitcoin")
    - "assetClass": must be one of "stock" | "fund" | "crypto" | "gold"
    - "units": number (positive, no commas, e.g. 10.5)
    - "avgCost": number (average cost per unit, no commas)
-   - "currency": "USD" or "THB" (specify "USD" if cost/price is in US Dollars, "THB" if Thai Baht. Defaults to "USD" for US stocks, "THB" for funds/crypto/gold)
+   - "currency": "USD" or "THB" (specify "USD" if cost/price is in US Dollars, "THB" if Thai Baht. If unsure, ask me!)
    - "price": number (OPTIONAL. Do NOT include for US stocks, BTC, or Gold since Spendiary fetches real-time prices automatically. Only include for Thai mutual funds or unlisted assets if known)
 3. If there are bank accounts or cash, put them in the "cashAccounts" array:
    - "name": string (e.g. "KBank Savings", "SCB", "Cash")
    - "balance": number (no commas, e.g. 50000)
    - "currency": "THB" or "USD" (defaults to "THB")
+4. Clarification rule: If any asset's units, currency, or figures are unclear or ambiguous, do NOT guess — ask me directly to confirm.
 
 [Expected JSON Schema]:
 {
