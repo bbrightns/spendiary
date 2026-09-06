@@ -82,7 +82,12 @@ function cleanJsonString(raw: string): string {
   if (s.endsWith('```')) {
     s = s.slice(0, -3)
   }
-  return s.trim()
+  s = s.trim()
+  // Strip trailing comma if present (e.g. when copying an item from an array)
+  if (s.endsWith(',')) {
+    s = s.slice(0, -1).trim()
+  }
+  return s
 }
 
 export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) {
@@ -138,6 +143,14 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
         const d = obj as Record<string, unknown>
         if (Array.isArray(d.holdings)) holdings = d.holdings
         if (Array.isArray(d.cashAccounts)) cashAccounts = d.cashAccounts
+        // Fallback: If user pasted a single holding object directly
+        if (holdings.length === 0 && cashAccounts.length === 0) {
+          if (d.ticker || d.assetClass || typeof d.units === 'number') {
+            holdings = [d]
+          } else if (typeof d.balance === 'number') {
+            cashAccounts = [d]
+          }
+        }
       }
 
       return {
