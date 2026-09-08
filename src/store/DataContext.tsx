@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import type { BtcLocation, CashAccount, DcaPlan, FixedCostItem, GoldLocation, Holding, HoldingLog, InvestAssetClass, NetWorthSnapshot, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
+import type { BtcLocation, CashAccount, DcaPlan, DividendRecord, FixedCostItem, GoldLocation, Holding, HoldingLog, InvestAssetClass, NetWorthSnapshot, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
 import { localDateStr } from '../lib/format'
 import { seedData } from '../lib/seed'
 import { detectBankPreset, findMatchingHolding, inferCashCategory } from '../lib/calc'
@@ -16,6 +16,7 @@ const emptyData: SpendiaryData = {
   holdings: [],
   dcaPlans: [],
   transfers: [],
+  dividendRecords: [],
 }
 
 function newId(): string {
@@ -315,6 +316,9 @@ interface DataContextValue {
 
   upsertTransfer: (transfer: Omit<Transfer, 'id'> & { id?: string }) => void
   removeTransfer: (id: string) => void
+
+  recordDividend: (record: Omit<DividendRecord, 'id' | 'createdAt'>) => void
+  removeDividendRecord: (id: string) => void
 
   setRetirement: (settings: RetirementSettings) => void
   setRebalanceMode: (mode: RebalanceMode) => void
@@ -1146,12 +1150,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
           // 3. Remove this log entry
           const updatedLogs = logs.filter((l) => l.id !== logId)
+          let updatedDividendRecords = prev.dividendRecords ?? []
+          if (log.action === 'dividend' && log.dividendRecordId) {
+            updatedDividendRecords = updatedDividendRecords.filter((r) => r.id !== log.dividendRecordId)
+          }
 
           return {
             ...prev,
             holdings: updatedHoldings,
             dcaPlans: updatedPlans,
             cashAccounts: updatedCashAccounts,
+            dividendRecords: updatedDividendRecords,
             holdingLogs: updatedLogs,
           }
         }),
@@ -1561,6 +1570,89 @@ export function DataProvider({ children }: { children: ReactNode }) {
         updateData((prev) => ({ ...prev, transfers: upsert(prev.transfers, transfer) })),
       removeTransfer: (id) =>
         updateData((prev) => ({ ...prev, transfers: prev.transfers.filter((t) => t.id !== id) })),
+
+      recordDividend: (record) =>
+        updateData((prev) => {
+          const id = newId()
+          const now = new Date().toISOString()
+          const oldAccounts = prev.cashAccounts ?? []
+          const cashAcc = record.cashAccountId
+            ? oldAccounts.find((a) => a.id === record.cashAccountId)
+            : undefined
+
+          // 1. Credit cash account if specified
+          const updatedCashAccounts = cashAcc
+            ? oldAccounts.map((a) =>
+                a.id === cashAcc.id
+                  ? { ...a, balance: a.balance + record.netAmount }
+                  : a,
+              )
+            : oldAccounts
+
+          // 2. Create DividendRecord
+          const newRecord: DividendRecord = {
+            ...record,
+            id,
+            cashAccountName: cashAcc ? cashAcc.name : record.cashAccountName,
+            createdAt: now,
+          }
+
+          // 3. Create Activity HoldingLog
+          const logEntry: HoldingLog = {
+            id: newId(),
+            timestamp: now,
+            action: 'dividend',
+            holdingId: record.holdingId,
+            holdingName: record.holdingName,
+            ticker: record.ticker,
+            assetClass: record.assetClass,
+            note: `Received dividend ฿${record.netAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (DPS: ฿${record.dps.toLocaleString()}, Tax 10%: -฿${record.taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) into ${cashAcc ? cashAcc.name : 'Cash'}`,
+            previousCashAccountsState: oldAccounts,
+            afterCashAccountsState: updatedCashAccounts,
+            cashAccountId: record.cashAccountId,
+            dividendPerShare: record.dps,
+            grossDividend: record.grossAmount,
+            withholdingTax: record.taxAmount,
+            netDividend: record.netAmount,
+            dividendRecordId: id,
+          }
+
+          return {
+            ...prev,
+            cashAccounts: updatedCashAccounts,
+            dividendRecords: [newRecord, ...(prev.dividendRecords ?? [])],
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+          }
+        }),
+
+      removeDividendRecord: (recordId) =>
+        updateData((prev) => {
+          const records = prev.dividendRecords ?? []
+          const target = records.find((r) => r.id === recordId)
+          if (!target) return prev
+
+          // Revert cash balance if deposited
+          const oldAccounts = prev.cashAccounts ?? []
+          const updatedCashAccounts = target.cashAccountId
+            ? oldAccounts.map((a) =>
+                a.id === target.cashAccountId
+                  ? { ...a, balance: Math.max(0, a.balance - target.netAmount) }
+                  : a,
+              )
+            : oldAccounts
+
+          const updatedRecords = records.filter((r) => r.id !== recordId)
+          const updatedLogs = (prev.holdingLogs ?? []).filter(
+            (l) => l.dividendRecordId !== recordId,
+          )
+
+          return {
+            ...prev,
+            cashAccounts: updatedCashAccounts,
+            dividendRecords: updatedRecords,
+            holdingLogs: updatedLogs,
+          }
+        }),
 
       setRetirement: (retirement) =>
         updateData((prev) => ({ ...prev, retirement })),
