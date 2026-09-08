@@ -18,19 +18,35 @@ const AI_PROMPT_TEMPLATE = `Convert my investment portfolio and cash records int
 [Instructions]:
 1. Output RAW JSON ONLY. Do not wrap with conversational text or markdown explanation.
    * Exception: If any unit of measurement (shares, units, grams vs baht gold, satoshi vs BTC), currency (USD vs THB), or price/cost figure is unclear or not specified in my data, DO NOT GUESS — ask me directly to clarify before outputting the JSON!
-2. If there are investment assets, put them in the "holdings" array:
-   - "ticker": string (e.g. "MSFT", "AAPL", "BTC", "SCBDV", "GOLD")
-   - "name": string (e.g. "Microsoft Corporation", "Bitcoin")
-   - "assetClass": must be one of "stock" | "fund" | "crypto" | "gold"
-   - "units": number (positive, no commas, e.g. 10.5)
+
+2. Asset Classification Rules for Spendiary (CRITICAL):
+   - "fund": Use for ALL Thai market assets (always set "currency": "THB"):
+     • Thai Stocks (e.g. PTT, CPALL, BDMS, DELTA, AOT, KBANK, SCB)
+     • Thai Mutual Funds (e.g. SCBDV, K-CASH, B-INNOTECH, SCBSET, funds ending in -A, -SSF, -RMF)
+     • Thai DR / DRx (Depositary Receipts e.g. E1VFVN3001, FUEVFVND01, AAPL80X, NVDA80X, NDX01)
+     • Price rule: Include current price in "price" if available in my data. If unknown, set "price" equal to "avgCost".
+   - "stock": Use ONLY for US Stocks and US ETFs (always set "currency": "USD"):
+     • US Stocks (e.g. AAPL, MSFT, NVDA, TSLA, GOOGL, AMZN, META)
+     • US ETFs (e.g. SPY, VOO, QQQ, VTI, SCHD)
+     • Price rule: Do NOT include "price" (Spendiary fetches real-time prices automatically).
+   - "crypto": Use for Cryptocurrencies (e.g. BTC, ETH). Currency "USD" or "THB".
+   - "gold": Use for Physical Gold or Gold assets (e.g. XAU, Baht Gold).
+
+3. If there are investment assets, put them in the "holdings" array:
+   - "ticker": string (e.g. "PTT", "CPALL", "SCBDV", "AAPL80X", "AAPL", "NVDA", "VOO", "BTC", "GOLD")
+   - "name": string (e.g. "PTT Public Company", "Apple Inc", "SCB Dividend Equity Fund")
+   - "assetClass": "fund" (for Thai stocks, funds, DR) | "stock" (for US stocks, US ETFs) | "crypto" | "gold"
+   - "units": number (positive, no commas, e.g. 1000)
    - "avgCost": number (average cost per unit, no commas)
-   - "currency": "USD" or "THB" (specify "USD" if cost/price is in US Dollars, "THB" if Thai Baht. If unsure, ask me!)
-   - "price": number (OPTIONAL. Do NOT include for US stocks, BTC, or Gold since Spendiary fetches real-time prices automatically. Only include for Thai mutual funds or unlisted assets if known)
-3. If there are bank accounts or cash, put them in the "cashAccounts" array:
+   - "currency": "THB" (for Thai stocks/funds/DR) or "USD" (for US stocks/ETFs)
+   - "price": number (OPTIONAL. Include for Thai assets if known; do NOT include for US stocks/ETFs)
+
+4. If there are bank accounts or cash, put them in the "cashAccounts" array:
    - "name": string (e.g. "KBank Savings", "SCB", "Cash")
    - "balance": number (no commas, e.g. 50000)
    - "currency": "THB" or "USD" (defaults to "THB")
-4. Clarification rule: If any asset's units, currency, or figures are unclear or ambiguous, do NOT guess — ask me directly to confirm.
+
+5. Clarification rule: If any asset's units, currency, or figures are unclear or ambiguous, do NOT guess — ask me directly to confirm.
 
 [Expected JSON Schema]:
 {
@@ -43,21 +59,46 @@ const AI_PROMPT_TEMPLATE = `Convert my investment portfolio and cash records int
   ],
   "holdings": [
     {
-      "ticker": "MSFT",
-      "name": "Microsoft Corporation",
-      "assetClass": "stock",
-      "units": 135,
-      "avgCost": 186.81,
-      "currency": "USD"
+      "ticker": "PTT",
+      "name": "PTT Public Company",
+      "assetClass": "fund",
+      "units": 1000,
+      "avgCost": 34.5,
+      "price": 35.0,
+      "currency": "THB"
     },
     {
-      "ticker": "SCBCE",
-      "name": "SCB China Equity",
+      "ticker": "SCBDV",
+      "name": "SCB Dividend Stock Open End Fund",
       "assetClass": "fund",
       "units": 500,
       "avgCost": 12.5,
       "price": 13.2,
       "currency": "THB"
+    },
+    {
+      "ticker": "AAPL80X",
+      "name": "Apple Inc DRx",
+      "assetClass": "fund",
+      "units": 100,
+      "avgCost": 7.8,
+      "currency": "THB"
+    },
+    {
+      "ticker": "NVDA",
+      "name": "NVIDIA Corporation",
+      "assetClass": "stock",
+      "units": 15,
+      "avgCost": 120.5,
+      "currency": "USD"
+    },
+    {
+      "ticker": "VOO",
+      "name": "Vanguard S&P 500 ETF",
+      "assetClass": "stock",
+      "units": 10,
+      "avgCost": 480.0,
+      "currency": "USD"
     }
   ]
 }
@@ -360,7 +401,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
             rows={6}
             value={jsonText}
             onChange={(e) => setJsonText(e.target.value)}
-            placeholder={`Paste the JSON code block from ChatGPT here, e.g.\n{\n  "holdings": [\n    { "ticker": "AAPL", "units": 10, "avgCost": 180.5 }\n  ]\n}`}
+            placeholder={`Paste the JSON code block from ChatGPT here, e.g.\n{\n  "holdings": [\n    { "ticker": "PTT", "units": 1000, "avgCost": 34.5, "assetClass": "fund", "currency": "THB" },\n    { "ticker": "AAPL", "units": 10, "avgCost": 180.5, "assetClass": "stock", "currency": "USD" }\n  ]\n}`}
             className="w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 font-mono text-xs text-ink placeholder:text-ink-soft/60 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/10 dark:bg-black/20"
           />
 

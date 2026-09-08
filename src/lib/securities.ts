@@ -40,8 +40,90 @@ const THAI_FUNDS: Security[] = [
   { name: 'BBLAM Healthcare', ticker: 'BBLAHCARE', assetClass: 'fund' },
 ]
 
+// ── Thai Stocks (SET / MAI) ───────────────────────────────────────────────────
+export const THAI_STOCKS: Security[] = [
+  { name: 'PTT (ปตท.)', ticker: 'PTT', assetClass: 'fund' },
+  { name: 'CP ALL (ซีพี ออลล์)', ticker: 'CPALL', assetClass: 'fund' },
+  { name: 'Delta Electronics (Thailand)', ticker: 'DELTA', assetClass: 'fund' },
+  { name: 'Airports of Thailand (ท่าอากาศยานไทย)', ticker: 'AOT', assetClass: 'fund' },
+  { name: 'Bangkok Dusit Medical Services (กรุงเทพดุสิตเวชการ)', ticker: 'BDMS', assetClass: 'fund' },
+  { name: 'Advanced Info Service (แอดวานซ์ อินโฟร์ เซอร์วิส)', ticker: 'ADVANC', assetClass: 'fund' },
+  { name: 'Gulf Energy Development', ticker: 'GULF', assetClass: 'fund' },
+  { name: 'SCB X (เอสซีบี เอกซ์)', ticker: 'SCB', assetClass: 'fund' },
+  { name: 'Kasikornbank (ธนาคารกสิกรไทย)', ticker: 'KBANK', assetClass: 'fund' },
+  { name: 'Bangkok Bank (ธนาคารกรุงเทพ)', ticker: 'BBL', assetClass: 'fund' },
+  { name: 'Krungthai Bank (ธนาคารกรุงไทย)', ticker: 'KTB', assetClass: 'fund' },
+  { name: 'True Corporation', ticker: 'TRUE', assetClass: 'fund' },
+  { name: 'Siam Cement (ปูนซิเมนต์ไทย)', ticker: 'SCC', assetClass: 'fund' },
+  { name: 'CP Axtra (ซีพี แอ็กซ์ตร้า)', ticker: 'CPAXT', assetClass: 'fund' },
+  { name: 'Central Pattana (เซ็นทรัลพัฒนา)', ticker: 'CPN', assetClass: 'fund' },
+  { name: 'Central Retail Corporation', ticker: 'CRC', assetClass: 'fund' },
+  { name: 'Minor International', ticker: 'MINT', assetClass: 'fund' },
+  { name: 'Intouch Holdings', ticker: 'INTUCH', assetClass: 'fund' },
+  { name: 'Bumrungrad Hospital (โรงพยาบาลบำรุงราษฎร์)', ticker: 'BH', assetClass: 'fund' },
+  { name: 'Thai Oil (ไทยออยล์)', ticker: 'TOP', assetClass: 'fund' },
+  { name: 'PTT Exploration and Production', ticker: 'PTTEP', assetClass: 'fund' },
+  { name: 'PTT Global Chemical', ticker: 'PTTGC', assetClass: 'fund' },
+  { name: 'Banpu (บ้านปู)', ticker: 'BANPU', assetClass: 'fund' },
+  { name: 'Home Product Center (โฮม โปรดักส์)', ticker: 'HMPRO', assetClass: 'fund' },
+  { name: 'Siam Global House', ticker: 'GLOBAL', assetClass: 'fund' },
+  { name: 'BTS Group Holdings', ticker: 'BTS', assetClass: 'fund' },
+  { name: 'Bangkok Expressway and Metro', ticker: 'BEM', assetClass: 'fund' },
+  { name: 'Hana Microelectronics', ticker: 'HANA', assetClass: 'fund' },
+  { name: 'KCE Electronics', ticker: 'KCE', assetClass: 'fund' },
+  { name: 'TMBThanachart Bank (ทีเอ็มบีธนชาต)', ticker: 'TTB', assetClass: 'fund' },
+  { name: 'Tisco Financial Group', ticker: 'TISCO', assetClass: 'fund' },
+  { name: 'Energy Absolute (พลังงานบริสุทธิ์)', ticker: 'EA', assetClass: 'fund' },
+  { name: 'B.Grimm Power', ticker: 'BGRIM', assetClass: 'fund' },
+  { name: 'Land and Houses', ticker: 'LH', assetClass: 'fund' },
+  { name: 'Charoen Pokphand Foods (เจริญโภคภัณฑ์อาหาร)', ticker: 'CPF', assetClass: 'fund' },
+  { name: 'Carabao Group (คาราบาวกรุ๊ป)', ticker: 'CBG', assetClass: 'fund' },
+  { name: 'Thai Union Group', ticker: 'TU', assetClass: 'fund' },
+  { name: 'WHA Corporation', ticker: 'WHA', assetClass: 'fund' },
+  { name: 'Berli Jucker', ticker: 'BJC', assetClass: 'fund' },
+  { name: 'Bangkok Chain Hospital', ticker: 'BCH', assetClass: 'fund' },
+  { name: 'Chularat Hospital', ticker: 'CHG', assetClass: 'fund' },
+  { name: 'SCG Packaging', ticker: 'SCGP', assetClass: 'fund' },
+  { name: 'Osotspa (โอสถสภา)', ticker: 'OSP', assetClass: 'fund' },
+  { name: 'Muangthai Capital', ticker: 'MTC', assetClass: 'fund' },
+  { name: 'Srisawad Corporation', ticker: 'SAWAD', assetClass: 'fund' },
+  { name: 'Ngern Tid Lor (เงินติดล้อ)', ticker: 'TIDLOR', assetClass: 'fund' },
+  { name: 'Krungthai Card (บัตรกรุงไทย)', ticker: 'KTC', assetClass: 'fund' },
+  { name: 'AP (Thailand)', ticker: 'AP', assetClass: 'fund' },
+  { name: 'Sansiri (แสนสิริ)', ticker: 'SIRI', assetClass: 'fund' },
+  { name: 'Supalai (ศุภาลัย)', ticker: 'SPALI', assetClass: 'fund' },
+  { name: 'Indorama Ventures', ticker: 'IVL', assetClass: 'fund' },
+  { name: 'IRPC', ticker: 'IRPC', assetClass: 'fund' },
+  { name: 'OR (PTT Oil and Retail Business)', ticker: 'OR', assetClass: 'fund' },
+]
+
+// ── Thai DR / DRx (Depositary Receipts) ───────────────────────────────────────
+export const THAI_DRS: Security[] = [
+  { name: 'Diamond ETF DR (Vietnam)', ticker: 'FUEVFVND01', assetClass: 'fund' },
+  { name: 'VN30 ETF DR (Vietnam)', ticker: 'E1VFVN3001', assetClass: 'fund' },
+  { name: 'Nasdaq 100 DR', ticker: 'NDX01', assetClass: 'fund' },
+  { name: 'S&P 500 DR', ticker: 'SPX01', assetClass: 'fund' },
+  { name: 'Hang Seng DR', ticker: 'HK01', assetClass: 'fund' },
+  { name: 'Hang Seng Tech DR', ticker: 'HKTECH01', assetClass: 'fund' },
+  { name: 'China CSI 300 DR', ticker: 'CN01', assetClass: 'fund' },
+  { name: 'China Tech DR', ticker: 'CNTECH01', assetClass: 'fund' },
+  { name: 'Alibaba DR', ticker: 'BABA80', assetClass: 'fund' },
+  { name: 'Tencent DR', ticker: 'TENCENT80', assetClass: 'fund' },
+  { name: 'Xiaomi DR', ticker: 'XIAOMI80', assetClass: 'fund' },
+  { name: 'BYD DR', ticker: 'BYD80', assetClass: 'fund' },
+  { name: 'Apple Inc. DRx', ticker: 'AAPL80X', assetClass: 'fund' },
+  { name: 'NVIDIA DRx', ticker: 'NVDA80X', assetClass: 'fund' },
+  { name: 'Tesla DRx', ticker: 'TSLA80X', assetClass: 'fund' },
+  { name: 'Microsoft DRx', ticker: 'MSFT80X', assetClass: 'fund' },
+  { name: 'Alphabet DRx', ticker: 'GOOG80X', assetClass: 'fund' },
+  { name: 'Amazon DRx', ticker: 'AMZN80X', assetClass: 'fund' },
+  { name: 'Meta Platforms DRx', ticker: 'META80X', assetClass: 'fund' },
+  { name: 'SPDR S&P 500 ETF DRx', ticker: 'SPY80X', assetClass: 'fund' },
+  { name: 'Invesco QQQ DRx', ticker: 'QQQ80X', assetClass: 'fund' },
+]
+
 // ── US Stocks ─────────────────────────────────────────────────────────────────
-const US_STOCKS: Security[] = [
+export const US_STOCKS: Security[] = [
   { name: 'Apple', ticker: 'AAPL', assetClass: 'stock' },
   { name: 'Microsoft', ticker: 'MSFT', assetClass: 'stock' },
   { name: 'NVIDIA', ticker: 'NVDA', assetClass: 'stock' },
@@ -109,7 +191,13 @@ const GOLD_SECURITIES: Security[] = [
   { name: 'Gold 99.99% (gram)', ticker: 'XAU', assetClass: 'gold' },
 ]
 
-export const ALL_SECURITIES: Security[] = [...THAI_FUNDS, ...US_STOCKS, ...GOLD_SECURITIES]
+export const ALL_SECURITIES: Security[] = [
+  ...THAI_FUNDS,
+  ...THAI_STOCKS,
+  ...THAI_DRS,
+  ...US_STOCKS,
+  ...GOLD_SECURITIES,
+]
 
 export function searchSecurities(query: string, assetClass: AssetClass): Security[] {
   if (!query || query.trim().length < 1) return []
