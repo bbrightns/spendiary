@@ -47,6 +47,14 @@ export interface Holding {
   btcLocations?: BtcLocation[]
   /** Gold sub-breakdown by location (only for assetClass === 'gold') */
   goldLocations?: GoldLocation[]
+  /** Whether this holding pays dividends */
+  paysDividend?: boolean
+  /** Expected dividend per share (in THB or USD based on holding) */
+  expectedDps?: number
+  /** Specific months (1-12) when dividend is expected to be paid */
+  dividendMonths?: number[]
+  /** Default cash account ID to deposit dividends into */
+  defaultCashAccountId?: string
 }
 
 export interface RetirementSettings {
@@ -144,10 +152,39 @@ export interface CashAccount {
   payoutMonths?: number[]
 }
 
+export interface DividendRecord {
+  id: string
+  holdingId?: string
+  holdingName: string
+  ticker: string
+  assetClass: AssetClass
+  /** ISO date string YYYY-MM-DD */
+  paymentDate: string
+  /** Dividend Per Share in THB (or USD for US stocks) */
+  dps: number
+  /** Number of shares eligible on record date */
+  shares: number
+  /** Total gross dividend (dps * shares) */
+  grossAmount: number
+  /** Tax rate as decimal (e.g. 0.10 for 10%) */
+  taxRate: number
+  /** Withholding tax amount */
+  taxAmount: number
+  /** Net cash received (grossAmount - taxAmount) */
+  netAmount: number
+  /** Destination cash account id */
+  cashAccountId?: string
+  /** Destination cash account name snapshot */
+  cashAccountName?: string
+  note?: string
+  /** ISO timestamp when record was created */
+  createdAt: string
+}
+
 export interface HoldingLog {
   id: string
   timestamp: string        // ISO datetime
-  action: 'add' | 'buy_more' | 'edit' | 'sell'
+  action: 'add' | 'buy_more' | 'edit' | 'sell' | 'dividend'
   holdingName: string
   ticker: string
   assetClass: AssetClass
@@ -165,6 +202,11 @@ export interface HoldingLog {
   realizedPnL?: number
   realizedPnLPercent?: number
   cashAccountId?: string
+  dividendPerShare?: number
+  grossDividend?: number
+  withholdingTax?: number
+  netDividend?: number
+  dividendRecordId?: string
 }
 
 export interface FixedCostItem {
@@ -217,6 +259,7 @@ export interface SpendiaryData {
   rebalanceTargets?: Record<InvestAssetClass, number>
   rebalanceHoldingTargets?: Record<string, number>
   plannedAssets?: PlannedAsset[]
+  dividendRecords?: DividendRecord[]
   /** Timestamp in ms when this data was last modified locally */
   lastUpdatedAt?: number
 }
