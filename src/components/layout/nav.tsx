@@ -8,9 +8,11 @@ import {
   ClockIcon,
   ScaleIcon,
   StrategyIcon,
+  CashflowIcon,
+  DividendIcon,
 } from '../icons'
 
-export interface StrategySubItem {
+export interface NavSubItem {
   to: string
   label: string
   short: string
@@ -18,16 +20,18 @@ export interface StrategySubItem {
   icon: ComponentType<SVGProps<SVGSVGElement>>
 }
 
+export type StrategySubItem = NavSubItem
+
 export interface NavItem {
   to?: string
   label: string
   short: string
   icon: ComponentType<SVGProps<SVGSVGElement>>
-  subItems?: StrategySubItem[]
+  subItems?: NavSubItem[]
 }
 
 export interface MobileNavItem {
-  id: 'home' | 'portfolio' | 'dca' | 'strategies'
+  id: 'home' | 'portfolio' | 'cashflow' | 'strategies'
   to?: string
   label: string
   short: string
@@ -35,7 +39,24 @@ export interface MobileNavItem {
   isAction?: boolean
 }
 
-export const strategySubItems: StrategySubItem[] = [
+export const cashflowSubItems: NavSubItem[] = [
+  {
+    to: '/dca',
+    label: 'DCA Plans',
+    short: 'DCA',
+    description: 'Monthly salary allocation & recurring investments',
+    icon: DcaIcon,
+  },
+  {
+    to: '/dividends',
+    label: 'Dividends',
+    short: 'Dividends',
+    description: 'Passive income tracker, payouts & withholding tax',
+    icon: DividendIcon,
+  },
+]
+
+export const strategySubItems: NavSubItem[] = [
   {
     to: '/rebalance',
     label: 'Portfolio Rebalancing',
@@ -55,7 +76,12 @@ export const strategySubItems: StrategySubItem[] = [
 export const navItems: NavItem[] = [
   { to: '/', label: 'Dashboard', short: 'Home', icon: DashboardIcon },
   { to: '/portfolio', label: 'Portfolio', short: 'Portfolio', icon: PortfolioIcon },
-  { to: '/dca', label: 'DCA Planner', short: 'DCA', icon: DcaIcon },
+  {
+    label: 'Cashflow',
+    short: 'Flow',
+    icon: CashflowIcon,
+    subItems: cashflowSubItems,
+  },
   {
     label: 'Strategies',
     short: 'Strategies',
@@ -68,7 +94,7 @@ export const navItems: NavItem[] = [
 export const mobileNavItems: MobileNavItem[] = [
   { id: 'home', to: '/', label: 'Dashboard', short: 'Home', icon: DashboardIcon },
   { id: 'portfolio', to: '/portfolio', label: 'Portfolio', short: 'Port', icon: PortfolioIcon },
-  { id: 'dca', to: '/dca', label: 'DCA Planner', short: 'DCA', icon: DcaIcon },
+  { id: 'cashflow', label: 'Cashflow', short: 'Flow', icon: CashflowIcon, isAction: true },
   { id: 'strategies', label: 'Strategies', short: 'Strategies', icon: StrategyIcon, isAction: true },
 ]
 
@@ -78,5 +104,6 @@ export const settingsItem: NavItem = {
   short: 'Settings',
   icon: SettingsIcon,
 }
+
 
 

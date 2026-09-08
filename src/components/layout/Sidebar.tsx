@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { navItems, settingsItem, strategySubItems } from './nav'
+import { cashflowSubItems, navItems, settingsItem, strategySubItems } from './nav'
 import { useData } from '../../store/DataContext'
 import { useTheme } from '../../hooks/useTheme'
 import { ChevronDownIcon } from '../icons'
@@ -16,20 +16,34 @@ export function Sidebar() {
 
   // Calculate live badge counts
   const dcaAlertCount = data.dcaPlans.filter((p) => shouldConfirmBuy(p)).length
+  const currentMonth = new Date().getMonth() + 1
+  const dividendAlertCount = (data.holdings ?? []).filter(
+    (h) => h.paysDividend && (h.dividendMonths ?? []).includes(currentMonth),
+  ).length
+  const cashflowAlertCount = dcaAlertCount + dividendAlertCount
 
   const getBadgeCount = (path?: string) => {
     if (path === '/dca') return dcaAlertCount
+    if (path === '/dividends') return dividendAlertCount
     return 0
   }
 
   const isStrategyActive = strategySubItems.some((sub) => pathname.startsWith(sub.to))
+  const isCashflowActive = cashflowSubItems.some((sub) => pathname.startsWith(sub.to))
   const [isStrategiesOpen, setIsStrategiesOpen] = useState(isStrategyActive)
+  const [isCashflowOpen, setIsCashflowOpen] = useState(isCashflowActive)
 
   useEffect(() => {
     if (isStrategyActive) {
       setIsStrategiesOpen(true)
     }
   }, [isStrategyActive])
+
+  useEffect(() => {
+    if (isCashflowActive) {
+      setIsCashflowOpen(true)
+    }
+  }, [isCashflowActive])
 
   const toggleTheme = () => {
     // If currently dark (or system evaluating to dark), toggle to light, else dark
@@ -75,12 +89,18 @@ export function Sidebar() {
           {navItems.map((item) => {
             if (item.subItems) {
               const isChildActive = item.subItems.some((sub) => pathname.startsWith(sub.to))
+              const isExpanded = item.label === 'Cashflow' ? isCashflowOpen : isStrategiesOpen
+              const toggleExpand = () => {
+                if (item.label === 'Cashflow') setIsCashflowOpen((prev) => !prev)
+                else setIsStrategiesOpen((prev) => !prev)
+              }
+              const parentBadgeCount = item.label === 'Cashflow' ? cashflowAlertCount : 0
 
               return (
                 <div key={item.label} className="flex flex-col gap-1">
                   <button
                     type="button"
-                    onClick={() => setIsStrategiesOpen((prev) => !prev)}
+                    onClick={toggleExpand}
                     className={[
                       'w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-[13.5px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset cursor-pointer select-none',
                       isChildActive
@@ -96,18 +116,26 @@ export function Sidebar() {
                       <span>{item.label}</span>
                     </div>
 
-                    <ChevronDownIcon
-                      className={`h-4 w-4 transition-transform duration-200 ${
-                        isStrategiesOpen ? 'rotate-180 text-ink' : 'text-ink-muted'
-                      }`}
-                      strokeWidth={2}
-                    />
+                    <div className="flex items-center gap-2">
+                      {parentBadgeCount > 0 && !isExpanded && (
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10.5px] font-bold text-white shadow-xs">
+                          {parentBadgeCount}
+                        </span>
+                      )}
+                      <ChevronDownIcon
+                        className={`h-4 w-4 transition-transform duration-200 ${
+                          isExpanded ? 'rotate-180 text-ink' : 'text-ink-muted'
+                        }`}
+                        strokeWidth={2}
+                      />
+                    </div>
                   </button>
 
-                  {isStrategiesOpen && (
+                  {isExpanded && (
                     <div className="flex flex-col gap-1 pl-3.5 ml-3 border-l border-line/70 py-0.5">
                       {item.subItems.map((sub) => {
                         const isSubActive = pathname.startsWith(sub.to)
+                        const subBadge = getBadgeCount(sub.to)
 
                         return (
                           <Link
@@ -115,17 +143,25 @@ export function Sidebar() {
                             to={sub.to}
                             title={sub.description}
                             className={[
-                              'flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
+                              'flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
                               isSubActive
                                 ? 'text-brand-ink bg-brand-soft/80 shadow-xs font-bold'
                                 : 'text-ink-muted hover:bg-surface-muted hover:text-ink',
                             ].join(' ')}
                           >
-                            <sub.icon
-                              className={`h-[17px] w-[17px] shrink-0 ${isSubActive ? 'text-brand-ink' : 'text-ink-muted'}`}
-                              strokeWidth={isSubActive ? 2.2 : 1.7}
-                            />
-                            <span className="truncate">{sub.label}</span>
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <sub.icon
+                                className={`h-[17px] w-[17px] shrink-0 ${isSubActive ? 'text-brand-ink' : 'text-ink-muted'}`}
+                                strokeWidth={isSubActive ? 2.2 : 1.7}
+                              />
+                              <span className="truncate">{sub.label}</span>
+                            </div>
+
+                            {subBadge > 0 && (
+                              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-xs ml-1.5">
+                                {subBadge}
+                              </span>
+                            )}
                           </Link>
                         )
                       })}

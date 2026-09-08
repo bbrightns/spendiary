@@ -50,6 +50,25 @@ export function TransferIcon(p: IconProps) {
   )
 }
 
+export function CashflowIcon(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M4 8h13M14 5l3 3-3 3" />
+      <path d="M20 16H7M10 19l-3-3 3-3" />
+    </svg>
+  )
+}
+
+export function DividendIcon(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <ellipse cx="9" cy="7" rx="6" ry="3" />
+      <path d="M3 7v5c0 1.7 2.7 3 6 3" />
+      <path d="M15 9.5c3.3 0 6 1.3 6 3v5c0 1.7-2.7 3-6 3s-6-1.3-6-3v-5" />
+    </svg>
+  )
+}
+
 export function WalletIcon(p: IconProps) {
   return (
     <svg {...base} {...p}>
