@@ -13,6 +13,7 @@ import { PnLPill, PnLText } from '../components/ui/PnL'
 import { HoldingForm } from '../components/forms/HoldingForm'
 import { BuyMoreForm } from '../components/forms/BuyMoreForm'
 import { SellHoldingModal } from '../components/forms/SellHoldingModal'
+import { ConfirmDividendModal } from '../components/forms/ConfirmDividendModal'
 import { Modal } from '../components/ui/Modal'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { FilterChip } from '../components/ui/FilterChip'
@@ -23,7 +24,7 @@ import { Button } from '../components/ui/Button'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import { PlusIcon, MinusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon, DownloadIcon, DotsHorizontalIcon } from '../components/icons'
+import { PlusIcon, MinusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon, DownloadIcon, DotsHorizontalIcon, DividendIcon } from '../components/icons'
 import {
   ASSET_META,
   GRAMS_PER_BAHT_GOLD,
@@ -153,6 +154,12 @@ export function Portfolio() {
     setBuyOpen(false)
     setSelling(h)
     setSellOpen(true)
+  }
+  const [dividendOpen, setDividendOpen] = useState(false)
+  const [dividendHolding, setDividendHolding] = useState<Holding | null>(null)
+  const openDividend = (h: Holding) => {
+    setDividendHolding(h)
+    setDividendOpen(true)
   }
   const switchToSell = () => {
     if (buying) {
@@ -769,6 +776,19 @@ export function Portfolio() {
                                 <MinusIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.4} />
                                 <span>ขายออก (Sell)</span>
                               </button>
+                              {(h.assetClass === 'fund' || h.assetClass === 'stock') && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveMenuHoldingId(null)
+                                    openDividend(h)
+                                  }}
+                                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer text-left"
+                                >
+                                  <DividendIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={2.2} />
+                                  <span>รับปันผล (Dividend)</span>
+                                </button>
+                              )}
                               <div className="my-1 border-t border-line/60" />
                               <button
                                 type="button"
@@ -900,6 +920,14 @@ export function Portfolio() {
           setSelling(null)
         }}
         onSwitchToBuy={switchToBuy}
+      />
+      <ConfirmDividendModal
+        open={dividendOpen}
+        holding={dividendHolding}
+        onClose={() => {
+          setDividendOpen(false)
+          setDividendHolding(null)
+        }}
       />
 
       {/* BTC / Gold location edit modal */}

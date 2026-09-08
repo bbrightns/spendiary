@@ -31,6 +31,15 @@ interface ActionMeta {
 }
 
 function getLogActionMeta(log: HoldingLog): ActionMeta {
+  if (log.action === 'dividend') {
+    return {
+      label: 'Dividend',
+      style: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+      icon: '💰',
+      isPriceUpdate: false,
+    }
+  }
+
   if (log.action === 'sell') {
     return {
       label: 'Sold',
