@@ -63,7 +63,7 @@ const blank = {
 }
 
 export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Props) {
-  const { upsertHolding, removeHolding, removePlannedAsset, addHoldingLog, usdThb } = useData()
+  const { data, upsertHolding, removeHolding, removePlannedAsset, addHoldingLog, usdThb } = useData()
   const { showToast } = useToast()
 
   // Generic fields
@@ -92,6 +92,12 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
   const [goldBaht, setGoldBaht] = useState<number | ''>('')
   const [goldThbSpent, setGoldThbSpent] = useState<number | ''>('')
   const [goldLocationName, setGoldLocationName] = useState('')
+
+  // Dividend tracking fields (fund & stock)
+  const [paysDividend, setPaysDividend] = useState(false)
+  const [expectedDps, setExpectedDps] = useState<number | ''>('')
+  const [dividendMonths, setDividendMonths] = useState<number[]>([])
+  const [defaultCashAccountId, setDefaultCashAccountId] = useState<string>('')
 
   const isBtc = form.assetClass === 'crypto'
   const isUsd = form.assetClass === 'stock'
@@ -142,6 +148,11 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
         setIsThbInvestedManuallyEdited(false)
         setIsEditingThb(false)
       }
+
+      setPaysDividend(Boolean(editing.paysDividend))
+      setExpectedDps(typeof editing.expectedDps === 'number' && editing.expectedDps > 0 ? editing.expectedDps : '')
+      setDividendMonths(editing.dividendMonths ?? [])
+      setDefaultCashAccountId(editing.defaultCashAccountId ?? '')
     } else if (initialPlannedAsset) {
       setForm({
         name: initialPlannedAsset.name,
@@ -161,6 +172,10 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
       setThbInvestedInput('')
       setIsThbInvestedManuallyEdited(false)
       setIsEditingThb(false)
+      setPaysDividend(false)
+      setExpectedDps('')
+      setDividendMonths([])
+      setDefaultCashAccountId(data.cashAccounts[0]?.id ?? '')
     } else {
       setForm(blank)
       setSatoshi('')
@@ -173,9 +188,13 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
       setThbInvestedInput('')
       setIsThbInvestedManuallyEdited(false)
       setIsEditingThb(false)
+      setPaysDividend(false)
+      setExpectedDps('')
+      setDividendMonths([])
+      setDefaultCashAccountId(data.cashAccounts[0]?.id ?? '')
     }
     setShowErrors(false)
-  }, [open, editing, initialPlannedAsset, usdThb])
+  }, [open, editing, initialPlannedAsset, usdThb, data.cashAccounts])
 
   // Interactive handlers for dynamic dual-currency and FX rate recalculations
   const handleSharesChange = (newUnits: number | string | '') => {
@@ -428,6 +447,25 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
         totalThbInvested,
         avgCost: avgCostThb,
         price: Number(form.price),
+      }
+    }
+
+    const canPayDividend = form.assetClass === 'fund' || form.assetClass === 'stock'
+    if (canPayDividend && paysDividend) {
+      updateObj = {
+        ...updateObj,
+        paysDividend: true,
+        expectedDps: typeof expectedDps === 'number' && expectedDps > 0 ? expectedDps : undefined,
+        dividendMonths: dividendMonths.length > 0 ? dividendMonths : undefined,
+        defaultCashAccountId: defaultCashAccountId || undefined,
+      }
+    } else {
+      updateObj = {
+        ...updateObj,
+        paysDividend: false,
+        expectedDps: undefined,
+        dividendMonths: undefined,
+        defaultCashAccountId: undefined,
       }
     }
 
@@ -1086,6 +1124,96 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
               </div>
             </>
           )
+        )}
+
+        {/* ── Dividend Tracking (Optional for Fund & Stock) ── */}
+        {!isBtc && !isGold && (
+          <div className="rounded-2xl border border-line bg-surface-muted/30 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={paysDividend}
+                  onChange={(e) => setPaysDividend(e.target.checked)}
+                  className="h-4 w-4 rounded-md border-line text-emerald-600 focus:ring-emerald-500/30"
+                />
+                <div>
+                  <span className="text-[13.5px] font-bold text-ink flex items-center gap-1.5">
+                    💰 Dividend Tracking (หุ้นปันผล)
+                  </span>
+                  <p className="text-[11px] text-ink-muted">
+                    เปิดหากสินทรัพย์นี้มีนโยบายจ่ายเงินปันผลเพื่อวางแผนกระแสเงินสด
+                  </p>
+                </div>
+              </label>
+              <span className="text-[11px] font-semibold text-ink-muted">Optional</span>
+            </div>
+
+            {paysDividend && (
+              <div className="space-y-3 pt-2 border-t border-line/60">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <NumberField
+                    label={`Expected DPS (${form.assetClass === 'stock' ? '$/share' : '฿/หุ้น'})`}
+                    prefix={form.assetClass === 'stock' ? '$' : '฿'}
+                    placeholder="e.g. 0.80"
+                    value={expectedDps}
+                    onChange={setExpectedDps}
+                    hint="เงินปันผลต่อหุ้นโดยประมาณ (ถ้าทราบ)"
+                  />
+
+                  <SelectField
+                    label="Default Cash Account (เข้าบัญชีเริ่มต้น)"
+                    value={defaultCashAccountId}
+                    options={[
+                      { value: '', label: 'None (ไม่ระบุ)' },
+                      ...(data.cashAccounts ?? []).map((c) => ({
+                        value: c.id,
+                        label: `${c.name} (${c.currency === 'USD' ? '$' : '฿'}${c.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`,
+                      })),
+                    ]}
+                    onChange={setDefaultCashAccountId}
+                  />
+                </div>
+
+                {/* 12 Months selection pills */}
+                <div className="space-y-1.5">
+                  <label className="text-[12px] font-medium text-ink-muted">
+                    Payout Months (เดือนที่มักจะจ่ายปันผล - แตะเลือกได้หลายเดือน):
+                  </label>
+                  <div className="grid grid-cols-6 sm:grid-cols-12 gap-1 text-[11px]">
+                    {['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'].map((mName, idx) => {
+                      const mNum = idx + 1
+                      const isSelected = dividendMonths.includes(mNum)
+
+                      return (
+                        <button
+                          key={mNum}
+                          type="button"
+                          onClick={() => {
+                            setDividendMonths((prev) =>
+                              isSelected ? prev.filter((m) => m !== mNum) : [...prev, mNum].sort((a, b) => a - b)
+                            )
+                          }}
+                          className={`py-1.5 rounded-lg font-bold transition-all cursor-pointer border ${
+                            isSelected
+                              ? 'bg-emerald-500 text-white border-emerald-500 shadow-2xs scale-105'
+                              : 'bg-surface text-ink-muted border-line hover:text-ink hover:border-line-strong'
+                          }`}
+                        >
+                          {mName}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {dividendMonths.length > 0 && (
+                    <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium pt-0.5">
+                      📅 แจ้งเตือนรับเงินปันผลในเดือน: {dividendMonths.map((m) => ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'][m - 1]).join(', ')}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </Modal>
