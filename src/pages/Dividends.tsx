@@ -9,6 +9,7 @@ import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
 import { thb } from '../lib/format'
+import { isDividendReceivedThisMonth } from '../lib/calc'
 import { CheckCircleIcon, CoinsIcon, PlusIcon, TrashIcon } from '../components/icons'
 import type { DividendRecord, Holding } from '../lib/types'
 
@@ -203,6 +204,7 @@ export function Dividends() {
                 const dps = h.expectedDps ?? 0
                 const estGross = units * dps
                 const estNet = estGross * 0.90
+                const isReceived = isDividendReceivedThisMonth(h.id, data.dividendRecords)
 
                 return (
                   <li key={h.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 hover:bg-surface-muted/50 transition-colors">
@@ -229,14 +231,29 @@ export function Dividends() {
                         </div>
                       )}
 
-                      <button
-                        type="button"
-                        onClick={() => handleOpenAddModal(h, dps > 0 ? dps : undefined)}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-[12px] font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
-                      >
-                        <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.2} />
-                        Confirm Received
-                      </button>
+                      {isReceived ? (
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-3 py-1.5 text-[12px] font-semibold text-gain">
+                            <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} /> Received
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenAddModal(h, dps > 0 ? dps : undefined)}
+                            className="inline-flex items-center rounded-full border border-line bg-surface hover:bg-surface-muted text-ink-muted hover:text-ink px-2.5 py-1 text-[11px] font-medium active:scale-95 transition-all cursor-pointer"
+                          >
+                            + Log More
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenAddModal(h, dps > 0 ? dps : undefined)}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-[12px] font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
+                        >
+                          <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.2} />
+                          Confirm Received
+                        </button>
+                      )}
                     </div>
                   </li>
                 )

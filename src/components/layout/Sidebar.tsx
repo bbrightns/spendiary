@@ -5,7 +5,7 @@ import { useData } from '../../store/DataContext'
 import { useTheme } from '../../hooks/useTheme'
 import { ChevronDownIcon } from '../icons'
 
-import { shouldConfirmBuy } from '../../lib/calc'
+import { isDividendReceivedThisMonth, shouldConfirmBuy } from '../../lib/calc'
 
 export function Sidebar() {
   const location = useLocation()
@@ -18,7 +18,10 @@ export function Sidebar() {
   const dcaAlertCount = data.dcaPlans.filter((p) => shouldConfirmBuy(p)).length
   const currentMonth = new Date().getMonth() + 1
   const dividendAlertCount = (data.holdings ?? []).filter(
-    (h) => h.paysDividend && (h.dividendMonths ?? []).includes(currentMonth),
+    (h) =>
+      h.paysDividend &&
+      (h.dividendMonths ?? []).includes(currentMonth) &&
+      !isDividendReceivedThisMonth(h.id, data.dividendRecords),
   ).length
   const cashflowAlertCount = dcaAlertCount + dividendAlertCount
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { cashflowSubItems, mobileNavItems, strategySubItems } from './nav'
 import { useData } from '../../store/DataContext'
-import { shouldConfirmBuy } from '../../lib/calc'
+import { isDividendReceivedThisMonth, shouldConfirmBuy } from '../../lib/calc'
 import { Modal } from '../ui/Modal'
 
 export function BottomNav() {
@@ -17,7 +17,10 @@ export function BottomNav() {
   const dcaAlertCount = data.dcaPlans.filter((p) => shouldConfirmBuy(p)).length
   const currentMonth = new Date().getMonth() + 1
   const dividendAlertCount = (data.holdings ?? []).filter(
-    (h) => h.paysDividend && (h.dividendMonths ?? []).includes(currentMonth),
+    (h) =>
+      h.paysDividend &&
+      (h.dividendMonths ?? []).includes(currentMonth) &&
+      !isDividendReceivedThisMonth(h.id, data.dividendRecords),
   ).length
   const cashflowAlertCount = dcaAlertCount + dividendAlertCount
 

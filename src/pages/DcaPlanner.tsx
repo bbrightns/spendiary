@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
@@ -6,16 +7,17 @@ import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { DcaForm } from '../components/forms/DcaForm'
 import { ConfirmDcaBuyForm } from '../components/forms/ConfirmDcaBuyForm'
+import { ConfirmDividendModal } from '../components/forms/ConfirmDividendModal'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { CheckCircleIcon, CheckIcon, DcaIcon, PencilIcon, TrashIcon } from '../components/icons'
 import { IconButton } from '../components/ui/IconButton'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import {
-  ASSET_META, dcaThisMonth, isBuyDayOverdue, isBuyDayToday, isConfirmedForPeriod, isSkippedForPeriod,
+  ASSET_META, dcaThisMonth, isBuyDayOverdue, isBuyDayToday, isConfirmedForPeriod, isDividendReceivedThisMonth, isSkippedForPeriod,
   nextBuyDate, shouldConfirmBuy, sortDcaPlans,
 } from '../lib/calc'
-import type { DcaPlan, FixedCostItem } from '../lib/types'
+import type { DcaPlan, FixedCostItem, Holding } from '../lib/types'
 import { daysUntil, localDateStr, ordinal, thb } from '../lib/format'
 
 // ─── Chevron icon ─────────────────────────────────────────────────────────────
@@ -370,6 +372,10 @@ export function DcaPlanner() {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [confirming, setConfirming] = useState<DcaPlan | null>(null)
 
+  // Dividend modal state
+  const [dividendModalOpen, setDividendModalOpen] = useState(false)
+  const [selectedDividendHolding, setSelectedDividendHolding] = useState<Holding | null>(null)
+
   const fixedItems = [...(data.fixedCostItems ?? [])].sort((a, b) => b.amount - a.amount)
   const fixedTotal = fixedItems.reduce((s, x) => s + x.amount, 0)
   const dcaMonth   = dcaThisMonth(data.dcaPlans)
@@ -378,6 +384,17 @@ export function DcaPlanner() {
 
   // DCA plans sorted by: 1. Overdue / near to the due, 2. Value
   const plans = sortDcaPlans(data.dcaPlans)
+
+  // Expected dividends for the current month
+  const currentMonth = new Date().getMonth() + 1
+  const scheduledDividends = (data.holdings ?? []).filter(
+    (h) => h.paysDividend && (h.dividendMonths ?? []).includes(currentMonth),
+  )
+  const totalEstDividendNet = scheduledDividends.reduce((sum, h) => {
+    const units = h.units ?? h.totalUnits ?? 0
+    const dps = h.expectedDps ?? 0
+    return sum + (units * dps * 0.90)
+  }, 0)
 
   // ── Salary handlers ──
   function openSalaryEdit() {
@@ -693,6 +710,106 @@ export function DcaPlanner() {
                   </div>
               )}
             </Card>
+
+            {/* ── Expected Dividends (Dividend Income) ── */}
+            <Card className="animate-rise overflow-hidden" padded={false}>
+              <div className="p-5 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-faint">
+                      Dividend Income
+                    </p>
+                    <span className="rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[10.5px] font-bold">
+                      {MONTH_NAMES[currentMonth - 1]}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 font-display text-[20px] font-extrabold tnum text-ink leading-none">
+                    {totalEstDividendNet > 0 ? `~${thb(totalEstDividendNet)}` : '฿0'}
+                  </p>
+                </div>
+                <Link
+                  to="/dividends"
+                  className="inline-flex items-center gap-1 text-[12px] font-semibold text-brand hover:underline cursor-pointer"
+                >
+                  <span>View All</span>
+                  <span aria-hidden="true">→</span>
+                </Link>
+              </div>
+
+              <div className="border-t border-line">
+                {scheduledDividends.length === 0 ? (
+                  <div className="p-5 text-center">
+                    <p className="text-[13px] text-ink-muted">
+                      No holdings scheduled for dividend payout in {MONTH_NAMES[currentMonth - 1]}.
+                    </p>
+                    <Link
+                      to="/dividends"
+                      className="mt-1.5 inline-block text-[12px] font-semibold text-brand hover:underline cursor-pointer"
+                    >
+                      Manage Dividends & Payouts →
+                    </Link>
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-line">
+                    {scheduledDividends.map((h) => {
+                      const units = h.units ?? h.totalUnits ?? 0
+                      const dps = h.expectedDps ?? 0
+                      const estNet = units * dps * 0.90
+                      const isReceived = isDividendReceivedThisMonth(h.id, data.dividendRecords)
+
+                      return (
+                        <li key={h.id} className="p-4 sm:p-5 hover:bg-surface-muted/30 transition-colors">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <AssetLogo name={h.name} assetClass={h.assetClass} size="md" />
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-display font-bold text-[15px] text-ink">{h.ticker}</span>
+                                  <span className="text-[12px] text-ink-muted truncate max-w-[140px] sm:max-w-xs">{h.name}</span>
+                                </div>
+                                <p className="text-[11.5px] text-ink-muted mt-0.5">
+                                  {units.toLocaleString()} shares · Est. DPS: {dps > 0 ? `฿${dps}` : '-'}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 shrink-0">
+                              {estNet > 0 && (
+                                <div className="text-right hidden sm:block">
+                                  <span className="font-display text-[14px] font-bold text-gain tnum">
+                                    ~{thb(estNet)}
+                                  </span>
+                                  <p className="text-[10px] text-ink-muted">Est. Net</p>
+                                </div>
+                              )}
+
+                              {isReceived ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-3 py-1.5 text-[11.5px] font-semibold text-gain">
+                                  <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.4} /> Confirmed
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedDividendHolding(h)
+                                    setDividendModalOpen(true)
+                                  }}
+                                  aria-label={`Confirm Dividend for ${h.ticker}`}
+                                  className="inline-flex items-center gap-1.5 rounded-full bg-[#00de9b] hover:bg-[#00c58a] text-[#052e21] px-3.5 py-1.5 text-[12px] font-bold shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
+                                >
+                                  <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
+                                  <span>Confirm Dividend</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
+              </div>
+            </Card>
           </div>
         </div>
 
@@ -701,6 +818,15 @@ export function DcaPlanner() {
           open={confirmOpen}
           plan={confirming}
           onClose={() => setConfirmOpen(false)}
+        />
+        <ConfirmDividendModal
+          open={dividendModalOpen}
+          holding={selectedDividendHolding}
+          initialDps={selectedDividendHolding?.expectedDps}
+          onClose={() => {
+            setDividendModalOpen(false)
+            setSelectedDividendHolding(null)
+          }}
         />
 
         <GuideTour
@@ -717,6 +843,11 @@ export function DcaPlanner() {
   }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const MONTH_NAMES = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+]
 
 const WEEKDAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 

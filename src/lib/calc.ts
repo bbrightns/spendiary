@@ -1,4 +1,4 @@
-import type { AssetClass, CashAccount, CashAccountCategory, DcaPlan, Holding, SpendiaryData, Transfer } from './types'
+import type { AssetClass, CashAccount, CashAccountCategory, DcaPlan, DividendRecord, Holding, SpendiaryData, Transfer } from './types'
 import { daysUntil, localDateStr } from './format'
 
 export interface HoldingMetrics extends Holding {
@@ -776,3 +776,17 @@ export function upsert<T extends { id: string }>(list: T[], item: Omit<T, 'id'> 
   const fullItem = { ...item, id } as T
   return exists ? list.map((x) => (x.id === id ? fullItem : x)) : [...list, fullItem]
 }
+
+/** Helper to check if a dividend has already been confirmed/received for a holding in a given month (YYYY-MM) */
+export function isDividendReceivedThisMonth(
+  holdingId: string,
+  dividendRecords?: DividendRecord[],
+  referenceDate = new Date(),
+): boolean {
+  if (!dividendRecords || dividendRecords.length === 0) return false
+  const targetYearMonth = localDateStr(referenceDate).slice(0, 7)
+  return dividendRecords.some(
+    (r) => r.holdingId === holdingId && r.paymentDate.startsWith(targetYearMonth),
+  )
+}
+
