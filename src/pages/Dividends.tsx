@@ -10,7 +10,7 @@ import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
 import { thb } from '../lib/format'
 import { isDividendReceivedThisMonth } from '../lib/calc'
-import { CheckCircleIcon, CoinsIcon, PlusIcon, TrashIcon } from '../components/icons'
+import { CheckCircleIcon, ChevronDownIcon, CoinsIcon, PlusIcon, TrashIcon } from '../components/icons'
 import type { DividendRecord, Holding } from '../lib/types'
 
 const MONTH_NAMES = [
@@ -28,6 +28,7 @@ export function Dividends() {
 
   const [deletingRecord, setDeletingRecord] = useState<DividendRecord | null>(null)
   const [yearFilter, setYearFilter] = useState<string>('all')
+  const [isUpcomingOpen, setIsUpcomingOpen] = useState<boolean | null>(null)
 
   const now = new Date()
   const currentYear = now.getFullYear()
@@ -68,6 +69,8 @@ export function Dividends() {
   const upcomingHoldings = useMemo(() => {
     return dividendHoldings.filter((h) => (h.dividendMonths ?? []).includes(currentMonth))
   }, [dividendHoldings, currentMonth])
+
+  const upcomingOpen = isUpcomingOpen ?? (upcomingHoldings.length > 0)
 
   // Estimated this month
   const estimatedThisMonth = useMemo(() => {
@@ -128,137 +131,185 @@ export function Dividends() {
         }
       />
 
-      <div className="space-y-6">
-        {/* ── KPI Stat Cards ── */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="animate-rise">
-            <p className="text-[12px] font-medium text-ink-muted">Net Received ({currentYear})</p>
-            <p className="mt-1 font-display text-[24px] font-extrabold text-emerald-600 dark:text-emerald-400 tnum">
-              {thb(totalNetThisYear)}
-            </p>
-            <p className="mt-0.5 text-[11px] text-ink-muted">
+      <div className="space-y-4 sm:space-y-6">
+        {/* ── KPI Stat Cards (2x2 on Mobile, 4x1 on Desktop) ── */}
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
+          <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+            <div>
+              <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">Net Received ({currentYear})</p>
+              <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-emerald-600 dark:text-emerald-400 tnum truncate">
+                {thb(totalNetThisYear)}
+              </p>
+            </div>
+            <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
               Gross: {thb(totalGrossThisYear)} · Tax: -{thb(totalTaxThisYear)}
             </p>
           </Card>
 
-          <Card className="animate-rise">
-            <p className="text-[12px] font-medium text-ink-muted">All-Time Net Dividends</p>
-            <p className="mt-1 font-display text-[24px] font-extrabold text-ink tnum">
-              {thb(totalNetAllTime)}
-            </p>
-            <p className="mt-0.5 text-[11px] text-ink-muted">
-              Total {records.length} {records.length === 1 ? 'payout' : 'payouts'} recorded
-            </p>
-          </Card>
-
-          <Card className="animate-rise">
-            <p className="text-[12px] font-medium text-ink-muted">Estimated This Month</p>
-            <p className="mt-1 font-display text-[24px] font-extrabold text-brand-ink tnum">
-              {estimatedThisMonth > 0 ? `~${thb(estimatedThisMonth)}` : '-'}
-            </p>
-            <p className="mt-0.5 text-[11px] text-ink-muted">
-              {upcomingHoldings.length} {upcomingHoldings.length === 1 ? 'asset' : 'assets'} scheduled in {MONTH_NAMES[currentMonth - 1]}
+          <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+            <div>
+              <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">All-Time Net</p>
+              <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-ink tnum truncate">
+                {thb(totalNetAllTime)}
+              </p>
+            </div>
+            <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+              Total {records.length} {records.length === 1 ? 'payout' : 'payouts'}
             </p>
           </Card>
 
-          <Card className="animate-rise">
-            <p className="text-[12px] font-medium text-ink-muted">Dividend Holdings</p>
-            <p className="mt-1 font-display text-[24px] font-extrabold text-ink tnum">
-              {dividendHoldings.length}
+          <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+            <div>
+              <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">Est. This Month</p>
+              <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-brand-ink tnum truncate">
+                {estimatedThisMonth > 0 ? `~${thb(estimatedThisMonth)}` : '-'}
+              </p>
+            </div>
+            <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+              {upcomingHoldings.length} {upcomingHoldings.length === 1 ? 'asset' : 'assets'} in {MONTH_NAMES[currentMonth - 1]}
             </p>
-            <p className="mt-0.5 text-[11px] text-ink-muted">
-              Holdings configured with dividend policy
+          </Card>
+
+          <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+            <div>
+              <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">Dividend Holdings</p>
+              <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-ink tnum truncate">
+                {dividendHoldings.length}
+              </p>
+            </div>
+            <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+              Configured assets
             </p>
           </Card>
         </div>
 
-        {/* ── Section 1: Upcoming / Expected Dividends ── */}
-        <Card className="animate-rise" padded={false}>
-          <div className="flex items-center justify-between p-5 border-b border-line">
-            <div>
-              <h2 className="font-display text-[16px] font-bold text-ink flex items-center gap-2">
-                <span>Upcoming & Expected Dividends</span>
-                <span className="rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[10.5px] font-bold">
-                  {MONTH_NAMES[currentMonth - 1]}
-                </span>
-              </h2>
-              <p className="text-[12px] text-ink-muted mt-0.5">
-                Assets expected to pay dividend this month based on your holding configurations.
-              </p>
+        {/* ── Section 1: Upcoming / Expected Dividends (Smart Accordion) ── */}
+        <Card className="animate-rise overflow-hidden" padded={false}>
+          <button
+            type="button"
+            onClick={() => setIsUpcomingOpen(!upcomingOpen)}
+            aria-expanded={upcomingOpen}
+            className="flex w-full items-center justify-between p-3.5 sm:p-5 text-left transition-colors hover:bg-surface-muted/50 cursor-pointer select-none"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="text-[16px] shrink-0">📅</span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="font-display text-[14.5px] sm:text-[16px] font-bold text-ink truncate">
+                    Upcoming & Expected Dividends
+                  </h2>
+                  <span className="rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[10.5px] font-bold">
+                    {MONTH_NAMES[currentMonth - 1]}
+                  </span>
+                  {upcomingHoldings.length > 0 && (
+                    <span className="rounded-full bg-surface-muted border border-line text-ink-muted px-2 py-0.5 text-[10.5px] font-bold">
+                      {upcomingHoldings.length} {upcomingHoldings.length === 1 ? 'item' : 'items'}
+                    </span>
+                  )}
+                </div>
+                {!upcomingOpen ? (
+                  <p className="text-[11.5px] text-ink-muted mt-0.5 truncate">
+                    {upcomingHoldings.length === 0
+                      ? `No payouts scheduled for ${MONTH_NAMES[currentMonth - 1]} (Tap to view details)`
+                      : `~${thb(estimatedThisMonth)} expected · Tap to view & confirm`}
+                  </p>
+                ) : (
+                  <p className="text-[11.5px] text-ink-muted mt-0.5 hidden sm:block">
+                    Assets expected to pay dividend this month based on your holding configurations.
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
 
-          {upcomingHoldings.length === 0 ? (
-            <div className="p-6 text-center">
-              <p className="text-[13px] text-ink-muted">
-                No holdings scheduled for dividend payout in {MONTH_NAMES[currentMonth - 1]}.
-              </p>
-              <p className="text-[11.5px] text-ink-faint mt-1">
-                You can set payout months in Holding settings or tap "Log Dividend" to record anytime.
-              </p>
+            <div className="flex items-center gap-2 shrink-0 ml-2">
+              <span className="text-[11px] font-medium text-ink-muted hidden sm:inline">
+                {upcomingOpen ? 'Collapse' : 'Expand'}
+              </span>
+              <div className="rounded-full p-1 hover:bg-surface-muted text-ink-muted">
+                <ChevronDownIcon
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    upcomingOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </div>
             </div>
-          ) : (
-            <ul className="divide-y divide-line">
-              {upcomingHoldings.map((h) => {
-                const units = h.units ?? h.totalUnits ?? 0
-                const dps = h.expectedDps ?? 0
-                const estGross = units * dps
-                const estNet = estGross * 0.90
-                const isReceived = isDividendReceivedThisMonth(h.id, data.dividendRecords)
+          </button>
 
-                return (
-                  <li key={h.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 hover:bg-surface-muted/50 transition-colors">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <AssetLogo name={h.name} assetClass={h.assetClass} size="md" />
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-display font-bold text-[14.5px] text-ink">{h.ticker}</span>
-                          <span className="text-[12px] text-ink-muted truncate max-w-[200px] sm:max-w-xs">{h.name}</span>
-                        </div>
-                        <p className="text-[11.5px] text-ink-muted mt-0.5">
-                          {units.toLocaleString()} shares · Estimated DPS: {dps > 0 ? `฿${dps}` : 'N/A'}
-                        </p>
-                      </div>
-                    </div>
+          {upcomingOpen && (
+            <div className="border-t border-line">
+              {upcomingHoldings.length === 0 ? (
+                <div className="p-4 sm:p-6 text-center">
+                  <p className="text-[13px] text-ink-muted">
+                    No holdings scheduled for dividend payout in {MONTH_NAMES[currentMonth - 1]}.
+                  </p>
+                  <p className="text-[11.5px] text-ink-faint mt-1">
+                    You can set payout months in Holding settings or tap "Log Dividend" to record anytime.
+                  </p>
+                </div>
+              ) : (
+                <ul className="divide-y divide-line">
+                  {upcomingHoldings.map((h) => {
+                    const units = h.units ?? h.totalUnits ?? 0
+                    const dps = h.expectedDps ?? 0
+                    const estGross = units * dps
+                    const estNet = estGross * 0.90
+                    const isReceived = isDividendReceivedThisMonth(h.id, data.dividendRecords)
 
-                    <div className="flex items-center gap-4">
-                      {estNet > 0 && (
-                        <div className="text-right">
-                          <span className="font-display text-[15px] font-bold text-emerald-600 dark:text-emerald-400 tnum">
-                            ~{thb(estNet)}
-                          </span>
-                          <p className="text-[10.5px] text-ink-muted">Est. Net (after 10% tax)</p>
+                    return (
+                      <li key={h.id} className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3.5 sm:py-4 hover:bg-surface-muted/50 transition-colors">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <AssetLogo name={h.name} assetClass={h.assetClass} size="md" />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-display font-bold text-[14.5px] text-ink">{h.ticker}</span>
+                              <span className="text-[12px] text-ink-muted truncate max-w-[150px] sm:max-w-xs">{h.name}</span>
+                            </div>
+                            <p className="text-[11.5px] text-ink-muted mt-0.5">
+                              {units.toLocaleString()} shares · Estimated DPS: {dps > 0 ? `฿${dps}` : 'N/A'}
+                            </p>
+                          </div>
                         </div>
-                      )}
 
-                      {isReceived ? (
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-3 py-1.5 text-[12px] font-semibold text-gain">
-                            <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} /> Received
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenAddModal(h, dps > 0 ? dps : undefined)}
-                            className="inline-flex items-center rounded-full border border-line bg-surface hover:bg-surface-muted text-ink-muted hover:text-ink px-2.5 py-1 text-[11px] font-medium active:scale-95 transition-all cursor-pointer"
-                          >
-                            + Log More
-                          </button>
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          {estNet > 0 && (
+                            <div className="text-right">
+                              <span className="font-display text-[14.5px] sm:text-[15px] font-bold text-emerald-600 dark:text-emerald-400 tnum">
+                                ~{thb(estNet)}
+                              </span>
+                              <p className="text-[10px] sm:text-[10.5px] text-ink-muted">Est. Net</p>
+                            </div>
+                          )}
+
+                          {isReceived ? (
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11.5px] sm:text-[12px] font-semibold text-gain">
+                                <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} /> Received
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenAddModal(h, dps > 0 ? dps : undefined)}
+                                className="inline-flex items-center rounded-full border border-line bg-surface hover:bg-surface-muted text-ink-muted hover:text-ink px-2 sm:px-2.5 py-1 text-[11px] font-medium active:scale-95 transition-all cursor-pointer"
+                              >
+                                + Log
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAddModal(h, dps > 0 ? dps : undefined)}
+                              className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-3 sm:px-3.5 py-1.5 text-[11.5px] sm:text-[12px] font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
+                            >
+                              <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.2} />
+                              Confirm Received
+                            </button>
+                          )}
                         </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleOpenAddModal(h, dps > 0 ? dps : undefined)}
-                          className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-[12px] font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
-                        >
-                          <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.2} />
-                          Confirm Received
-                        </button>
-                      )}
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </div>
           )}
         </Card>
 
