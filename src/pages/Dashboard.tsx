@@ -219,13 +219,6 @@ export function Dashboard() {
 
             {/* Quick ratio box */}
             <div className="rounded-2xl bg-surface-muted/80 dark:bg-white/10 p-3.5 px-4.5 border border-line/80 dark:border-white/15 backdrop-blur-md sm:min-w-[220px]">
-              <div className="flex items-center justify-between gap-3 text-[10.5px] font-bold tracking-wider uppercase text-ink-muted dark:text-white/50 pb-1.5 border-b border-line dark:border-white/10 mb-2">
-                <span>Ratio</span>
-                <span className="tnum text-[11.5px] font-semibold text-ink-soft dark:text-white/80">
-                  {nw > 0 ? `${Math.round((portfolio.value / nw) * 100)}% : ${Math.round((cash / nw) * 100)}%` : '0% : 0%'}
-                </span>
-              </div>
-
               <div className="grid grid-cols-2 gap-3.5">
                 <div>
                   <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-brand">
