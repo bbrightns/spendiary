@@ -33,7 +33,8 @@ import {
   portfolioSummary,
 } from '../lib/calc'
 import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
-import type { AssetClass, BtcLocation, Holding, NetWorthSnapshot } from '../lib/types'
+import { InteractivePortfolioChart } from '../components/charts/InteractiveTrendChart'
+import type { AssetClass, BtcLocation, Holding } from '../lib/types'
 import { money, thb, thbCompact } from '../lib/format'
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
@@ -596,11 +597,6 @@ export function Portfolio() {
               </Link>
             </div>
           </Card>
-
-          {/* Portfolio Value Trend */}
-          {(data.portfolioHistory?.length ?? 0) >= 1 && (
-            <PortfolioTrendChart history={data.portfolioHistory!} />
-          )}
         </div>
 
         {/* Right Column (7 cols): Holdings Hub & Management */}
@@ -987,6 +983,23 @@ export function Portfolio() {
         </div>
       </div>
 
+      {/* ── ROW 2: Portfolio Value Trend (Full Width at Bottom) ── */}
+      <div id="guide-portfolio-chart" className="mt-6">
+        <Card className="animate-rise overflow-hidden" padded={false}>
+          {(data.portfolioHistory?.length ?? 0) >= 1 ? (
+            <InteractivePortfolioChart history={data.portfolioHistory!} />
+          ) : (
+            <div className="p-8 text-center">
+              <PortfolioIcon className="h-6 w-6 mx-auto text-brand mb-2" />
+              <h3 className="font-display font-bold text-ink">Portfolio Value Trend</h3>
+              <p className="text-[13px] text-ink-muted mt-1 max-w-md mx-auto">
+                Snapshot history will record daily as your holdings and prices update.
+              </p>
+            </div>
+          )}
+        </Card>
+      </div>
+
       <HoldingForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
       <BuyMoreForm
         open={buyOpen}
@@ -1178,108 +1191,4 @@ function unitLabel(assetClass: AssetClass): string {
   if (assetClass === 'stock') return 'shares'
   if (assetClass === 'gold') return 'g'
   return 'BTC'
-}
-
-
-// ── Portfolio Value Trend Chart ───────────────────────────────────────────────
-
-function PortfolioTrendChart({ history }: { history: NetWorthSnapshot[] }) {
-  const colorVar = 'var(--color-funds)'
-  const first = history[0]
-  const last = history[history.length - 1]
-  const [y0, mo0, d0] = first.date.split('-').map(Number)
-  const startDate = new Date(y0, mo0 - 1, d0).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-  const todayLabel = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-
-  // Single snapshot — show a "building history" state
-  if (history.length < 2) {
-    return (
-      <Card className="animate-rise overflow-hidden" padded={false}>
-        <div className="flex items-center justify-between px-5 pt-5">
-          <div>
-            <h2 className="font-display text-[15px] font-bold text-ink">Portfolio Value Trend</h2>
-            <p className="text-[12.5px] text-ink-muted">Building history… come back tomorrow</p>
-          </div>
-          <span className="rounded-full bg-surface-muted px-3 py-1 text-[12px] font-semibold text-ink-muted">Day 1</span>
-        </div>
-        <div className="relative px-5 pb-5 pt-3">
-          {/* Flat placeholder line */}
-          <svg viewBox="0 0 600 96" className="w-full" style={{ height: 88, display: 'block' }} aria-hidden>
-            <defs>
-              <linearGradient id="pvg" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" style={{ stopColor: colorVar, stopOpacity: 0.15 }} />
-                <stop offset="100%" style={{ stopColor: colorVar, stopOpacity: 0 }} />
-              </linearGradient>
-            </defs>
-            <path d="M2,52 L598,52 L598,96 L2,96Z" fill="url(#pvg)" />
-            <path d="M2,52 L598,52" fill="none" style={{ stroke: colorVar }} strokeWidth="2" strokeLinecap="round" strokeDasharray="6,4" opacity="0.5" />
-            <circle cx={300} cy={52} r="5" style={{ fill: colorVar }} />
-          </svg>
-          <div className="flex justify-between">
-            <span className="text-[11px] text-ink-faint">{startDate}</span>
-            <span className="text-[11px] font-semibold text-ink-muted">{thb(last.value)} today</span>
-            <span className="text-[11px] text-ink-faint">{todayLabel}</span>
-          </div>
-        </div>
-      </Card>
-    )
-  }
-
-  // Multi-snapshot — full line chart
-  const W = 600, H = 96
-  const PAD_X = 2, PAD_Y = 10
-  const iW = W - PAD_X * 2
-  const iH = H - PAD_Y * 2
-
-  const vals = history.map((s) => s.value)
-  const minV = Math.min(...vals)
-  const maxV = Math.max(...vals)
-  const range = maxV - minV || 1
-
-  const pts = history.map((s, i) => ({
-    x: PAD_X + (i / (history.length - 1)) * iW,
-    y: PAD_Y + (1 - (s.value - minV) / range) * iH,
-    ...s,
-  }))
-
-  const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
-  const areaPath = `${linePath} L${pts[pts.length - 1].x},${H} L${pts[0].x},${H}Z`
-
-  const change = last.value - first.value
-  const changePct = Math.abs((change / first.value) * 100)
-  const isUp = change >= 0
-  const lineColor = isUp ? 'var(--color-funds)' : 'var(--color-loss)'
-
-  return (
-    <Card className="animate-rise overflow-hidden" padded={false}>
-      <div className="flex items-center justify-between px-5 pt-5">
-        <div>
-          <h2 className="font-display text-[15px] font-bold text-ink">Portfolio Value Trend</h2>
-          <p className="text-[12.5px] text-ink-muted">{history.length} snapshots · since {startDate}</p>
-        </div>
-        <div className={`flex items-baseline gap-1 rounded-full px-3 py-1 text-[13px] font-bold ${isUp ? 'bg-gain-soft text-gain' : 'bg-loss-soft text-loss'}`}>
-          {isUp ? '▲' : '▼'} {changePct.toFixed(1)}%
-          <span className="text-[11px] font-medium opacity-70">from start</span>
-        </div>
-      </div>
-      <div className="relative px-5 pb-4 pt-3">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 88, display: 'block' }} aria-hidden>
-          <defs>
-            <linearGradient id="pvg" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" style={{ stopColor: lineColor, stopOpacity: 0.2 }} />
-              <stop offset="100%" style={{ stopColor: lineColor, stopOpacity: 0 }} />
-            </linearGradient>
-          </defs>
-          <path d={areaPath} fill="url(#pvg)" />
-          <path d={linePath} fill="none" style={{ stroke: lineColor }} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="4" style={{ fill: lineColor }} />
-        </svg>
-        <div className="flex justify-between">
-          <span className="text-[11px] text-ink-faint">{startDate}</span>
-          <span className="text-[11px] font-semibold text-ink-muted">{thb(last.value)} today</span>
-          <span className="text-[11px] text-ink-faint">{todayLabel}</span>
-        </div>
-      </div>
-    </Card>
-  )
 }
