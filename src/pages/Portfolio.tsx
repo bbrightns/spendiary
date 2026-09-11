@@ -29,8 +29,6 @@ import {
   ASSET_META,
   GRAMS_PER_BAHT_GOLD,
   allocations,
-  goldThbPerBahtToXauUsd,
-  goldThbPerGramToXauUsd,
   holdingMetrics,
   portfolioSummary,
 } from '../lib/calc'
@@ -71,6 +69,11 @@ export function Portfolio() {
   } = useData()
   const { showToast } = useToast()
   const { status: priceStatus, lastUpdated, usdThb, goldThbPerGram, errorMsg, refresh: refreshPrices } = useLivePrices()
+  const goldHolding = data.holdings.find((h) => h.assetClass === 'gold' && h.price > 0)
+  const effectiveGoldThbPerGram = goldThbPerGram ?? goldHolding?.price ?? null
+  const effectiveGoldPerBaht = effectiveGoldThbPerGram ? Math.round(effectiveGoldThbPerGram * GRAMS_PER_BAHT_GOLD) : null
+  const effectiveUsdThb = usdThb && usdThb > 0 ? usdThb : null
+
   const [filter, setFilter] = useState<AssetClass | 'all'>('all')
   const [sortBy, setSortBy] = useState<'none' | 'value' | 'pnl' | 'type'>('value')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
@@ -79,7 +82,7 @@ export function Portfolio() {
 
   const handleCopyMarkdown = async () => {
     try {
-      const md = generatePortfolioMarkdown(data, usdThb, goldThbPerGram)
+      const md = generatePortfolioMarkdown(data, effectiveUsdThb ?? usdThb, effectiveGoldThbPerGram)
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(md)
       } else {
@@ -349,10 +352,8 @@ export function Portfolio() {
       } else if (isGold) {
         const bahtGold = h.units / GRAMS_PER_BAHT_GOLD
         const avgCostPerBaht = (h.units > 0 ? h.costBasis / h.units : h.avgCost) * GRAMS_PER_BAHT_GOLD
-        const avgCostXauUsd = goldThbPerBahtToXauUsd(avgCostPerBaht, rate)
         const pricePerBaht = h.price * GRAMS_PER_BAHT_GOLD
-        const priceXauUsd = goldThbPerBahtToXauUsd(pricePerBaht, rate)
-        nativeDetails = `${bahtGold.toFixed(4)} บาททอง | Avg: ฿${Math.round(avgCostPerBaht).toLocaleString()}/บาท ($${Math.round(avgCostXauUsd).toLocaleString()}/oz) | Price: ฿${Math.round(pricePerBaht).toLocaleString()}/บาท ($${Math.round(priceXauUsd).toLocaleString()}/oz)`
+        nativeDetails = `${bahtGold.toFixed(4)} บาททอง | Avg: ฿${Math.round(avgCostPerBaht).toLocaleString()}/บาท | Price: ฿${Math.round(pricePerBaht).toLocaleString()}/บาท`
         locationsStr = (h.goldLocations ?? []).map((loc) => `${loc.name}: ${(loc.grams / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง (${loc.grams}g, ฿${loc.thbSpent.toLocaleString()})`).join('; ')
       } else if (isFund) {
         nativeDetails = `Avg NAV: ฿${h.avgCost.toFixed(4)} | Current NAV: ฿${h.price.toFixed(4)}`
@@ -405,39 +406,68 @@ export function Portfolio() {
             aria-live="polite"
             className="flex items-center gap-2 flex-wrap text-[14.5px] text-ink-muted"
           >
-            {priceStatus === 'loading' && 'Fetching live prices…'}
-            {priceStatus === 'ok' && lastUpdated && (
+            {priceStatus === 'loading' && (
               <>
-                <span className="inline-block h-2 w-2 rounded-full bg-gain animate-pulse" />
-                Live · updated {lastUpdated.toLocaleTimeString()}
-                {usdThb && <span className="text-ink-soft">· USD/THB {usdThb.toFixed(2)}</span>}
-                {goldThbPerGram !== null && (
+                <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                <span>Updating live prices…</span>
+                {effectiveUsdThb && <span className="text-ink-soft">· USD/THB {effectiveUsdThb.toFixed(2)}</span>}
+                {effectiveGoldPerBaht !== null && (
                   <span className="text-ink-soft">
-                    · Gold ฿{Math.round(goldThbPerGram * GRAMS_PER_BAHT_GOLD).toLocaleString()} / บาททองคำ
+                    · Gold ฿{effectiveGoldPerBaht.toLocaleString()} / บาททอง
                   </span>
                 )}
               </>
             )}
-            {priceStatus === 'partial' && lastUpdated && (
+            {priceStatus === 'ok' && (
               <>
-                <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
-                Partial update · {lastUpdated.toLocaleTimeString()}
-                {usdThb && <span className="text-ink-soft">· USD/THB {usdThb.toFixed(2)}</span>}
-                {goldThbPerGram !== null && (
+                <span className="inline-block h-2 w-2 rounded-full bg-gain animate-pulse" />
+                Live{lastUpdated && ` · updated ${lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                {effectiveUsdThb && <span className="text-ink-soft">· USD/THB {effectiveUsdThb.toFixed(2)}</span>}
+                {effectiveGoldPerBaht !== null && (
                   <span className="text-ink-soft">
-                    · Gold ฿{Math.round(goldThbPerGram * GRAMS_PER_BAHT_GOLD).toLocaleString()} / บาททองคำ
+                    · Gold ฿{effectiveGoldPerBaht.toLocaleString()} / บาททอง
                   </span>
                 )}
-                <span className="text-loss text-[12px]">{errorMsg}</span>
+              </>
+            )}
+            {priceStatus === 'partial' && (
+              <>
+                <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                Partial update{lastUpdated && ` · ${lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                {effectiveUsdThb && <span className="text-ink-soft">· USD/THB {effectiveUsdThb.toFixed(2)}</span>}
+                {effectiveGoldPerBaht !== null && (
+                  <span className="text-ink-soft">
+                    · Gold ฿{effectiveGoldPerBaht.toLocaleString()} / บาททอง
+                  </span>
+                )}
+                {errorMsg && <span className="text-loss text-[12px]">{errorMsg}</span>}
               </>
             )}
             {priceStatus === 'error' && (
-              <span className="text-loss">
-                Price fetch failed ·{' '}
-                <button onClick={refreshPrices} className="underline">retry</button>
-              </span>
+              <>
+                <span className="text-loss">
+                  Price fetch failed ·{' '}
+                  <button onClick={refreshPrices} className="underline cursor-pointer">retry</button>
+                </span>
+                {effectiveUsdThb && <span className="text-ink-soft">· USD/THB {effectiveUsdThb.toFixed(2)}</span>}
+                {effectiveGoldPerBaht !== null && (
+                  <span className="text-ink-soft">
+                    · Gold ฿{effectiveGoldPerBaht.toLocaleString()} / บาททอง
+                  </span>
+                )}
+              </>
             )}
-            {priceStatus === 'idle' && "Valued at the latest prices you've filled in."}
+            {priceStatus === 'idle' && (
+              <>
+                <span>Valued at saved prices</span>
+                {effectiveUsdThb && <span className="text-ink-soft">· USD/THB {effectiveUsdThb.toFixed(2)}</span>}
+                {effectiveGoldPerBaht !== null && (
+                  <span className="text-ink-soft">
+                    · Gold ฿{effectiveGoldPerBaht.toLocaleString()} / บาททอง
+                  </span>
+                )}
+              </>
+            )}
           </span>
         }
         onStartGuide={startTour}
@@ -684,11 +714,11 @@ export function Portfolio() {
                   const btcAvgCostThb = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost)
                   const btcAvgCostUsd = fxRate > 0 ? btcAvgCostThb / fxRate : 0
                   const goldAvgCostPerBaht = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost) * GRAMS_PER_BAHT_GOLD
-                  const goldAvgCostXauUsd = goldThbPerBahtToXauUsd(goldAvgCostPerBaht, fxRate)
+                  const goldBaht = h.units / GRAMS_PER_BAHT_GOLD
                   const unitsLabel = isBtc
                     ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats · avg ${money(btcAvgCostUsd, 'USD')}/BTC`
                     : isGold
-                    ? `${h.units.toFixed(4)} g (${(h.units / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง) · avg ${thb(goldAvgCostPerBaht)}/บาททอง ($${Math.round(goldAvgCostXauUsd).toLocaleString()}/oz)`
+                    ? `${h.units.toFixed(4)} g (${goldBaht.toFixed(4)} บาท) · avg ${thb(goldAvgCostPerBaht)}/บาท`
                     : `${h.units.toLocaleString()} ${unitLabel(h.assetClass)} · ${ASSET_META[h.assetClass].label}`
 
                   const staleIndicator = isPriceStale(h.updatedAt) && (
@@ -836,6 +866,27 @@ export function Portfolio() {
                         <div className={`border-t border-line bg-surface-muted px-5 pb-3.5 pt-2.5 ${
                           isLast ? 'rounded-b-[var(--radius-card)]' : ''
                         }`}>
+                          {/* ── Live Market Gold Price Banner (รูปแบบ A) ── */}
+                          {isGold && effectiveGoldPerBaht !== null && (
+                            <div className="mb-3 flex items-center justify-between rounded-xl bg-surface border border-line/70 px-3.5 py-2.5 shadow-2xs">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[14px]">
+                                  🏷️
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-[12.5px] font-semibold text-ink leading-tight">ราคาทองคำวันนี้</p>
+                                  <p className="text-[11px] text-ink-muted">สมาคมค้าทองคำ (96.5%)</p>
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="text-[15px] font-bold text-amber-600 dark:text-amber-400 tnum leading-tight">
+                                  {thb(effectiveGoldPerBaht)}
+                                </p>
+                                <p className="text-[10.5px] font-medium text-ink-muted">ต่อบาททอง</p>
+                              </div>
+                            </div>
+                          )}
+
                           <p className="mb-2 text-[12px] font-semibold text-ink-muted">Storage & Purchase Locations</p>
 
                           {isBtc && (
@@ -885,14 +936,13 @@ export function Portfolio() {
                                 <ul className="space-y-1.5">
                                   {(h.goldLocations ?? []).map((loc) => {
                                     const locCostPerBaht = loc.grams > 0 ? (loc.thbSpent / loc.grams) * GRAMS_PER_BAHT_GOLD : 0
-                                    const locCostXauUsd = goldThbPerBahtToXauUsd(locCostPerBaht, fxRate)
                                     const locBaht = loc.grams / GRAMS_PER_BAHT_GOLD
                                     return (
                                       <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
                                         <div className="min-w-0 flex-1">
                                           <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
                                           <p className="tnum text-[12px] text-ink-muted">
-                                            {loc.grams.toFixed(4)} g ({locBaht.toFixed(4)} บาททอง) · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBaht)}/บาททอง (${Math.round(locCostXauUsd).toLocaleString()}/oz)
+                                            {loc.grams.toFixed(4)} g ({locBaht.toFixed(4)} บาททอง) · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBaht)}/บาททอง
                                           </p>
                                         </div>
                                         <IconButton
@@ -1066,7 +1116,6 @@ export function Portfolio() {
                 <span className="text-ink-muted">Avg cost / บาททองคำ</span>
                 <span className="font-semibold text-brand tnum">
                   {thb((Number(locThbSpent) / Number(locGrams)) * GRAMS_PER_BAHT_GOLD)}
-                  {(usdThb && usdThb > 0 ? usdThb : 35) > 0 && ` ($${Math.round(goldThbPerGramToXauUsd(Number(locThbSpent) / Number(locGrams), usdThb && usdThb > 0 ? usdThb : 35)).toLocaleString()}/oz XAUUSD)`}
                 </span>
               </div>
             </div>

@@ -5,14 +5,41 @@ import { localDateStr } from '../lib/format'
 
 const REFRESH_MS = 60_000
 
+const CACHED_USD_THB_KEY = 'spendiary.cached_usd_thb'
+const CACHED_GOLD_PRICE_KEY = 'spendiary.cached_gold_thb_gram'
+const CACHED_LAST_UPDATED_KEY = 'spendiary.cached_prices_last_updated'
+
 export type PriceStatus = 'idle' | 'loading' | 'ok' | 'partial' | 'error'
 
 export function useLivePrices() {
   const { data, upsertHolding, setUsdThb } = useData()
   const [status, setStatus] = useState<PriceStatus>('idle')
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
-  const [usdThbLocal, setUsdThbLocal] = useState<number | null>(null)
-  const [goldThbPerGram, setGoldThbPerGram] = useState<number | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(() => {
+    try {
+      const cached = localStorage.getItem(CACHED_LAST_UPDATED_KEY)
+      return cached ? new Date(cached) : null
+    } catch {
+      return null
+    }
+  })
+  const [usdThbLocal, setUsdThbLocal] = useState<number | null>(() => {
+    try {
+      const cached = localStorage.getItem(CACHED_USD_THB_KEY)
+      return cached ? parseFloat(cached) : null
+    } catch {
+      return null
+    }
+  })
+  const [goldThbPerGram, setGoldThbPerGram] = useState<number | null>(() => {
+    try {
+      const cached = localStorage.getItem(CACHED_GOLD_PRICE_KEY)
+      if (cached) return parseFloat(cached)
+      const gh = data.holdings.find((h) => h.assetClass === 'gold' && h.price > 0)
+      return gh ? gh.price : null
+    } catch {
+      return null
+    }
+  })
   const [errorMsg, setErrorMsg] = useState<string>('')
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Keep a stable ref to data so the interval always sees latest holdings
@@ -56,6 +83,11 @@ export function useLivePrices() {
         ])
         setUsdThbLocal(usdRate)
         setUsdThb(usdRate)
+        try {
+          localStorage.setItem(CACHED_USD_THB_KEY, String(usdRate))
+        } catch {
+          // ignore
+        }
         for (const h of stockHoldings) {
           const usdPrice = stockPricesUsd[h.ticker.toUpperCase()]
           if (usdPrice && usdRate > 0) {
@@ -75,6 +107,11 @@ export function useLivePrices() {
       try {
         const goldPrice = await fetchXauThbPricePerGram()
         setGoldThbPerGram(goldPrice.pricePerGram)
+        try {
+          localStorage.setItem(CACHED_GOLD_PRICE_KEY, String(goldPrice.pricePerGram))
+        } catch {
+          // ignore
+        }
         for (const h of goldHoldings) {
           upsertHolding({ ...h, price: goldPrice.pricePerGram, updatedAt: today })
         }
@@ -96,8 +133,20 @@ export function useLivePrices() {
       setStatus('error')
       setErrorMsg(errors.join(' · '))
     }
-    setLastUpdated(new Date())
+    const now = new Date()
+    setLastUpdated(now)
+    try {
+      localStorage.setItem(CACHED_LAST_UPDATED_KEY, now.toISOString())
+    } catch {
+      // ignore
+    }
   }
+
+  useEffect(() => {
+    if (usdThbLocal && usdThbLocal > 0) {
+      setUsdThb(usdThbLocal)
+    }
+  }, [setUsdThb])
 
   useEffect(() => {
     refresh()
