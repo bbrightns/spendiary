@@ -874,8 +874,8 @@ export function Portfolio() {
                                   🏷️
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="text-[12.5px] font-semibold text-ink leading-tight">ราคาทองคำวันนี้</p>
-                                  <p className="text-[11px] text-ink-muted">สมาคมค้าทองคำ (96.5%)</p>
+                                  <p className="text-[12.5px] font-semibold text-ink leading-tight">ราคาทองคำ Real-time</p>
+                                  <p className="text-[11px] text-ink-muted">Spot คำนวณทองไทย 96.5%</p>
                                 </div>
                               </div>
                               <div className="text-right shrink-0">

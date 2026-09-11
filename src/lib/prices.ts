@@ -35,8 +35,8 @@ export async function fetchUsdThb(): Promise<number> {
 }
 
 /**
- * GoldPriceService: fetch live Thai gold association price (96.5%) or derive from XAU/THB spot.
- * Falls back to the last cached value if the API fails.
+ * GoldPriceService: Live 24/7 Thai gold price (96.5%) derived directly from XAU/USD Spot + USD/THB.
+ * Tracks global gold spot (Binance XAUT/PAXG) and converts to Thai baht gold standard.
  */
 export async function fetchXauThbPricePerGram(): Promise<{ xauThb: number; pricePerGram: number; pricePerBaht: number; updatedAt: number }> {
   const now = Date.now()
@@ -44,25 +44,7 @@ export async function fetchXauThbPricePerGram(): Promise<{ xauThb: number; price
     return cachedGoldPrice
   }
 
-  // 1. Try official Thai Gold Association API first (96.5% Thai gold standard)
-  try {
-    const res = await fetch('https://api.chnwt.dev/thai-gold-api/latest')
-    if (res.ok) {
-      const json = await res.json()
-      const rawSell = json?.response?.price?.gold_bar?.sell?.toString().replace(/,/g, '')
-      const goldBarSell = parseFloat(rawSell)
-      if (goldBarSell && !isNaN(goldBarSell) && goldBarSell > 0) {
-        const pricePerGram = parseFloat((goldBarSell / GRAMS_PER_BAHT).toFixed(4))
-        const xauThb = goldBarSell * (THAI_GOLD_GRAMS_PER_TROY_OUNCE / (GRAMS_PER_BAHT * THAI_GOLD_PURITY))
-        cachedGoldPrice = { xauThb, pricePerGram, pricePerBaht: goldBarSell, updatedAt: now }
-        return cachedGoldPrice
-      }
-    }
-  } catch {
-    // Fallback to XAUT/PAXG Spot calculation below
-  }
-
-  // 2. Fallback: Spot XAUT/PAXG converted to 96.5% Thai gold standard
+  // Live Spot XAUT/PAXG converted to 96.5% Thai gold standard
   try {
     let xauUsdt = 0
     try {
