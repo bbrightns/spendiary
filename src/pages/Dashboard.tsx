@@ -345,25 +345,33 @@ export function Dashboard() {
 
               {/* Value & PnL Hero Summary */}
               <div id="guide-portfolio-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Portfolio Value</span>
-                    <p className="mt-1 font-display text-[22px] sm:text-[24px] font-extrabold tracking-tight tnum text-ink leading-tight">
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                  {/* Row 1: Labels */}
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Portfolio Value</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted text-right">All-Time PnL</span>
+
+                  {/* Row 2: Values */}
+                  <div className="flex items-baseline min-w-0">
+                    <p className="font-display text-[21px] sm:text-[24px] font-extrabold tracking-tight tnum text-ink leading-tight truncate">
                       {thb(portfolio.value)}
                     </p>
-                    <p className="mt-1 text-[11.5px] text-ink-muted font-medium">
+                  </div>
+                  <div className="flex items-baseline justify-end min-w-0">
+                    <PnLText
+                      value={portfolio.pnl}
+                      className="font-display text-[21px] sm:text-[24px] !font-extrabold tracking-tight leading-tight truncate"
+                    />
+                  </div>
+
+                  {/* Row 3: Subtext / Details */}
+                  <div className="flex items-center min-w-0 h-6">
+                    <p className="text-[11.5px] text-ink-muted font-medium truncate">
                       Invested: <span className="font-semibold tnum text-ink-soft">{thbCompact(portfolio.cost)}</span>
                     </p>
                   </div>
-                  <div className="text-right flex flex-col items-end shrink-0">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">All-Time PnL</span>
-                    <div className="mt-1 flex items-baseline justify-end">
-                      <PnLText value={portfolio.pnl} className="font-display text-[18px] sm:text-[20px] !font-extrabold tracking-tight leading-tight" />
-                    </div>
-                    <div className="mt-1 flex items-center justify-end gap-1">
-                      <PnLPill value={portfolio.pnlPct} asPct size="sm" />
-                      <span className="text-[11px] text-ink-muted font-medium">all-time</span>
-                    </div>
+                  <div className="flex items-center justify-end gap-1.5 min-w-0 h-6">
+                    <PnLPill value={portfolio.pnlPct} asPct size="sm" />
+                    <span className="text-[11px] text-ink-muted font-medium whitespace-nowrap">all-time</span>
                   </div>
                 </div>
               </div>
