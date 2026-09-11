@@ -540,7 +540,7 @@ export function Portfolio() {
                 {/* Row 3: Subtext / Details */}
                 <div className="flex items-center min-w-0 h-6">
                   <p className="text-[11.5px] text-ink-muted font-medium truncate">
-                    Cost: <span className="font-semibold tnum text-ink-soft">{thbCompact(summary.cost)}</span>
+                    Cost: <span className="font-semibold tnum text-ink-soft">{thb(summary.cost)}</span>
                   </p>
                 </div>
                 <div className="flex items-center justify-end gap-1.5 min-w-0 h-6">
