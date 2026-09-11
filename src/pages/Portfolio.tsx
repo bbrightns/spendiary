@@ -109,13 +109,18 @@ export function Portfolio() {
   const [sellOpen, setSellOpen] = useState(false)
   const [selling, setSelling] = useState<Holding | null>(null)
   const [activeMenuHoldingId, setActiveMenuHoldingId] = useState<string | null>(null)
+  const [menuDirection, setMenuDirection] = useState<'down' | 'up'>('down')
 
-  // Close action dropdown menu when clicking outside
+  // Close action dropdown menu when clicking outside or scrolling
   useEffect(() => {
     if (!activeMenuHoldingId) return
-    const handleClickOutside = () => setActiveMenuHoldingId(null)
-    window.addEventListener('click', handleClickOutside)
-    return () => window.removeEventListener('click', handleClickOutside)
+    const handleClose = () => setActiveMenuHoldingId(null)
+    window.addEventListener('click', handleClose)
+    window.addEventListener('scroll', handleClose, { passive: true })
+    return () => {
+      window.removeEventListener('click', handleClose)
+      window.removeEventListener('scroll', handleClose)
+    }
   }, [activeMenuHoldingId])
 
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false)
@@ -562,7 +567,7 @@ export function Portfolio() {
 
         {/* Right Column (7 cols): Holdings Hub & Management */}
         <div id="guide-portfolio-holdings" className="lg:col-span-7 xl:col-span-8 space-y-6">
-          <Card className="animate-rise overflow-hidden" padded={false}>
+          <Card className="animate-rise" padded={false}>
             <div className="pt-5">
               <div className="px-5">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -659,7 +664,8 @@ export function Portfolio() {
               </div>
 
               <ul className="divide-y divide-line border-t border-line">
-                {rows.map((h) => {
+                {rows.map((h, index) => {
+                  const isLast = index === rows.length - 1
                   const isBtc = h.assetClass === 'crypto'
                   const isGold = h.assetClass === 'gold'
                   const isExpandable = isBtc || isGold
@@ -704,7 +710,9 @@ export function Portfolio() {
                   return (
                     <li
                       key={h.id}
-                      className="transition-colors hover:bg-surface-muted/50"
+                      className={`transition-colors hover:bg-surface-muted/50 ${
+                        isLast && !isExpanded ? 'rounded-b-[var(--radius-card)]' : ''
+                      }`}
                     >
                       {/* ── Compact & Desktop Unified Row ── */}
                       <div
@@ -713,7 +721,9 @@ export function Portfolio() {
                         onClick={rowClick}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rowClick() } }}
                         aria-label={isExpandable ? (isExpanded ? `Collapse ${h.name}` : `Expand ${h.name}`) : `Edit ${h.name}`}
-                        className="flex cursor-pointer items-center gap-3.5 px-5 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                        className={`flex cursor-pointer items-center gap-3.5 px-5 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+                          isLast && !isExpanded ? 'rounded-b-[var(--radius-card)]' : ''
+                        }`}
                       >
                         {badge}
                         <div className="min-w-0 flex-1">
@@ -738,7 +748,18 @@ export function Portfolio() {
                         <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
                           <button
                             type="button"
-                            onClick={() => setActiveMenuHoldingId((curr) => (curr === h.id ? null : h.id))}
+                            onClick={(e) => {
+                              if (activeMenuHoldingId === h.id) {
+                                setActiveMenuHoldingId(null)
+                              } else {
+                                const rect = e.currentTarget.getBoundingClientRect()
+                                const spaceBelow = window.innerHeight - rect.bottom
+                                const isTailItem = rows.length >= 3 && index >= rows.length - 2
+                                const openUp = (index >= 1 && isTailItem) || spaceBelow < 240 || (rows.length >= 4 && index >= rows.length - 3 && spaceBelow < 280)
+                                setMenuDirection(openUp ? 'up' : 'down')
+                                setActiveMenuHoldingId(h.id)
+                              }
+                            }}
                             aria-label={`Actions for ${h.name}`}
                             title="Actions / เมนูจัดการ"
                             className={`relative grid h-8 w-8 place-items-center rounded-full transition-all cursor-pointer ${
@@ -752,7 +773,11 @@ export function Portfolio() {
 
                           {activeMenuHoldingId === h.id && (
                             <div
-                              className="absolute right-0 top-full mt-1.5 z-40 min-w-[165px] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
+                              className={`absolute right-0 z-40 min-w-[165px] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 ${
+                                menuDirection === 'up'
+                                  ? 'bottom-full mb-1.5 origin-bottom-right'
+                                  : 'top-full mt-1.5 origin-top-right'
+                              }`}
                             >
                               <button
                                 type="button"
@@ -808,7 +833,9 @@ export function Portfolio() {
 
                       {/* BTC / Gold sub-breakdown panel */}
                       {isExpandable && isExpanded && (
-                        <div className="border-t border-line bg-surface-muted px-5 pb-3.5 pt-2.5">
+                        <div className={`border-t border-line bg-surface-muted px-5 pb-3.5 pt-2.5 ${
+                          isLast ? 'rounded-b-[var(--radius-card)]' : ''
+                        }`}>
                           <p className="mb-2 text-[12px] font-semibold text-ink-muted">Storage & Purchase Locations</p>
 
                           {isBtc && (
