@@ -351,18 +351,20 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <input
-                          ref={(el) => {
-                            if (el) nameInputRefs.current.set(r.id, el)
-                            else nameInputRefs.current.delete(r.id)
-                          }}
-                          type="text"
-                          value={r.name}
-                          onChange={(e) => update(r.id, { name: e.target.value })}
-                          placeholder="ชื่อรายการหนี้ (เช่น บัตร KBank, ผ่อนบ้าน)"
-                          className="w-full bg-transparent font-bold text-[14px] text-ink dark:text-white placeholder:text-ink-faint focus:outline-none"
-                        />
-                        <div className="flex items-center gap-2 mt-0.5">
+                        <div className="relative">
+                          <input
+                            ref={(el) => {
+                              if (el) nameInputRefs.current.set(r.id, el)
+                              else nameInputRefs.current.delete(r.id)
+                            }}
+                            type="text"
+                            value={r.name}
+                            onChange={(e) => update(r.id, { name: e.target.value })}
+                            placeholder="ระบุชื่อรายการหนี้ (คลิกเพื่อแก้ไข)"
+                            className="w-full rounded-xl bg-surface-muted/60 dark:bg-white/5 px-3 py-1.5 font-bold text-[14px] text-ink dark:text-white placeholder:text-ink-faint border border-line/80 dark:border-white/10 hover:border-brand/50 focus:border-brand focus:bg-surface dark:focus:bg-white/10 focus:outline-none transition-colors"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2 mt-1.5">
                           <select
                             value={r.category}
                             onChange={(e) => update(r.id, { category: e.target.value as DebtCategory })}
@@ -411,14 +413,15 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                       <button
                         type="button"
                         onClick={() => setExpandedId(isExpanded ? null : r.id)}
-                        className={`p-1.5 rounded-lg border transition-colors cursor-pointer text-[12px] font-semibold ${
+                        className={`px-2.5 py-1.5 rounded-lg border transition-colors cursor-pointer text-[11.5px] font-semibold flex items-center gap-1.5 ${
                           isExpanded
                             ? 'bg-brand/10 text-brand border-brand/30'
                             : 'bg-surface-muted text-ink-muted border-line/60 hover:text-ink dark:bg-white/10 dark:text-white/70'
                         }`}
                         title="ดูรายละเอียดเพิ่มเติม (ดอกเบี้ย, ค่างวด, สถาบัน)"
                       >
-                        {isExpanded ? 'ย่อ' : 'รายละเอียด'}
+                        <span>{isExpanded ? 'ย่อ' : 'รายละเอียด'}</span>
+                        <span className="text-[10px] font-normal opacity-70">(optional)</span>
                       </button>
 
                       <button
@@ -435,10 +438,23 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
 
                   {/* Expanded Detail Fields */}
                   {isExpanded && (
-                    <div className="px-4 pb-4 pt-2 border-t border-line/60 dark:border-white/10 bg-surface-muted/20 dark:bg-white/[0.02] grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div className="px-4 pb-4 pt-2.5 border-t border-line/60 dark:border-white/10 bg-surface-muted/20 dark:bg-white/[0.02] grid grid-cols-1 sm:grid-cols-4 gap-3">
+                      <div className="sm:col-span-4 flex items-center justify-between pb-1 border-b border-line/40 dark:border-white/5 text-[11px]">
+                        <span className="font-semibold text-ink-muted flex items-center gap-1.5">
+                          <span>รายละเอียดเพิ่มเติม</span>
+                          <span className="text-[10px] font-medium text-ink-faint bg-surface-muted dark:bg-white/10 px-1.5 py-0.5 rounded border border-line/40">
+                            Optional (ไม่บังคับ)
+                          </span>
+                        </span>
+                        <span className="text-[10.5px] text-ink-faint hidden sm:inline">
+                          ไม่กรอกก็ได้ ไม่มีผลต่อการคำนวณ Net Worth
+                        </span>
+                      </div>
+
                       <div>
-                        <label className="block text-[11px] font-semibold text-ink-muted mb-1">
-                          อัตราดอกเบี้ยต่อปี (% APR)
+                        <label className="block text-[11px] font-semibold text-ink-muted mb-1 flex items-center justify-between">
+                          <span>อัตราดอกเบี้ยต่อปี (% APR)</span>
+                          <span className="text-[9.5px] font-normal text-ink-faint">optional</span>
                         </label>
                         <div className="relative">
                           <input
@@ -455,8 +471,9 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-semibold text-ink-muted mb-1">
-                          ค่างวดต่อเดือน (฿)
+                        <label className="block text-[11px] font-semibold text-ink-muted mb-1 flex items-center justify-between">
+                          <span>ค่างวดต่อเดือน (฿)</span>
+                          <span className="text-[9.5px] font-normal text-ink-faint">optional</span>
                         </label>
                         <input
                           type="text"
@@ -468,8 +485,9 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-semibold text-ink-muted mb-1">
-                          เจ้าหนี้ / สถาบันการเงิน
+                        <label className="block text-[11px] font-semibold text-ink-muted mb-1 flex items-center justify-between">
+                          <span>เจ้าหนี้ / สถาบันการเงิน</span>
+                          <span className="text-[9.5px] font-normal text-ink-faint">optional</span>
                         </label>
                         <input
                           type="text"
@@ -481,8 +499,9 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-semibold text-ink-muted mb-1">
-                          วันครบกำหนดจ่าย (Due Day)
+                        <label className="block text-[11px] font-semibold text-ink-muted mb-1 flex items-center justify-between">
+                          <span>วันครบกำหนดจ่าย (Due Day)</span>
+                          <span className="text-[9.5px] font-normal text-ink-faint">optional</span>
                         </label>
                         <input
                           type="number"
@@ -496,8 +515,9 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                       </div>
 
                       <div className="sm:col-span-4">
-                        <label className="block text-[11px] font-semibold text-ink-muted mb-1">
-                          บันทึกเพิ่มเติม (Note)
+                        <label className="block text-[11px] font-semibold text-ink-muted mb-1 flex items-center justify-between">
+                          <span>บันทึกเพิ่มเติม (Note)</span>
+                          <span className="text-[9.5px] font-normal text-ink-faint">optional</span>
                         </label>
                         <input
                           type="text"
