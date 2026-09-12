@@ -417,4 +417,22 @@ export function ReceiptPercentIcon(p: IconProps) {
   )
 }
 
+export function FlaskIcon(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M10 2v7.31a2 2 0 0 1-.37 1.17L4.22 18.6A2 2 0 0 0 5.86 22h12.28a2 2 0 0 0 1.64-3.4l-5.41-8.12A2 2 0 0 1 14 9.31V2" />
+      <path d="M8.5 2h7" />
+      <path d="M7 16h10" />
+    </svg>
+  )
+}
 
+export function LogOutIcon(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  )
+}

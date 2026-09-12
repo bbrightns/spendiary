@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom'
 import { BottomNav } from './BottomNav'
 import { Sidebar } from './Sidebar'
 import { Footer } from './Footer'
+import { TestModeBanner } from './TestModeBanner'
 import { ClockIcon, SettingsIcon } from '../icons'
 import { useData } from '../../store/DataContext'
 import { useScrollVisibility } from '../../hooks/useScrollVisibility'
@@ -13,11 +14,14 @@ export function Layout({ children }: { children: ReactNode }) {
   const isVisible = useScrollVisibility()
 
   return (
-    <div className="min-h-dvh bg-transparent lg:dark:bg-canvas relative flex flex-col">
+    <div className={`min-h-dvh bg-transparent lg:dark:bg-canvas relative flex flex-col ${isTestMode ? 'pt-9' : ''}`}>
+      {/* Test Mode Global Warning Banner */}
+      <TestModeBanner />
+
       {/* Skip to main content (keyboard / screen reader) */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-ink focus:px-4 focus:py-2 focus:text-[14px] focus:font-semibold focus:text-white focus:shadow-[var(--shadow-lift)] focus:outline-none"
+        className={`sr-only focus:not-sr-only focus:fixed focus:left-4 ${isTestMode ? 'focus:top-12' : 'focus:top-4'} focus:z-50 focus:rounded-xl focus:bg-ink focus:px-4 focus:py-2 focus:text-[14px] focus:font-semibold focus:text-white focus:shadow-[var(--shadow-lift)] focus:outline-none`}
       >
         Skip to content
       </a>
@@ -27,7 +31,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {/* ── Mobile Top Brand Bar (< lg) ── */}
       <div
-        className={`sticky top-0 z-20 flex items-center gap-2 border-b border-line bg-surface/75 px-4 sm:px-5 py-3 backdrop-blur-xl transition-transform duration-300 ease-in-out lg:hidden ${
+        className={`sticky ${isTestMode ? 'top-9' : 'top-0'} z-20 flex items-center gap-2 border-b border-line bg-surface/75 px-4 sm:px-5 py-3 backdrop-blur-xl transition-transform duration-300 ease-in-out lg:hidden ${
           isVisible ? 'translate-y-0' : '-translate-y-full pointer-events-none'
         }`}
       >
@@ -36,7 +40,8 @@ export function Layout({ children }: { children: ReactNode }) {
           Spendiary
         </p>
         {isTestMode && (
-          <span className="rounded-full bg-amber-500/10 text-amber-600 dark:bg-amber-400/15 dark:text-amber-300 border border-amber-500/20 px-2 py-0.5 text-[9px] sm:text-[9.5px] font-bold tracking-wider uppercase">
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300 border border-amber-500/30 px-2 py-0.5 text-[9px] sm:text-[9.5px] font-extrabold tracking-wider uppercase shadow-xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
             Test
           </span>
         )}

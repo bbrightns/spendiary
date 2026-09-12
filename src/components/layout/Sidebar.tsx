@@ -58,7 +58,11 @@ export function Sidebar() {
   const userInitial = displayName.charAt(0).toUpperCase()
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-line bg-surface/85 backdrop-blur-xl px-4 py-5 lg:flex flex-col justify-between select-none">
+    <aside
+      className={`fixed bottom-0 left-0 z-40 hidden w-64 border-r border-line bg-surface/85 backdrop-blur-xl px-4 py-5 lg:flex flex-col justify-between select-none transition-[top] duration-200 ${
+        isTestMode ? 'top-9' : 'top-0'
+      }`}
+    >
       <div className="flex flex-col gap-6">
         {/* Brand Header */}
         <div className="flex items-center justify-between px-2 pt-1">
@@ -78,7 +82,8 @@ export function Sidebar() {
             </div>
           </Link>
           {isTestMode && (
-            <span className="rounded-full bg-amber-500/10 text-amber-600 dark:bg-amber-400/15 dark:text-amber-300 border border-amber-500/20 px-2 py-0.5 text-[9.5px] font-bold tracking-wider uppercase">
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300 border border-amber-500/30 px-2 py-0.5 text-[9.5px] font-extrabold tracking-wider uppercase shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
               Test
             </span>
           )}
