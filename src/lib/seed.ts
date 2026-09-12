@@ -22,6 +22,7 @@ export const seedData: SpendiaryData = {
     { id: 'fc2', name: 'Family Allowance', amount: 10_000 },
   ],
   monthlyPersonal: 15_000,
+  liabilities: [],
   holdings: [
     {
       id: 'h1',
