@@ -74,6 +74,7 @@ export function Settings() {
 
   // ── modal states ───────────────────────────────────────────────
   const [resetOpen, setResetOpen] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
   const [importConfirmOpen, setImportConfirmOpen] = useState(false)
   const [pendingImport, setPendingImport] = useState<string | null>(null)  // raw json string
   const [pendingImportSummary, setPendingImportSummary] = useState('')
@@ -175,9 +176,14 @@ export function Settings() {
   }
 
   // ── Reset ──────────────────────────────────────────────────────
-  function handleReset() {
-    clearAll()
-    setResetOpen(false)
+  async function handleReset() {
+    setIsResetting(true)
+    try {
+      await clearAll()
+    } finally {
+      setIsResetting(false)
+      setResetOpen(false)
+    }
   }
 
   // ── Sync badge ─────────────────────────────────────────────────
@@ -408,13 +414,14 @@ export function Settings() {
             <div>
               <p className="text-[14px] font-semibold text-ink">Reset all data</p>
               <p className="mt-0.5 text-[12.5px] text-ink-muted">
-                Permanently clears every holding, plan, and transfer. Cannot be undone.
+                Permanently clears all data of this user and brings you back to the login screen. Cannot be undone.
               </p>
             </div>
             <button
               id="btn-reset"
               onClick={() => setResetOpen(true)}
-              className="ml-4 inline-flex shrink-0 items-center gap-2 rounded-full bg-loss-soft px-4 py-2 text-[13px] font-semibold text-loss transition-colors hover:bg-loss hover:text-white active:scale-95 cursor-pointer"
+              disabled={isResetting}
+              className="ml-4 inline-flex shrink-0 items-center gap-2 rounded-full bg-loss-soft px-4 py-2 text-[13px] font-semibold text-loss transition-colors hover:bg-loss hover:text-white active:scale-95 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
             >
               <TrashIcon className="h-4 w-4" />
               Reset
@@ -591,10 +598,12 @@ export function Settings() {
       {/* ── Reset confirmation modal ───────────────────────────── */}
       <ConfirmModal
         open={resetOpen}
-        onClose={() => setResetOpen(false)}
+        onClose={() => {
+          if (!isResetting) setResetOpen(false)
+        }}
         title="Reset all data?"
-        description="This will permanently delete all holdings, DCA plans, transfers, and cash accounts. Export a backup first if you want to keep anything."
-        confirmText="Yes, delete everything"
+        description="This will permanently delete all data of this user and return you to the login screen. Export a backup first if you want to keep anything."
+        confirmText={isResetting ? 'Resetting and signing out…' : 'Yes, delete everything'}
         confirmVariant="danger"
         confirmIcon={<TrashIcon className="h-4 w-4" strokeWidth={2.2} />}
         cancelText="Cancel"

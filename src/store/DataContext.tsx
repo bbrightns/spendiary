@@ -238,7 +238,7 @@ interface DataContextValue {
   data: SpendiaryData
   setData: (next: SpendiaryData) => void
   loadSample: () => void
-  clearAll: () => void
+  clearAll: () => Promise<void>
   syncStatus: SyncStatus
   user: User | null
   loginWithGoogle: () => void
@@ -608,6 +608,57 @@ export function DataProvider({ children }: { children: ReactNode }) {
     updateLastSynced(null)
   }
 
+  const clearAll = async () => {
+    syncReady.current = false
+    const currentUser = user
+
+    if (currentUser) {
+      if (currentUser.id === 'guest-user-local') {
+        localStorage.removeItem('spendiary.guest_data')
+      } else if (currentUser.id === 'test-user-local') {
+        localStorage.removeItem('spendiary.test_data')
+      } else {
+        // Cloud Supabase user: delete row from user_data table
+        try {
+          const { error } = await (supabase.from('user_data') as any)
+            .delete()
+            .eq('id', currentUser.id)
+          if (error) {
+            console.warn('Supabase delete failed, falling back to empty payload upsert:', error)
+            await supabase
+              .from('user_data')
+              .upsert({
+                id: currentUser.id,
+                payload: emptyData,
+                updated_at: new Date().toISOString()
+              })
+          }
+        } catch (err) {
+          console.error('Error clearing remote user data:', err)
+        }
+
+        try {
+          await supabase.auth.signOut()
+        } catch (err) {
+          console.error('Error signing out during clearAll:', err)
+        }
+      }
+    }
+
+    localStorage.removeItem('spendiary.last_user_id')
+    localStorage.removeItem('spendiary.last_synced_time')
+
+    lastSynced.current = ''
+    setDataState(emptyData)
+    updateLastSynced(null)
+    setSyncStatus('idle')
+    setUser(null)
+
+    try {
+      window.history.replaceState(null, '', '/')
+    } catch {}
+  }
+
   const fetchRemoteData = async (userId: string) => {
     if (userId === 'guest-user-local') {
       const local = localStorage.getItem('spendiary.guest_data')
@@ -822,7 +873,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       data,
       setData: updateData,
       loadSample: () => {},
-      clearAll: () => updateData(emptyData),
+      clearAll,
       syncStatus,
       lastSyncedAt,
       user,
