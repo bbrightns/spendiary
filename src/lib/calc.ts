@@ -1,4 +1,4 @@
-import type { AssetClass, CashAccount, CashAccountCategory, DcaPlan, DebtCategory, DividendRecord, Holding, SpendiaryData, Transfer } from './types'
+import type { AssetClass, CashAccount, CashAccountCategory, DcaPlan, DebtCategory, DividendRecord, Holding, InvestAssetClass, SpendiaryData, Transfer } from './types'
 import { daysUntil, localDateStr } from './format'
 
 export interface HoldingMetrics extends Holding {
