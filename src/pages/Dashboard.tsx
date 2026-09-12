@@ -88,7 +88,7 @@ export function Dashboard() {
   const debts = useMemo(() => totalLiabilities(data), [data.liabilities])
   const monthlyDebt = useMemo(() => totalMonthlyDebtPayment(data), [data.liabilities])
   const grossAssets = portfolio.value + cash
-  const debtRatio = grossAssets > 0 ? (debts / grossAssets) * 100 : 0
+  const debtRatio = grossAssets > 0 ? (debts / grossAssets) * 100 : (debts > 0 ? 100 : 0)
   const nw = useMemo(() => netWorth(data, usdThb), [data.cashAccounts, data.holdings, data.liabilities, usdThb])
   const cashInterest = useMemo(
     () => calculateAnnualCashInterest(data.cashAccounts, usdThb),
@@ -230,7 +230,7 @@ export function Dashboard() {
                     className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted dark:bg-white/12 px-3 py-1 text-[12px] font-semibold text-ink-soft dark:text-white/90 shadow-xs border border-line dark:border-white/10 transition-colors hover:bg-line/70 dark:hover:bg-white/20 hover:text-ink dark:hover:text-white"
                     aria-label="View wealth runway details on retirement page"
                   >
-                    ⏳ {((nw / (data.retirement.monthlySpend * 12))).toFixed(1)}y runway
+                    ⏳ {Math.max(0, nw / (data.retirement.monthlySpend * 12)).toFixed(1)}y runway
                   </Link>
                 ) : (
                   <Link
@@ -298,31 +298,31 @@ export function Dashboard() {
               </div>
 
               {/* Mini ratio split bar */}
-              {grossAssets > 0 && (
+              {(grossAssets > 0 || debts > 0) && (
                 <div className="mt-2.5 flex h-1.5 w-full overflow-hidden rounded-full bg-line dark:bg-white/10">
                   <div
                     className="bg-brand transition-all duration-500"
                     style={{
-                      width: `${debts > 0 && nw > 0
-                        ? (portfolio.value / grossAssets) * (nw / grossAssets) * 100
-                        : (portfolio.value / grossAssets) * 100}%`,
+                      width: `${debts > 0
+                        ? (nw > 0 && grossAssets > 0 ? (portfolio.value / grossAssets) * (nw / grossAssets) * 100 : 0)
+                        : (grossAssets > 0 ? (portfolio.value / grossAssets) * 100 : 0)}%`,
                     }}
-                    title={`Invested: ${thb(portfolio.value)} (${((portfolio.value / grossAssets) * 100).toFixed(1)}% of assets)`}
+                    title={`Invested: ${thb(portfolio.value)} (${grossAssets > 0 ? ((portfolio.value / grossAssets) * 100).toFixed(1) : 0}% of assets)`}
                   />
                   <div
                     className="bg-gain transition-all duration-500"
                     style={{
-                      width: `${debts > 0 && nw > 0
-                        ? (cash / grossAssets) * (nw / grossAssets) * 100
-                        : (cash / grossAssets) * 100}%`,
+                      width: `${debts > 0
+                        ? (nw > 0 && grossAssets > 0 ? (cash / grossAssets) * (nw / grossAssets) * 100 : 0)
+                        : (grossAssets > 0 ? (cash / grossAssets) * 100 : 0)}%`,
                     }}
-                    title={`Cash: ${thb(cash)} (${((cash / grossAssets) * 100).toFixed(1)}% of assets)`}
+                    title={`Cash: ${thb(cash)} (${grossAssets > 0 ? ((cash / grossAssets) * 100).toFixed(1) : 0}% of assets)`}
                   />
                   {debts > 0 && (
                     <div
                       className="bg-rose-500 transition-all duration-500"
                       style={{
-                        width: `${Math.min(100, (debts / grossAssets) * 100)}%`,
+                        width: `${grossAssets > 0 ? Math.min(100, (debts / grossAssets) * 100) : 100}%`,
                       }}
                       title={`Debts: -${thb(debts)} (${debtRatio.toFixed(1)}% Debt Ratio)`}
                     />
@@ -703,7 +703,7 @@ export function Dashboard() {
                 <div className="mt-4 space-y-3">
                   <div className="flex h-2 overflow-hidden rounded-full bg-surface-muted">
                     {data.liabilities!.map((l) => {
-                      const meta = DEBT_CATEGORIES[l.category ?? 'other']
+                      const meta = DEBT_CATEGORIES[l.category] ?? DEBT_CATEGORIES.other
                       return (
                         <div
                           key={l.id}
@@ -725,7 +725,7 @@ export function Dashboard() {
                   {/* Liabilities list grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                     {data.liabilities!.map((l) => {
-                      const meta = DEBT_CATEGORIES[l.category ?? 'other']
+                      const meta = DEBT_CATEGORIES[l.category] ?? DEBT_CATEGORIES.other
                       return (
                         <button
                           key={l.id}

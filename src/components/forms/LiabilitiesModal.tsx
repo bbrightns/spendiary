@@ -198,6 +198,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
 
   const save = () => {
     const cleaned: Liability[] = rows
+      .filter((r) => r.name.trim() !== '' || Number(r.balance.replace(/[^0-9.]/g, '')) > 0)
       .map((r) => {
         const cleanBal = r.balance.replace(/[^0-9.]/g, '')
         const cleanRate = r.interestRate.replace(/[^0-9.]/g, '')
@@ -217,7 +218,6 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
           updatedAt: new Date().toISOString().slice(0, 10),
         }
       })
-      .filter((l) => l.name !== '' || l.balance > 0)
 
     setLiabilities(cleaned)
     showToast('Saved liabilities successfully', 'success')
