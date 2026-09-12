@@ -218,10 +218,10 @@ export function Dashboard() {
                       setSelectedLiabilityId(null)
                       setLiabilitiesOpen(true)
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 px-3 py-1 text-[12px] font-semibold text-rose-600 dark:text-rose-400 border border-rose-500/20 transition-colors hover:bg-rose-500/20 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 px-3 py-1 text-[12px] font-semibold text-rose-600 dark:text-rose-400 border border-rose-500/20 transition-colors hover:bg-rose-500/20 cursor-pointer whitespace-nowrap"
                     aria-label="Manage liabilities"
                   >
-                    📉 {debtRatio.toFixed(1)}% Debt Ratio (-{thbCompact(debts)})
+                    📉 {debtRatio.toFixed(1)}% Debt Ratio ({thbCompact(-debts)})
                   </button>
                 )}
                 {data.retirement?.monthlySpend && data.retirement.monthlySpend > 0 ? (
@@ -245,30 +245,30 @@ export function Dashboard() {
             </div>
 
             {/* Quick ratio box */}
-            <div className="rounded-2xl bg-surface-muted/80 dark:bg-white/10 p-3.5 px-4.5 border border-line/80 dark:border-white/15 backdrop-blur-md sm:min-w-[220px]">
-              <div className={`grid ${debts > 0 ? 'grid-cols-3 gap-2.5 sm:gap-3.5' : 'grid-cols-2 gap-3.5'}`}>
+            <div className={`rounded-2xl bg-surface-muted/80 dark:bg-white/10 p-3 sm:p-3.5 px-3.5 sm:px-4.5 border border-line/80 dark:border-white/15 backdrop-blur-md ${debts > 0 ? 'sm:min-w-[270px]' : 'sm:min-w-[210px]'}`}>
+              <div className={`grid ${debts > 0 ? 'grid-cols-3 gap-2 sm:gap-3' : 'grid-cols-2 gap-3.5'}`}>
                 <div>
-                  <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-brand">
+                  <div className="flex items-center gap-1.5 text-[11px] sm:text-[11.5px] font-bold text-brand whitespace-nowrap">
                     <span className="h-2 w-2 rounded-full bg-brand shrink-0" />
                     <span>Invested</span>
                   </div>
-                  <p className="mt-1 font-display text-[17px] sm:text-[19px] font-extrabold tnum text-ink dark:text-white">
+                  <p className="mt-1 font-display text-[15px] sm:text-[18px] font-extrabold tnum text-ink dark:text-white whitespace-nowrap">
                     {thbCompact(portfolio.value)}
                   </p>
-                  <p className="mt-0.5 text-[11.5px] font-semibold text-brand/80 tnum">
+                  <p className="mt-0.5 text-[11px] sm:text-[11.5px] font-semibold text-brand/80 tnum whitespace-nowrap">
                     {grossAssets > 0 ? `${((portfolio.value / grossAssets) * 100).toFixed(1)}%` : '0%'}
                   </p>
                 </div>
 
-                <div className="pl-3 sm:pl-3.5 border-l border-line dark:border-white/10">
-                  <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-gain">
+                <div className="pl-2.5 sm:pl-3 border-l border-line dark:border-white/10">
+                  <div className="flex items-center gap-1.5 text-[11px] sm:text-[11.5px] font-bold text-gain whitespace-nowrap">
                     <span className="h-2 w-2 rounded-full bg-gain shrink-0" />
                     <span>Cash</span>
                   </div>
-                  <p className="mt-1 font-display text-[17px] sm:text-[19px] font-extrabold tnum text-ink dark:text-white">
+                  <p className="mt-1 font-display text-[15px] sm:text-[18px] font-extrabold tnum text-ink dark:text-white whitespace-nowrap">
                     {thbCompact(cash)}
                   </p>
-                  <p className="mt-0.5 text-[11.5px] font-semibold text-gain/80 tnum">
+                  <p className="mt-0.5 text-[11px] sm:text-[11.5px] font-semibold text-gain/80 tnum whitespace-nowrap">
                     {grossAssets > 0 ? `${((cash / grossAssets) * 100).toFixed(1)}%` : '0%'}
                   </p>
                 </div>
@@ -280,17 +280,17 @@ export function Dashboard() {
                       setSelectedLiabilityId(null)
                       setLiabilitiesOpen(true)
                     }}
-                    className="pl-3 sm:pl-3.5 border-l border-line dark:border-white/10 text-left cursor-pointer group"
+                    className="pl-2.5 sm:pl-3 border-l border-line dark:border-white/10 text-left cursor-pointer group"
                     title="Click to manage liabilities"
                   >
-                    <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-rose-500">
+                    <div className="flex items-center gap-1.5 text-[11px] sm:text-[11.5px] font-bold text-rose-500 whitespace-nowrap">
                       <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0" />
                       <span className="group-hover:underline">Debts</span>
                     </div>
-                    <p className="mt-1 font-display text-[17px] sm:text-[19px] font-extrabold tnum text-rose-600 dark:text-rose-400">
-                      -{thbCompact(debts)}
+                    <p className="mt-1 font-display text-[15px] sm:text-[18px] font-extrabold tnum text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                      {thbCompact(-debts)}
                     </p>
-                    <p className="mt-0.5 text-[11.5px] font-semibold text-rose-500/80 tnum">
+                    <p className="mt-0.5 text-[11px] sm:text-[11.5px] font-semibold text-rose-500/80 tnum whitespace-nowrap">
                       {grossAssets > 0 ? `${debtRatio.toFixed(1)}%` : '0%'}
                     </p>
                   </button>
