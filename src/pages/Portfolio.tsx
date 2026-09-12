@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 
 import { useData } from '../store/DataContext'
@@ -117,17 +118,24 @@ export function Portfolio() {
   const [sellOpen, setSellOpen] = useState(false)
   const [selling, setSelling] = useState<Holding | null>(null)
   const [activeMenuHoldingId, setActiveMenuHoldingId] = useState<string | null>(null)
+  const [activeMenuHolding, setActiveMenuHolding] = useState<Holding | null>(null)
   const [menuDirection, setMenuDirection] = useState<'down' | 'up'>('down')
+  const [menuCoords, setMenuCoords] = useState<{ top?: number; bottom?: number; right: number } | null>(null)
 
-  // Close action dropdown menu when clicking outside or scrolling
+  // Close action dropdown menu when clicking outside, scrolling, or resizing
   useEffect(() => {
     if (!activeMenuHoldingId) return
-    const handleClose = () => setActiveMenuHoldingId(null)
+    const handleClose = () => {
+      setActiveMenuHoldingId(null)
+      setActiveMenuHolding(null)
+    }
     window.addEventListener('click', handleClose)
     window.addEventListener('scroll', handleClose, { passive: true })
+    window.addEventListener('resize', handleClose)
     return () => {
       window.removeEventListener('click', handleClose)
       window.removeEventListener('scroll', handleClose)
+      window.removeEventListener('resize', handleClose)
     }
   }, [activeMenuHoldingId])
 
@@ -426,9 +434,7 @@ export function Portfolio() {
 
   const renderHoldingRow = (
     h: import('../lib/calc').HoldingMetrics,
-    index: number,
     isLast: boolean,
-    totalCount: number,
   ) => {
     const isBtc = h.assetClass === 'crypto'
     const isGold = h.assetClass === 'gold'
@@ -523,13 +529,21 @@ export function Portfolio() {
               onClick={(e) => {
                 if (activeMenuHoldingId === h.id) {
                   setActiveMenuHoldingId(null)
+                  setActiveMenuHolding(null)
                 } else {
                   const rect = e.currentTarget.getBoundingClientRect()
                   const spaceBelow = window.innerHeight - rect.bottom
-                  const isTailItem = totalCount >= 3 && index >= totalCount - 2
-                  const openUp = (index >= 1 && isTailItem) || spaceBelow < 240 || (totalCount >= 4 && index >= totalCount - 3 && spaceBelow < 280)
+                  const spaceAbove = rect.top
+                  const menuApproxHeight = (h.assetClass === 'fund' || h.assetClass === 'stock') ? 190 : 145
+                  const openUp = spaceBelow < menuApproxHeight && spaceAbove > spaceBelow
                   setMenuDirection(openUp ? 'up' : 'down')
+                  setMenuCoords({
+                    top: openUp ? undefined : rect.bottom + 6,
+                    bottom: openUp ? window.innerHeight - rect.top + 6 : undefined,
+                    right: Math.max(12, window.innerWidth - rect.right),
+                  })
                   setActiveMenuHoldingId(h.id)
+                  setActiveMenuHolding(h)
                 }
               }}
               aria-label={`Actions for ${h.name}`}
@@ -542,64 +556,6 @@ export function Portfolio() {
             >
               <DotsHorizontalIcon className="h-4 w-4" />
             </button>
-
-            {activeMenuHoldingId === h.id && (
-              <div
-                className={`absolute right-0 z-40 min-w-[165px] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 ${
-                  menuDirection === 'up'
-                    ? 'bottom-full mb-1.5 origin-bottom-right'
-                    : 'top-full mt-1.5 origin-top-right'
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveMenuHoldingId(null)
-                    openBuy(h)
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
-                >
-                  <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
-                  <span>ซื้อเพิ่ม (Buy)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveMenuHoldingId(null)
-                    openSell(h)
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
-                >
-                  <MinusIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.4} />
-                  <span>ขายออก (Sell)</span>
-                </button>
-                {(h.assetClass === 'fund' || h.assetClass === 'stock') && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveMenuHoldingId(null)
-                      openDividend(h)
-                    }}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer text-left"
-                  >
-                    <DividendIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={2.2} />
-                    <span>รับปันผล (Dividend)</span>
-                  </button>
-                )}
-                <div className="my-1 border-t border-line/60" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveMenuHoldingId(null)
-                    openEdit(h)
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer text-left"
-                >
-                  <PencilIcon className="h-3.5 w-3.5 shrink-0" />
-                  <span>แก้ไข (Edit)</span>
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
@@ -1103,7 +1059,7 @@ export function Portfolio() {
               {viewMode === 'list' ? (
                 <ul className="divide-y divide-line border-t border-line">
                   {rows.map((h, index) =>
-                    renderHoldingRow(h, index, index === rows.length - 1, rows.length)
+                    renderHoldingRow(h, index === rows.length - 1)
                   )}
                 </ul>
               ) : (
@@ -1151,7 +1107,7 @@ export function Portfolio() {
                       {/* Group Holdings */}
                       <ul className="divide-y divide-line">
                         {group.holdings.map((h, hIdx) =>
-                          renderHoldingRow(h, hIdx, hIdx === group.holdings.length - 1, group.holdings.length)
+                          renderHoldingRow(h, hIdx === group.holdings.length - 1)
                         )}
                       </ul>
                     </div>
@@ -1179,6 +1135,89 @@ export function Portfolio() {
           )}
         </Card>
       </div>
+
+      {/* ── Action Dropdown Menu Portal ── */}
+      {activeMenuHolding && menuCoords && typeof document !== 'undefined' && createPortal(
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => {
+              setActiveMenuHoldingId(null)
+              setActiveMenuHolding(null)
+            }}
+            aria-hidden="true"
+          />
+          <div
+            style={{
+              position: 'fixed',
+              top: menuCoords.top !== undefined ? `${menuCoords.top}px` : undefined,
+              bottom: menuCoords.bottom !== undefined ? `${menuCoords.bottom}px` : undefined,
+              right: `${menuCoords.right}px`,
+            }}
+            className={`z-50 min-w-[170px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 ${
+              menuDirection === 'up' ? 'origin-bottom-right' : 'origin-top-right'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                const target = activeMenuHolding
+                setActiveMenuHoldingId(null)
+                setActiveMenuHolding(null)
+                openBuy(target)
+              }}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
+            >
+              <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
+              <span>ซื้อเพิ่ม (Buy)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const target = activeMenuHolding
+                setActiveMenuHoldingId(null)
+                setActiveMenuHolding(null)
+                openSell(target)
+              }}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
+            >
+              <MinusIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.4} />
+              <span>ขายออก (Sell)</span>
+            </button>
+            {(activeMenuHolding.assetClass === 'fund' || activeMenuHolding.assetClass === 'stock') && (
+              <button
+                type="button"
+                onClick={() => {
+                  const target = activeMenuHolding
+                  setActiveMenuHoldingId(null)
+                  setActiveMenuHolding(null)
+                  openDividend(target)
+                }}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer text-left"
+              >
+                <DividendIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={2.2} />
+                <span>รับปันผล (Dividend)</span>
+              </button>
+            )}
+            <div className="my-1 border-t border-line/60" />
+            <button
+              type="button"
+              onClick={() => {
+                const target = activeMenuHolding
+                setActiveMenuHoldingId(null)
+                setActiveMenuHolding(null)
+                openEdit(target)
+              }}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer text-left"
+            >
+              <PencilIcon className="h-3.5 w-3.5 shrink-0" />
+              <span>แก้ไข (Edit)</span>
+            </button>
+          </div>
+        </>,
+        document.body
+      )}
 
       <HoldingForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
       <BuyMoreForm
