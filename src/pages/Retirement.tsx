@@ -221,8 +221,8 @@ function Row({ label, value, bold, highlight, hint }: {
 }) {
   return (
     <div className="flex items-center justify-between gap-2 text-[13px]">
-      <span className="text-ink-muted shrink-0 leading-none">{label}</span>
-      <div className="text-right min-w-0">
+      <span className="text-ink-muted min-w-0 flex-1 leading-snug">{label}</span>
+      <div className="text-right shrink-0">
         <span className={`tnum font-semibold ${
           highlight === 'gain' ? 'text-gain' :
           highlight === 'loss' ? 'text-loss' :
@@ -502,8 +502,28 @@ export function Retirement() {
                   value={withdrawalStrategy}
                   onChange={setWithdrawalStrategy}
                   options={[
-                    { value: 'lump_sum', label: 'ถอนก้อนเดียว (Lump Sum)' },
-                    { value: 'drawdown', label: 'ทยอยถอนรายปี (Drawdown)' },
+                    {
+                      value: 'lump_sum',
+                      label: (
+                        <span className="inline-block text-center leading-tight">
+                          <span>ถอนก้อนเดียว</span>{' '}
+                          <span className="block sm:inline text-[11px] sm:text-[12px] opacity-75 font-normal">
+                            (Lump Sum)
+                          </span>
+                        </span>
+                      ),
+                    },
+                    {
+                      value: 'drawdown',
+                      label: (
+                        <span className="inline-block text-center leading-tight">
+                          <span>ทยอยถอนรายปี</span>{' '}
+                          <span className="block sm:inline text-[11px] sm:text-[12px] opacity-75 font-normal">
+                            (Drawdown)
+                          </span>
+                        </span>
+                      ),
+                    },
                   ]}
                 />
                 <p className="mt-1 text-[11px] text-ink-muted leading-relaxed">
@@ -519,6 +539,7 @@ export function Retirement() {
                   onChange={setRetireAge}
                   placeholder="40"
                   min={currentAge + 1}
+                  max={100}
                 />
                 <NumberField
                   label="วางแผนใช้เงินถึงอายุ"
@@ -526,6 +547,7 @@ export function Retirement() {
                   onChange={setPlanUntilAge}
                   placeholder="85"
                   min={Number(retireAge) + 1}
+                  max={120}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -619,8 +641,8 @@ export function Retirement() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-[13px] font-semibold text-ink">{m.name}</p>
-                        <span className="tnum text-[12px] font-bold text-ink-soft">{m.valueLabel}</span>
+                        <p className="text-[13px] font-semibold text-ink min-w-0 flex-1 leading-snug">{m.name}</p>
+                        <span className="tnum text-[12px] font-bold text-ink-soft shrink-0">{m.valueLabel}</span>
                       </div>
                       <p className="text-[11.5px] text-ink-muted mt-0.5">{m.desc}</p>
                       
@@ -809,7 +831,7 @@ export function Retirement() {
                 })}
                 <line x1={toX(investLine.length - 1, investLine.length)} x2={toX(investLine.length - 1, investLine.length)}
                   y1={padT} y2={chartH - padB} stroke="var(--color-line)" strokeWidth={1} strokeDasharray="4 3" opacity={0.45} />
-                <text x={(padL + chartW - padR) / 2} y={chartH - 4} textAnchor="middle" fontSize={14} fill="var(--color-ink-muted">
+                <text x={(padL + chartW - padR) / 2} y={chartH - 4} textAnchor="middle" fontSize={14} fill="var(--color-ink-muted)">
                   อายุ (ปี)
                 </text>
                 {corpusNeeded > 0 && corpusNeeded <= maxY && (

@@ -33,14 +33,20 @@ export function SegmentedControl<T extends string>({
     md: 'py-2 px-3 text-[12.5px] sm:text-[13px]',
   }
 
+  const effectiveGridCols =
+    gridCols ??
+    (fullWidth && options.length >= 2 && options.length <= 4
+      ? (options.length as 2 | 3 | 4)
+      : undefined)
+
   const gridClasses: Record<number, string> = {
     2: 'grid grid-cols-2 gap-1 rounded-xl bg-surface-muted p-1 border border-line-strong/30 w-full',
     3: 'grid grid-cols-3 gap-1 rounded-xl bg-surface-muted p-1 border border-line-strong/30 w-full',
     4: 'grid grid-cols-4 gap-1 rounded-xl bg-surface-muted p-1 border border-line-strong/30 w-full',
   }
 
-  const containerClasses = gridCols && gridClasses[gridCols]
-    ? gridClasses[gridCols]
+  const containerClasses = effectiveGridCols && gridClasses[effectiveGridCols]
+    ? gridClasses[effectiveGridCols]
     : `flex items-center rounded-xl bg-surface-muted p-1 gap-1 border border-line-strong/30 ${
         fullWidth ? 'w-full' : 'inline-flex'
       }`
@@ -61,7 +67,7 @@ export function SegmentedControl<T extends string>({
             aria-checked={isSelected}
             title={opt.title}
             onClick={() => onChange(opt.value)}
-            className={`${fullWidth ? 'flex-1' : ''} inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold transition-all duration-200 cursor-pointer ${
+            className={`${fullWidth ? 'flex-1 min-w-0' : 'min-w-0'} inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold transition-all duration-200 cursor-pointer ${
               sizeClasses[size]
             } ${
               isSelected
@@ -70,7 +76,11 @@ export function SegmentedControl<T extends string>({
             }`}
           >
             {opt.icon && <span className="shrink-0">{opt.icon}</span>}
-            <span className="truncate">{opt.label}</span>
+            {typeof opt.label === 'string' ? (
+              <span className="min-w-0 truncate text-center">{opt.label}</span>
+            ) : (
+              <span className="min-w-0 text-center leading-snug">{opt.label}</span>
+            )}
           </button>
         )
       })}
