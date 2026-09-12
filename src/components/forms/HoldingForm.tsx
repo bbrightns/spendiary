@@ -648,7 +648,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
             { value: 'stock', label: 'US Stock' },
             { value: 'crypto', label: 'Bitcoin' },
             { value: 'gold', label: 'Gold' },
-            { value: 'real_estate', label: 'Real Estate (บ้าน / คอนโด / ที่ดิน)' },
+            { value: 'real_estate', label: 'Real Estate (House / Condo / Land)' },
           ]}
         />
 
@@ -665,7 +665,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                   setSuggestions((!isBtc && !isGold && !isRealEstate) ? searchSecurities(name, form.assetClass) : [])
                 }}
                 onBlur={() => setTimeout(() => setSuggestions([]), 150)}
-                placeholder={isBtc ? 'e.g. My Bitcoin' : isUsd ? 'e.g. Apple Inc.' : isGold ? 'e.g. My Gold' : isRealEstate ? 'e.g. คอนโด Ideo สุขุมวิท, บ้านเดี่ยว Centro' : 'e.g. Kasikorn Fund'}
+                placeholder={isBtc ? 'e.g. My Bitcoin' : isUsd ? 'e.g. Apple Inc.' : isGold ? 'e.g. My Gold' : isRealEstate ? 'e.g. Sukhumvit Condo, Modern House' : 'e.g. Kasikorn Fund'}
               />
               {suggestions.length > 0 && (
                 <ul className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-line bg-surface shadow-lg">
@@ -701,24 +701,24 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
             {/* Tag / Category */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-[13px] font-medium text-ink-muted">Asset Tag / กลุ่มสินทรัพย์</label>
-                <span className="text-[11px] text-ink-faint">optional · ใช้จัดกลุ่มพอร์ต</span>
+                <label className="text-[13px] font-medium text-ink-muted">Asset Tag / Group</label>
+                <span className="text-[11px] text-ink-faint">optional · group your portfolio</span>
               </div>
               <input
                 type="text"
                 value={form.tag}
                 onChange={(e) => setForm((f) => ({ ...f, tag: e.target.value }))}
-                placeholder={isRealEstate ? 'e.g. อสังหา, คอนโดปล่อยเช่า' : form.assetClass === 'fund' ? 'e.g. กองทุนหุ้นไทย, ตราสารหนี้' : 'e.g. หุ้นเมกา, หุ้นเทค'}
+                placeholder={isRealEstate ? 'e.g. Real Estate, Rental Property' : form.assetClass === 'fund' ? 'e.g. Thai Equities, Fixed Income' : 'e.g. US Tech, Growth'}
                 className="w-full rounded-xl border border-line bg-surface-muted px-3.5 py-2 text-[13.5px] text-ink outline-none placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/20"
               />
               {(() => {
                 const assetTagsByClass: Record<AssetClass, string[]> = {
-                  fund: ['กองทุนหุ้นไทย', 'กองทุนหุ้นสหรัฐฯ', 'หุ้นเทคโนโลยี', 'ตราสารหนี้', 'อสังหาฯ / REITs', 'กองทุนทองคำ', 'หุ้นปันผล'],
-                  real_estate: ['อสังหา', 'คอนโด', 'บ้านเดี่ยว', 'ปล่อยเช่า', 'อยู่อาศัย', 'ที่ดิน'],
-                  stock: ['หุ้นเมกา', 'หุ้นเทค', 'หุ้นปันผล', 'ETF'],
+                  fund: ['Thai Equities', 'Global Equity', 'Tech', 'Fixed Income', 'Property / REITs', 'Dividend'],
+                  real_estate: ['Real Estate', 'Condo', 'House', 'Rental', 'Residential', 'Land'],
+                  stock: ['US Stocks', 'Big Tech', 'Dividend', 'ETFs', 'Growth'],
                   crypto: ['Bitcoin', 'Crypto'],
-                  gold: ['ทองคำ', 'ทองแท่ง'],
-                  cash: ['เงินสด'],
+                  gold: ['Gold', 'Gold Bullion'],
+                  cash: ['Cash'],
                 }
                 const existingTags = Array.from(
                   new Set(
@@ -736,7 +736,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                 if (suggestedTags.length === 0) return null
                 return (
                   <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-                    <span className="shrink-0 text-[10.5px] font-semibold text-ink-muted">แนะนำ:</span>
+                    <span className="shrink-0 text-[10.5px] font-semibold text-ink-muted">Suggested:</span>
                     {suggestedTags.slice(0, 10).map((tag) => {
                       const isSelected = form.tag.trim() === tag
                       return (
@@ -1176,7 +1176,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
           ) : (
             <>
               <NumberField
-                label={isRealEstate ? "จำนวนหลัง / ยูนิต (Units)" : "Units held"}
+                label={isRealEstate ? "Properties / Units" : "Units held"}
                 value={form.units}
                 error={showErrors && form.units === '' && !isRealEstate ? 'Units are required' : undefined}
                 onChange={(units) => setForm((f) => ({ ...f, units }))}
@@ -1185,7 +1185,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
               />
               <div className="grid grid-cols-1 gap-3 ">
                 <NumberField
-                  label={isRealEstate ? "ราคาซื้อ / เงินลงทุนรวม (Purchase Cost)" : "Avg cost / unit"}
+                  label={isRealEstate ? "Purchase Cost (THB)" : "Avg cost / unit"}
                   prefix="฿"
                   value={form.avgCost}
                   error={showErrors && form.avgCost === '' ? 'Cost is required' : undefined}
@@ -1193,7 +1193,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                   placeholder="0"
                 />
                 <NumberField
-                  label={isRealEstate ? "มูลค่าประเมิน / ราคาตลาดปัจจุบัน (Current Value)" : "Current price / unit"}
+                  label={isRealEstate ? "Current Valuation (THB)" : "Current price / unit"}
                   prefix="฿"
                   value={form.price}
                   error={showErrors && form.price === '' ? 'Price is required' : undefined}
@@ -1218,10 +1218,10 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                 />
                 <div>
                   <span className="text-[13.5px] font-bold text-ink flex items-center gap-1.5">
-                    💰 Dividend Tracking (หุ้นปันผล)
+                    💰 Dividend Tracking
                   </span>
                   <p className="text-[11px] text-ink-muted">
-                    เปิดหากสินทรัพย์นี้มีนโยบายจ่ายเงินปันผลเพื่อวางแผนกระแสเงินสด
+                    Enable if this asset pays dividends to track cash flow projections
                   </p>
                 </div>
               </label>

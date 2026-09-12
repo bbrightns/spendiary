@@ -94,7 +94,7 @@ export const ASSET_META: Record<
   stock: { label: 'US Stock', plural: 'US Stocks', color: '#0ea5e9', cssVar: 'var(--color-stocks)' },
   crypto: { label: 'Bitcoin', plural: 'Bitcoin', color: '#f59e0b', cssVar: 'var(--color-crypto)' },
   gold: { label: 'Gold', plural: 'Gold', color: '#ca8a04', cssVar: 'var(--color-gold)' },
-  real_estate: { label: 'Real Estate', plural: 'Real Estate / อสังหาริมทรัพย์', color: '#8b5cf6', cssVar: 'var(--color-real-estate, #8b5cf6)' },
+  real_estate: { label: 'Real Estate', plural: 'Real Estate', color: '#8b5cf6', cssVar: 'var(--color-real-estate, #8b5cf6)' },
   cash: { label: 'Cash', plural: 'Cash', color: '#10b981', cssVar: 'var(--color-cash)' },
 }
 
@@ -114,9 +114,18 @@ export function portfolioCost(holdings: Holding[]): number {
 
 export function allocations(holdings: Holding[]): Allocation[] {
   const total = portfolioValue(holdings)
-  const byClass: Record<string, number> = {}
+  const byClass: Record<AssetClass, number> = {
+    fund: 0,
+    stock: 0,
+    crypto: 0,
+    gold: 0,
+    real_estate: 0,
+    cash: 0,
+  }
   for (const h of holdings) {
-    byClass[h.assetClass] = (byClass[h.assetClass] ?? 0) + h.units * h.price
+    if (byClass[h.assetClass] !== undefined) {
+      byClass[h.assetClass] += h.units * h.price
+    }
   }
   return (Object.keys(byClass) as AssetClass[])
     .map((assetClass) => ({
@@ -161,28 +170,28 @@ const TAG_PALETTE = [
 /** Pick an appropriate color for a given group/tag name */
 export function getAssetGroupColor(groupName: string, index: number, assetClass?: AssetClass): string {
   const s = groupName.toLowerCase().trim()
-  if (s.includes('อสังหา') || s.includes('บ้าน') || s.includes('คอนโด') || s.includes('reit') || s.includes('property') || assetClass === 'real_estate') {
+  if (s.includes('real estate') || s.includes('estate') || s.includes('property') || s.includes('condo') || s.includes('house') || s.includes('reit') || s.includes('อสังหา') || s.includes('บ้าน') || s.includes('คอนโด') || assetClass === 'real_estate') {
     return '#8b5cf6'
   }
-  if (s.includes('เมกา') || s.includes('สหรัฐ') || s.includes('us') || s.includes('s&p') || s.includes('nasdaq') || assetClass === 'stock') {
+  if (s.includes('us') || s.includes('stock') || s.includes('equity') || s.includes('equities') || s.includes('s&p') || s.includes('nasdaq') || s.includes('เมกา') || s.includes('สหรัฐ') || assetClass === 'stock') {
     return '#0ea5e9'
   }
-  if (s.includes('ทอง') || s.includes('gold') || s.includes('xau') || assetClass === 'gold') {
+  if (s.includes('gold') || s.includes('xau') || s.includes('ทอง') || assetClass === 'gold') {
     return '#ca8a04'
   }
   if (s.includes('btc') || s.includes('bitcoin') || s.includes('crypto') || assetClass === 'crypto') {
     return '#f59e0b'
   }
-  if (s.includes('เทค') || s.includes('tech') || s.includes('semiconductor')) {
+  if (s.includes('tech') || s.includes('semiconductor') || s.includes('เทค')) {
     return '#06b6d4'
   }
-  if (s.includes('ปันผล') || s.includes('dividend')) {
+  if (s.includes('dividend') || s.includes('ปันผล')) {
     return '#10b981'
   }
-  if (s.includes('ไทย') || s.includes('set') || assetClass === 'fund') {
+  if (s.includes('fund') || s.includes('thai') || s.includes('set') || s.includes('ไทย') || assetClass === 'fund') {
     return '#6366f1'
   }
-  if (s.includes('หนี้') || s.includes('bond') || s.includes('fixed income')) {
+  if (s.includes('bond') || s.includes('debt') || s.includes('fixed income') || s.includes('หนี้')) {
     return '#64748b'
   }
   return TAG_PALETTE[index % TAG_PALETTE.length]
@@ -191,7 +200,7 @@ export function getAssetGroupColor(groupName: string, index: number, assetClass?
 /**
  * Group portfolio holdings by:
  * Priority 1: Custom Tag (if specified)
- * Priority 2: Asset Class fallback (หุ้น, ทอง, btc, กองทุน, อสังหาฯ)
+ * Priority 2: Asset Class fallback (US Stocks, Gold, Bitcoin, Thai Funds & Stocks, Real Estate)
  */
 export function assetGroupAllocations(holdings: Holding[]): AssetGroupAllocation[] {
   const total = portfolioValue(holdings)
@@ -215,24 +224,24 @@ export function assetGroupAllocations(holdings: Holding[]): AssetGroupAllocation
       groupName = rawTag
       isTag = true
     } else {
-      // Fallback by asset class
+      // Fallback by asset class in English
       groupKey = `class:${h.assetClass}`
       isTag = false
       switch (h.assetClass) {
         case 'real_estate':
-          groupName = 'อสังหาริมทรัพย์'
+          groupName = 'Real Estate'
           break
         case 'stock':
-          groupName = 'หุ้นสหรัฐฯ'
+          groupName = 'US Stocks'
           break
         case 'crypto':
           groupName = 'Bitcoin'
           break
         case 'gold':
-          groupName = 'ทองคำ'
+          groupName = 'Gold'
           break
         case 'fund':
-          groupName = 'กองทุน / หุ้นไทย'
+          groupName = 'Thai Funds & Stocks'
           break
         default:
           groupName = ASSET_META[h.assetClass]?.label ?? h.assetClass

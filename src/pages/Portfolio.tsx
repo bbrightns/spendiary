@@ -847,7 +847,7 @@ export function Portfolio() {
                       : 'text-ink-muted hover:text-ink'
                   }`}
                 >
-                  ตามประเภท
+                  By Class
                 </button>
                 <button
                   type="button"
@@ -859,7 +859,7 @@ export function Portfolio() {
                       : 'text-ink-muted hover:text-ink'
                   }`}
                 >
-                  ตามกลุ่ม / Tag
+                  By Group / Tag
                 </button>
               </div>
             </div>
@@ -999,7 +999,7 @@ export function Portfolio() {
                             : 'text-ink-muted hover:text-ink'
                         }`}
                       >
-                        รายการทั้งหมด
+                        All Holdings
                       </button>
                       <button
                         type="button"
@@ -1011,7 +1011,7 @@ export function Portfolio() {
                             : 'text-ink-muted hover:text-ink'
                         }`}
                       >
-                        แยกตามกลุ่มสินทรัพย์
+                        Grouped View
                       </button>
                     </div>
                     <AddButton onClick={openAdd} label="Add holding" />
@@ -1133,27 +1133,18 @@ export function Portfolio() {
                               {thb(group.value)}
                             </p>
                             <p className="text-[11px] font-bold text-ink-muted">
-                              {group.pct.toFixed(1)}% ของพอร์ต
+                              {group.pct.toFixed(1)}% of portfolio
                             </p>
                           </div>
                         </div>
 
-                        {/* Progress bar & Group PnL */}
+                        {/* Group Cost & PnL */}
                         <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
-                          <span className="text-ink-muted truncate">ต้นทุน {thb(group.cost)}</span>
+                          <span className="text-ink-muted truncate">Cost: {thb(group.cost)}</span>
                           <div className="flex items-center gap-1.5 shrink-0">
                             <PnLText value={group.pnl} className="font-semibold" />
                             <PnLPill value={group.pnlPct} asPct size="sm" />
                           </div>
-                        </div>
-                        <div className="mt-2 h-1.5 w-full rounded-full bg-line overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-300"
-                            style={{
-                              width: `${Math.min(100, Math.max(0, group.pct))}%`,
-                              background: group.color,
-                            }}
-                          />
                         </div>
                       </div>
 
