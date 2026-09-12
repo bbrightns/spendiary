@@ -40,7 +40,7 @@ import { money, thb, thbCompact } from '../lib/format'
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
-  { key: 'fund', label: 'Thai Funds/Stocks' },
+  { key: 'fund', label: 'Thai Assets' },
   { key: 'stock', label: 'US Stocks' },
   { key: 'crypto', label: 'Bitcoin' },
   { key: 'gold', label: 'Gold' },

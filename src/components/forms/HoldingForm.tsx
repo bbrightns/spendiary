@@ -644,7 +644,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
             setSuggestions([])
           }}
           options={[
-            { value: 'fund', label: 'Thai Fund/Stock/DR' },
+            { value: 'fund', label: 'Thai Assets (Stocks, Funds, DR)' },
             { value: 'stock', label: 'US Stock' },
             { value: 'crypto', label: 'Bitcoin' },
             { value: 'gold', label: 'Gold' },

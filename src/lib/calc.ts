@@ -90,11 +90,11 @@ export const ASSET_META: Record<
   AssetClass,
   { label: string; plural: string; color: string; cssVar: string }
 > = {
-  fund: { label: 'Thai Fund/Stock/DR', plural: 'Thai Funds/Stocks/DR', color: '#6366f1', cssVar: 'var(--color-funds)' },
-  stock: { label: 'US Stock', plural: 'US Stocks', color: '#0ea5e9', cssVar: 'var(--color-stocks)' },
-  crypto: { label: 'Bitcoin', plural: 'Bitcoin', color: '#f59e0b', cssVar: 'var(--color-crypto)' },
-  gold: { label: 'Gold', plural: 'Gold', color: '#ca8a04', cssVar: 'var(--color-gold)' },
-  real_estate: { label: 'Real Estate', plural: 'Real Estate', color: '#8b5cf6', cssVar: 'var(--color-real-estate, #8b5cf6)' },
+  fund: { label: 'Thai Assets', plural: 'Thai Assets', color: '#2563eb', cssVar: 'var(--color-funds)' },
+  stock: { label: 'US Stock', plural: 'US Stocks', color: '#0284c7', cssVar: 'var(--color-stocks)' },
+  crypto: { label: 'Bitcoin', plural: 'Bitcoin', color: '#f97316', cssVar: 'var(--color-crypto)' },
+  gold: { label: 'Gold', plural: 'Gold', color: '#eab308', cssVar: 'var(--color-gold)' },
+  real_estate: { label: 'Real Estate', plural: 'Real Estate', color: '#a855f7', cssVar: 'var(--color-real-estate, #a855f7)' },
   cash: { label: 'Cash', plural: 'Cash', color: '#10b981', cssVar: 'var(--color-cash)' },
 }
 
@@ -171,16 +171,16 @@ const TAG_PALETTE = [
 export function getAssetGroupColor(groupName: string, index: number, assetClass?: AssetClass): string {
   const s = groupName.toLowerCase().trim()
   if (s.includes('real estate') || s.includes('estate') || s.includes('property') || s.includes('condo') || s.includes('house') || s.includes('reit') || s.includes('อสังหา') || s.includes('บ้าน') || s.includes('คอนโด') || assetClass === 'real_estate') {
-    return '#8b5cf6'
+    return '#a855f7'
   }
   if (s.includes('us') || s.includes('stock') || s.includes('equity') || s.includes('equities') || s.includes('s&p') || s.includes('nasdaq') || s.includes('เมกา') || s.includes('สหรัฐ') || assetClass === 'stock') {
-    return '#0ea5e9'
+    return '#0284c7'
   }
   if (s.includes('gold') || s.includes('xau') || s.includes('ทอง') || assetClass === 'gold') {
-    return '#ca8a04'
+    return '#eab308'
   }
   if (s.includes('btc') || s.includes('bitcoin') || s.includes('crypto') || assetClass === 'crypto') {
-    return '#f59e0b'
+    return '#f97316'
   }
   if (s.includes('tech') || s.includes('semiconductor') || s.includes('เทค')) {
     return '#06b6d4'
@@ -189,7 +189,7 @@ export function getAssetGroupColor(groupName: string, index: number, assetClass?
     return '#10b981'
   }
   if (s.includes('fund') || s.includes('thai') || s.includes('set') || s.includes('ไทย') || assetClass === 'fund') {
-    return '#6366f1'
+    return '#2563eb'
   }
   if (s.includes('bond') || s.includes('debt') || s.includes('fixed income') || s.includes('หนี้')) {
     return '#64748b'
@@ -200,7 +200,7 @@ export function getAssetGroupColor(groupName: string, index: number, assetClass?
 /**
  * Group portfolio holdings by:
  * Priority 1: Custom Tag (if specified)
- * Priority 2: Asset Class fallback (US Stocks, Gold, Bitcoin, Thai Funds & Stocks, Real Estate)
+ * Priority 2: Asset Class fallback (US Stocks, Gold, Bitcoin, Thai Assets, Real Estate)
  */
 export function assetGroupAllocations(holdings: Holding[]): AssetGroupAllocation[] {
   const total = portfolioValue(holdings)
@@ -241,7 +241,7 @@ export function assetGroupAllocations(holdings: Holding[]): AssetGroupAllocation
           groupName = 'Gold'
           break
         case 'fund':
-          groupName = 'Thai Funds & Stocks'
+          groupName = 'Thai Assets'
           break
         default:
           groupName = ASSET_META[h.assetClass]?.label ?? h.assetClass

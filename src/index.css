@@ -38,10 +38,11 @@
   --color-warn-soft: #fffbeb;
 
   /* Asset accents */
-  --color-funds: #6366f1;
+  --color-funds: #2563eb;
   --color-stocks: #0284c7;
-  --color-crypto: #f59e0b;
-  --color-gold: #ca8a04;
+  --color-crypto: #f97316;
+  --color-gold: #eab308;
+  --color-real-estate: #a855f7;
   --color-cash: #10b981;
 
   --radius-card: 1.5rem;
@@ -87,6 +88,14 @@
   /* Shadows: stronger for elevation on dark */
   --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.4), 0 8px 24px -8px rgba(0, 0, 0, 0.5);
   --shadow-lift: 0 2px 8px rgba(0, 0, 0, 0.4), 0 20px 48px -16px rgba(0, 0, 0, 0.6);
+
+  /* Asset accents: enhanced luminosity for dark backgrounds */
+  --color-funds: #3b82f6;
+  --color-stocks: #38bdf8;
+  --color-crypto: #fb923c;
+  --color-gold: #facc15;
+  --color-real-estate: #c084fc;
+  --color-cash: #34d399;
 }
 
 @layer base {
