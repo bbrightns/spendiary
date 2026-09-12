@@ -394,14 +394,8 @@ export function Rebalance() {
       <PageHeader
         eyebrow="Portfolio Management"
         title="Portfolio Rebalance"
+        subtitle="Align portfolio allocation with target weights & simulate capital deployment."
         onStartGuide={startTour}
-        subtitle={
-          <span className="flex items-center gap-2 flex-wrap text-[14px] text-ink-muted">
-            <span>Portfolio: <strong className="text-ink">{thb(portVal)}</strong></span>
-            <span>·</span>
-            <span>Available Liquid Cash: <strong className="text-emerald-600 dark:text-emerald-400">{thb(availCash)}</strong></span>
-          </span>
-        }
         action={
           <button
             type="button"
@@ -423,36 +417,62 @@ export function Rebalance() {
         }
       />
 
-      {/* Top 3 Metric Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <Card className="animate-rise p-4">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Current Value</span>
-          <p className="mt-1 font-display text-[22px] font-extrabold tnum text-ink leading-tight">
-            {thb(portVal)}
-          </p>
-          <p className="mt-1 text-[11.5px] text-ink-muted font-medium">
-            {data.holdings.length} active holding positions
-          </p>
-        </Card>
-
-        <Card className="animate-rise p-4">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">New Cash Injection</span>
-          <p className="mt-1 font-display text-[22px] font-extrabold tnum text-brand leading-tight">
-            +{thb(cashToDeploy)}
-          </p>
-          <p className="mt-1 text-[11.5px] text-ink-muted font-medium">
-            Available liquid: <span className="font-semibold text-ink-soft">{thbCompact(availCash)}</span>
+      {/* ── KPI Stat Cards (2x2 on Mobile, 4x1 on Desktop - Dividends Style) ── */}
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4 mb-6">
+        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+          <div>
+            <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">Current Value</p>
+            <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-ink tnum truncate">
+              {thb(portVal)}
+            </p>
+          </div>
+          <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+            {data.holdings.length} active {data.holdings.length === 1 ? 'position' : 'positions'}
           </p>
         </Card>
 
-        <Card className="animate-rise p-4">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Projected Total Value</span>
-          <p className="mt-1 font-display text-[22px] font-extrabold tnum text-ink leading-tight">
-            {thb(targetTotalValue)}
+        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+          <div>
+            <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">Available Liquid</p>
+            <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-emerald-600 dark:text-emerald-400 tnum truncate">
+              {thb(availCash)}
+            </p>
+          </div>
+          <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+            Cash accounts balance
           </p>
-          <div className="mt-1 flex items-center gap-1.5">
-            <span className={`h-2 w-2 rounded-full ${currentTargetsSum === 100 ? 'bg-gain' : 'bg-warn animate-pulse'}`} />
-            <span className={`text-[11.5px] font-bold ${currentTargetsSum === 100 ? 'text-gain' : 'text-warn'}`}>
+        </Card>
+
+        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+          <div>
+            <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">Cash to Deploy</p>
+            <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-brand-ink tnum truncate">
+              +{thb(cashToDeploy)}
+            </p>
+          </div>
+          <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+            {cashToDeploy > 0 ? 'Allocated to rebalance' : 'Optional cash injection'}
+          </p>
+        </Card>
+
+        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+          <div>
+            <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">Projected Total</p>
+            <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-ink tnum truncate">
+              {thb(targetTotalValue)}
+            </p>
+          </div>
+          <div className="mt-1 sm:mt-1.5 flex items-center gap-1.5 min-w-0">
+            <span
+              className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full shrink-0 ${
+                currentTargetsSum === 100 ? 'bg-gain' : 'bg-warn animate-pulse'
+              }`}
+            />
+            <span
+              className={`text-[10px] sm:text-[11px] font-semibold truncate ${
+                currentTargetsSum === 100 ? 'text-gain' : 'text-warn'
+              }`}
+            >
               {currentTargetsSum === 100 ? '100% Target Sum' : `Sum: ${currentTargetsSum}% (Incomplete)`}
             </span>
           </div>
