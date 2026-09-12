@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import type { BtcLocation, CashAccount, DcaPlan, DividendRecord, FixedCostItem, GoldLocation, Holding, HoldingLog, InvestAssetClass, NetWorthSnapshot, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
+import type { BtcLocation, CashAccount, DcaPlan, DividendRecord, FixedCostItem, GoldLocation, Holding, HoldingLog, InvestAssetClass, Liability, NetWorthSnapshot, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
 import { localDateStr } from '../lib/format'
 import { seedData } from '../lib/seed'
 import { detectBankPreset, findMatchingHolding, inferCashCategory } from '../lib/calc'
@@ -17,6 +17,7 @@ const emptyData: SpendiaryData = {
   dcaPlans: [],
   transfers: [],
   dividendRecords: [],
+  liabilities: [],
 }
 
 function newId(): string {
@@ -231,6 +232,15 @@ export function validateSpendiaryData(obj: unknown): obj is SpendiaryData {
       if (!['fund', 'stock', 'crypto', 'gold'].includes(paa.assetClass as string)) return false
     }
   }
+  if (d.liabilities !== undefined) {
+    if (!Array.isArray(d.liabilities)) return false
+    for (const l of d.liabilities as unknown[]) {
+      if (typeof l !== 'object' || l === null) return false
+      const ll = l as Record<string, unknown>
+      if (typeof ll.id !== 'string' || typeof ll.name !== 'string') return false
+      if (typeof ll.balance !== 'number') return false
+    }
+  }
   return true
 }
 
@@ -253,6 +263,9 @@ interface DataContextValue {
   upsertFixedCostItem: (item: Omit<FixedCostItem, 'id'> & { id?: string }) => void
   removeFixedCostItem: (id: string) => void
   setMonthlyPersonal: (amount: number) => void
+  upsertLiability: (item: Omit<Liability, 'id'> & { id?: string }) => void
+  removeLiability: (id: string) => void
+  setLiabilities: (liabilities: Liability[]) => void
   /** Live USD/THB rate — set by useLivePrices, used by forms to convert USD inputs */
   usdThb: number | null
   setUsdThb: (rate: number) => void
@@ -423,6 +436,7 @@ function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
     }
   })
   delete (merged as { cash?: number }).cash
+  merged.liabilities = Array.isArray(merged.liabilities) ? merged.liabilities : []
   return merged
 }
 
@@ -996,6 +1010,53 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }
         }),
       setMonthlyPersonal: (monthlyPersonal) => updateData((prev) => ({ ...prev, monthlyPersonal })),
+
+      upsertLiability: (item) =>
+        updateData((prev) => {
+          const isEdit = item.id && (prev.liabilities ?? []).some((x) => x.id === item.id)
+          const updatedItems = upsert(prev.liabilities ?? [], {
+            ...item,
+            updatedAt: new Date().toISOString().slice(0, 10),
+          })
+          const logEntry: HoldingLog = {
+            id: newId(),
+            timestamp: new Date().toISOString(),
+            action: isEdit ? 'edit' : 'add',
+            holdingName: `Liability: ${item.name}`,
+            ticker: 'DEBT',
+            assetClass: 'cash',
+            note: isEdit
+              ? `Updated liability "${item.name}" balance to ฿${item.balance.toLocaleString()}`
+              : `Added liability "${item.name}" with balance ฿${item.balance.toLocaleString()}`,
+          }
+          return {
+            ...prev,
+            liabilities: updatedItems,
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+          }
+        }),
+      removeLiability: (id) =>
+        updateData((prev) => {
+          const item = (prev.liabilities ?? []).find((x) => x.id === id)
+          if (!item) return prev
+          const updatedItems = (prev.liabilities ?? []).filter((x) => x.id !== id)
+          const logEntry: HoldingLog = {
+            id: newId(),
+            timestamp: new Date().toISOString(),
+            action: 'sell',
+            holdingName: `Liability: ${item.name}`,
+            ticker: 'DEBT',
+            assetClass: 'cash',
+            note: `Paid off / removed liability "${item.name}" (฿${item.balance.toLocaleString()})`,
+          }
+          return {
+            ...prev,
+            liabilities: updatedItems,
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+          }
+        }),
+      setLiabilities: (liabilities) =>
+        updateData((prev) => ({ ...prev, liabilities })),
 
       upsertHolding: (holding) =>
         updateData((prev) => ({ ...prev, holdings: upsert(prev.holdings, holding) })),
