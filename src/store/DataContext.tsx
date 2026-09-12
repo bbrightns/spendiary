@@ -585,6 +585,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const loginAsTestMode = () => {
     setAuthError(null)
+    localStorage.removeItem('spendiary.test_data')
     const testUser: User = {
       id: 'test-user-local',
       app_metadata: { provider: 'test' },
@@ -594,6 +595,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       email: 'test@spendiary.local',
       role: 'authenticated'
     }
+    const freshSample = migrate(JSON.parse(JSON.stringify(seedData)))
+    setDataState(freshSample)
+    lastSynced.current = JSON.stringify(freshSample)
     setUser(testUser)
   }
 
@@ -680,23 +684,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     if (userId === 'test-user-local') {
-      const local = localStorage.getItem('spendiary.test_data')
-      if (local) {
-        try {
-          const parsed = JSON.parse(local)
-          const migrated = migrate(parsed)
-          lastSynced.current = JSON.stringify(migrated)
-          setDataState(migrated)
-        } catch {
-          const migrated = migrate(seedData)
-          lastSynced.current = JSON.stringify(migrated)
-          setDataState(migrated)
-        }
-      } else {
-        const migrated = migrate(seedData)
-        lastSynced.current = JSON.stringify(migrated)
-        setDataState(migrated)
-      }
+      localStorage.removeItem('spendiary.test_data')
+      const freshSample = migrate(JSON.parse(JSON.stringify(seedData)))
+      lastSynced.current = JSON.stringify(freshSample)
+      setDataState(freshSample)
       setSyncStatus('synced')
       syncReady.current = true
       return
@@ -838,7 +829,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     if (user.id === 'test-user-local') {
-      localStorage.setItem('spendiary.test_data', serialised)
+      // Test Mode is strictly in-memory — never persist to localStorage so mock data stays fresh
       lastSynced.current = serialised
       setSyncStatus('synced')
       updateLastSynced(new Date())
@@ -872,7 +863,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     () => ({
       data,
       setData: updateData,
-      loadSample: () => {},
+      loadSample: () => {
+        const freshSample = migrate(JSON.parse(JSON.stringify(seedData)))
+        updateData(freshSample)
+      },
       clearAll,
       syncStatus,
       lastSyncedAt,
