@@ -233,6 +233,21 @@ export interface PlannedAsset {
   assetClass: InvestAssetClass
 }
 
+export type DebtCategory = 'credit_card' | 'mortgage' | 'auto_loan' | 'personal_loan' | 'student_loan' | 'other'
+
+export interface Liability {
+  id: string
+  name: string
+  category: DebtCategory
+  balance: number
+  interestRate?: number
+  monthlyPayment?: number
+  lender?: string
+  dueDay?: number
+  note?: string
+  updatedAt?: string
+}
+
 export interface SpendiaryData {
   /** Display name shown in the Dashboard greeting */
   userName?: string
@@ -260,6 +275,7 @@ export interface SpendiaryData {
   rebalanceHoldingTargets?: Record<string, number>
   plannedAssets?: PlannedAsset[]
   dividendRecords?: DividendRecord[]
+  liabilities?: Liability[]
   /** Timestamp in ms when this data was last modified locally */
   lastUpdatedAt?: number
 }
