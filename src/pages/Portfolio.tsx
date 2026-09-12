@@ -29,6 +29,7 @@ import {
   ASSET_META,
   GRAMS_PER_BAHT_GOLD,
   allocations,
+  assetGroupAllocations,
   holdingMetrics,
   portfolioSummary,
 } from '../lib/calc'
@@ -39,10 +40,11 @@ import { money, thb, thbCompact } from '../lib/format'
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
-  { key: 'fund', label: 'Thai Funds/Stocks/DR' },
+  { key: 'fund', label: 'Thai Funds/Stocks' },
   { key: 'stock', label: 'US Stocks' },
   { key: 'crypto', label: 'Bitcoin' },
   { key: 'gold', label: 'Gold' },
+  { key: 'real_estate', label: 'Real Estate' },
 ]
 
 const SATS_PER_BTC = 100_000_000
@@ -79,6 +81,8 @@ export function Portfolio() {
   const [sortBy, setSortBy] = useState<'none' | 'value' | 'pnl' | 'type'>('value')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [search, setSearch] = useState('')
+  const [viewMode, setViewMode] = useState<'list' | 'group'>('list')
+  const [donutMode, setDonutMode] = useState<'class' | 'group'>('class')
   const [copied, setCopied] = useState(false)
 
   const handleCopyMarkdown = async () => {
@@ -145,6 +149,7 @@ export function Portfolio() {
 
   const summary = portfolioSummary(data.holdings)
   const alloc = allocations(data.holdings)
+  const groupAlloc = assetGroupAllocations(data.holdings)
 
   // Record today's portfolio value snapshot whenever it changes
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -262,17 +267,27 @@ export function Portfolio() {
     )
   }
 
-  const TYPE_ORDER: Record<AssetClass, number> = { crypto: 0, gold: 1, stock: 2, fund: 3, cash: 4 }
+  const TYPE_ORDER: Record<AssetClass, number> = { real_estate: 0, crypto: 1, gold: 2, stock: 3, fund: 4, cash: 5 }
 
-  const searchLower = search.toLowerCase()
+  const searchTrimmed = search.trim()
+  const searchLower = searchTrimmed.toLowerCase()
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9ก-๙]/g, '')
+  const normSearch = norm(searchTrimmed)
+
   const rows = data.holdings
     .map(holdingMetrics)
     .filter((h) => filter === 'all' || h.assetClass === filter)
-    .filter((h) =>
-      !search ||
-      h.name.toLowerCase().includes(searchLower) ||
-      h.ticker.toLowerCase().includes(searchLower),
-    )
+    .filter((h) => {
+      if (!searchLower) return true
+      const name = h.name.toLowerCase()
+      const ticker = (h.ticker || '').toLowerCase()
+      const tag = (h.tag || '').toLowerCase()
+      if (name.includes(searchLower) || ticker.includes(searchLower) || tag.includes(searchLower)) return true
+      if (normSearch && (norm(name).includes(normSearch) || norm(ticker).includes(normSearch) || norm(tag).includes(normSearch))) return true
+      if (h.btcLocations?.some((l) => l.name.toLowerCase().includes(searchLower))) return true
+      if (h.goldLocations?.some((l) => l.name.toLowerCase().includes(searchLower))) return true
+      return false
+    })
     .sort((a, b) => {
       if (sortBy === 'none') return 0
       const dir = sortDir === 'desc' ? -1 : 1
@@ -282,11 +297,19 @@ export function Portfolio() {
       return 0
     })
 
-  const segments = alloc.map((a) => ({
-    label: ASSET_META[a.assetClass].plural,
-    value: a.value,
-    color: ASSET_META[a.assetClass].color,
-  }))
+  const groupedRows = assetGroupAllocations(rows)
+
+  const segments = donutMode === 'class'
+    ? alloc.map((a) => ({
+        label: ASSET_META[a.assetClass]?.plural ?? a.assetClass,
+        value: a.value,
+        color: ASSET_META[a.assetClass]?.color ?? '#6366f1',
+      }))
+    : groupAlloc.map((g) => ({
+        label: g.name,
+        value: g.value,
+        color: g.color,
+      }))
 
   const handleExportCsv = () => {
     if (rows.length === 0) {
@@ -296,6 +319,7 @@ export function Portfolio() {
 
     const headers = [
       'Asset Class',
+      'Tag / Group',
       'Ticker',
       'Holding Name',
       'Quantity',
@@ -328,6 +352,7 @@ export function Portfolio() {
       const isCrypto = h.assetClass === 'crypto'
       const isGold = h.assetClass === 'gold'
       const isFund = h.assetClass === 'fund'
+      const isRealEstate = h.assetClass === 'real_estate'
 
       const assetClassLabel = ASSET_META[h.assetClass]?.label ?? h.assetClass
       const uLabel = unitLabel(h.assetClass)
@@ -358,6 +383,8 @@ export function Portfolio() {
         locationsStr = (h.goldLocations ?? []).map((loc) => `${loc.name}: ${(loc.grams / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง (${loc.grams}g, ฿${loc.thbSpent.toLocaleString()})`).join('; ')
       } else if (isFund) {
         nativeDetails = `Avg NAV: ฿${h.avgCost.toFixed(4)} | Current NAV: ฿${h.price.toFixed(4)}`
+      } else if (isRealEstate) {
+        nativeDetails = `Real Estate | Valuation: ฿${h.price.toLocaleString()} | Cost: ฿${h.avgCost.toLocaleString()}`
       }
 
       const weightPct = summary.value > 0 ? (h.marketValue / summary.value) * 100 : 0
@@ -365,6 +392,7 @@ export function Portfolio() {
 
       return [
         escapeCsv(assetClassLabel),
+        escapeCsv(h.tag || ''),
         escapeCsv(h.ticker),
         escapeCsv(h.name),
         escapeCsv(qty),
@@ -394,6 +422,298 @@ export function Portfolio() {
     URL.revokeObjectURL(url)
 
     showToast(`Exported ${rows.length} holding${rows.length === 1 ? '' : 's'} to CSV`, 'success')
+  }
+
+  const renderHoldingRow = (
+    h: import('../lib/calc').HoldingMetrics,
+    index: number,
+    isLast: boolean,
+    totalCount: number,
+  ) => {
+    const isBtc = h.assetClass === 'crypto'
+    const isGold = h.assetClass === 'gold'
+    const isRealEstate = h.assetClass === 'real_estate'
+    const isExpandable = isBtc || isGold
+    const isExpanded = isExpandable && expandedId === h.id
+
+    const badge = (
+      <AssetLogo
+        ticker={h.ticker}
+        name={h.name}
+        assetClass={h.assetClass}
+        size="md"
+      />
+    )
+
+    const fxRate = usdThb && usdThb > 0 ? usdThb : 35
+    const btcAvgCostThb = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost)
+    const btcAvgCostUsd = fxRate > 0 ? btcAvgCostThb / fxRate : 0
+    const goldAvgCostPerBaht = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost) * GRAMS_PER_BAHT_GOLD
+    const goldBaht = h.units / GRAMS_PER_BAHT_GOLD
+    const unitsLabel = isBtc
+      ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats · avg ${money(btcAvgCostUsd, 'USD')}/BTC`
+      : isGold
+      ? `${h.units.toFixed(4)} g (${goldBaht.toFixed(4)} บาท) · avg ${thb(goldAvgCostPerBaht)}/บาท`
+      : isRealEstate
+      ? `${h.units} ${h.units > 1 ? 'units' : 'หลัง/ห้อง'} · ต้นทุน ฿${h.costBasis.toLocaleString()}`
+      : `${h.units.toLocaleString()} ${unitLabel(h.assetClass)} · ${ASSET_META[h.assetClass]?.label ?? h.assetClass}`
+
+    const staleIndicator = isPriceStale(h.updatedAt) && (
+      <span title={`Price last updated: ${h.updatedAt ?? 'unknown'}`} aria-label="Price is stale" className="h-2 w-2 shrink-0 rounded-full bg-warn" />
+    )
+
+    const chevron = isExpandable && (
+      <svg aria-hidden="true" width={14} height={14} viewBox="0 0 14 14" fill="none"
+        className={`shrink-0 text-ink-muted transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+        <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+
+    const rowClick = () => {
+      if (isExpandable) setExpandedId(isExpanded ? null : h.id)
+      else openEdit(h)
+    }
+
+    return (
+      <li
+        key={h.id}
+        className={`transition-colors hover:bg-surface-muted/50 ${
+          isLast && !isExpanded ? 'rounded-b-[var(--radius-card)]' : ''
+        }`}
+      >
+        {/* ── Compact & Desktop Unified Row ── */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={rowClick}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rowClick() } }}
+          aria-label={isExpandable ? (isExpanded ? `Collapse ${h.name}` : `Expand ${h.name}`) : `Edit ${h.name}`}
+          className={`flex cursor-pointer items-center gap-3 px-4 py-3 sm:px-5 sm:py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+            isLast && !isExpanded ? 'rounded-b-[var(--radius-card)]' : ''
+          }`}
+        >
+          {badge}
+          <div className="min-w-0 flex-1">
+            {/* Line 1: name + value */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-1.5 flex-wrap">
+                <p className="truncate text-[14px] sm:text-[14.5px] font-semibold text-ink">
+                  {h.name} <span className="text-[11px] sm:text-[11.5px] font-normal text-ink-muted ml-0.5">{h.ticker}</span>
+                </p>
+                {h.tag && (
+                  <span className="inline-flex items-center rounded-md bg-brand/10 dark:bg-brand/20 px-1.5 py-0.5 text-[10px] sm:text-[10.5px] font-semibold text-brand tracking-tight shrink-0">
+                    #{h.tag}
+                  </span>
+                )}
+                {staleIndicator}{chevron}
+              </div>
+              <p className="shrink-0 text-[14px] sm:text-[14.5px] font-bold tnum text-ink">{thb(h.marketValue)}</p>
+            </div>
+            {/* Line 2: units + PnL% */}
+            <div className="mt-0.5 flex items-center justify-between gap-2">
+              <p className="truncate text-[11.5px] sm:text-[12px] text-ink-muted">{unitsLabel}</p>
+              <PnLPill value={h.pnlPct} asPct size="sm" />
+            </div>
+          </div>
+
+          {/* ── Action Dropdown Menu [ ⋯ ] ── */}
+          <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={(e) => {
+                if (activeMenuHoldingId === h.id) {
+                  setActiveMenuHoldingId(null)
+                } else {
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  const spaceBelow = window.innerHeight - rect.bottom
+                  const isTailItem = totalCount >= 3 && index >= totalCount - 2
+                  const openUp = (index >= 1 && isTailItem) || spaceBelow < 240 || (totalCount >= 4 && index >= totalCount - 3 && spaceBelow < 280)
+                  setMenuDirection(openUp ? 'up' : 'down')
+                  setActiveMenuHoldingId(h.id)
+                }
+              }}
+              aria-label={`Actions for ${h.name}`}
+              title="Actions / เมนูจัดการ"
+              className={`relative grid h-8 w-8 place-items-center rounded-full transition-all cursor-pointer ${
+                activeMenuHoldingId === h.id
+                  ? 'bg-ink text-white dark:bg-[#4f46e5] shadow-xs'
+                  : 'bg-surface-muted text-ink-muted hover:bg-surface-elevated hover:text-ink active:scale-95'
+              }`}
+            >
+              <DotsHorizontalIcon className="h-4 w-4" />
+            </button>
+
+            {activeMenuHoldingId === h.id && (
+              <div
+                className={`absolute right-0 z-40 min-w-[165px] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 ${
+                  menuDirection === 'up'
+                    ? 'bottom-full mb-1.5 origin-bottom-right'
+                    : 'top-full mt-1.5 origin-top-right'
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenuHoldingId(null)
+                    openBuy(h)
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
+                >
+                  <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
+                  <span>ซื้อเพิ่ม (Buy)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenuHoldingId(null)
+                    openSell(h)
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
+                >
+                  <MinusIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.4} />
+                  <span>ขายออก (Sell)</span>
+                </button>
+                {(h.assetClass === 'fund' || h.assetClass === 'stock') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveMenuHoldingId(null)
+                      openDividend(h)
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer text-left"
+                  >
+                    <DividendIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={2.2} />
+                    <span>รับปันผล (Dividend)</span>
+                  </button>
+                )}
+                <div className="my-1 border-t border-line/60" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenuHoldingId(null)
+                    openEdit(h)
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer text-left"
+                >
+                  <PencilIcon className="h-3.5 w-3.5 shrink-0" />
+                  <span>แก้ไข (Edit)</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* BTC / Gold sub-breakdown panel */}
+        {isExpandable && isExpanded && (
+          <div className={`border-t border-line bg-surface-muted px-5 pb-3.5 pt-2.5 ${
+            isLast ? 'rounded-b-[var(--radius-card)]' : ''
+          }`}>
+            {/* Live Market Gold Price Banner */}
+            {isGold && effectiveGoldPerBaht !== null && (
+              <div className="mb-3 flex items-center justify-between rounded-xl bg-surface border border-line/70 px-3.5 py-2.5 shadow-2xs">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[14px]">
+                    🏷️
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[12.5px] font-semibold text-ink leading-tight">ราคาทองคำ Real-time</p>
+                    <p className="text-[11px] text-ink-muted">Spot คำนวณทองไทย 96.5%</p>
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-[15px] font-bold text-amber-600 dark:text-amber-400 tnum leading-tight">
+                    {thb(effectiveGoldPerBaht)}
+                  </p>
+                  <p className="text-[10.5px] font-medium text-ink-muted">ต่อบาททอง</p>
+                </div>
+              </div>
+            )}
+
+            <p className="mb-2 text-[12px] font-semibold text-ink-muted">Storage & Purchase Locations</p>
+
+            {isBtc && (
+              (h.btcLocations ?? []).length === 0
+                ? <p className="py-1 text-[13px] text-ink-muted">No locations yet. Use "Buy more" to add.</p>
+                : (
+                  <ul className="space-y-1.5">
+                    {(h.btcLocations ?? []).map((loc) => {
+                      const locCostPerBtcThb = loc.satoshi > 0 ? (loc.thbSpent / loc.satoshi) * SATS_PER_BTC : 0
+                      const locCostPerBtcUsd = fxRate > 0 ? locCostPerBtcThb / fxRate : 0
+                      return (
+                        <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
+                            <p className="tnum text-[12px] text-ink-muted">
+                              {loc.satoshi.toLocaleString()} sats · {thb(loc.thbSpent)} spent · avg {money(locCostPerBtcUsd, 'USD')}/BTC
+                            </p>
+                          </div>
+                          <IconButton
+                            icon={<PencilIcon className="h-3.5 w-3.5" />}
+                            label={`Edit location ${loc.name}`}
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openLocEdit(h.id, loc)}
+                          />
+                          <IconButton
+                            icon={<TrashIcon className="h-3.5 w-3.5" />}
+                            label={`Remove location ${loc.name}`}
+                            variant="danger"
+                            size="sm"
+                            onClick={() => {
+                              removeBtcLocation(h.id, loc.id)
+                              showToast(`Removed location "${loc.name}"`, 'info')
+                            }}
+                          />
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )
+            )}
+
+            {isGold && (
+              (h.goldLocations ?? []).length === 0
+                ? <p className="py-1 text-[13px] text-ink-muted">No locations yet. Use "Buy more" to add.</p>
+                : (
+                  <ul className="space-y-1.5">
+                    {(h.goldLocations ?? []).map((loc) => {
+                      const locCostPerBaht = loc.grams > 0 ? (loc.thbSpent / loc.grams) * GRAMS_PER_BAHT_GOLD : 0
+                      const locBaht = loc.grams / GRAMS_PER_BAHT_GOLD
+                      return (
+                        <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
+                            <p className="tnum text-[12px] text-ink-muted">
+                              {loc.grams.toFixed(4)} g ({locBaht.toFixed(4)} บาททอง) · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBaht)}/บาททอง
+                            </p>
+                          </div>
+                          <IconButton
+                            icon={<PencilIcon className="h-3.5 w-3.5" />}
+                            label={`Edit location ${loc.name}`}
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openLocEdit(h.id, loc)}
+                          />
+                          <IconButton
+                            icon={<TrashIcon className="h-3.5 w-3.5" />}
+                            label={`Remove location ${loc.name}`}
+                            variant="danger"
+                            size="sm"
+                            onClick={() => {
+                              removeGoldLocation(h.id, loc.id)
+                              showToast(`Removed location "${loc.name}"`, 'info')
+                            }}
+                          />
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )
+            )}
+          </div>
+        )}
+      </li>
+    )
   }
 
   return (
@@ -514,8 +834,34 @@ export function Portfolio() {
         <div id="guide-portfolio-alloc" className="lg:col-span-5 xl:col-span-4 space-y-6">
           {/* Asset Allocation card (Hero Overview & Allocation) */}
           <Card className="animate-rise">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <h2 className="font-display text-[16px] font-bold text-ink">Port Allocation</h2>
+              <div className="inline-flex rounded-lg bg-surface-muted p-0.5 text-[11px] font-semibold shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setDonutMode('class')}
+                  aria-pressed={donutMode === 'class'}
+                  className={`rounded-md px-2 py-1 transition-all cursor-pointer ${
+                    donutMode === 'class'
+                      ? 'bg-surface text-ink shadow-xs'
+                      : 'text-ink-muted hover:text-ink'
+                  }`}
+                >
+                  ตามประเภท
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDonutMode('group')}
+                  aria-pressed={donutMode === 'group'}
+                  className={`rounded-md px-2 py-1 transition-all cursor-pointer ${
+                    donutMode === 'group'
+                      ? 'bg-surface text-ink shadow-xs'
+                      : 'text-ink-muted hover:text-ink'
+                  }`}
+                >
+                  ตามกลุ่ม / Tag
+                </button>
+              </div>
             </div>
 
             {/* Value & PnL Hero Summary */}
@@ -563,26 +909,53 @@ export function Portfolio() {
               />
 
               <div className="w-full space-y-2 pt-2 border-t border-line">
-                {alloc.map((a) => {
-                  const pctVal = summary.value > 0 ? (a.value / summary.value) * 100 : 0
-                  return (
-                    <div key={a.assetClass} className="flex items-center justify-between text-[12.5px]">
-                      <span className="flex items-center gap-2 font-medium text-ink">
-                        <span
-                          className="h-2.5 w-2.5 rounded-full shrink-0"
-                          style={{ background: ASSET_META[a.assetClass].color }}
-                        />
-                        {ASSET_META[a.assetClass].plural}
-                      </span>
-                      <span className="font-bold tnum text-ink">
-                        {thb(a.value)}{' '}
-                        <span className="font-normal text-ink-muted text-[11px]">
-                          ({pctVal.toFixed(1)}%)
+                {donutMode === 'class' ? (
+                  alloc.map((a) => {
+                    const pctVal = summary.value > 0 ? (a.value / summary.value) * 100 : 0
+                    return (
+                      <div key={a.assetClass} className="flex items-center justify-between text-[12.5px]">
+                        <span className="flex items-center gap-2 font-medium text-ink truncate mr-2">
+                          <span
+                            className="h-2.5 w-2.5 rounded-full shrink-0"
+                            style={{ background: ASSET_META[a.assetClass].color }}
+                          />
+                          <span className="truncate">{ASSET_META[a.assetClass].plural}</span>
                         </span>
-                      </span>
-                    </div>
-                  )
-                })}
+                        <span className="font-bold tnum text-ink shrink-0">
+                          {thb(a.value)}{' '}
+                          <span className="font-normal text-ink-muted text-[11px]">
+                            ({pctVal.toFixed(1)}%)
+                          </span>
+                        </span>
+                      </div>
+                    )
+                  })
+                ) : (
+                  groupAlloc.map((g) => {
+                    return (
+                      <div key={g.id} className="flex items-center justify-between text-[12.5px]">
+                        <span className="flex items-center gap-2 font-medium text-ink truncate mr-2">
+                          <span
+                            className="h-2.5 w-2.5 rounded-full shrink-0"
+                            style={{ background: g.color }}
+                          />
+                          <span className="truncate">{g.name}</span>
+                          {g.isTag && (
+                            <span className="rounded bg-brand/10 px-1 py-0.2 text-[9.5px] font-bold text-brand shrink-0">
+                              Tag
+                            </span>
+                          )}
+                        </span>
+                        <span className="font-bold tnum text-ink shrink-0">
+                          {thb(g.value)}{' '}
+                          <span className="font-normal text-ink-muted text-[11px]">
+                            ({g.pct.toFixed(1)}%)
+                          </span>
+                        </span>
+                      </div>
+                    )
+                  })
+                )}
               </div>
             </div>
 
@@ -613,7 +986,36 @@ export function Portfolio() {
                       {rows.length} of {data.holdings.length} positions shown
                     </p>
                   </div>
-                  <AddButton onClick={openAdd} label="Add holding" />
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* View Switcher: List vs Group */}
+                    <div className="inline-flex rounded-full bg-surface-muted p-0.5 text-[11.5px] font-semibold border border-line/60">
+                      <button
+                        type="button"
+                        onClick={() => setViewMode('list')}
+                        aria-pressed={viewMode === 'list'}
+                        className={`rounded-full px-2.5 py-1 transition-all cursor-pointer ${
+                          viewMode === 'list'
+                            ? 'bg-surface text-ink shadow-xs'
+                            : 'text-ink-muted hover:text-ink'
+                        }`}
+                      >
+                        รายการทั้งหมด
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setViewMode('group')}
+                        aria-pressed={viewMode === 'group'}
+                        className={`rounded-full px-2.5 py-1 transition-all cursor-pointer ${
+                          viewMode === 'group'
+                            ? 'bg-surface text-ink shadow-xs'
+                            : 'text-ink-muted hover:text-ink'
+                        }`}
+                      >
+                        แยกตามกลุ่มสินทรัพย์
+                      </button>
+                    </div>
+                    <AddButton onClick={openAdd} label="Add holding" />
+                  </div>
                 </div>
 
                 {/* Search */}
@@ -629,7 +1031,7 @@ export function Portfolio() {
                     type="text"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search by name or ticker…"
+                    placeholder="Search by name, ticker, or tag…"
                     className="w-full rounded-xl border border-line bg-surface-muted py-2 pl-9 pr-8 text-[13.5px] text-ink outline-none placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/20"
                   />
                   {search && (
@@ -697,287 +1099,74 @@ export function Portfolio() {
                 </div>
               </div>
 
-              <ul className="divide-y divide-line border-t border-line">
-                {rows.map((h, index) => {
-                  const isLast = index === rows.length - 1
-                  const isBtc = h.assetClass === 'crypto'
-                  const isGold = h.assetClass === 'gold'
-                  const isExpandable = isBtc || isGold
-                  const isExpanded = isExpandable && expandedId === h.id
-
-                  const badge = (
-                    <AssetLogo
-                      ticker={h.ticker}
-                      name={h.name}
-                      assetClass={h.assetClass}
-                      size="md"
-                    />
-                  )
-
-                  const fxRate = usdThb && usdThb > 0 ? usdThb : 35
-                  const btcAvgCostThb = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost)
-                  const btcAvgCostUsd = fxRate > 0 ? btcAvgCostThb / fxRate : 0
-                  const goldAvgCostPerBaht = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost) * GRAMS_PER_BAHT_GOLD
-                  const goldBaht = h.units / GRAMS_PER_BAHT_GOLD
-                  const unitsLabel = isBtc
-                    ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats · avg ${money(btcAvgCostUsd, 'USD')}/BTC`
-                    : isGold
-                    ? `${h.units.toFixed(4)} g (${goldBaht.toFixed(4)} บาท) · avg ${thb(goldAvgCostPerBaht)}/บาท`
-                    : `${h.units.toLocaleString()} ${unitLabel(h.assetClass)} · ${ASSET_META[h.assetClass].label}`
-
-                  const staleIndicator = isPriceStale(h.updatedAt) && (
-                    <span title={`Price last updated: ${h.updatedAt ?? 'unknown'}`} aria-label="Price is stale" className="h-2 w-2 shrink-0 rounded-full bg-warn" />
-                  )
-
-                  const chevron = isExpandable && (
-                    <svg aria-hidden="true" width={14} height={14} viewBox="0 0 14 14" fill="none"
-                      className={`shrink-0 text-ink-muted transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
-                      <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )
-
-                  const rowClick = () => {
-                    if (isExpandable) setExpandedId(isExpanded ? null : h.id)
-                    else openEdit(h)
-                  }
-
-                  return (
-                    <li
-                      key={h.id}
-                      className={`transition-colors hover:bg-surface-muted/50 ${
-                        isLast && !isExpanded ? 'rounded-b-[var(--radius-card)]' : ''
-                      }`}
+              {/* Holdings Rows / Grouped View */}
+              {viewMode === 'list' ? (
+                <ul className="divide-y divide-line border-t border-line">
+                  {rows.map((h, index) =>
+                    renderHoldingRow(h, index, index === rows.length - 1, rows.length)
+                  )}
+                </ul>
+              ) : (
+                <div className="p-3.5 sm:p-5 space-y-4 border-t border-line bg-surface-muted/20">
+                  {groupedRows.map((group) => (
+                    <div
+                      key={group.id}
+                      className="rounded-2xl border border-line bg-surface shadow-xs overflow-hidden"
                     >
-                      {/* ── Compact & Desktop Unified Row ── */}
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={rowClick}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rowClick() } }}
-                        aria-label={isExpandable ? (isExpanded ? `Collapse ${h.name}` : `Expand ${h.name}`) : `Edit ${h.name}`}
-                        className={`flex cursor-pointer items-center gap-3.5 px-5 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
-                          isLast && !isExpanded ? 'rounded-b-[var(--radius-card)]' : ''
-                        }`}
-                      >
-                        {badge}
-                        <div className="min-w-0 flex-1">
-                          {/* Line 1: name + value */}
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex min-w-0 items-center gap-1.5">
-                              <p className="truncate text-[14.5px] font-semibold text-ink">
-                                {h.name} <span className="text-[11.5px] font-normal text-ink-muted ml-1">{h.ticker}</span>
-                              </p>
-                              {staleIndicator}{chevron}
-                            </div>
-                            <p className="shrink-0 text-[14.5px] font-bold tnum text-ink">{thb(h.marketValue)}</p>
+                      {/* Group Header */}
+                      <div className="px-4 py-3 bg-surface-muted/40 border-b border-line">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span
+                              className="h-3 w-3 rounded-full shrink-0 shadow-xs"
+                              style={{ background: group.color }}
+                            />
+                            <h4 className="font-display text-[15px] font-bold text-ink truncate">
+                              {group.name}
+                            </h4>
+                            <span className="rounded-full bg-surface px-2 py-0.5 text-[10.5px] font-semibold text-ink-muted border border-line shrink-0">
+                              {group.holdingCount} {group.holdingCount === 1 ? 'position' : 'positions'}
+                            </span>
                           </div>
-                          {/* Line 2: units + PnL% */}
-                          <div className="mt-0.5 flex items-center justify-between gap-2">
-                            <p className="truncate text-[12px] text-ink-muted">{unitsLabel}</p>
-                            <PnLPill value={h.pnlPct} asPct />
+                          <div className="text-right shrink-0">
+                            <p className="font-display text-[15px] font-extrabold tnum text-ink">
+                              {thb(group.value)}
+                            </p>
+                            <p className="text-[11px] font-bold text-ink-muted">
+                              {group.pct.toFixed(1)}% ของพอร์ต
+                            </p>
                           </div>
                         </div>
-                        
-                        {/* ── Action Dropdown Menu [ ⋯ ] ── */}
-                        <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              if (activeMenuHoldingId === h.id) {
-                                setActiveMenuHoldingId(null)
-                              } else {
-                                const rect = e.currentTarget.getBoundingClientRect()
-                                const spaceBelow = window.innerHeight - rect.bottom
-                                const isTailItem = rows.length >= 3 && index >= rows.length - 2
-                                const openUp = (index >= 1 && isTailItem) || spaceBelow < 240 || (rows.length >= 4 && index >= rows.length - 3 && spaceBelow < 280)
-                                setMenuDirection(openUp ? 'up' : 'down')
-                                setActiveMenuHoldingId(h.id)
-                              }
-                            }}
-                            aria-label={`Actions for ${h.name}`}
-                            title="Actions / เมนูจัดการ"
-                            className={`relative grid h-8 w-8 place-items-center rounded-full transition-all cursor-pointer ${
-                              activeMenuHoldingId === h.id
-                                ? 'bg-ink text-white dark:bg-[#4f46e5] shadow-xs'
-                                : 'bg-surface-muted text-ink-muted hover:bg-surface-elevated hover:text-ink active:scale-95'
-                            }`}
-                          >
-                            <DotsHorizontalIcon className="h-4 w-4" />
-                          </button>
 
-                          {activeMenuHoldingId === h.id && (
-                            <div
-                              className={`absolute right-0 z-40 min-w-[165px] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 ${
-                                menuDirection === 'up'
-                                  ? 'bottom-full mb-1.5 origin-bottom-right'
-                                  : 'top-full mt-1.5 origin-top-right'
-                              }`}
-                            >
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setActiveMenuHoldingId(null)
-                                  openBuy(h)
-                                }}
-                                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
-                              >
-                                <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
-                                <span>ซื้อเพิ่ม (Buy)</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setActiveMenuHoldingId(null)
-                                  openSell(h)
-                                }}
-                                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
-                              >
-                                <MinusIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.4} />
-                                <span>ขายออก (Sell)</span>
-                              </button>
-                              {(h.assetClass === 'fund' || h.assetClass === 'stock') && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setActiveMenuHoldingId(null)
-                                    openDividend(h)
-                                  }}
-                                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer text-left"
-                                >
-                                  <DividendIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={2.2} />
-                                  <span>รับปันผล (Dividend)</span>
-                                </button>
-                              )}
-                              <div className="my-1 border-t border-line/60" />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setActiveMenuHoldingId(null)
-                                  openEdit(h)
-                                }}
-                                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer text-left"
-                              >
-                                <PencilIcon className="h-3.5 w-3.5 shrink-0" />
-                                <span>แก้ไข (Edit)</span>
-                              </button>
-                            </div>
-                          )}
+                        {/* Progress bar & Group PnL */}
+                        <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
+                          <span className="text-ink-muted truncate">ต้นทุน {thb(group.cost)}</span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <PnLText value={group.pnl} className="font-semibold" />
+                            <PnLPill value={group.pnlPct} asPct size="sm" />
+                          </div>
+                        </div>
+                        <div className="mt-2 h-1.5 w-full rounded-full bg-line overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-300"
+                            style={{
+                              width: `${Math.min(100, Math.max(0, group.pct))}%`,
+                              background: group.color,
+                            }}
+                          />
                         </div>
                       </div>
 
-                      {/* BTC / Gold sub-breakdown panel */}
-                      {isExpandable && isExpanded && (
-                        <div className={`border-t border-line bg-surface-muted px-5 pb-3.5 pt-2.5 ${
-                          isLast ? 'rounded-b-[var(--radius-card)]' : ''
-                        }`}>
-                          {/* ── Live Market Gold Price Banner (รูปแบบ A) ── */}
-                          {isGold && effectiveGoldPerBaht !== null && (
-                            <div className="mb-3 flex items-center justify-between rounded-xl bg-surface border border-line/70 px-3.5 py-2.5 shadow-2xs">
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[14px]">
-                                  🏷️
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="text-[12.5px] font-semibold text-ink leading-tight">ราคาทองคำ Real-time</p>
-                                  <p className="text-[11px] text-ink-muted">Spot คำนวณทองไทย 96.5%</p>
-                                </div>
-                              </div>
-                              <div className="text-right shrink-0">
-                                <p className="text-[15px] font-bold text-amber-600 dark:text-amber-400 tnum leading-tight">
-                                  {thb(effectiveGoldPerBaht)}
-                                </p>
-                                <p className="text-[10.5px] font-medium text-ink-muted">ต่อบาททอง</p>
-                              </div>
-                            </div>
-                          )}
-
-                          <p className="mb-2 text-[12px] font-semibold text-ink-muted">Storage & Purchase Locations</p>
-
-                          {isBtc && (
-                            (h.btcLocations ?? []).length === 0
-                              ? <p className="py-1 text-[13px] text-ink-muted">No locations yet. Use "Buy more" to add.</p>
-                              : (
-                                <ul className="space-y-1.5">
-                                  {(h.btcLocations ?? []).map((loc) => {
-                                    const locCostPerBtcThb = loc.satoshi > 0 ? (loc.thbSpent / loc.satoshi) * SATS_PER_BTC : 0
-                                    const locCostPerBtcUsd = fxRate > 0 ? locCostPerBtcThb / fxRate : 0
-                                    return (
-                                      <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
-                                        <div className="min-w-0 flex-1">
-                                          <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
-                                          <p className="tnum text-[12px] text-ink-muted">
-                                            {loc.satoshi.toLocaleString()} sats · {thb(loc.thbSpent)} spent · avg {money(locCostPerBtcUsd, 'USD')}/BTC
-                                          </p>
-                                        </div>
-                                        <IconButton
-                                          icon={<PencilIcon className="h-3.5 w-3.5" />}
-                                          label={`Edit location ${loc.name}`}
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => openLocEdit(h.id, loc)}
-                                        />
-                                        <IconButton
-                                          icon={<TrashIcon className="h-3.5 w-3.5" />}
-                                          label={`Remove location ${loc.name}`}
-                                          variant="danger"
-                                          size="sm"
-                                          onClick={() => {
-                                            removeBtcLocation(h.id, loc.id)
-                                            showToast(`Removed location "${loc.name}"`, 'info')
-                                          }}
-                                        />
-                                      </li>
-                                    )
-                                  })}
-                                </ul>
-                              )
-                          )}
-
-                          {isGold && (
-                            (h.goldLocations ?? []).length === 0
-                              ? <p className="py-1 text-[13px] text-ink-muted">No locations yet. Use "Buy more" to add.</p>
-                              : (
-                                <ul className="space-y-1.5">
-                                  {(h.goldLocations ?? []).map((loc) => {
-                                    const locCostPerBaht = loc.grams > 0 ? (loc.thbSpent / loc.grams) * GRAMS_PER_BAHT_GOLD : 0
-                                    const locBaht = loc.grams / GRAMS_PER_BAHT_GOLD
-                                    return (
-                                      <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
-                                        <div className="min-w-0 flex-1">
-                                          <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
-                                          <p className="tnum text-[12px] text-ink-muted">
-                                            {loc.grams.toFixed(4)} g ({locBaht.toFixed(4)} บาททอง) · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBaht)}/บาททอง
-                                          </p>
-                                        </div>
-                                        <IconButton
-                                          icon={<PencilIcon className="h-3.5 w-3.5" />}
-                                          label={`Edit location ${loc.name}`}
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => openLocEdit(h.id, loc)}
-                                        />
-                                        <IconButton
-                                          icon={<TrashIcon className="h-3.5 w-3.5" />}
-                                          label={`Remove location ${loc.name}`}
-                                          variant="danger"
-                                          size="sm"
-                                          onClick={() => {
-                                            removeGoldLocation(h.id, loc.id)
-                                            showToast(`Removed location "${loc.name}"`, 'info')
-                                          }}
-                                        />
-                                      </li>
-                                    )
-                                  })}
-                                </ul>
-                              )
-                          )}
-                        </div>
-                      )}
-                    </li>
-                  )
-                })}
-              </ul>
+                      {/* Group Holdings */}
+                      <ul className="divide-y divide-line">
+                        {group.holdings.map((h, hIdx) =>
+                          renderHoldingRow(h, hIdx, hIdx === group.holdings.length - 1, group.holdings.length)
+                        )}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </Card>
         </div>

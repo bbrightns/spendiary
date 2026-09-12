@@ -1,5 +1,5 @@
-export type AssetClass = 'fund' | 'stock' | 'crypto' | 'gold' | 'cash'
-export type InvestAssetClass = 'fund' | 'stock' | 'crypto' | 'gold'
+export type AssetClass = 'fund' | 'stock' | 'crypto' | 'gold' | 'real_estate' | 'cash'
+export type InvestAssetClass = 'fund' | 'stock' | 'crypto' | 'gold' | 'real_estate'
 
 export interface BtcLocation {
   id: string
@@ -25,6 +25,8 @@ export interface Holding {
   name: string
   ticker: string
   assetClass: AssetClass
+  /** Optional custom tag or category (e.g. "อสังหา", "หุ้นเมกา", "หุ้นเทค", "ตราสารหนี้", "ปันผล") */
+  tag?: string
   /** Units / shares / coins held (totalUnits) */
   units: number
   /** Total units held */

@@ -1,5 +1,5 @@
 import type { SpendiaryData } from './types'
-import { GRAMS_PER_BAHT_GOLD, SATS_PER_BTC, goldThbPerBahtToXauUsd, portfolioSummary } from './calc'
+import { GRAMS_PER_BAHT_GOLD, SATS_PER_BTC, assetGroupAllocations, goldThbPerBahtToXauUsd, portfolioSummary } from './calc'
 
 function fmtNum(n: number, decimals = 2): string {
   return new Intl.NumberFormat('en-US', {
@@ -78,6 +78,16 @@ export function generatePortfolioMarkdown(
   lines.push(`- **จำนวนรายการถือครอง (Holdings Count)**: **${holdings.length} รายการ**`)
   lines.push('')
 
+  // Asset Group Allocation
+  const groupAllocs = assetGroupAllocations(holdings)
+  if (groupAllocs.length > 0) {
+    lines.push(`## 🎯 สัดส่วนตามกลุ่มสินทรัพย์ (Asset Group Allocation)`)
+    for (const g of groupAllocs) {
+      lines.push(`- **${g.name}**: **${fmtMoney(g.value, 'THB')}** (**${g.pct.toFixed(1)}%**) · PnL: ${fmtSignMoney(g.pnl, 'THB')} (${fmtPct(g.pnlPct)})`)
+    }
+    lines.push('')
+  }
+
   // Summary Table
   if (holdings.length > 0) {
     lines.push(`## 📋 ตารางสรุปรายการถือครอง (Holdings Summary)`)
@@ -88,6 +98,7 @@ export function generatePortfolioMarkdown(
       const isStock = h.assetClass === 'stock'
       const isCrypto = h.assetClass === 'crypto'
       const isGold = h.assetClass === 'gold'
+      const isRealEstate = h.assetClass === 'real_estate'
 
       const marketValue = h.units * h.price
       const costBasis = h.totalThbInvested ?? (h.units * h.avgCost)
@@ -131,10 +142,16 @@ export function generatePortfolioMarkdown(
         const priceXauUsd = goldThbPerBahtToXauUsd(pricePerBaht, rate)
         avgCostStr = `${fmtMoney(avgCostPerBaht, 'THB', 0)}/บาททอง<br/>($${fmtMoney(avgCostXauUsd, 'USD', 0)}/oz)`
         priceStr = `${fmtMoney(pricePerBaht, 'THB', 0)}/บาททอง<br/>($${fmtMoney(priceXauUsd, 'USD', 0)}/oz)`
+      } else if (isRealEstate) {
+        typeLabel = 'อสังหาริมทรัพย์'
+        qtyStr = `${h.units} หลัง/ห้อง`
+        avgCostStr = fmtMoney(h.avgCost, 'THB')
+        priceStr = fmtMoney(h.price, 'THB')
       }
 
       const pnlStr = `${fmtSignMoney(pnl, 'THB', 2)}<br/>(${fmtPct(pnlPct, 2)})`
-      lines.push(`| **${h.name}** (${h.ticker}) | ${typeLabel} | ${qtyStr} | ${avgCostStr} | ${priceStr} | ${totalCostStr} | ${marketValStr} | ${pnlStr} |`)
+      const tagBadge = h.tag ? ` \`#${h.tag}\`` : ''
+      lines.push(`| **${h.name}** (${h.ticker})${tagBadge} | ${typeLabel} | ${qtyStr} | ${avgCostStr} | ${priceStr} | ${totalCostStr} | ${marketValStr} | ${pnlStr} |`)
     }
     lines.push('')
   }
@@ -258,7 +275,26 @@ export function generatePortfolioMarkdown(
     }
   }
 
-  // 5. Cash Accounts
+  // 5. Real Estate
+  const realEstates = holdings.filter((h) => h.assetClass === 'real_estate')
+  if (realEstates.length > 0) {
+    lines.push(`## 🏠 อสังหาริมทรัพย์ (Real Estate)`)
+    for (const h of realEstates) {
+      const marketValue = h.units * h.price
+      const costBasis = h.totalThbInvested ?? (h.units * h.avgCost)
+      const pnl = marketValue - costBasis
+      const pnlPct = costBasis > 0 ? (pnl / costBasis) * 100 : 0
+
+      lines.push(`### 🔹 ${h.name} (\`${h.ticker}\`)${h.tag ? ` - \`#${h.tag}\`` : ''}`)
+      lines.push(`- **จำนวนยูนิต/หลัง**: **${h.units} หลัง/ห้อง**`)
+      lines.push(`- **ต้นทุนเงินลงทุนรวม**: **${fmtMoney(costBasis, 'THB', 2)}**`)
+      lines.push(`- **มูลค่าประเมิน/ราคาตลาดปัจจุบัน**: **${fmtMoney(marketValue, 'THB', 2)}**`)
+      lines.push(`- **ส่วนต่างกำไร/ขาดทุนประเมิน (PnL)**: **${fmtSignMoney(pnl, 'THB', 2)} (${fmtPct(pnlPct, 2)})**`)
+      lines.push('')
+    }
+  }
+
+  // 6. Cash Accounts
   if (cashAccounts.length > 0) {
     lines.push(`## 💵 บัญชีเงินสด (Cash Accounts)`)
     for (const acc of cashAccounts) {

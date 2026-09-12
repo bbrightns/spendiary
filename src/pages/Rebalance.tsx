@@ -18,7 +18,7 @@ import type { Holding, InvestAssetClass, PlannedAsset, RebalanceMode } from '../
 import { CheckIcon, CopyIcon, PlusIcon, TrashIcon } from '../components/icons'
 
 
-const REBALANCE_ASSETS: InvestAssetClass[] = ['fund', 'stock', 'gold', 'crypto']
+const REBALANCE_ASSETS: InvestAssetClass[] = ['fund', 'stock', 'gold', 'crypto', 'real_estate']
 
 export function Rebalance() {
   const {
@@ -75,6 +75,7 @@ export function Rebalance() {
     stock: data.rebalanceTargets?.stock ?? 30,
     gold: data.rebalanceTargets?.gold ?? 15,
     crypto: data.rebalanceTargets?.crypto ?? 5,
+    real_estate: data.rebalanceTargets?.real_estate ?? 0,
   }
   const [localClassTargets, setLocalClassTargets] = useState<Record<InvestAssetClass, number>>(initialClassTargets)
 
@@ -83,6 +84,7 @@ export function Rebalance() {
     stock: data.holdings.filter((h) => h.assetClass === 'stock').reduce((s, h) => s + h.units * h.price, 0),
     crypto: data.holdings.filter((h) => h.assetClass === 'crypto').reduce((s, h) => s + h.units * h.price, 0),
     gold: data.holdings.filter((h) => h.assetClass === 'gold').reduce((s, h) => s + h.units * h.price, 0),
+    real_estate: data.holdings.filter((h) => h.assetClass === 'real_estate').reduce((s, h) => s + h.units * h.price, 0),
   }
 
   const classTargetsSum = Object.values(localClassTargets).reduce((s, x) => s + x, 0)

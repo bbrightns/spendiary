@@ -94,6 +94,7 @@ export const ASSET_META: Record<
   stock: { label: 'US Stock', plural: 'US Stocks', color: '#0ea5e9', cssVar: 'var(--color-stocks)' },
   crypto: { label: 'Bitcoin', plural: 'Bitcoin', color: '#f59e0b', cssVar: 'var(--color-crypto)' },
   gold: { label: 'Gold', plural: 'Gold', color: '#ca8a04', cssVar: 'var(--color-gold)' },
+  real_estate: { label: 'Real Estate', plural: 'Real Estate / อสังหาริมทรัพย์', color: '#8b5cf6', cssVar: 'var(--color-real-estate, #8b5cf6)' },
   cash: { label: 'Cash', plural: 'Cash', color: '#10b981', cssVar: 'var(--color-cash)' },
 }
 
@@ -124,6 +125,162 @@ export function allocations(holdings: Holding[]): Allocation[] {
       pct: total > 0 ? (byClass[assetClass] / total) * 100 : 0,
     }))
     .sort((a, b) => b.value - a.value)
+}
+
+export interface AssetGroupAllocation {
+  id: string
+  name: string
+  isTag: boolean
+  tag?: string
+  assetClass?: AssetClass
+  value: number
+  cost: number
+  pnl: number
+  pnlPct: number
+  pct: number
+  color: string
+  holdingCount: number
+  holdings: HoldingMetrics[]
+}
+
+const TAG_PALETTE = [
+  '#8b5cf6', // Violet (great for Real Estate / Property)
+  '#0ea5e9', // Sky blue (US Stocks)
+  '#f59e0b', // Amber (Gold / BTC)
+  '#10b981', // Emerald (Dividends / Cash)
+  '#ec4899', // Pink
+  '#06b6d4', // Cyan (Tech)
+  '#6366f1', // Indigo (Thai Funds)
+  '#f43f5e', // Rose
+  '#84cc16', // Lime
+  '#a855f7', // Purple
+  '#14b8a6', // Teal
+  '#d97706', // Orange
+]
+
+/** Pick an appropriate color for a given group/tag name */
+export function getAssetGroupColor(groupName: string, index: number, assetClass?: AssetClass): string {
+  const s = groupName.toLowerCase().trim()
+  if (s.includes('อสังหา') || s.includes('บ้าน') || s.includes('คอนโด') || s.includes('reit') || s.includes('property') || assetClass === 'real_estate') {
+    return '#8b5cf6'
+  }
+  if (s.includes('เมกา') || s.includes('สหรัฐ') || s.includes('us') || s.includes('s&p') || s.includes('nasdaq') || assetClass === 'stock') {
+    return '#0ea5e9'
+  }
+  if (s.includes('ทอง') || s.includes('gold') || s.includes('xau') || assetClass === 'gold') {
+    return '#ca8a04'
+  }
+  if (s.includes('btc') || s.includes('bitcoin') || s.includes('crypto') || assetClass === 'crypto') {
+    return '#f59e0b'
+  }
+  if (s.includes('เทค') || s.includes('tech') || s.includes('semiconductor')) {
+    return '#06b6d4'
+  }
+  if (s.includes('ปันผล') || s.includes('dividend')) {
+    return '#10b981'
+  }
+  if (s.includes('ไทย') || s.includes('set') || assetClass === 'fund') {
+    return '#6366f1'
+  }
+  if (s.includes('หนี้') || s.includes('bond') || s.includes('fixed income')) {
+    return '#64748b'
+  }
+  return TAG_PALETTE[index % TAG_PALETTE.length]
+}
+
+/**
+ * Group portfolio holdings by:
+ * Priority 1: Custom Tag (if specified)
+ * Priority 2: Asset Class fallback (หุ้น, ทอง, btc, กองทุน, อสังหาฯ)
+ */
+export function assetGroupAllocations(holdings: Holding[]): AssetGroupAllocation[] {
+  const total = portfolioValue(holdings)
+  const groupMap = new Map<string, {
+    name: string
+    isTag: boolean
+    tag?: string
+    assetClass?: AssetClass
+    holdings: HoldingMetrics[]
+  }>()
+
+  for (const h of holdings) {
+    const metric = holdingMetrics(h)
+    const rawTag = h.tag?.trim()
+    let groupKey = ''
+    let groupName = ''
+    let isTag = false
+
+    if (rawTag) {
+      groupKey = `tag:${rawTag.toLowerCase()}`
+      groupName = rawTag
+      isTag = true
+    } else {
+      // Fallback by asset class
+      groupKey = `class:${h.assetClass}`
+      isTag = false
+      switch (h.assetClass) {
+        case 'real_estate':
+          groupName = 'อสังหาริมทรัพย์'
+          break
+        case 'stock':
+          groupName = 'หุ้นสหรัฐฯ'
+          break
+        case 'crypto':
+          groupName = 'Bitcoin'
+          break
+        case 'gold':
+          groupName = 'ทองคำ'
+          break
+        case 'fund':
+          groupName = 'กองทุน / หุ้นไทย'
+          break
+        default:
+          groupName = ASSET_META[h.assetClass]?.label ?? h.assetClass
+      }
+    }
+
+    if (!groupMap.has(groupKey)) {
+      groupMap.set(groupKey, {
+        name: groupName,
+        isTag,
+        tag: isTag ? rawTag : undefined,
+        assetClass: !isTag ? h.assetClass : undefined,
+        holdings: [],
+      })
+    }
+    groupMap.get(groupKey)!.holdings.push(metric)
+  }
+
+  // Sort groups by total value descending
+  const groups = Array.from(groupMap.entries()).map(([key, g], idx) => {
+    const val = g.holdings.reduce((sum, item) => sum + item.marketValue, 0)
+    const cost = g.holdings.reduce((sum, item) => sum + item.costBasis, 0)
+    const pnl = val - cost
+    const pnlPct = cost > 0 ? (pnl / cost) * 100 : 0
+    const pct = total > 0 ? (val / total) * 100 : 0
+    const color = getAssetGroupColor(g.name, idx, g.assetClass)
+
+    // Sort holdings inside each group by marketValue descending
+    const sortedHoldings = [...g.holdings].sort((a, b) => b.marketValue - a.marketValue)
+
+    return {
+      id: key,
+      name: g.name,
+      isTag: g.isTag,
+      tag: g.tag,
+      assetClass: g.assetClass,
+      value: val,
+      cost,
+      pnl,
+      pnlPct,
+      pct,
+      color,
+      holdingCount: g.holdings.length,
+      holdings: sortedHoldings,
+    }
+  })
+
+  return groups.sort((a, b) => b.value - a.value)
 }
 
 export interface PortfolioSummary {

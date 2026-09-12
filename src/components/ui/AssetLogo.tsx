@@ -77,6 +77,43 @@ export function AssetLogo({
     )
   }
 
+  // 0.5 Real Estate (House / Condo / Property)
+  if (
+    currentAssetClass === 'real_estate' ||
+    cleanName.includes('คอนโด') ||
+    cleanName.includes('บ้าน') ||
+    cleanName.includes('ที่ดิน') ||
+    cleanTicker.includes('HOME') ||
+    cleanTicker.includes('CONDO')
+  ) {
+    return (
+      <div
+        title={name || ticker || 'Real Estate'}
+        className={`relative inline-flex items-center justify-center shrink-0 rounded-full font-bold shadow-xs select-none ${sizeClasses[size]} ${className}`}
+        style={{
+          background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
+          boxShadow: '0 2px 8px rgba(139, 92, 246, 0.35)',
+          color: '#ffffff',
+        }}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width={iconSizes[size]}
+          height={iconSizes[size]}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="shrink-0 block"
+        >
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+      </div>
+    )
+  }
+
   // 1. Bitcoin (BTC / XBT / SAT)
   if (
     cleanTicker === 'BTC' ||
