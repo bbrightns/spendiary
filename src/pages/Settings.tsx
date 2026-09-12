@@ -139,6 +139,12 @@ export function Settings() {
         Array.isArray(d.dcaPlans) && d.dcaPlans.length > 0
           ? `${(d.dcaPlans as unknown[]).length} DCA plans`
           : null,
+        Array.isArray(d.cashAccounts) && d.cashAccounts.length > 0
+          ? `${(d.cashAccounts as unknown[]).length} cash accounts`
+          : null,
+        Array.isArray(d.liabilities) && d.liabilities.length > 0
+          ? `${(d.liabilities as unknown[]).length} liabilities`
+          : null,
         Array.isArray(d.transfers) && d.transfers.length > 0
           ? `${(d.transfers as unknown[]).length} transfers`
           : null,
