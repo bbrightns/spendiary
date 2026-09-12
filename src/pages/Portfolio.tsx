@@ -515,7 +515,7 @@ export function Portfolio() {
           {/* Asset Allocation card (Hero Overview & Allocation) */}
           <Card className="animate-rise">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-[16px] font-bold text-ink">Asset Allocation</h2>
+              <h2 className="font-display text-[16px] font-bold text-ink">Port Allocation</h2>
             </div>
 
             {/* Value & PnL Hero Summary */}

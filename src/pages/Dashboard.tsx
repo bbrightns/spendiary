@@ -392,7 +392,7 @@ export function Dashboard() {
                   <div className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-500/10 text-indigo-500">
                     <PortfolioIcon className="h-4 w-4" />
                   </div>
-                  <h2 className="font-display text-[16px] font-bold text-ink">Asset Allocation</h2>
+                  <h2 className="font-display text-[16px] font-bold text-ink">Port Allocation</h2>
                 </div>
                 <Link
                   to="/portfolio"
