@@ -136,7 +136,7 @@ function AppContent() {
                 className="inline-flex items-center gap-1.5 text-slate-500 hover:text-[#0066FF] text-xs font-semibold transition-colors py-1 cursor-pointer"
               >
                 <span>✨</span>
-                <span className="underline underline-offset-2">ทดลองใช้งานโหมดตัวอย่าง (Test Mode)</span>
+                <span className="underline underline-offset-2">Try Demo / Test Mode</span>
               </button>
             </div>
 

@@ -21,10 +21,10 @@ export function TestModeBanner() {
             Test Mode
           </span>
           <span className="hidden sm:inline font-medium text-amber-950/90 truncate">
-            คุณกำลังอยู่ในโหมดทดสอบ — ข้อมูลจำลองจะไม่ถูกบันทึกลงบัญชีจริง
+            Sandbox environment — Simulated mock data, changes will not affect real accounts
           </span>
           <span className="sm:hidden font-medium text-amber-950/90 truncate">
-            ข้อมูลจำลองไม่ถูกบันทึกจริง
+            Mock data only, changes are not saved
           </span>
         </div>
       </div>
@@ -33,11 +33,11 @@ export function TestModeBanner() {
         type="button"
         onClick={() => void logout()}
         className="inline-flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-md text-[11px] sm:text-[11.5px] font-bold bg-amber-950/15 hover:bg-amber-950/25 active:scale-95 text-amber-950 border border-amber-950/20 transition-all cursor-pointer"
-        title="ออกจากโหมดทดสอบและกลับสู่หน้าหลัก"
+        title="Exit test mode and return to sign in"
       >
         <LogOutIcon className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">ออกจากโหมดทดสอบ</span>
-        <span className="sm:hidden">ออก</span>
+        <span className="hidden sm:inline">Exit Test Mode</span>
+        <span className="sm:hidden">Exit</span>
       </button>
     </aside>
   )

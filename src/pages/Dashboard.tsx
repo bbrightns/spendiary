@@ -9,10 +9,12 @@ import { DonutChart } from '../components/charts/DonutChart'
 import { InteractiveNetWorthChart } from '../components/charts/InteractiveNetWorthChart'
 import { PnLPill, PnLText } from '../components/ui/PnL'
 import { CashAccountsForm } from '../components/forms/CashAccountsForm'
+import { LiabilitiesModal } from '../components/forms/LiabilitiesModal'
 import { AiImportModal } from '../components/forms/AiImportModal'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import {
+  DebtIcon,
   PencilIcon,
   PortfolioIcon,
   SparkleIcon,
@@ -20,6 +22,7 @@ import {
 } from '../components/icons'
 import {
   ASSET_META,
+  DEBT_CATEGORIES,
   allocations,
   calculateAnnualCashInterest,
   detectBankPreset,
@@ -28,6 +31,8 @@ import {
   portfolioSummary,
   shouldConfirmBuy,
   totalCash,
+  totalLiabilities,
+  totalMonthlyDebtPayment,
 } from '../lib/calc'
 import { getRandomGreeting, moneyCompact, thb, thbCompact } from '../lib/format'
 
@@ -48,6 +53,8 @@ export function Dashboard() {
   const navigate = useNavigate()
   const [cashOpen, setCashOpen] = useState(false)
   const [selectedCashAccountId, setSelectedCashAccountId] = useState<string | null>(null)
+  const [liabilitiesOpen, setLiabilitiesOpen] = useState(false)
+  const [selectedLiabilityId, setSelectedLiabilityId] = useState<string | null>(null)
   const [aiImportOpen, setAiImportOpen] = useState(false)
   const {
     steps,
@@ -61,7 +68,10 @@ export function Dashboard() {
   } = usePageGuide('dashboard')
 
   const hasAnything =
-    data.holdings.length > 0 || data.dcaPlans.length > 0 || data.cashAccounts.length > 0
+    data.holdings.length > 0 ||
+    data.dcaPlans.length > 0 ||
+    data.cashAccounts.length > 0 ||
+    (data.liabilities?.length ?? 0) > 0
 
   const portfolio = useMemo(() => portfolioSummary(data.holdings), [data.holdings])
   const alloc = useMemo(() => allocations(data.holdings), [data.holdings])
@@ -75,7 +85,11 @@ export function Dashboard() {
     [alloc],
   )
   const cash = useMemo(() => totalCash(data, usdThb), [data.cashAccounts, usdThb])
-  const nw = useMemo(() => netWorth(data, usdThb), [data.cashAccounts, data.holdings, usdThb])
+  const debts = useMemo(() => totalLiabilities(data), [data.liabilities])
+  const monthlyDebt = useMemo(() => totalMonthlyDebtPayment(data), [data.liabilities])
+  const grossAssets = portfolio.value + cash
+  const debtRatio = grossAssets > 0 ? (debts / grossAssets) * 100 : 0
+  const nw = useMemo(() => netWorth(data, usdThb), [data.cashAccounts, data.holdings, data.liabilities, usdThb])
   const cashInterest = useMemo(
     () => calculateAnnualCashInterest(data.cashAccounts, usdThb),
     [data.cashAccounts, usdThb],
@@ -197,6 +211,19 @@ export function Dashboard() {
               <div className="pt-1 flex flex-wrap items-center gap-2.5">
                 <PnLPill value={portfolio.pnl} size="md" />
                 <span className="text-[12.5px] text-ink-muted dark:text-white/70 font-medium">unrealised</span>
+                {debts > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedLiabilityId(null)
+                      setLiabilitiesOpen(true)
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 px-3 py-1 text-[12px] font-semibold text-rose-600 dark:text-rose-400 border border-rose-500/20 transition-colors hover:bg-rose-500/20 cursor-pointer"
+                    aria-label="Manage liabilities"
+                  >
+                    📉 {debtRatio.toFixed(1)}% Debt Ratio (-{thbCompact(debts)})
+                  </button>
+                )}
                 {data.retirement?.monthlySpend && data.retirement.monthlySpend > 0 ? (
                   <Link
                     to="/retirement"
@@ -219,7 +246,7 @@ export function Dashboard() {
 
             {/* Quick ratio box */}
             <div className="rounded-2xl bg-surface-muted/80 dark:bg-white/10 p-3.5 px-4.5 border border-line/80 dark:border-white/15 backdrop-blur-md sm:min-w-[220px]">
-              <div className="grid grid-cols-2 gap-3.5">
+              <div className={`grid ${debts > 0 ? 'grid-cols-3 gap-2.5 sm:gap-3.5' : 'grid-cols-2 gap-3.5'}`}>
                 <div>
                   <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-brand">
                     <span className="h-2 w-2 rounded-full bg-brand shrink-0" />
@@ -229,11 +256,11 @@ export function Dashboard() {
                     {thbCompact(portfolio.value)}
                   </p>
                   <p className="mt-0.5 text-[11.5px] font-semibold text-brand/80 tnum">
-                    {nw > 0 ? `${((portfolio.value / nw) * 100).toFixed(1)}%` : '0%'}
+                    {grossAssets > 0 ? `${((portfolio.value / grossAssets) * 100).toFixed(1)}%` : '0%'}
                   </p>
                 </div>
 
-                <div className="pl-3.5 border-l border-line dark:border-white/10">
+                <div className="pl-3 sm:pl-3.5 border-l border-line dark:border-white/10">
                   <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-gain">
                     <span className="h-2 w-2 rounded-full bg-gain shrink-0" />
                     <span>Cash</span>
@@ -242,23 +269,46 @@ export function Dashboard() {
                     {thbCompact(cash)}
                   </p>
                   <p className="mt-0.5 text-[11.5px] font-semibold text-gain/80 tnum">
-                    {nw > 0 ? `${((cash / nw) * 100).toFixed(1)}%` : '0%'}
+                    {grossAssets > 0 ? `${((cash / grossAssets) * 100).toFixed(1)}%` : '0%'}
                   </p>
                 </div>
+
+                {debts > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedLiabilityId(null)
+                      setLiabilitiesOpen(true)
+                    }}
+                    className="pl-3 sm:pl-3.5 border-l border-line dark:border-white/10 text-left cursor-pointer group"
+                    title="Click to manage liabilities"
+                  >
+                    <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-rose-500">
+                      <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0" />
+                      <span className="group-hover:underline">Debts</span>
+                    </div>
+                    <p className="mt-1 font-display text-[17px] sm:text-[19px] font-extrabold tnum text-rose-600 dark:text-rose-400">
+                      -{thbCompact(debts)}
+                    </p>
+                    <p className="mt-0.5 text-[11.5px] font-semibold text-rose-500/80 tnum">
+                      {grossAssets > 0 ? `${debtRatio.toFixed(1)}%` : '0%'}
+                    </p>
+                  </button>
+                )}
               </div>
 
               {/* Mini ratio split bar */}
-              {nw > 0 && (
+              {grossAssets > 0 && (
                 <div className="mt-2.5 flex h-1.5 w-full overflow-hidden rounded-full bg-line dark:bg-white/10">
                   <div
                     className="bg-brand transition-all duration-500"
-                    style={{ width: `${(portfolio.value / nw) * 100}%` }}
-                    title={`Invested: ${thb(portfolio.value)} (${((portfolio.value / nw) * 100).toFixed(1)}%)`}
+                    style={{ width: `${(portfolio.value / grossAssets) * 100}%` }}
+                    title={`Invested: ${thb(portfolio.value)} (${((portfolio.value / grossAssets) * 100).toFixed(1)}%)`}
                   />
                   <div
                     className="bg-gain transition-all duration-500"
-                    style={{ width: `${(cash / nw) * 100}%` }}
-                    title={`Cash: ${thb(cash)} (${((cash / nw) * 100).toFixed(1)}%)`}
+                    style={{ width: `${(cash / grossAssets) * 100}%` }}
+                    title={`Cash: ${thb(cash)} (${((cash / grossAssets) * 100).toFixed(1)}%)`}
                   />
                 </div>
               )}
@@ -314,10 +364,10 @@ export function Dashboard() {
         </Card>
       </div>
 
-      {/* ── ROW 2: Holdings Donut Breakdown (5 cols) & Cash & Liquidity Hub (7 cols) ── */}
+      {/* ── ROW 2: Holdings Donut Breakdown & Cash Hub & Liabilities Hub ── */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 items-stretch">
         {/* Portfolio asset breakdown card */}
-        <div id="guide-dashboard-alloc" className="lg:col-span-5">
+        <div id="guide-dashboard-alloc" className="lg:col-span-5 xl:col-span-4">
           <Card className="animate-rise h-full flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
@@ -419,7 +469,7 @@ export function Dashboard() {
         </div>
 
         {/* Cash & Liquidity Hub */}
-        <div id="guide-dashboard-cash" className="lg:col-span-7">
+        <div id="guide-dashboard-cash" className="lg:col-span-7 xl:col-span-4">
           <Card className="animate-rise h-full flex flex-col justify-between">
             <div>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-line">
@@ -572,6 +622,161 @@ export function Dashboard() {
             </div>
           </Card>
         </div>
+
+        {/* Liabilities & Debts Hub */}
+        <div id="guide-dashboard-debts" className="lg:col-span-12 xl:col-span-4">
+          <Card className="animate-rise h-full flex flex-col justify-between">
+            <div>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-line">
+                <div className="flex items-center gap-2">
+                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                    <DebtIcon className="h-4 w-4" />
+                  </div>
+                  <h2 className="font-display text-[16px] font-bold text-ink">Liabilities & Debts</h2>
+                </div>
+
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {monthlyDebt > 0 && (
+                    <span className="rounded-full bg-rose-500/10 px-2.5 py-0.5 text-[11px] font-bold text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                      💳 ~{thbCompact(monthlyDebt)}/mo
+                    </span>
+                  )}
+                  <span className="rounded-full bg-surface-muted px-2.5 py-0.5 text-[11px] font-bold text-ink-muted border border-line/50">
+                    {(data.liabilities?.length ?? 0) === 0
+                      ? 'Debt Free'
+                      : `${data.liabilities?.length} ${(data.liabilities?.length ?? 0) === 1 ? 'Debt' : 'Debts'}`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedLiabilityId(null)
+                      setLiabilitiesOpen(true)
+                    }}
+                    aria-label="Manage liabilities and debts"
+                    className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-brand hover:underline cursor-pointer"
+                  >
+                    <span>Manage</span>
+                    <PencilIcon className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                <div>
+                  <span className="text-[11.5px] font-medium text-ink-muted">Total Outstanding Debt</span>
+                  <p className="font-display text-[24px] font-extrabold tnum text-rose-600 dark:text-rose-400 leading-tight">
+                    {debts > 0 ? `-${thb(debts)}` : '฿0'}
+                  </p>
+                </div>
+                <div className="text-[12px] text-ink-muted sm:text-right">
+                  {debts > 0 ? (
+                    <span>
+                      D/A Ratio: <strong className="text-ink">{debtRatio.toFixed(1)}%</strong>
+                    </span>
+                  ) : (
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                      🎉 100% Solvency
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Debt distribution bar & items */}
+              {(data.liabilities?.length ?? 0) > 0 ? (
+                <div className="mt-4 space-y-3">
+                  <div className="flex h-2 overflow-hidden rounded-full bg-surface-muted">
+                    {data.liabilities!.map((l) => {
+                      const meta = DEBT_CATEGORIES[l.category ?? 'other']
+                      return (
+                        <div
+                          key={l.id}
+                          onClick={() => {
+                            setSelectedLiabilityId(l.id)
+                            setLiabilitiesOpen(true)
+                          }}
+                          style={{
+                            width: `${debts > 0 ? (l.balance / debts) * 100 : 0}%`,
+                            background: meta.color,
+                          }}
+                          title={`${l.name}: ${thb(l.balance)} (Click to edit)`}
+                          className="cursor-pointer hover:opacity-80 transition-opacity"
+                        />
+                      )
+                    })}
+                  </div>
+
+                  {/* Liabilities list grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    {data.liabilities!.map((l) => {
+                      const meta = DEBT_CATEGORIES[l.category ?? 'other']
+                      return (
+                        <button
+                          key={l.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedLiabilityId(l.id)
+                            setLiabilitiesOpen(true)
+                          }}
+                          aria-label={`Edit ${l.name}, balance ${thb(l.balance)}`}
+                          className="flex flex-col text-left p-2.5 rounded-xl bg-surface-muted/50 border border-line/40 hover:bg-surface-muted hover:border-brand/40 hover:shadow-xs group transition-all cursor-pointer active:scale-[0.98]"
+                          title={`Click to edit ${l.name}`}
+                        >
+                          <span className="flex items-center justify-between gap-1.5 text-[11px] font-medium text-ink-muted truncate w-full">
+                            <span className="flex items-center gap-1.5 truncate">
+                              <span
+                                className="h-2 w-2 shrink-0 rounded-full"
+                                style={{ background: meta.color }}
+                              />
+                              <span className="truncate group-hover:text-ink transition-colors">{l.name}</span>
+                            </span>
+                            {l.interestRate !== undefined && l.interestRate > 0 && (
+                              <span className="shrink-0 text-[9.5px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1 py-0.5 rounded font-mono">
+                                {l.interestRate}%
+                              </span>
+                            )}
+                          </span>
+                          <span className="mt-1 font-display font-bold tnum text-[13.5px] text-rose-600 dark:text-rose-400">
+                            -{thb(l.balance)}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="py-6 text-center">
+                  <p className="text-[12.5px] text-ink-muted">ปลอดหนี้สิน หรือยังไม่ได้เพิ่มรายการ</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedLiabilityId(null)
+                      setLiabilitiesOpen(true)
+                    }}
+                    aria-label="Add first liability"
+                    className="mt-1 text-[12px] font-semibold text-brand hover:underline cursor-pointer"
+                  >
+                    + บันทึกหนี้สิน
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
+              <span>{debts > 0 ? 'ผ่อนชำระตรงเวลาเพื่อลดภาระดอกเบี้ย' : 'ความมั่งคั่งสุทธิ = ทรัพย์สิน 100%'}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedLiabilityId(null)
+                  setLiabilitiesOpen(true)
+                }}
+                aria-label="Add new liability"
+                className="font-semibold text-brand hover:underline cursor-pointer"
+              >
+                + Add Debt
+              </button>
+            </div>
+          </Card>
+        </div>
       </div>
 
       {/* ── ROW 3: Net Worth Performance Graph (Full Width at Bottom) ── */}
@@ -598,6 +803,15 @@ export function Dashboard() {
           setSelectedCashAccountId(null)
         }}
         initialAccountId={selectedCashAccountId}
+      />
+
+      <LiabilitiesModal
+        open={liabilitiesOpen}
+        onClose={() => {
+          setLiabilitiesOpen(false)
+          setSelectedLiabilityId(null)
+        }}
+        initialLiabilityId={selectedLiabilityId}
       />
 
       <AiImportModal
