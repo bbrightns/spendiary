@@ -1,4 +1,4 @@
-import type { AssetClass, CashAccount, CashAccountCategory, DcaPlan, DividendRecord, Holding, SpendiaryData, Transfer } from './types'
+import type { AssetClass, CashAccount, CashAccountCategory, DcaPlan, DebtCategory, DividendRecord, Holding, Liability, SpendiaryData, Transfer } from './types'
 import { daysUntil, localDateStr } from './format'
 
 export interface HoldingMetrics extends Holding {
@@ -721,11 +721,71 @@ export function getCashLiquidityBreakdown(
   return res
 }
 
+/* --------------------------- Liabilities ------------------------- */
+
+export const DEBT_CATEGORIES: Record<
+  DebtCategory,
+  { label: string; color: string; bgClass: string; textClass: string; borderClass: string }
+> = {
+  credit_card: {
+    label: 'Credit Card',
+    color: '#f43f5e',
+    bgClass: 'bg-rose-500/10 dark:bg-rose-500/20',
+    textClass: 'text-rose-600 dark:text-rose-400',
+    borderClass: 'border-rose-500/20',
+  },
+  mortgage: {
+    label: 'Mortgage / Home',
+    color: '#8b5cf6',
+    bgClass: 'bg-violet-500/10 dark:bg-violet-500/20',
+    textClass: 'text-violet-600 dark:text-violet-400',
+    borderClass: 'border-violet-500/20',
+  },
+  auto_loan: {
+    label: 'Auto Loan',
+    color: '#0284c7',
+    bgClass: 'bg-sky-500/10 dark:bg-sky-500/20',
+    textClass: 'text-sky-600 dark:text-sky-400',
+    borderClass: 'border-sky-500/20',
+  },
+  personal_loan: {
+    label: 'Personal Loan',
+    color: '#f59e0b',
+    bgClass: 'bg-amber-500/10 dark:bg-amber-500/20',
+    textClass: 'text-amber-600 dark:text-amber-400',
+    borderClass: 'border-amber-500/20',
+  },
+  student_loan: {
+    label: 'Student Loan',
+    color: '#10b981',
+    bgClass: 'bg-emerald-500/10 dark:bg-emerald-500/20',
+    textClass: 'text-emerald-600 dark:text-emerald-400',
+    borderClass: 'border-emerald-500/20',
+  },
+  other: {
+    label: 'Other Debt',
+    color: '#64748b',
+    bgClass: 'bg-slate-500/10 dark:bg-slate-500/20',
+    textClass: 'text-slate-600 dark:text-slate-400',
+    borderClass: 'border-slate-500/20',
+  },
+}
+
+/** Total outstanding liabilities in THB */
+export function totalLiabilities(data: SpendiaryData): number {
+  return (data.liabilities ?? []).reduce((sum, l) => sum + (Number(l.balance) || 0), 0)
+}
+
+/** Total monthly debt service / installment payments in THB */
+export function totalMonthlyDebtPayment(data: SpendiaryData): number {
+  return (data.liabilities ?? []).reduce((sum, l) => sum + (Number(l.monthlyPayment) || 0), 0)
+}
+
 /* --------------------------- Net worth -------------------------- */
 
-/** Net worth is always derived — cash on hand plus the live portfolio value. */
+/** Net worth is total assets (cash + portfolio) minus total liabilities. */
 export function netWorth(data: SpendiaryData, usdThb?: number | null): number {
-  return totalCash(data, usdThb) + portfolioValue(data.holdings)
+  return totalCash(data, usdThb) + portfolioValue(data.holdings) - totalLiabilities(data)
 }
 
 /** Helper to match a DCA plan to an existing holding in the portfolio */
