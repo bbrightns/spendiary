@@ -114,20 +114,23 @@ export function portfolioCost(holdings: Holding[]): number {
 
 export function allocations(holdings: Holding[]): Allocation[] {
   const total = portfolioValue(holdings)
-  const byClass: Record<AssetClass, number> = {
+  const byClass: Record<InvestAssetClass, number> = {
     fund: 0,
     stock: 0,
     crypto: 0,
     gold: 0,
     real_estate: 0,
-    cash: 0,
   }
+  const heldClasses = new Set<InvestAssetClass>()
   for (const h of holdings) {
-    if (byClass[h.assetClass] !== undefined) {
-      byClass[h.assetClass] += h.units * h.price
+    if (h.assetClass in byClass) {
+      const ac = h.assetClass as InvestAssetClass
+      byClass[ac] += h.units * h.price
+      heldClasses.add(ac)
     }
   }
-  return (Object.keys(byClass) as AssetClass[])
+  return (Object.keys(byClass) as InvestAssetClass[])
+    .filter((ac) => heldClasses.has(ac) || byClass[ac] > 0)
     .map((assetClass) => ({
       assetClass,
       value: byClass[assetClass],
