@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -54,6 +54,14 @@ export function Rebalance() {
 
   // Search filter for holdings mode
   const [search, setSearch] = useState('')
+
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 767px)')
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mql.addEventListener('change', handler)
+    return () => mql.removeEventListener('change', handler)
+  }, [])
 
   const mode: RebalanceMode = data.rebalanceMode ?? 'class'
   const availCash = totalCash(data, usdThb)
@@ -595,7 +603,7 @@ export function Rebalance() {
         {/* Right Column (7 cols): Full Interactive Target Table */}
         <div id="guide-rebalance-weights" className="lg:col-span-7 xl:col-span-8 space-y-6">
           <Card className="animate-rise overflow-hidden" padded={false}>
-            <div className="p-5">
+            <div className="p-4 sm:p-5">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="font-display text-[17px] font-bold text-ink">
@@ -652,40 +660,95 @@ export function Rebalance() {
                 </div>
               )}
 
-              {/* ── Mode 1 Table: Asset Class ── */}
+              {/* ── Mode 1: Asset Class ── */}
               {mode === 'class' && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-[13px] border-collapse">
-                    <thead>
-                      <tr className="text-ink-muted border-b border-line pb-2 font-medium">
-                        <th className="pb-2 font-semibold text-left">Asset Class</th>
-                        <th className="pb-2 font-semibold text-right">Current Value</th>
-                        <th className="pb-2 font-semibold text-center w-[90px]">Target %</th>
-                        <th className="pb-2 font-semibold text-right">Projected Value</th>
-                        <th id="guide-rebalance-suggestions" className="pb-2 font-semibold text-right">Action Advice</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {classRows.map((row) => {
-                        const color = ASSET_META[row.key]?.color
-                        const shortName = ASSET_META[row.key]?.plural ?? row.key
+                <>
+                  {/* Mobile View: Card List */}
+                  <div className="block md:hidden space-y-3">
+                    {classRows.map((row, index) => {
+                      const color = ASSET_META[row.key]?.color
+                      const shortName = ASSET_META[row.key]?.plural ?? row.key
 
-                        return (
-                          <tr key={row.key} className="border-b border-line last:border-0 align-middle hover:bg-surface-muted/40 transition-colors">
-                            <td className="py-3 text-left font-medium text-ink">
-                              <div className="flex items-center gap-2">
-                                <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: color }} />
-                                <span className="font-bold">{shortName}</span>
-                              </div>
-                            </td>
+                      return (
+                        <div
+                          key={row.key}
+                          className="rounded-2xl border border-line bg-surface-muted/20 p-4 transition-all"
+                        >
+                          {/* Top Row: Name with Color Dot + Action Advice Badge */}
+                          <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-line/60">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span
+                                className="h-3.5 w-3.5 shrink-0 rounded-full shadow-xs ring-2 ring-surface"
+                                style={{ background: color }}
+                              />
+                              <span className="font-bold text-[14.5px] text-ink truncate">
+                                {shortName}
+                              </span>
+                            </div>
+                            <div id={isMobile && index === 0 ? 'guide-rebalance-suggestions' : undefined}>
+                              {classTargetsSum === 100 ? (
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11.5px] font-bold ${
+                                    row.actionCls.includes('text-gain')
+                                      ? 'bg-gain-soft text-gain'
+                                      : row.actionCls.includes('text-loss')
+                                      ? 'bg-loss-soft text-loss'
+                                      : row.actionCls.includes('text-brand')
+                                      ? 'bg-brand-soft text-brand'
+                                      : 'bg-surface-muted text-ink-muted'
+                                  }`}
+                                >
+                                  {row.actionLabel}
+                                </span>
+                              ) : (
+                                <span className="text-ink-muted text-[12px] font-medium">-</span>
+                              )}
+                            </div>
+                          </div>
 
-                            <td className="py-3 text-right tnum text-ink-soft">
-                              <div className="font-bold text-ink">{thb(row.actualVal)}</div>
-                              <div className="text-[11px] text-ink-muted">{row.actualPct.toFixed(1)}% of total</div>
-                            </td>
+                          {/* Middle: Current vs Projected Stats Grid */}
+                          <div className="grid grid-cols-2 gap-2 my-3 rounded-xl bg-surface p-3 border border-line/50">
+                            <div>
+                              <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-muted block">
+                                Current Value
+                              </span>
+                              <p className="font-bold text-ink text-[14px] mt-0.5 tnum">
+                                {thb(row.actualVal)}
+                              </p>
+                              <p className="text-[10.5px] text-ink-muted mt-0.5 tnum font-medium">
+                                {row.actualPct.toFixed(1)}% of total
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-muted block">
+                                Projected Value
+                              </span>
+                              <p className="font-bold text-ink-soft text-[14px] mt-0.5 tnum">
+                                {thb(row.targetVal)}
+                              </p>
+                              <p className="text-[10.5px] text-brand mt-0.5 tnum font-bold">
+                                {row.targetPct}% target
+                              </p>
+                            </div>
+                          </div>
 
-                            <td className="py-3 text-center">
-                              <div className="inline-flex items-center rounded-xl border border-line-strong px-2 py-1 bg-surface-muted max-w-[75px] mx-auto shadow-xs">
+                          {/* Bottom Row: Target Allocation Controls */}
+                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-line/40">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[12px] font-bold text-ink-soft">Target Weight</span>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleClassTargetChange(row.key, Math.max(0, row.targetPct - 5))}
+                                aria-label={`Decrease target for ${shortName} by 5%`}
+                                className="h-8 w-8 rounded-lg border border-line bg-surface flex items-center justify-center text-ink-muted hover:text-ink hover:bg-surface-muted active:scale-90 font-bold transition-all cursor-pointer shadow-xs text-[13px]"
+                              >
+                                -5
+                              </button>
+
+                              <div className="flex items-center h-8 rounded-xl border border-line-strong bg-surface px-2 shadow-xs focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">
                                 <input
                                   type="number"
                                   min={0}
@@ -697,54 +760,295 @@ export function Rebalance() {
                                       Math.min(100, Math.max(0, Number(e.target.value) || 0)),
                                     )
                                   }
-                                  className="w-full text-center outline-none bg-transparent tnum text-[13px] font-bold text-ink"
+                                  aria-label={`Target percentage for ${shortName}`}
+                                  className="w-8 text-center outline-none bg-transparent tnum text-[13.5px] font-bold text-ink"
                                 />
-                                <span className="text-[10px] text-ink-muted font-bold">%</span>
+                                <span className="text-[11px] text-ink-muted font-bold">%</span>
                               </div>
-                            </td>
 
-                            <td className="py-3 text-right tnum font-semibold text-ink-soft">
-                              {thb(row.targetVal)}
-                            </td>
+                              <button
+                                type="button"
+                                onClick={() => handleClassTargetChange(row.key, Math.min(100, row.targetPct + 5))}
+                                aria-label={`Increase target for ${shortName} by 5%`}
+                                className="h-8 w-8 rounded-lg border border-line bg-surface flex items-center justify-center text-ink-muted hover:text-ink hover:bg-surface-muted active:scale-90 font-bold transition-all cursor-pointer shadow-xs text-[13px]"
+                              >
+                                +5
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
 
-                            <td className="py-3 text-right tnum font-bold text-[12.5px]">
-                              {classTargetsSum === 100 ? (
-                                <span className={`inline-block px-2.5 py-1 rounded-full text-[12px] ${
-                                  row.actionCls.includes('text-gain')
-                                    ? 'bg-gain-soft text-gain'
-                                    : row.actionCls.includes('text-loss')
-                                    ? 'bg-loss-soft text-loss'
-                                    : row.actionCls.includes('text-brand')
-                                    ? 'bg-brand-soft text-brand'
-                                    : 'bg-surface-muted text-ink-muted'
-                                }`}>
+                  {/* Desktop View: Table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full min-w-[620px] text-left text-[13px] border-collapse">
+                      <thead>
+                        <tr className="text-ink-muted border-b border-line pb-2 font-medium">
+                          <th className="pb-2 pr-4 font-semibold text-left">Asset Class</th>
+                          <th className="pb-2 px-3 font-semibold text-right">Current Value</th>
+                          <th className="pb-2 px-3 font-semibold text-center w-[90px]">Target %</th>
+                          <th className="pb-2 px-3 font-semibold text-right">Projected Value</th>
+                          <th
+                            id={!isMobile ? 'guide-rebalance-suggestions' : undefined}
+                            className="pb-2 pl-3 font-semibold text-right"
+                          >
+                            Action Advice
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {classRows.map((row) => {
+                          const color = ASSET_META[row.key]?.color
+                          const shortName = ASSET_META[row.key]?.plural ?? row.key
+
+                          return (
+                            <tr key={row.key} className="border-b border-line last:border-0 align-middle hover:bg-surface-muted/40 transition-colors">
+                              <td className="py-3 pr-4 text-left font-medium text-ink">
+                                <div className="flex items-center gap-2">
+                                  <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: color }} />
+                                  <span className="font-bold">{shortName}</span>
+                                </div>
+                              </td>
+
+                              <td className="py-3 px-3 text-right tnum text-ink-soft">
+                                <div className="font-bold text-ink">{thb(row.actualVal)}</div>
+                                <div className="text-[11px] text-ink-muted">{row.actualPct.toFixed(1)}% of total</div>
+                              </td>
+
+                              <td className="py-3 px-3 text-center">
+                                <div className="inline-flex items-center rounded-xl border border-line-strong px-2 py-1 bg-surface-muted max-w-[75px] mx-auto shadow-xs">
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={100}
+                                    value={row.targetPct}
+                                    onChange={(e) =>
+                                      handleClassTargetChange(
+                                        row.key,
+                                        Math.min(100, Math.max(0, Number(e.target.value) || 0)),
+                                      )
+                                    }
+                                    className="w-full text-center outline-none bg-transparent tnum text-[13px] font-bold text-ink"
+                                  />
+                                  <span className="text-[10px] text-ink-muted font-bold">%</span>
+                                </div>
+                              </td>
+
+                              <td className="py-3 px-3 text-right tnum font-semibold text-ink-soft">
+                                {thb(row.targetVal)}
+                              </td>
+
+                              <td className="py-3 pl-3 text-right tnum font-bold text-[12.5px]">
+                                {classTargetsSum === 100 ? (
+                                  <span className={`inline-block px-2.5 py-1 rounded-full text-[12px] ${
+                                    row.actionCls.includes('text-gain')
+                                      ? 'bg-gain-soft text-gain'
+                                      : row.actionCls.includes('text-loss')
+                                      ? 'bg-loss-soft text-loss'
+                                      : row.actionCls.includes('text-brand')
+                                      ? 'bg-brand-soft text-brand'
+                                      : 'bg-surface-muted text-ink-muted'
+                                  }`}>
+                                    {row.actionLabel}
+                                  </span>
+                                ) : (
+                                  <span className="text-ink-muted">-</span>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+
+              {/* ── Mode 2: Specific Holdings & Planned Assets ── */}
+              {mode === 'holding' && (
+                <div className="space-y-4">
+                  {/* Mobile View: Card List */}
+                  <div className="block md:hidden space-y-3">
+                    {displayHoldingRows.map((row, index) => {
+                      const hasAction =
+                        (row.actionLabel.startsWith('Buy') || row.actionLabel.startsWith('Add')) &&
+                        holdingTargetsSum === 100
+
+                      return (
+                        <div
+                          key={row.id}
+                          className="rounded-2xl border border-line bg-surface-muted/20 p-4 transition-all"
+                        >
+                          {/* Top: AssetLogo + Name + Ticker + Planned Badge + Action / Delete */}
+                          <div className="flex items-start justify-between gap-2 pb-2">
+                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                              <AssetLogo
+                                ticker={row.ticker}
+                                name={row.name}
+                                assetClass={row.assetClass}
+                                size="md"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <p className="truncate text-[14px] font-bold text-ink leading-tight">
+                                    {row.ticker || row.name}
+                                  </p>
+                                  {row.isPlanned && (
+                                    <span className="shrink-0 rounded bg-brand/15 px-1.5 py-0.2 text-[9.5px] font-extrabold text-brand uppercase">
+                                      Planned
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="truncate text-[11.5px] text-ink-muted mt-0.5">{row.name}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {hasAction && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (row.isPlanned && row.plannedObj) {
+                                      openAddPlanned(row.plannedObj)
+                                    } else if (row.holdingObj) {
+                                      openBuy(row.holdingObj)
+                                    }
+                                  }}
+                                  title={row.isPlanned ? 'Add to portfolio' : 'Buy more'}
+                                  className="inline-flex items-center gap-1 rounded-full bg-brand px-3 py-1 text-[11px] font-bold text-white dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] shadow-xs hover:bg-brand/90 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+                                >
+                                  {row.isPlanned ? '+ Add' : '+ Buy'}
+                                </button>
+                              )}
+
+                              {row.isPlanned && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    removePlannedAsset(row.id)
+                                    setLocalHoldingTargets((prev) => {
+                                      const next = { ...prev }
+                                      delete next[row.id]
+                                      return next
+                                    })
+                                  }}
+                                  title="Remove planned asset"
+                                  aria-label={`Remove planned asset ${row.name}`}
+                                  className="p-1.5 rounded-full text-ink-muted hover:text-loss hover:bg-loss-soft/30 transition-colors cursor-pointer"
+                                >
+                                  <TrashIcon className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Middle: Current vs Projected Stats */}
+                          <div className="grid grid-cols-2 gap-2 my-2.5 rounded-xl bg-surface p-3 border border-line/50">
+                            <div>
+                              <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-muted block">
+                                Current Value
+                              </span>
+                              <p className="font-bold text-ink text-[14px] mt-0.5 tnum">
+                                {row.actualVal > 0 ? thb(row.actualVal) : '฿0'}
+                              </p>
+                              <p className="text-[10.5px] text-ink-muted mt-0.5 tnum">
+                                {row.actualPct.toFixed(1)}% of total
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-muted block">
+                                Projected Value
+                              </span>
+                              <p className="font-bold text-ink-soft text-[14px] mt-0.5 tnum">{thb(row.targetVal)}</p>
+                              <p className="text-[10.5px] text-brand mt-0.5 tnum font-bold">
+                                {row.targetPct}% target
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Bottom: Target Stepper & Advice Badge */}
+                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-line/40">
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleHoldingTargetChange(row.id, Math.max(0, row.targetPct - 1))}
+                                aria-label={`Decrease target for ${row.ticker || row.name} by 1%`}
+                                className="h-8 w-8 rounded-lg border border-line bg-surface flex items-center justify-center text-ink-muted hover:text-ink hover:bg-surface-muted active:scale-90 font-bold transition-all cursor-pointer shadow-xs text-[14px]"
+                              >
+                                -
+                              </button>
+
+                              <div className="flex items-center h-8 rounded-xl border border-line-strong bg-surface px-2 shadow-xs focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={100}
+                                  value={row.targetPct}
+                                  onChange={(e) =>
+                                    handleHoldingTargetChange(
+                                      row.id,
+                                      Math.min(100, Math.max(0, Number(e.target.value) || 0)),
+                                    )
+                                  }
+                                  aria-label={`Target percentage for ${row.ticker || row.name}`}
+                                  className="w-8 text-center outline-none bg-transparent tnum text-[13.5px] font-bold text-ink"
+                                />
+                                <span className="text-[11px] text-ink-muted font-bold">%</span>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => handleHoldingTargetChange(row.id, Math.min(100, row.targetPct + 1))}
+                                aria-label={`Increase target for ${row.ticker || row.name} by 1%`}
+                                className="h-8 w-8 rounded-lg border border-line bg-surface flex items-center justify-center text-ink-muted hover:text-ink hover:bg-surface-muted active:scale-90 font-bold transition-all cursor-pointer shadow-xs text-[14px]"
+                              >
+                                +
+                              </button>
+                            </div>
+
+                            <div id={isMobile && index === 0 ? 'guide-rebalance-suggestions' : undefined}>
+                              {holdingTargetsSum === 100 ? (
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11.5px] font-bold ${
+                                    row.actionCls.includes('text-gain')
+                                      ? 'bg-gain-soft text-gain'
+                                      : row.actionCls.includes('text-loss')
+                                      ? 'bg-loss-soft text-loss'
+                                      : row.actionCls.includes('text-brand')
+                                      ? 'bg-brand-soft text-brand'
+                                      : 'bg-surface-muted text-ink-muted'
+                                  }`}
+                                >
                                   {row.actionLabel}
                                 </span>
                               ) : (
-                                <span className="text-ink-muted">-</span>
+                                <span className="text-ink-muted text-[12px] font-medium">-</span>
                               )}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
 
-              {/* ── Mode 2 Table: Specific Holdings & Planned Assets ── */}
-              {mode === 'holding' && (
-                <div className="space-y-4">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-[13px] border-collapse">
+                  {/* Desktop View: Table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full min-w-[660px] text-left text-[13px] border-collapse">
                       <thead>
                         <tr className="text-ink-muted border-b border-line pb-2 font-medium">
-                          <th className="pb-2 font-semibold text-left">Security</th>
-                          <th className="pb-2 font-semibold text-right">Current Value</th>
-                          <th className="pb-2 font-semibold text-center w-[85px]">Target %</th>
-                          <th className="pb-2 font-semibold text-right">Projected</th>
-                          <th className="pb-2 font-semibold text-right">Action Advice</th>
-                          <th className="pb-2 font-semibold text-right w-[65px]">Action</th>
+                          <th className="pb-2 pr-4 font-semibold text-left">Security</th>
+                          <th className="pb-2 px-3 font-semibold text-right">Current Value</th>
+                          <th className="pb-2 px-3 font-semibold text-center w-[85px]">Target %</th>
+                          <th className="pb-2 px-3 font-semibold text-right">Projected</th>
+                          <th
+                            id={!isMobile ? 'guide-rebalance-suggestions' : undefined}
+                            className="pb-2 px-3 font-semibold text-right"
+                          >
+                            Action Advice
+                          </th>
+                          <th className="pb-2 pl-3 font-semibold text-right w-[65px]">Action</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -755,7 +1059,7 @@ export function Rebalance() {
 
                           return (
                             <tr key={row.id} className="border-b border-line last:border-0 align-middle hover:bg-surface-muted/40 transition-colors">
-                              <td className="py-3 text-left font-medium text-ink max-w-[180px]">
+                              <td className="py-3 pr-4 text-left font-medium text-ink max-w-[180px]">
                                 <div className="flex items-center gap-2.5">
                                   <AssetLogo
                                     ticker={row.ticker}
@@ -779,7 +1083,7 @@ export function Rebalance() {
                                 </div>
                               </td>
 
-                              <td className="py-3 text-right tnum text-ink-soft">
+                              <td className="py-3 px-3 text-right tnum text-ink-soft">
                                 <div className="font-bold text-ink">
                                   {row.actualVal > 0 ? thb(row.actualVal) : '฿0'}
                                 </div>
@@ -788,7 +1092,7 @@ export function Rebalance() {
                                 </div>
                               </td>
 
-                              <td className="py-3 text-center">
+                              <td className="py-3 px-3 text-center">
                                 <div className="inline-flex items-center rounded-xl border border-line-strong px-2 py-1 bg-surface-muted max-w-[70px] mx-auto shadow-xs">
                                   <input
                                     type="number"
@@ -807,11 +1111,11 @@ export function Rebalance() {
                                 </div>
                               </td>
 
-                              <td className="py-3 text-right tnum font-semibold text-ink-soft">
+                              <td className="py-3 px-3 text-right tnum font-semibold text-ink-soft">
                                 {thb(row.targetVal)}
                               </td>
 
-                              <td className="py-3 text-right tnum font-bold text-[12px]">
+                              <td className="py-3 px-3 text-right tnum font-bold text-[12px]">
                                 {holdingTargetsSum === 100 ? (
                                   <span className={`inline-block px-2.5 py-1 rounded-full text-[11.5px] ${
                                     row.actionCls.includes('text-gain')
@@ -829,7 +1133,7 @@ export function Rebalance() {
                                 )}
                               </td>
 
-                              <td className="py-3 text-right">
+                              <td className="py-3 pl-3 text-right">
                                 <div className="flex items-center justify-end gap-1.5">
                                   {hasAction && (
                                     <button
