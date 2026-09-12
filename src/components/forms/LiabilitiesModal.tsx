@@ -242,7 +242,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
           <div className="rounded-2xl bg-surface-muted/80 dark:bg-white/5 p-4 border border-line/70 dark:border-white/10 space-y-2">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
               <span className="text-[12.5px] font-semibold text-ink-muted">Total Outstanding Debt (หนี้สินรวม)</span>
-              <span className="font-display text-[22px] sm:text-[24px] font-extrabold tnum text-rose-600 dark:text-rose-400">
+              <span className={`font-display text-[22px] sm:text-[24px] font-extrabold tnum ${totalBalance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-ink dark:text-white'}`}>
                 {thb(totalBalance)}
               </span>
             </div>
@@ -394,7 +394,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
 
                     <div className="flex items-center gap-2 sm:justify-end">
                       <div className="relative flex-1 sm:flex-initial sm:w-44">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-rose-500">
+                        <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-[12px] font-bold ${Number(r.balance.replace(/[^0-9.]/g, '')) > 0 ? 'text-rose-500' : 'text-ink-muted/60'}`}>
                           -฿
                         </span>
                         <input

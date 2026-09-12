@@ -664,7 +664,7 @@ export function Dashboard() {
               <div className="mt-4 flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
                 <div>
                   <span className="text-[11.5px] font-medium text-ink-muted">Total Outstanding Debt</span>
-                  <p className="font-display text-[24px] font-extrabold tnum text-rose-600 dark:text-rose-400 leading-tight">
+                  <p className={`font-display text-[24px] font-extrabold tnum leading-tight ${debts > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-ink dark:text-white'}`}>
                     {debts > 0 ? `-${thb(debts)}` : '฿0'}
                   </p>
                 </div>
