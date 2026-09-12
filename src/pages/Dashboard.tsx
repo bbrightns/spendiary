@@ -302,28 +302,45 @@ export function Dashboard() {
                 <div className="mt-2.5 flex h-1.5 w-full overflow-hidden rounded-full bg-line dark:bg-white/10">
                   <div
                     className="bg-brand transition-all duration-500"
-                    style={{ width: `${(portfolio.value / grossAssets) * 100}%` }}
-                    title={`Invested: ${thb(portfolio.value)} (${((portfolio.value / grossAssets) * 100).toFixed(1)}%)`}
+                    style={{
+                      width: `${debts > 0 && nw > 0
+                        ? (portfolio.value / grossAssets) * (nw / grossAssets) * 100
+                        : (portfolio.value / grossAssets) * 100}%`,
+                    }}
+                    title={`Invested: ${thb(portfolio.value)} (${((portfolio.value / grossAssets) * 100).toFixed(1)}% of assets)`}
                   />
                   <div
                     className="bg-gain transition-all duration-500"
-                    style={{ width: `${(cash / grossAssets) * 100}%` }}
-                    title={`Cash: ${thb(cash)} (${((cash / grossAssets) * 100).toFixed(1)}%)`}
+                    style={{
+                      width: `${debts > 0 && nw > 0
+                        ? (cash / grossAssets) * (nw / grossAssets) * 100
+                        : (cash / grossAssets) * 100}%`,
+                    }}
+                    title={`Cash: ${thb(cash)} (${((cash / grossAssets) * 100).toFixed(1)}% of assets)`}
                   />
+                  {debts > 0 && (
+                    <div
+                      className="bg-rose-500 transition-all duration-500"
+                      style={{
+                        width: `${Math.min(100, (debts / grossAssets) * 100)}%`,
+                      }}
+                      title={`Debts: -${thb(debts)} (${debtRatio.toFixed(1)}% Debt Ratio)`}
+                    />
+                  )}
                 </div>
               )}
             </div>
           </div>
 
           {/* Asset Distribution Bar & Legend */}
-          {nw > 0 && (
+          {grossAssets > 0 && (
             <div className="relative mt-auto px-6 sm:px-7 pb-5 pt-3.5 border-t border-line dark:border-white/10 space-y-2.5">
               <div className="flex h-2 overflow-hidden rounded-full bg-surface-muted dark:bg-white/10 border border-line/40 dark:border-transparent">
                 {alloc.map((a) => (
                   <div
                     key={a.assetClass}
                     style={{
-                      width: `${(a.value / nw) * 100}%`,
+                      width: `${(a.value / grossAssets) * 100}%`,
                       background: ASSET_META[a.assetClass].cssVar,
                     }}
                     title={`${ASSET_META[a.assetClass].label}: ${thb(a.value)}`}
@@ -332,7 +349,7 @@ export function Dashboard() {
                 {cash > 0 && (
                   <div
                     style={{
-                      width: `${(cash / nw) * 100}%`,
+                      width: `${(cash / grossAssets) * 100}%`,
                       background: 'var(--color-cash)',
                     }}
                     title={`Cash: ${thb(cash)}`}
@@ -349,13 +366,13 @@ export function Dashboard() {
                       className="h-2 w-2 shrink-0 rounded-full"
                       style={{ background: ASSET_META[a.assetClass].cssVar }}
                     />
-                    {ASSET_META[a.assetClass].label} {Math.round((a.value / nw) * 100)}%
+                    {ASSET_META[a.assetClass].label} {Math.round((a.value / grossAssets) * 100)}%
                   </span>
                 ))}
                 {cash > 0 && (
                   <span className="flex items-center gap-1.5 text-[12px] text-ink-soft dark:text-white/85 font-semibold">
                     <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--color-cash)' }} />
-                    Cash {Math.round((cash / nw) * 100)}%
+                    Cash {Math.round((cash / grossAssets) * 100)}%
                   </span>
                 )}
               </div>
