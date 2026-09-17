@@ -625,9 +625,10 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
           >
             {/* Total Proceeds Row */}
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-[13px]">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-ink-soft">Total Proceeds (เงินที่จะได้รับ)</span>
+              <div className="flex items-center justify-between text-[13px] gap-2">
+                <span className="text-ink-soft shrink-0">Total Proceeds (เงินที่จะได้รับ)</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold tnum text-ink text-[14px]">{thb(totalProceedsThb)}</span>
                   {!isCustomProceeds ? (
                     <button
                       type="button"
@@ -636,10 +637,11 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
                         setCustomProceeds(Number(grossProceedsThb.toFixed(2)))
                         setCustomFee('')
                       }}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-brand dark:text-brand-light hover:underline bg-brand/10 hover:bg-brand/20 dark:bg-brand/15 dark:hover:bg-brand/25 rounded-md px-1.5 py-0.5 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11.5px] font-medium text-sky-700 bg-sky-100 hover:bg-sky-200 dark:text-sky-200 dark:bg-sky-950 dark:hover:bg-sky-900 border border-sky-300 dark:border-sky-800 transition-colors cursor-pointer shrink-0 shadow-2xs"
                       title="ระบุยอดเงินที่ได้รับจริงเอง กรณีมีค่าธรรมเนียมหรือส่วนลด"
                     >
-                      <span>✏️</span> ปรับยอดเงิน (มีค่าธรรมเนียม)
+                      <span className="text-[12px]">✏️</span>
+                      <span>ปรับยอด</span>
                     </button>
                   ) : (
                     <button
@@ -649,18 +651,19 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
                         setCustomProceeds('')
                         setCustomFee('')
                       }}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-ink-muted hover:text-ink hover:underline rounded-md px-1.5 py-0.5 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11.5px] font-medium text-ink-muted hover:text-ink bg-surface border border-line hover:border-line-strong transition-colors cursor-pointer shrink-0 shadow-2xs"
+                      title="คืนค่าคำนวณอัตโนมัติ"
                     >
-                      <span>↺</span> คืนค่าคำนวณอัตโนมัติ
+                      <span>↺</span>
+                      <span>อัตโนมัติ</span>
                     </button>
                   )}
                 </div>
-                <span className="font-bold tnum text-ink">{thb(totalProceedsThb)}</span>
               </div>
 
               {/* Custom Net Proceeds & Fee Input Drawer */}
               {isCustomProceeds && (
-                <div className="rounded-xl bg-surface/90 border border-line/80 p-2.5 space-y-2 text-left shadow-xs">
+                <div className="rounded-xl bg-surface border border-line p-3 space-y-2.5 text-left shadow-xs">
                   <div className="flex items-center justify-between text-[11.5px] text-ink-muted">
                     <span>มูลค่าขายตามราคาตลาด: <strong className="text-ink font-semibold tnum">{thb(grossProceedsThb)}</strong></span>
                     <span className="text-[11px] text-ink-soft">กรอกยอดสุทธิหรือค่าธรรมเนียม</span>
