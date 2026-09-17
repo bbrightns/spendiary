@@ -3,6 +3,7 @@ import { Modal } from '../ui/Modal'
 import { SegmentedControl } from '../ui/SegmentedControl'
 import { NumberField, SelectField } from '../ui/Field'
 import { Button } from '../ui/Button'
+import { BUY_SELL_SEGMENT_OPTIONS } from './BuyMoreForm'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, holdingMetrics } from '../../lib/calc'
@@ -348,10 +349,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
               onChange={(val) => {
                 if (val === 'buy') onSwitchToBuy()
               }}
-              options={[
-                { value: 'buy', label: '+ ซื้อเพิ่ม (Buy)' },
-                { value: 'sell', label: '− ขายออก (Sell)' },
-              ]}
+              options={BUY_SELL_SEGMENT_OPTIONS}
             />
           </div>
         )}

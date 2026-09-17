@@ -5,6 +5,8 @@ export interface SegmentOption<T extends string> {
   label: ReactNode
   icon?: ReactNode
   title?: string
+  activeClassName?: string
+  inactiveClassName?: string
 }
 
 interface SegmentedControlProps<T extends string> {
@@ -71,8 +73,8 @@ export function SegmentedControl<T extends string>({
               sizeClasses[size]
             } ${
               isSelected
-                ? 'bg-surface text-ink shadow-sm'
-                : 'text-ink-muted hover:text-ink'
+                ? (opt.activeClassName ?? 'bg-surface text-ink shadow-sm')
+                : (opt.inactiveClassName ?? 'text-ink-muted hover:text-ink')
             }`}
           >
             {opt.icon && <span className="shrink-0">{opt.icon}</span>}

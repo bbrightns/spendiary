@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Modal } from '../ui/Modal'
-import { SegmentedControl } from '../ui/SegmentedControl'
+import { SegmentedControl, type SegmentOption } from '../ui/SegmentedControl'
 import { NumberField, TextField, SelectField } from '../ui/Field'
 import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
@@ -8,6 +8,21 @@ import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, applyBuy, goldThbPerGramToXauUsd, holdingMetrics, upsert } from '../../lib/calc'
 import type { BtcLocation, GoldLocation, Holding } from '../../lib/types'
 import { money, thb, localDateStr } from '../../lib/format'
+
+export const BUY_SELL_SEGMENT_OPTIONS: SegmentOption<'buy' | 'sell'>[] = [
+  {
+    value: 'buy',
+    label: '+ ซื้อเพิ่ม (Buy)',
+    activeClassName: 'bg-gain text-white shadow-sm dark:bg-emerald-600',
+    inactiveClassName: 'text-gain hover:bg-gain/10 dark:text-emerald-400',
+  },
+  {
+    value: 'sell',
+    label: '− ขายออก (Sell)',
+    activeClassName: 'bg-loss text-white shadow-sm dark:bg-rose-600',
+    inactiveClassName: 'text-loss hover:bg-loss/10 dark:text-rose-400',
+  },
+]
 
 interface Props {
   open: boolean
@@ -376,7 +391,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
         title={`Buy more · ${holding.name}`}
         description="Log a purchase in grams or บาททองคำ (ทองคำแท่ง 15.244g). Choose or create a location."
         footer={
-          <Button onClick={saveGold} className="w-full">
+          <Button variant="success" onClick={saveGold} className="w-full">
             Add to holding
           </Button>
         }
@@ -389,10 +404,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
                 onChange={(val) => {
                   if (val === 'sell') onSwitchToSell()
                 }}
-                options={[
-                  { value: 'buy', label: '+ ซื้อเพิ่ม (Buy)' },
-                  { value: 'sell', label: '− ขายออก (Sell)' },
-                ]}
+                options={BUY_SELL_SEGMENT_OPTIONS}
               />
             </div>
           )}
@@ -591,7 +603,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
         title={`Buy more · ${holding.name}`}
         description="Log a purchase in Satoshi. Choose or create a location."
         footer={
-          <Button onClick={saveBtc} className="w-full">
+          <Button variant="success" onClick={saveBtc} className="w-full">
             Add to holding
           </Button>
         }
@@ -604,10 +616,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
                 onChange={(val) => {
                   if (val === 'sell') onSwitchToSell()
                 }}
-                options={[
-                  { value: 'buy', label: '+ ซื้อเพิ่ม (Buy)' },
-                  { value: 'sell', label: '− ขายออก (Sell)' },
-                ]}
+                options={BUY_SELL_SEGMENT_OPTIONS}
               />
             </div>
           )}
@@ -777,7 +786,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
           : 'Log a purchase. Units grow and your average cost is recalculated.'
       }
       footer={
-        <Button onClick={save} className="w-full" disabled={isStock ? !validStock : !valid}>
+        <Button variant="success" onClick={save} className="w-full" disabled={isStock ? !validStock : !valid}>
           Add to holding
         </Button>
       }
@@ -790,10 +799,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
               onChange={(val) => {
                 if (val === 'sell') onSwitchToSell()
               }}
-              options={[
-                { value: 'buy', label: '+ ซื้อเพิ่ม (Buy)' },
-                { value: 'sell', label: '− ขายออก (Sell)' },
-              ]}
+              options={BUY_SELL_SEGMENT_OPTIONS}
             />
           </div>
         )}
