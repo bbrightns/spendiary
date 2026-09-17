@@ -1,5 +1,21 @@
 import type { SpendiaryData } from './types'
-import { GRAMS_PER_BAHT_GOLD, SATS_PER_BTC, assetGroupAllocations, goldThbPerBahtToXauUsd, portfolioSummary } from './calc'
+import {
+  ASSET_META,
+  GRAMS_PER_BAHT_GOLD,
+  SATS_PER_BTC,
+  assetGroupAllocations,
+  dcaPerMonth,
+  dcaThisMonth,
+  goldThbPerBahtToXauUsd,
+  isBuyDayOverdue,
+  isBuyDayToday,
+  isConfirmedForPeriod,
+  isSkippedForPeriod,
+  nextBuyDate,
+  planMonthlyEquivalent,
+  portfolioSummary,
+  sortDcaPlans,
+} from './calc'
 
 function fmtNum(n: number, decimals = 2): string {
   return new Intl.NumberFormat('en-US', {
@@ -43,6 +59,7 @@ export function generatePortfolioMarkdown(
   const rate = usdThb && usdThb > 0 ? usdThb : 35
   const holdings = data.holdings ?? []
   const cashAccounts = data.cashAccounts ?? []
+  const dcaPlans = data.dcaPlans ?? []
   const summary = portfolioSummary(holdings)
   const totalCashThb = cashAccounts.reduce((sum, a) => {
     const isUsd = a.currency === 'USD'
@@ -140,8 +157,8 @@ export function generatePortfolioMarkdown(
         const avgCostXauUsd = goldThbPerBahtToXauUsd(avgCostPerBaht, rate)
         const pricePerBaht = h.price * GRAMS_PER_BAHT_GOLD
         const priceXauUsd = goldThbPerBahtToXauUsd(pricePerBaht, rate)
-        avgCostStr = `${fmtMoney(avgCostPerBaht, 'THB', 0)}/บาททอง<br/>($${fmtMoney(avgCostXauUsd, 'USD', 0)}/oz)`
-        priceStr = `${fmtMoney(pricePerBaht, 'THB', 0)}/บาททอง<br/>($${fmtMoney(priceXauUsd, 'USD', 0)}/oz)`
+        avgCostStr = `${fmtMoney(avgCostPerBaht, 'THB', 0)}/บาททอง<br/>(${fmtMoney(avgCostXauUsd, 'USD', 0)}/oz)`
+        priceStr = `${fmtMoney(pricePerBaht, 'THB', 0)}/บาททอง<br/>(${fmtMoney(priceXauUsd, 'USD', 0)}/oz)`
       } else if (isRealEstate) {
         typeLabel = 'อสังหาริมทรัพย์'
         qtyStr = `${h.units} หลัง/ห้อง`
@@ -156,126 +173,36 @@ export function generatePortfolioMarkdown(
     lines.push('')
   }
 
-  // Detailed Section by Asset Class
-  const stocks = holdings.filter((h) => h.assetClass === 'stock')
-  const cryptos = holdings.filter((h) => h.assetClass === 'crypto')
-  const golds = holdings.filter((h) => h.assetClass === 'gold')
-  const funds = holdings.filter((h) => h.assetClass === 'fund')
-
-  // 1. US Stocks
-  if (stocks.length > 0) {
-    lines.push(`## 📈 หุ้นต่างประเทศ / หุ้นสหรัฐ (US Stocks)`)
-    for (const h of stocks) {
-      const marketValue = h.units * h.price
-      const costBasis = h.totalThbInvested ?? (h.units * h.avgCost)
-      const pnl = marketValue - costBasis
-      const pnlPct = costBasis > 0 ? (pnl / costBasis) * 100 : 0
-      const avgCostUsd = h.avgCostUsd ?? (rate > 0 ? h.avgCost / rate : 0)
-      const priceUsd = rate > 0 ? h.price / rate : 0
-      const totalCostUsd = h.totalUsdInvested ?? (avgCostUsd * h.units)
-      const marketValUsd = rate > 0 ? marketValue / rate : 0
-      const pnlUsd = marketValUsd - totalCostUsd
-
-      lines.push(`### 🔹 ${h.name} (\`${h.ticker}\`)`)
-      lines.push(`- **จำนวนที่ถือครอง**: **${fmtNum(h.units, 4)} หุ้น** (Shares)`)
-      lines.push(`- **ต้นทุนเฉลี่ย (Avg Cost)**: **${fmtMoney(avgCostUsd, 'USD', 2)} / หุ้น** (≈ ${fmtMoney(h.avgCost, 'THB', 2)})`)
-      lines.push(`- **ราคาปัจจุบัน (Price)**: **${fmtMoney(priceUsd, 'USD', 2)} / หุ้น** (≈ ${fmtMoney(h.price, 'THB', 2)})`)
-      lines.push(`- **ต้นทุนรวม (Total Cost)**: **${fmtMoney(totalCostUsd, 'USD', 2)}** (≈ ${fmtMoney(costBasis, 'THB', 2)})`)
-      lines.push(`- **มูลค่าปัจจุบัน (Market Value)**: **${fmtMoney(marketValUsd, 'USD', 2)}** (≈ ${fmtMoney(marketValue, 'THB', 2)})`)
-      lines.push(`- **กำไร/ขาดทุน (PnL)**: **${fmtSignMoney(pnlUsd, 'USD', 2)}** (≈ ${fmtSignMoney(pnl, 'THB', 2)}) | **${fmtPct(pnlPct, 2)}**`)
-      lines.push('')
-    }
-  }
-
-  // 2. Bitcoin / Crypto
-  if (cryptos.length > 0) {
-    lines.push(`## 🪙 บิตคอยน์ & คริปโต (Bitcoin & Crypto)`)
-    for (const h of cryptos) {
-      const sats = Math.round(h.units * SATS_PER_BTC)
-      const marketValue = h.units * h.price
-      const costBasis = h.totalThbInvested ?? (h.units * h.avgCost)
-      const pnl = marketValue - costBasis
-      const pnlPct = costBasis > 0 ? (pnl / costBasis) * 100 : 0
-      const avgCostPerBtc = h.units > 0 ? costBasis / h.units : h.avgCost
-      const avgCostPerBtcUsd = rate > 0 ? avgCostPerBtc / rate : 0
-      const priceUsd = rate > 0 ? h.price / rate : 0
-
-      lines.push(`### 🔹 ${h.name} (\`${h.ticker}\`)`)
-      lines.push(`- **จำนวนที่ถือครอง**: **${sats.toLocaleString()} sats** (${fmtNum(h.units, 8)} BTC)`)
-      lines.push(`- **ต้นทุนเฉลี่ย (Avg Cost)**: **${fmtMoney(avgCostPerBtcUsd, 'USD', 0)} / BTC** (≈ ${fmtMoney(avgCostPerBtc, 'THB', 0)})`)
-      lines.push(`- **ราคาปัจจุบัน (Price)**: **${fmtMoney(priceUsd, 'USD', 0)} / BTC** (≈ ${fmtMoney(h.price, 'THB', 0)})`)
-      lines.push(`- **ต้นทุนรวม (Total Cost)**: **${fmtMoney(costBasis, 'THB', 2)}**`)
-      lines.push(`- **มูลค่าปัจจุบัน (Market Value)**: **${fmtMoney(marketValue, 'THB', 2)}**`)
-      lines.push(`- **กำไร/ขาดทุน (PnL)**: **${fmtSignMoney(pnl, 'THB', 2)} (${fmtPct(pnlPct, 2)})**`)
-
+  // Storage / Custody Locations (Only for BTC & Gold that have custody breakdowns)
+  const holdingsWithLocations = holdings.filter(
+    (h) => (h.btcLocations && h.btcLocations.length > 0) || (h.goldLocations && h.goldLocations.length > 0),
+  )
+  if (holdingsWithLocations.length > 0) {
+    lines.push(`## 📍 แหล่งจัดเก็บสินทรัพย์ (Storage & Custody Locations)`)
+    for (const h of holdingsWithLocations) {
       if (h.btcLocations && h.btcLocations.length > 0) {
-        lines.push(`- **แหล่งจัดเก็บ / ซื้อ (Storage Locations)**:`)
+        lines.push(`### 🪙 ${h.name} (\`${h.ticker}\`)`)
         for (const loc of h.btcLocations) {
           const locCostPerBtc = loc.satoshi > 0 ? (loc.thbSpent / loc.satoshi) * SATS_PER_BTC : 0
           const locCostPerBtcUsd = rate > 0 ? locCostPerBtc / rate : 0
-          lines.push(`  - 📍 **${loc.name}**: ${loc.satoshi.toLocaleString()} sats (${(loc.satoshi / SATS_PER_BTC).toFixed(8)} BTC) | ทุน: ${fmtMoney(loc.thbSpent, 'THB', 2)} | ทุนเฉลี่ย: ${fmtMoney(locCostPerBtcUsd, 'USD', 0)}/BTC (≈ ${fmtMoney(locCostPerBtc, 'THB', 0)})`)
+          lines.push(`- 📍 **${loc.name}**: ${loc.satoshi.toLocaleString()} sats (${(loc.satoshi / SATS_PER_BTC).toFixed(8)} BTC) | ทุน: ${fmtMoney(loc.thbSpent, 'THB', 2)} | ทุนเฉลี่ย: ${fmtMoney(locCostPerBtcUsd, 'USD', 0)}/BTC (≈ ${fmtMoney(locCostPerBtc, 'THB', 0)})`)
         }
+        lines.push('')
       }
-      lines.push('')
-    }
-  }
-
-  // 3. Gold
-  if (golds.length > 0) {
-    lines.push(`## 👑 ทองคำ (Gold)`)
-    for (const h of golds) {
-      const bahtGold = h.units / GRAMS_PER_BAHT_GOLD
-      const marketValue = h.units * h.price
-      const costBasis = h.totalThbInvested ?? (h.units * h.avgCost)
-      const pnl = marketValue - costBasis
-      const pnlPct = costBasis > 0 ? (pnl / costBasis) * 100 : 0
-      const avgCostPerBaht = (h.units > 0 ? costBasis / h.units : h.avgCost) * GRAMS_PER_BAHT_GOLD
-      const avgCostXauUsd = goldThbPerBahtToXauUsd(avgCostPerBaht, rate)
-      const pricePerBaht = h.price * GRAMS_PER_BAHT_GOLD
-      const priceXauUsd = goldThbPerBahtToXauUsd(pricePerBaht, rate)
-
-      lines.push(`### 🔹 ${h.name} (\`${h.ticker}\`)`)
-      lines.push(`- **จำนวนที่ถือครอง**: **${fmtNum(bahtGold, 4)} บาททองคำ** (${fmtNum(h.units, 4)} กรัม / g)`)
-      lines.push(`- **ต้นทุนเฉลี่ย (Avg Cost)**: **${fmtMoney(avgCostPerBaht, 'THB', 0)} / บาททองคำ** ($${fmtMoney(avgCostXauUsd, 'USD', 0)} / oz XAUUSD | ${fmtMoney(h.avgCost, 'THB', 2)} / g)`)
-      lines.push(`- **ราคาปัจจุบัน (Price)**: **${fmtMoney(pricePerBaht, 'THB', 0)} / บาททองคำ** ($${fmtMoney(priceXauUsd, 'USD', 0)} / oz XAUUSD | ${fmtMoney(h.price, 'THB', 2)} / g)`)
-      lines.push(`- **ต้นทุนรวม (Total Cost)**: **${fmtMoney(costBasis, 'THB', 2)}**`)
-      lines.push(`- **มูลค่าปัจจุบัน (Market Value)**: **${fmtMoney(marketValue, 'THB', 2)}**`)
-      lines.push(`- **กำไร/ขาดทุน (PnL)**: **${fmtSignMoney(pnl, 'THB', 2)} (${fmtPct(pnlPct, 2)})**`)
-
       if (h.goldLocations && h.goldLocations.length > 0) {
-        lines.push(`- **แหล่งจัดเก็บ / ร้านทอง (Gold Locations)**:`)
+        lines.push(`### 👑 ${h.name} (\`${h.ticker}\`)`)
         for (const loc of h.goldLocations) {
           const locBaht = loc.grams / GRAMS_PER_BAHT_GOLD
           const locCostPerBaht = loc.grams > 0 ? (loc.thbSpent / loc.grams) * GRAMS_PER_BAHT_GOLD : 0
           const locCostXauUsd = goldThbPerBahtToXauUsd(locCostPerBaht, rate)
-          lines.push(`  - 📍 **${loc.name}**: ${fmtNum(locBaht, 4)} บาททอง (${fmtNum(loc.grams, 4)} g) | ทุน: ${fmtMoney(loc.thbSpent, 'THB', 2)} | ทุนเฉลี่ย: ${fmtMoney(locCostPerBaht, 'THB', 0)}/บาททอง ($${fmtMoney(locCostXauUsd, 'USD', 0)}/oz)`)
+          lines.push(`- 📍 **${loc.name}**: ${fmtNum(locBaht, 4)} บาททอง (${fmtNum(loc.grams, 4)} g) | ทุน: ${fmtMoney(loc.thbSpent, 'THB', 2)} | ทุนเฉลี่ย: ${fmtMoney(locCostPerBaht, 'THB', 0)}/บาททอง (${fmtMoney(locCostXauUsd, 'USD', 0)}/oz)`)
         }
+        lines.push('')
       }
-      lines.push('')
     }
   }
 
-  // 4. Thai Funds / Stocks / DR
-  if (funds.length > 0) {
-    lines.push(`## 🏛️ กองทุน / หุ้นไทย / DR (Thai Funds / Stocks / DR)`)
-    for (const h of funds) {
-      const marketValue = h.units * h.price
-      const costBasis = h.totalThbInvested ?? (h.units * h.avgCost)
-      const pnl = marketValue - costBasis
-      const pnlPct = costBasis > 0 ? (pnl / costBasis) * 100 : 0
-
-      lines.push(`### 🔹 ${h.name} (\`${h.ticker}\`)`)
-      lines.push(`- **จำนวนหน่วยลงทุน**: **${fmtNum(h.units, 4)} units**`)
-      lines.push(`- **ต้นทุนเฉลี่ย (Avg Cost / NAV)**: **${fmtMoney(h.avgCost, 'THB', 4)} / unit**`)
-      lines.push(`- **ราคาปัจจุบัน (Current NAV)**: **${fmtMoney(h.price, 'THB', 4)} / unit**`)
-      lines.push(`- **ต้นทุนรวม (Total Cost)**: **${fmtMoney(costBasis, 'THB', 2)}**`)
-      lines.push(`- **มูลค่าปัจจุบัน (Market Value)**: **${fmtMoney(marketValue, 'THB', 2)}**`)
-      lines.push(`- **กำไร/ขาดทุน (PnL)**: **${fmtSignMoney(pnl, 'THB', 2)} (${fmtPct(pnlPct, 2)})**`)
-      lines.push('')
-    }
-  }
-
-  // 5. Real Estate
+  // Real Estate (if any)
   const realEstates = holdings.filter((h) => h.assetClass === 'real_estate')
   if (realEstates.length > 0) {
     lines.push(`## 🏠 อสังหาริมทรัพย์ (Real Estate)`)
@@ -294,7 +221,64 @@ export function generatePortfolioMarkdown(
     }
   }
 
-  // 6. Cash Accounts
+  // DCA Plans & Schedule
+  if (dcaPlans.length > 0) {
+    const sortedPlans = sortDcaPlans(dcaPlans, now)
+    const monthlyTotal = dcaPerMonth(dcaPlans, now)
+    const dcaMonth = dcaThisMonth(dcaPlans, now)
+
+    lines.push(`## 🎯 แผนการลงทุนสะสม (DCA Plans)`)
+    lines.push(`- **งบ DCA รวมต่อเดือน (Monthly Budget)**: **${fmtMoney(monthlyTotal, 'THB')}**`)
+    lines.push(`- **ความคืบหน้างวดเดือนนี้**: ซื้อแล้ว **${fmtMoney(dcaMonth.invested, 'THB')}** (${dcaMonth.pct.toFixed(1)}%) · รอซื้อ **${fmtMoney(dcaMonth.upcoming, 'THB')}**`)
+    lines.push(`- **จำนวนแผน DCA ทั้งหมด**: **${dcaPlans.length} รายการ**`)
+    lines.push('')
+    lines.push(`| แผน DCA (Plan) | สินทรัพย์ | ความถี่ | กำหนดซื้อ | ยอดต่องวด | เทียบเท่า/เดือน | สถานะงวดนี้ |`)
+    lines.push(`| :--- | :--- | :--- | :--- | :--- | :--- | :--- |`)
+
+    const weekdayNames = ['', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์']
+
+    for (const p of sortedPlans) {
+      const freq = p.frequency ?? 'monthly'
+      let freqLabel = 'รายเดือน'
+      let schedLabel = `ทุกวันที่ ${p.dayOfMonth}`
+
+      if (freq === 'daily') {
+        freqLabel = 'รายวัน'
+        schedLabel = 'ทุกวัน'
+      } else if (freq === 'weekly') {
+        freqLabel = 'รายสัปดาห์'
+        schedLabel = `ทุกวัน${weekdayNames[p.dayOfMonth] ?? p.dayOfMonth}`
+      }
+
+      const meta = ASSET_META[p.assetClass]
+      const assetLabel = meta?.label ?? p.assetClass
+      const monthlyEquiv = planMonthlyEquivalent(p, now)
+
+      const confirmed = isConfirmedForPeriod(p, now)
+      const skipped = isSkippedForPeriod(p, now)
+      const isOverdue = isBuyDayOverdue(p, now) && !confirmed && !skipped
+      const isToday = isBuyDayToday(p, now) && !confirmed && !skipped
+      const next = nextBuyDate(p, now)
+      const nextDateStr = next.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })
+
+      let statusLabel = `⏳ รอซื้อ (${nextDateStr})`
+      if (confirmed) {
+        statusLabel = `✅ ซื้อแล้ว`
+      } else if (skipped) {
+        statusLabel = `⏭️ ข้ามงวดนี้`
+      } else if (isToday) {
+        statusLabel = `🔔 ซื้อวันนี้`
+      } else if (isOverdue) {
+        statusLabel = `⚠️ เลยกำหนด (${nextDateStr})`
+      }
+
+      const planName = p.ticker ? `**${p.name}** (\`${p.ticker}\`)` : `**${p.name}**`
+      lines.push(`| ${planName} | ${assetLabel} | ${freqLabel} | ${schedLabel} | ${fmtMoney(p.monthlyAmount, 'THB')} | ${fmtMoney(monthlyEquiv, 'THB')} | ${statusLabel} |`)
+    }
+    lines.push('')
+  }
+
+  // Cash Accounts
   if (cashAccounts.length > 0) {
     lines.push(`## 💵 บัญชีเงินสด (Cash Accounts)`)
     for (const acc of cashAccounts) {
