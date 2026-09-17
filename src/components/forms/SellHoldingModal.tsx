@@ -36,6 +36,11 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
   const [price, setPrice] = useState<number | ''>('')
   const [showErrors, setShowErrors] = useState(false)
 
+  // Custom proceeds / fee override state
+  const [isCustomProceeds, setIsCustomProceeds] = useState(false)
+  const [customProceeds, setCustomProceeds] = useState<number | ''>('')
+  const [customFee, setCustomFee] = useState<number | ''>('')
+
   // Stock-specific State
   const [stockShares, setStockShares] = useState<number | ''>('')
   const [stockPriceUsd, setStockPriceUsd] = useState<number | ''>('')
@@ -59,6 +64,9 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
     if (open && !wasOpen.current && holding) {
       setShowErrors(false)
       setCashAccountId('none')
+      setIsCustomProceeds(false)
+      setCustomProceeds('')
+      setCustomFee('')
 
       // Initial defaults
       if (holding.assetClass === 'stock') {
@@ -103,6 +111,9 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
 
   // Quick percent applicator
   const applyPercent = (pct: number) => {
+    setIsCustomProceeds(false)
+    setCustomProceeds('')
+    setCustomFee('')
     if (isBtc) {
       const loc = (holding.btcLocations ?? []).find((l) => l.id === btcLocationId)
       const availableSats = loc ? loc.satoshi : Math.round(currentUnits * SATS_PER_BTC)
@@ -133,7 +144,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
 
   // Calculate sell outcomes per asset type
   let sellUnitsCount = 0
-  let totalProceedsThb = 0
+  let grossProceedsThb = 0
   let costBasisSoldThb = 0
   let isValid = false
 
@@ -143,7 +154,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
     const sFx = Number(stockFxRate) || rate
     sellUnitsCount = sShares
     const proceedsUsd = sShares * sPriceUsd
-    totalProceedsThb = proceedsUsd * sFx
+    grossProceedsThb = proceedsUsd * sFx
     costBasisSoldThb = sShares * avgCostPerUnitThb
     isValid = sShares > 0 && sShares <= currentUnits + 0.0001 && sPriceUsd > 0 && sFx > 0
   } else if (isBtc) {
@@ -151,26 +162,48 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
     const availableSats = loc ? loc.satoshi : Math.round(currentUnits * SATS_PER_BTC)
     const sSats = Number(satoshi) || 0
     sellUnitsCount = sSats / SATS_PER_BTC
-    totalProceedsThb = Number(btcThbProceeds) || 0
+    grossProceedsThb = Number(btcThbProceeds) || 0
     const locCostBasis = loc ? (loc.satoshi > 0 ? (loc.thbSpent / loc.satoshi) * sSats : 0) : sSats * (avgCostPerUnitThb / SATS_PER_BTC)
     costBasisSoldThb = locCostBasis
-    isValid = sSats > 0 && sSats <= availableSats && totalProceedsThb > 0
+    isValid = sSats > 0 && sSats <= availableSats && grossProceedsThb > 0
   } else if (isGold) {
     const loc = (holding.goldLocations ?? []).find((l) => l.id === goldLocationId)
     const availableGrams = loc ? loc.grams : currentUnits
     const sGrams = Number(goldGrams) || 0
     sellUnitsCount = sGrams
-    totalProceedsThb = Number(goldThbProceeds) || 0
+    grossProceedsThb = Number(goldThbProceeds) || 0
     const locCostBasis = loc ? (loc.grams > 0 ? (loc.thbSpent / loc.grams) * sGrams : 0) : sGrams * avgCostPerUnitThb
     costBasisSoldThb = locCostBasis
-    isValid = sGrams > 0 && sGrams <= availableGrams + 0.0001 && totalProceedsThb > 0
+    isValid = sGrams > 0 && sGrams <= availableGrams + 0.0001 && grossProceedsThb > 0
   } else {
     const u = Number(units) || 0
     const p = Number(price) || 0
     sellUnitsCount = u
-    totalProceedsThb = u * p
+    grossProceedsThb = u * p
     costBasisSoldThb = u * avgCostPerUnitThb
     isValid = u > 0 && u <= currentUnits + 0.0001 && p > 0
+  }
+
+  // Determine effective proceeds & fee
+  let totalProceedsThb = grossProceedsThb
+  let effectiveFee = 0
+
+  if (isCustomProceeds && customProceeds !== '') {
+    const cVal = Number(customProceeds)
+    if (!isNaN(cVal) && cVal >= 0) {
+      totalProceedsThb = cVal
+      effectiveFee = Math.max(0, grossProceedsThb - totalProceedsThb)
+    }
+  } else if (isCustomProceeds && customFee !== '') {
+    const fVal = Number(customFee)
+    if (!isNaN(fVal) && fVal >= 0) {
+      effectiveFee = fVal
+      totalProceedsThb = Math.max(0, grossProceedsThb - fVal)
+    }
+  }
+
+  if (isCustomProceeds) {
+    isValid = isValid && totalProceedsThb > 0
   }
 
   const realizedPnL = totalProceedsThb - costBasisSoldThb
@@ -211,8 +244,9 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
         }
       }
 
+      const feeNote = effectiveFee > 0 ? ` · Fee: ฿${effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''
       const pnlSign = realizedPnL >= 0 ? '+' : ''
-      note = `Sold ${sShares.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${sPriceUsd.toFixed(2)} (FX ${sFx.toFixed(2)}) · Proceeds: ฿${totalProceedsThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · Realized PnL: ${pnlSign}฿${realizedPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${pnlSign}${realizedPnLPercent.toFixed(1)}%)${cashNoteSuffix}`
+      note = `Sold ${sShares.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${sPriceUsd.toFixed(2)} (FX ${sFx.toFixed(2)})${feeNote} · Proceeds: ฿${totalProceedsThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · Realized PnL: ${pnlSign}฿${realizedPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${pnlSign}${realizedPnLPercent.toFixed(1)}%)${cashNoteSuffix}`
     } else if (isBtc) {
       const sSats = Number(satoshi)
       const loc = (holding.btcLocations ?? []).find((l) => l.id === btcLocationId)
@@ -247,8 +281,9 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
         }
       }
 
+      const feeNote = effectiveFee > 0 ? ` · Fee: ฿${effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''
       const pnlSign = realizedPnL >= 0 ? '+' : ''
-      note = `Sold ${sSats.toLocaleString()} sats from ${locName} · Proceeds: ฿${totalProceedsThb.toLocaleString()} · Realized PnL: ${pnlSign}฿${realizedPnL.toLocaleString()} (${pnlSign}${realizedPnLPercent.toFixed(1)}%)${cashNoteSuffix}`
+      note = `Sold ${sSats.toLocaleString()} sats from ${locName}${feeNote} · Proceeds: ฿${totalProceedsThb.toLocaleString()} · Realized PnL: ${pnlSign}฿${realizedPnL.toLocaleString()} (${pnlSign}${realizedPnLPercent.toFixed(1)}%)${cashNoteSuffix}`
     } else if (isGold) {
       const sGrams = Number(goldGrams)
       const sBaht = Number((sGrams / GRAMS_PER_BAHT_GOLD).toFixed(4))
@@ -283,8 +318,9 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
         }
       }
 
+      const feeNote = effectiveFee > 0 ? ` · Fee: ฿${effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''
       const pnlSign = realizedPnL >= 0 ? '+' : ''
-      note = `Sold ${sGrams.toFixed(4)} g (${sBaht.toFixed(4)} บาททอง) from ${locName} · Proceeds: ฿${totalProceedsThb.toLocaleString()} · Realized PnL: ${pnlSign}฿${realizedPnL.toLocaleString()} (${pnlSign}${realizedPnLPercent.toFixed(1)}%)${cashNoteSuffix}`
+      note = `Sold ${sGrams.toFixed(4)} g (${sBaht.toFixed(4)} บาททอง) from ${locName}${feeNote} · Proceeds: ฿${totalProceedsThb.toLocaleString()} · Realized PnL: ${pnlSign}฿${realizedPnL.toLocaleString()} (${pnlSign}${realizedPnLPercent.toFixed(1)}%)${cashNoteSuffix}`
     } else {
       const u = Number(units)
       const p = Number(price)
@@ -302,8 +338,9 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
         }
       }
 
+      const feeNote = effectiveFee > 0 ? ` · Fee: ฿${effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''
       const pnlSign = realizedPnL >= 0 ? '+' : ''
-      note = `Sold ${u.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${label} @ ฿${p.toLocaleString()} · Proceeds: ฿${totalProceedsThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · Realized PnL: ${pnlSign}฿${realizedPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${pnlSign}${realizedPnLPercent.toFixed(1)}%)${cashNoteSuffix}`
+      note = `Sold ${u.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${label} @ ฿${p.toLocaleString()}${feeNote} · Proceeds: ฿${totalProceedsThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · Realized PnL: ${pnlSign}฿${realizedPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${pnlSign}${realizedPnLPercent.toFixed(1)}%)${cashNoteSuffix}`
     }
 
     sellHolding({
@@ -313,6 +350,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
       proceeds: totalProceedsThb,
       realizedPnL,
       realizedPnLPercent,
+      fee: effectiveFee > 0 ? effectiveFee : undefined,
       remainingHolding,
       cashAccountId: cashAccountId !== 'none' ? cashAccountId : undefined,
       cashDepositAmount: cashAccountId !== 'none' ? totalProceedsThb : undefined,
@@ -577,17 +615,101 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
         </div>
 
         {/* Live Preview Card */}
-        {sellUnitsCount > 0 && totalProceedsThb > 0 && (
+        {sellUnitsCount > 0 && grossProceedsThb > 0 && (
           <div
-            className="rounded-2xl border px-4 py-3 space-y-2"
+            className="rounded-2xl border px-4 py-3 space-y-2.5"
             style={{
               borderColor: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 35%, transparent)`,
               background: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 8%, transparent)`,
             }}
           >
-            <div className="flex items-center justify-between text-[13px]">
-              <span className="text-ink-soft">Total Proceeds (เงินที่จะได้รับ)</span>
-              <span className="font-bold tnum text-ink">{thb(totalProceedsThb)}</span>
+            {/* Total Proceeds Row */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[13px]">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-ink-soft">Total Proceeds (เงินที่จะได้รับ)</span>
+                  {!isCustomProceeds ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomProceeds(true)
+                        setCustomProceeds(Number(grossProceedsThb.toFixed(2)))
+                        setCustomFee('')
+                      }}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-brand dark:text-brand-light hover:underline bg-brand/10 hover:bg-brand/20 dark:bg-brand/15 dark:hover:bg-brand/25 rounded-md px-1.5 py-0.5 transition-colors cursor-pointer"
+                      title="ระบุยอดเงินที่ได้รับจริงเอง กรณีมีค่าธรรมเนียมหรือส่วนลด"
+                    >
+                      <span>✏️</span> ปรับยอดเงิน (มีค่าธรรมเนียม)
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomProceeds(false)
+                        setCustomProceeds('')
+                        setCustomFee('')
+                      }}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-ink-muted hover:text-ink hover:underline rounded-md px-1.5 py-0.5 transition-colors cursor-pointer"
+                    >
+                      <span>↺</span> คืนค่าคำนวณอัตโนมัติ
+                    </button>
+                  )}
+                </div>
+                <span className="font-bold tnum text-ink">{thb(totalProceedsThb)}</span>
+              </div>
+
+              {/* Custom Net Proceeds & Fee Input Drawer */}
+              {isCustomProceeds && (
+                <div className="rounded-xl bg-surface/90 border border-line/80 p-2.5 space-y-2 text-left shadow-xs">
+                  <div className="flex items-center justify-between text-[11.5px] text-ink-muted">
+                    <span>มูลค่าขายตามราคาตลาด: <strong className="text-ink font-semibold tnum">{thb(grossProceedsThb)}</strong></span>
+                    <span className="text-[11px] text-ink-soft">กรอกยอดสุทธิหรือค่าธรรมเนียม</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <NumberField
+                      label="เงินสุทธิที่ได้รับจริง (฿)"
+                      prefix="฿"
+                      value={customProceeds}
+                      onChange={(val) => {
+                        const num = val === '' ? '' : Number(val)
+                        setCustomProceeds(num)
+                        if (num !== '' && grossProceedsThb > 0) {
+                          const diff = grossProceedsThb - num
+                          setCustomFee(diff > 0 ? Number(diff.toFixed(2)) : 0)
+                        } else {
+                          setCustomFee('')
+                        }
+                      }}
+                      placeholder={grossProceedsThb.toFixed(2)}
+                      step={0.01}
+                    />
+                    <NumberField
+                      label="หรือค่าธรรมเนียมที่หัก (฿)"
+                      prefix="฿"
+                      value={customFee}
+                      onChange={(val) => {
+                        const num = val === '' ? '' : Number(val)
+                        setCustomFee(num)
+                        if (num !== '' && grossProceedsThb > 0) {
+                          setCustomProceeds(Number(Math.max(0, grossProceedsThb - num).toFixed(2)))
+                        } else {
+                          setCustomProceeds(Number(grossProceedsThb.toFixed(2)))
+                        }
+                      }}
+                      placeholder="0.00"
+                      step={0.01}
+                    />
+                  </div>
+                  {effectiveFee > 0 && (
+                    <div className="flex items-center justify-between text-[11.5px] text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-2.5 py-1">
+                      <span>หักค่าธรรมเนียม/ต๋ง (Fee):</span>
+                      <span className="font-bold tnum">
+                        -฿{effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({grossProceedsThb > 0 ? ((effectiveFee / grossProceedsThb) * 100).toFixed(2) : '0'}%)
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex items-center justify-between text-[13px]">
               <span className="text-ink-soft">Cost Basis Sold (ต้นทุนของส่วนที่ขาย)</span>

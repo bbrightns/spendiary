@@ -280,6 +280,7 @@ interface DataContextValue {
     proceeds: number
     realizedPnL: number
     realizedPnLPercent: number
+    fee?: number
     remainingHolding?: Holding | null
     cashAccountId?: string
     cashDepositAmount?: number
@@ -1121,6 +1122,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             proceeds: params.proceeds,
             realizedPnL: params.realizedPnL,
             realizedPnLPercent: params.realizedPnLPercent,
+            fee: params.fee,
             cashAccountId: params.cashAccountId,
             previousHoldingState,
             afterHoldingState: params.remainingHolding && params.remainingHolding.units > 0 ? params.remainingHolding : undefined,

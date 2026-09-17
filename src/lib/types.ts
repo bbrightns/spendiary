@@ -203,6 +203,7 @@ export interface HoldingLog {
   proceeds?: number
   realizedPnL?: number
   realizedPnLPercent?: number
+  fee?: number
   cashAccountId?: string
   dividendPerShare?: number
   grossDividend?: number
