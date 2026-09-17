@@ -10,13 +10,15 @@ import { ConfirmDcaBuyForm } from '../components/forms/ConfirmDcaBuyForm'
 import { ConfirmDividendModal } from '../components/forms/ConfirmDividendModal'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import { CheckCircleIcon, CheckIcon, DcaIcon, PencilIcon, TrashIcon } from '../components/icons'
+import { useLivePrices } from '../hooks/useLivePrices'
+import { CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, PencilIcon, TrashIcon } from '../components/icons'
 import { IconButton } from '../components/ui/IconButton'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import {
   ASSET_META, dcaThisMonth, isBuyDayOverdue, isBuyDayToday, isConfirmedForPeriod, isDividendReceivedThisMonth, isSkippedForPeriod,
   nextBuyDate, shouldConfirmBuy, sortDcaPlans,
 } from '../lib/calc'
+import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
 import type { DcaPlan, FixedCostItem, Holding } from '../lib/types'
 import { daysUntil, localDateStr, ordinal, thb } from '../lib/format'
 
@@ -408,6 +410,37 @@ export function DcaPlanner() {
     setEditingSalary(false)
   }
 
+  const { usdThb, goldThbPerGram } = useLivePrices()
+  const goldHolding = data.holdings?.find((h) => h.assetClass === 'gold' && h.price > 0)
+  const effectiveGoldThbPerGram = goldThbPerGram ?? goldHolding?.price ?? null
+  const effectiveUsdThb = usdThb && usdThb > 0 ? usdThb : null
+  const [copied, setCopied] = useState(false)
+
+  const handleCopyMarkdown = async () => {
+    try {
+      const md = generatePortfolioMarkdown(data, effectiveUsdThb ?? usdThb, effectiveGoldThbPerGram)
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(md)
+      } else {
+        const textarea = document.createElement('textarea')
+        textarea.value = md
+        textarea.style.position = 'fixed'
+        textarea.style.left = '-9999px'
+        textarea.style.top = '-9999px'
+        document.body.appendChild(textarea)
+        textarea.focus()
+        textarea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+      }
+      setCopied(true)
+      showToast('คัดลอกข้อมูลพอร์ตในรูปแบบ Markdown สำเร็จแล้ว', 'success')
+      setTimeout(() => setCopied(false), 2500)
+    } catch {
+      showToast('ไม่สามารถคัดลอก Markdown ได้', 'error')
+    }
+  }
+
   const openAdd = () => { setEditing(null); setFormOpen(true) }
   const openEdit = (p: DcaPlan) => { setEditing(p); setFormOpen(true) }
 
@@ -418,6 +451,27 @@ export function DcaPlanner() {
         title="DCA Plans"
         subtitle="Monthly salary allocation & recurring investments."
         onStartGuide={startTour}
+        action={
+          <button
+            type="button"
+            onClick={handleCopyMarkdown}
+            aria-label="Copy portfolio markdown"
+            title="Copy Portfolio as Markdown"
+            className="inline-flex h-9 items-center gap-2 rounded-full border border-line-strong bg-surface px-3.5 text-[12.5px] font-semibold text-ink shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-surface-muted active:scale-95 cursor-pointer whitespace-nowrap"
+          >
+            {copied ? (
+              <>
+                <CheckIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.2} />
+                <span className="text-gain">Copied MD!</span>
+              </>
+            ) : (
+              <>
+                <CopyIcon className="h-4 w-4 text-ink-muted shrink-0" />
+                <span>Copy Portfolio MD</span>
+              </>
+            )}
+          </button>
+        }
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
