@@ -1,0 +1,740 @@
+import { useMemo, useState } from 'react'
+import { PageHeader } from '../components/layout/PageHeader'
+import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
+import { Modal } from '../components/ui/Modal'
+import { LiabilitiesModal } from '../components/forms/LiabilitiesModal'
+import { useData } from '../store/DataContext'
+import { useToast } from '../store/ToastContext'
+import type { DebtCategory, HoldingLog, Liability } from '../lib/types'
+import { DEBT_CATEGORIES, getLiabilityDueStatus } from '../lib/calc'
+import { thb, thbCompact } from '../lib/format'
+import {
+  CarIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  ClockIcon,
+  CreditCardIcon,
+  DebtIcon,
+  HomeIcon,
+  PencilIcon,
+  PlusIcon,
+  ReceiptPercentIcon,
+  ShoppingBagIcon,
+  TrashIcon,
+} from '../components/icons'
+
+function CategoryIcon({ category, className = 'h-4 w-4' }: { category: DebtCategory; className?: string }) {
+  switch (category) {
+    case 'installment':
+      return <ShoppingBagIcon className={className} />
+    case 'credit_card':
+      return <CreditCardIcon className={className} />
+    case 'mortgage':
+      return <HomeIcon className={className} />
+    case 'auto_loan':
+      return <CarIcon className={className} />
+    case 'personal_loan':
+    case 'student_loan':
+      return <ReceiptPercentIcon className={className} />
+    default:
+      return <DebtIcon className={className} />
+  }
+}
+
+const THAI_MONTHS = [
+  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+]
+
+function formatThaiDate(dateStr?: string): string {
+  if (!dateStr) return '-'
+  try {
+    const parts = dateStr.slice(0, 10).split('-')
+    if (parts.length < 3) return dateStr
+    const y = Number(parts[0])
+    const m = Number(parts[1]) - 1
+    const d = Number(parts[2])
+    const yearBE = y > 2400 ? y : y + 543
+    return `${d} ${THAI_MONTHS[m] || ''} ${yearBE}`
+  } catch {
+    return dateStr
+  }
+}
+
+function getEstimatedPayoffDate(dueDay: number | undefined, remainingTerms: number): { dateStr: string; relativeStr: string } {
+  if (remainingTerms <= 0) return { dateStr: 'ผ่อนหมดแล้ว 🎉', relativeStr: '0 เดือน' }
+  const now = new Date()
+  const targetDate = new Date(now.getFullYear(), now.getMonth() + remainingTerms, dueDay || 25)
+  const d = targetDate.getDate()
+  const m = targetDate.getMonth()
+  const yearBE = targetDate.getFullYear() + 543
+  return {
+    dateStr: `${d} ${THAI_MONTHS[m]} ${yearBE}`,
+    relativeStr: `อีก ${remainingTerms} เดือน`,
+  }
+}
+
+export function Debts() {
+  const { data, payLiabilityInstallment, undoLiabilityPayment, removeLiability } = useData()
+  const { showToast } = useToast()
+
+  const [statusTab, setStatusTab] = useState<'active' | 'completed' | 'all'>('active')
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState<DebtCategory | 'all'>('all')
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set())
+  const [liabilitiesModalOpen, setLiabilitiesModalOpen] = useState(false)
+  const [editingLiabilityId, setEditingLiabilityId] = useState<string | null>(null)
+  const [historyModalLiability, setHistoryModalLiability] = useState<Liability | null>(null)
+  const [itemToDelete, setItemToDelete] = useState<Liability | null>(null)
+
+  const liabilities = data.liabilities ?? []
+
+  // Metrics
+  const activeDebts = useMemo(() => {
+    return liabilities.filter((l) => {
+      if (l.balance <= 0) return false
+      if (l.isInstallment && l.totalInstallments && (l.paidInstallments ?? 0) >= l.totalInstallments) return false
+      return true
+    })
+  }, [liabilities])
+
+  const completedDebts = useMemo(() => {
+    return liabilities.filter((l) => {
+      if (l.balance <= 0) return true
+      if (l.isInstallment && l.totalInstallments && (l.paidInstallments ?? 0) >= l.totalInstallments) return true
+      return false
+    })
+  }, [liabilities])
+
+  const totalOutstanding = useMemo(() => {
+    return activeDebts.reduce((sum, l) => sum + (Number(l.balance) || 0), 0)
+  }, [activeDebts])
+
+  const totalMonthlyPayment = useMemo(() => {
+    return activeDebts.reduce((sum, l) => sum + (Number(l.monthlyPayment) || 0), 0)
+  }, [activeDebts])
+
+  const totalOriginalDebt = useMemo(() => {
+    return liabilities.reduce((sum, l) => sum + (l.originalBalance ?? l.balance ?? 0), 0)
+  }, [liabilities])
+
+  const totalPaidOffAmount = Math.max(0, totalOriginalDebt - totalOutstanding)
+
+  // Max payoff estimation among all active installment debts
+  const overallDebtFreeEstimation = useMemo(() => {
+    let maxRemainingMonths = 0
+    let latestDueDay = 25
+
+    activeDebts.forEach((l) => {
+      if (l.isInstallment && l.totalInstallments) {
+        const remaining = Math.max(0, l.totalInstallments - (l.paidInstallments ?? 0))
+        if (remaining > maxRemainingMonths) {
+          maxRemainingMonths = remaining
+          latestDueDay = l.dueDay || 25
+        }
+      }
+    })
+
+    if (maxRemainingMonths === 0) return null
+    return getEstimatedPayoffDate(latestDueDay, maxRemainingMonths)
+  }, [activeDebts])
+
+  // Filtered list
+  const filteredDebts = useMemo(() => {
+    return liabilities.filter((l) => {
+      const isCompleted = l.balance <= 0 || (l.isInstallment && l.totalInstallments && (l.paidInstallments ?? 0) >= l.totalInstallments)
+      if (statusTab === 'active' && isCompleted) return false
+      if (statusTab === 'completed' && !isCompleted) return false
+      if (activeCategoryFilter !== 'all' && l.category !== activeCategoryFilter) return false
+      return true
+    })
+  }, [liabilities, statusTab, activeCategoryFilter])
+
+  const toggleCollapse = (id: string) => {
+    setCollapsedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const handlePay = (l: Liability) => {
+    payLiabilityInstallment(l.id)
+    showToast(`บันทึกชำระงวด "${l.name}" เรียบร้อยแล้ว`, 'success')
+  }
+
+  const handleUndo = (l: Liability) => {
+    undoLiabilityPayment(l.id)
+    showToast(`ยกเลิกการชำระงวด "${l.name}" เรียบร้อย`, 'info')
+  }
+
+  const handleDeleteConfirm = () => {
+    if (itemToDelete) {
+      removeLiability(itemToDelete.id)
+      showToast(`ลบรายการ "${itemToDelete.name}" เรียบร้อย`, 'info')
+      setItemToDelete(null)
+    }
+  }
+
+  // Related logs for history modal
+  const historyLogs = useMemo(() => {
+    if (!historyModalLiability) return []
+    return (data.holdingLogs ?? []).filter((log: HoldingLog) => {
+      return (
+        log.holdingName === `Liability: ${historyModalLiability.name}` ||
+        log.note.includes(historyModalLiability.name)
+      )
+    })
+  }, [historyModalLiability, data.holdingLogs])
+
+  return (
+    <div className="space-y-6">
+      {/* ── Page Header ── */}
+      <PageHeader
+        eyebrow="Cashflow & Liabilities"
+        title="Debts & Installments"
+        subtitle="ศูนย์รวมการจัดการหนี้สิน ผ่อนสินค้า 0% และวางแผนปลดหนี้สู่ความมั่งคั่งที่แท้จริง"
+        action={
+          <Button
+            onClick={() => {
+              setEditingLiabilityId(null)
+              setLiabilitiesModalOpen(true)
+            }}
+            variant="primary"
+            size="md"
+            className="shadow-xs"
+          >
+            <PlusIcon className="h-4 w-4 mr-1.5" />
+            เพิ่มรายการหนี้ใหม่
+          </Button>
+        }
+      />
+
+      {/* ── Top Summary Bento ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Total Outstanding */}
+        <Card className="animate-rise p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] font-semibold text-ink-muted">หนี้คงค้างรวม (Outstanding)</span>
+            <div className="grid h-7 w-7 place-items-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
+              <DebtIcon className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <p className={`font-display text-[26px] font-extrabold tnum leading-tight ${totalOutstanding > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+              {totalOutstanding > 0 ? `-${thb(totalOutstanding)}` : '฿0'}
+            </p>
+            <p className="text-[11.5px] text-ink-muted mt-1 font-medium">
+              {totalOutstanding > 0 ? `${activeDebts.length} รายการที่กำลังผ่อน` : '🎉 ปลอดหนี้ 100%'}
+            </p>
+          </div>
+        </Card>
+
+        {/* Card 2: Total Monthly Payment */}
+        <Card className="animate-rise p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] font-semibold text-ink-muted">ภาระผ่อนรวมต่อเดือน (Monthly)</span>
+            <div className="grid h-7 w-7 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <ReceiptPercentIcon className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <p className="font-display text-[26px] font-extrabold tnum text-ink dark:text-white leading-tight">
+              {totalMonthlyPayment > 0 ? thb(totalMonthlyPayment) : '฿0'}
+              <span className="text-[12px] font-semibold text-ink-muted ml-1">/เดือน</span>
+            </p>
+            <p className="text-[11.5px] text-ink-muted mt-1 font-medium">
+              ภาระผ่อนประจำที่จะถูกตัดในแต่ละรอบ
+            </p>
+          </div>
+        </Card>
+
+        {/* Card 3: Paid Off Progress */}
+        <Card className="animate-rise p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] font-semibold text-ink-muted">ผ่อนชำระสำเร็จแล้ว (Paid Off)</span>
+            <div className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <CheckIcon className="h-4 w-4" strokeWidth={2.4} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <p className="font-display text-[26px] font-extrabold tnum text-emerald-600 dark:text-emerald-400 leading-tight">
+              +{thb(totalPaidOffAmount)}
+            </p>
+            <p className="text-[11.5px] text-ink-muted mt-1 font-medium">
+              {completedDebts.length > 0 ? `ปิดหนี้สำเร็จแล้ว ${completedDebts.length} รายการ 🎉` : 'ยอดสะสมจากการทยอยผ่อน'}
+            </p>
+          </div>
+        </Card>
+
+        {/* Card 4: Estimated Debt-Free Date */}
+        <Card className="animate-rise p-5 flex flex-col justify-between bg-gradient-to-br from-surface to-brand-soft/20 dark:from-white/[0.03] dark:to-brand/10">
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] font-semibold text-brand">วันคาดว่าจะปลอดหนี้ (Debt Free)</span>
+            <div className="grid h-7 w-7 place-items-center rounded-lg bg-brand-soft text-brand">
+              <ClockIcon className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <p className="font-display text-[22px] font-extrabold text-ink dark:text-white leading-tight">
+              {overallDebtFreeEstimation ? overallDebtFreeEstimation.dateStr : 'ไม่มีหนี้คงค้าง 🎉'}
+            </p>
+            <p className="text-[11.5px] text-ink-muted mt-1 font-medium">
+              {overallDebtFreeEstimation ? overallDebtFreeEstimation.relativeStr : 'ยินดีด้วย! คุณมีอิสรภาพทางการเงินเต็ม 100%'}
+            </p>
+          </div>
+        </Card>
+      </div>
+
+      {/* ── Status Tabs & Filter Controls ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+        {/* Main Status Segment (เหมือนรูปเป๊ะๆ) */}
+        <div className="flex items-center gap-1.5 p-1 bg-surface-muted dark:bg-white/5 rounded-2xl border border-line/60 dark:border-white/10 w-fit">
+          <button
+            type="button"
+            onClick={() => setStatusTab('active')}
+            className={`px-4 py-1.5 rounded-xl text-[12.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              statusTab === 'active'
+                ? 'bg-amber-400 text-amber-950 dark:bg-amber-400 dark:text-amber-950 shadow-xs'
+                : 'text-ink-muted hover:text-ink dark:hover:text-white'
+            }`}
+          >
+            <span>กำลังผ่อน</span>
+            <span className="text-[11px] opacity-80">({activeDebts.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStatusTab('completed')}
+            className={`px-4 py-1.5 rounded-xl text-[12.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              statusTab === 'completed'
+                ? 'bg-emerald-500 text-white shadow-xs'
+                : 'text-ink-muted hover:text-ink dark:hover:text-white'
+            }`}
+          >
+            <span>ผ่อนสำเร็จ 🎉</span>
+            <span className="text-[11px] opacity-80">({completedDebts.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStatusTab('all')}
+            className={`px-4 py-1.5 rounded-xl text-[12.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              statusTab === 'all'
+                ? 'bg-ink text-surface dark:bg-white dark:text-ink-dark shadow-xs'
+                : 'text-ink-muted hover:text-ink dark:hover:text-white'
+            }`}
+          >
+            <span>ทั้งหมด</span>
+            <span className="text-[11px] opacity-80">({liabilities.length})</span>
+          </button>
+        </div>
+
+        {/* Category Filter Pills */}
+        <div className="flex flex-wrap items-center gap-1.5 text-[11.5px]">
+          <button
+            type="button"
+            onClick={() => setActiveCategoryFilter('all')}
+            className={`px-2.5 py-1 rounded-full font-semibold transition-colors cursor-pointer ${
+              activeCategoryFilter === 'all'
+                ? 'bg-ink text-surface dark:bg-white dark:text-ink-dark'
+                : 'bg-surface-muted text-ink-muted hover:text-ink dark:bg-white/10 dark:text-white/70'
+            }`}
+          >
+            ทุกหมวด
+          </button>
+
+          {(['installment', 'credit_card', 'mortgage', 'auto_loan', 'personal_loan', 'student_loan', 'other'] as DebtCategory[]).map((catKey) => {
+            const meta = DEBT_CATEGORIES[catKey]
+            const count = liabilities.filter((l) => l.category === catKey).length
+            if (count === 0 && activeCategoryFilter !== catKey) return null
+            const isSelected = activeCategoryFilter === catKey
+            return (
+              <button
+                key={catKey}
+                type="button"
+                onClick={() => setActiveCategoryFilter(catKey)}
+                className={`px-2.5 py-1 rounded-full font-medium transition-colors cursor-pointer flex items-center gap-1 ${
+                  isSelected
+                    ? 'bg-brand text-white shadow-xs font-semibold'
+                    : 'bg-surface-muted text-ink-muted hover:text-ink dark:bg-white/10 dark:text-white/70'
+                }`}
+              >
+                <CategoryIcon category={catKey} className="h-3 w-3" />
+                <span>{meta.label}</span>
+                <span className="text-[10px] opacity-75">({count})</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Debts List / Cards ── */}
+      {filteredDebts.length === 0 ? (
+        <Card className="p-12 text-center">
+          <div className="inline-grid h-16 w-16 place-items-center rounded-3xl bg-pink-500/10 text-pink-600 dark:text-pink-400 mb-3">
+            <ShoppingBagIcon className="h-8 w-8" />
+          </div>
+          <h3 className="font-display text-[18px] font-bold text-ink dark:text-white">
+            {statusTab === 'active'
+              ? 'ไม่มีรายการหนี้ที่กำลังผ่อน (Debt Free 🎉)'
+              : statusTab === 'completed'
+              ? 'ยังไม่มีรายการที่ผ่อนสำเร็จ'
+              : 'ยังไม่มีรายการหนี้สิน'}
+          </h3>
+          <p className="text-[13px] text-ink-muted max-w-md mx-auto mt-1">
+            {statusTab === 'active'
+              ? 'สุดยอดมาก! คุณไม่มีภาระผ่อนคงค้าง หรือหากต้องการบันทึกการผ่อนสินค้า 0% ชิ้นใหม่ สามารถกดเพิ่มได้เลย'
+              : 'บันทึกและจัดการผ่อนสินค้า 0% สินเชื่อบ้าน รถ หรือกู้ยืมเพื่อเห็นภาพความมั่งคั่งสุทธิ'}
+          </p>
+          <Button
+            onClick={() => {
+              setEditingLiabilityId(null)
+              setLiabilitiesModalOpen(true)
+            }}
+            variant="secondary"
+            size="md"
+            className="mt-5"
+          >
+            <PlusIcon className="h-4 w-4 mr-1.5" />
+            เพิ่มรายการแรก
+          </Button>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {filteredDebts.map((l) => {
+            const meta = DEBT_CATEGORIES[l.category] ?? DEBT_CATEGORIES.other
+            const isInst = l.isInstallment || l.category === 'installment'
+            const totalInst = l.totalInstallments ?? (isInst ? 10 : 0)
+            const paidInst = l.paidInstallments ?? 0
+            const remainingInst = Math.max(0, totalInst - paidInst)
+            const isCompleted = l.balance <= 0 || (isInst && totalInst > 0 && paidInst >= totalInst)
+            const percent = totalInst > 0 ? Math.min(100, Math.round((paidInst / totalInst) * 100)) : (isCompleted ? 100 : 0)
+            const isCollapsed = collapsedIds.has(l.id)
+
+            const originalBal = l.originalBalance ?? (isInst && l.monthlyPayment && totalInst > 0 ? l.monthlyPayment * totalInst : l.balance)
+            const paidAmount = Math.max(0, originalBal - l.balance)
+            const dueInfo = getLiabilityDueStatus(l)
+            const payoff = getEstimatedPayoffDate(l.dueDay, remainingInst)
+
+            // Monthly amount for each installment pill
+            const pillAmount = l.monthlyPayment && l.monthlyPayment > 0
+              ? l.monthlyPayment
+              : (totalInst > 0 ? Math.round(originalBal / totalInst) : 0)
+
+            return (
+              <Card
+                key={l.id}
+                className="overflow-hidden border border-line/70 dark:border-white/10 shadow-xs hover:border-line-strong transition-all"
+              >
+                {/* ── Card Header ── */}
+                <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line/50 dark:border-white/5 bg-surface-muted/30 dark:bg-white/[0.01]">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`grid h-10 w-10 place-items-center rounded-2xl shrink-0 ${meta.bgClass} ${meta.textClass}`}>
+                      <CategoryIcon category={l.category} className="h-5 w-5" />
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-display font-bold text-[16px] sm:text-[17px] text-ink dark:text-white truncate">
+                          {l.name}
+                        </h3>
+                        <span className={`text-[10.5px] font-semibold px-2 py-0.5 rounded-full ${dueInfo.badgeClass}`}>
+                          {dueInfo.label}
+                        </span>
+                      </div>
+                      <p className="text-[12px] text-ink-muted truncate mt-0.5">
+                        {meta.label} {l.lender ? `· ${l.lender}` : ''}
+                        {l.interestRate !== undefined && l.interestRate > 0 && ` · ดอกเบี้ย ${l.interestRate}% APR`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Header Actions */}
+                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingLiabilityId(l.id)
+                        setLiabilitiesModalOpen(true)
+                      }}
+                      className="p-2 rounded-xl text-ink-muted hover:text-ink hover:bg-surface-muted dark:hover:bg-white/10 transition-colors cursor-pointer"
+                      title="แก้ไขข้อมูลรายการนี้"
+                    >
+                      <PencilIcon className="h-4 w-4" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setItemToDelete(l)}
+                      className="p-2 rounded-xl text-ink-muted hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      title="ลบรายการนี้"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleCollapse(l.id)}
+                      className="p-2 rounded-xl text-ink-muted hover:text-ink hover:bg-surface-muted dark:hover:bg-white/10 transition-colors cursor-pointer"
+                      title={isCollapsed ? 'ขยายดูรายละเอียด' : 'ย่อรายการ'}
+                    >
+                      <ChevronDownIcon className={`h-4 w-4 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* ── Card Body (Collapsible) ── */}
+                {!isCollapsed && (
+                  <div className="p-4 sm:p-5 space-y-5">
+                    {/* 1. Grid 6 ช่องสรุปตัวเลขหลัก (เหมือนรูป UI เป๊ะๆ) */}
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 rounded-2xl bg-surface-muted/50 dark:bg-white/[0.02] p-3 sm:p-4 border border-line/40 dark:border-white/5 text-center">
+                      <div className="space-y-0.5">
+                        <span className="text-[11px] font-medium text-ink-muted">จ่ายไปแล้ว</span>
+                        <p className="font-display font-bold text-[14px] sm:text-[15.5px] tnum text-emerald-600 dark:text-emerald-400">
+                          {thb(paidAmount)}
+                        </p>
+                      </div>
+
+                      <div className="space-y-0.5">
+                        <span className="text-[11px] font-medium text-ink-muted">คงเหลือ</span>
+                        <p className={`font-display font-extrabold text-[14px] sm:text-[15.5px] tnum ${l.balance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                          {l.balance > 0 ? `-${thb(l.balance)}` : '฿0'}
+                        </p>
+                      </div>
+
+                      <div className="space-y-0.5">
+                        <span className="text-[11px] font-medium text-ink-muted">เงินต้น / ราคาเต็ม</span>
+                        <p className="font-display font-bold text-[14px] sm:text-[15.5px] tnum text-ink dark:text-white">
+                          {thb(originalBal)}
+                        </p>
+                      </div>
+
+                      <div className="space-y-0.5">
+                        <span className="text-[11px] font-medium text-ink-muted">ค่างวดต่อเดือน</span>
+                        <p className="font-display font-bold text-[14px] sm:text-[15.5px] tnum text-ink dark:text-white">
+                          {l.monthlyPayment ? thb(l.monthlyPayment) : '-'}
+                        </p>
+                      </div>
+
+                      <div className="space-y-0.5">
+                        <span className="text-[11px] font-medium text-ink-muted">จ่ายล่าสุด</span>
+                        <p className="font-display font-semibold text-[13px] sm:text-[14px] text-ink dark:text-white truncate">
+                          {formatThaiDate(l.lastPaidDate)}
+                        </p>
+                      </div>
+
+                      <div className="space-y-0.5">
+                        <span className="text-[11px] font-medium text-ink-muted">เจ้าหนี้</span>
+                        <p className="font-display font-semibold text-[13px] sm:text-[14px] text-ink dark:text-white truncate">
+                          {l.lender || '-'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* 2. Progress Bar */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-[11.5px] font-semibold text-ink-muted">
+                        <span>ความคืบหน้า ({percent}%)</span>
+                        <span>{isCompleted ? 'ผ่อนชำระครบถ้วนแล้ว 🎉' : `เหลืออีก ${thb(l.balance)}`}</span>
+                      </div>
+                      <div className="h-2.5 w-full rounded-full bg-surface-muted dark:bg-white/10 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            percent >= 100 ? 'bg-emerald-500' : 'bg-pink-500'
+                          }`}
+                          style={{ width: `${percent}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* 3. ตารางการผ่อนชำระ (Visual Installment Pills Matrix) */}
+                    {totalInst > 0 && (
+                      <div className="space-y-2.5 pt-1">
+                        <div className="flex items-center justify-between text-[12.5px]">
+                          <span className="font-bold text-ink dark:text-white">ตารางการผ่อนชำระ</span>
+                          <span className="text-ink-muted font-medium">
+                            {paidInst}/{totalInst} (เหลือ {remainingInst} งวด)
+                          </span>
+                        </div>
+
+                        {/* Grid of Pill Chips (1, 2, 3...) */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                          {Array.from({ length: totalInst }, (_, i) => {
+                            const termNum = i + 1
+                            const isPaid = termNum <= paidInst
+                            const isNext = termNum === paidInst + 1
+
+                            return (
+                              <button
+                                key={termNum}
+                                type="button"
+                                onClick={() => {
+                                  if (isPaid && termNum === paidInst) {
+                                    handleUndo(l)
+                                  } else if (isNext) {
+                                    handlePay(l)
+                                  }
+                                }}
+                                title={
+                                  isPaid
+                                    ? `งวดที่ ${termNum} (ชำระแล้ว - คลิกเพื่อ Undo)`
+                                    : isNext
+                                    ? `งวดที่ ${termNum} (งวดถัดไป - คลิกเพื่อจ่าย)`
+                                    : `งวดที่ ${termNum} (ยังไม่ถึงกำหนด)`
+                                }
+                                className={`flex items-center justify-between px-3 py-2 rounded-xl text-[12px] font-bold border transition-all cursor-pointer select-none ${
+                                  isPaid
+                                    ? 'bg-[#b3cf82]/35 dark:bg-[#b3cf82]/20 border-[#9abf60]/50 text-[#3d5a1e] dark:text-[#c4e296] hover:brightness-95'
+                                    : isNext
+                                    ? 'bg-amber-400/20 dark:bg-amber-400/10 border-amber-500/50 text-amber-800 dark:text-amber-300 ring-2 ring-amber-400/30 animate-pulse'
+                                    : 'bg-surface-muted/40 dark:bg-white/[0.02] border-line/50 dark:border-white/5 text-ink-muted/70 hover:bg-surface-muted'
+                                }`}
+                              >
+                                <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-extrabold ${
+                                  isPaid
+                                    ? 'bg-[#7a9d3e] text-white'
+                                    : isNext
+                                    ? 'bg-amber-500 text-white'
+                                    : 'bg-surface-muted text-ink-faint'
+                                }`}>
+                                  {isPaid ? '✓' : termNum}
+                                </span>
+                                <span className="tnum font-semibold">
+                                  {pillAmount > 0 ? thbCompact(pillAmount) : '฿0'}
+                                </span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 4. Estimated Payoff Date */}
+                    {isInst && !isCompleted && (
+                      <div className="rounded-xl bg-surface-muted/40 dark:bg-white/[0.02] px-3.5 py-2.5 text-[12px] text-ink-muted flex items-center justify-between">
+                        <span>วันที่คาดว่าจะผ่อนหมด :</span>
+                        <strong className="text-ink dark:text-white font-bold">{payoff.dateStr} ({payoff.relativeStr})</strong>
+                      </div>
+                    )}
+
+                    {/* 5. Action Footer Buttons */}
+                    <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-t border-line/40 dark:border-white/5">
+                      <Button
+                        variant="secondary"
+                        size="md"
+                        onClick={() => setHistoryModalLiability(l)}
+                        className="w-full sm:w-auto"
+                      >
+                        <ClockIcon className="h-4 w-4 mr-1.5 text-ink-muted" />
+                        ประวัติการชำระ
+                      </Button>
+
+                      {isCompleted ? (
+                        <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold text-[13px]">
+                          <CheckIcon className="h-4 w-4" strokeWidth={2.4} />
+                          <span>ผ่อนชำระครบทุกงวดแล้ว 🎉</span>
+                        </div>
+                      ) : dueInfo.status === 'paid' ? (
+                        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                          <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3.5 py-1.5 rounded-xl border border-emerald-500/20">
+                            <CheckIcon className="h-4 w-4" strokeWidth={2.4} />
+                            <span>จ่ายงวดนี้แล้ว</span>
+                          </span>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleUndo(l)}
+                            className="text-rose-600 hover:text-rose-700"
+                          >
+                            ยกเลิก (Undo)
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="primary"
+                          size="md"
+                          onClick={() => handlePay(l)}
+                          className="w-full sm:w-auto bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold shadow-xs border-amber-500/30"
+                        >
+                          <CheckIcon className="h-4 w-4 mr-1.5" strokeWidth={2.4} />
+                          จ่ายค่างวด ({l.monthlyPayment ? thb(l.monthlyPayment) : 'งวดนี้'})
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </Card>
+            )
+          })}
+        </div>
+      )}
+
+      {/* ── Payment History Modal ── */}
+      <Modal
+        open={historyModalLiability !== null}
+        onClose={() => setHistoryModalLiability(null)}
+        title={historyModalLiability ? `ประวัติการชำระ: ${historyModalLiability.name}` : 'ประวัติการชำระ'}
+        description="ประวัติบันทึกการตัดรอบและชำระค่างวดที่บันทึกไว้ใน Activity Logs"
+        size="lg"
+      >
+        <div className="space-y-3 py-1">
+          {historyLogs.length === 0 ? (
+            <div className="py-8 text-center text-ink-muted text-[13px]">
+              ยังไม่มีประวัติการทำรายการสำหรับหนี้สินรายการนี้
+            </div>
+          ) : (
+            <div className="divide-y divide-line/60 dark:divide-white/5 max-h-[60vh] overflow-y-auto">
+              {historyLogs.map((log: HoldingLog) => (
+                <div key={log.id} className="py-3 flex items-start justify-between gap-3 text-[12.5px]">
+                  <div>
+                    <p className="font-semibold text-ink dark:text-white">{log.note}</p>
+                    <p className="text-[11px] text-ink-faint mt-0.5">
+                      {new Date(log.timestamp).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })}
+                    </p>
+                  </div>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-surface-muted text-ink-muted uppercase">
+                    {log.action}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* ── Delete Confirmation Modal ── */}
+      <Modal
+        open={itemToDelete !== null}
+        onClose={() => setItemToDelete(null)}
+        title="ยืนยันการลบรายการหนี้"
+        size="sm"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <Button variant="secondary" onClick={() => setItemToDelete(null)}>
+              ยกเลิก
+            </Button>
+            <Button variant="danger" onClick={handleDeleteConfirm}>
+              ลบรายการ
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-[13px] text-ink-muted py-2">
+          คุณแน่ใจหรือไม่ว่าต้องการลบรายการ &ldquo;<strong className="text-ink dark:text-white">{itemToDelete?.name}</strong>&rdquo; ออกจากระบบ? การลบนี้จะไม่สามารถย้อนคืนได้
+        </p>
+      </Modal>
+
+      {/* ── Add / Edit Liabilities Modal ── */}
+      <LiabilitiesModal
+        open={liabilitiesModalOpen}
+        onClose={() => {
+          setLiabilitiesModalOpen(false)
+          setEditingLiabilityId(null)
+        }}
+        initialLiabilityId={editingLiabilityId}
+      />
+    </div>
+  )
+}

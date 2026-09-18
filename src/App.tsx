@@ -16,6 +16,7 @@ const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.S
 const HoldingLogs = lazy(() => import('./pages/HoldingLogs').then(m => ({ default: m.HoldingLogs })))
 const Rebalance = lazy(() => import('./pages/Rebalance').then(m => ({ default: m.Rebalance })))
 const Dividends = lazy(() => import('./pages/Dividends').then(m => ({ default: m.Dividends })))
+const Debts = lazy(() => import('./pages/Debts').then(m => ({ default: m.Debts })))
 
 function PageLoadingFallback() {
   return (
@@ -239,8 +240,10 @@ function AppContent() {
           <Route path="/rebalance" element={<Rebalance />} />
           <Route path="/dca" element={<DcaPlanner />} />
           <Route path="/dividends" element={<Dividends />} />
+          <Route path="/debts" element={<Debts />} />
           <Route path="/cashflow/dca" element={<DcaPlanner />} />
           <Route path="/cashflow/dividends" element={<Dividends />} />
+          <Route path="/cashflow/debts" element={<Debts />} />
           <Route path="/retirement" element={<Retirement />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/logs" element={<HoldingLogs />} />

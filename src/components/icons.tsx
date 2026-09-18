@@ -447,3 +447,10 @@ export function ShoppingBagIcon(p: IconProps) {
   )
 }
 
+export function ArrowUpRightIcon(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M7 17 17 7M7 7h10v10" />
+    </svg>
+  )
+}

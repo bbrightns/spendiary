@@ -14,6 +14,7 @@ import { AiImportModal } from '../components/forms/AiImportModal'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import {
+  ArrowUpRightIcon,
   CheckIcon,
   DebtIcon,
   PencilIcon,
@@ -190,17 +191,7 @@ export function Dashboard() {
             <div id="guide-dashboard-debt-alert">
               <button
                 type="button"
-                onClick={() => {
-                  const el = document.getElementById('guide-dashboard-debts')
-                  if (el) {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                    el.classList.add('ring-2', 'ring-rose-500/50')
-                    setTimeout(() => el.classList.remove('ring-2', 'ring-rose-500/50'), 2000)
-                  } else {
-                    setSelectedLiabilityId(null)
-                    setLiabilitiesOpen(true)
-                  }
-                }}
+                onClick={() => navigate('/debts')}
                 aria-label={`View ${debtActions.length} debts due for payment`}
                 className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[12.5px] font-semibold transition-all active:scale-95 cursor-pointer shadow-xs ${
                   hasOverdueDebts
@@ -724,18 +715,14 @@ export function Dashboard() {
                   <h2 className="font-display text-[16px] font-bold text-ink">Liabilities & Debts</h2>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedLiabilityId(null)
-                    setLiabilitiesOpen(true)
-                  }}
-                  aria-label="Manage liabilities and debts"
+                <Link
+                  to="/debts"
+                  aria-label="Open Debts & Installments Hub"
                   className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-brand hover:underline cursor-pointer"
                 >
-                  <span>Manage</span>
-                  <PencilIcon className="h-3.5 w-3.5" />
-                </button>
+                  <span>Open Hub</span>
+                  <ArrowUpRightIcon className="h-3.5 w-3.5" />
+                </Link>
               </div>
 
               {/* Liabilities & Debts Hero Summary */}
@@ -962,17 +949,26 @@ export function Dashboard() {
 
             <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
               <span>{debts > 0 ? 'ผ่อนชำระตรงเวลาเพื่อลดภาระดอกเบี้ย' : 'ความมั่งคั่งสุทธิ = ทรัพย์สิน 100%'}</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedLiabilityId(null)
-                  setLiabilitiesOpen(true)
-                }}
-                aria-label="Add new liability"
-                className="font-semibold text-brand hover:underline cursor-pointer"
-              >
-                + Add Debt
-              </button>
+              <div className="flex items-center gap-3">
+                <Link
+                  to="/debts"
+                  className="font-semibold text-brand hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  <span>ดูตารางผ่อนทั้งหมด</span>
+                  <ArrowUpRightIcon className="h-3 w-3" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedLiabilityId(null)
+                    setLiabilitiesOpen(true)
+                  }}
+                  aria-label="Add new liability"
+                  className="font-semibold text-brand hover:underline cursor-pointer"
+                >
+                  + Add Debt
+                </button>
+              </div>
             </div>
           </Card>
         </div>

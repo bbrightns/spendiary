@@ -2,6 +2,7 @@ import type { ComponentType, SVGProps } from 'react'
 import {
   DashboardIcon,
   DcaIcon,
+  DebtIcon,
   PortfolioIcon,
   RetirementIcon,
   SettingsIcon,
@@ -53,6 +54,13 @@ export const cashflowSubItems: NavSubItem[] = [
     short: 'Dividends',
     description: 'Passive income tracker, payouts & withholding tax',
     icon: DividendIcon,
+  },
+  {
+    to: '/debts',
+    label: 'Debts & Installments',
+    short: 'Debts',
+    description: 'Track loans, BNPL, 0% installments & payoff schedule',
+    icon: DebtIcon,
   },
 ]
 
