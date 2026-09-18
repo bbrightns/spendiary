@@ -21,7 +21,6 @@ import {
   PencilIcon,
   PlusIcon,
   SearchIcon,
-  SparkleIcon,
   TrashIcon,
   WalletIcon,
 } from '../components/icons'
@@ -29,18 +28,6 @@ import {
 const THAI_MONTHS_SHORT = [
   'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
   'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-]
-
-const QUICK_PRESETS = [
-  { name: 'Kept', rate: '2.22', category: 'emergency' as CashAccountCategory, schedule: 'monthly' as CashPayoutSchedule, months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
-  { name: 'Click', rate: '1.50', category: 'emergency' as CashAccountCategory, schedule: 'monthly' as CashPayoutSchedule, months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
-  { name: 'Dime THB', rate: '3.00', maxBalance: 10000, category: 'invest' as CashAccountCategory, schedule: 'monthly' as CashPayoutSchedule, months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
-  { name: 'Dime USD', currency: 'USD' as const, category: 'invest' as CashAccountCategory, schedule: 'monthly' as CashPayoutSchedule, months: [] },
-  { name: 'TrueMoney', category: 'spending' as CashAccountCategory, schedule: 'monthly' as CashPayoutSchedule, months: [] },
-  { name: 'KBank', category: 'spending' as CashAccountCategory, schedule: 'semi_annual' as CashPayoutSchedule, months: [6, 12] },
-  { name: 'SCB', category: 'spending' as CashAccountCategory, schedule: 'semi_annual' as CashPayoutSchedule, months: [6, 12] },
-  { name: 'ออมทรัพย์ หุ้น (สหกรณ์)', rate: '5.50', category: 'locked' as CashAccountCategory, schedule: 'annual' as CashPayoutSchedule, months: [2] },
-  { name: 'กองทุนสำรองเลี้ยงชีพ', category: 'locked' as CashAccountCategory, schedule: 'annual' as CashPayoutSchedule, months: [] },
 ]
 
 function tempId(): string {
@@ -176,25 +163,6 @@ export function CashLiquidity() {
     const sorted = sortCashAccounts(accounts, rate)
     setCashAccounts(sorted)
     showToast('จัดเรียงบัญชีตามสถาบันและยอดเงินเรียบร้อยแล้ว', 'success')
-  }
-
-  const handleAddPreset = (p: (typeof QUICK_PRESETS)[0]) => {
-    const newAcc: CashAccount = {
-      id: tempId(),
-      name: p.name,
-      balance: 0,
-      currency: p.currency ?? 'THB',
-      category: p.category,
-      interestRate: p.rate ? Number(p.rate) : undefined,
-      maxEligibleBalance: p.maxBalance,
-      payoutSchedule: p.schedule ?? 'monthly',
-      payoutMonths: p.months,
-    }
-    const updated = sortCashAccounts([...accounts, newAcc], rate)
-    setCashAccounts(updated)
-    setAccountToEdit(newAcc)
-    setIsEditModalOpen(true)
-    showToast(`เพิ่มบัญชี ${p.name} เรียบร้อยแล้ว`, 'success')
   }
 
   const handleOpenAddModal = () => {
@@ -416,39 +384,6 @@ export function CashLiquidity() {
         </div>
       </Card>
 
-      {/* ── Quick Bank Presets Bar ── */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[12px] font-bold uppercase tracking-wider text-ink-muted flex items-center gap-1.5">
-            <SparkleIcon className="h-3.5 w-3.5 text-amber-500" />
-            Quick Presets (คลิกเพื่อเพิ่มบัญชีธนาคารยอดนิยม)
-          </span>
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {QUICK_PRESETS.map((p) => {
-            const presetInfo = detectBankPreset(p.name)
-            return (
-              <button
-                key={p.name}
-                type="button"
-                onClick={() => handleAddPreset(p)}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11.5px] font-semibold border transition-all hover:scale-105 cursor-pointer shadow-2xs"
-                style={{
-                  backgroundColor: presetInfo?.bg ?? 'var(--color-surface-muted)',
-                  borderColor: 'var(--color-line)',
-                  color: presetInfo?.color ?? 'var(--color-ink)',
-                }}
-                title={`เพิ่ม ${p.name} (${p.category})`}
-              >
-                <PlusIcon className="h-3 w-3" strokeWidth={2.5} />
-                <span>{p.name}</span>
-                {p.rate && <span className="opacity-80 text-[10px]">({p.rate}%)</span>}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
       {/* ── Cash Accounts Matrix & Filter Controls ── */}
       <Card className="p-4 sm:p-5 border-line/60 space-y-4">
         {/* Controls: Search & Category Tabs */}
@@ -488,16 +423,26 @@ export function CashLiquidity() {
             })}
           </div>
 
-          {/* Search box */}
-          <div className="relative w-full sm:w-64">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-ink-muted" />
-            <input
-              type="text"
-              placeholder="ค้นหาชื่อบัญชี / สถาบัน..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9 w-full rounded-xl border border-line bg-surface-muted/40 pl-8 pr-3 text-[12.5px] font-medium text-ink outline-none placeholder:text-ink-muted/50 focus:border-brand focus:bg-surface"
-            />
+          {/* Search box & Add Account Button */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-64">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-ink-muted" />
+              <input
+                type="text"
+                placeholder="ค้นหาชื่อบัญชี / สถาบัน..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-9 w-full rounded-xl border border-line bg-surface-muted/40 pl-8 pr-3 text-[12.5px] font-medium text-ink outline-none placeholder:text-ink-muted/50 focus:border-brand focus:bg-surface"
+              />
+            </div>
+            <Button
+              onClick={handleOpenAddModal}
+              className="gap-1.5 text-[12.5px] shrink-0 h-9 px-3.5 shadow-xs"
+              title="เพิ่มบัญชีเงินสดใหม่"
+            >
+              <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
+              <span>เพิ่มบัญชี</span>
+            </Button>
           </div>
         </div>
 
