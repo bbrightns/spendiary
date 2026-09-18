@@ -274,58 +274,58 @@ export function Debts() {
         </Card>
       </div>
 
-      {/* ── Status Tabs & Filter Controls ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-        {/* Main Status Segment (เหมือนรูปเป๊ะๆ) */}
-        <div className="flex items-center gap-1.5 p-1 bg-surface-muted dark:bg-white/5 rounded-2xl border border-line/60 dark:border-white/10 w-fit">
+      {/* ── Status Tabs & Filter Controls (Slim & Compact) ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
+        {/* Main Status Segment (Slim single-line pill) */}
+        <div className="inline-flex items-center gap-1 p-0.5 sm:p-1 bg-surface-muted/70 dark:bg-white/5 rounded-xl border border-line/60 dark:border-white/10 w-fit shrink-0">
           <button
             type="button"
             onClick={() => setStatusTab('active')}
-            className={`px-4 py-1.5 rounded-xl text-[12.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-2.5 py-1 rounded-lg text-[11.5px] font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
               statusTab === 'active'
                 ? 'bg-amber-400 text-amber-950 dark:bg-amber-400 dark:text-amber-950 shadow-xs'
                 : 'text-ink-muted hover:text-ink dark:hover:text-white'
             }`}
           >
             <span>กำลังผ่อน</span>
-            <span className="text-[11px] opacity-80">({activeDebts.length})</span>
+            <span className="text-[10px] opacity-85">({activeDebts.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setStatusTab('completed')}
-            className={`px-4 py-1.5 rounded-xl text-[12.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-2.5 py-1 rounded-lg text-[11.5px] font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
               statusTab === 'completed'
                 ? 'bg-emerald-500 text-white shadow-xs'
                 : 'text-ink-muted hover:text-ink dark:hover:text-white'
             }`}
           >
-            <span>ผ่อนสำเร็จ 🎉</span>
-            <span className="text-[11px] opacity-80">({completedDebts.length})</span>
+            <span>ผ่อนสำเร็จ</span>
+            <span className="text-[10px] opacity-85">({completedDebts.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setStatusTab('all')}
-            className={`px-4 py-1.5 rounded-xl text-[12.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-2.5 py-1 rounded-lg text-[11.5px] font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
               statusTab === 'all'
                 ? 'bg-ink text-surface dark:bg-white dark:text-ink-dark shadow-xs'
                 : 'text-ink-muted hover:text-ink dark:hover:text-white'
             }`}
           >
             <span>ทั้งหมด</span>
-            <span className="text-[11px] opacity-80">({liabilities.length})</span>
+            <span className="text-[10px] opacity-85">({liabilities.length})</span>
           </button>
         </div>
 
-        {/* Category Filter Pills */}
-        <div className="flex flex-wrap items-center gap-1.5 text-[11.5px]">
+        {/* Category Filter Pills (Slim) */}
+        <div className="flex flex-wrap items-center gap-1 text-[11px]">
           <button
             type="button"
             onClick={() => setActiveCategoryFilter('all')}
-            className={`px-2.5 py-1 rounded-full font-semibold transition-colors cursor-pointer ${
+            className={`px-2 py-0.5 rounded-full font-semibold whitespace-nowrap transition-colors cursor-pointer ${
               activeCategoryFilter === 'all'
-                ? 'bg-ink text-surface dark:bg-white dark:text-ink-dark'
+                ? 'bg-ink text-surface dark:bg-white dark:text-ink-dark shadow-xs'
                 : 'bg-surface-muted text-ink-muted hover:text-ink dark:bg-white/10 dark:text-white/70'
             }`}
           >
@@ -342,7 +342,7 @@ export function Debts() {
                 key={catKey}
                 type="button"
                 onClick={() => setActiveCategoryFilter(catKey)}
-                className={`px-2.5 py-1 rounded-full font-medium transition-colors cursor-pointer flex items-center gap-1 ${
+                className={`px-2 py-0.5 rounded-full font-medium whitespace-nowrap transition-colors cursor-pointer flex items-center gap-1 ${
                   isSelected
                     ? 'bg-brand text-white shadow-xs font-semibold'
                     : 'bg-surface-muted text-ink-muted hover:text-ink dark:bg-white/10 dark:text-white/70'
@@ -350,7 +350,7 @@ export function Debts() {
               >
                 <CategoryIcon category={catKey} className="h-3 w-3" />
                 <span>{meta.label}</span>
-                <span className="text-[10px] opacity-75">({count})</span>
+                <span className="text-[9.5px] opacity-75">({count})</span>
               </button>
             )
           })}
