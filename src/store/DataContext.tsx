@@ -266,6 +266,8 @@ interface DataContextValue {
   upsertLiability: (item: Omit<Liability, 'id'> & { id?: string }) => void
   removeLiability: (id: string) => void
   setLiabilities: (liabilities: Liability[]) => void
+  payLiabilityInstallment: (id: string) => void
+  undoLiabilityPayment: (id: string) => void
   /** Live USD/THB rate — set by useLivePrices, used by forms to convert USD inputs */
   usdThb: number | null
   setUsdThb: (rate: number) => void
@@ -1058,6 +1060,96 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }),
       setLiabilities: (liabilities) =>
         updateData((prev) => ({ ...prev, liabilities })),
+
+      payLiabilityInstallment: (id) =>
+        updateData((prev) => {
+          const item = (prev.liabilities ?? []).find((x) => x.id === id)
+          if (!item) return prev
+
+          const currentPaid = item.paidInstallments ?? 0
+          const totalInst = item.totalInstallments
+          const nextPaid = currentPaid + 1
+          
+          // Determine installment payment amount
+          let paymentAmount = item.monthlyPayment ?? 0
+          if (paymentAmount <= 0) {
+            const remainingInst = Math.max(1, (totalInst ?? 1) - currentPaid)
+            paymentAmount = Math.round(item.balance / remainingInst)
+          }
+
+          const newBalance = Math.max(0, item.balance - paymentAmount)
+          const todayStr = new Date().toISOString().slice(0, 10)
+
+          const updatedItems = (prev.liabilities ?? []).map((x) =>
+            x.id === id
+              ? {
+                  ...x,
+                  balance: newBalance,
+                  paidInstallments: nextPaid,
+                  lastPaidDate: todayStr,
+                  updatedAt: todayStr,
+                }
+              : x,
+          )
+
+          const logEntry: HoldingLog = {
+            id: newId(),
+            timestamp: new Date().toISOString(),
+            action: 'edit',
+            holdingName: `Liability: ${item.name}`,
+            ticker: 'DEBT',
+            assetClass: 'cash',
+            note: `Paid installment ${nextPaid}${totalInst ? `/${totalInst}` : ''} for "${item.name}" (฿${paymentAmount.toLocaleString()})`,
+          }
+
+          return {
+            ...prev,
+            liabilities: updatedItems,
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+          }
+        }),
+
+      undoLiabilityPayment: (id) =>
+        updateData((prev) => {
+          const item = (prev.liabilities ?? []).find((x) => x.id === id)
+          if (!item || (item.paidInstallments ?? 0) <= 0) return prev
+
+          const prevPaid = Math.max(0, (item.paidInstallments ?? 1) - 1)
+          const paymentAmount = item.monthlyPayment ?? 0
+          const restoredBalance = item.originalBalance
+            ? Math.min(item.originalBalance, item.balance + paymentAmount)
+            : item.balance + paymentAmount
+
+          const todayStr = new Date().toISOString().slice(0, 10)
+
+          const updatedItems = (prev.liabilities ?? []).map((x) =>
+            x.id === id
+              ? {
+                  ...x,
+                  balance: restoredBalance,
+                  paidInstallments: prevPaid,
+                  lastPaidDate: undefined,
+                  updatedAt: todayStr,
+                }
+              : x,
+          )
+
+          const logEntry: HoldingLog = {
+            id: newId(),
+            timestamp: new Date().toISOString(),
+            action: 'edit',
+            holdingName: `Liability: ${item.name}`,
+            ticker: 'DEBT',
+            assetClass: 'cash',
+            note: `Undid installment payment for "${item.name}" (reverted to ${prevPaid} paid, balance ฿${restoredBalance.toLocaleString()})`,
+          }
+
+          return {
+            ...prev,
+            liabilities: updatedItems,
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+          }
+        }),
 
       upsertHolding: (holding) =>
         updateData((prev) => ({ ...prev, holdings: upsert(prev.holdings, holding) })),

@@ -236,7 +236,7 @@ export interface PlannedAsset {
   assetClass: InvestAssetClass
 }
 
-export type DebtCategory = 'credit_card' | 'mortgage' | 'auto_loan' | 'personal_loan' | 'student_loan' | 'other'
+export type DebtCategory = 'installment' | 'credit_card' | 'mortgage' | 'auto_loan' | 'personal_loan' | 'student_loan' | 'other'
 
 export interface Liability {
   id: string
@@ -249,6 +249,16 @@ export interface Liability {
   dueDay?: number
   note?: string
   updatedAt?: string
+  /** Whether this liability is an installment plan (e.g. 0% 10-month phone, goods financing) */
+  isInstallment?: boolean
+  /** Total number of installments (e.g. 10) */
+  totalInstallments?: number
+  /** Number of installments paid so far (e.g. 4) */
+  paidInstallments?: number
+  /** ISO date string YYYY-MM-DD of the most recent payment confirmed */
+  lastPaidDate?: string
+  /** Original total cost/balance of the installment purchase (used for progress tracking) */
+  originalBalance?: number
 }
 
 export interface SpendiaryData {

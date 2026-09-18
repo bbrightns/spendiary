@@ -1,4 +1,4 @@
-import type { AssetClass, CashAccount, CashAccountCategory, DcaPlan, DebtCategory, DividendRecord, Holding, InvestAssetClass, SpendiaryData, Transfer } from './types'
+import type { AssetClass, CashAccount, CashAccountCategory, DcaPlan, DebtCategory, DividendRecord, Holding, InvestAssetClass, Liability, SpendiaryData, Transfer } from './types'
 import { daysUntil, localDateStr } from './format'
 
 export interface HoldingMetrics extends Holding {
@@ -896,6 +896,13 @@ export const DEBT_CATEGORIES: Record<
   DebtCategory,
   { label: string; color: string; bgClass: string; textClass: string; borderClass: string }
 > = {
+  installment: {
+    label: 'ผ่อนสินค้า / Shopping',
+    color: '#ec4899',
+    bgClass: 'bg-pink-500/10 dark:bg-pink-500/20',
+    textClass: 'text-pink-600 dark:text-pink-400',
+    borderClass: 'border-pink-500/20',
+  },
   credit_card: {
     label: 'Credit Card',
     color: '#f43f5e',
@@ -948,6 +955,89 @@ export function totalLiabilities(data: SpendiaryData): number {
 /** Total monthly debt service / installment payments in THB */
 export function totalMonthlyDebtPayment(data: SpendiaryData): number {
   return (data.liabilities ?? []).reduce((sum, l) => sum + (Number(l.monthlyPayment) || 0), 0)
+}
+
+/** Check if a liability has already been marked as paid in the current month */
+export function isLiabilityPaidThisMonth(l: Liability, now: Date = new Date()): boolean {
+  if (!l.lastPaidDate) return false
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const currentYearMonth = `${year}-${month}`
+  return l.lastPaidDate.startsWith(currentYearMonth)
+}
+
+export type LiabilityDueStatusType = 'paid' | 'completed' | 'overdue' | 'due_today' | 'due_soon' | 'pending'
+
+export interface LiabilityDueStatus {
+  status: LiabilityDueStatusType
+  label: string
+  badgeClass: string
+  daysLeft?: number
+}
+
+/** Determine payment due status for a given liability */
+export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): LiabilityDueStatus {
+  const isPaidThisMonth = isLiabilityPaidThisMonth(l, now)
+  const isCompleted = l.isInstallment && l.totalInstallments !== undefined && (l.paidInstallments ?? 0) >= l.totalInstallments && l.balance <= 0
+
+  if (isCompleted) {
+    return {
+      status: 'completed',
+      label: 'ผ่อนครบแล้ว 🎉',
+      badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+    }
+  }
+
+  if (isPaidThisMonth) {
+    return {
+      status: 'paid',
+      label: 'จ่ายงวดนี้แล้ว ✅',
+      badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+    }
+  }
+
+  if (!l.dueDay) {
+    return {
+      status: 'pending',
+      label: 'รอชำระ',
+      badgeClass: 'bg-surface-muted text-ink-muted border border-line/40',
+    }
+  }
+
+  const currentDay = now.getDate()
+  if (currentDay === l.dueDay) {
+    return {
+      status: 'due_today',
+      label: 'ครบกำหนดวันนี้',
+      badgeClass: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse',
+      daysLeft: 0,
+    }
+  }
+
+  if (currentDay > l.dueDay) {
+    return {
+      status: 'overdue',
+      label: `เลยกำหนด (วันที่ ${l.dueDay})`,
+      badgeClass: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30',
+    }
+  }
+
+  const daysLeft = l.dueDay - currentDay
+  if (daysLeft <= 3) {
+    return {
+      status: 'due_soon',
+      label: `อีก ${daysLeft} วัน (วันที่ ${l.dueDay})`,
+      badgeClass: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25',
+      daysLeft,
+    }
+  }
+
+  return {
+    status: 'pending',
+    label: `ทุกวันที่ ${l.dueDay}`,
+    badgeClass: 'bg-surface-muted text-ink-muted border border-line/40',
+    daysLeft,
+  }
 }
 
 /* --------------------------- Net worth -------------------------- */
