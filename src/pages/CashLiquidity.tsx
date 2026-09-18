@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, Fragment } from 'react'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -70,6 +70,8 @@ export function CashLiquidity() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [sortField, setSortField] = useState<'name' | 'category' | 'yield' | 'balance'>('balance')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
   // Modals state
   const [accountToEdit, setAccountToEdit] = useState<CashAccount | null>(null)
@@ -178,12 +180,45 @@ export function CashLiquidity() {
 
   // Filtering and Sorting
   const filteredAccounts = useMemo(() => {
-    return accounts.filter((a) => {
+    const list = accounts.filter((a) => {
       const matchesCategory = activeCategoryFilter === 'all' || (a.category ?? inferCashCategory(a.name)) === activeCategoryFilter
       const matchesSearch = searchQuery.trim() === '' || a.name.toLowerCase().includes(searchQuery.toLowerCase())
       return matchesCategory && matchesSearch
     })
-  }, [accounts, activeCategoryFilter, searchQuery])
+
+    return [...list].sort((a, b) => {
+      let comparison = 0
+      if (sortField === 'name') {
+        comparison = a.name.localeCompare(b.name, 'th')
+      } else if (sortField === 'category') {
+        const catA = a.category ?? inferCashCategory(a.name)
+        const catB = b.category ?? inferCashCategory(b.name)
+        comparison = catA.localeCompare(catB)
+      } else if (sortField === 'yield') {
+        const getEarned = (acc: CashAccount) => {
+          if (!acc.interestRate || acc.interestRate <= 0 || acc.balance <= 0) return 0
+          const cap = acc.maxEligibleBalance && acc.maxEligibleBalance > 0 ? Math.min(acc.balance, acc.maxEligibleBalance) : acc.balance
+          const thbVal = acc.currency === 'USD' ? cap * rate : cap
+          return thbVal * (acc.interestRate / 100)
+        }
+        comparison = getEarned(a) - getEarned(b)
+      } else if (sortField === 'balance') {
+        const thbA = a.currency === 'USD' ? a.balance * rate : a.balance
+        const thbB = b.currency === 'USD' ? b.balance * rate : b.balance
+        comparison = thbA - thbB
+      }
+      return sortOrder === 'asc' ? comparison : -comparison
+    })
+  }, [accounts, activeCategoryFilter, searchQuery, sortField, sortOrder, rate])
+
+  const handleSortToggle = (field: 'name' | 'category' | 'yield' | 'balance') => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortField(field)
+      setSortOrder(field === 'name' || field === 'category' ? 'asc' : 'desc')
+    }
+  }
 
   // Handlers
   const handleAutoSort = () => {
@@ -680,178 +715,260 @@ export function CashLiquidity() {
           </div>
         </div>
 
-        {/* Account Cards List */}
-        <div className="space-y-2.5">
-          {filteredAccounts.map((a) => {
-            const preset = detectBankPreset(a.name)
-            const cat = a.category ?? inferCashCategory(a.name)
-            const isExpanded = expandedId === a.id
-
-            const rateNum = a.interestRate ?? 0
-            const capNum = a.maxEligibleBalance
-            const eligibleBal = capNum && capNum > 0 ? Math.min(a.balance, capNum) : a.balance
-            const eligibleThb = a.currency === 'USD' ? eligibleBal * rate : eligibleBal
-            const annualEarned = rateNum > 0 && eligibleThb > 0 ? eligibleThb * (rateNum / 100) : 0
-
-            return (
-              <div
-                key={a.id}
-                className="rounded-2xl border border-line/60 bg-surface hover:border-line-strong transition-all duration-200 overflow-hidden shadow-2xs"
-              >
-                <div className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  {/* Left: Avatar + Account Info */}
-                  <div className="flex items-center gap-3 min-w-0">
-                    {preset ? (
-                      <div
-                        className="h-10 w-10 rounded-xl text-[12px] font-black shrink-0 flex items-center justify-center select-none shadow-xs"
-                        style={{ background: preset.bg, color: preset.color, border: `1px solid ${preset.color}35` }}
-                        title={`สถาบัน: ${preset.name}`}
-                      >
-                        {preset.shortName}
-                      </div>
-                    ) : (
-                      <div className="h-10 w-10 rounded-xl bg-surface-muted border border-line/50 text-ink-muted text-[12px] font-bold shrink-0 flex items-center justify-center">
-                        <WalletIcon className="h-5 w-5 opacity-60" />
-                      </div>
-                    )}
-
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-display font-bold text-[15px] text-ink truncate">
-                          {a.name || 'Untitled Account'}
-                        </h4>
-                        <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] font-medium bg-surface-muted border border-line/50 shrink-0">
-                          <span>{CASH_CATEGORIES[cat]?.icon}</span>
-                          <span>{CASH_CATEGORIES[cat]?.labelTh}</span>
-                        </span>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2 mt-1 text-[11.5px] text-ink-muted">
-                        {rateNum > 0 ? (
-                          <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
-                            <span>📈 {rateNum.toFixed(2)}%{capNum && capNum > 0 ? ` (สูงสุด ${thb(capNum)})` : ''}</span>
-                            <span>• ≈ {thb(annualEarned)}/ปี</span>
-                          </span>
-                        ) : (
-                          <span className="text-ink-muted/70">ไม่มีดอกเบี้ย</span>
-                        )}
-
-                        {a.currency === 'USD' && a.balance > 0 && (
-                          <span className="font-mono text-ink-muted">
-                            ≈ {thb(a.balance * rate)} (@{rate.toFixed(2)})
-                          </span>
-                        )}
-                      </div>
-                    </div>
+        {/* Semi-Table / Responsive Modern Table */}
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <table className="w-full text-left border-collapse min-w-[700px]">
+            <thead>
+              <tr className="border-b border-line/60 text-[11px] font-bold uppercase tracking-wider text-ink-muted select-none">
+                {/* Column 1: บัญชี / สถาบัน */}
+                <th
+                  onClick={() => handleSortToggle('name')}
+                  className="py-2.5 px-3 cursor-pointer hover:text-ink transition-colors"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>บัญชี / สถาบัน</span>
+                    <span className={`text-[10px] ${sortField === 'name' ? 'text-brand font-black' : 'opacity-30'}`}>
+                      {sortField === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
+                    </span>
                   </div>
+                </th>
 
-                  {/* Right: Balance In-Place Input + Actions */}
-                  <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-line/40">
-                    <div className="relative w-40 sm:w-44">
-                      <button
-                        type="button"
-                        onClick={() => handleToggleCurrency(a.id)}
-                        className={`absolute left-1.5 top-1/2 -translate-y-1/2 rounded-md px-2 py-0.5 text-[12px] font-extrabold transition-all cursor-pointer ${
-                          a.currency === 'USD'
-                            ? 'bg-sky-500/15 text-sky-500 hover:bg-sky-500/25 ring-1 ring-sky-500/30'
-                            : 'bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25 ring-1 ring-emerald-500/30'
-                        }`}
-                        title="คลิกเพื่อสลับสกุลเงิน (THB / USD)"
-                      >
-                        {a.currency === 'USD' ? '$' : '฿'}
-                      </button>
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        className="h-10 w-full rounded-xl border border-line bg-surface-muted/40 pl-9 pr-3 text-[14.5px] font-bold tnum text-ink outline-none transition-colors focus:border-brand focus:bg-surface focus:ring-2 focus:ring-brand/15 text-right"
-                        value={a.balance === 0 ? '' : formatWithCommas(a.balance)}
-                        placeholder="0.00"
-                        onChange={(e) => handleQuickBalanceChange(a.id, e.target.value)}
-                      />
-                    </div>
+                {/* Column 2: หมวดหมู่ */}
+                <th
+                  onClick={() => handleSortToggle('category')}
+                  className="py-2.5 px-3 cursor-pointer hover:text-ink transition-colors"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>หมวดหมู่</span>
+                    <span className={`text-[10px] ${sortField === 'category' ? 'text-brand font-black' : 'opacity-30'}`}>
+                      {sortField === 'category' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
+                    </span>
+                  </div>
+                </th>
 
-                    {/* Edit Details Button */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAccountToEdit(a)
-                        setIsEditModalOpen(true)
-                      }}
-                      className="grid h-10 w-9 place-items-center rounded-xl text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer"
-                      title="แก้ไขรายละเอียด ดอกเบี้ย และรอบการจ่าย"
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </button>
+                {/* Column 3: ดอกเบี้ย / ผลตอบแทน */}
+                <th
+                  onClick={() => handleSortToggle('yield')}
+                  className="py-2.5 px-3 cursor-pointer hover:text-ink transition-colors"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>ดอกเบี้ย & ผลตอบแทน</span>
+                    <span className={`text-[10px] ${sortField === 'yield' ? 'text-brand font-black' : 'opacity-30'}`}>
+                      {sortField === 'yield' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
+                    </span>
+                  </div>
+                </th>
 
-                    {/* Quick Expand Toggle Button */}
-                    <button
-                      type="button"
-                      onClick={() => setExpandedId(isExpanded ? null : a.id)}
-                      className={`grid h-10 w-9 place-items-center rounded-xl transition-colors cursor-pointer ${
-                        isExpanded ? 'bg-brand/10 text-brand' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'
+                {/* Column 4: ยอดคงเหลือ (Right aligned) */}
+                <th
+                  onClick={() => handleSortToggle('balance')}
+                  className="py-2.5 px-3 text-right cursor-pointer hover:text-ink transition-colors"
+                >
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span>ยอดคงเหลือ</span>
+                    <span className={`text-[10px] ${sortField === 'balance' ? 'text-brand font-black' : 'opacity-30'}`}>
+                      {sortField === 'balance' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
+                    </span>
+                  </div>
+                </th>
+
+                {/* Column 5: จัดการ (Actions) */}
+                <th className="py-2.5 px-3 text-right w-24">
+                  <span>จัดการ</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line/30 text-[13px]">
+              {filteredAccounts.map((a) => {
+                const preset = detectBankPreset(a.name)
+                const cat = a.category ?? inferCashCategory(a.name)
+                const isExpanded = expandedId === a.id
+
+                const rateNum = a.interestRate ?? 0
+                const capNum = a.maxEligibleBalance
+                const eligibleBal = capNum && capNum > 0 ? Math.min(a.balance, capNum) : a.balance
+                const eligibleThb = a.currency === 'USD' ? eligibleBal * rate : eligibleBal
+                const annualEarned = rateNum > 0 && eligibleThb > 0 ? eligibleThb * (rateNum / 100) : 0
+
+                return (
+                  <Fragment key={a.id}>
+                    <tr
+                      className={`group transition-colors ${
+                        isExpanded ? 'bg-surface-muted/60' : 'hover:bg-surface-muted/40'
                       }`}
-                      title={isExpanded ? 'ย่อรายละเอียด' : 'ดูรายละเอียด'}
                     >
-                      <svg
-                        viewBox="0 0 16 16"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-brand' : 'text-ink-muted'}`}
-                      >
-                        <path d="M4 6l4 4 4-4" />
-                      </svg>
-                    </button>
+                      {/* 1. บัญชี / สถาบัน */}
+                      <td className="py-2 px-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {preset ? (
+                            <div
+                              className="h-8 w-8 rounded-lg text-[11px] font-black shrink-0 flex items-center justify-center select-none shadow-xs"
+                              style={{ background: preset.bg, color: preset.color, border: `1px solid ${preset.color}35` }}
+                              title={`สถาบัน: ${preset.name}`}
+                            >
+                              {preset.shortName}
+                            </div>
+                          ) : (
+                            <div className="h-8 w-8 rounded-lg bg-surface-muted border border-line/50 text-ink-muted text-[11px] font-bold shrink-0 flex items-center justify-center">
+                              <WalletIcon className="h-4 w-4 opacity-60" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <span className="font-display font-bold text-[13.5px] text-ink block truncate group-hover:text-brand transition-colors">
+                              {a.name || 'Untitled Account'}
+                            </span>
+                            {a.currency === 'USD' && a.balance > 0 && (
+                              <span className="text-[10.5px] font-mono text-ink-muted block">
+                                ≈ {thb(a.balance * rate)} (@{rate.toFixed(2)})
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
 
-                    {/* Delete Button */}
-                    <button
-                      type="button"
-                      onClick={() => setAccountToDelete(a)}
-                      className="grid h-10 w-9 place-items-center rounded-xl text-ink-muted hover:bg-loss-soft hover:text-loss transition-colors cursor-pointer"
-                      title="ลบบัญชีนี้"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Expanded Details Drawer */}
-                {isExpanded && (
-                  <div className="p-4 border-t border-line/40 bg-surface-muted/30 text-[12px] space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="p-2.5 rounded-xl bg-surface border border-line/50">
-                        <span className="text-[11px] font-semibold text-ink-muted block">หมวดหมู่วัตถุประสงค์:</span>
-                        <span className="font-bold text-ink mt-0.5 flex items-center gap-1.5">
+                      {/* 2. หมวดหมู่ */}
+                      <td className="py-2 px-3 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium bg-surface-muted border border-line/50">
                           <span>{CASH_CATEGORIES[cat]?.icon}</span>
                           <span>{CASH_CATEGORIES[cat]?.labelTh}</span>
                         </span>
-                      </div>
+                      </td>
 
-                      <div className="p-2.5 rounded-xl bg-surface border border-line/50">
-                        <span className="text-[11px] font-semibold text-ink-muted block">รอบดอกเบี้ยเข้าบัญชี:</span>
-                        <span className="font-bold text-ink mt-0.5">
-                          {a.payoutSchedule === 'monthly'
-                            ? 'ทุกเดือน (12 ครั้ง/ปี)'
-                            : a.payoutSchedule === 'semi_annual'
-                            ? 'ปีละ 2 ครั้ง (มิ.ย. & ธ.ค.)'
-                            : a.payoutSchedule === 'annual'
-                            ? 'ปีละ 1 ครั้ง'
-                            : 'กำหนดเดือนเอง'}
-                        </span>
-                      </div>
+                      {/* 3. ดอกเบี้ย & ผลตอบแทน */}
+                      <td className="py-2 px-3 whitespace-nowrap">
+                        {rateNum > 0 ? (
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400 text-[12px]">
+                              <span>📈 {rateNum.toFixed(2)}%</span>
+                              {capNum && capNum > 0 && (
+                                <span className="text-[10px] opacity-75 font-normal">
+                                  (สูงสุด {thb(capNum)})
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-ink-muted font-mono">
+                              ≈ {thb(annualEarned)}/ปี{' '}
+                              <span className="opacity-70 font-sans">
+                                ({a.payoutSchedule === 'monthly' ? 'จ่ายทุกเดือน' : a.payoutSchedule === 'semi_annual' ? 'ปีละ 2 ครั้ง' : 'ปีละ 1 ครั้ง'})
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-ink-muted/50 text-[11.5px]">-</span>
+                        )}
+                      </td>
 
-                      <div className="p-2.5 rounded-xl bg-surface border border-line/50">
-                        <span className="text-[11px] font-semibold text-ink-muted block">ดอกเบี้ยต่อปี (โดยประมาณ):</span>
-                        <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-0.5 block">
-                          {thb(annualEarned)} / ปี
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
+                      {/* 4. ยอดคงเหลือ (In-place compact input) */}
+                      <td className="py-2 px-3 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center justify-end">
+                          <div className="relative w-36 sm:w-40">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleCurrency(a.id)}
+                              className={`absolute left-1 top-1/2 -translate-y-1/2 rounded px-1.5 py-0.5 text-[11px] font-extrabold transition-all cursor-pointer ${
+                                a.currency === 'USD'
+                                  ? 'bg-sky-500/15 text-sky-500 hover:bg-sky-500/25 ring-1 ring-sky-500/30'
+                                  : 'bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25 ring-1 ring-emerald-500/30'
+                              }`}
+                              title="คลิกเพื่อสลับสกุลเงิน (THB / USD)"
+                            >
+                              {a.currency === 'USD' ? '$' : '฿'}
+                            </button>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              className="h-8 w-full rounded-lg border border-line bg-surface-muted/40 pl-8 pr-2 text-[13.5px] font-bold tnum text-ink outline-none transition-colors focus:border-brand focus:bg-surface text-right"
+                              value={a.balance === 0 ? '' : formatWithCommas(a.balance)}
+                              placeholder="0.00"
+                              onChange={(e) => handleQuickBalanceChange(a.id, e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* 5. จัดการ (Actions: ดินสอ / ถังขยะ / Expand) */}
+                      <td className="py-2 px-3 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAccountToEdit(a)
+                              setIsEditModalOpen(true)
+                            }}
+                            className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted hover:bg-surface hover:text-ink transition-colors cursor-pointer"
+                            title="แก้ไขข้อมูลบัญชี"
+                          >
+                            <PencilIcon className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setAccountToDelete(a)}
+                            className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted hover:bg-loss-soft hover:text-loss transition-colors cursor-pointer"
+                            title="ลบบัญชีนี้"
+                          >
+                            <TrashIcon className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedId(isExpanded ? null : a.id)}
+                            className={`grid h-8 w-7 place-items-center rounded-lg transition-colors cursor-pointer ${
+                              isExpanded ? 'bg-brand/10 text-brand' : 'text-ink-muted hover:bg-surface hover:text-ink'
+                            }`}
+                            title={isExpanded ? 'ย่อแถว' : 'ดูรายละเอียดเพิ่มเติม'}
+                          >
+                            <svg
+                              viewBox="0 0 16 16"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                              className={`h-3.5 w-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-brand' : 'text-ink-muted'}`}
+                            >
+                              <path d="M4 6l4 4 4-4" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Expandable details row */}
+                    {isExpanded && (
+                      <tr className="bg-surface-muted/25 border-b border-line/40">
+                        <td colSpan={5} className="py-2.5 px-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11.5px]">
+                            <div className="p-2 rounded-lg bg-surface border border-line/40">
+                              <span className="text-ink-muted block text-[10.5px]">วัตถุประสงค์:</span>
+                              <span className="font-bold text-ink flex items-center gap-1 mt-0.5">
+                                <span>{CASH_CATEGORIES[cat]?.icon}</span>
+                                <span>{CASH_CATEGORIES[cat]?.labelTh}</span>
+                              </span>
+                            </div>
+                            <div className="p-2 rounded-lg bg-surface border border-line/40">
+                              <span className="text-ink-muted block text-[10.5px]">รอบการจ่ายดอกเบี้ย:</span>
+                              <span className="font-bold text-ink mt-0.5 block">
+                                {a.payoutSchedule === 'monthly'
+                                  ? 'ทุกเดือน (12 ครั้ง/ปี)'
+                                  : a.payoutSchedule === 'semi_annual'
+                                  ? 'ปีละ 2 ครั้ง (มิ.ย. & ธ.ค.)'
+                                  : a.payoutSchedule === 'annual'
+                                  ? 'ปีละ 1 ครั้ง'
+                                  : 'กำหนดเดือนเอง'}
+                              </span>
+                            </div>
+                            <div className="p-2 rounded-lg bg-surface border border-line/40">
+                              <span className="text-ink-muted block text-[10.5px]">ประมาณการดอกเบี้ย:</span>
+                              <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-0.5 block">
+                                {thb(annualEarned)} / ปี
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                )
+              })}
+            </tbody>
+          </table>
 
           {filteredAccounts.length === 0 && (
             <div className="text-center py-12 text-ink-muted space-y-2">
