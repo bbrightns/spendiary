@@ -489,7 +489,7 @@ export function Dashboard() {
         <div id="guide-dashboard-cash" className="lg:col-span-7 xl:col-span-4">
           <Card className="animate-rise h-full flex flex-col justify-between">
             <div>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-line">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                     <WalletIcon className="h-4 w-4" />
@@ -497,45 +497,62 @@ export function Dashboard() {
                   <h2 className="font-display text-[16px] font-bold text-ink">Cash & Liquidity Hub</h2>
                 </div>
 
-                <div className="flex items-center gap-2 sm:gap-3">
-                  {cashInterest > 0 && (
-                    <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                      💰 ~{thbCompact(cashInterest)}/yr
-                    </span>
-                  )}
-                  <span className="rounded-full bg-surface-muted px-2.5 py-0.5 text-[11px] font-bold text-ink-muted border border-line/50">
-                    {data.cashAccounts.length} {data.cashAccounts.length === 1 ? 'Account' : 'Accounts'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedCashAccountId(null)
-                      setCashOpen(true)
-                    }}
-                    aria-label="Manage cash accounts"
-                    className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-brand hover:underline cursor-pointer"
-                  >
-                    <span>Manage</span>
-                    <PencilIcon className="h-3.5 w-3.5" />
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCashAccountId(null)
+                    setCashOpen(true)
+                  }}
+                  aria-label="Manage cash accounts"
+                  className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-brand hover:underline cursor-pointer"
+                >
+                  <span>Manage</span>
+                  <PencilIcon className="h-3.5 w-3.5" />
+                </button>
               </div>
 
-              <div className="mt-4 flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
-                <div>
-                  <span className="text-[11.5px] font-medium text-ink-muted">Available Cash</span>
-                  <p className="font-display text-[24px] font-extrabold tnum text-ink leading-tight">
-                    {thb(cash)}
-                  </p>
-                </div>
-                <div className="text-[12px] text-ink-muted sm:text-right">
-                  {cashBreakdown.locked > 0 ? (
-                    <span>
-                      Instant: <strong className="text-ink">{thb(cashBreakdown.spending + cashBreakdown.emergency + cashBreakdown.invest)}</strong> • Locked: <strong className="text-ink">{thb(cashBreakdown.locked)}</strong>
+              {/* Cash & Liquidity Hero Summary */}
+              <div id="guide-cash-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                  {/* Row 1: Labels */}
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Available Cash</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted text-right">Est. Yield</span>
+
+                  {/* Row 2: Values */}
+                  <div className="flex items-baseline min-w-0">
+                    <p className="font-display text-[21px] sm:text-[24px] font-extrabold tracking-tight tnum text-ink leading-tight truncate">
+                      {thb(cash)}
+                    </p>
+                  </div>
+                  <div className="flex items-baseline justify-end min-w-0">
+                    {cashInterest > 0 ? (
+                      <span className="font-display text-[21px] sm:text-[24px] font-extrabold tracking-tight tnum text-emerald-600 dark:text-emerald-400 leading-tight truncate">
+                        ~{thbCompact(cashInterest)}<span className="text-[12px] font-semibold text-ink-muted">/yr</span>
+                      </span>
+                    ) : (
+                      <span className="text-[13px] text-ink-muted font-medium self-center">No yield</span>
+                    )}
+                  </div>
+
+                  {/* Row 3: Subtext / Details */}
+                  <div className="flex items-center min-w-0 h-6">
+                    <p className="text-[11.5px] text-ink-muted font-medium truncate">
+                      {cashBreakdown.locked > 0 ? (
+                        <>
+                          Instant: <strong className="text-ink font-semibold">{thbCompact(cashBreakdown.spending + cashBreakdown.emergency + cashBreakdown.invest)}</strong>
+                          <span className="mx-1 text-ink-muted/50">•</span>
+                          Locked: <strong className="text-ink font-semibold">{thbCompact(cashBreakdown.locked)}</strong>
+                        </>
+                      ) : (
+                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">100% Instant Liquidity</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-end gap-1.5 min-w-0 h-6">
+                    <span className="text-[11px] font-bold text-ink-muted bg-surface px-2 py-0.5 rounded-md border border-line/60">
+                      {data.cashAccounts.length} {data.cashAccounts.length === 1 ? 'Account' : 'Accounts'}
                     </span>
-                  ) : (
-                    <span>Instant liquidity</span>
-                  )}
+                  </div>
                 </div>
               </div>
 
@@ -644,7 +661,7 @@ export function Dashboard() {
         <div id="guide-dashboard-debts" className="lg:col-span-12 xl:col-span-4">
           <Card className="animate-rise h-full flex flex-col justify-between">
             <div>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-line">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="grid h-7 w-7 place-items-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
                     <DebtIcon className="h-4 w-4" />
@@ -652,49 +669,62 @@ export function Dashboard() {
                   <h2 className="font-display text-[16px] font-bold text-ink">Liabilities & Debts</h2>
                 </div>
 
-                <div className="flex items-center gap-2 sm:gap-3">
-                  {monthlyDebt > 0 && (
-                    <span className="rounded-full bg-rose-500/10 px-2.5 py-0.5 text-[11px] font-bold text-rose-600 dark:text-rose-400 border border-rose-500/20">
-                      💳 ~{thbCompact(monthlyDebt)}/mo
-                    </span>
-                  )}
-                  <span className="rounded-full bg-surface-muted px-2.5 py-0.5 text-[11px] font-bold text-ink-muted border border-line/50">
-                    {(data.liabilities?.length ?? 0) === 0
-                      ? 'Debt Free'
-                      : `${data.liabilities?.length} ${(data.liabilities?.length ?? 0) === 1 ? 'Debt' : 'Debts'}`}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedLiabilityId(null)
-                      setLiabilitiesOpen(true)
-                    }}
-                    aria-label="Manage liabilities and debts"
-                    className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-brand hover:underline cursor-pointer"
-                  >
-                    <span>Manage</span>
-                    <PencilIcon className="h-3.5 w-3.5" />
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedLiabilityId(null)
+                    setLiabilitiesOpen(true)
+                  }}
+                  aria-label="Manage liabilities and debts"
+                  className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-brand hover:underline cursor-pointer"
+                >
+                  <span>Manage</span>
+                  <PencilIcon className="h-3.5 w-3.5" />
+                </button>
               </div>
 
-              <div className="mt-4 flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
-                <div>
-                  <span className="text-[11.5px] font-medium text-ink-muted">Total Outstanding Debt</span>
-                  <p className={`font-display text-[24px] font-extrabold tnum leading-tight ${debts > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-ink dark:text-white'}`}>
-                    {debts > 0 ? `-${thb(debts)}` : '฿0'}
-                  </p>
-                </div>
-                <div className="text-[12px] text-ink-muted sm:text-right">
-                  {debts > 0 ? (
-                    <span>
-                      D/A Ratio: <strong className="text-ink">{debtRatio.toFixed(1)}%</strong>
+              {/* Liabilities & Debts Hero Summary */}
+              <div id="guide-debt-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                  {/* Row 1: Labels */}
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Total Outstanding</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted text-right">Monthly Payment</span>
+
+                  {/* Row 2: Values */}
+                  <div className="flex items-baseline min-w-0">
+                    <p className={`font-display text-[21px] sm:text-[24px] font-extrabold tracking-tight tnum leading-tight truncate ${debts > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-ink dark:text-white'}`}>
+                      {debts > 0 ? `-${thb(debts)}` : '฿0'}
+                    </p>
+                  </div>
+                  <div className="flex items-baseline justify-end min-w-0">
+                    {monthlyDebt > 0 ? (
+                      <span className="font-display text-[21px] sm:text-[24px] font-extrabold tracking-tight tnum text-rose-600 dark:text-rose-400 leading-tight truncate">
+                        ~{thbCompact(monthlyDebt)}<span className="text-[12px] font-semibold text-ink-muted">/mo</span>
+                      </span>
+                    ) : (
+                      <span className="text-[13px] text-emerald-600 dark:text-emerald-400 font-semibold self-center">฿0/mo</span>
+                    )}
+                  </div>
+
+                  {/* Row 3: Subtext / Details */}
+                  <div className="flex items-center min-w-0 h-6">
+                    <p className="text-[11.5px] text-ink-muted font-medium truncate">
+                      {debts > 0 ? (
+                        <>
+                          D/A Ratio: <strong className="text-ink font-semibold">{debtRatio.toFixed(1)}%</strong>
+                        </>
+                      ) : (
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">🎉 100% Solvency</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-end gap-1.5 min-w-0 h-6">
+                    <span className="text-[11px] font-bold text-ink-muted bg-surface px-2 py-0.5 rounded-md border border-line/60">
+                      {(data.liabilities?.length ?? 0) === 0
+                        ? 'Debt Free'
+                        : `${data.liabilities?.length} ${(data.liabilities?.length ?? 0) === 1 ? 'Debt' : 'Debts'}`}
                     </span>
-                  ) : (
-                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                      🎉 100% Solvency
-                    </span>
-                  )}
+                  </div>
                 </div>
               </div>
 
