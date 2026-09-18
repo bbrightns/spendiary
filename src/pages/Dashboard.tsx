@@ -29,6 +29,7 @@ import {
   detectBankPreset,
   getCashLiquidityBreakdown,
   getLiabilityDueStatus,
+  isLiabilityPaidThisMonth,
   netWorth,
   portfolioSummary,
   shouldConfirmBuy,
@@ -121,6 +122,20 @@ export function Dashboard() {
     [data.dcaPlans],
   )
 
+  const debtActions = useMemo(() => {
+    return (data.liabilities ?? []).filter((l) => {
+      if (l.balance <= 0) return false
+      const hasPayment = (l.monthlyPayment && l.monthlyPayment > 0) || l.isInstallment || l.category === 'installment'
+      if (!hasPayment) return false
+      if (l.isInstallment && l.totalInstallments && (l.paidInstallments ?? 0) >= l.totalInstallments) return false
+      return !isLiabilityPaidThisMonth(l)
+    })
+  }, [data.liabilities])
+
+  const hasOverdueDebts = useMemo(() => {
+    return debtActions.some((l) => getLiabilityDueStatus(l).status === 'overdue')
+  }, [debtActions])
+
   if (!hasAnything) {
     return (
       <>
@@ -170,6 +185,44 @@ export function Dashboard() {
             <SparkleIcon className="h-3.5 w-3.5" />
             <span>Import (AI/JSON)</span>
           </button>
+
+          {debtActions.length > 0 && (
+            <div id="guide-dashboard-debt-alert">
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById('guide-dashboard-debts')
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    el.classList.add('ring-2', 'ring-rose-500/50')
+                    setTimeout(() => el.classList.remove('ring-2', 'ring-rose-500/50'), 2000)
+                  } else {
+                    setSelectedLiabilityId(null)
+                    setLiabilitiesOpen(true)
+                  }
+                }}
+                aria-label={`View ${debtActions.length} debts due for payment`}
+                className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[12.5px] font-semibold transition-all active:scale-95 cursor-pointer shadow-xs ${
+                  hasOverdueDebts
+                    ? 'border-rose-500/30 bg-rose-500/15 text-rose-700 dark:text-rose-300 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600'
+                    : 'border-pink-500/30 bg-pink-500/10 text-pink-700 dark:text-pink-300 hover:bg-pink-500 hover:text-white dark:hover:bg-pink-600'
+                }`}
+              >
+                <span
+                  className={`flex h-4.5 w-4.5 items-center justify-center rounded-full text-[10.5px] font-bold text-white ${
+                    hasOverdueDebts ? 'bg-rose-500 animate-pulse' : 'bg-pink-500'
+                  }`}
+                >
+                  {debtActions.length}
+                </span>
+                <span>
+                  {hasOverdueDebts
+                    ? `${debtActions.length} ${debtActions.length === 1 ? 'หนี้เลยกำหนด' : 'หนี้เลยกำหนด'}`
+                    : `${debtActions.length} ${debtActions.length === 1 ? 'หนี้รอจ่ายรอบนี้' : 'หนี้รอจ่ายรอบนี้'}`}
+                </span>
+              </button>
+            </div>
+          )}
 
           {dcaActions.length > 0 && (
             <div id="guide-dashboard-dca">

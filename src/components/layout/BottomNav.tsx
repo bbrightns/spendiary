@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { cashflowSubItems, mobileNavItems, strategySubItems } from './nav'
 import { useData } from '../../store/DataContext'
-import { isDividendReceivedThisMonth, shouldConfirmBuy } from '../../lib/calc'
+import { isDividendReceivedThisMonth, isLiabilityPaidThisMonth, shouldConfirmBuy } from '../../lib/calc'
 import { Modal } from '../ui/Modal'
 
 export function BottomNav() {
@@ -23,6 +23,13 @@ export function BottomNav() {
       !isDividendReceivedThisMonth(h.id, data.dividendRecords),
   ).length
   const cashflowAlertCount = dcaAlertCount + dividendAlertCount
+  const debtAlertCount = (data.liabilities ?? []).filter((l) => {
+    if (l.balance <= 0) return false
+    const hasPayment = (l.monthlyPayment && l.monthlyPayment > 0) || l.isInstallment || l.category === 'installment'
+    if (!hasPayment) return false
+    if (l.isInstallment && l.totalInstallments && (l.paidInstallments ?? 0) >= l.totalInstallments) return false
+    return !isLiabilityPaidThisMonth(l)
+  }).length
 
   // Close sheets on route change
   useEffect(() => {
@@ -111,6 +118,8 @@ export function BottomNav() {
                 ? pathname === '/'
                 : pathname.startsWith(toPath)
 
+            const routeBadge = item.id === 'home' ? debtAlertCount : 0
+
             return (
               <Link
                 key={item.id}
@@ -127,6 +136,13 @@ export function BottomNav() {
                   ].join(' ')}
                 >
                   <item.icon className="h-[20px] w-[20px]" strokeWidth={isActive ? 2 : 1.6} />
+
+                  {/* Route notification badge bubble */}
+                  {routeBadge > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-xs ring-2 ring-surface">
+                      {routeBadge}
+                    </span>
+                  )}
                 </span>
                 {item.short}
               </Link>
