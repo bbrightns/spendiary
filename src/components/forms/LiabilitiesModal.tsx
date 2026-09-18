@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import {
@@ -6,6 +6,7 @@ import {
   CreditCardIcon,
   DebtIcon,
   HomeIcon,
+  PencilIcon,
   PlusIcon,
   ReceiptPercentIcon,
   ShoppingBagIcon,
@@ -39,19 +40,29 @@ interface Draft {
   originalBalance: string
 }
 
+const CATEGORIES_LIST: DebtCategory[] = [
+  'installment',
+  'credit_card',
+  'mortgage',
+  'auto_loan',
+  'personal_loan',
+  'student_loan',
+  'other',
+]
+
 const QUICK_PRESETS = [
   { name: 'iPhone (0% 10 เดือน)', category: 'installment' as DebtCategory, rate: '0.0', isInstallment: true, totalInst: '10', dueDay: '25' },
-  { name: 'เครื่องใช้ไฟฟ้า / TV (0% 10 ด.)', category: 'installment' as DebtCategory, rate: '0.0', isInstallment: true, totalInst: '10', dueDay: '25' },
+  { name: 'เครื่องใช้ไฟฟ้า / TV (10 ด.)', category: 'installment' as DebtCategory, rate: '0.0', isInstallment: true, totalInst: '10', dueDay: '25' },
   { name: 'Shopee SPayLater (6 ด.)', category: 'installment' as DebtCategory, rate: '0.0', isInstallment: true, totalInst: '6', dueDay: '1' },
-  { name: 'บัตรเครดิต KBank', category: 'credit_card' as DebtCategory, rate: '16.0' },
-  { name: 'บัตรเครดิต KTC', category: 'credit_card' as DebtCategory, rate: '16.0' },
-  { name: 'สินเชื่อบ้าน / คอนโด', category: 'mortgage' as DebtCategory, rate: '3.75' },
-  { name: 'สินเชื่อรถยนต์', category: 'auto_loan' as DebtCategory, rate: '2.50' },
-  { name: 'กู้ยืม กยศ.', category: 'student_loan' as DebtCategory, rate: '1.0' },
+  { name: 'บัตรเครดิต KBank', category: 'credit_card' as DebtCategory, rate: '16.0', isInstallment: false },
+  { name: 'บัตรเครดิต KTC', category: 'credit_card' as DebtCategory, rate: '16.0', isInstallment: false },
+  { name: 'สินเชื่อบ้าน / คอนโด', category: 'mortgage' as DebtCategory, rate: '3.75', isInstallment: false },
+  { name: 'สินเชื่อรถยนต์', category: 'auto_loan' as DebtCategory, rate: '2.50', isInstallment: false },
+  { name: 'กู้ยืม กยศ.', category: 'student_loan' as DebtCategory, rate: '1.0', isInstallment: false },
 ]
 
 function tempId(): string {
-  return `tmp-${Math.random().toString(36).slice(2, 9)}`
+  return `lib-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
 
 function formatWithCommas(value: string | number): string {
@@ -87,636 +98,802 @@ function CategoryIcon({ category, className = 'h-4 w-4' }: { category: DebtCateg
   }
 }
 
+const emptyDraft = (): Draft => ({
+  id: tempId(),
+  name: '',
+  category: 'installment',
+  balance: '',
+  interestRate: '0.0',
+  monthlyPayment: '',
+  lender: '',
+  dueDay: '',
+  note: '',
+  isInstallment: true,
+  totalInstallments: '10',
+  paidInstallments: '0',
+  originalBalance: '',
+})
+
 export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
-  const { data, setLiabilities } = useData()
+  const { data, setLiabilities, removeLiability } = useData()
   const { showToast } = useToast()
-  const [rows, setRows] = useState<Draft[]>([])
-  const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [activeCategoryFilter, setActiveCategoryFilter] = useState<DebtCategory | 'all'>('all')
-  const [highlightedId, setHighlightedId] = useState<string | null>(null)
 
-  const balanceInputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
-  const nameInputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
+  // 'form' = add or edit one item; 'list' = manage all debts
+  const [mode, setMode] = useState<'form' | 'list'>('form')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [draft, setDraft] = useState<Draft>(emptyDraft())
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [activePreset, setActivePreset] = useState<string | null>(null)
 
+  const nameInputRef = useRef<HTMLInputElement>(null)
+  const balanceInputRef = useRef<HTMLInputElement>(null)
+
+  const liabilitiesList = useMemo(() => data.liabilities ?? [], [data.liabilities])
+
+  // Initialize draft and mode when modal opens or initialLiabilityId changes
   useEffect(() => {
     if (!open) {
-      setHighlightedId(null)
-      setExpandedId(null)
-      setActiveCategoryFilter('all')
+      setMode('form')
+      setEditingId(null)
+      setShowAdvanced(false)
+      setActivePreset(null)
       return
     }
 
-    const initialList = data.liabilities ?? []
-    const mappedDrafts: Draft[] = initialList.length > 0
-      ? initialList.map((l) => ({
-          id: l.id,
-          name: l.name,
-          category: l.category ?? 'other',
-          balance: l.balance ? formatWithCommas(l.balance) : '',
-          interestRate: l.interestRate !== undefined ? String(l.interestRate) : '',
-          monthlyPayment: l.monthlyPayment !== undefined ? formatWithCommas(l.monthlyPayment) : '',
-          lender: l.lender ?? '',
-          dueDay: l.dueDay !== undefined ? String(l.dueDay) : '',
-          note: l.note ?? '',
-          isInstallment: l.isInstallment ?? (l.category === 'installment'),
-          totalInstallments: l.totalInstallments !== undefined ? String(l.totalInstallments) : '',
-          paidInstallments: l.paidInstallments !== undefined ? String(l.paidInstallments) : '',
-          originalBalance: l.originalBalance !== undefined ? formatWithCommas(l.originalBalance) : '',
-        }))
-      : []
-
-    setRows(mappedDrafts)
-
     if (initialLiabilityId) {
-      setHighlightedId(initialLiabilityId)
-      setExpandedId(initialLiabilityId)
-      setTimeout(() => {
-        const input = balanceInputRefs.current.get(initialLiabilityId)
-        if (input) {
-          input.focus()
-          input.select()
-        }
-      }, 100)
-    }
-  }, [open, initialLiabilityId, data.liabilities])
-
-  // Aggregate totals
-  const totalBalance = rows.reduce((sum, r) => {
-    const clean = r.balance.replace(/[^0-9.]/g, '')
-    return sum + (clean === '' ? 0 : Number(clean))
-  }, 0)
-
-  const totalMonthlyPayment = rows.reduce((sum, r) => {
-    const clean = r.monthlyPayment.replace(/[^0-9.]/g, '')
-    return sum + (clean === '' ? 0 : Number(clean))
-  }, 0)
-
-  const update = (id: string, patch: Partial<Draft>) =>
-    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)))
-
-  const remove = (id: string) => {
-    setRows((rs) => rs.filter((r) => r.id !== id))
-    if (expandedId === id) setExpandedId(null)
-  }
-
-  const add = () => {
-    const id = tempId()
-    setRows((rs) => [
-      ...rs,
-      {
-        id,
-        name: '',
-        category: 'installment',
-        balance: '',
-        interestRate: '',
-        monthlyPayment: '',
-        lender: '',
-        dueDay: '',
-        note: '',
-        isInstallment: true,
-        totalInstallments: '10',
-        paidInstallments: '0',
-        originalBalance: '',
-      },
-    ])
-    setExpandedId(id)
-    setTimeout(() => {
-      const nameInput = nameInputRefs.current.get(id)
-      if (nameInput) {
-        nameInput.focus()
-        nameInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      const existing = liabilitiesList.find((l) => l.id === initialLiabilityId)
+      if (existing) {
+        setEditingId(existing.id)
+        setDraft({
+          id: existing.id,
+          name: existing.name,
+          category: existing.category ?? 'other',
+          balance: existing.balance ? formatWithCommas(existing.balance) : '',
+          interestRate: existing.interestRate !== undefined ? String(existing.interestRate) : '',
+          monthlyPayment: existing.monthlyPayment !== undefined ? formatWithCommas(existing.monthlyPayment) : '',
+          lender: existing.lender ?? '',
+          dueDay: existing.dueDay !== undefined ? String(existing.dueDay) : '',
+          note: existing.note ?? '',
+          isInstallment: existing.isInstallment ?? (existing.category === 'installment'),
+          totalInstallments: existing.totalInstallments !== undefined ? String(existing.totalInstallments) : '',
+          paidInstallments: existing.paidInstallments !== undefined ? String(existing.paidInstallments) : '',
+          originalBalance: existing.originalBalance !== undefined ? formatWithCommas(existing.originalBalance) : '',
+        })
+        setMode('form')
+        setShowAdvanced(Boolean(existing.interestRate || existing.lender || existing.dueDay || existing.note))
+        return
       }
-    }, 50)
-  }
+    }
 
-  const addPreset = (p: (typeof QUICK_PRESETS)[0]) => {
-    const id = tempId()
-    const newDraft: Draft = {
-      id,
+    // Default to adding new debt with clean blank draft
+    setEditingId(null)
+    setDraft(emptyDraft())
+    setMode('form')
+    setShowAdvanced(false)
+    setActivePreset(null)
+  }, [open, initialLiabilityId, liabilitiesList])
+
+  // Focus input on form open
+  useEffect(() => {
+    if (open && mode === 'form') {
+      const timer = setTimeout(() => {
+        if (draft.name) {
+          balanceInputRef.current?.focus()
+        } else {
+          nameInputRef.current?.focus()
+        }
+      }, 80)
+      return () => clearTimeout(timer)
+    }
+  }, [open, mode, editingId])
+
+  const totalBalanceAll = useMemo(() => {
+    return liabilitiesList.reduce((sum, l) => sum + (l.balance || 0), 0)
+  }, [liabilitiesList])
+
+  const totalMonthlyPaymentAll = useMemo(() => {
+    return liabilitiesList.reduce((sum, l) => sum + (l.monthlyPayment || 0), 0)
+  }, [liabilitiesList])
+
+  // Apply Quick Preset
+  const applyPreset = (p: typeof QUICK_PRESETS[number]) => {
+    setActivePreset(p.name)
+    const isInst = Boolean(p.isInstallment)
+    setDraft((d) => ({
+      ...d,
       name: p.name,
       category: p.category,
-      balance: '',
-      interestRate: p.rate,
-      monthlyPayment: '',
-      lender: '',
-      dueDay: 'dueDay' in p ? (p.dueDay as string) : '',
-      note: '',
-      isInstallment: 'isInstallment' in p ? Boolean(p.isInstallment) : false,
-      totalInstallments: 'totalInst' in p ? (p.totalInst as string) : '',
+      interestRate: p.rate ?? '',
+      dueDay: 'dueDay' in p ? (p.dueDay as string) : d.dueDay,
+      isInstallment: isInst,
+      totalInstallments: 'totalInst' in p ? (p.totalInst as string) : d.totalInstallments,
       paidInstallments: '0',
-      originalBalance: '',
-    }
-    setRows((rs) => [...rs, newDraft])
-    setExpandedId(id)
+    }))
     setTimeout(() => {
-      const balanceInput = balanceInputRefs.current.get(id)
-      if (balanceInput) {
-        balanceInput.focus()
-        balanceInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-      }
+      balanceInputRef.current?.focus()
     }, 50)
   }
 
-  const save = () => {
-    const cleaned: Liability[] = rows
-      .filter((r) => r.name.trim() !== '' || Number(r.balance.replace(/[^0-9.]/g, '')) > 0)
-      .map((r) => {
-        const cleanBal = r.balance.replace(/[^0-9.]/g, '')
-        const cleanRate = r.interestRate.replace(/[^0-9.]/g, '')
-        const cleanPayment = r.monthlyPayment.replace(/[^0-9.]/g, '')
-        const cleanDue = r.dueDay.replace(/[^0-9]/g, '')
-        const cleanTotalInst = r.totalInstallments.replace(/[^0-9]/g, '')
-        const cleanPaidInst = r.paidInstallments.replace(/[^0-9]/g, '')
-        const cleanOrigBal = r.originalBalance.replace(/[^0-9.]/g, '')
+  // Edit existing from list
+  const startEdit = (l: Liability) => {
+    setEditingId(l.id)
+    setDraft({
+      id: l.id,
+      name: l.name,
+      category: l.category ?? 'other',
+      balance: l.balance ? formatWithCommas(l.balance) : '',
+      interestRate: l.interestRate !== undefined ? String(l.interestRate) : '',
+      monthlyPayment: l.monthlyPayment !== undefined ? formatWithCommas(l.monthlyPayment) : '',
+      lender: l.lender ?? '',
+      dueDay: l.dueDay !== undefined ? String(l.dueDay) : '',
+      note: l.note ?? '',
+      isInstallment: l.isInstallment ?? (l.category === 'installment'),
+      totalInstallments: l.totalInstallments !== undefined ? String(l.totalInstallments) : '',
+      paidInstallments: l.paidInstallments !== undefined ? String(l.paidInstallments) : '',
+      originalBalance: l.originalBalance !== undefined ? formatWithCommas(l.originalBalance) : '',
+    })
+    setShowAdvanced(Boolean(l.interestRate || l.lender || l.dueDay || l.note))
+    setMode('form')
+  }
 
-        const isInst = r.isInstallment || r.category === 'installment'
+  // Delete liability
+  const handleDelete = (id: string) => {
+    removeLiability(id)
+    showToast('ลบรายการหนี้สินเรียบร้อย', 'info')
+    if (editingId === id) {
+      setEditingId(null)
+      setDraft(emptyDraft())
+      if (liabilitiesList.length <= 1) {
+        onClose()
+      } else {
+        setMode('list')
+      }
+    }
+  }
 
-        return {
-          id: r.id.startsWith('tmp-') ? tempId().replace('tmp-', 'lib-') : r.id,
-          name: r.name.trim() || 'Debt Item',
-          category: r.category,
-          balance: cleanBal === '' ? 0 : Number(cleanBal),
-          interestRate: cleanRate !== '' ? Number(cleanRate) : undefined,
-          monthlyPayment: cleanPayment !== '' ? Number(cleanPayment) : undefined,
-          lender: r.lender.trim() || undefined,
-          dueDay: cleanDue !== '' ? Math.min(31, Math.max(1, Number(cleanDue))) : undefined,
-          note: r.note.trim() || undefined,
-          isInstallment: isInst ? true : undefined,
-          totalInstallments: isInst && cleanTotalInst !== '' ? Math.max(1, Number(cleanTotalInst)) : undefined,
-          paidInstallments: isInst && cleanPaidInst !== '' ? Math.max(0, Number(cleanPaidInst)) : undefined,
-          originalBalance: cleanOrigBal !== '' ? Number(cleanOrigBal) : (cleanBal !== '' ? Number(cleanBal) : undefined),
-          updatedAt: new Date().toISOString().slice(0, 10),
-        }
-      })
+  // Save liability form
+  const handleSave = () => {
+    const cleanName = draft.name.trim()
+    const cleanBal = draft.balance.replace(/[^0-9.]/g, '')
+    const balNum = cleanBal === '' ? 0 : Number(cleanBal)
 
-    setLiabilities(cleaned)
-    showToast('Saved liabilities successfully', 'success')
+    if (!cleanName && balNum <= 0) {
+      showToast('กรุณาระบุชื่อรายการหนี้สินหรือยอดหนี้', 'error')
+      return
+    }
+
+    const cleanRate = draft.interestRate.replace(/[^0-9.]/g, '')
+    const cleanPayment = draft.monthlyPayment.replace(/[^0-9.]/g, '')
+    const cleanDue = draft.dueDay.replace(/[^0-9]/g, '')
+    const cleanTotalInst = draft.totalInstallments.replace(/[^0-9]/g, '')
+    const cleanPaidInst = draft.paidInstallments.replace(/[^0-9]/g, '')
+    const cleanOrigBal = draft.originalBalance.replace(/[^0-9.]/g, '')
+
+    const isInst = draft.isInstallment || draft.category === 'installment'
+
+    const liabilityData: Liability = {
+      id: editingId || draft.id,
+      name: cleanName || 'หนี้สินรายการใหม่',
+      category: draft.category,
+      balance: balNum,
+      interestRate: cleanRate !== '' ? Number(cleanRate) : undefined,
+      monthlyPayment: cleanPayment !== '' ? Number(cleanPayment) : undefined,
+      lender: draft.lender.trim() || undefined,
+      dueDay: cleanDue !== '' ? Math.min(31, Math.max(1, Number(cleanDue))) : undefined,
+      note: draft.note.trim() || undefined,
+      isInstallment: isInst ? true : undefined,
+      totalInstallments: isInst && cleanTotalInst !== '' ? Math.max(1, Number(cleanTotalInst)) : undefined,
+      paidInstallments: isInst && cleanPaidInst !== '' ? Math.max(0, Number(cleanPaidInst)) : undefined,
+      originalBalance: cleanOrigBal !== '' ? Number(cleanOrigBal) : (balNum > 0 ? balNum : undefined),
+      updatedAt: new Date().toISOString().slice(0, 10),
+    }
+
+    let nextList: Liability[]
+    if (editingId) {
+      nextList = liabilitiesList.map((l) => (l.id === editingId ? liabilityData : l))
+      showToast(`อัปเดตรายการ "${liabilityData.name}" เรียบร้อย`, 'success')
+    } else {
+      nextList = [...liabilitiesList, liabilityData]
+      showToast(`บันทึกรายการ "${liabilityData.name}" เรียบร้อย`, 'success')
+    }
+
+    setLiabilities(nextList)
     onClose()
   }
 
-  const filteredRows = rows.filter((r) => {
-    if (activeCategoryFilter === 'all') return true
-    return r.category === activeCategoryFilter
-  })
+  const modalTitle = editingId
+    ? 'แก้ไขรายการหนี้สิน (Edit Debt)'
+    : mode === 'list'
+    ? 'จัดการหนี้สินทั้งหมด (All Debts)'
+    : 'บันทึกรายการหนี้ใหม่ (Add Debt)'
+
+  const modalDescription = editingId
+    ? 'ปรับปรุงยอดหนี้ ค่างวด หรือข้อมูลการผ่อนชำระ'
+    : mode === 'list'
+    ? 'ตรวจสอบและแก้ไขรายการหนี้สินทั้งหมดในระบบ'
+    : 'บันทึกรายการผ่อนสินค้า หรือหนี้สินเพื่อสะท้อน Net Worth ที่แท้จริง'
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title="Liabilities & Debts"
-      description="บันทึกและจัดการรายการหนี้สิน ยอดหนี้คงค้างจะถูกนำไปหักลบออกจาก Net Worth สุทธิ"
-      size="xl"
+      title={modalTitle}
+      description={modalDescription}
+      size="lg"
       footer={
-        <div className="flex flex-col gap-3 w-full">
-          {/* Summary Card */}
-          <div className="rounded-2xl bg-surface-muted/80 dark:bg-white/5 p-4 border border-line/70 dark:border-white/10 space-y-2">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-              <span className="text-[12.5px] font-semibold text-ink-muted">Total Outstanding Debt (หนี้สินรวม)</span>
-              <span className={`font-display text-[22px] sm:text-[24px] font-extrabold tnum ${totalBalance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-ink dark:text-white'}`}>
-                {thb(totalBalance)}
-              </span>
-            </div>
-
-            {totalMonthlyPayment > 0 && (
-              <div className="flex items-center justify-between text-[11.5px] text-ink-muted border-t border-line/40 dark:border-white/10 pt-2">
-                <span>Total Monthly Payment (ภาระผ่อนรวม)</span>
-                <span className="tnum font-bold text-ink dark:text-white">
-                  {thb(totalMonthlyPayment)} / month
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Button variant="secondary" onClick={onClose} className="w-1/3">
-              Cancel
-            </Button>
-            <Button onClick={save} className="w-2/3">
-              Save Liabilities
-            </Button>
-          </div>
-        </div>
-      }
-    >
-      <div className="space-y-4 pb-2">
-        {/* Category Filter Tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-1 text-[12px]">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setActiveCategoryFilter('all')}
-              className={`px-3 py-1 rounded-full font-semibold transition-colors cursor-pointer shrink-0 ${
-                activeCategoryFilter === 'all'
-                  ? 'bg-ink text-surface shadow-xs dark:bg-white dark:text-ink-dark'
-                  : 'bg-surface-muted text-ink-muted hover:text-ink dark:bg-white/10 dark:text-white/70 dark:hover:text-white'
-              }`}
-            >
-              All ({rows.length})
-            </button>
-            {(['installment', 'credit_card', 'mortgage', 'auto_loan', 'personal_loan', 'student_loan', 'other'] as DebtCategory[]).map((catKey) => {
-              const meta = DEBT_CATEGORIES[catKey]
-              const count = rows.filter((r) => r.category === catKey).length
-              if (count === 0 && activeCategoryFilter !== catKey) return null
-              const isSelected = activeCategoryFilter === catKey
-              return (
-                <button
-                  key={catKey}
-                  type="button"
-                  onClick={() => setActiveCategoryFilter(catKey)}
-                  className={`px-2.5 py-1 rounded-full font-medium transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
-                    isSelected
-                      ? 'bg-brand text-white shadow-xs font-semibold'
-                      : 'bg-surface-muted text-ink-muted hover:text-ink dark:bg-white/10 dark:text-white/70 dark:hover:text-white'
-                  }`}
+        mode === 'form' ? (
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5 w-full">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                onClick={onClose}
+                className="shrink-0 whitespace-nowrap"
+              >
+                ยกเลิก (Cancel)
+              </Button>
+              {editingId && (
+                <Button
+                  variant="danger"
+                  onClick={() => handleDelete(editingId)}
+                  className="shrink-0 whitespace-nowrap"
                 >
-                  <CategoryIcon category={catKey} className="h-3.5 w-3.5" />
-                  <span>{meta.label}</span>
-                  <span className="text-[10px] opacity-75">({count})</span>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* List of Debt Items */}
-        {filteredRows.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-line dark:border-white/10 p-8 text-center bg-surface-muted/30">
-            <div className="inline-grid h-12 w-12 place-items-center rounded-2xl bg-rose-500/10 text-rose-500 mb-2">
-              <DebtIcon className="h-6 w-6" />
+                  <TrashIcon className="h-4 w-4 mr-1" />
+                  ลบรายการนี้
+                </Button>
+              )}
             </div>
-            <p className="font-display font-bold text-[15px] text-ink dark:text-white">
-              {activeCategoryFilter === 'all' ? 'ไม่มีรายการหนี้สิน (Debt Free 🎉)' : 'ไม่พบรายการในหมวดนี้'}
-            </p>
-            <p className="text-[12.5px] text-ink-muted mt-0.5">
-              {activeCategoryFilter === 'all'
-                ? 'หากคุณมีหนี้บัตรเครดิต สินเชื่อบ้าน รถ หรือกู้ยืม สามารถเพิ่มเพื่อสะท้อน Net Worth ที่แท้จริงได้'
-                : 'เลือกหมวดอื่น หรือกดปุ่มเพิ่มรายการใหม่ด้านล่าง'}
-            </p>
-            <Button onClick={add} variant="secondary" size="sm" className="mt-4">
-              <PlusIcon className="h-4 w-4 mr-1" />
-              Add First Debt
+
+            <Button
+              onClick={handleSave}
+              className="shrink-0 whitespace-nowrap min-w-[140px]"
+            >
+              {editingId ? 'บันทึกการแก้ไข' : 'บันทึกรายการหนี้'}
             </Button>
           </div>
         ) : (
-          <div className="space-y-3">
-            {filteredRows.map((r) => {
-              const isExpanded = expandedId === r.id
-              const meta = DEBT_CATEGORIES[r.category]
-              const isHighlighted = highlightedId === r.id
-              const isInst = r.isInstallment || r.category === 'installment'
+          <div className="flex items-center justify-between gap-3 w-full">
+            <Button variant="secondary" onClick={onClose} className="shrink-0 whitespace-nowrap">
+              ปิดหน้าต่าง
+            </Button>
+            <Button
+              onClick={() => {
+                setEditingId(null)
+                setDraft(emptyDraft())
+                setMode('form')
+              }}
+              className="shrink-0 whitespace-nowrap"
+            >
+              <PlusIcon className="h-4 w-4 mr-1" />
+              + เพิ่มรายการหนี้ใหม่
+            </Button>
+          </div>
+        )
+      }
+    >
+      <div className="space-y-4 pb-1">
+        {/* Navigation Tabs (When user has liabilities and is not in strict edit mode) */}
+        {liabilitiesList.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-line/60 dark:border-white/10">
+            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-surface-muted/60 dark:bg-white/5 border border-line/40">
+              <button
+                type="button"
+                onClick={() => {
+                  if (editingId) {
+                    setEditingId(null)
+                    setDraft(emptyDraft())
+                  }
+                  setMode('form')
+                }}
+                className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  mode === 'form'
+                    ? 'bg-surface dark:bg-white/15 text-ink dark:text-white shadow-xs'
+                    : 'text-ink-muted hover:text-ink dark:hover:text-white'
+                }`}
+              >
+                <PlusIcon className="h-3.5 w-3.5" />
+                <span>{editingId ? 'แก้ไขรายการ' : 'เพิ่มรายการใหม่'}</span>
+              </button>
 
-              return (
-                <div
-                  key={r.id}
-                  className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
-                    isHighlighted
-                      ? 'border-brand ring-2 ring-brand/20 bg-brand-soft/10 dark:bg-brand/10'
-                      : 'border-line dark:border-white/10 bg-surface dark:bg-white/[0.03] hover:border-line-strong'
-                  }`}
-                >
-                  {/* Primary Row Header */}
-                  <div className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                      <div className={`grid h-8 w-8 place-items-center rounded-xl shrink-0 ${meta.bgClass} ${meta.textClass}`}>
-                        <CategoryIcon category={r.category} className="h-4 w-4" />
-                      </div>
+              <button
+                type="button"
+                onClick={() => setMode('list')}
+                className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  mode === 'list'
+                    ? 'bg-surface dark:bg-white/15 text-ink dark:text-white shadow-xs'
+                    : 'text-ink-muted hover:text-ink dark:hover:text-white'
+                }`}
+              >
+                <span>รายการทั้งหมด ({liabilitiesList.length})</span>
+              </button>
+            </div>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="relative">
-                          <input
-                            ref={(el) => {
-                              if (el) nameInputRefs.current.set(r.id, el)
-                              else nameInputRefs.current.delete(r.id)
-                            }}
-                            type="text"
-                            value={r.name}
-                            onChange={(e) => update(r.id, { name: e.target.value })}
-                            placeholder="ระบุชื่อรายการหนี้ (คลิกเพื่อแก้ไข)"
-                            className="w-full rounded-xl bg-surface-muted/60 dark:bg-white/5 px-3 py-1.5 font-bold text-[14px] text-ink dark:text-white placeholder:text-ink-faint border border-line/80 dark:border-white/10 hover:border-brand/50 focus:border-brand focus:bg-surface dark:focus:bg-white/10 focus:outline-none transition-colors"
-                          />
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                          <select
-                            value={r.category}
-                            onChange={(e) => {
-                              const newCat = e.target.value as DebtCategory
-                              update(r.id, {
-                                category: newCat,
-                                isInstallment: newCat === 'installment' ? true : r.isInstallment,
-                              })
-                            }}
-                            className="text-[11px] font-semibold bg-surface-muted dark:bg-white/10 text-ink-muted dark:text-white/80 rounded-md px-2 py-0.5 border border-line/60 dark:border-white/10 focus:outline-none cursor-pointer"
-                          >
-                            {(['installment', 'credit_card', 'mortgage', 'auto_loan', 'personal_loan', 'student_loan', 'other'] as DebtCategory[]).map((cat) => (
-                              <option key={cat} value={cat}>
-                                {DEBT_CATEGORIES[cat].label}
-                              </option>
-                            ))}
-                          </select>
-
-                          {isInst && r.totalInstallments && Number(r.totalInstallments) > 0 && (
-                            <span className="text-[10.5px] font-bold text-pink-600 dark:text-pink-400 bg-pink-500/10 px-1.5 py-0.5 rounded">
-                              ผ่อน {r.paidInstallments || 0}/{r.totalInstallments} งวด
-                            </span>
-                          )}
-
-                          {r.interestRate && Number(r.interestRate) > 0 && (
-                            <span className="text-[10.5px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                              {r.interestRate}% APR
-                            </span>
-                          )}
-
-                          {r.monthlyPayment && Number(r.monthlyPayment.replace(/[^0-9.]/g, '')) > 0 && (
-                            <span className="text-[10.5px] font-medium text-ink-muted">
-                              ผ่อน {thb(Number(r.monthlyPayment.replace(/[^0-9.]/g, '')))}/ด.
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 sm:justify-end">
-                      <div className="relative flex-1 sm:flex-initial sm:w-44">
-                        <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-[12px] font-bold ${Number(r.balance.replace(/[^0-9.]/g, '')) > 0 ? 'text-rose-500' : 'text-ink-muted/60'}`}>
-                          -฿
-                        </span>
-                        <input
-                          ref={(el) => {
-                            if (el) balanceInputRefs.current.set(r.id, el)
-                            else balanceInputRefs.current.delete(r.id)
-                          }}
-                          type="text"
-                          value={r.balance}
-                          onChange={(e) => update(r.id, { balance: formatWithCommas(e.target.value) })}
-                          placeholder="0.00"
-                          className="w-full rounded-xl bg-surface-muted/70 dark:bg-white/5 pl-8 pr-3 py-1.5 text-right font-display font-bold text-[14.5px] text-ink dark:text-white border border-line dark:border-white/10 focus:outline-none focus:border-brand tnum"
-                        />
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => setExpandedId(isExpanded ? null : r.id)}
-                        className={`px-2.5 py-1.5 rounded-lg border transition-colors cursor-pointer text-[11.5px] font-semibold flex items-center gap-1.5 ${
-                          isExpanded
-                            ? 'bg-brand/10 text-brand border-brand/30'
-                            : 'bg-surface-muted text-ink-muted border-line/60 hover:text-ink dark:bg-white/10 dark:text-white/70'
-                        }`}
-                        title="ดูรายละเอียดเพิ่มเติม (ดอกเบี้ย, ค่างวด, สถาบัน)"
-                      >
-                        <span>{isExpanded ? 'ย่อ' : 'รายละเอียด'}</span>
-                        <span className="text-[10px] font-normal opacity-70">(optional)</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => remove(r.id)}
-                        aria-label={`Delete ${r.name || 'debt'}`}
-                        className="p-1.5 rounded-lg text-ink-faint hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                        title="ลบรายการนี้"
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Expanded Detail Fields */}
-                  {isExpanded && (
-                    <div className="px-4 pb-4 pt-2.5 border-t border-line/60 dark:border-white/10 bg-surface-muted/20 dark:bg-white/[0.02] space-y-3.5">
-                      {/* Installment Plan Toggle Card */}
-                      <div className="rounded-xl border border-pink-500/20 bg-pink-500/5 p-3 dark:border-pink-500/30 dark:bg-pink-500/10 space-y-2.5">
-                        <div className="flex items-center justify-between">
-                          <label className="flex items-center gap-2 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={r.isInstallment || r.category === 'installment'}
-                              onChange={(e) => {
-                                const checked = e.target.checked
-                                update(r.id, {
-                                  isInstallment: checked,
-                                  category: checked && r.category === 'other' ? 'installment' : r.category,
-                                  totalInstallments: checked && !r.totalInstallments ? '10' : r.totalInstallments,
-                                  paidInstallments: checked && !r.paidInstallments ? '0' : r.paidInstallments,
-                                })
-                              }}
-                              className="h-4 w-4 rounded border-pink-400 text-pink-600 focus:ring-pink-500 cursor-pointer"
-                            />
-                            <span className="text-[12.5px] font-bold text-ink dark:text-white flex items-center gap-1.5">
-                              <span>ผ่อนชำระเป็นงวด (Installment Plan / 0%)</span>
-                              <span className="text-[10px] font-bold text-pink-600 dark:text-pink-400 bg-pink-500/15 px-1.5 py-0.5 rounded">
-                                Gadget / Shopping
-                              </span>
-                            </span>
-                          </label>
-
-                          {(r.isInstallment || r.category === 'installment') && (
-                            <span className="text-[11px] font-semibold text-pink-600 dark:text-pink-400">
-                              เหลืออีก {Math.max(0, (Number(r.totalInstallments) || 0) - (Number(r.paidInstallments) || 0))} งวด
-                            </span>
-                          )}
-                        </div>
-
-                        {(r.isInstallment || r.category === 'installment') && (
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1.5 border-t border-pink-500/15">
-                            <div>
-                              <label className="block text-[10.5px] font-semibold text-ink-muted mb-1">
-                                จำนวนงวดทั้งหมด (Total Terms)
-                              </label>
-                              <div className="space-y-1.5">
-                                <input
-                                  type="number"
-                                  min={1}
-                                  max={120}
-                                  value={r.totalInstallments}
-                                  onChange={(e) => {
-                                    const val = e.target.value
-                                    const numTerms = Number(val)
-                                    const currentBal = Number(r.balance.replace(/[^0-9.]/g, ''))
-                                    const paid = Number(r.paidInstallments) || 0
-                                    const remaining = Math.max(1, numTerms - paid)
-                                    const suggestedPayment = currentBal > 0 ? Math.round(currentBal / remaining) : 0
-
-                                    update(r.id, {
-                                      totalInstallments: val,
-                                      monthlyPayment: suggestedPayment > 0 ? formatWithCommas(suggestedPayment) : r.monthlyPayment,
-                                    })
-                                  }}
-                                  placeholder="e.g. 10"
-                                  className="w-full rounded-lg bg-surface dark:bg-white/5 px-2.5 py-1 text-[13px] font-bold text-ink dark:text-white border border-line dark:border-white/10 focus:outline-none focus:border-brand tnum"
-                                />
-                                <div className="flex flex-wrap gap-1">
-                                  {['3', '6', '10', '12', '24'].map((terms) => (
-                                    <button
-                                      key={terms}
-                                      type="button"
-                                      onClick={() => {
-                                        const numTerms = Number(terms)
-                                        const currentBal = Number(r.balance.replace(/[^0-9.]/g, ''))
-                                        const paid = Number(r.paidInstallments) || 0
-                                        const remaining = Math.max(1, numTerms - paid)
-                                        const suggestedPayment = currentBal > 0 ? Math.round(currentBal / remaining) : 0
-                                        update(r.id, {
-                                          totalInstallments: terms,
-                                          monthlyPayment: suggestedPayment > 0 ? formatWithCommas(suggestedPayment) : r.monthlyPayment,
-                                        })
-                                      }}
-                                      className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border transition-colors cursor-pointer ${
-                                        r.totalInstallments === terms
-                                          ? 'bg-pink-500 text-white border-pink-500'
-                                          : 'bg-surface-muted/80 text-ink-muted border-line/40 hover:text-ink'
-                                      }`}
-                                    >
-                                      {terms} งวด
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div>
-                              <label className="block text-[10.5px] font-semibold text-ink-muted mb-1">
-                                ผ่อนไปแล้วกี่งวด (Paid Terms)
-                              </label>
-                              <input
-                                type="number"
-                                min={0}
-                                max={Number(r.totalInstallments) || 120}
-                                value={r.paidInstallments}
-                                onChange={(e) => update(r.id, { paidInstallments: e.target.value })}
-                                placeholder="0"
-                                className="w-full rounded-lg bg-surface dark:bg-white/5 px-2.5 py-1 text-[13px] font-bold text-ink dark:text-white border border-line dark:border-white/10 focus:outline-none focus:border-brand tnum"
-                              />
-                              <span className="text-[9.5px] text-ink-faint block mt-1">
-                                เริ่มต้นใส่ 0 (หรือระบุงวดที่เคยจ่ายแล้ว)
-                              </span>
-                            </div>
-
-                            <div>
-                              <label className="block text-[10.5px] font-semibold text-ink-muted mb-1">
-                                ราคาเต็ม / ยอดเริ่มต้น (฿)
-                              </label>
-                              <input
-                                type="text"
-                                value={r.originalBalance}
-                                onChange={(e) => update(r.id, { originalBalance: formatWithCommas(e.target.value) })}
-                                placeholder={r.balance || 'e.g. 35,000'}
-                                className="w-full rounded-lg bg-surface dark:bg-white/5 px-2.5 py-1 text-[13px] font-bold text-ink dark:text-white border border-line dark:border-white/10 focus:outline-none focus:border-brand tnum"
-                              />
-                              <span className="text-[9.5px] text-ink-faint block mt-1">
-                                เพื่อใช้คำนวณแถบความคืบหน้า (Progress)
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                        <div>
-                          <label className="block text-[11px] font-semibold text-ink-muted mb-1 flex items-center justify-between">
-                            <span>อัตราดอกเบี้ยต่อปี (% APR)</span>
-                            <span className="text-[9.5px] font-normal text-ink-faint">optional</span>
-                          </label>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              value={r.interestRate}
-                              onChange={(e) => update(r.id, { interestRate: e.target.value.replace(/[^0-9.]/g, '') })}
-                              placeholder="0.0"
-                              className="w-full rounded-lg bg-surface dark:bg-white/5 px-2.5 py-1 text-[13px] font-bold text-ink dark:text-white border border-line dark:border-white/10 focus:outline-none focus:border-brand tnum pr-6"
-                            />
-                            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-ink-muted font-bold">
-                              %
-                            </span>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-semibold text-ink-muted mb-1 flex items-center justify-between">
-                            <span>ค่างวดต่อเดือน (฿)</span>
-                            <span className="text-[9.5px] font-normal text-ink-faint">optional</span>
-                          </label>
-                          <input
-                            type="text"
-                            value={r.monthlyPayment}
-                            onChange={(e) => update(r.id, { monthlyPayment: formatWithCommas(e.target.value) })}
-                            placeholder="e.g. 3,500"
-                            className="w-full rounded-lg bg-surface dark:bg-white/5 px-2.5 py-1 text-[13px] font-bold text-ink dark:text-white border border-line dark:border-white/10 focus:outline-none focus:border-brand tnum"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-semibold text-ink-muted mb-1 flex items-center justify-between">
-                            <span>เจ้าหนี้ / สถาบันการเงิน</span>
-                            <span className="text-[9.5px] font-normal text-ink-faint">optional</span>
-                          </label>
-                          <input
-                            type="text"
-                            value={r.lender}
-                            onChange={(e) => update(r.id, { lender: e.target.value })}
-                            placeholder="e.g. SPayLater, Apple, KBank"
-                            className="w-full rounded-lg bg-surface dark:bg-white/5 px-2.5 py-1 text-[13px] text-ink dark:text-white border border-line dark:border-white/10 focus:outline-none focus:border-brand"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-semibold text-ink-muted mb-1 flex items-center justify-between">
-                            <span>วันครบกำหนดจ่าย (Due Day)</span>
-                            <span className="text-[9.5px] font-normal text-ink-faint">optional</span>
-                          </label>
-                          <input
-                            type="number"
-                            min={1}
-                            max={31}
-                            value={r.dueDay}
-                            onChange={(e) => update(r.id, { dueDay: e.target.value })}
-                            placeholder="วันที่ 1-31"
-                            className="w-full rounded-lg bg-surface dark:bg-white/5 px-2.5 py-1 text-[13px] text-ink dark:text-white border border-line dark:border-white/10 focus:outline-none focus:border-brand tnum"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="sm:col-span-4">
-                        <label className="block text-[11px] font-semibold text-ink-muted mb-1 flex items-center justify-between">
-                          <span>บันทึกเพิ่มเติม (Note)</span>
-                          <span className="text-[9.5px] font-normal text-ink-faint">optional</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={r.note}
-                          onChange={(e) => update(r.id, { note: e.target.value })}
-                          placeholder="เช่น ผ่อน 0% 10 เดือน เหลือ 4 งวดสุดท้าย"
-                          className="w-full rounded-lg bg-surface dark:bg-white/5 px-2.5 py-1 text-[12.5px] text-ink dark:text-white border border-line dark:border-white/10 focus:outline-none focus:border-brand"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+            <div className="text-[12px] text-ink-muted font-medium">
+              หนี้คงค้างรวม: <strong className="text-rose-600 dark:text-rose-400 font-bold">{thb(totalBalanceAll)}</strong>
+            </div>
           </div>
         )}
 
-        {/* Action / Presets Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 border-t border-line/60 dark:border-white/10">
-          <Button onClick={add} variant="secondary" size="sm" className="w-full sm:w-auto">
-            <PlusIcon className="h-4 w-4 mr-1 text-brand" />
-            + เพิ่มรายการหนี้ใหม่
-          </Button>
+        {/* ── MODE 1: FORM (Add / Edit Single Debt) ── */}
+        {mode === 'form' && (
+          <div className="space-y-4">
+            {/* Quick Presets (Only shown in Add mode to keep it clean) */}
+            {!editingId && (
+              <div className="rounded-2xl bg-surface-muted/50 dark:bg-white/[0.03] p-3 border border-line/60 dark:border-white/10 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">
+                    ⚡ Quick Presets (เลือกด่วน)
+                  </span>
+                  <span className="text-[10px] text-ink-faint">คลิกเพื่อใส่ข้อมูลเริ่มต้นทันที</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {QUICK_PRESETS.map((p) => {
+                    const isSelected = activePreset === p.name
+                    return (
+                      <button
+                        key={p.name}
+                        type="button"
+                        onClick={() => applyPreset(p)}
+                        className={`text-[11.5px] font-semibold px-2.5 py-1 rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
+                          isSelected
+                            ? 'bg-brand text-white border-brand shadow-xs'
+                            : 'bg-surface dark:bg-white/10 text-ink-muted dark:text-white/80 border-line/60 dark:border-white/15 hover:text-ink dark:hover:text-white hover:border-brand/40'
+                        }`}
+                      >
+                        <span>+ {p.name}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
-          {/* Quick Presets */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] text-ink-muted mr-1">Quick Add:</span>
-            {QUICK_PRESETS.map((p) => (
+            {/* Main Inputs: Name & Balance */}
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+              {/* Name */}
+              <div className="sm:col-span-7">
+                <label className="h-5 flex items-center text-[12px] font-semibold text-ink-muted mb-1">
+                  <span>ชื่อรายการหนี้ / สินค้า</span>
+                  <span className="text-rose-500 ml-1">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    ref={nameInputRef}
+                    type="text"
+                    value={draft.name}
+                    onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+                    placeholder="เช่น iPhone 16 Pro, บัตรเครดิต KBank"
+                    className="h-10 w-full rounded-xl bg-surface-muted/60 dark:bg-white/5 px-3 font-semibold text-[14px] text-ink dark:text-white border border-line/80 dark:border-white/10 focus:outline-none focus:border-brand focus:bg-surface dark:focus:bg-white/10 transition-colors placeholder:text-ink-faint"
+                  />
+                </div>
+              </div>
+
+              {/* Balance */}
+              <div className="sm:col-span-5">
+                <label className="h-5 flex items-center justify-between text-[12px] font-semibold text-ink-muted mb-1">
+                  <span>
+                    ยอดหนี้คงเหลือ (฿) <span className="text-rose-500">*</span>
+                  </span>
+                  {draft.originalBalance && Number(draft.originalBalance.replace(/[^0-9.]/g, '')) > 0 && (
+                    <span className="text-[10px] text-ink-faint">
+                      เต็ม {draft.originalBalance}
+                    </span>
+                  )}
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] font-bold text-rose-500 select-none">
+                    -฿
+                  </span>
+                  <input
+                    ref={balanceInputRef}
+                    type="text"
+                    inputMode="decimal"
+                    value={draft.balance}
+                    onChange={(e) => {
+                      const formatted = formatWithCommas(e.target.value)
+                      const numBal = Number(formatted.replace(/[^0-9.]/g, ''))
+                      const numTotal = Number(draft.totalInstallments) || 1
+                      const numPaid = Number(draft.paidInstallments) || 0
+                      const remaining = Math.max(1, numTotal - numPaid)
+                      const autoMonth = numBal > 0 ? Math.round(numBal / remaining) : 0
+                      setDraft((d) => ({
+                        ...d,
+                        balance: formatted,
+                        originalBalance: d.originalBalance || formatted,
+                        monthlyPayment: d.isInstallment && autoMonth > 0 ? formatWithCommas(autoMonth) : d.monthlyPayment,
+                      }))
+                    }}
+                    placeholder="0.00"
+                    className="h-10 w-full rounded-xl bg-surface-muted/60 dark:bg-white/5 pl-9 pr-3 text-right font-display font-bold text-[15px] text-ink dark:text-white border border-line/80 dark:border-white/10 focus:outline-none focus:border-brand focus:bg-surface dark:focus:bg-white/10 transition-colors placeholder:text-ink-faint tnum"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Category Selector Chips */}
+            <div>
+              <label className="h-5 flex items-center justify-between text-[12px] font-semibold text-ink-muted mb-1.5">
+                <span>หมวดหมู่หนี้สิน (Category)</span>
+                <span className="text-[10.5px] text-ink-faint">คลิกเลือกหมวดที่ตรงกัน</span>
+              </label>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {CATEGORIES_LIST.map((catKey) => {
+                  const meta = DEBT_CATEGORIES[catKey]
+                  const isSelected = draft.category === catKey
+                  return (
+                    <button
+                      key={catKey}
+                      type="button"
+                      onClick={() => {
+                        const isInst = catKey === 'installment'
+                        setDraft((d) => ({
+                          ...d,
+                          category: catKey,
+                          isInstallment: isInst ? true : d.isInstallment,
+                          totalInstallments: isInst && !d.totalInstallments ? '10' : d.totalInstallments,
+                          paidInstallments: isInst && !d.paidInstallments ? '0' : d.paidInstallments,
+                        }))
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-[11.5px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
+                        isSelected
+                          ? `${meta.bgClass} ${meta.textClass} ${meta.borderClass} ring-1 ring-current shadow-xs`
+                          : 'bg-surface-muted/60 dark:bg-white/5 text-ink-muted dark:text-white/70 border-line/60 dark:border-white/10 hover:text-ink dark:hover:text-white'
+                      }`}
+                    >
+                      <CategoryIcon category={catKey} className="h-3.5 w-3.5" />
+                      <span>{meta.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Installment Plan Section */}
+            <div className="rounded-2xl border border-pink-500/25 bg-pink-500/5 dark:bg-pink-500/10 p-3.5 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={draft.isInstallment}
+                    onChange={(e) => {
+                      const checked = e.target.checked
+                      setDraft((d) => ({
+                        ...d,
+                        isInstallment: checked,
+                        category: checked && d.category === 'other' ? 'installment' : d.category,
+                      }))
+                    }}
+                    className="h-4 w-4 rounded border-pink-400 text-pink-600 focus:ring-pink-500 cursor-pointer"
+                  />
+                  <span className="text-[12.5px] font-bold text-ink dark:text-white flex items-center gap-2">
+                    <span>ผ่อนชำระเป็นงวด (Installment Plan / 0%)</span>
+                    <span className="text-[10px] font-bold text-pink-600 dark:text-pink-400 bg-pink-500/15 px-2 py-0.5 rounded-full">
+                      Gadget / Shopping
+                    </span>
+                  </span>
+                </label>
+
+                {draft.isInstallment && (
+                  <span className="text-[11.5px] font-bold text-pink-600 dark:text-pink-400">
+                    เหลืออีก {Math.max(0, (Number(draft.totalInstallments) || 0) - (Number(draft.paidInstallments) || 0))} งวด
+                  </span>
+                )}
+              </div>
+
+              {draft.isInstallment && (
+                <>
+                  {/* Preset term chips on their own row */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[11px] font-semibold text-ink-muted">เลือกงวดด่วน:</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['3', '6', '10', '12', '18', '24', '36'].map((terms) => {
+                        const isSelected = draft.totalInstallments === terms
+                        return (
+                          <button
+                            key={terms}
+                            type="button"
+                            onClick={() => {
+                              const numTerms = Number(terms)
+                              const currentBal = Number(draft.balance.replace(/[^0-9.]/g, ''))
+                              const paid = Number(draft.paidInstallments) || 0
+                              const remaining = Math.max(1, numTerms - paid)
+                              const suggested = currentBal > 0 ? Math.round(currentBal / remaining) : 0
+                              setDraft((d) => ({
+                                ...d,
+                                totalInstallments: terms,
+                                monthlyPayment: suggested > 0 ? formatWithCommas(suggested) : d.monthlyPayment,
+                              }))
+                            }}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer ${
+                              isSelected
+                                ? 'bg-pink-500 text-white border-pink-500 shadow-xs'
+                                : 'bg-surface dark:bg-white/10 text-ink-muted dark:text-white/80 border-line/60 dark:border-white/10 hover:text-ink dark:hover:text-white'
+                            }`}
+                          >
+                            {terms} งวด
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 3 Columns: Total Terms, Paid Terms, Monthly Payment */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-pink-500/15">
+                    <div>
+                      <label className="h-5 flex items-center text-[11.5px] font-semibold text-ink-muted mb-1">
+                        จำนวนงวดทั้งหมด
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={120}
+                        value={draft.totalInstallments}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          const numTerms = Number(val)
+                          const currentBal = Number(draft.balance.replace(/[^0-9.]/g, ''))
+                          const paid = Number(draft.paidInstallments) || 0
+                          const remaining = Math.max(1, numTerms - paid)
+                          const suggested = currentBal > 0 ? Math.round(currentBal / remaining) : 0
+                          setDraft((d) => ({
+                            ...d,
+                            totalInstallments: val,
+                            monthlyPayment: suggested > 0 ? formatWithCommas(suggested) : d.monthlyPayment,
+                          }))
+                        }}
+                        placeholder="เช่น 10"
+                        className="h-10 w-full rounded-xl bg-surface dark:bg-white/10 px-3 text-[13.5px] font-bold text-ink dark:text-white border border-line dark:border-white/15 focus:outline-none focus:border-brand tnum"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="h-5 flex items-center text-[11.5px] font-semibold text-ink-muted mb-1">
+                        ผ่อนไปแล้ว (งวด)
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={Number(draft.totalInstallments) || 120}
+                        value={draft.paidInstallments}
+                        onChange={(e) => setDraft((d) => ({ ...d, paidInstallments: e.target.value }))}
+                        placeholder="0"
+                        className="h-10 w-full rounded-xl bg-surface dark:bg-white/10 px-3 text-[13.5px] font-bold text-ink dark:text-white border border-line dark:border-white/15 focus:outline-none focus:border-brand tnum"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="h-5 flex items-center justify-between text-[11.5px] font-semibold text-ink-muted mb-1">
+                        <span>ค่างวดต่อเดือน (฿)</span>
+                        <span className="text-[10px] text-pink-600 dark:text-pink-400 font-normal">คำนวณให้อัตโนมัติ</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={draft.monthlyPayment}
+                        onChange={(e) => setDraft((d) => ({ ...d, monthlyPayment: formatWithCommas(e.target.value) }))}
+                        placeholder="เช่น 3,500"
+                        className="h-10 w-full rounded-xl bg-surface dark:bg-white/10 px-3 text-[13.5px] font-bold text-ink dark:text-white border border-line dark:border-white/15 focus:outline-none focus:border-brand tnum"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Collapsible Advanced Details (Optional) */}
+            <div className="rounded-2xl border border-line/60 dark:border-white/10 overflow-hidden">
               <button
-                key={p.name}
                 type="button"
-                onClick={() => addPreset(p)}
-                className="text-[11px] font-medium bg-surface-muted dark:bg-white/10 hover:bg-surface-muted/80 text-ink-soft dark:text-white/80 px-2 py-0.5 rounded-full border border-line/50 dark:border-white/10 transition-colors cursor-pointer"
+                onClick={() => setShowAdvanced((prev) => !prev)}
+                className="w-full flex items-center justify-between p-3 bg-surface-muted/30 dark:bg-white/[0.02] hover:bg-surface-muted/60 transition-colors cursor-pointer text-left"
               >
-                + {p.name}
+                <div className="flex items-center gap-2">
+                  <span className="text-[12.5px] font-semibold text-ink dark:text-white">
+                    ⚙️ ข้อมูลเพิ่มเติม (Optional)
+                  </span>
+                  <span className="text-[11px] text-ink-faint">
+                    (ดอกเบี้ย APR, สถาบัน, วันครบกำหนด, Note)
+                  </span>
+                </div>
+                <span
+                  className={`text-[12px] text-ink-muted font-bold transition-transform duration-200 ${
+                    showAdvanced ? 'rotate-180 text-brand' : ''
+                  }`}
+                >
+                  ▼
+                </span>
               </button>
-            ))}
+
+              {showAdvanced && (
+                <div className="p-3.5 space-y-3 bg-surface dark:bg-white/[0.01] border-t border-line/50 dark:border-white/10">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                      <label className="h-5 flex items-center text-[11px] font-semibold text-ink-muted mb-1">
+                        ดอกเบี้ยต่อปี (% APR)
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={draft.interestRate}
+                          onChange={(e) => setDraft((d) => ({ ...d, interestRate: e.target.value.replace(/[^0-9.]/g, '') }))}
+                          placeholder="0.0"
+                          className="h-10 w-full rounded-xl bg-surface-muted/50 dark:bg-white/5 pl-3 pr-6 text-[13px] font-bold text-ink dark:text-white border border-line/70 dark:border-white/10 focus:outline-none focus:border-brand tnum"
+                        />
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-ink-muted">
+                          %
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="h-5 flex items-center text-[11px] font-semibold text-ink-muted mb-1">
+                        ราคาเต็มเริ่มต้น (฿)
+                      </label>
+                      <input
+                        type="text"
+                        value={draft.originalBalance}
+                        onChange={(e) => setDraft((d) => ({ ...d, originalBalance: formatWithCommas(e.target.value) }))}
+                        placeholder="เช่น 35,000"
+                        className="h-10 w-full rounded-xl bg-surface-muted/50 dark:bg-white/5 px-3 text-[13px] font-bold text-ink dark:text-white border border-line/70 dark:border-white/10 focus:outline-none focus:border-brand tnum"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="h-5 flex items-center text-[11px] font-semibold text-ink-muted mb-1">
+                        เจ้าหนี้ / สถาบันการเงิน
+                      </label>
+                      <input
+                        type="text"
+                        value={draft.lender}
+                        onChange={(e) => setDraft((d) => ({ ...d, lender: e.target.value }))}
+                        placeholder="เช่น SPayLater, Apple"
+                        className="h-10 w-full rounded-xl bg-surface-muted/50 dark:bg-white/5 px-3 text-[13px] text-ink dark:text-white border border-line/70 dark:border-white/10 focus:outline-none focus:border-brand"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="h-5 flex items-center text-[11px] font-semibold text-ink-muted mb-1">
+                        วันครบกำหนดจ่าย
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={31}
+                        value={draft.dueDay}
+                        onChange={(e) => setDraft((d) => ({ ...d, dueDay: e.target.value }))}
+                        placeholder="วันที่ 1-31"
+                        className="h-10 w-full rounded-xl bg-surface-muted/50 dark:bg-white/5 px-3 text-[13px] text-ink dark:text-white border border-line/70 dark:border-white/10 focus:outline-none focus:border-brand tnum"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="h-5 flex items-center text-[11px] font-semibold text-ink-muted mb-1">
+                      บันทึกเพิ่มเติม (Note)
+                    </label>
+                    <input
+                      type="text"
+                      value={draft.note}
+                      onChange={(e) => setDraft((d) => ({ ...d, note: e.target.value }))}
+                      placeholder="เช่น ผ่อน 0% 10 เดือน เหลือ 4 งวดสุดท้าย"
+                      className="h-10 w-full rounded-xl bg-surface-muted/50 dark:bg-white/5 px-3 text-[12.5px] text-ink dark:text-white border border-line/70 dark:border-white/10 focus:outline-none focus:border-brand"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* ── MODE 2: LIST (Review & Manage All Existing Debts) ── */}
+        {mode === 'list' && (
+          <div className="space-y-3">
+            {liabilitiesList.length === 0 ? (
+              <div className="py-12 text-center">
+                <p className="text-[13.5px] text-ink-muted font-medium">ยังไม่มีรายการหนี้สินในระบบ</p>
+                <Button
+                  onClick={() => {
+                    setEditingId(null)
+                    setDraft(emptyDraft())
+                    setMode('form')
+                  }}
+                  className="mt-3 shrink-0"
+                >
+                  <PlusIcon className="h-4 w-4 mr-1" />
+                  เพิ่มรายการแรก
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
+                {liabilitiesList.map((l) => {
+                  const meta = DEBT_CATEGORIES[l.category] ?? DEBT_CATEGORIES.other
+                  const isInst = l.isInstallment || l.category === 'installment'
+                  const total = l.totalInstallments ?? 0
+                  const paid = l.paidInstallments ?? 0
+                  const percent = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0
+
+                  return (
+                    <div
+                      key={l.id}
+                      className="p-3 rounded-2xl border border-line/60 dark:border-white/10 bg-surface-muted/30 dark:bg-white/[0.02] flex items-center justify-between gap-3 hover:border-brand/40 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`grid h-9 w-9 place-items-center rounded-xl shrink-0 ${meta.bgClass} ${meta.textClass}`}>
+                          <CategoryIcon category={l.category} className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-[14px] text-ink dark:text-white truncate">
+                            {l.name}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-ink-muted mt-0.5">
+                            <span className="font-semibold">{meta.label}</span>
+                            {isInst && total > 0 && (
+                              <>
+                                <span>•</span>
+                                <span className="font-bold text-pink-600 dark:text-pink-400">
+                                  ผ่อน {paid}/{total} งวด ({percent}%)
+                                </span>
+                              </>
+                            )}
+                            {l.monthlyPayment && (
+                              <>
+                                <span>•</span>
+                                <span>{thb(l.monthlyPayment)}/ด.</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="font-display font-bold text-[15px] text-rose-600 dark:text-rose-400 tnum">
+                          -{thb(l.balance)}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => startEdit(l)}
+                            className="p-2 rounded-xl text-ink-muted hover:text-brand hover:bg-brand/10 transition-colors cursor-pointer"
+                            title="แก้ไขรายการนี้"
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(l.id)}
+                            className="p-2 rounded-xl text-ink-muted hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                            title="ลบรายการนี้"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Summary Footer in List Mode */}
+            {liabilitiesList.length > 0 && (
+              <div className="p-3.5 rounded-2xl bg-surface-muted/60 dark:bg-white/5 border border-line/60 dark:border-white/10 flex items-center justify-between text-[12px]">
+                <div className="text-ink-muted">
+                  รวม <strong className="text-ink dark:text-white">{liabilitiesList.length} รายการ</strong>
+                  {totalMonthlyPaymentAll > 0 && (
+                    <span className="ml-2">
+                      (ภาระผ่อนรวม <strong>{thb(totalMonthlyPaymentAll)}/เดือน</strong>)
+                    </span>
+                  )}
+                </div>
+                <div className="text-right">
+                  <span className="font-bold text-[15px] text-rose-600 dark:text-rose-400 tnum">
+                    -{thb(totalBalanceAll)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </Modal>
   )
