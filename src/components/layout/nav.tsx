@@ -11,6 +11,7 @@ import {
   StrategyIcon,
   CashflowIcon,
   DividendIcon,
+  WalletIcon,
 } from '../icons'
 
 export interface NavSubItem {
@@ -41,6 +42,13 @@ export interface MobileNavItem {
 }
 
 export const cashflowSubItems: NavSubItem[] = [
+  {
+    to: '/cash',
+    label: 'Cash & Liquidity',
+    short: 'Cash',
+    description: 'Liquid reserves, emergency runway & yield booster',
+    icon: WalletIcon,
+  },
   {
     to: '/dca',
     label: 'DCA Plans',

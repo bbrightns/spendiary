@@ -17,7 +17,6 @@ import {
   ArrowUpRightIcon,
   CheckIcon,
   DebtIcon,
-  PencilIcon,
   PortfolioIcon,
   SparkleIcon,
   WalletIcon,
@@ -543,18 +542,14 @@ export function Dashboard() {
                   <h2 className="font-display text-[16px] font-bold text-ink">Cash & Liquidity Hub</h2>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedCashAccountId(null)
-                    setCashOpen(true)
-                  }}
-                  aria-label="Manage cash accounts"
+                <Link
+                  to="/cash"
+                  aria-label="Open Cash & Liquidity Hub"
                   className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-brand hover:underline cursor-pointer"
                 >
-                  <span>Manage</span>
-                  <PencilIcon className="h-3.5 w-3.5" />
-                </button>
+                  <span>Open Hub</span>
+                  <ArrowUpRightIcon className="h-3.5 w-3.5" />
+                </Link>
               </div>
 
               {/* Cash & Liquidity Hero Summary */}
@@ -688,17 +683,26 @@ export function Dashboard() {
 
             <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
               <span>Emergency cash reserve</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedCashAccountId(null)
-                  setCashOpen(true)
-                }}
-                aria-label="Add new cash account"
-                className="font-semibold text-brand hover:underline cursor-pointer"
-              >
-                + Add Account
-              </button>
+              <div className="flex items-center gap-3">
+                <Link
+                  to="/cash"
+                  className="font-semibold text-brand hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  <span>ดูรายละเอียดทั้งหมด</span>
+                  <ArrowUpRightIcon className="h-3 w-3" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCashAccountId(null)
+                    setCashOpen(true)
+                  }}
+                  aria-label="Add new cash account"
+                  className="font-semibold text-brand hover:underline cursor-pointer"
+                >
+                  + Add Account
+                </button>
+              </div>
             </div>
           </Card>
         </div>
