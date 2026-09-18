@@ -18,7 +18,6 @@ import {
 } from '../lib/calc'
 import { thb } from '../lib/format'
 import {
-  CoinsIcon,
   PencilIcon,
   PlusIcon,
   SearchIcon,
@@ -68,7 +67,6 @@ export function CashLiquidity() {
 
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<CashAccountCategory | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedMonth, setSelectedMonth] = useState<number | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [sortField, setSortField] = useState<'name' | 'category' | 'yield' | 'balance'>('balance')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
@@ -86,10 +84,6 @@ export function CashLiquidity() {
   const totalCashThb = useMemo(() => totalCash(data, usdThb), [data, usdThb])
 
   // Multi-currency breakdown
-  const thbOnlyTotal = useMemo(() => {
-    return accounts.reduce((sum, a) => (a.currency !== 'USD' ? sum + a.balance : sum), 0)
-  }, [accounts])
-
   const usdOnlyTotal = useMemo(() => {
     return accounts.reduce((sum, a) => (a.currency === 'USD' ? sum + a.balance : sum), 0)
   }, [accounts])
@@ -134,49 +128,6 @@ export function CashLiquidity() {
   // Warchest Dry Powder
   const warchestAmount = categoryBreakdown.invest
   const warchestPct = totalCashThb > 0 ? (warchestAmount / totalCashThb) * 100 : 0
-
-  // 12-Month Interest Calendar Projection
-  const monthlyInterestProjection = useMemo(() => {
-    const months = Array.from({ length: 12 }, (_, i) => i + 1)
-    return months.map((monthNum) => {
-      let monthTotal = 0
-      const payingAccounts: { name: string; amount: number }[] = []
-
-      for (const a of accounts) {
-        if (!a.interestRate || a.interestRate <= 0 || a.balance <= 0) continue
-
-        const cap = a.maxEligibleBalance && a.maxEligibleBalance > 0 ? Math.min(a.balance, a.maxEligibleBalance) : a.balance
-        const eligibleThb = a.currency === 'USD' ? cap * rate : cap
-        const annualThb = eligibleThb * (a.interestRate / 100)
-
-        const schedule = a.payoutSchedule ?? (a.payoutMonths && a.payoutMonths.length > 0 ? 'custom' : 'monthly')
-        const activeMonths = a.payoutMonths && a.payoutMonths.length > 0
-          ? a.payoutMonths
-          : schedule === 'semi_annual'
-            ? [6, 12]
-            : schedule === 'annual'
-              ? [2]
-              : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-
-        if (activeMonths.includes(monthNum)) {
-          const payoutAmount = annualThb / (activeMonths.length || 1)
-          monthTotal += payoutAmount
-          payingAccounts.push({ name: a.name, amount: payoutAmount })
-        }
-      }
-
-      return {
-        month: monthNum,
-        monthName: THAI_MONTHS_SHORT[monthNum - 1],
-        amount: monthTotal,
-        accounts: payingAccounts,
-      }
-    })
-  }, [accounts, rate])
-
-  const maxMonthInterest = useMemo(() => {
-    return Math.max(...monthlyInterestProjection.map((m) => m.amount), 1)
-  }, [monthlyInterestProjection])
 
   // Filtering and Sorting
   const filteredAccounts = useMemo(() => {
@@ -300,8 +251,6 @@ export function CashLiquidity() {
     setCashAccounts(updated)
   }
 
-  const currentMonthNum = new Date().getMonth() + 1
-
   return (
     <div className="space-y-6 pb-12">
       {/* ── Page Header ── */}
@@ -326,134 +275,59 @@ export function CashLiquidity() {
         }
       />
 
-      {/* ── Top KPI Grid (4 Cards) ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      {/* ── Top KPI Grid (2x2 on Mobile, 4x1 on Desktop) ── */}
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
         {/* Card 1: Total Cash */}
-        <Card className="p-4 flex flex-col justify-between border-line/60 relative overflow-hidden">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[12px] font-bold uppercase tracking-wider text-ink-muted">
-              Total Liquid Cash
-            </span>
-            <div className="h-8 w-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <WalletIcon className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="mt-2.5">
-            <div className="font-display text-[24px] sm:text-[26px] font-black text-ink tnum leading-tight truncate">
+        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+          <div>
+            <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">Total Liquid Cash</p>
+            <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-ink tnum truncate">
               {thb(totalCashThb)}
-            </div>
-            <div className="mt-1 text-[11.5px] text-ink-muted flex items-center justify-between">
-              <span>สัดส่วนในพอร์ต</span>
-              <span className="font-bold text-ink tnum">
-                {currentNetWorth > 0 ? ((totalCashThb / currentNetWorth) * 100).toFixed(1) : 0}% ของ Net Worth
-              </span>
-            </div>
+            </p>
           </div>
-          {usdOnlyTotal > 0 && (
-            <div className="mt-2 pt-2 border-t border-line/40 text-[11px] text-ink-muted flex items-center justify-between font-mono">
-              <span>THB: {thb(thbOnlyTotal)}</span>
-              <span>USD: ${usdOnlyTotal.toLocaleString()}</span>
-            </div>
-          )}
+          <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+            {currentNetWorth > 0 ? ((totalCashThb / currentNetWorth) * 100).toFixed(1) : 0}% of Net Worth
+            {usdOnlyTotal > 0 ? ` · $${usdOnlyTotal.toLocaleString()} USD` : ''}
+          </p>
         </Card>
 
         {/* Card 2: Annual Yield & APY */}
-        <Card className="p-4 flex flex-col justify-between border-line/60 relative overflow-hidden">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[12px] font-bold uppercase tracking-wider text-ink-muted">
-              Est. Annual Yield
-            </span>
-            <div className="h-8 w-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-              <CoinsIcon className="h-4 w-4" />
-            </div>
+        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+          <div>
+            <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">Est. Annual Yield</p>
+            <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-emerald-600 dark:text-emerald-400 tnum truncate">
+              {thb(totalAnnualYield)}
+            </p>
           </div>
-          <div className="mt-2.5">
-            <div className="font-display text-[24px] sm:text-[26px] font-black text-emerald-600 dark:text-emerald-400 tnum leading-tight truncate">
-              {thb(totalAnnualYield)} <span className="text-xs font-semibold text-ink-muted">/ปี</span>
-            </div>
-            <div className="mt-1 text-[11.5px] text-ink-muted flex items-center justify-between">
-              <span>เฉลี่ยเดือนละ</span>
-              <span className="font-bold text-ink tnum">
-                {thb(totalAnnualYield / 12)}
-              </span>
-            </div>
-          </div>
-          <div className="mt-2 pt-2 border-t border-line/40 text-[11px] text-ink-muted flex items-center justify-between">
-            <span>Average Effective APY</span>
-            <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-              {effectiveApy.toFixed(2)}%
-            </span>
-          </div>
+          <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+            เฉลี่ย {thb(totalAnnualYield / 12)}/ด. · APY {effectiveApy.toFixed(2)}%
+          </p>
         </Card>
 
         {/* Card 3: Emergency Runway */}
-        <Card className="p-4 flex flex-col justify-between border-line/60 relative overflow-hidden">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[12px] font-bold uppercase tracking-wider text-ink-muted">
-              Emergency Runway
-            </span>
-            <div className={`h-8 w-8 rounded-xl flex items-center justify-center ${
-              emergencyRunwayMonths >= 6
-                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                : emergencyRunwayMonths >= 3
-                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
-            }`}>
-              <span className="text-sm">🛡️</span>
-            </div>
-          </div>
-          <div className="mt-2.5">
-            <div className="font-display text-[24px] sm:text-[26px] font-black text-ink tnum leading-tight truncate">
+        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+          <div>
+            <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">Emergency Runway</p>
+            <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-ink tnum truncate">
               {emergencyRunwayMonths > 36 ? '36+ เดือน' : `${emergencyRunwayMonths.toFixed(1)} เดือน`}
-            </div>
-            <div className="mt-1 text-[11.5px] text-ink-muted flex items-center justify-between">
-              <span>เงินสำรองในตลับ</span>
-              <span className="font-bold text-ink tnum">
-                {thb(emergencyAmount)}
-              </span>
-            </div>
+            </p>
           </div>
-          <div className="mt-2 pt-2 border-t border-line/40 text-[11px] text-ink-muted flex items-center justify-between">
-            <span>สถานะความปลอดภัย</span>
-            <span className={`font-bold ${
-              emergencyRunwayMonths >= 6
-                ? 'text-emerald-600 dark:text-emerald-400'
-                : emergencyRunwayMonths >= 3
-                ? 'text-amber-600 dark:text-amber-400'
-                : 'text-rose-600 dark:text-rose-400'
-            }`}>
-              {emergencyRunwayMonths >= 6 ? '🛡️ แข็งแกร่ง (>6 ด.)' : emergencyRunwayMonths >= 3 ? '⚡ ปานกลาง (3-6 ด.)' : '⚠️ ควรเพิ่มสำรอง'}
-            </span>
-          </div>
+          <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+            สำรอง {thb(emergencyAmount)} · {emergencyRunwayMonths >= 6 ? '🛡️ แข็งแกร่ง' : emergencyRunwayMonths >= 3 ? '⚡ ปานกลาง' : '⚠️ ควรเพิ่ม'}
+          </p>
         </Card>
 
         {/* Card 4: Investment Warchest */}
-        <Card className="p-4 flex flex-col justify-between border-line/60 relative overflow-hidden">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[12px] font-bold uppercase tracking-wider text-ink-muted">
-              Investment Warchest
-            </span>
-            <div className="h-8 w-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-              <span className="text-sm">🎯</span>
-            </div>
-          </div>
-          <div className="mt-2.5">
-            <div className="font-display text-[24px] sm:text-[26px] font-black text-ink tnum leading-tight truncate">
+        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+          <div>
+            <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">Investment Warchest</p>
+            <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-ink tnum truncate">
               {thb(warchestAmount)}
-            </div>
-            <div className="mt-1 text-[11.5px] text-ink-muted flex items-center justify-between">
-              <span>สัดส่วนกระสุนรอลงทุน</span>
-              <span className="font-bold text-ink tnum">
-                {warchestPct.toFixed(1)}% ของเงินสด
-              </span>
-            </div>
+            </p>
           </div>
-          <div className="mt-2 pt-2 border-t border-line/40 text-[11px] text-ink-muted flex items-center justify-between">
-            <span>สภาพคล่องพร้อมช้อนซื้อ</span>
-            <span className="font-bold text-blue-600 dark:text-blue-400">
-              {warchestAmount > 0 ? 'พร้อม DCA & ซื้อหุ้น' : 'ไม่มีเงินสดรอซื้อ'}
-            </span>
-          </div>
+          <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+            {warchestPct.toFixed(1)}% ของเงินสด · {warchestAmount > 0 ? 'พร้อมลงทุน' : 'ไม่มีเงินรอซื้อ'}
+          </p>
         </Card>
       </div>
 
@@ -538,96 +412,6 @@ export function CashLiquidity() {
             )
           })}
         </div>
-      </Card>
-
-      {/* ── 12-Month Interest Cashflow Calendar ── */}
-      <Card className="p-4 sm:p-5 border-line/60 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 className="font-display text-[16px] font-bold text-ink flex items-center gap-2">
-              <span>📅 Cash Interest Calendar (ปฏิทินดอกเบี้ยรับรายเดือน)</span>
-            </h3>
-            <p className="text-[12px] text-ink-muted">
-              ประเมินรอบกระแสเงินสดดอกเบี้ยเงินฝากที่จะได้รับเข้าบัญชีในแต่ละเดือนตลอดทั้งปี
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-[12px]">
-            <span className="text-ink-muted">ดอกเบี้ยรวมคาดการณ์:</span>
-            <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-              {thb(totalAnnualYield)} / ปี
-            </span>
-          </div>
-        </div>
-
-        {/* 12-Month Bar Chart */}
-        <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5 sm:gap-2 pt-2">
-          {monthlyInterestProjection.map((item) => {
-            const heightPct = (item.amount / maxMonthInterest) * 100
-            const isCurrentMonth = item.month === currentMonthNum
-            const isSelected = selectedMonth === item.month
-
-            return (
-              <div
-                key={item.month}
-                onClick={() => setSelectedMonth(isSelected ? null : item.month)}
-                className={`flex flex-col items-center justify-end p-2 rounded-xl transition-all cursor-pointer border ${
-                  isSelected
-                    ? 'border-brand bg-brand-soft/30 ring-2 ring-brand/40'
-                    : isCurrentMonth
-                    ? 'border-emerald-500/50 bg-emerald-500/10'
-                    : 'border-line/40 bg-surface-muted/30 hover:bg-surface-muted/80'
-                }`}
-                title={`เดือน ${item.monthName}: ดอกเบี้ยรับคาดการณ์ ${thb(item.amount)}`}
-              >
-                <div className="w-full flex items-end justify-center h-24 mb-2">
-                  <div
-                    style={{ height: `${Math.max(heightPct, 6)}%` }}
-                    className={`w-full max-w-[28px] rounded-t-md transition-all duration-300 ${
-                      item.amount > 0
-                        ? isCurrentMonth
-                          ? 'bg-emerald-500'
-                          : 'bg-emerald-500/70 hover:bg-emerald-500'
-                        : 'bg-surface-muted'
-                    }`}
-                  />
-                </div>
-                <span className="font-display text-[10.5px] font-bold text-ink tnum truncate">
-                  {item.amount > 0 ? thb(item.amount) : '-'}
-                </span>
-                <span className={`text-[11px] font-semibold mt-0.5 ${isCurrentMonth ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-ink-muted'}`}>
-                  {item.monthName}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Selected Month Detail Breakdown */}
-        {selectedMonth !== null && (
-          <div className="p-3 rounded-xl bg-surface-muted/50 border border-line/50 text-[12px] space-y-2">
-            <div className="flex items-center justify-between font-bold text-ink">
-              <span>
-                รายละเอียดดอกเบี้ยรับเดือน {THAI_MONTHS_SHORT[selectedMonth - 1]}:
-              </span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-mono">
-                {thb(monthlyInterestProjection[selectedMonth - 1]?.amount ?? 0)}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2 pt-1">
-              {(monthlyInterestProjection[selectedMonth - 1]?.accounts ?? []).map((acc, i) => (
-                <div key={i} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface border border-line/60">
-                  <span className="text-ink font-medium">{acc.name}:</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                    +{thb(acc.amount)}
-                  </span>
-                </div>
-              ))}
-              {(monthlyInterestProjection[selectedMonth - 1]?.accounts ?? []).length === 0 && (
-                <span className="text-ink-muted italic">ไม่มีรอบจ่ายดอกเบี้ยในเดือนนี้</span>
-              )}
-            </div>
-          </div>
-        )}
       </Card>
 
       {/* ── Quick Bank Presets Bar ── */}
