@@ -65,7 +65,10 @@ function formatThaiDate(dateStr?: string): string {
 function getEstimatedPayoffDate(dueDay: number | undefined, remainingTerms: number): { dateStr: string; relativeStr: string } {
   if (remainingTerms <= 0) return { dateStr: 'ผ่อนหมดแล้ว 🎉', relativeStr: '0 เดือน' }
   const now = new Date()
-  const targetDate = new Date(now.getFullYear(), now.getMonth() + remainingTerms, dueDay || 25)
+  const dDay = dueDay || 25
+  const isNextMonthStart = now.getDate() > dDay
+  const monthsToAdd = isNextMonthStart ? remainingTerms : Math.max(0, remainingTerms - 1)
+  const targetDate = new Date(now.getFullYear(), now.getMonth() + monthsToAdd, dDay)
   const d = targetDate.getDate()
   const m = targetDate.getMonth()
   const yearBE = targetDate.getFullYear() + 543

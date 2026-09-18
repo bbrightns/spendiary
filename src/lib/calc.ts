@@ -957,6 +957,11 @@ export function totalMonthlyDebtPayment(data: SpendiaryData): number {
   return (data.liabilities ?? []).reduce((sum, l) => sum + (Number(l.monthlyPayment) || 0), 0)
 }
 
+export const THAI_MONTHS_SHORT = [
+  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+]
+
 /** Check if a liability has already been marked as paid in the current month */
 export function isLiabilityPaidThisMonth(l: Liability, now: Date = new Date()): boolean {
   if (!l.lastPaidDate) return false
@@ -964,6 +969,55 @@ export function isLiabilityPaidThisMonth(l: Liability, now: Date = new Date()): 
   const month = String(now.getMonth() + 1).padStart(2, '0')
   const currentYearMonth = `${year}-${month}`
   return l.lastPaidDate.startsWith(currentYearMonth)
+}
+
+/** Check whether a liability's next active payment is scheduled for the following month */
+export function isLiabilityFirstDueNextMonth(l: Liability, now: Date = new Date()): boolean {
+  if (!l.dueDay) return false
+  const currentDay = now.getDate()
+
+  // Explicit user preference
+  if (l.firstPaymentMonth === 'next') return true
+  if (l.firstPaymentMonth === 'current') return false
+
+  // If today hasn't passed dueDay, this month's due date is still upcoming
+  if (currentDay <= l.dueDay) return false
+
+  // If already paid in the app this month, it's not "first due next month"
+  if (isLiabilityPaidThisMonth(l, now)) return false
+
+  // Check registration/creation date
+  const recordDateStr = l.createdAt || l.updatedAt
+  if (recordDateStr) {
+    const recordDate = new Date(recordDateStr)
+    const isThisMonth =
+      recordDate.getFullYear() === now.getFullYear() &&
+      recordDate.getMonth() === now.getMonth()
+
+    // If recorded in current month on/after dueDay, the due day of this month had already passed before creation
+    if (isThisMonth && recordDate.getDate() >= l.dueDay) {
+      return true
+    }
+  }
+
+  // If no payment was ever recorded in the app and it's an installment where paidInstallments is tracked:
+  // any past due dates were already accounted for in paidInstallments, so the next due is next month
+  if (!l.lastPaidDate && (l.isInstallment || l.category === 'installment')) {
+    return true
+  }
+
+  return false
+}
+
+/** Check whether a liability has a pending action/payment required in the current month */
+export function isLiabilityActionableThisMonth(l: Liability, now: Date = new Date()): boolean {
+  if (l.balance <= 0) return false
+  const hasPayment = (l.monthlyPayment && l.monthlyPayment > 0) || l.isInstallment || l.category === 'installment'
+  if (!hasPayment) return false
+  if (l.isInstallment && l.totalInstallments && (l.paidInstallments ?? 0) >= l.totalInstallments) return false
+  if (isLiabilityPaidThisMonth(l, now)) return false
+  if (isLiabilityFirstDueNextMonth(l, now)) return false
+  return true
 }
 
 export type LiabilityDueStatusType = 'paid' | 'completed' | 'overdue' | 'due_today' | 'due_soon' | 'pending'
@@ -1005,12 +1059,29 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
   }
 
   const currentDay = now.getDate()
+
   if (currentDay === l.dueDay) {
     return {
       status: 'due_today',
       label: 'ครบกำหนดวันนี้',
       badgeClass: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse',
       daysLeft: 0,
+    }
+  }
+
+  // If first payment is scheduled for next month (e.g. registered on 18th with dueDay 1)
+  if (isLiabilityFirstDueNextMonth(l, now)) {
+    const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, l.dueDay)
+    const todayZero = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const diffMs = nextMonthDate.getTime() - todayZero.getTime()
+    const daysLeft = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)))
+    const nextMonthName = THAI_MONTHS_SHORT[nextMonthDate.getMonth()]
+
+    return {
+      status: 'pending',
+      label: `อีก ${daysLeft} วัน (${l.dueDay} ${nextMonthName})`,
+      badgeClass: 'bg-surface-muted text-ink-muted border border-line/40',
+      daysLeft,
     }
   }
 

@@ -248,7 +248,10 @@ export interface Liability {
   lender?: string
   dueDay?: number
   note?: string
+  createdAt?: string
   updatedAt?: string
+  /** Whether the first due payment cycle starts in 'current' or 'next' month */
+  firstPaymentMonth?: 'current' | 'next'
   /** Whether this liability is an installment plan (e.g. 0% 10-month phone, goods financing) */
   isInstallment?: boolean
   /** Total number of installments (e.g. 10) */

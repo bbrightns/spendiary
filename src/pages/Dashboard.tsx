@@ -29,7 +29,7 @@ import {
   detectBankPreset,
   getCashLiquidityBreakdown,
   getLiabilityDueStatus,
-  isLiabilityPaidThisMonth,
+  isLiabilityActionableThisMonth,
   netWorth,
   portfolioSummary,
   shouldConfirmBuy,
@@ -123,13 +123,7 @@ export function Dashboard() {
   )
 
   const debtActions = useMemo(() => {
-    return (data.liabilities ?? []).filter((l) => {
-      if (l.balance <= 0) return false
-      const hasPayment = (l.monthlyPayment && l.monthlyPayment > 0) || l.isInstallment || l.category === 'installment'
-      if (!hasPayment) return false
-      if (l.isInstallment && l.totalInstallments && (l.paidInstallments ?? 0) >= l.totalInstallments) return false
-      return !isLiabilityPaidThisMonth(l)
-    })
+    return (data.liabilities ?? []).filter((l) => isLiabilityActionableThisMonth(l))
   }, [data.liabilities])
 
   const hasOverdueDebts = useMemo(() => {

@@ -5,7 +5,7 @@ import { useData } from '../../store/DataContext'
 import { useTheme } from '../../hooks/useTheme'
 import { ChevronDownIcon } from '../icons'
 
-import { isDividendReceivedThisMonth, isLiabilityPaidThisMonth, shouldConfirmBuy } from '../../lib/calc'
+import { isDividendReceivedThisMonth, isLiabilityActionableThisMonth, shouldConfirmBuy } from '../../lib/calc'
 
 export function Sidebar() {
   const location = useLocation()
@@ -24,13 +24,7 @@ export function Sidebar() {
       !isDividendReceivedThisMonth(h.id, data.dividendRecords),
   ).length
   const cashflowAlertCount = dcaAlertCount + dividendAlertCount
-  const debtAlertCount = (data.liabilities ?? []).filter((l) => {
-    if (l.balance <= 0) return false
-    const hasPayment = (l.monthlyPayment && l.monthlyPayment > 0) || l.isInstallment || l.category === 'installment'
-    if (!hasPayment) return false
-    if (l.isInstallment && l.totalInstallments && (l.paidInstallments ?? 0) >= l.totalInstallments) return false
-    return !isLiabilityPaidThisMonth(l)
-  }).length
+  const debtAlertCount = (data.liabilities ?? []).filter((l) => isLiabilityActionableThisMonth(l)).length
 
   const getBadgeCount = (path?: string) => {
     if (path === '/') return debtAlertCount

@@ -15,7 +15,7 @@ import {
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import type { DebtCategory, Liability } from '../../lib/types'
-import { DEBT_CATEGORIES } from '../../lib/calc'
+import { DEBT_CATEGORIES, THAI_MONTHS_SHORT } from '../../lib/calc'
 import { thb } from '../../lib/format'
 
 interface Props {
@@ -38,6 +38,8 @@ interface Draft {
   totalInstallments: string
   paidInstallments: string
   originalBalance: string
+  firstPaymentMonth: 'auto' | 'current' | 'next'
+  createdAt?: string
 }
 
 const CATEGORIES_LIST: DebtCategory[] = [
@@ -112,6 +114,7 @@ const emptyDraft = (): Draft => ({
   totalInstallments: '10',
   paidInstallments: '0',
   originalBalance: '',
+  firstPaymentMonth: 'auto',
 })
 
 export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
@@ -158,6 +161,8 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
           totalInstallments: existing.totalInstallments !== undefined ? String(existing.totalInstallments) : '',
           paidInstallments: existing.paidInstallments !== undefined ? String(existing.paidInstallments) : '',
           originalBalance: existing.originalBalance !== undefined ? formatWithCommas(existing.originalBalance) : '',
+          firstPaymentMonth: existing.firstPaymentMonth ?? 'auto',
+          createdAt: existing.createdAt,
         })
         setMode('form')
         setShowAdvanced(Boolean(existing.interestRate || existing.lender || existing.dueDay || existing.note))
@@ -231,6 +236,8 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
       totalInstallments: l.totalInstallments !== undefined ? String(l.totalInstallments) : '',
       paidInstallments: l.paidInstallments !== undefined ? String(l.paidInstallments) : '',
       originalBalance: l.originalBalance !== undefined ? formatWithCommas(l.originalBalance) : '',
+      firstPaymentMonth: l.firstPaymentMonth ?? 'auto',
+      createdAt: l.createdAt,
     })
     setShowAdvanced(Boolean(l.interestRate || l.lender || l.dueDay || l.note))
     setMode('form')
@@ -270,6 +277,16 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
     const cleanOrigBal = draft.originalBalance.replace(/[^0-9.]/g, '')
 
     const isInst = draft.isInstallment || draft.category === 'installment'
+    const cleanDueDayNum = cleanDue !== '' ? Math.min(31, Math.max(1, Number(cleanDue))) : undefined
+
+    let resolvedFirstPaymentMonth: 'current' | 'next' | undefined = undefined
+    if (draft.firstPaymentMonth === 'next' || draft.firstPaymentMonth === 'current') {
+      resolvedFirstPaymentMonth = draft.firstPaymentMonth
+    } else if (cleanDueDayNum !== undefined && cleanDueDayNum < new Date().getDate()) {
+      resolvedFirstPaymentMonth = 'next'
+    }
+
+    const existingItem = liabilitiesList.find((l) => l.id === (editingId || draft.id))
 
     const liabilityData: Liability = {
       id: editingId || draft.id,
@@ -279,12 +296,14 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
       interestRate: cleanRate !== '' ? Number(cleanRate) : undefined,
       monthlyPayment: cleanPayment !== '' ? Number(cleanPayment) : undefined,
       lender: draft.lender.trim() || undefined,
-      dueDay: cleanDue !== '' ? Math.min(31, Math.max(1, Number(cleanDue))) : undefined,
+      dueDay: cleanDueDayNum,
       note: draft.note.trim() || undefined,
       isInstallment: isInst ? true : undefined,
       totalInstallments: isInst && cleanTotalInst !== '' ? Math.max(1, Number(cleanTotalInst)) : undefined,
       paidInstallments: isInst && cleanPaidInst !== '' ? Math.max(0, Number(cleanPaidInst)) : undefined,
       originalBalance: cleanOrigBal !== '' ? Number(cleanOrigBal) : (balNum > 0 ? balNum : undefined),
+      firstPaymentMonth: resolvedFirstPaymentMonth,
+      createdAt: existingItem?.createdAt || draft.createdAt || new Date().toISOString().slice(0, 10),
       updatedAt: new Date().toISOString().slice(0, 10),
     }
 
@@ -766,6 +785,59 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                       />
                     </div>
                   </div>
+
+                  {/* Smart Next Due Cycle Notice (เมื่อใส่วันที่เลยกำหนดของเดือนนี้) */}
+                  {(() => {
+                    const dueNum = Number(draft.dueDay)
+                    const now = new Date()
+                    const curDay = now.getDate()
+                    if (dueNum >= 1 && dueNum <= 31 && dueNum < curDay) {
+                      const nextMonthName = THAI_MONTHS_SHORT[(now.getMonth() + 1) % 12]
+                      const curMonthName = THAI_MONTHS_SHORT[now.getMonth()]
+                      return (
+                        <div className="p-2.5 rounded-xl bg-brand/5 dark:bg-brand/10 border border-brand/20 text-[11.5px] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div>
+                            <span className="font-semibold text-brand dark:text-brand-light">
+                              💡 เลยวันที่ {dueNum} ของเดือนนี้แล้ว:
+                            </span>{' '}
+                            <span className="text-ink-muted dark:text-white/80">
+                              รอบชำระถัดไปจะเริ่มวันที่{' '}
+                              <strong>
+                                {draft.firstPaymentMonth === 'current'
+                                  ? `${dueNum} ${curMonthName} (รอบเดือนนี้)`
+                                  : `${dueNum} ${nextMonthName} (เดือนหน้า)`}
+                              </strong>
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0 self-end sm:self-auto">
+                            <button
+                              type="button"
+                              onClick={() => setDraft((d) => ({ ...d, firstPaymentMonth: 'next' }))}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
+                                draft.firstPaymentMonth !== 'current'
+                                  ? 'bg-brand text-white shadow-xs'
+                                  : 'bg-surface-muted text-ink-muted hover:text-ink dark:bg-white/10 dark:text-white/70'
+                              }`}
+                            >
+                              เริ่ม {dueNum} {nextMonthName} (แนะนำ)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDraft((d) => ({ ...d, firstPaymentMonth: 'current' }))}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium cursor-pointer transition-all ${
+                                draft.firstPaymentMonth === 'current'
+                                  ? 'bg-rose-500 text-white shadow-xs'
+                                  : 'bg-surface-muted text-ink-muted hover:text-ink dark:bg-white/10 dark:text-white/70'
+                              }`}
+                            >
+                              รอบ {dueNum} {curMonthName} (ค้างจ่าย)
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    }
+                    return null
+                  })()}
 
                   <div>
                     <label className="h-5 flex items-center text-[11px] font-semibold text-ink-muted mb-1">

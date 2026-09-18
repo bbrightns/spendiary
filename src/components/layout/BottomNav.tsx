@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { cashflowSubItems, mobileNavItems, strategySubItems } from './nav'
 import { useData } from '../../store/DataContext'
-import { isDividendReceivedThisMonth, isLiabilityPaidThisMonth, shouldConfirmBuy } from '../../lib/calc'
+import { isDividendReceivedThisMonth, isLiabilityActionableThisMonth, shouldConfirmBuy } from '../../lib/calc'
 import { Modal } from '../ui/Modal'
 
 export function BottomNav() {
@@ -23,13 +23,7 @@ export function BottomNav() {
       !isDividendReceivedThisMonth(h.id, data.dividendRecords),
   ).length
   const cashflowAlertCount = dcaAlertCount + dividendAlertCount
-  const debtAlertCount = (data.liabilities ?? []).filter((l) => {
-    if (l.balance <= 0) return false
-    const hasPayment = (l.monthlyPayment && l.monthlyPayment > 0) || l.isInstallment || l.category === 'installment'
-    if (!hasPayment) return false
-    if (l.isInstallment && l.totalInstallments && (l.paidInstallments ?? 0) >= l.totalInstallments) return false
-    return !isLiabilityPaidThisMonth(l)
-  }).length
+  const debtAlertCount = (data.liabilities ?? []).filter((l) => isLiabilityActionableThisMonth(l)).length
 
   // Close sheets on route change
   useEffect(() => {
