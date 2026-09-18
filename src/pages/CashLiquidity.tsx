@@ -446,8 +446,154 @@ export function CashLiquidity() {
           </div>
         </div>
 
-        {/* Semi-Table / Responsive Modern Table */}
-        <div className="overflow-x-auto -mx-4 sm:mx-0">
+        {/* ── Mobile View: Compact List Cards (md:hidden) ── */}
+        <div className="md:hidden space-y-2">
+          {/* Quick Sort Bar on Mobile */}
+          {filteredAccounts.length > 1 && (
+            <div className="flex items-center justify-between text-[11px] text-ink-muted px-1 pb-1 select-none border-b border-line/30">
+              <span>{filteredAccounts.length} บัญชี</span>
+              <div className="flex items-center gap-2">
+                <span className="text-ink-muted">เรียง:</span>
+                <button
+                  type="button"
+                  onClick={() => handleSortToggle('balance')}
+                  className={`font-semibold cursor-pointer ${sortField === 'balance' ? 'text-brand font-bold' : 'hover:text-ink'}`}
+                >
+                  ยอดคงเหลือ {sortField === 'balance' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                </button>
+                <span>·</span>
+                <button
+                  type="button"
+                  onClick={() => handleSortToggle('yield')}
+                  className={`font-semibold cursor-pointer ${sortField === 'yield' ? 'text-brand font-bold' : 'hover:text-ink'}`}
+                >
+                  ดอกเบี้ย {sortField === 'yield' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* List of Mobile Cards */}
+          <div className="divide-y divide-line/30">
+            {filteredAccounts.map((a) => {
+              const preset = detectBankPreset(a.name)
+              const cat = a.category ?? inferCashCategory(a.name)
+              const catMeta = CASH_CATEGORIES[cat]
+
+              const rateNum = a.interestRate ?? 0
+              const capNum = a.maxEligibleBalance
+              const eligibleBal = capNum && capNum > 0 ? Math.min(a.balance, capNum) : a.balance
+              const eligibleThb = a.currency === 'USD' ? eligibleBal * rate : eligibleBal
+              const annualEarned = rateNum > 0 && eligibleThb > 0 ? eligibleThb * (rateNum / 100) : 0
+
+              return (
+                <div
+                  key={a.id}
+                  className="py-2.5 px-0.5 flex items-center justify-between gap-2 transition-colors hover:bg-surface-muted/20"
+                >
+                  {/* Left: Logo + Name + Category / Rate Tag */}
+                  <div
+                    className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
+                    onClick={() => {
+                      setAccountToEdit(a)
+                      setIsEditModalOpen(true)
+                    }}
+                  >
+                    {preset ? (
+                      <div
+                        className="h-8.5 w-8.5 rounded-lg text-[10.5px] font-black shrink-0 flex items-center justify-center select-none shadow-xs"
+                        style={{ background: preset.bg, color: preset.color, border: `1px solid ${preset.color}35` }}
+                      >
+                        {preset.shortName}
+                      </div>
+                    ) : (
+                      <div className="h-8.5 w-8.5 rounded-lg bg-surface-muted border border-line/50 text-ink-muted text-[11px] font-bold shrink-0 flex items-center justify-center">
+                        <WalletIcon className="h-4 w-4 opacity-60" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="font-display font-bold text-[13.5px] text-ink truncate">
+                          {a.name || 'Untitled'}
+                        </span>
+                        {a.currency === 'USD' && (
+                          <span className="text-[9.5px] font-bold px-1 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 font-mono shrink-0">
+                            USD
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 mt-0.5 text-[11px] text-ink-muted truncate">
+                        <span className="truncate">{catMeta?.icon} {catMeta?.labelTh}</span>
+                        {rateNum > 0 && (
+                          <>
+                            <span className="opacity-40">·</span>
+                            <span className="font-semibold text-emerald-600 dark:text-emerald-400 font-mono shrink-0">
+                              {rateNum}%
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right: Balance + Annual Interest + Action Buttons */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <div
+                      className="text-right cursor-pointer"
+                      onClick={() => {
+                        setAccountToEdit(a)
+                        setIsEditModalOpen(true)
+                      }}
+                    >
+                      <div className="font-display font-black text-[14.5px] text-ink tnum">
+                        {a.currency === 'USD' ? `$${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : thb(a.balance)}
+                      </div>
+                      {annualEarned > 0 ? (
+                        <div className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                          +{thb(annualEarned)}/ปี
+                        </div>
+                      ) : a.currency === 'USD' && a.balance > 0 ? (
+                        <div className="text-[10px] font-mono text-ink-muted">
+                          ≈ {thb(a.balance * rate)}
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-ink-muted/40">
+                          -
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-0.5 ml-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAccountToEdit(a)
+                          setIsEditModalOpen(true)
+                        }}
+                        className="p-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
+                        title="แก้ไขบัญชี"
+                      >
+                        <PencilIcon className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAccountToDelete(a)}
+                        className="p-1.5 rounded-lg text-ink-muted hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                        title="ลบบัญชี"
+                      >
+                        <TrashIcon className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* ── Desktop View: Responsive Modern Table (hidden md:block) ── */}
+        <div className="hidden md:block overflow-x-auto -mx-4 sm:mx-0">
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
               <tr className="border-b border-line/60 text-[11px] font-bold uppercase tracking-wider text-ink-muted select-none">
@@ -700,16 +846,16 @@ export function CashLiquidity() {
               })}
             </tbody>
           </table>
-
-          {filteredAccounts.length === 0 && (
-            <div className="text-center py-12 text-ink-muted space-y-2">
-              <p className="text-[14px] font-medium">ไม่พบบัญชีเงินสดที่ตรงกับเงื่อนไข</p>
-              <Button onClick={handleOpenAddModal} variant="secondary" className="text-xs">
-                + เพิ่มบัญชีใหม่
-              </Button>
-            </div>
-          )}
         </div>
+
+        {filteredAccounts.length === 0 && (
+          <div className="text-center py-12 text-ink-muted space-y-2">
+            <p className="text-[14px] font-medium">ไม่พบบัญชีเงินสดที่ตรงกับเงื่อนไข</p>
+            <Button onClick={handleOpenAddModal} variant="secondary" className="text-xs">
+              + เพิ่มบัญชีใหม่
+            </Button>
+          </div>
+        )}
       </Card>
 
       {/* ── Edit / Add Account Modal ── */}
