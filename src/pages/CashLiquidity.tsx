@@ -392,21 +392,23 @@ export function CashLiquidity() {
                 key={catKey}
                 type="button"
                 onClick={() => setActiveCategoryFilter(isSelected ? 'all' : catKey)}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${badgeBorderColors[catKey]} ${
+                className={`p-2.5 sm:p-3 rounded-xl border text-left transition-all cursor-pointer min-w-0 overflow-hidden flex flex-col justify-between ${badgeBorderColors[catKey]} ${
                   isSelected ? 'ring-2 ring-brand bg-brand-soft/20' : 'bg-surface-muted/40 hover:bg-surface-muted/80'
                 }`}
               >
-                <div className="flex items-center justify-between text-[11.5px] font-medium text-ink-muted">
-                  <span className="flex items-center gap-1.5">
-                    <span>{meta.icon}</span>
-                    <span className="truncate">{meta.labelTh}</span>
-                  </span>
-                  <span className="font-mono text-[11px] font-bold text-ink">
-                    {pct.toFixed(1)}%
+                <div className="flex items-center gap-1.5 min-w-0 w-full">
+                  <span className="shrink-0 text-[13px]">{meta.icon}</span>
+                  <span className="text-[11px] sm:text-[12px] font-semibold text-ink-muted truncate" title={meta.labelTh}>
+                    {meta.labelTh}
                   </span>
                 </div>
-                <div className="font-display font-extrabold text-[15px] sm:text-[16px] text-ink tnum mt-1.5">
-                  {thb(amount)}
+                <div className="mt-2 flex items-baseline justify-between gap-1 w-full min-w-0">
+                  <span className="font-display font-black text-[14px] sm:text-[16px] text-ink tnum truncate">
+                    {thb(amount)}
+                  </span>
+                  <span className="font-mono text-[10.5px] sm:text-[11px] font-bold text-ink-muted shrink-0">
+                    {pct.toFixed(1)}%
+                  </span>
                 </div>
               </button>
             )
