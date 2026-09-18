@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Modal } from '../ui/Modal'
-import { Button } from '../ui/Button'
 import {
   CarIcon,
   CreditCardIcon,
@@ -165,7 +164,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
           createdAt: existing.createdAt,
         })
         setMode('form')
-        setShowAdvanced(Boolean(existing.interestRate || existing.lender || existing.dueDay || existing.note))
+        setShowAdvanced(Boolean(existing.interestRate || existing.note || (existing.originalBalance && existing.originalBalance !== existing.balance)))
         return
       }
     }
@@ -239,7 +238,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
       firstPaymentMonth: l.firstPaymentMonth ?? 'auto',
       createdAt: l.createdAt,
     })
-    setShowAdvanced(Boolean(l.interestRate || l.lender || l.dueDay || l.note))
+    setShowAdvanced(Boolean(l.interestRate || l.note || (l.originalBalance && l.originalBalance !== l.balance)))
     setMode('form')
   }
 
@@ -341,50 +340,56 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
       size="lg"
       footer={
         mode === 'form' ? (
-          <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5 w-full">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="secondary"
+          <div className="flex items-center justify-between gap-2 w-full">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <button
+                type="button"
                 onClick={onClose}
-                className="shrink-0 whitespace-nowrap"
+                className="h-8.5 px-3 rounded-xl text-[12px] font-semibold text-ink-muted hover:text-ink dark:hover:text-white bg-surface-muted/60 dark:bg-white/5 border border-line/60 dark:border-white/10 active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
               >
-                ยกเลิก (Cancel)
-              </Button>
+                ยกเลิก
+              </button>
               {editingId && (
-                <Button
-                  variant="danger"
+                <button
+                  type="button"
                   onClick={() => handleDelete(editingId)}
-                  className="shrink-0 whitespace-nowrap"
+                  className="h-8.5 px-2.5 sm:px-3 rounded-xl text-[12px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap flex items-center gap-1"
                 >
-                  <TrashIcon className="h-4 w-4 mr-1" />
-                  ลบรายการนี้
-                </Button>
+                  <TrashIcon className="h-3.5 w-3.5" />
+                  <span>ลบรายการนี้</span>
+                </button>
               )}
             </div>
 
-            <Button
+            <button
+              type="button"
               onClick={handleSave}
-              className="shrink-0 whitespace-nowrap min-w-[140px]"
+              className="h-8.5 px-4 rounded-xl text-[12.5px] font-bold text-white bg-brand hover:bg-brand/90 active:scale-[0.98] transition-all cursor-pointer shadow-xs whitespace-nowrap"
             >
               {editingId ? 'บันทึกการแก้ไข' : 'บันทึกรายการหนี้'}
-            </Button>
+            </button>
           </div>
         ) : (
-          <div className="flex items-center justify-between gap-3 w-full">
-            <Button variant="secondary" onClick={onClose} className="shrink-0 whitespace-nowrap">
+          <div className="flex items-center justify-between gap-2.5 w-full">
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-8.5 px-3.5 rounded-xl text-[12px] font-semibold text-ink-muted hover:text-ink dark:hover:text-white bg-surface-muted/60 dark:bg-white/5 border border-line/60 dark:border-white/10 active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
+            >
               ปิดหน้าต่าง
-            </Button>
-            <Button
+            </button>
+            <button
+              type="button"
               onClick={() => {
                 setEditingId(null)
                 setDraft(emptyDraft())
                 setMode('form')
               }}
-              className="shrink-0 whitespace-nowrap"
+              className="h-8.5 px-3.5 rounded-xl text-[12.5px] font-bold text-white bg-brand hover:bg-brand/90 active:scale-[0.98] transition-all cursor-pointer shadow-xs whitespace-nowrap flex items-center gap-1.5"
             >
-              <PlusIcon className="h-4 w-4 mr-1" />
-              + เพิ่มรายการหนี้ใหม่
-            </Button>
+              <PlusIcon className="h-3.5 w-3.5" />
+              <span>เพิ่มรายการหนี้ใหม่</span>
+            </button>
           </div>
         )
       }
@@ -527,6 +532,93 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                 </div>
               </div>
             </div>
+
+            {/* Row 2: Lender & Due Day (Main Details) */}
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+              {/* Lender */}
+              <div className="sm:col-span-7">
+                <label className="h-5 flex items-center text-[12px] font-semibold text-ink-muted mb-1">
+                  เจ้าหนี้ / สถาบันการเงิน
+                </label>
+                <input
+                  type="text"
+                  value={draft.lender}
+                  onChange={(e) => setDraft((d) => ({ ...d, lender: e.target.value }))}
+                  placeholder="เช่น SPayLater, Apple, KBank, SCB"
+                  className="h-10 w-full rounded-xl bg-surface-muted/60 dark:bg-white/5 px-3 text-[13px] text-ink dark:text-white border border-line/80 dark:border-white/10 focus:outline-none focus:border-brand focus:bg-surface dark:focus:bg-white/10 transition-colors placeholder:text-ink-faint"
+                />
+              </div>
+
+              {/* Due Day */}
+              <div className="sm:col-span-5">
+                <label className="h-5 flex items-center justify-between text-[12px] font-semibold text-ink-muted mb-1">
+                  <span>วันครบกำหนดจ่าย</span>
+                  <span className="text-[10.5px] text-ink-faint">วันที่ 1-31</span>
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={31}
+                  value={draft.dueDay}
+                  onChange={(e) => setDraft((d) => ({ ...d, dueDay: e.target.value }))}
+                  placeholder="เช่น 1, 15, 25"
+                  className="h-10 w-full rounded-xl bg-surface-muted/60 dark:bg-white/5 px-3 text-[13px] font-bold text-ink dark:text-white border border-line/80 dark:border-white/10 focus:outline-none focus:border-brand focus:bg-surface dark:focus:bg-white/10 transition-colors placeholder:text-ink-faint tnum"
+                />
+              </div>
+            </div>
+
+            {/* Smart Next Due Cycle Notice (เมื่อใส่วันที่เลยกำหนดของเดือนนี้) */}
+            {(() => {
+              const dueNum = Number(draft.dueDay)
+              const now = new Date()
+              const curDay = now.getDate()
+              if (dueNum >= 1 && dueNum <= 31 && dueNum < curDay) {
+                const nextMonthName = THAI_MONTHS_SHORT[(now.getMonth() + 1) % 12]
+                const curMonthName = THAI_MONTHS_SHORT[now.getMonth()]
+                return (
+                  <div className="p-2.5 rounded-xl bg-brand/5 dark:bg-brand/10 border border-brand/20 text-[11.5px] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <span className="font-semibold text-brand dark:text-brand-light">
+                        💡 เลยวันที่ {dueNum} ของเดือนนี้แล้ว:
+                      </span>{' '}
+                      <span className="text-ink-muted dark:text-white/80">
+                        รอบชำระถัดไปจะเริ่มวันที่{' '}
+                        <strong>
+                          {draft.firstPaymentMonth === 'current'
+                            ? `${dueNum} ${curMonthName} (รอบเดือนนี้)`
+                            : `${dueNum} ${nextMonthName} (เดือนหน้า)`}
+                        </strong>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0 self-end sm:self-auto">
+                      <button
+                        type="button"
+                        onClick={() => setDraft((d) => ({ ...d, firstPaymentMonth: 'next' }))}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
+                          draft.firstPaymentMonth !== 'current'
+                            ? 'bg-brand text-white shadow-xs'
+                            : 'bg-surface-muted text-ink-muted hover:text-ink dark:bg-white/10 dark:text-white/70'
+                        }`}
+                      >
+                        เริ่ม {dueNum} {nextMonthName} (แนะนำ)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDraft((d) => ({ ...d, firstPaymentMonth: 'current' }))}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-medium cursor-pointer transition-all ${
+                          draft.firstPaymentMonth === 'current'
+                            ? 'bg-rose-500 text-white shadow-xs'
+                            : 'bg-surface-muted text-ink-muted hover:text-ink dark:bg-white/10 dark:text-white/70'
+                        }`}
+                      >
+                        รอบ {dueNum} {curMonthName} (ค้างจ่าย)
+                      </button>
+                    </div>
+                  </div>
+                )
+              }
+              return null
+            })()}
 
             {/* Category Selector Chips */}
             <div>
@@ -711,7 +803,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                     ⚙️ ข้อมูลเพิ่มเติม (Optional)
                   </span>
                   <span className="text-[11px] text-ink-faint">
-                    (ดอกเบี้ย APR, สถาบัน, วันครบกำหนด, Note)
+                    (ดอกเบี้ย APR, ราคาเต็มเริ่มต้น, Note)
                   </span>
                 </div>
                 <span
@@ -725,7 +817,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
 
               {showAdvanced && (
                 <div className="p-3.5 space-y-3 bg-surface dark:bg-white/[0.01] border-t border-line/50 dark:border-white/10">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="h-5 flex items-center text-[11px] font-semibold text-ink-muted mb-1">
                         ดอกเบี้ยต่อปี (% APR)
@@ -756,88 +848,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                         className="h-10 w-full rounded-xl bg-surface-muted/50 dark:bg-white/5 px-3 text-[13px] font-bold text-ink dark:text-white border border-line/70 dark:border-white/10 focus:outline-none focus:border-brand tnum"
                       />
                     </div>
-
-                    <div>
-                      <label className="h-5 flex items-center text-[11px] font-semibold text-ink-muted mb-1">
-                        เจ้าหนี้ / สถาบันการเงิน
-                      </label>
-                      <input
-                        type="text"
-                        value={draft.lender}
-                        onChange={(e) => setDraft((d) => ({ ...d, lender: e.target.value }))}
-                        placeholder="เช่น SPayLater, Apple"
-                        className="h-10 w-full rounded-xl bg-surface-muted/50 dark:bg-white/5 px-3 text-[13px] text-ink dark:text-white border border-line/70 dark:border-white/10 focus:outline-none focus:border-brand"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="h-5 flex items-center text-[11px] font-semibold text-ink-muted mb-1">
-                        วันครบกำหนดจ่าย
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={31}
-                        value={draft.dueDay}
-                        onChange={(e) => setDraft((d) => ({ ...d, dueDay: e.target.value }))}
-                        placeholder="วันที่ 1-31"
-                        className="h-10 w-full rounded-xl bg-surface-muted/50 dark:bg-white/5 px-3 text-[13px] text-ink dark:text-white border border-line/70 dark:border-white/10 focus:outline-none focus:border-brand tnum"
-                      />
-                    </div>
                   </div>
-
-                  {/* Smart Next Due Cycle Notice (เมื่อใส่วันที่เลยกำหนดของเดือนนี้) */}
-                  {(() => {
-                    const dueNum = Number(draft.dueDay)
-                    const now = new Date()
-                    const curDay = now.getDate()
-                    if (dueNum >= 1 && dueNum <= 31 && dueNum < curDay) {
-                      const nextMonthName = THAI_MONTHS_SHORT[(now.getMonth() + 1) % 12]
-                      const curMonthName = THAI_MONTHS_SHORT[now.getMonth()]
-                      return (
-                        <div className="p-2.5 rounded-xl bg-brand/5 dark:bg-brand/10 border border-brand/20 text-[11.5px] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div>
-                            <span className="font-semibold text-brand dark:text-brand-light">
-                              💡 เลยวันที่ {dueNum} ของเดือนนี้แล้ว:
-                            </span>{' '}
-                            <span className="text-ink-muted dark:text-white/80">
-                              รอบชำระถัดไปจะเริ่มวันที่{' '}
-                              <strong>
-                                {draft.firstPaymentMonth === 'current'
-                                  ? `${dueNum} ${curMonthName} (รอบเดือนนี้)`
-                                  : `${dueNum} ${nextMonthName} (เดือนหน้า)`}
-                              </strong>
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0 self-end sm:self-auto">
-                            <button
-                              type="button"
-                              onClick={() => setDraft((d) => ({ ...d, firstPaymentMonth: 'next' }))}
-                              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
-                                draft.firstPaymentMonth !== 'current'
-                                  ? 'bg-brand text-white shadow-xs'
-                                  : 'bg-surface-muted text-ink-muted hover:text-ink dark:bg-white/10 dark:text-white/70'
-                              }`}
-                            >
-                              เริ่ม {dueNum} {nextMonthName} (แนะนำ)
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setDraft((d) => ({ ...d, firstPaymentMonth: 'current' }))}
-                              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium cursor-pointer transition-all ${
-                                draft.firstPaymentMonth === 'current'
-                                  ? 'bg-rose-500 text-white shadow-xs'
-                                  : 'bg-surface-muted text-ink-muted hover:text-ink dark:bg-white/10 dark:text-white/70'
-                              }`}
-                            >
-                              รอบ {dueNum} {curMonthName} (ค้างจ่าย)
-                            </button>
-                          </div>
-                        </div>
-                      )
-                    }
-                    return null
-                  })()}
 
                   <div>
                     <label className="h-5 flex items-center text-[11px] font-semibold text-ink-muted mb-1">
@@ -863,17 +874,18 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
             {liabilitiesList.length === 0 ? (
               <div className="py-12 text-center">
                 <p className="text-[13.5px] text-ink-muted font-medium">ยังไม่มีรายการหนี้สินในระบบ</p>
-                <Button
+                <button
+                  type="button"
                   onClick={() => {
                     setEditingId(null)
                     setDraft(emptyDraft())
                     setMode('form')
                   }}
-                  className="mt-3 shrink-0"
+                  className="mt-3 inline-flex items-center justify-center gap-1.5 h-8.5 px-3.5 rounded-xl text-[12px] font-bold text-white bg-brand hover:bg-brand/90 active:scale-[0.98] transition-all cursor-pointer shadow-xs"
                 >
-                  <PlusIcon className="h-4 w-4 mr-1" />
-                  เพิ่มรายการแรก
-                </Button>
+                  <PlusIcon className="h-3.5 w-3.5" />
+                  <span>เพิ่มรายการแรก</span>
+                </button>
               </div>
             ) : (
               <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
