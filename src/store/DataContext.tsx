@@ -287,15 +287,18 @@ interface DataContextValue {
     cashAccountId?: string
     cashDepositAmount?: number
     note: string
+    timestamp?: string
   }) => void
   buyMoreHolding: (params: {
     updatedHolding: Holding
     cashAccountId?: string
     cashDeductAmount?: number
     note: string
+    timestamp?: string
   }) => void
-  addHoldingLog: (log: Omit<HoldingLog, 'id' | 'timestamp'>) => void
+  addHoldingLog: (log: Omit<HoldingLog, 'id' | 'timestamp'> & { id?: string; timestamp?: string }) => void
   undoHoldingLog: (logId: string) => void
+  updateHoldingLogTimestamp: (logId: string, timestamp: string) => void
 
   upsertPlan: (plan: Omit<DcaPlan, 'id'> & { id?: string }) => void
   removePlan: (id: string) => void
@@ -1202,7 +1205,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
           const logEntry: HoldingLog = {
             id: newId(),
-            timestamp: new Date().toISOString(),
+            timestamp: params.timestamp ?? new Date().toISOString(),
             action: 'sell',
             holdingId: holding.id,
             holdingName: holding.name,
@@ -1252,7 +1255,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
           const logEntry: HoldingLog = {
             id: newId(),
-            timestamp: new Date().toISOString(),
+            timestamp: params.timestamp ?? new Date().toISOString(),
             action: 'buy_more',
             holdingId: params.updatedHolding.id,
             holdingName: params.updatedHolding.name,
@@ -1290,13 +1293,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
             holdingLogs: [
               {
                 ...log,
-                id: newId(),
-                timestamp: new Date().toISOString(),
+                id: log.id ?? newId(),
+                timestamp: log.timestamp ?? new Date().toISOString(),
                 holdingId: log.holdingId ?? holding?.id,
                 previousHoldingState,
               },
               ...(prev.holdingLogs ?? []),
             ].slice(0, 200),
+          }
+        }),
+
+      updateHoldingLogTimestamp: (logId, timestamp) =>
+        updateData((prev) => {
+          const logs = prev.holdingLogs ?? []
+          const updatedLogs = logs.map((l) => (l.id === logId ? { ...l, timestamp } : l))
+          return {
+            ...prev,
+            holdingLogs: updatedLogs,
           }
         }),
 
