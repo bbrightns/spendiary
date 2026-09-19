@@ -84,6 +84,13 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
     }
   }
 
+  const isUsd = targetHolding?.assetClass === 'stock'
+  const currencyPrefix = isUsd ? '$' : '฿'
+  const formatCur = (val: number) =>
+    isUsd
+      ? `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : thb(val)
+
   const numDps = typeof dps === 'number' && !isNaN(dps) ? dps : 0
   const numShares = typeof shares === 'number' && !isNaN(shares) ? shares : 0
   const grossAmount = numDps * numShares
@@ -183,8 +190,8 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
           />
         )}
 
-        {/* Date and DPS Inputs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Date, DPS, Shares & Account Inputs (Single unified grid for perfect 2x2 horizontal alignment) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <TextField
             label="Payment Date (วันที่รับเงิน)"
             type="date"
@@ -194,19 +201,16 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
           />
 
           <NumberField
-            label="Dividend per Share (DPS / ปันผลต่อหุ้น)"
-            prefix="฿"
-            placeholder="e.g. 0.80"
+            label="Dividend per Share (DPS)"
+            prefix={currencyPrefix}
+            placeholder="0.00"
             value={dps}
             onChange={setDps}
             error={showErrors && (!numDps || numDps <= 0) ? 'Required > 0' : undefined}
           />
-        </div>
 
-        {/* Shares Eligible */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <NumberField
-            label="Shares on Record Date (จำนวนหุ้นที่ได้รับสิทธิ)"
+            label="Eligible Shares (จำนวนหุ้น)"
             placeholder="e.g. 10,000"
             value={shares}
             onChange={setShares}
@@ -214,7 +218,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
           />
 
           <SelectField
-            label="Deposit to Cash Account (เข้าบัญชีเงินสด)"
+            label="Deposit Account (เข้าบัญชี)"
             value={cashAccountId}
             options={cashAccountOptions}
             onChange={setCashAccountId}
@@ -226,7 +230,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
           <div className="flex items-center justify-between text-[13px]">
             <span className="text-ink-muted">Gross Dividend (ยอดปันผลรวม)</span>
             <span className="font-semibold text-ink tnum">
-              {grossAmount > 0 ? thb(grossAmount) : '฿0.00'}
+              {grossAmount > 0 ? formatCur(grossAmount) : `${currencyPrefix}0.00`}
             </span>
           </div>
 
@@ -244,7 +248,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
               </span>
             </label>
             <span className="text-[12.5px] font-semibold text-rose-500 tnum">
-              {taxAmount > 0 ? `-฿${taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '฿0.00'}
+              {taxAmount > 0 ? `-${formatCur(taxAmount)}` : `${currencyPrefix}0.00`}
             </span>
           </div>
 
@@ -256,7 +260,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
             </div>
             <div className="text-right">
               <span className="font-display text-[22px] font-extrabold text-emerald-600 dark:text-emerald-400 tnum">
-                {netAmount > 0 ? thb(netAmount) : '฿0.00'}
+                {netAmount > 0 ? formatCur(netAmount) : `${currencyPrefix}0.00`}
               </span>
             </div>
           </div>

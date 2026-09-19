@@ -715,11 +715,25 @@ export function HoldingLogs() {
     nextStep,
     prevStep,
   } = usePageGuide('logs')
-  const { data, undoHoldingLog, usdThb } = useData()
+  const { data, undoHoldingLog, updateHoldingLogTimestamp, usdThb } = useData()
   const { showToast } = useToast()
-  const logs = data.holdingLogs ?? []
+  const rawLogs = data.holdingLogs ?? []
+  const logs = [...rawLogs].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  )
 
   const [undoTarget, setUndoTarget] = useState<HoldingLog | null>(null)
+  const [editingDateLog, setEditingDateLog] = useState<HoldingLog | null>(null)
+  const [editDateValue, setEditDateValue] = useState<string>('')
+  const [editTimeValue, setEditTimeValue] = useState<string>('')
+
+  function startEditDate(log: HoldingLog) {
+    setEditingDateLog(log)
+    const dt = new Date(log.timestamp)
+    setEditDateValue(localDateStr(dt))
+    setEditTimeValue(dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
+  }
+
   const [assetFilter, setAssetFilter] = useState<AssetClass | 'all'>('all')
   const [actionFilter, setActionFilter] = useState<'all' | 'add' | 'buy_more' | 'sell' | 'edit'>('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -1487,8 +1501,18 @@ export function HoldingLogs() {
                             hasComparison ? 'cursor-pointer hover:bg-surface-muted/50' : 'hover:bg-surface-muted/30'
                           } ${isExpanded ? 'bg-surface-muted/40' : ''}`}
                         >
-                          <td className="py-3 px-4 whitespace-nowrap">
-                            <div className="font-semibold text-ink text-[12.5px] tnum">{dateStr}</div>
+                          <td
+                            className="py-3 px-4 whitespace-nowrap cursor-pointer group/date"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              startEditDate(log)
+                            }}
+                            title="Click to edit date / แตะเพื่อแก้ไขวันที่"
+                          >
+                            <div className="font-semibold text-ink text-[12.5px] tnum group-hover/date:text-brand flex items-center gap-1">
+                              {dateStr}
+                              <PencilIcon className="h-2.5 w-2.5 opacity-0 group-hover/date:opacity-100 transition-opacity text-brand" />
+                            </div>
                             <div className="text-[11px] text-ink-faint tnum">{timeStr}</div>
                           </td>
                           <td className="py-3 px-3 whitespace-nowrap">
@@ -1576,17 +1600,31 @@ export function HoldingLogs() {
                             </div>
                           </td>
                           <td className="py-3 px-4 text-center whitespace-nowrap">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setUndoTarget(log)
-                              }}
-                              aria-label={`Undo activity for ${log.holdingName}`}
-                              className="rounded-lg px-2 py-1 text-[11px] font-bold text-loss hover:bg-loss/10 transition-colors cursor-pointer"
-                            >
-                              Undo
-                            </button>
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  startEditDate(log)
+                                }}
+                                title="Edit Date / แก้ไขวันที่"
+                                aria-label={`Edit date for ${log.holdingName}`}
+                                className="rounded-lg p-1.5 text-ink-muted hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
+                              >
+                                <PencilIcon className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setUndoTarget(log)
+                                }}
+                                aria-label={`Undo activity for ${log.holdingName}`}
+                                className="rounded-lg px-2 py-1 text-[11px] font-bold text-loss hover:bg-loss/10 transition-colors cursor-pointer"
+                              >
+                                Undo
+                              </button>
+                            </div>
                           </td>
                         </tr>
                         {isExpanded && (
@@ -1653,17 +1691,35 @@ export function HoldingLogs() {
                           {renderStateComparison(log)}
                         </div>
 
-                        <div className="flex flex-col items-end gap-2 shrink-0 pt-0.5">
-                          <time className="text-[11.5px] font-medium text-ink-faint">
-                            {new Date(log.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                          </time>
+                        <div className="flex flex-col items-end gap-1.5 shrink-0 pt-0.5">
                           <button
-                            onClick={() => setUndoTarget(log)}
-                            aria-label={`Undo activity for ${log.holdingName}`}
-                            className="rounded-lg px-2 py-1 text-[11.5px] font-bold text-loss hover:bg-loss/10 transition-colors cursor-pointer"
+                            type="button"
+                            onClick={() => startEditDate(log)}
+                            className="text-[11.5px] font-medium text-ink-faint hover:text-brand transition-colors cursor-pointer flex items-center gap-1"
+                            title="Edit Date / แตะเพื่อแก้ไขวันที่"
                           >
-                            Undo
+                            <time>
+                              {new Date(log.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                            </time>
+                            <PencilIcon className="h-2.5 w-2.5" />
                           </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => startEditDate(log)}
+                              className="rounded-lg px-2 py-1 text-[11px] font-semibold text-ink-soft hover:bg-surface-muted transition-colors cursor-pointer"
+                            >
+                              Edit Date
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setUndoTarget(log)}
+                              aria-label={`Undo activity for ${log.holdingName}`}
+                              className="rounded-lg px-2 py-1 text-[11.5px] font-bold text-loss hover:bg-loss/10 transition-colors cursor-pointer"
+                            >
+                              Undo
+                            </button>
+                          </div>
                         </div>
                       </li>
                     )
@@ -1731,6 +1787,83 @@ export function HoldingLogs() {
           )
         })()}
       </ConfirmModal>
+
+      {/* Edit Date Modal */}
+      {editingDateLog && (
+        <Modal
+          open={!!editingDateLog}
+          onClose={() => setEditingDateLog(null)}
+          title="แก้ไขวันที่ทำรายการ"
+          description={`ปรับเปลี่ยนวันและเวลาบันทึกสำหรับ "${editingDateLog.holdingName}" (${getLogActionMeta(editingDateLog).label})`}
+          footer={
+            <div className="flex items-center justify-end gap-2 w-full">
+              <Button
+                variant="secondary"
+                onClick={() => setEditingDateLog(null)}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  if (editingDateLog && editDateValue) {
+                    const newTimestamp = dateStrToTimestamp(editDateValue, editTimeValue)
+                    updateHoldingLogTimestamp(editingDateLog.id, newTimestamp)
+                    showToast(`แก้ไขวันที่ของ "${editingDateLog.holdingName}" เรียบร้อยแล้ว`, 'success')
+                    setEditingDateLog(null)
+                  }
+                }}
+              >
+                บันทึกวันที่
+              </Button>
+            </div>
+          }
+        >
+          <div className="space-y-4">
+            {/* Info card */}
+            <div className="rounded-2xl border border-line bg-surface-muted p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="font-bold text-[14px] text-ink truncate">
+                    {editingDateLog.holdingName}
+                  </span>
+                  {editingDateLog.ticker && editingDateLog.ticker !== 'CASH' && editingDateLog.ticker !== 'FIXED' && editingDateLog.ticker !== 'DCA' && (
+                    <span className="rounded-md bg-surface px-1.5 py-0.5 text-[10.5px] font-medium text-ink-muted">
+                      {editingDateLog.ticker}
+                    </span>
+                  )}
+                </div>
+                <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${getLogActionMeta(editingDateLog).style}`}>
+                  {getLogActionMeta(editingDateLog).label}
+                </span>
+              </div>
+              <p className="text-[12px] text-ink-muted truncate">
+                {getDisplayNote(editingDateLog)}
+              </p>
+            </div>
+
+            {/* Date Picker */}
+            <TransactionDateField
+              value={editDateValue}
+              onChange={setEditDateValue}
+              label="วันที่ทำรายการ (Transaction Date)"
+            />
+
+            {/* Time Picker */}
+            <div>
+              <label className="block mb-1.5 text-[13px] font-semibold text-ink-soft">
+                เวลาที่ทำรายการ (Time)
+              </label>
+              <input
+                type="time"
+                value={editTimeValue}
+                onChange={(e) => setEditTimeValue(e.target.value)}
+                className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-[15px] text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15"
+              />
+            </div>
+          </div>
+        </Modal>
+      )}
 
       <GuideTour
         isOpen={isRunning}
