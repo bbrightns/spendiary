@@ -7,11 +7,12 @@ interface PageHeaderProps {
   subtitle?: React.ReactNode
   action?: ReactNode
   onStartGuide?: () => void
+  className?: string
 }
 
-export function PageHeader({ eyebrow, title, subtitle, action, onStartGuide }: PageHeaderProps) {
+export function PageHeader({ eyebrow, title, subtitle, action, onStartGuide, className = '' }: PageHeaderProps) {
   return (
-    <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <header className={`mb-6 flex flex-wrap items-end justify-between gap-4 ${className}`}>
       <div>
         {eyebrow && (
           <p className="mb-1 text-[12px] font-semibold uppercase tracking-[0.08em] text-brand">

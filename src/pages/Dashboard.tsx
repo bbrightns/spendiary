@@ -156,71 +156,70 @@ export function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Top Header Row with Greetings & Quick Action Badges */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <PageHeader
-          eyebrow={today}
-          title={`${greeting}${data.userName ? `, ${data.userName}` : ''}`}
-          subtitle="Here's where your wealth and cash flow stand."
-          onStartGuide={startTour}
-        />
+      <PageHeader
+        eyebrow={today}
+        title={`${greeting}${data.userName ? `, ${data.userName}` : ''}`}
+        subtitle="Here's where your wealth and cash flow stand."
+        onStartGuide={startTour}
+        className="!mb-0"
+        action={
+          <div className="flex flex-wrap items-center gap-2 pt-1 sm:pt-0">
+            <button
+              type="button"
+              onClick={() => setAiImportOpen(true)}
+              title="Import Portfolio & Cash with AI"
+              className="inline-flex items-center gap-1.5 rounded-full border border-brand/25 bg-brand-soft/80 hover:bg-brand hover:text-white dark:bg-brand/20 dark:hover:bg-brand px-3.5 py-1.5 text-[12.5px] font-semibold text-brand-ink dark:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
+            >
+              <SparkleIcon className="h-3.5 w-3.5" />
+              <span>Import (AI/JSON)</span>
+            </button>
 
-        {/* Global actionable badges & Quick Import */}
-        <div className="flex flex-wrap items-center gap-2 pt-1 sm:pt-0">
-          <button
-            type="button"
-            onClick={() => setAiImportOpen(true)}
-            title="Import Portfolio & Cash with AI"
-            className="inline-flex items-center gap-1.5 rounded-full border border-brand/25 bg-brand-soft/80 hover:bg-brand hover:text-white dark:bg-brand/20 dark:hover:bg-brand px-3.5 py-1.5 text-[12.5px] font-semibold text-brand-ink dark:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
-          >
-            <SparkleIcon className="h-3.5 w-3.5" />
-            <span>Import (AI/JSON)</span>
-          </button>
-
-          {debtActions.length > 0 && (
-            <div id="guide-dashboard-debt-alert">
-              <button
-                type="button"
-                onClick={() => navigate('/debts')}
-                aria-label={`View ${debtActions.length} debts due for payment`}
-                className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[12.5px] font-semibold transition-all active:scale-95 cursor-pointer shadow-xs ${
-                  hasOverdueDebts
-                    ? 'border-rose-500/30 bg-rose-500/15 text-rose-700 dark:text-rose-300 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600'
-                    : 'border-pink-500/30 bg-pink-500/10 text-pink-700 dark:text-pink-300 hover:bg-pink-500 hover:text-white dark:hover:bg-pink-600'
-                }`}
-              >
-                <span
-                  className={`flex h-4.5 w-4.5 items-center justify-center rounded-full text-[10.5px] font-bold text-white ${
-                    hasOverdueDebts ? 'bg-rose-500 animate-pulse' : 'bg-pink-500'
+            {debtActions.length > 0 && (
+              <div id="guide-dashboard-debt-alert">
+                <button
+                  type="button"
+                  onClick={() => navigate('/debts')}
+                  aria-label={`View ${debtActions.length} debts due for payment`}
+                  className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[12.5px] font-semibold transition-all active:scale-95 cursor-pointer shadow-xs ${
+                    hasOverdueDebts
+                      ? 'border-rose-500/30 bg-rose-500/15 text-rose-700 dark:text-rose-300 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600'
+                      : 'border-pink-500/30 bg-pink-500/10 text-pink-700 dark:text-pink-300 hover:bg-pink-500 hover:text-white dark:hover:bg-pink-600'
                   }`}
                 >
-                  {debtActions.length}
-                </span>
-                <span>
-                  {hasOverdueDebts
-                    ? `${debtActions.length} ${debtActions.length === 1 ? 'หนี้เลยกำหนด' : 'หนี้เลยกำหนด'}`
-                    : `${debtActions.length} ${debtActions.length === 1 ? 'หนี้รอจ่ายรอบนี้' : 'หนี้รอจ่ายรอบนี้'}`}
-                </span>
-              </button>
-            </div>
-          )}
+                  <span
+                    className={`flex h-4.5 w-4.5 items-center justify-center rounded-full text-[10.5px] font-bold text-white ${
+                      hasOverdueDebts ? 'bg-rose-500 animate-pulse' : 'bg-pink-500'
+                    }`}
+                  >
+                    {debtActions.length}
+                  </span>
+                  <span>
+                    {hasOverdueDebts
+                      ? `${debtActions.length} ${debtActions.length === 1 ? 'หนี้เลยกำหนด' : 'หนี้เลยกำหนด'}`
+                      : `${debtActions.length} ${debtActions.length === 1 ? 'หนี้รอจ่ายรอบนี้' : 'หนี้รอจ่ายรอบนี้'}`}
+                  </span>
+                </button>
+              </div>
+            )}
 
-          {dcaActions.length > 0 && (
-            <div id="guide-dashboard-dca">
-              <button
-                type="button"
-                onClick={() => navigate('/dca')}
-                aria-label={`View ${dcaActions.length} DCA ${dcaActions.length === 1 ? 'buy' : 'buys'} ready to confirm`}
-                className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand-soft px-3.5 py-1.5 text-[12.5px] font-semibold text-brand-ink transition-all hover:bg-brand hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 cursor-pointer"
-              >
-                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand dark:bg-[#4f46e5] text-[10.5px] font-bold text-white">
-                  {dcaActions.length}
-                </span>
-                <span>DCA {dcaActions.length === 1 ? 'buy ready' : 'buys ready'}</span>
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
+            {dcaActions.length > 0 && (
+              <div id="guide-dashboard-dca">
+                <button
+                  type="button"
+                  onClick={() => navigate('/dca')}
+                  aria-label={`View ${dcaActions.length} DCA ${dcaActions.length === 1 ? 'buy' : 'buys'} ready to confirm`}
+                  className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand-soft px-3.5 py-1.5 text-[12.5px] font-semibold text-brand-ink transition-all hover:bg-brand hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 cursor-pointer"
+                >
+                  <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand dark:bg-[#4f46e5] text-[10.5px] font-bold text-white">
+                    {dcaActions.length}
+                  </span>
+                  <span>DCA {dcaActions.length === 1 ? 'buy ready' : 'buys ready'}</span>
+                </button>
+              </div>
+            )}
+          </div>
+        }
+      />
 
       {/* ── ROW 1: Net Worth Master Hero (Full Width Bento) ── */}
       <div id="guide-dashboard-networth">
