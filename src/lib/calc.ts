@@ -1194,3 +1194,31 @@ export function getHoldingDpsForMonth(holding?: Holding | null, month?: number):
   return typeof holding.expectedDps === 'number' && !isNaN(holding.expectedDps) ? holding.expectedDps : 0
 }
 
+/**
+ * Calculates estimated annual gross dividend for a holding based on its scheduled months or payouts.
+ */
+export function getHoldingAnnualDividend(holding?: Holding | null): number {
+  if (!holding || !holding.paysDividend) return 0
+  const units = holding.units ?? holding.totalUnits ?? 0
+  if (units <= 0) return 0
+
+  const months = (holding.dividendMonths && holding.dividendMonths.length > 0)
+    ? holding.dividendMonths
+    : (holding.dividendPayouts && holding.dividendPayouts.length > 0)
+      ? holding.dividendPayouts.map((p) => p.month)
+      : []
+
+  if (months.length === 0) {
+    // If no specific months set, check if expectedDps exists (e.g. 1 payout or annual)
+    const dps = typeof holding.expectedDps === 'number' && !isNaN(holding.expectedDps) ? holding.expectedDps : 0
+    return units * dps
+  }
+
+  // Sum DPS for all active months
+  return months.reduce((sum, m) => {
+    const dps = getHoldingDpsForMonth(holding, m)
+    return sum + units * dps
+  }, 0)
+}
+
+
