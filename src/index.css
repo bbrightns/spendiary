@@ -44,6 +44,7 @@
   --color-gold: #eab308;
   --color-real-estate: #a855f7;
   --color-cash: #10b981;
+  --color-debt: #f43f5e;
 
   --radius-card: 1.5rem;
 
@@ -96,6 +97,7 @@
   --color-gold: #facc15;
   --color-real-estate: #c084fc;
   --color-cash: #34d399;
+  --color-debt: #fb7185;
 }
 
 @layer base {

@@ -898,10 +898,10 @@ export const DEBT_CATEGORIES: Record<
 > = {
   installment: {
     label: 'ผ่อนสินค้า / Shopping',
-    color: '#ec4899',
-    bgClass: 'bg-pink-500/10 dark:bg-pink-500/20',
-    textClass: 'text-pink-600 dark:text-pink-400',
-    borderClass: 'border-pink-500/20',
+    color: '#6366f1',
+    bgClass: 'bg-indigo-500/10 dark:bg-indigo-500/20',
+    textClass: 'text-indigo-600 dark:text-indigo-400',
+    borderClass: 'border-indigo-500/20',
   },
   credit_card: {
     label: 'Credit Card',
