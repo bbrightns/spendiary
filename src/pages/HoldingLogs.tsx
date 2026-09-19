@@ -6,21 +6,24 @@ import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
+import { Modal } from '../components/ui/Modal'
 import { FilterChip } from '../components/ui/FilterChip'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC, goldThbPerGramToXauUsd } from '../lib/calc'
-import { thb } from '../lib/format'
+import { dateStrToTimestamp, localDateStr, thb } from '../lib/format'
 import type { AssetClass, HoldingLog } from '../lib/types'
 import {
   ClockIcon,
   DownloadIcon,
   ListIcon,
+  PencilIcon,
   SearchIcon,
   TableIcon,
   UndoIcon,
   WalletIcon,
 } from '../components/icons'
+import { TransactionDateField } from '../components/forms/TransactionDateField'
 
 
 interface ActionMeta {

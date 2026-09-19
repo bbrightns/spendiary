@@ -124,20 +124,14 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
       const availableSats = loc ? loc.satoshi : Math.round(currentUnits * SATS_PER_BTC)
       const targetSats = Math.round(availableSats * (pct / 100))
       setSatoshi(targetSats > 0 ? targetSats : '')
-      // Estimated proceeds from current price
-      if (holding.price > 0) {
-        const estBtc = targetSats / SATS_PER_BTC
-        setBtcThbProceeds(Math.round(estBtc * holding.price))
-      }
+      setBtcThbProceeds('')
     } else if (isGold) {
       const loc = (holding.goldLocations ?? []).find((l) => l.id === goldLocationId)
       const availableGrams = loc ? loc.grams : currentUnits
       const targetGrams = Number((availableGrams * (pct / 100)).toFixed(4))
       setGoldGrams(targetGrams > 0 ? targetGrams : '')
       setGoldBaht(targetGrams > 0 ? Number((targetGrams / GRAMS_PER_BAHT_GOLD).toFixed(4)) : '')
-      if (holding.price > 0) {
-        setGoldThbProceeds(Math.round(targetGrams * holding.price))
-      }
+      setGoldThbProceeds('')
     } else if (isStock) {
       const targetShares = pct === 100 ? currentUnits : Number((currentUnits * (pct / 100)).toFixed(4))
       setStockShares(targetShares > 0 ? targetShares : '')
@@ -215,6 +209,16 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
   const realizedPnLPercent = costBasisSoldThb > 0 ? (realizedPnL / costBasisSoldThb) * 100 : 0
   const remainingUnits = Math.max(0, currentUnits - sellUnitsCount)
   const isFullSell = remainingUnits <= 0.00001
+
+  const estBtcProceeds =
+    isBtc && holding.price > 0 && satoshi !== '' && Number(satoshi) > 0
+      ? Math.round((Number(satoshi) / SATS_PER_BTC) * holding.price)
+      : 0
+
+  const estGoldProceeds =
+    isGold && holding.price > 0 && goldGrams !== '' && Number(goldGrams) > 0
+      ? Math.round(Number(goldGrams) * holding.price)
+      : 0
 
   // Handle Save Sell
   const handleSave = () => {
@@ -500,22 +504,31 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
                   ? 'Required (> 0)'
                   : undefined
               }
-              onChange={(val) => {
-                setSatoshi(val === '' ? '' : Number(val))
-                if (val !== '' && Number(val) > 0 && holding.price > 0) {
-                  setBtcThbProceeds(Math.round((Number(val) / SATS_PER_BTC) * holding.price))
-                }
-              }}
+              onChange={(val) => setSatoshi(val === '' ? '' : Number(val))}
               placeholder="e.g. 500000"
             />
-            <NumberField
-              label="THB proceeds received (เงินบาทที่ได้รับ)"
-              prefix="฿"
-              value={btcThbProceeds}
-              error={showErrors && (btcThbProceeds === '' || Number(btcThbProceeds) <= 0) ? 'Required' : undefined}
-              onChange={(val) => setBtcThbProceeds(val === '' ? '' : Number(val))}
-              placeholder="0"
-            />
+            <div className="space-y-1.5">
+              <NumberField
+                label="THB proceeds received (เงินบาทที่ได้รับ)"
+                prefix="฿"
+                value={btcThbProceeds}
+                error={showErrors && (btcThbProceeds === '' || Number(btcThbProceeds) <= 0) ? 'Required' : undefined}
+                onChange={(val) => setBtcThbProceeds(val === '' ? '' : Number(val))}
+                placeholder={estBtcProceeds > 0 ? `เช่น ${estBtcProceeds.toLocaleString()}` : '0'}
+              />
+              {estBtcProceeds > 0 && (
+                <div className="flex items-center justify-between text-[11.5px] px-1 text-ink-muted">
+                  <span>ราคาตลาดประเมิน: <strong className="text-ink-soft font-medium">฿{estBtcProceeds.toLocaleString()}</strong></span>
+                  <button
+                    type="button"
+                    onClick={() => setBtcThbProceeds(estBtcProceeds)}
+                    className="text-brand hover:underline font-medium cursor-pointer"
+                  >
+                    ใช้ราคานี้
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         ) : isGold ? (
           <div className="grid grid-cols-1 gap-3">
@@ -552,7 +565,6 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
                   setGoldGrams(num)
                   if (num !== '' && num > 0) {
                     setGoldBaht(Number((num / GRAMS_PER_BAHT_GOLD).toFixed(4)))
-                    if (holding.price > 0) setGoldThbProceeds(Math.round(num * holding.price))
                   } else {
                     setGoldBaht('')
                   }
@@ -571,7 +583,6 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
                   if (num !== '' && num > 0) {
                     const g = Number((num * GRAMS_PER_BAHT_GOLD).toFixed(4))
                     setGoldGrams(g)
-                    if (holding.price > 0) setGoldThbProceeds(Math.round(g * holding.price))
                   } else {
                     setGoldGrams('')
                   }
@@ -580,14 +591,28 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
                 placeholder="e.g. 1.0"
               />
             )}
-            <NumberField
-              label="THB proceeds received (เงินบาทที่ได้รับ)"
-              prefix="฿"
-              value={goldThbProceeds}
-              error={showErrors && (goldThbProceeds === '' || Number(goldThbProceeds) <= 0) ? 'Required' : undefined}
-              onChange={(val) => setGoldThbProceeds(val === '' ? '' : Number(val))}
-              placeholder="0"
-            />
+            <div className="space-y-1.5">
+              <NumberField
+                label="THB proceeds received (เงินบาทที่ได้รับ)"
+                prefix="฿"
+                value={goldThbProceeds}
+                error={showErrors && (goldThbProceeds === '' || Number(goldThbProceeds) <= 0) ? 'Required' : undefined}
+                onChange={(val) => setGoldThbProceeds(val === '' ? '' : Number(val))}
+                placeholder={estGoldProceeds > 0 ? `เช่น ${estGoldProceeds.toLocaleString()}` : '0'}
+              />
+              {estGoldProceeds > 0 && (
+                <div className="flex items-center justify-between text-[11.5px] px-1 text-ink-muted">
+                  <span>ราคาตลาดประเมิน: <strong className="text-ink-soft font-medium">฿{estGoldProceeds.toLocaleString()}</strong></span>
+                  <button
+                    type="button"
+                    onClick={() => setGoldThbProceeds(estGoldProceeds)}
+                    className="text-brand hover:underline font-medium cursor-pointer"
+                  >
+                    ใช้ราคานี้
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3">

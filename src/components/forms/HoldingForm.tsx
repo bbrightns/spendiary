@@ -5,7 +5,7 @@ import { FormActions } from './FormActions'
 import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
-import { ASSET_META, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd } from '../../lib/calc'
+import { ASSET_META, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd, upsert } from '../../lib/calc'
 import type { AssetClass, DividendPayoutSchedule, Holding, PlannedAsset } from '../../lib/types'
 import { dateStrToTimestamp, localDateStr, thb } from '../../lib/format'
 import { searchSecurities, type Security } from '../../lib/securities'
@@ -351,6 +351,48 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
     if (sats <= 0 || spent <= 0 || !locName) { setShowErrors(true); return }
 
     const btcUnits = sats / SATS_PER_BTC
+
+    // ── If a BTC holding already exists, merge the new wallet into it ──
+    const existingBtc = !editing
+      ? data.holdings.find((h) => h.assetClass === 'crypto')
+      : null
+
+    if (existingBtc) {
+      const newLoc = { name: locName, satoshi: sats, thbSpent: spent }
+      const updatedLocations = upsert(existingBtc.btcLocations ?? [], newLoc)
+      const totalSats = updatedLocations.reduce((s, l) => s + l.satoshi, 0)
+      const totalUnits = totalSats / SATS_PER_BTC
+      const totalThb = parseFloat(updatedLocations.reduce((s, l) => s + l.thbSpent, 0).toFixed(2))
+      const newAvgCostThb = totalUnits > 0 ? totalThb / totalUnits : existingBtc.avgCostThb ?? existingBtc.avgCost
+      const mergedHolding: Holding = {
+        ...existingBtc,
+        btcLocations: updatedLocations,
+        units: totalUnits,
+        totalUnits,
+        avgCost: newAvgCostThb,
+        avgCostThb: newAvgCostThb,
+        totalThbInvested: totalThb,
+        updatedAt: localDateStr(),
+      }
+      upsertHolding(mergedHolding)
+      if (initialPlannedAsset?.id) {
+        removePlannedAsset(initialPlannedAsset.id)
+      }
+      addHoldingLog({
+        action: 'add',
+        timestamp: dateStrToTimestamp(txDate),
+        holdingId: existingBtc.id,
+        holdingName: 'Bitcoin',
+        ticker: 'BTC',
+        assetClass: 'crypto',
+        note: `${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} spent · ${locName} (merged into existing)`,
+        afterHoldingState: mergedHolding,
+      })
+      onClose()
+      return
+    }
+
+    // ── No existing BTC holding — create fresh ──
     const avgCostThb = spent / btcUnits
     const savedHolding: Holding = {
       id: editing?.id ?? newId(),
@@ -377,7 +419,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
       holdingName: 'Bitcoin',
       ticker: 'BTC',
       assetClass: 'crypto',
-      note: `${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} spent · ${locationName.trim()}`,
+      note: `${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} spent · ${locName}`,
       afterHoldingState: savedHolding,
     })
     onClose()
@@ -392,8 +434,49 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
     const locName = goldLocationName.trim()
     if (g <= 0 || spent <= 0 || !locName) { setShowErrors(true); return }
 
-    const avgCostThb = spent / g
     const bahtAmount = (g / GRAMS_PER_BAHT_GOLD).toFixed(4)
+
+    // ── If a Gold holding already exists, merge the new location into it ──
+    const existingGold = !editing
+      ? data.holdings.find((h) => h.assetClass === 'gold')
+      : null
+
+    if (existingGold) {
+      const newLoc = { name: locName, grams: g, thbSpent: spent }
+      const updatedLocations = upsert(existingGold.goldLocations ?? [], newLoc)
+      const totalGrams = updatedLocations.reduce((s, l) => s + l.grams, 0)
+      const totalThb = parseFloat(updatedLocations.reduce((s, l) => s + l.thbSpent, 0).toFixed(2))
+      const newAvgCostThb = totalGrams > 0 ? totalThb / totalGrams : existingGold.avgCostThb ?? existingGold.avgCost
+      const mergedHolding: Holding = {
+        ...existingGold,
+        goldLocations: updatedLocations,
+        units: totalGrams,
+        totalUnits: totalGrams,
+        avgCost: newAvgCostThb,
+        avgCostThb: newAvgCostThb,
+        totalThbInvested: totalThb,
+        updatedAt: localDateStr(),
+      }
+      upsertHolding(mergedHolding)
+      if (initialPlannedAsset?.id) {
+        removePlannedAsset(initialPlannedAsset.id)
+      }
+      addHoldingLog({
+        action: 'add',
+        timestamp: dateStrToTimestamp(txDate),
+        holdingId: existingGold.id,
+        holdingName: 'Gold',
+        ticker: 'XAU',
+        assetClass: 'gold',
+        note: `${g.toFixed(4)} g (${bahtAmount} บาททอง) · ฿${spent.toLocaleString()} spent · ${locName} (merged into existing)`,
+        afterHoldingState: mergedHolding,
+      })
+      onClose()
+      return
+    }
+
+    // ── No existing Gold holding — create fresh ──
+    const avgCostThb = spent / g
     const savedHolding: Holding = {
       id: editing?.id ?? newId(),
       name: 'Gold',
@@ -419,7 +502,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
       holdingName: 'Gold',
       ticker: 'XAU',
       assetClass: 'gold',
-      note: `${g.toFixed(4)} g (${bahtAmount} บาททอง) · ฿${spent.toLocaleString()} spent · ${goldLocationName.trim()}`,
+      note: `${g.toFixed(4)} g (${bahtAmount} บาททอง) · ฿${spent.toLocaleString()} spent · ${locName}`,
       afterHoldingState: savedHolding,
     })
     onClose()
