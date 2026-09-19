@@ -7,9 +7,10 @@ import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd } from '../../lib/calc'
 import type { AssetClass, Holding, PlannedAsset } from '../../lib/types'
-import { localDateStr, thb } from '../../lib/format'
+import { dateStrToTimestamp, localDateStr, thb } from '../../lib/format'
 import { searchSecurities, type Security } from '../../lib/securities'
 import { PencilIcon } from '../icons'
+import { TransactionDateField } from './TransactionDateField'
 
 interface Props {
   open: boolean
@@ -100,6 +101,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
   const [dividendMonths, setDividendMonths] = useState<number[]>([])
   const [defaultCashAccountId, setDefaultCashAccountId] = useState<string>('')
 
+  // Backdated transaction date
+  const [txDate, setTxDate] = useState<string>(localDateStr())
+
   const isBtc = form.assetClass === 'crypto'
   const isUsd = form.assetClass === 'stock'
   const isGold = form.assetClass === 'gold'
@@ -119,6 +123,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
       }
       return
     }
+
+    setTxDate(localDateStr())
 
     if (editing) {
       const loadedAvgCost = editing.assetClass === 'stock'
@@ -345,6 +351,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
     }
     addHoldingLog({
       action: 'add',
+      timestamp: dateStrToTimestamp(txDate),
       holdingId: savedHolding.id,
       holdingName: 'Bitcoin',
       ticker: 'BTC',
@@ -386,6 +393,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
     }
     addHoldingLog({
       action: 'add',
+      timestamp: dateStrToTimestamp(txDate),
       holdingId: savedHolding.id,
       holdingName: 'Gold',
       ticker: 'XAU',
@@ -548,6 +556,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
 
     addHoldingLog({
       action: editing ? 'edit' : 'add',
+      timestamp: dateStrToTimestamp(txDate),
       holdingId: targetId,
       holdingName: name,
       ticker,
@@ -651,6 +660,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
             { value: 'real_estate', label: 'Real Estate (House / Condo / Land)' },
           ]}
         />
+
+        {/* Transaction Date */}
+        <TransactionDateField value={txDate} onChange={setTxDate} />
 
         {/* Name + Ticker + Tag — only for fund/stock/real_estate (and edit mode for all) */}
         {(!isBtc && !isGold) || editing ? (
