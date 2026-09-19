@@ -201,14 +201,14 @@ export function Dashboard() {
                 type="button"
                 onClick={() => navigate('/debts')}
                 aria-label={`View ${debtActions.length} debts due for payment`}
-                className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer shadow-xs ${
+                className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[12.5px] font-semibold transition-all active:scale-95 cursor-pointer shadow-xs ${
                   hasOverdueDebts
-                    ? 'border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600'
-                    : 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-600'
+                    ? 'border-rose-500/30 bg-rose-500/15 text-rose-700 dark:text-rose-300 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600'
+                    : 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-600'
                 }`}
               >
                 <span
-                  className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white ${
+                  className={`flex h-4.5 w-4.5 items-center justify-center rounded-full text-[10.5px] font-bold text-white ${
                     hasOverdueDebts ? 'bg-rose-500 animate-pulse' : 'bg-amber-500'
                   }`}
                 >
@@ -216,8 +216,8 @@ export function Dashboard() {
                 </span>
                 <span>
                   {hasOverdueDebts
-                    ? `${debtActions.length} หนี้เลยกำหนด`
-                    : `${debtActions.length} หนี้รอชำระ`}
+                    ? `${debtActions.length} ${debtActions.length === 1 ? 'หนี้เลยกำหนด' : 'หนี้เลยกำหนด'}`
+                    : `${debtActions.length} ${debtActions.length === 1 ? 'หนี้รอจ่ายรอบนี้' : 'หนี้รอจ่ายรอบนี้'}`}
                 </span>
               </button>
             </div>
@@ -272,7 +272,7 @@ export function Dashboard() {
                       setSelectedLiabilityId(null)
                       setLiabilitiesOpen(true)
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 px-3 py-1 text-[12px] font-semibold text-rose-600 dark:text-rose-400 border border-rose-500/20 transition-colors hover:bg-rose-500/20 cursor-pointer whitespace-nowrap"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted dark:bg-white/12 px-3 py-1 text-[12px] font-semibold text-ink-soft dark:text-white/90 shadow-xs border border-line dark:border-white/10 transition-colors hover:bg-line/70 dark:hover:bg-white/20 hover:text-ink dark:hover:text-white cursor-pointer whitespace-nowrap"
                     aria-label="Manage liabilities"
                   >
                     📉 {debtRatio.toFixed(1)}% Debt Ratio ({thbCompact(-debts)})
@@ -341,7 +341,7 @@ export function Dashboard() {
                       <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0" />
                       <span className="group-hover:underline">Debts</span>
                     </div>
-                    <p className="mt-1 font-display text-[15px] sm:text-[18px] font-extrabold tnum text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                    <p className="mt-1 font-display text-[15px] sm:text-[18px] font-extrabold tnum text-ink dark:text-white whitespace-nowrap">
                       {thbCompact(-debts)}
                     </p>
                     <p className="mt-0.5 text-[11px] sm:text-[11.5px] font-semibold text-rose-500/80 tnum whitespace-nowrap">
@@ -684,7 +684,7 @@ export function Dashboard() {
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-surface-muted dark:bg-white/10 text-ink-muted dark:text-white/80">
                     <DebtIcon className="h-4 w-4" />
                   </div>
                   <h2 className="font-display text-[16px] font-bold text-ink">Liabilities & Debts</h2>
@@ -710,7 +710,7 @@ export function Dashboard() {
                   {/* Row 2: Values */}
                   <div className="flex items-baseline min-w-0">
                     <p
-                      className={`font-display text-[18px] sm:text-[20px] xl:text-[21px] font-extrabold tracking-tight tnum leading-tight truncate cursor-default ${debts > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-ink dark:text-white'}`}
+                      className="font-display text-[18px] sm:text-[20px] xl:text-[21px] font-extrabold tracking-tight tnum leading-tight truncate cursor-default text-ink dark:text-white"
                       title={debts > 0 ? `-${thb(debts)}` : '฿0'}
                     >
                       {debts > 0 ? (debts >= 1_000_000 ? `-${thbCompact(debts)}` : `-${thb(debts)}`) : '฿0'}
@@ -720,7 +720,7 @@ export function Dashboard() {
                     {monthlyDebt > 0 ? (
                       <span
                         title={`~${thb(monthlyDebt)}/mo`}
-                        className="font-display text-[18px] sm:text-[20px] xl:text-[21px] font-extrabold tracking-tight tnum text-rose-600 dark:text-rose-400 leading-tight truncate cursor-default"
+                        className="font-display text-[18px] sm:text-[20px] xl:text-[21px] font-extrabold tracking-tight tnum text-ink dark:text-white leading-tight truncate cursor-default"
                       >
                         ~{thbCompact(monthlyDebt)}<span className="text-[12px] font-semibold text-ink-muted">/mo</span>
                       </span>
@@ -813,7 +813,7 @@ export function Dashboard() {
                             </div>
 
                             <div className="shrink-0 text-right">
-                              <span className={`font-display font-extrabold tnum text-[14.5px] ${l.balance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                              <span className={`font-display font-extrabold tnum text-[14.5px] ${l.balance > 0 ? 'text-ink dark:text-white' : 'text-emerald-600 dark:text-emerald-400'}`}>
                                 {l.balance > 0 ? `-${thb(l.balance)}` : '฿0 (ครบแล้ว)'}
                               </span>
                             </div>
@@ -831,7 +831,7 @@ export function Dashboard() {
                                 </span>
                               )}
                               {isInst && totalInst > 0 && (
-                                <span className="text-[10.5px] font-bold text-pink-600 dark:text-pink-400 bg-pink-500/10 px-1.5 py-0.2 rounded shrink-0">
+                                <span className="text-[10px] font-semibold text-ink-muted dark:text-white/70 bg-surface dark:bg-white/10 border border-line dark:border-white/10 px-1.5 py-0.5 rounded shrink-0">
                                   {paidInst}/{totalInst} งวด
                                 </span>
                               )}
@@ -870,7 +870,7 @@ export function Dashboard() {
                                       payLiabilityInstallment(l.id)
                                     }}
                                     aria-label={`Pay installment for ${l.name}`}
-                                    className="inline-flex items-center gap-1 rounded-lg bg-pink-500 hover:bg-pink-600 text-white px-2 py-0.5 text-[10.5px] font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
+                                    className="inline-flex items-center gap-1 rounded-lg bg-ink text-white hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] px-2.5 py-0.5 text-[10.5px] font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
                                   >
                                     <CheckIcon className="h-3 w-3" strokeWidth={2.5} />
                                     <span>จ่ายงวดนี้</span>
@@ -890,7 +890,7 @@ export function Dashboard() {
                               <div className="w-full h-1.5 rounded-full bg-surface-muted dark:bg-white/10 overflow-hidden">
                                 <div
                                   className={`h-full rounded-full transition-all duration-500 ${
-                                    percent >= 100 ? 'bg-emerald-500' : 'bg-pink-500'
+                                    percent >= 100 ? 'bg-emerald-500' : 'bg-brand dark:bg-[#4f46e5]'
                                   }`}
                                   style={{ width: `${percent}%` }}
                                 />

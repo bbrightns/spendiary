@@ -227,7 +227,7 @@ export function Debts() {
         <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
           <div>
             <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted truncate">หนี้คงค้างรวม</p>
-            <p className={`mt-1 font-display text-[17px] sm:text-[24px] font-extrabold tnum truncate ${totalOutstanding > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+            <p className={`mt-1 font-display text-[17px] sm:text-[24px] font-extrabold tnum truncate ${totalOutstanding > 0 ? 'text-ink dark:text-white' : 'text-emerald-600 dark:text-emerald-400'}`}>
               {totalOutstanding > 0 ? `-${thb(totalOutstanding)}` : '฿0'}
             </p>
           </div>
@@ -363,7 +363,7 @@ export function Debts() {
       {/* ── Debts List / Cards ── */}
       {filteredDebts.length === 0 ? (
         <Card className="p-12 text-center">
-          <div className="inline-grid h-16 w-16 place-items-center rounded-3xl bg-pink-500/10 text-pink-600 dark:text-pink-400 mb-3">
+          <div className="inline-grid h-16 w-16 place-items-center rounded-3xl bg-brand/10 text-brand dark:text-brand-ink mb-3">
             <ShoppingBagIcon className="h-8 w-8" />
           </div>
           <h3 className="font-display text-[18px] font-bold text-ink dark:text-white">
@@ -446,7 +446,7 @@ export function Debts() {
 
                   {/* Header Right: Balance & Actions */}
                   <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                    <span className="font-display font-bold text-[13px] sm:text-[15px] text-rose-600 dark:text-rose-400 tnum">
+                    <span className="font-display font-bold text-[13px] sm:text-[15px] text-ink dark:text-white tnum">
                       -{thb(l.balance)}
                     </span>
 
@@ -494,7 +494,7 @@ export function Debts() {
 
                         <div>
                           <span className="text-[10px] sm:text-[11px] font-medium text-ink-muted block">คงเหลือ</span>
-                          <p className={`font-display font-extrabold text-[12px] sm:text-[13.5px] tnum truncate ${l.balance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                          <p className={`font-display font-extrabold text-[12px] sm:text-[13.5px] tnum truncate ${l.balance > 0 ? 'text-ink dark:text-white' : 'text-emerald-600 dark:text-emerald-400'}`}>
                             {l.balance > 0 ? `-${thb(l.balance)}` : '฿0'}
                           </p>
                         </div>
@@ -540,7 +540,7 @@ export function Debts() {
                       <div className="h-1.5 w-full rounded-full bg-surface-muted dark:bg-white/10 overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${
-                            percent >= 100 ? 'bg-emerald-500' : 'bg-pink-500'
+                            percent >= 100 ? 'bg-emerald-500' : 'bg-brand dark:bg-[#4f46e5]'
                           }`}
                           style={{ width: `${percent}%` }}
                         />

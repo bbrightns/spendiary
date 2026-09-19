@@ -75,16 +75,16 @@ export function Sidebar() {
               className="h-8 w-8 object-contain transition-transform group-hover:scale-105"
             />
             <div>
-              <span className="font-display text-[19px] font-extrabold tracking-tight text-ink leading-none">
+              <span className="font-display text-lg font-extrabold tracking-tight text-ink leading-none">
                 Spendiary
               </span>
-              <p className="text-[10.5px] font-medium text-ink-muted leading-tight mt-0.5">
+              <p className="text-xs font-medium text-ink-muted leading-tight mt-0.5">
                 Financial Cockpit
               </p>
             </div>
           </Link>
           {isTestMode && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300 border border-amber-500/30 px-2 py-0.5 text-[9.5px] font-extrabold tracking-wider uppercase shadow-xs">
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300 border border-amber-500/30 px-2 py-0.5 text-[10px] font-extrabold tracking-wider uppercase shadow-xs">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
               Test
             </span>
@@ -93,7 +93,7 @@ export function Sidebar() {
 
         {/* Navigation Items */}
         <nav className="flex flex-col gap-1">
-          <span className="px-3 text-[11px] font-semibold tracking-normal text-ink-muted mb-1">
+          <span className="px-3 text-xs font-semibold tracking-normal text-ink-muted mb-1">
             Navigation
           </span>
           {navItems.map((item) => {
@@ -112,7 +112,7 @@ export function Sidebar() {
                     type="button"
                     onClick={toggleExpand}
                     className={[
-                      'w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-[13.5px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset cursor-pointer select-none',
+                      'w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset cursor-pointer select-none',
                       isChildActive
                         ? 'text-brand-ink bg-brand-soft/50 font-bold'
                         : 'text-ink-muted hover:bg-surface-muted hover:text-ink',
@@ -120,7 +120,7 @@ export function Sidebar() {
                   >
                     <div className="flex items-center gap-3">
                       <item.icon
-                        className={`h-[19px] w-[19px] ${isChildActive ? 'text-brand-ink' : 'text-ink-muted'}`}
+                        className={`h-4.5 w-4.5 ${isChildActive ? 'text-brand-ink' : 'text-ink-muted'}`}
                         strokeWidth={isChildActive ? 2.2 : 1.7}
                       />
                       <span>{item.label}</span>
@@ -128,7 +128,7 @@ export function Sidebar() {
 
                     <div className="flex items-center gap-2">
                       {parentBadgeCount > 0 && !isExpanded && (
-                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10.5px] font-bold text-white shadow-xs">
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white shadow-xs">
                           {parentBadgeCount}
                         </span>
                       )}
@@ -153,7 +153,7 @@ export function Sidebar() {
                             to={sub.to}
                             title={sub.description}
                             className={[
-                              'flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
+                              'flex items-center justify-between px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
                               isSubActive
                                 ? 'text-brand-ink bg-brand-soft/80 shadow-xs font-bold'
                                 : 'text-ink-muted hover:bg-surface-muted hover:text-ink',
@@ -161,14 +161,16 @@ export function Sidebar() {
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
                               <sub.icon
-                                className={`h-[17px] w-[17px] shrink-0 ${isSubActive ? 'text-brand-ink' : 'text-ink-muted'}`}
+                                className={`h-4 w-4 shrink-0 ${isSubActive ? 'text-brand-ink' : 'text-ink-muted'}`}
                                 strokeWidth={isSubActive ? 2.2 : 1.7}
                               />
                               <span className="truncate">{sub.label}</span>
                             </div>
 
                             {subBadge > 0 && (
-                              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-xs ml-1.5">
+                              <span
+                                className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-brand text-white dark:bg-[#4f46e5] px-1 text-[10px] font-bold shadow-xs"
+                              >
                                 {subBadge}
                               </span>
                             )}
@@ -182,10 +184,7 @@ export function Sidebar() {
             }
 
             const toPath = item.to || '/'
-            const isActive =
-              toPath === '/'
-                ? pathname === '/'
-                : pathname.startsWith(toPath)
+            const isActive = toPath === '/' ? pathname === '/' : pathname.startsWith(toPath)
             const badgeCount = getBadgeCount(toPath)
 
             return (
@@ -193,7 +192,7 @@ export function Sidebar() {
                 key={toPath}
                 to={toPath}
                 className={[
-                  'flex items-center justify-between px-3 py-2.5 rounded-xl text-[13.5px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
+                  'flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
                   isActive
                     ? 'text-brand-ink bg-brand-soft/70 shadow-xs font-bold'
                     : 'text-ink-muted hover:bg-surface-muted hover:text-ink',
@@ -201,7 +200,7 @@ export function Sidebar() {
               >
                 <div className="flex items-center gap-3">
                   <item.icon
-                    className={`h-[19px] w-[19px] ${isActive ? 'text-brand-ink' : 'text-ink-muted'}`}
+                    className={`h-4.5 w-4.5 ${isActive ? 'text-brand-ink' : 'text-ink-muted'}`}
                     strokeWidth={isActive ? 2.2 : 1.7}
                   />
                   <span>{item.label}</span>
@@ -209,7 +208,7 @@ export function Sidebar() {
 
                 {badgeCount > 0 && (
                   <span
-                    className="px-1.5 py-0.2 rounded-full text-[10.5px] font-bold leading-tight bg-brand text-white dark:bg-[#4f46e5]"
+                    className="px-1.5 py-0.2 rounded-full text-[10px] font-bold leading-tight bg-brand text-white dark:bg-[#4f46e5]"
                   >
                     {badgeCount}
                   </span>
@@ -226,14 +225,14 @@ export function Sidebar() {
         <Link
           to={settingsItem.to || '/settings'}
           className={[
-            'flex items-center justify-between px-3 py-2.5 rounded-xl text-[13.5px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
+            'flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
             pathname.startsWith(settingsItem.to || '/settings')
               ? 'text-brand-ink bg-brand-soft/70 shadow-xs font-bold'
               : 'text-ink-muted hover:bg-surface-muted hover:text-ink',
           ].join(' ')}
         >
           <div className="flex items-center gap-3">
-            <settingsItem.icon className="h-[19px] w-[19px]" strokeWidth={1.7} />
+            <settingsItem.icon className="h-4.5 w-4.5" strokeWidth={1.7} />
             <span>{settingsItem.label}</span>
           </div>
         </Link>
