@@ -603,9 +603,11 @@ function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null): {
           const spent = parseFloat(noteSpentMatch[1].replace(/,/g, ''))
           costDiff = spent
           const pricePerGram = spent / unitDiff
-          priceDisplay = `฿${pricePerGram.toFixed(2)}/g`
+          const pricePerBaht = Math.round(pricePerGram * GRAMS_PER_BAHT_GOLD)
+          priceDisplay = `฿${pricePerBaht.toLocaleString()}/บาททอง`
         } else if (curr.price && curr.price > 0) {
-          priceDisplay = `฿${curr.price.toFixed(2)}/g`
+          const pricePerBaht = Math.round((curr.price < 10000 ? curr.price * GRAMS_PER_BAHT_GOLD : curr.price))
+          priceDisplay = `฿${pricePerBaht.toLocaleString()}/บาททอง`
         }
       } else {
         const notePriceMatch = log.note.match(/@\s*฿([0-9,.]+)/)
@@ -1316,13 +1318,13 @@ export function HoldingLogs() {
 
               {/* ── Collapse toggle for details ── */}
               {(showPriceRow || showBalanceRow || showAvgCostRow) && (
-                <div className="pt-1.5 border-t border-line/60">
+                <div className="pt-2 border-t border-line/60">
                   <button
                     type="button"
                     onClick={() => toggleDetails(log.id)}
-                    className="flex items-center gap-1 text-[11px] font-semibold text-ink-faint hover:text-ink transition-colors cursor-pointer select-none"
+                    className="inline-flex items-center gap-1.5 py-1 text-[12.5px] font-semibold text-ink-muted hover:text-ink active:scale-95 transition-all cursor-pointer select-none"
                   >
-                    {isDetailsOpen ? '▲ ซ่อนรายละเอียด' : '▼ ดูรายละเอียด'}
+                    <span>{isDetailsOpen ? '▲ ซ่อนรายละเอียด' : '▼ ดูรายละเอียด'}</span>
                   </button>
 
                   {isDetailsOpen && (
@@ -1421,43 +1423,47 @@ export function HoldingLogs() {
           }
 
           const hasSpent = txDetails.amountThbDisplay && txDetails.amountThbDisplay !== '-'
+          const hasUnits = txDetails.sharesDisplay && txDetails.sharesDisplay !== '-'
           const cashItems = getCashDiffItems(log)
 
           return (
             <>
-              {/* ── Hero Buy / Add stats badge ── */}
-              {(hasSpent || buyPriceDisplay) && (
+              {/* ── Hero Buy / Add 3-block stats ── */}
+              {(hasSpent || hasUnits || buyPriceDisplay) && (
                 <div className={(showNameRow || showTickerRow) ? 'pt-2 border-t border-line/60' : ''}>
-                  <div className="flex flex-wrap items-center gap-3">
-                    {/* ยอดซื้อ / ยอดลงทุน */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {/* 1. ยอดที่ซื้อ (Total Spent) */}
                     {hasSpent && (
-                      <div>
-                        <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold mb-1">
-                          💳 ยอดที่ซื้อ
+                      <div className="flex flex-col justify-between rounded-xl p-2.5 bg-sky-500/10 dark:bg-sky-950/40 border border-sky-500/25 dark:border-sky-500/30">
+                        <span className="text-[12px] font-bold text-sky-700 dark:text-sky-300 flex items-center gap-1.5 mb-1">
+                          <span>💳</span> ยอดที่ซื้อ
                         </span>
-                        <div className="inline-flex items-baseline gap-1.5 rounded-xl px-3 py-1.5 font-bold bg-brand/10 text-brand border border-brand/20">
-                          <span className="text-[17px] leading-none">
-                            {txDetails.amountThbDisplay}
-                          </span>
-                          {txDetails.sharesDisplay && txDetails.sharesDisplay !== '-' && (
-                            <span className="text-[12px] opacity-85 font-medium">
-                              ({txDetails.sharesDisplay})
-                            </span>
-                          )}
+                        <div className="text-[17px] font-black tracking-tight text-sky-700 dark:text-sky-200">
+                          {txDetails.amountThbDisplay}
                         </div>
                       </div>
                     )}
 
-                    {/* ราคาที่เข้าซื้อ */}
-                    {buyPriceDisplay && (
-                      <div>
-                        <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold mb-1">
-                          🏷️ ราคาเข้าซื้อ
+                    {/* 2. หน่วยที่ได้ (Units Bought) */}
+                    {hasUnits && (
+                      <div className="flex flex-col justify-between rounded-xl p-2.5 bg-gain/10 dark:bg-gain/15 border border-gain/25 dark:border-gain/30">
+                        <span className="text-[12px] font-bold text-gain flex items-center gap-1.5 mb-1">
+                          <span>📦</span> หน่วยที่ได้
                         </span>
-                        <div className="inline-flex items-baseline gap-1.5 rounded-xl px-3 py-1.5 font-bold bg-surface border border-line text-ink">
-                          <span className="text-[15.5px] leading-none text-ink">
-                            {buyPriceDisplay}
-                          </span>
+                        <div className="text-[16px] font-black tracking-tight text-gain">
+                          {txDetails.sharesDisplay}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 3. ราคาเข้าซื้อ (Buy Price) */}
+                    {buyPriceDisplay && (
+                      <div className="flex flex-col justify-between rounded-xl p-2.5 bg-surface border border-line/80 shadow-xs">
+                        <span className="text-[12px] font-bold text-ink-soft dark:text-ink-soft flex items-center gap-1.5 mb-1">
+                          <span>🏷️</span> ราคาเข้าซื้อ
+                        </span>
+                        <div className="text-[15.5px] font-bold tracking-tight text-ink">
+                          {buyPriceDisplay}
                         </div>
                       </div>
                     )}
@@ -1467,12 +1473,12 @@ export function HoldingLogs() {
 
               {/* ── Cash deduction row (Paid from) ── */}
               {cashItems.length > 0 && (
-                <div className="pt-1.5 border-t border-line/60 space-y-1.5">
+                <div className="pt-2 border-t border-line/60 space-y-1.5">
                   {cashItems.map((item, idx) => {
                     const sym = item.currencySymbol
                     return (
                       <div key={idx}>
-                        <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">
+                        <span className="text-ink-muted block text-[11.5px] font-bold">
                           {item.diff && item.diff < 0 ? '💸 จ่ายจาก' : item.diff && item.diff > 0 ? '💵 รับเงินเข้า' : 'กระเป๋า'}: {item.accountName}
                         </span>
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
@@ -1497,13 +1503,13 @@ export function HoldingLogs() {
 
               {/* ── Collapse toggle for details ── */}
               {(showPriceRow || showBalanceRow || showAvgCostRow) && (
-                <div className="pt-1.5 border-t border-line/60">
+                <div className="pt-2 border-t border-line/60">
                   <button
                     type="button"
                     onClick={() => toggleDetails(log.id)}
-                    className="flex items-center gap-1 text-[11px] font-semibold text-ink-faint hover:text-ink transition-colors cursor-pointer select-none"
+                    className="inline-flex items-center gap-1.5 py-1 text-[12.5px] font-semibold text-ink-muted hover:text-ink active:scale-95 transition-all cursor-pointer select-none"
                   >
-                    {isDetailsOpen ? '▲ ซ่อนรายละเอียด' : '▼ ดูรายละเอียด'}
+                    <span>{isDetailsOpen ? '▲ ซ่อนรายละเอียด' : '▼ ดูรายละเอียด'}</span>
                   </button>
 
                   {isDetailsOpen && (
