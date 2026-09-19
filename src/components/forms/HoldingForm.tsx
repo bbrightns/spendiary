@@ -9,13 +9,14 @@ import { ASSET_META, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd, upsert } from 
 import type { AssetClass, DividendPayoutSchedule, Holding, PlannedAsset } from '../../lib/types'
 import { dateStrToTimestamp, localDateStr, thb } from '../../lib/format'
 import { searchSecurities, type Security } from '../../lib/securities'
-import { PencilIcon } from '../icons'
+import { ChevronDownIcon, PencilIcon } from '../icons'
 import { TransactionDateField } from './TransactionDateField'
 
 interface Props {
   open: boolean
   editing: Holding | null
   initialPlannedAsset?: PlannedAsset | null
+  initialSection?: 'general' | 'dividend'
   onClose: () => void
 }
 
@@ -69,9 +70,13 @@ const blank = {
   price: '' as number | string | '',
 }
 
-export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Props) {
+export function HoldingForm({ open, editing, initialPlannedAsset, initialSection, onClose }: Props) {
   const { data, upsertHolding, removeHolding, removePlannedAsset, addHoldingLog, usdThb } = useData()
   const { showToast } = useToast()
+
+  // Collapsible sections state
+  const [isGeneralExpanded, setIsGeneralExpanded] = useState(true)
+  const [isDividendExpanded, setIsDividendExpanded] = useState(true)
 
   // Generic fields
   const [form, setForm] = useState(blank)
@@ -130,6 +135,14 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
     }
 
     setTxDate(localDateStr())
+
+    if (initialSection === 'dividend') {
+      setIsGeneralExpanded(false)
+      setIsDividendExpanded(true)
+    } else {
+      setIsGeneralExpanded(true)
+      setIsDividendExpanded(true)
+    }
 
     if (editing) {
       const loadedAvgCost = editing.assetClass === 'stock'
@@ -225,7 +238,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
       setDefaultCashAccountId(data.cashAccounts[0]?.id ?? '')
     }
     setShowErrors(false)
-  }, [open, editing, initialPlannedAsset, usdThb, data.cashAccounts])
+  }, [open, editing, initialPlannedAsset, initialSection, usdThb, data.cashAccounts])
 
   // Interactive handlers for dynamic dual-currency and FX rate recalculations
   const handleSharesChange = (newUnits: number | string | '') => {
@@ -817,7 +830,40 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
       }
     >
       <div className="space-y-4">
-        {/* Asset class — always first */}
+        {/* Accordion 1: ข้อมูลทั่วไป (General Info) */}
+        <div className="rounded-2xl border border-line bg-surface overflow-hidden shadow-2xs">
+          <button
+            type="button"
+            onClick={() => setIsGeneralExpanded((v) => !v)}
+            className="w-full flex items-center justify-between p-3.5 sm:p-4 text-left hover:bg-surface-muted/50 transition-colors cursor-pointer select-none"
+            aria-expanded={isGeneralExpanded}
+          >
+            <div className="flex items-center gap-2 min-w-0 pr-2">
+              <span className="text-[14px]">📦</span>
+              <span className="text-[13.5px] sm:text-[14px] font-bold text-ink truncate">
+                ข้อมูลทั่วไป (General Info)
+              </span>
+              {!isGeneralExpanded && (form.name || form.ticker) && (
+                <span className="hidden sm:inline-flex items-center rounded-md bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-ink-muted truncate max-w-[200px]">
+                  {form.ticker ? `${form.ticker} · ` : ''}{form.name || 'Holding'}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {!isGeneralExpanded && (
+                <span className="text-[11px] text-brand font-medium">แตะเพื่อดู/แก้ไข</span>
+              )}
+              <ChevronDownIcon
+                className={`h-4 w-4 text-ink-muted transition-transform duration-200 ${
+                  isGeneralExpanded ? 'rotate-180' : ''
+                }`}
+              />
+            </div>
+          </button>
+
+          {isGeneralExpanded && (
+            <div className="p-3.5 sm:p-4 pt-1 space-y-4 border-t border-line/60">
+              {/* Asset class — always first */}
         <SelectField
           label="Asset class"
           value={form.assetClass}
@@ -1394,31 +1440,69 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
             </>
           )
         )}
-
-        {/* ── Dividend Tracking (Optional for Fund & Stock) ── */}
-        {!isBtc && !isGold && !isRealEstate && (
-          <div className="rounded-2xl border border-line bg-surface-muted/30 p-4 space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <label className="flex items-center gap-2 cursor-pointer select-none min-w-0">
-                <input
-                  type="checkbox"
-                  checked={paysDividend}
-                  onChange={(e) => setPaysDividend(e.target.checked)}
-                  className="h-4 w-4 rounded-md border-line text-emerald-600 focus:ring-emerald-500/30 shrink-0"
-                />
-                <div className="min-w-0">
-                  <span className="text-[13.5px] font-bold text-ink flex items-center gap-1.5 whitespace-nowrap">
-                    💰 ปันผล
-                  </span>
-                  <p className="text-[11px] text-ink-muted truncate">
-                    เปิดบันทึกเงินปันผลเพื่อคำนวณกระแสเงินสด
-                  </p>
-                </div>
-              </label>
-              <span className="text-[11px] font-medium text-ink-muted whitespace-nowrap shrink-0">
-                (optional)
-              </span>
             </div>
+          )}
+        </div>
+
+        {/* Accordion 2: ข้อมูลเงินปันผล (Dividend Tracking - Optional for Fund & Stock) */}
+        {!isBtc && !isGold && !isRealEstate && (
+          <div className="rounded-2xl border border-line bg-surface overflow-hidden shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setIsDividendExpanded((v) => !v)}
+              className="w-full flex items-center justify-between p-3.5 sm:p-4 text-left hover:bg-surface-muted/50 transition-colors cursor-pointer select-none"
+              aria-expanded={isDividendExpanded}
+            >
+              <div className="flex items-center gap-2 min-w-0 pr-2">
+                <span className="text-[14px]">💰</span>
+                <span className="text-[13.5px] sm:text-[14px] font-bold text-ink truncate">
+                  ข้อมูลเงินปันผล (Dividend & Payouts)
+                </span>
+                <span
+                  className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium shrink-0 ${
+                    paysDividend
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold'
+                      : 'bg-surface-muted text-ink-muted'
+                  }`}
+                >
+                  {paysDividend ? `${dividendMonths.length} ครั้ง/ปี` : 'ไม่ได้เปิด'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {!isDividendExpanded && (
+                  <span className="text-[11px] text-brand font-medium">แตะเพื่อดู/แก้ไข</span>
+                )}
+                <ChevronDownIcon
+                  className={`h-4 w-4 text-ink-muted transition-transform duration-200 ${
+                    isDividendExpanded ? 'rotate-180' : ''
+                  }`}
+                />
+              </div>
+            </button>
+
+            {isDividendExpanded && (
+              <div className="p-3.5 sm:p-4 pt-1 space-y-3 border-t border-line/60">
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <label className="flex items-center gap-2 cursor-pointer select-none min-w-0">
+                    <input
+                      type="checkbox"
+                      checked={paysDividend}
+                      onChange={(e) => setPaysDividend(e.target.checked)}
+                      className="h-4 w-4 rounded-md border-line text-emerald-600 focus:ring-emerald-500/30 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <span className="text-[13.5px] font-bold text-ink flex items-center gap-1.5 whitespace-nowrap">
+                        เปิดบันทึกเงินปันผล
+                      </span>
+                      <p className="text-[11px] text-ink-muted truncate">
+                        เปิดบันทึกเงินปันผลเพื่อคำนวณกระแสเงินสด
+                      </p>
+                    </div>
+                  </label>
+                  <span className="text-[11px] font-medium text-ink-muted whitespace-nowrap shrink-0">
+                    (optional)
+                  </span>
+                </div>
 
             {paysDividend && (
               <div className="space-y-4 pt-2 border-t border-line/60">
@@ -1555,7 +1639,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                 />
               </div>
             )}
-          </div>
+            </div>
+          )}
+        </div>
         )}
       </div>
     </Modal>

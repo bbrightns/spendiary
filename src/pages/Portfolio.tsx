@@ -564,27 +564,6 @@ export function Portfolio() {
           <div className={`border-t border-line bg-surface-muted px-5 pb-3.5 pt-2.5 ${
             isLast ? 'rounded-b-[var(--radius-card)]' : ''
           }`}>
-            {/* Live Market Gold Price Banner */}
-            {isGold && effectiveGoldPerBaht !== null && (
-              <div className="mb-3 flex items-center justify-between rounded-xl bg-surface border border-line/70 px-3.5 py-2.5 shadow-2xs">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[14px]">
-                    🏷️
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[12.5px] font-semibold text-ink leading-tight">ราคาทองคำ Real-time</p>
-                    <p className="text-[11px] text-ink-muted">Spot คำนวณทองไทย 96.5%</p>
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-[15px] font-bold text-amber-600 dark:text-amber-400 tnum leading-tight">
-                    {thb(effectiveGoldPerBaht)}
-                  </p>
-                  <p className="text-[10.5px] font-medium text-ink-muted">ต่อบาททอง</p>
-                </div>
-              </div>
-            )}
-
             <p className="mb-2 text-[12px] font-semibold text-ink-muted">Storage & Purchase Locations</p>
 
             {isBtc && (
@@ -678,74 +657,88 @@ export function Portfolio() {
         eyebrow="Holdings"
         title="Portfolio"
         subtitle={
-          <span
+          <div
             role="status"
             aria-live="polite"
-            className="flex items-center gap-2 flex-wrap text-[14.5px] text-ink-muted"
+            className="flex items-center gap-2 flex-wrap text-[13px] pt-0.5"
           >
-            {priceStatus === 'loading' && (
-              <>
-                <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
-                <span>Updating live prices…</span>
-                {effectiveUsdThb && <span className="text-ink-soft">· USD/THB {effectiveUsdThb.toFixed(2)}</span>}
-                {effectiveGoldPerBaht !== null && (
-                  <span className="text-ink-soft">
-                    · Gold ฿{effectiveGoldPerBaht.toLocaleString()} / บาททอง
-                  </span>
-                )}
-              </>
-            )}
-            {priceStatus === 'ok' && (
-              <>
-                <span className="inline-block h-2 w-2 rounded-full bg-gain animate-pulse" />
-                Live{lastUpdated && ` · updated ${lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
-                {effectiveUsdThb && <span className="text-ink-soft">· USD/THB {effectiveUsdThb.toFixed(2)}</span>}
-                {effectiveGoldPerBaht !== null && (
-                  <span className="text-ink-soft">
-                    · Gold ฿{effectiveGoldPerBaht.toLocaleString()} / บาททอง
-                  </span>
-                )}
-              </>
-            )}
-            {priceStatus === 'partial' && (
-              <>
-                <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
-                Partial update{lastUpdated && ` · ${lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
-                {effectiveUsdThb && <span className="text-ink-soft">· USD/THB {effectiveUsdThb.toFixed(2)}</span>}
-                {effectiveGoldPerBaht !== null && (
-                  <span className="text-ink-soft">
-                    · Gold ฿{effectiveGoldPerBaht.toLocaleString()} / บาททอง
-                  </span>
-                )}
-                {errorMsg && <span className="text-loss text-[12px]">{errorMsg}</span>}
-              </>
-            )}
-            {priceStatus === 'error' && (
-              <>
-                <span className="text-loss">
-                  Price fetch failed ·{' '}
-                  <button onClick={refreshPrices} className="underline cursor-pointer">retry</button>
+            {/* Status indicator */}
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface border border-line/70 text-ink-muted shadow-2xs">
+              {priceStatus === 'loading' && (
+                <>
+                  <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                  <span className="text-[12px] font-medium">Updating prices…</span>
+                </>
+              )}
+              {priceStatus === 'ok' && (
+                <>
+                  <span className="inline-block h-2 w-2 rounded-full bg-gain animate-pulse shrink-0" />
+                  <span className="text-[12px] font-medium text-ink">Live</span>
+                  {lastUpdated && (
+                    <span className="text-[11.5px] text-ink-muted">
+                      · {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
+                </>
+              )}
+              {priceStatus === 'partial' && (
+                <>
+                  <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                  <span className="text-[12px] font-medium text-ink">Partial</span>
+                  {lastUpdated && (
+                    <span className="text-[11.5px] text-ink-muted">
+                      · {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
+                  {errorMsg && <span className="text-loss text-[11px]">({errorMsg})</span>}
+                </>
+              )}
+              {priceStatus === 'error' && (
+                <>
+                  <span className="inline-block h-2 w-2 rounded-full bg-loss shrink-0" />
+                  <span className="text-[12px] font-medium text-loss">Fetch failed</span>
+                  <button onClick={refreshPrices} className="text-[11.5px] underline text-brand hover:text-brand-emphasis cursor-pointer ml-0.5">
+                    retry
+                  </button>
+                </>
+              )}
+              {priceStatus === 'idle' && (
+                <>
+                  <span className="inline-block h-2 w-2 rounded-full bg-ink-muted shrink-0" />
+                  <span className="text-[12px] font-medium text-ink-muted">Saved prices</span>
+                </>
+              )}
+            </div>
+
+            {/* USD/THB Badge */}
+            {effectiveUsdThb && (
+              <div
+                title="Exchange Rate USD to THB"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface border border-line/70 text-ink shadow-2xs"
+              >
+                <span className="text-[12px] opacity-80">💵</span>
+                <span className="text-[11.5px] font-medium text-ink-muted">USD/THB</span>
+                <span className="tnum text-[12.5px] font-bold text-ink tracking-tight">
+                  {effectiveUsdThb.toFixed(2)}
                 </span>
-                {effectiveUsdThb && <span className="text-ink-soft">· USD/THB {effectiveUsdThb.toFixed(2)}</span>}
-                {effectiveGoldPerBaht !== null && (
-                  <span className="text-ink-soft">
-                    · Gold ฿{effectiveGoldPerBaht.toLocaleString()} / บาททอง
-                  </span>
-                )}
-              </>
+              </div>
             )}
-            {priceStatus === 'idle' && (
-              <>
-                <span>Valued at saved prices</span>
-                {effectiveUsdThb && <span className="text-ink-soft">· USD/THB {effectiveUsdThb.toFixed(2)}</span>}
-                {effectiveGoldPerBaht !== null && (
-                  <span className="text-ink-soft">
-                    · Gold ฿{effectiveGoldPerBaht.toLocaleString()} / บาททอง
-                  </span>
-                )}
-              </>
+
+            {/* Gold Badge */}
+            {effectiveGoldPerBaht !== null && (
+              <div
+                title="คำนวณราคาทองคำแท่ง 96.5% ต่อบาททอง"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface border border-line/70 text-ink shadow-2xs"
+              >
+                <span className="text-[12px]">🪙</span>
+                <span className="text-[11.5px] font-medium text-ink-muted">Gold 96.5%</span>
+                <span className="tnum text-[12.5px] font-bold text-amber-600 dark:text-amber-400 tracking-tight">
+                  ฿{effectiveGoldPerBaht.toLocaleString()}
+                </span>
+                <span className="text-[11px] text-ink-muted">/บาททอง</span>
+              </div>
             )}
-          </span>
+          </div>
         }
         onStartGuide={startTour}
         action={

@@ -546,6 +546,7 @@ export function Dividends() {
       <HoldingForm
         open={Boolean(editingHolding)}
         editing={editingHolding ? (data.holdings.find((item) => item.id === editingHolding.id) ?? editingHolding) : null}
+        initialSection="dividend"
         onClose={() => setEditingHolding(null)}
       />
 
