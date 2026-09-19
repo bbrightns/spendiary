@@ -15,7 +15,7 @@ function getStoredTheme(): Theme {
   } catch {
     /* storage unavailable */
   }
-  return 'system'
+  return 'light'
 }
 
 function applyTheme(theme: Theme) {
