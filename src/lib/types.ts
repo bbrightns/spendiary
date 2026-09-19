@@ -55,8 +55,15 @@ export interface Holding {
   expectedDps?: number
   /** Specific months (1-12) when dividend is expected to be paid */
   dividendMonths?: number[]
+  /** Month-specific expected DPS schedule (supports varying DPS across payout rounds) */
+  dividendPayouts?: DividendPayoutSchedule[]
   /** Default cash account ID to deposit dividends into */
   defaultCashAccountId?: string
+}
+
+export interface DividendPayoutSchedule {
+  month: number // 1-12
+  dps: number   // Dividend per share for this round
 }
 
 export interface RetirementSettings {

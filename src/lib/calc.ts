@@ -1180,3 +1180,17 @@ export function isDividendReceivedThisMonth(
   )
 }
 
+/**
+ * Returns the expected DPS for a specific month (1-12) for a holding.
+ * Looks up month-specific dividendPayouts first, falling back to expectedDps.
+ */
+export function getHoldingDpsForMonth(holding?: Holding | null, month?: number): number {
+  if (!holding) return 0
+  const m = month ?? (new Date().getMonth() + 1)
+  const scheduled = holding.dividendPayouts?.find((p) => p.month === m)
+  if (scheduled !== undefined && typeof scheduled.dps === 'number' && !isNaN(scheduled.dps)) {
+    return scheduled.dps
+  }
+  return typeof holding.expectedDps === 'number' && !isNaN(holding.expectedDps) ? holding.expectedDps : 0
+}
+

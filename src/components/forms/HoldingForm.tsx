@@ -6,7 +6,7 @@ import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd } from '../../lib/calc'
-import type { AssetClass, Holding, PlannedAsset } from '../../lib/types'
+import type { AssetClass, DividendPayoutSchedule, Holding, PlannedAsset } from '../../lib/types'
 import { dateStrToTimestamp, localDateStr, thb } from '../../lib/format'
 import { searchSecurities, type Security } from '../../lib/securities'
 import { PencilIcon } from '../icons'
@@ -20,6 +20,11 @@ interface Props {
 }
 
 const SATS_PER_BTC = 100_000_000
+
+const THAI_MONTHS_SHORT = [
+  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+]
 
 const newId = () => crypto?.randomUUID?.() ?? `id-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
@@ -97,8 +102,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
 
   // Dividend tracking fields (fund & stock)
   const [paysDividend, setPaysDividend] = useState(false)
-  const [expectedDps, setExpectedDps] = useState<number | ''>('')
   const [dividendMonths, setDividendMonths] = useState<number[]>([])
+  const [payoutDpsMap, setPayoutDpsMap] = useState<Record<number, number | string>>({})
   const [defaultCashAccountId, setDefaultCashAccountId] = useState<string>('')
 
   // Backdated transaction date
@@ -159,9 +164,25 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
       }
 
       setPaysDividend(Boolean(editing.paysDividend))
-      setExpectedDps(typeof editing.expectedDps === 'number' && editing.expectedDps > 0 ? editing.expectedDps : '')
       setDividendMonths(editing.dividendMonths ?? [])
       setDefaultCashAccountId(editing.defaultCashAccountId ?? '')
+
+      const initialMap: Record<number, number | string> = {}
+      if (editing.dividendPayouts && editing.dividendPayouts.length > 0) {
+        editing.dividendPayouts.forEach((p) => {
+          initialMap[p.month] = p.dps
+        })
+      } else if (editing.dividendMonths && editing.dividendMonths.length > 0) {
+        const legacyDps = typeof editing.expectedDps === 'number' && editing.expectedDps > 0
+          ? editing.expectedDps
+          : (parseFloat(String(editing.expectedDps ?? '')) || '')
+        editing.dividendMonths.forEach((m) => {
+          initialMap[m] = legacyDps
+        })
+      } else if (typeof editing.expectedDps === 'number' && editing.expectedDps > 0) {
+        initialMap[1] = editing.expectedDps
+      }
+      setPayoutDpsMap(initialMap)
     } else if (initialPlannedAsset) {
       setForm({
         name: initialPlannedAsset.name,
@@ -183,8 +204,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
       setIsThbInvestedManuallyEdited(false)
       setIsEditingThb(false)
       setPaysDividend(false)
-      setExpectedDps('')
       setDividendMonths([])
+      setPayoutDpsMap({})
       setDefaultCashAccountId(data.cashAccounts[0]?.id ?? '')
     } else {
       setForm(blank)
@@ -199,8 +220,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
       setIsThbInvestedManuallyEdited(false)
       setIsEditingThb(false)
       setPaysDividend(false)
-      setExpectedDps('')
       setDividendMonths([])
+      setPayoutDpsMap({})
       setDefaultCashAccountId(data.cashAccounts[0]?.id ?? '')
     }
     setShowErrors(false)
@@ -466,12 +487,29 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
     }
 
     const canPayDividend = form.assetClass === 'fund' || form.assetClass === 'stock'
-    if (canPayDividend && paysDividend) {
+    if (canPayDividend && paysDividend && dividendMonths.length > 0) {
+      const cleanPayouts: DividendPayoutSchedule[] = dividendMonths
+        .map((m) => {
+          const raw = payoutDpsMap[m]
+          const num = typeof raw === 'number' ? raw : parseFloat(String(raw ?? ''))
+          return {
+            month: m,
+            dps: isNaN(num) ? 0 : Math.max(0, num),
+          }
+        })
+        .sort((a, b) => a.month - b.month)
+
+      const totalDpsSum = cleanPayouts.reduce((sum, p) => sum + p.dps, 0)
+      const avgRoundDps = cleanPayouts.length > 0
+        ? Number((totalDpsSum / cleanPayouts.length).toFixed(4))
+        : 0
+
       updateObj = {
         ...updateObj,
         paysDividend: true,
-        expectedDps: typeof expectedDps === 'number' && expectedDps > 0 ? expectedDps : undefined,
-        dividendMonths: dividendMonths.length > 0 ? dividendMonths : undefined,
+        dividendMonths: dividendMonths.slice().sort((a, b) => a - b),
+        dividendPayouts: cleanPayouts,
+        expectedDps: avgRoundDps > 0 ? avgRoundDps : undefined,
         defaultCashAccountId: defaultCashAccountId || undefined,
       }
     } else {
@@ -480,6 +518,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
         paysDividend: false,
         expectedDps: undefined,
         dividendMonths: undefined,
+        dividendPayouts: undefined,
         defaultCashAccountId: undefined,
       }
     }
@@ -598,6 +637,62 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
     : netPnlThb < 0
     ? `-฿${Math.abs(netPnlThb).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : `฿0.00`
+
+  // Dividend derived values & actions
+  const isStock = form.assetClass === 'stock'
+  const currencyPrefix = isStock ? '$' : '฿'
+  const currencyUnit = isStock ? '$/share' : '฿/หุ้น'
+
+  const totalAnnualDps = dividendMonths.reduce((sum, m) => {
+    const raw = payoutDpsMap[m]
+    const num = typeof raw === 'number' ? raw : parseFloat(String(raw ?? ''))
+    return sum + (isNaN(num) ? 0 : num)
+  }, 0)
+
+  const currentUnits = Number(form.units) || 0
+  const estAnnualGross = currentUnits * totalAnnualDps
+  const estAnnualNet = estAnnualGross * 0.90 // 10% tax estimate
+
+  const handleToggleMonth = (mNum: number) => {
+    setDividendMonths((prev) => {
+      const isSelected = prev.includes(mNum)
+      if (isSelected) {
+        setPayoutDpsMap((prevMap) => {
+          const next = { ...prevMap }
+          delete next[mNum]
+          return next
+        })
+        return prev.filter((m) => m !== mNum)
+      } else {
+        const existingValues = Object.values(payoutDpsMap).filter((v) => v !== '' && Number(v) > 0)
+        const defaultVal = existingValues.length > 0 ? existingValues[0] : ''
+        setPayoutDpsMap((prevMap) => ({
+          ...prevMap,
+          [mNum]: prevMap[mNum] ?? defaultVal,
+        }))
+        return [...prev, mNum].sort((a, b) => a - b)
+      }
+    })
+  }
+
+  const handleApplyDpsToAll = () => {
+    const sorted = dividendMonths.slice().sort((a, b) => a - b)
+    const firstSelectedMonth = sorted.find((m) => {
+      const v = payoutDpsMap[m]
+      return v !== '' && !isNaN(Number(v)) && Number(v) > 0
+    }) ?? sorted[0]
+    const sourceVal = firstSelectedMonth ? (payoutDpsMap[firstSelectedMonth] ?? '') : ''
+    if (sourceVal === '' || Number(sourceVal) <= 0) return
+
+    setPayoutDpsMap(() => {
+      const next: Record<number, number | string> = {}
+      dividendMonths.forEach((m) => {
+        next[m] = sourceVal
+      })
+      return next
+    })
+    showToast('คัดลอกยอดเงินปันผลไปยังทุกรอบเรียบร้อย', 'info')
+  }
 
   const modalDescription = isBtc
     ? 'Log your first purchase in Satoshi.'
@@ -1241,38 +1336,21 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
             </div>
 
             {paysDividend && (
-              <div className="space-y-3 pt-2 border-t border-line/60">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <NumberField
-                    label={`Expected DPS (${form.assetClass === 'stock' ? '$/share' : '฿/หุ้น'})`}
-                    prefix={form.assetClass === 'stock' ? '$' : '฿'}
-                    placeholder="e.g. 0.80"
-                    value={expectedDps}
-                    onChange={setExpectedDps}
-                    hint="เงินปันผลต่อหุ้นโดยประมาณ (ถ้าทราบ)"
-                  />
-
-                  <SelectField
-                    label="Default Cash Account (เข้าบัญชีเริ่มต้น)"
-                    value={defaultCashAccountId}
-                    options={[
-                      { value: '', label: 'None (ไม่ระบุ)' },
-                      ...(data.cashAccounts ?? []).map((c) => ({
-                        value: c.id,
-                        label: `${c.name} (${c.currency === 'USD' ? '$' : '฿'}${c.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`,
-                      })),
-                    ]}
-                    onChange={setDefaultCashAccountId}
-                  />
-                </div>
-
+              <div className="space-y-4 pt-2 border-t border-line/60">
                 {/* 12 Months selection pills */}
                 <div className="space-y-1.5">
-                  <label className="text-[12px] font-medium text-ink-muted">
-                    Payout Months (เดือนที่มักจะจ่ายปันผล - แตะเลือกได้หลายเดือน):
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[12px] font-semibold text-ink-soft">
+                      Payout Months (เดือนที่จ่ายปันผล - แตะเลือกได้หลายเดือน):
+                    </label>
+                    {dividendMonths.length > 0 && (
+                      <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                        {dividendMonths.length} รอบ/ปี
+                      </span>
+                    )}
+                  </div>
                   <div className="grid grid-cols-6 sm:grid-cols-12 gap-1 text-[11px]">
-                    {['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'].map((mName, idx) => {
+                    {THAI_MONTHS_SHORT.map((mName, idx) => {
                       const mNum = idx + 1
                       const isSelected = dividendMonths.includes(mNum)
 
@@ -1280,11 +1358,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                         <button
                           key={mNum}
                           type="button"
-                          onClick={() => {
-                            setDividendMonths((prev) =>
-                              isSelected ? prev.filter((m) => m !== mNum) : [...prev, mNum].sort((a, b) => a - b)
-                            )
-                          }}
+                          onClick={() => handleToggleMonth(mNum)}
                           className={`py-1.5 rounded-lg font-bold transition-all cursor-pointer border ${
                             isSelected
                               ? 'bg-emerald-500 text-white border-emerald-500 shadow-2xs scale-105'
@@ -1298,10 +1372,102 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                   </div>
                   {dividendMonths.length > 0 && (
                     <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium pt-0.5">
-                      📅 แจ้งเตือนรับเงินปันผลในเดือน: {dividendMonths.map((m) => ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'][m - 1]).join(', ')}
+                      📅 แจ้งเตือนรับเงินปันผลในเดือน: {dividendMonths.slice().sort((a, b) => a - b).map((m) => THAI_MONTHS_SHORT[m - 1]).join(', ')}
                     </p>
                   )}
                 </div>
+
+                {/* Per-round DPS input section */}
+                {dividendMonths.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-line bg-surface/40 p-3 text-center">
+                    <p className="text-[12px] text-ink-muted">
+                      👆 แตะเลือกเดือนด้านบน เพื่อกำหนดงวดที่คาดว่าจะได้รับเงินปันผล
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <span className="text-[12px] font-bold text-ink flex items-center gap-1.5">
+                          💵 กำหนดเงินปันผลต่อหุ้น (DPS) ในแต่ละงวด
+                        </span>
+                        <p className="text-[10.5px] text-ink-muted">
+                          ระบุยอดเงินปันผลต่อหุ้นแยกตามแต่ละรอบที่จ่ายจริง
+                        </p>
+                      </div>
+                      {dividendMonths.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={handleApplyDpsToAll}
+                          className="inline-flex items-center text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                        >
+                          ⚡ ใช้ยอดเท่ากันทุกรอบ
+                        </button>
+                      )}
+                    </div>
+
+                    <div className={`grid gap-2.5 ${dividendMonths.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
+                      {dividendMonths.slice().sort((a, b) => a - b).map((mNum, roundIdx) => (
+                        <div key={mNum} className="rounded-xl border border-line bg-surface/80 p-2.5 shadow-2xs space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[12px] font-bold text-ink flex items-center gap-1.5">
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[10.5px] font-bold">
+                                {roundIdx + 1}
+                              </span>
+                              รอบเดือน {THAI_MONTHS_SHORT[mNum - 1]}
+                            </span>
+                            <span className="text-[10.5px] font-medium text-ink-muted">
+                              {currencyUnit}
+                            </span>
+                          </div>
+                          <NumberField
+                            label=""
+                            prefix={currencyPrefix}
+                            placeholder="0.00"
+                            value={payoutDpsMap[mNum] ?? ''}
+                            onChange={(val) => {
+                              setPayoutDpsMap((prev) => ({ ...prev, [mNum]: val }))
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Summary box */}
+                    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 flex flex-wrap items-center justify-between gap-2 text-[12px]">
+                      <div>
+                        <span className="text-ink-muted block text-[11px]">รวมปันผลทั้งปี (Total Annual DPS):</span>
+                        <span className="font-display font-extrabold text-[14px] text-emerald-600 dark:text-emerald-400 tnum">
+                          {currencyPrefix}{totalAnnualDps.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                          <span className="text-[11px] font-normal text-ink-muted ml-1">/{isStock ? 'share' : 'หุ้น'}</span>
+                        </span>
+                      </div>
+                      {currentUnits > 0 && estAnnualGross > 0 && (
+                        <div className="text-right">
+                          <span className="text-ink-muted block text-[11px]">ประมาณการปันผลต่อปี ({currentUnits.toLocaleString()} หุ้น):</span>
+                          <span className="font-display font-bold text-[13px] text-ink tnum">
+                            ~{currencyPrefix}{estAnnualNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <span className="text-[10px] text-ink-muted ml-1 font-normal">(สุทธิหลังหักภาษี 10%)</span>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Default Cash Account */}
+                <SelectField
+                  label="Default Cash Account (เข้าบัญชีเริ่มต้น)"
+                  value={defaultCashAccountId}
+                  options={[
+                    { value: '', label: 'None (ไม่ระบุ)' },
+                    ...(data.cashAccounts ?? []).map((c) => ({
+                      value: c.id,
+                      label: `${c.name} (${c.currency === 'USD' ? '$' : '฿'}${c.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`,
+                    })),
+                  ]}
+                  onChange={setDefaultCashAccountId}
+                />
               </div>
             )}
           </div>
