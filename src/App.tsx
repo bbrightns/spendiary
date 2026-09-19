@@ -164,8 +164,8 @@ function AppContent() {
           {/* ── 3 Feature Cards ── */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4 w-full max-w-md md:max-w-4xl">
             {/* Card 1 */}
-            <div className="bg-white/60 hover:bg-white/75 backdrop-blur-md rounded-[20px] border border-white/80 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
-              <div className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 bg-brand-soft text-brand shadow-xs">
+            <div className="bg-white/75 hover:bg-white/90 backdrop-blur-md rounded-[20px] border border-white/90 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
+              <div className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 bg-blue-50 text-blue-600 border border-blue-100/80 shadow-xs">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                   <path d="m9 12 2 2 4-4" />
@@ -182,8 +182,8 @@ function AppContent() {
             </div>
 
             {/* Card 2 */}
-            <div className="bg-white/60 hover:bg-white/75 backdrop-blur-md rounded-[20px] border border-white/80 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
-              <div className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 bg-brand-soft text-brand shadow-xs">
+            <div className="bg-white/75 hover:bg-white/90 backdrop-blur-md rounded-[20px] border border-white/90 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
+              <div className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 bg-indigo-50 text-indigo-600 border border-indigo-100/80 shadow-xs">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                 </svg>
@@ -199,8 +199,8 @@ function AppContent() {
             </div>
 
             {/* Card 3 */}
-            <div className="bg-white/60 hover:bg-white/75 backdrop-blur-md rounded-[20px] border border-white/80 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
-              <div className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 bg-brand-soft text-brand shadow-xs">
+            <div className="bg-white/75 hover:bg-white/90 backdrop-blur-md rounded-[20px] border border-white/90 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
+              <div className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 bg-violet-50 text-violet-600 border border-violet-100/80 shadow-xs">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="3" width="18" height="18" rx="4" />
                   <path d="m9 12 2 2 4-4" />

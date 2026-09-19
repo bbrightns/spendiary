@@ -157,7 +157,7 @@ export function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Top Header Row with Greetings & Quick Action Badges */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between mb-4">
         <div>
           {today && (
             <p className="mb-1 text-[12px] font-semibold uppercase tracking-[0.08em] text-brand">
