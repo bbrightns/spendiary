@@ -747,8 +747,7 @@ const ASSET_FILTERS: { key: AssetClass | 'all'; label: string }[] = [
 
 const ACTION_FILTERS = [
   { key: 'all', label: 'All' },
-  { key: 'add', label: 'Added' },
-  { key: 'buy_more', label: 'Bought more' },
+  { key: 'buy', label: 'Buy / Add' },
   { key: 'sell', label: 'Sold' },
   { key: 'dividend', label: 'Dividend' },
   { key: 'edit', label: 'Edited' },
@@ -785,7 +784,7 @@ export function HoldingLogs() {
   }
 
   const [assetFilter, setAssetFilter] = useState<AssetClass | 'all'>('all')
-  const [actionFilter, setActionFilter] = useState<'all' | 'add' | 'buy_more' | 'sell' | 'dividend' | 'edit'>('all')
+  const [actionFilter, setActionFilter] = useState<'all' | 'buy' | 'sell' | 'dividend' | 'edit'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'table' | 'timeline'>(() => {
     const saved = localStorage.getItem('spendiary_logs_view_mode')
@@ -811,7 +810,13 @@ export function HoldingLogs() {
 
   const filtered = logs.filter((l) => {
     if (assetFilter !== 'all' && l.assetClass !== assetFilter) return false
-    if (actionFilter !== 'all' && l.action !== actionFilter) return false
+    if (actionFilter !== 'all') {
+      if (actionFilter === 'buy') {
+        if (l.action !== 'add' && l.action !== 'buy_more') return false
+      } else if (l.action !== actionFilter) {
+        return false
+      }
+    }
 
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase()
