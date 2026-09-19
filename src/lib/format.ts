@@ -89,6 +89,39 @@ export function localDateStr(d = new Date()): string {
   return `${y}-${m}-${day}`
 }
 
+/**
+ * Converts a YYYY-MM-DD date string (and optional HH:mm string) to an ISO timestamp.
+ * If dateStr matches today's local date and no custom time is given, uses new Date().toISOString()
+ * to preserve the current exact second and millisecond.
+ * If another date is chosen, creates a Date object using the user's local components and returns ISO string.
+ */
+export function dateStrToTimestamp(dateStr?: string, timeStr?: string): string {
+  if (!dateStr) return new Date().toISOString()
+  const todayStr = localDateStr()
+  const now = new Date()
+
+  if (dateStr === todayStr && !timeStr) {
+    return now.toISOString()
+  }
+
+  const [y, m, d] = dateStr.split('-').map(Number)
+  let hours = now.getHours()
+  let minutes = now.getMinutes()
+  let seconds = now.getSeconds()
+
+  if (timeStr) {
+    const [th, tm] = timeStr.split(':').map(Number)
+    if (!isNaN(th) && !isNaN(tm)) {
+      hours = th
+      minutes = tm
+      seconds = 0
+    }
+  }
+
+  const dt = new Date(y, m - 1, d, hours, minutes, seconds)
+  return dt.toISOString()
+}
+
 export function daysUntil(iso: string, fromDate = new Date()): number {
   const now = new Date(fromDate)
   now.setHours(0, 0, 0, 0)
