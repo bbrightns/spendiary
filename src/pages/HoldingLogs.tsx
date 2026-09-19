@@ -10,7 +10,7 @@ import { Modal } from '../components/ui/Modal'
 import { FilterChip } from '../components/ui/FilterChip'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC, goldThbPerGramToXauUsd } from '../lib/calc'
+import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC } from '../lib/calc'
 import { dateStrToTimestamp, localDateStr, thb } from '../lib/format'
 import type { AssetClass, HoldingLog } from '../lib/types'
 import {
@@ -182,15 +182,46 @@ function getDisplayNote(log: HoldingLog): string {
     if (n.startsWith('Sold ')) {
       n = n.replace(/^Sold\s+/, 'ขาย ')
       n = n.replace(/\s+from\s+/, ' จาก ')
-      n = n.replace(/·\s*Proceeds:\s*/, '· ได้รับเงิน ')
-      // Remove Realized PnL text from note since hero badge shows it prominently
-      n = n.replace(/·\s*Realized PnL:[^·]+/, '')
+      n = n.replace(/·\s*Proceeds:\s*/, '· ได้รับเงิน: ')
       n = n.replace(/·\s*Deposited to\s*/, '· ฝากเข้า ')
-      n = n.replace(/\s*·\s*·\s*/g, ' · ').trim()
-      // Remove trailing dot or spaces
-      n = n.replace(/\s*·\s*$/, '').trim()
-      return n
     }
+
+    // Remove redundant Realized PnL / กำไร / ขาดทุน text from note since hero badge shows it prominently
+    n = n.replace(/·\s*(?:กำไร|ขาดทุน|Realized PnL):\s*[^·]+/, '')
+
+    // For gold sell: ensure format: ขายเท่าไหร่, จากที่ไหน, ที่ราคาเท่าไหร่ (THB/บาททองคำ), ได้รับเงินเท่าไหร่
+    if (log.assetClass === 'gold') {
+      const hasPrice = /(?:@|ที่ราคา)\s*฿?[0-9,.]+\/บาททอง/.test(n)
+      if (!hasPrice) {
+        let pricePerBaht = 0
+        if (curr?.price && curr.price > 0) {
+          pricePerBaht = Math.round(curr.price * (curr.price < 10000 ? GRAMS_PER_BAHT_GOLD : 1))
+        } else {
+          const gMatch = n.match(/ขาย\s+([0-9,.]+)\s*g/i)
+          const proceedsMatch = n.match(/ได้รับเงิน:\s*฿([0-9,.]+)/)
+          if (gMatch && proceedsMatch) {
+            const grams = parseFloat(gMatch[1].replace(/,/g, ''))
+            const proceeds = parseFloat(proceedsMatch[1].replace(/,/g, ''))
+            if (grams > 0) {
+              pricePerBaht = Math.round((proceeds / grams) * GRAMS_PER_BAHT_GOLD)
+            }
+          }
+        }
+
+        if (pricePerBaht > 0) {
+          if (n.includes(' จาก ')) {
+            n = n.replace(/(จาก\s+[^·]+?)(\s*·\s*ได้รับเงิน)/, `$1 ที่ราคา ฿${pricePerBaht.toLocaleString()}/บาททอง$2`)
+          } else {
+            n = n.replace(/(\s*·\s*ได้รับเงิน)/, ` ที่ราคา ฿${pricePerBaht.toLocaleString()}/บาททอง$1`)
+          }
+        }
+      }
+    }
+
+    n = n.replace(/\s*·\s*·\s*/g, ' · ').trim()
+    // Remove trailing dot or spaces
+    n = n.replace(/\s*·\s*$/, '').trim()
+    return n
   }
 
   return log.note
@@ -464,7 +495,7 @@ function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null): {
         priceDisplay = `$${(log.soldPrice / fx).toFixed(2)}`
       }
     } else {
-      const notePriceMatch = log.note.match(/@\s*฿([0-9,.]+)/)
+      const notePriceMatch = log.note.match(/(?:@|ที่ราคา)\s*฿([0-9,.]+)/)
       if (notePriceMatch) {
         priceDisplay = `฿${notePriceMatch[1]}`
       } else if (log.soldPrice && log.soldPrice > 0) {
@@ -474,7 +505,7 @@ function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null): {
 
     let proceedsThb = log.proceeds ?? null
     if (proceedsThb === null) {
-      const proceedsMatch = log.note.match(/Proceeds:\s*฿([0-9,.]+)/)
+      const proceedsMatch = log.note.match(/(?:Proceeds|ได้รับเงิน):\s*฿([0-9,.]+)/)
       if (proceedsMatch) {
         proceedsThb = parseFloat(proceedsMatch[1].replace(/,/g, ''))
       }
@@ -1056,11 +1087,9 @@ export function HoldingLogs() {
     } else if (log.assetClass === 'gold') {
       const prevBaht = prevAvgCostThb * GRAMS_PER_BAHT_GOLD
       const currBaht = currAvgCostThb * GRAMS_PER_BAHT_GOLD
-      const prevXauUsd = goldThbPerGramToXauUsd(prevAvgCostThb, fx)
-      const currXauUsd = goldThbPerGramToXauUsd(currAvgCostThb, fx)
 
-      prevAvgCostDisplay = `฿${Math.round(prevBaht).toLocaleString()}/บาททอง ($${Math.round(prevXauUsd).toLocaleString()}/oz)`
-      currAvgCostDisplay = `฿${Math.round(currBaht).toLocaleString()}/บาททอง ($${Math.round(currXauUsd).toLocaleString()}/oz)`
+      prevAvgCostDisplay = `฿${Math.round(prevBaht).toLocaleString()}/บาททอง`
+      currAvgCostDisplay = `฿${Math.round(currBaht).toLocaleString()}/บาททอง`
       const diffBaht = Math.round(currBaht - prevBaht)
       if (diffBaht !== 0 && prevUnits > 0) {
         const sign = diffBaht > 0 ? '+' : '-'

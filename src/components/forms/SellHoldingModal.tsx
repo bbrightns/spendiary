@@ -369,9 +369,8 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
       }
 
       const feeNote = effectiveFee > 0 ? ` · ค่าธรรมเนียม: ฿${effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''
-      const pnlSign = realizedPnL >= 0 ? '+' : ''
-      const pnlWord = realizedPnL >= 0 ? 'กำไร' : 'ขาดทุน'
-      note = `ขาย ${sGrams.toFixed(4)} g (${sBaht.toFixed(4)} บาททอง) จาก ${locName}${feeNote} · ได้รับเงิน: ฿${totalProceedsThb.toLocaleString()} · ${pnlWord}: ${pnlSign}฿${realizedPnL.toLocaleString()} (${pnlSign}${realizedPnLPercent.toFixed(1)}%)${cashNoteSuffix}`
+      const soldPricePerBaht = Math.round(soldPriceDisplay * GRAMS_PER_BAHT_GOLD)
+      note = `ขาย ${sGrams.toFixed(4)} g (${sBaht.toFixed(4)} บาททอง) จาก ${locName} ที่ราคา ฿${soldPricePerBaht.toLocaleString()}/บาททอง${feeNote} · ได้รับเงิน: ฿${totalProceedsThb.toLocaleString()}${cashNoteSuffix}`
     } else {
       const u = Number(units)
       const p = Number(price)
