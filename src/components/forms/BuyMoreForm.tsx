@@ -7,7 +7,8 @@ import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, applyBuy, goldThbPerGramToXauUsd, holdingMetrics, upsert } from '../../lib/calc'
 import type { BtcLocation, GoldLocation, Holding } from '../../lib/types'
-import { money, thb, localDateStr } from '../../lib/format'
+import { dateStrToTimestamp, money, thb, localDateStr } from '../../lib/format'
+import { TransactionDateField } from './TransactionDateField'
 
 export const BUY_SELL_SEGMENT_OPTIONS: SegmentOption<'buy' | 'sell'>[] = [
   {
@@ -96,6 +97,9 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
   const [priceUsd, setPriceUsd] = useState<number | string | ''>('')
   const [sharesBought, setSharesBought] = useState<number | string | ''>('')
   const [lastFocused, setLastFocused] = useState<'thb' | 'shares'>('thb')
+
+  // Backdated transaction date
+  const [txDate, setTxDate] = useState<string>(localDateStr())
 
   const isBtc = holding?.assetClass === 'crypto'
   const isGold = holding?.assetClass === 'gold'
@@ -275,6 +279,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
     const justOpened = !wasOpen.current && open
     wasOpen.current = open
     if (!justOpened || !holding) return
+    setTxDate(localDateStr())
     setUnits('')
     setShowErrors(false)
     setCashAccountId('none')
@@ -379,6 +384,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
         cashAccountId: cashAccountId !== 'none' ? cashAccountId : undefined,
         cashDeductAmount: cashAccountId !== 'none' ? spent : undefined,
         note: `+${g.toFixed(4)} g (${bahtAmount} บาททอง) · ฿${spent.toLocaleString()} spent · ${goldLocName}${cashSuffix}`,
+        timestamp: dateStrToTimestamp(txDate),
       })
       showToast(`Bought ${g.toFixed(4)}g (${bahtAmount} บาททอง) gold for ${holding!.name}`, 'success')
       onClose()
@@ -408,6 +414,10 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
               />
             </div>
           )}
+
+          {/* Transaction Date */}
+          <TransactionDateField value={txDate} onChange={setTxDate} />
+
           <div className="rounded-2xl bg-surface-muted px-4 py-3">
             <div className="flex items-center justify-between text-[13px]">
               <span className="text-ink-muted">Currently holding</span>
@@ -591,6 +601,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
         cashAccountId: cashAccountId !== 'none' ? cashAccountId : undefined,
         cashDeductAmount: cashAccountId !== 'none' ? spent : undefined,
         note: `+${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} spent · ${locName}${cashSuffix}`,
+        timestamp: dateStrToTimestamp(txDate),
       })
       showToast(`Bought ${sats.toLocaleString()} sats for ${holding!.name}`, 'success')
       onClose()
@@ -620,6 +631,10 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
               />
             </div>
           )}
+
+          {/* Transaction Date */}
+          <TransactionDateField value={txDate} onChange={setTxDate} />
+
           <div className="rounded-2xl bg-surface-muted px-4 py-3">
             <div className="flex items-center justify-between text-[13px]">
               <span className="text-ink-muted">Currently holding</span>
@@ -742,6 +757,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
         cashAccountId: cashAccountId !== 'none' ? cashAccountId : undefined,
         cashDeductAmount: cashAccountId !== 'none' ? amountSpentThbNum : undefined,
         note: `+${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${priceUsdNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/unit${cashSuffix}`,
+        timestamp: dateStrToTimestamp(txDate),
       })
       showToast(`Bought ${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares of ${holding!.name}`, 'success')
       onClose()
@@ -767,6 +783,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
         cashAccountId: cashAccountId !== 'none' ? cashAccountId : undefined,
         cashDeductAmount: cashAccountId !== 'none' ? amountSpentThb : undefined,
         note: `+${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${label} @ ฿${Number(price).toLocaleString()}/unit${cashSuffix}`,
+        timestamp: dateStrToTimestamp(txDate),
       })
       showToast(`Bought ${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} units of ${holding!.name}`, 'success')
       onClose()
@@ -803,6 +820,10 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
             />
           </div>
         )}
+
+        {/* Transaction Date */}
+        <TransactionDateField value={txDate} onChange={setTxDate} />
+
         {isStock && !usdThb && (
           <div className="rounded-xl bg-warn-soft px-4 py-3 text-[13px] font-medium text-warn">
             USD/THB rate is loading. Please wait before saving to avoid wrong values.
