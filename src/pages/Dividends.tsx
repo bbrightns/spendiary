@@ -288,38 +288,49 @@ export function Dividends() {
 
                     return (
                       <li key={h.id} className="p-3.5 sm:px-5 sm:py-4 hover:bg-surface-muted/50 transition-colors">
-                        {/* Mobile Layout (2 Rows) & Desktop Layout (1 Row) */}
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4">
+                        <div className="flex flex-col gap-2.5">
                           
-                          {/* Top Row on Mobile: Logo + Name/Ticker + Estimated Net Amount */}
-                          <div className="flex items-center justify-between gap-3 min-w-0">
-                            <div
-                              onClick={() => setEditingHolding(h)}
-                              title="แตะเพื่อดูรายละเอียดและแก้ไขการปันผล"
-                              className="flex items-center gap-2.5 sm:gap-3 min-w-0 cursor-pointer group/item flex-1"
-                            >
+                          {/* ── แถวที่ 1: ข้อมูลหุ้น / ยอดเงิน & % ต่อปี / ปุ่มแก้ไข ── */}
+                          <div className="flex items-start justify-between gap-3 min-w-0">
+                            {/* ฝั่งซ้าย: Logo + ชื่อหุ้น + บรรทัดต่อมาเป็น % ต่อปี | ปุ่มแก้ไข */}
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
                               <AssetLogo name={h.name} assetClass={h.assetClass} size="md" />
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="font-display font-bold text-[15px] text-ink group-hover/item:text-brand transition-colors">
+                              <div className="min-w-0 flex-1">
+                                {/* บรรทัด 1.1: ชื่อย่อ + ชื่อเต็ม */}
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <span className="font-display font-bold text-[15px] sm:text-[16px] text-ink truncate">
                                     {h.ticker}
                                   </span>
-                                  <span className="text-[12px] text-ink-muted truncate max-w-[120px] sm:max-w-xs">
+                                  <span className="text-[12px] text-ink-muted truncate max-w-[140px] sm:max-w-xs">
                                     {h.name}
                                   </span>
-                                  {assetYieldPct > 0 && (
-                                    <span className="inline-flex items-center rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.2 text-[10.5px] font-bold">
-                                      ~{assetYieldPct.toFixed(1)}%/ปี
+                                </div>
+
+                                {/* บรรทัด 1.2: % ต่อปี | [ปุ่มแก้ไข] */}
+                                <div className="flex items-center gap-2 mt-1 text-[11px] sm:text-[12px]">
+                                  {assetYieldPct > 0 ? (
+                                    <span className="inline-flex items-center rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 font-bold">
+                                      ~{assetYieldPct.toFixed(1)}% ต่อปี
                                     </span>
+                                  ) : (
+                                    <span className="text-ink-muted">-</span>
                                   )}
+                                  <span className="text-line">|</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingHolding(h)}
+                                    className="inline-flex items-center text-brand hover:text-brand-ink font-semibold hover:underline cursor-pointer transition-colors"
+                                  >
+                                    แก้ไขปันผล ↗
+                                  </button>
                                 </div>
                               </div>
                             </div>
 
-                            {/* Estimated Amount (Visible on mobile top-right and desktop) */}
+                            {/* ฝั่งขวา: ยอดเงินที่จะได้รับ */}
                             {estNet > 0 && (
                               <div className="text-right shrink-0">
-                                <span className="font-display text-[15px] sm:text-[16px] font-extrabold text-emerald-600 dark:text-emerald-400 tnum">
+                                <span className="font-display text-[16px] sm:text-[18px] font-extrabold text-emerald-600 dark:text-emerald-400 tnum">
                                   ~{thb(estNet)}
                                 </span>
                                 <p className="text-[9.5px] sm:text-[10.5px] text-ink-muted">ได้สุทธิประมาณ</p>
@@ -327,26 +338,28 @@ export function Dividends() {
                             )}
                           </div>
 
-                          {/* Bottom Row on Mobile / Inline details on Desktop */}
-                          <div className="flex items-center justify-between gap-2 pt-1.5 sm:pt-0 border-t border-line/40 sm:border-0">
-                            <div className="text-[11.5px] text-ink-muted flex items-center gap-1.5 flex-wrap min-w-0">
+                          {/* ── เส้นคั่นบางๆ ── */}
+                          <div className="border-t border-line/60" />
+
+                          {/* ── แถวที่ 2: จำนวนหุ้น, ปันผล xx บาท/ปี  และ  [ปุ่มยืนยันรับเงิน] ── */}
+                          <div className="flex items-center justify-between gap-3 min-w-0">
+                            {/* ฝั่งซ้าย: จำนวนหุ้น, ปันผล xx บาท/รอบ หรือ /ปี */}
+                            <div className="text-[12px] text-ink-muted min-w-0 truncate">
                               <span>{units.toLocaleString()} หุ้น</span>
-                              <span>·</span>
-                              <span>ปันผล: <strong className="text-ink font-semibold">{dps > 0 ? `${sym}${dps}` : 'N/A'}</strong></span>
-                              <button
-                                type="button"
-                                onClick={() => setEditingHolding(h)}
-                                className="text-[10.5px] font-semibold text-brand hover:underline cursor-pointer bg-brand/10 px-1.5 py-0.5 rounded transition-all"
-                              >
-                                แก้ไขปันผล ↗
-                              </button>
+                              <span className="mx-1.5">·</span>
+                              <span>ปันผล: <strong className="text-ink font-semibold">{dps > 0 ? `${sym}${dps}` : 'N/A'}</strong> / หุ้น</span>
+                              {annualGross > 0 && (
+                                <span className="hidden sm:inline text-ink-muted">
+                                  {' '}(รวมทั้งปี ~{thb(annualGross)})
+                                </span>
+                              )}
                             </div>
 
-                            {/* Action Buttons */}
+                            {/* ฝั่งขวา: ปุ่ม Action */}
                             <div className="shrink-0">
                               {isReceived ? (
                                 <div className="flex items-center gap-1.5">
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-2.5 py-1 text-[11.5px] font-bold text-gain">
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-3 py-1 text-[11.5px] sm:text-[12px] font-bold text-gain">
                                     <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} /> ได้รับแล้ว
                                   </span>
                                   <button
@@ -361,7 +374,7 @@ export function Dividends() {
                                 <button
                                   type="button"
                                   onClick={() => handleOpenAddModal(h, dps > 0 ? dps : undefined)}
-                                  className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-3 sm:px-3.5 py-1.5 text-[11.5px] sm:text-[12px] font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
+                                  className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 sm:px-4 py-1.5 text-[11.5px] sm:text-[12px] font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
                                 >
                                   <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.2} />
                                   ยืนยันรับเงิน
