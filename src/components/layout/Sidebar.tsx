@@ -241,14 +241,14 @@ export function Sidebar() {
         {/* User Card + Theme Switch */}
         <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-surface-muted/50 border border-line/40">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-ink text-white font-bold text-[12px] dark:bg-brand-soft dark:text-brand">
+            <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-ink text-white font-bold text-xs dark:bg-brand-soft dark:text-brand">
               {userInitial}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[12.5px] font-bold text-ink leading-tight">
+              <p className="truncate text-xs font-bold text-ink leading-tight">
                 {displayName}
               </p>
-              <p className="truncate text-[10.5px] text-ink-muted leading-tight">
+              <p className="truncate text-[11px] text-ink-muted leading-tight">
                 {user?.id === 'guest-local' ? 'Local Mode' : 'Cloud Sync'}
               </p>
             </div>
@@ -259,7 +259,7 @@ export function Sidebar() {
             onClick={toggleTheme}
             className="grid h-11 w-11 place-items-center rounded-xl text-ink-muted hover:bg-surface hover:text-ink hover:shadow-xs transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             title="Toggle theme"
-            aria-label="Toggle theme"
+            aria-label="เปลี่ยนธีม (Toggle light and dark theme)"
           >
             <svg className="h-5 w-5 dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />

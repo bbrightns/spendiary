@@ -166,10 +166,10 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
 
       {/* Salary boundary bracket (Idea 1: Monthly Salary span) */}
       {isOverflow && (
-        <div className="mt-2 text-[11px] text-ink-muted">
+        <div className="mt-2 text-xs text-ink-muted">
           <div
             style={{ width: `${salaryPct}%` }}
-            className="border-b-2 border-l border-r border-line-strong rounded-b-md pt-1 pb-0.5 text-center transition-all duration-500"
+            className="border-b border-l border-r border-line-strong rounded-b-md pt-1 pb-0.5 text-center transition-all duration-500"
           >
             <span className="font-semibold text-ink-soft">Monthly Salary ({thb(salary)})</span>
           </div>

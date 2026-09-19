@@ -80,8 +80,11 @@ export function BottomNav() {
                   key={item.id}
                   type="button"
                   onClick={handleClick}
+                  aria-label={item.label}
+                  aria-expanded={isCashflow ? isCashflowSheetOpen : isStrategySheetOpen}
+                  aria-haspopup="dialog"
                   className={[
-                    'group relative flex flex-1 flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-[10.5px] font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset cursor-pointer',
+                    'group relative flex flex-1 flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-xs font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset cursor-pointer min-h-[48px]',
                     isActive ? 'text-brand-ink' : 'text-ink-muted',
                   ].join(' ')}
                 >
@@ -91,7 +94,7 @@ export function BottomNav() {
                       isActive ? 'bg-brand-soft' : 'bg-transparent',
                     ].join(' ')}
                   >
-                    <item.icon className="h-[20px] w-[20px]" strokeWidth={isActive ? 2 : 1.6} />
+                    <item.icon className="h-5 w-5" strokeWidth={isActive ? 2 : 1.6} />
 
                     {/* iPhone style notification badge bubble */}
                     {badgeCount > 0 && (
@@ -118,8 +121,10 @@ export function BottomNav() {
               <Link
                 key={item.id}
                 to={toPath}
+                aria-label={item.label}
+                aria-current={isActive ? 'page' : undefined}
                 className={[
-                  'group relative flex flex-1 flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-[10.5px] font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
+                  'group relative flex flex-1 flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-xs font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset min-h-[48px]',
                   isActive ? 'text-brand-ink' : 'text-ink-muted',
                 ].join(' ')}
               >
@@ -129,7 +134,7 @@ export function BottomNav() {
                     isActive ? 'bg-brand-soft' : 'bg-transparent',
                   ].join(' ')}
                 >
-                  <item.icon className="h-[20px] w-[20px]" strokeWidth={isActive ? 2 : 1.6} />
+                  <item.icon className="h-5 w-5" strokeWidth={isActive ? 2 : 1.6} />
 
                   {/* Route notification badge bubble */}
                   {routeBadge > 0 && (

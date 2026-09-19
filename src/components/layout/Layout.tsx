@@ -36,16 +36,16 @@ export function Layout({ children }: { children: ReactNode }) {
         }`}
       >
         <img src="/logo.png" alt="Spendiary Logo" className="h-7 w-7 sm:h-8 sm:w-8 object-contain shrink-0" />
-        <p className="font-display text-[17px] sm:text-[17.5px] font-extrabold tracking-tight leading-none text-ink -translate-y-[0.5px]">
+        <p className="font-display text-base sm:text-lg font-extrabold tracking-tight leading-none text-ink -translate-y-[0.5px]">
           Spendiary
         </p>
         {isTestMode && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300 border border-amber-500/30 px-2 py-0.5 text-[9px] sm:text-[9.5px] font-extrabold tracking-wider uppercase shadow-xs">
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300 border border-amber-500/30 px-2 py-0.5 text-[10px] font-extrabold tracking-wider uppercase shadow-xs">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
             Test
           </span>
         )}
-        <p className="flex-1 text-right text-[11.5px] sm:text-[12px] font-semibold uppercase tracking-wide text-ink-muted truncate mr-1">
+        <p className="flex-1 text-right text-xs font-semibold uppercase tracking-wide text-ink-muted truncate mr-1">
           {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
         </p>
         <div className="flex items-center gap-1 shrink-0">

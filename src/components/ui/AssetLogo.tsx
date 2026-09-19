@@ -68,7 +68,7 @@ export function AssetLogo({
         title={name || ticker || 'Cash'}
         className={`relative inline-flex items-center justify-center shrink-0 rounded-full font-bold shadow-xs select-none ${sizeClasses[size]} ${className}`}
         style={{
-          background: `linear-gradient(135deg, ${bg} 0%, color-mix(in srgb, ${bg} 70%, #000) 100%)`,
+          background: `linear-gradient(135deg, ${bg} 0%, color-mix(in srgb, ${bg} 70%, black) 100%)`,
           color: '#ffffff',
         }}
       >
@@ -322,7 +322,7 @@ export function AssetLogo({
       title={ticker || name}
       className={`relative inline-flex items-center justify-center shrink-0 rounded-full font-bold shadow-xs select-none ${sizeClasses[size]} ${className}`}
       style={{
-        background: `linear-gradient(135deg, ${metaColor} 0%, color-mix(in srgb, ${metaColor} 70%, #000) 100%)`,
+        background: `linear-gradient(135deg, ${metaColor} 0%, color-mix(in srgb, ${metaColor} 70%, black) 100%)`,
         color: '#ffffff',
       }}
     >

@@ -77,14 +77,7 @@ function AppContent() {
           {/* Hero Headline */}
           <h1 className="font-display font-black text-3xl sm:text-5xl md:text-6xl text-slate-950 text-center tracking-tight leading-[1.15] max-w-2xl mb-3 sm:mb-4 px-2 text-balance">
             Spend smarter.{' '}
-            <span 
-              className="block mt-1 sm:mt-2 italic font-black bg-clip-text text-transparent bg-gradient-to-r from-[#405DFF] to-[#DFAA41]"
-              style={{
-                backgroundImage: 'linear-gradient(to right, #405DFF 0%, #DFAA41 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
+            <span className="block mt-1 sm:mt-2 font-black text-brand tracking-tight">
               Now live wealthier.
             </span>
           </h1>
@@ -98,55 +91,69 @@ function AppContent() {
           <div className="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-[22px] sm:rounded-[24px] border border-slate-200/90 shadow-[0_12px_40px_rgba(15,23,42,0.06)] p-5 sm:p-8 mb-8 sm:mb-12">
             <div className="text-center mb-5 sm:mb-6">
               <h2 className="font-display font-extrabold text-lg sm:text-xl text-slate-900 tracking-tight">
-                Sign in to Spendiary
+                Welcome to Spendiary
               </h2>
-              <p className="text-slate-500 text-[11.5px] sm:text-xs mt-0.5 sm:mt-1">
-                Choose your preferred sign-in method to continue
+              <p className="text-slate-500 text-xs sm:text-sm mt-1">
+                Your private dashboard for wealth and investments
               </p>
             </div>
 
             {authError && (
-              <div className="mb-4 sm:mb-5 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs leading-relaxed text-center font-medium">
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-600 text-center">
                 {authError}
               </div>
             )}
 
-            <div className="flex flex-col gap-2.5 sm:gap-3">
-              {/* Google Sign In */}
-              <button
-                type="button"
-                onClick={loginWithGoogle}
-                className="w-full py-3.5 px-4 bg-[#0066FF] hover:bg-[#0052cc] text-white font-bold rounded-full shadow-md shadow-blue-500/25 active:scale-[0.98] transition-all duration-200 text-xs tracking-wider uppercase flex items-center justify-center gap-2.5 sm:gap-3 cursor-pointer"
-              >
-                <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center shrink-0 shadow-xs">
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
-                  </svg>
-                </div>
-                <span>Sign in with Google</span>
-              </button>
+            {/* 1. Google Sign-In Button */}
+            <button
+              onClick={loginWithGoogle}
+              className="w-full h-11 sm:h-12 bg-slate-900 hover:bg-slate-800 text-white rounded-xl sm:rounded-2xl font-semibold text-xs sm:text-sm shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]"
+            >
+              <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                />
+              </svg>
+              <span>Continue with Google</span>
+            </button>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 my-3 sm:my-3.5">
+              <div className="h-px flex-1 bg-slate-200/80" />
+              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">or</span>
+              <div className="h-px flex-1 bg-slate-200/80" />
             </div>
 
-            {/* Test Mode */}
-            <div className="mt-3.5 sm:mt-4 text-center">
-              <button
-                type="button"
-                onClick={loginAsTestMode}
-                className="inline-flex items-center gap-1.5 text-slate-500 hover:text-[#0066FF] text-xs font-semibold transition-colors py-1 cursor-pointer"
-              >
-                <span>✨</span>
-                <span className="underline underline-offset-2">Try Demo / Test Mode</span>
-              </button>
-            </div>
+            {/* 2. Test / Offline Mode */}
+            <button
+              onClick={loginAsTestMode}
+              className="w-full h-11 sm:h-12 bg-slate-100 hover:bg-slate-200/80 text-slate-700 hover:text-slate-900 rounded-xl sm:rounded-2xl font-semibold text-xs sm:text-sm border border-slate-200/60 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+            >
+              <svg className="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              <span>Explore Demo / Offline Mode</span>
+            </button>
 
-            {/* Security Assurance Footer */}
-            <div className="mt-5 sm:mt-6 pt-3.5 sm:pt-4 border-t border-slate-100 flex items-center justify-center text-[10.5px] sm:text-[11px] text-slate-500 font-medium text-center">
-              <span className="inline-flex items-center justify-center gap-1.5 text-slate-500 leading-tight">
-                <svg className="w-3.5 h-3.5 text-[#0066FF] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            {/* Trust badge under sign-in */}
+            <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-center gap-1.5 text-[11px] text-slate-600 font-medium">
+              <span className="inline-flex items-center gap-1.5 text-center">
+                <svg className="w-3.5 h-3.5 text-emerald-600 shrink-0 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
                 <span className="sm:hidden">Secure Cloud Sync · 100% Client Privacy</span>
                 <span className="hidden sm:inline">Secure Cloud Synchronization · 100% Client Privacy</span>
@@ -154,14 +161,11 @@ function AppContent() {
             </div>
           </div>
 
-          {/* ── 3 Feature Cards (Fastwork Translucent Style - Horizontal with Gradient Badge) ── */}
+          {/* ── 3 Feature Cards ── */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4 w-full max-w-md md:max-w-4xl">
             {/* Card 1 */}
             <div className="bg-white/60 hover:bg-white/75 backdrop-blur-md rounded-[20px] border border-white/80 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
-              <div 
-                className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 text-white shadow-sm"
-                style={{ background: 'linear-gradient(140deg, #6079FE 0%, #765EFD 50%, #B875B4 100%)' }}
-              >
+              <div className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 bg-brand-soft text-brand shadow-xs">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                   <path d="m9 12 2 2 4-4" />
@@ -179,10 +183,7 @@ function AppContent() {
 
             {/* Card 2 */}
             <div className="bg-white/60 hover:bg-white/75 backdrop-blur-md rounded-[20px] border border-white/80 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
-              <div 
-                className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 text-white shadow-sm"
-                style={{ background: 'linear-gradient(140deg, #6079FE 0%, #765EFD 50%, #B875B4 100%)' }}
-              >
+              <div className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 bg-brand-soft text-brand shadow-xs">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                 </svg>
@@ -199,10 +200,7 @@ function AppContent() {
 
             {/* Card 3 */}
             <div className="bg-white/60 hover:bg-white/75 backdrop-blur-md rounded-[20px] border border-white/80 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
-              <div 
-                className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 text-white shadow-sm"
-                style={{ background: 'linear-gradient(140deg, #6079FE 0%, #765EFD 50%, #B875B4 100%)' }}
-              >
+              <div className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 bg-brand-soft text-brand shadow-xs">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="3" width="18" height="18" rx="4" />
                   <path d="m9 12 2 2 4-4" />

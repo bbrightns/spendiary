@@ -55,13 +55,10 @@ export function Footer({ className = '', lightOnly = false }: FooterProps) {
           © 2026 Spendiary. Every choice shapes your wealth.
         </p>
 
-        {/* Gradient Accent Bar + Tag */}
+        {/* Brand Accent Bar + Tag */}
         <div className="flex items-center gap-2.5 pt-0.5">
-          <span
-            className="w-7 h-[2px] rounded-full shrink-0"
-            style={{ background: 'linear-gradient(to right, #405DFF, #DFAA41)' }}
-          />
-          <span className={`text-[11.5px] font-medium ${textClass}`}>
+          <span className="w-7 h-[2px] rounded-full shrink-0 bg-brand/80 dark:bg-brand" />
+          <span className={`text-xs font-medium ${textClass}`}>
             Designed & Built by bbrightns
           </span>
         </div>
