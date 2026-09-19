@@ -47,7 +47,7 @@ const CASH_COLORS = [
   'var(--color-funds)', // violet
   'var(--color-real-estate)', // teal
   '#f97316', // orange
-  '#ec4899', // pink
+  '#64748b', // slate
 ]
 
 export function Dashboard() {
@@ -160,25 +160,25 @@ export function Dashboard() {
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between mb-4">
         <div>
           {today && (
-            <p className="mb-1 text-[12px] font-semibold uppercase tracking-[0.08em] text-brand">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-brand">
               {today}
             </p>
           )}
           <div className="flex items-center gap-2.5">
-            <h1 className="font-display text-[27px] font-extrabold leading-none tracking-tight text-ink [text-wrap:balance]">
+            <h1 className="font-display text-2xl sm:text-3xl font-extrabold leading-none tracking-tight text-ink [text-wrap:balance]">
               {`${greeting}${data.userName ? `, ${data.userName}` : ''}`}
             </h1>
             <button
               type="button"
               onClick={startTour}
               title="Page Guide"
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold text-brand bg-brand/10 hover:bg-brand/20 dark:bg-[#4f46e5]/20 dark:text-[#c7d2fe] dark:border-[#4f46e5]/40 active:scale-95 transition-all border border-brand/20 cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold text-brand bg-brand/10 hover:bg-brand/20 dark:bg-brand/20 dark:text-brand-ink dark:border-brand/40 active:scale-95 transition-all border border-brand/20 cursor-pointer shadow-xs"
             >
               <HelpCircleIcon className="w-3.5 h-3.5" />
               <span>Guide</span>
             </button>
           </div>
-          <p className="mt-2 text-[14.5px] text-ink-muted">
+          <p className="mt-1.5 text-sm text-ink-muted">
             Here's where your wealth and cash flow stand.
           </p>
         </div>
@@ -189,9 +189,9 @@ export function Dashboard() {
             type="button"
             onClick={() => setAiImportOpen(true)}
             title="Import Portfolio & Cash with AI"
-            className="inline-flex items-center gap-1.5 rounded-full border border-brand/25 bg-brand-soft/80 hover:bg-brand hover:text-white dark:bg-brand/20 dark:hover:bg-brand px-3.5 py-1.5 text-[12.5px] font-semibold text-brand-ink dark:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface hover:bg-surface-muted text-ink dark:border-white/10 px-3.5 py-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer shadow-xs"
           >
-            <SparkleIcon className="h-3.5 w-3.5" />
+            <SparkleIcon className="h-3.5 w-3.5 text-brand" />
             <span>Import (AI/JSON)</span>
           </button>
 
@@ -201,23 +201,23 @@ export function Dashboard() {
                 type="button"
                 onClick={() => navigate('/debts')}
                 aria-label={`View ${debtActions.length} debts due for payment`}
-                className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[12.5px] font-semibold transition-all active:scale-95 cursor-pointer shadow-xs ${
+                className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer shadow-xs ${
                   hasOverdueDebts
-                    ? 'border-rose-500/30 bg-rose-500/15 text-rose-700 dark:text-rose-300 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600'
-                    : 'border-pink-500/30 bg-pink-500/10 text-pink-700 dark:text-pink-300 hover:bg-pink-500 hover:text-white dark:hover:bg-pink-600'
+                    ? 'border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600'
+                    : 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-600'
                 }`}
               >
                 <span
-                  className={`flex h-4.5 w-4.5 items-center justify-center rounded-full text-[10.5px] font-bold text-white ${
-                    hasOverdueDebts ? 'bg-rose-500 animate-pulse' : 'bg-pink-500'
+                  className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white ${
+                    hasOverdueDebts ? 'bg-rose-500 animate-pulse' : 'bg-amber-500'
                   }`}
                 >
                   {debtActions.length}
                 </span>
                 <span>
                   {hasOverdueDebts
-                    ? `${debtActions.length} ${debtActions.length === 1 ? 'หนี้เลยกำหนด' : 'หนี้เลยกำหนด'}`
-                    : `${debtActions.length} ${debtActions.length === 1 ? 'หนี้รอจ่ายรอบนี้' : 'หนี้รอจ่ายรอบนี้'}`}
+                    ? `${debtActions.length} หนี้เลยกำหนด`
+                    : `${debtActions.length} หนี้รอชำระ`}
                 </span>
               </button>
             </div>
@@ -229,12 +229,12 @@ export function Dashboard() {
                 type="button"
                 onClick={() => navigate('/dca')}
                 aria-label={`View ${dcaActions.length} DCA ${dcaActions.length === 1 ? 'buy' : 'buys'} ready to confirm`}
-                className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand-soft px-3.5 py-1.5 text-[12.5px] font-semibold text-brand-ink transition-all hover:bg-brand hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand-soft/70 px-3.5 py-1.5 text-xs font-medium text-brand-ink transition-all hover:bg-brand hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 cursor-pointer shadow-xs"
               >
-                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand dark:bg-[#4f46e5] text-[10.5px] font-bold text-white">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand dark:bg-[#4f46e5] text-[10px] font-bold text-white">
                   {dcaActions.length}
                 </span>
-                <span>DCA {dcaActions.length === 1 ? 'buy ready' : 'buys ready'}</span>
+                <span>{dcaActions.length} DCA รอซื้อ</span>
               </button>
             </div>
           )}
