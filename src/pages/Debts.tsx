@@ -673,6 +673,13 @@ export function Debts() {
         title={historyModalLiability ? `ประวัติการชำระ: ${historyModalLiability.name}` : 'ประวัติการชำระ'}
         description="ประวัติบันทึกการตัดรอบและชำระค่างวดที่บันทึกไว้ใน Activity Logs"
         size="lg"
+        footer={
+          <div className="flex items-center justify-end w-full">
+            <Button variant="secondary" onClick={() => setHistoryModalLiability(null)}>
+              ปิด
+            </Button>
+          </div>
+        }
       >
         <div className="space-y-3 py-1">
           {historyLogs.length === 0 ? (

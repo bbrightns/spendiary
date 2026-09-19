@@ -941,8 +941,18 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
       onClose={onClose}
       title={initialAccount.name ? 'แก้ไขข้อมูลบัญชีเงินสด' : 'เพิ่มบัญชีเงินสดใหม่'}
       size="md"
+      footer={
+        <div className="flex items-center justify-end gap-2 w-full">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            ยกเลิก
+          </Button>
+          <Button type="submit" form="account-edit-form">
+            บันทึกบัญชี
+          </Button>
+        </div>
+      }
     >
-      <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+      <form id="account-edit-form" onSubmit={handleSubmit} className="space-y-4 pt-1">
         {/* Name */}
         <div>
           <label className="block text-[12px] font-bold text-ink mb-1">
@@ -1138,16 +1148,6 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
               </div>
             </div>
           )}
-        </div>
-
-        {/* Buttons */}
-        <div className="flex items-center justify-end gap-2 pt-3 border-t border-line/50">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            ยกเลิก
-          </Button>
-          <Button type="submit">
-            บันทึกบัญชี
-          </Button>
         </div>
       </form>
     </Modal>
