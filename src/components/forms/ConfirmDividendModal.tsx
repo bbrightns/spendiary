@@ -153,8 +153,26 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
       onClose={onClose}
       title="บันทึกรับเงินปันผล"
       description="บันทึกเงินปันผลเข้าพอร์ตและบัญชีเงินสด"
+      footer={
+        <div className="flex items-center justify-end gap-3">
+          <Button type="button" variant="ghost" onClick={onClose}>
+            ยกเลิก
+          </Button>
+          <Button
+            type="submit"
+            form="confirm-dividend-form"
+            variant="primary"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+          >
+            <CheckCircleIcon className="h-4 w-4 mr-1.5" strokeWidth={2.2} />
+            {netAmount > 0
+              ? `ยืนยันรับเงิน (${formatCur(netAmount)})`
+              : 'ยืนยันรับเงินปันผล'}
+          </Button>
+        </div>
+      }
     >
-      <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+      <form id="confirm-dividend-form" onSubmit={handleSubmit} className="space-y-4 pt-1">
         {/* Selected Holding Card or Selector */}
         {holding ? (
           <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface-muted/50 p-3.5">
@@ -273,23 +291,6 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
           value={note}
           onChange={setNote}
         />
-
-        {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-3 pt-3">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            ยกเลิก
-          </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
-          >
-            <CheckCircleIcon className="h-4 w-4 mr-1.5" strokeWidth={2.2} />
-            {netAmount > 0
-              ? `ยืนยันรับเงิน (${formatCur(netAmount)})`
-              : 'ยืนยันรับเงินปันผล'}
-          </Button>
-        </div>
       </form>
     </Modal>
   )
