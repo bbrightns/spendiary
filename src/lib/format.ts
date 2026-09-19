@@ -55,6 +55,15 @@ export function signedThb(value: number): string {
   return `${sign}฿${NBSP}${baht.format(Math.abs(Math.round(value)))}`
 }
 
+/** Signed compact money, e.g. +฿1.24M or -฿500K */
+export function signedThbCompact(value: number): string {
+  const abs = Math.abs(value)
+  const sign = value > 0 ? '+' : value < 0 ? '-' : ''
+  if (abs >= 1_000_000) return `${sign}฿${NBSP}${(abs / 1_000_000).toFixed(2)}M`
+  if (abs >= 1_000) return `${sign}฿${NBSP}${(abs / 1_000).toFixed(1)}K`
+  return `${sign}฿${NBSP}${baht.format(Math.round(abs))}`
+}
+
 export function formatNumber(value: number, decimals = 2): string {
   return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: decimals,

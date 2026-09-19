@@ -732,7 +732,10 @@ export function Dashboard() {
 
                   {/* Row 2: Values */}
                   <div className="flex items-baseline min-w-0">
-                    <p className={`font-display text-[21px] sm:text-[24px] font-extrabold tracking-tight tnum leading-tight truncate ${debts > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-ink dark:text-white'}`}>
+                    <p
+                      className={`font-display text-[19px] sm:text-[22px] font-extrabold tracking-tight tnum leading-tight truncate ${debts > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-ink dark:text-white'}`}
+                      title={debts > 0 ? `-${thb(debts)}` : '฿0'}
+                    >
                       {debts > 0 ? `-${thb(debts)}` : '฿0'}
                     </p>
                   </div>
@@ -792,8 +795,8 @@ export function Dashboard() {
                     })}
                   </div>
 
-                  {/* Liabilities list grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                  {/* Liabilities list compact rows */}
+                  <div className="space-y-2 pt-1">
                     {data.liabilities!.map((l) => {
                       const meta = DEBT_CATEGORIES[l.category] ?? DEBT_CATEGORIES.other
                       const isInst = l.isInstallment || l.category === 'installment'
@@ -810,102 +813,76 @@ export function Dashboard() {
                             setSelectedLiabilityId(l.id)
                             setLiabilitiesOpen(true)
                           }}
-                          className="flex flex-col justify-between text-left p-3 rounded-2xl bg-surface-muted/50 border border-line/40 hover:bg-surface-muted/90 hover:border-brand/40 hover:shadow-xs group transition-all cursor-pointer relative"
+                          className="p-3 rounded-2xl bg-surface-muted/50 border border-line/40 hover:bg-surface-muted/90 hover:border-brand/40 hover:shadow-xs group transition-all cursor-pointer relative"
                         >
-                          <div>
-                            {/* Top row: Name & Due status / Rate */}
-                            <div className="flex items-center justify-between gap-1.5 text-[11px] font-medium text-ink-muted w-full">
-                              <span className="flex items-center gap-1.5 min-w-0 truncate">
-                                <span
-                                  className="h-2 w-2 shrink-0 rounded-full"
-                                  style={{ background: meta.color }}
-                                />
-                                <span className="truncate font-semibold text-ink group-hover:text-brand transition-colors">
-                                  {l.name}
-                                </span>
+                          {/* Row 1: Left (Color dot + Name + Interest rate) | Right (Balance) */}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                              <span
+                                className="h-2 w-2 shrink-0 rounded-full"
+                                style={{ background: meta.color }}
+                              />
+                              <span className="truncate font-semibold text-[13px] text-ink group-hover:text-brand transition-colors">
+                                {l.name}
                               </span>
-
-                              <div className="flex items-center gap-1 shrink-0">
-                                {l.interestRate !== undefined && l.interestRate > 0 && (
-                                  <span className="text-[9.5px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded font-mono">
-                                    {l.interestRate}%
-                                  </span>
-                                )}
-                                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${dueInfo.badgeClass}`}>
-                                  {dueInfo.label}
+                              {l.interestRate !== undefined && l.interestRate > 0 && (
+                                <span className="shrink-0 text-[9.5px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded font-mono">
+                                  {l.interestRate}%
                                 </span>
-                              </div>
+                              )}
                             </div>
 
-                            {/* Amount and installment terms */}
-                            <div className="mt-2 flex items-baseline justify-between gap-2">
-                              <div>
-                                <span className={`font-display font-extrabold tnum text-[15px] ${l.balance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                                  {l.balance > 0 ? `-${thb(l.balance)}` : '฿0 (ครบแล้ว)'}
-                                </span>
-                                {l.monthlyPayment && l.monthlyPayment > 0 && l.balance > 0 && (
-                                  <span className="text-[11px] text-ink-faint ml-1.5 font-medium">
-                                    ({thb(l.monthlyPayment)}/งวด)
-                                  </span>
-                                )}
-                              </div>
+                            <div className="shrink-0 text-right">
+                              <span className={`font-display font-extrabold tnum text-[14.5px] ${l.balance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                {l.balance > 0 ? `-${thb(l.balance)}` : '฿0 (ครบแล้ว)'}
+                              </span>
+                            </div>
+                          </div>
 
+                          {/* Row 2: Left (Due badge, Monthly/Installment info) | Right (Quick Action or Status) */}
+                          <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
+                            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${dueInfo.badgeClass}`}>
+                                {dueInfo.label}
+                              </span>
+                              {l.monthlyPayment && l.monthlyPayment > 0 && l.balance > 0 && (
+                                <span className="text-ink-muted font-medium shrink-0">
+                                  ~{thb(l.monthlyPayment)}/งวด
+                                </span>
+                              )}
                               {isInst && totalInst > 0 && (
-                                <span className="text-[11px] font-bold text-pink-600 dark:text-pink-400 bg-pink-500/10 px-2 py-0.5 rounded-md shrink-0">
+                                <span className="text-[10.5px] font-bold text-pink-600 dark:text-pink-400 bg-pink-500/10 px-1.5 py-0.2 rounded shrink-0">
                                   {paidInst}/{totalInst} งวด
                                 </span>
                               )}
                             </div>
 
-                            {/* Progress bar for installment plans */}
-                            {isInst && totalInst > 0 && (
-                              <div className="mt-2">
-                                <div className="flex items-center justify-between text-[10px] font-semibold text-ink-faint mb-1">
-                                  <span>ความคืบหน้า ({percent}%)</span>
-                                  <span>{remainingInst === 0 ? 'ครบแล้ว 🎉' : `เหลืออีก ${remainingInst} งวด`}</span>
-                                </div>
-                                <div className="w-full h-1.5 rounded-full bg-surface-muted dark:bg-white/10 overflow-hidden">
-                                  <div
-                                    className={`h-full rounded-full transition-all duration-500 ${
-                                      percent >= 100 ? 'bg-emerald-500' : 'bg-pink-500'
-                                    }`}
-                                    style={{ width: `${percent}%` }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Quick Check-off Action Bar */}
-                          {(l.monthlyPayment || isInst) && (
-                            <div className="mt-3 pt-2 border-t border-line/40 dark:border-white/5 flex items-center justify-between">
-                              {dueInfo.status === 'completed' ? (
-                                <span className="text-[11.5px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-                                  🎉 ปลดหนี้รายการนี้สำเร็จแล้ว
-                                </span>
-                              ) : dueInfo.status === 'paid' ? (
-                                <div className="flex items-center justify-between w-full text-[11px]">
-                                  <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
-                                    <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.5} />
-                                    <span>จ่ายงวดนี้แล้ว</span>
+                            {/* Quick Action / Status */}
+                            {(l.monthlyPayment || isInst) && (
+                              <div className="shrink-0">
+                                {dueInfo.status === 'completed' ? (
+                                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                                    🎉 ปลดหนี้แล้ว
                                   </span>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      undoLiabilityPayment(l.id)
-                                    }}
-                                    className="text-[10.5px] font-semibold text-ink-faint hover:text-rose-600 hover:underline cursor-pointer"
-                                    title="ย้อนกลับการชำระงวดนี้"
-                                  >
-                                    ยกเลิก (Undo)
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-between w-full">
-                                  <span className="text-[10.5px] text-ink-muted truncate mr-2">
-                                    {l.dueDay ? `ตัดยอดทุกวันที่ ${l.dueDay}` : 'รอบเดือนนี้'}
-                                  </span>
+                                ) : dueInfo.status === 'paid' ? (
+                                  <div className="flex items-center gap-1.5 text-[10.5px]">
+                                    <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+                                      <CheckIcon className="h-3 w-3" strokeWidth={2.5} />
+                                      <span>จ่ายงวดนี้แล้ว</span>
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        undoLiabilityPayment(l.id)
+                                      }}
+                                      className="font-semibold text-ink-faint hover:text-rose-600 hover:underline cursor-pointer"
+                                      title="ย้อนกลับการชำระงวดนี้"
+                                    >
+                                      ยกเลิก
+                                    </button>
+                                  </div>
+                                ) : (
                                   <button
                                     type="button"
                                     onClick={(e) => {
@@ -913,13 +890,31 @@ export function Dashboard() {
                                       payLiabilityInstallment(l.id)
                                     }}
                                     aria-label={`Pay installment for ${l.name}`}
-                                    className="inline-flex items-center gap-1 rounded-lg bg-pink-500 hover:bg-pink-600 text-white px-2.5 py-1 text-[11px] font-bold shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
+                                    className="inline-flex items-center gap-1 rounded-lg bg-pink-500 hover:bg-pink-600 text-white px-2 py-0.5 text-[10.5px] font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
                                   >
-                                    <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.5} />
+                                    <CheckIcon className="h-3 w-3" strokeWidth={2.5} />
                                     <span>จ่ายงวดนี้</span>
                                   </button>
-                                </div>
-                              )}
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Progress bar for installment plans */}
+                          {isInst && totalInst > 0 && (
+                            <div className="mt-2 pt-1.5 border-t border-line/30 dark:border-white/5">
+                              <div className="flex items-center justify-between text-[10px] font-semibold text-ink-faint mb-1">
+                                <span>ความคืบหน้า ({percent}%)</span>
+                                <span>{remainingInst === 0 ? 'ครบแล้ว 🎉' : `เหลืออีก ${remainingInst} งวด`}</span>
+                              </div>
+                              <div className="w-full h-1.5 rounded-full bg-surface-muted dark:bg-white/10 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-500 ${
+                                    percent >= 100 ? 'bg-emerald-500' : 'bg-pink-500'
+                                  }`}
+                                  style={{ width: `${percent}%` }}
+                                />
+                              </div>
                             </div>
                           )}
                         </div>
