@@ -126,19 +126,19 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
       note: note.trim() || undefined,
     })
 
-    showToast(`Recorded dividend of ฿${netAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })} for ${targetHolding.ticker}`, 'success')
+    showToast(`บันทึกรับเงินปันผล ${targetHolding.ticker} จำนวน ${formatCur(netAmount)} เรียบร้อยแล้ว`, 'success')
     onClose()
   }
 
   // Options for holding select dropdown
   const holdingOptions = data.holdings.map((h) => ({
     value: h.id,
-    label: `${h.ticker} · ${h.name} (${(h.units ?? 0).toLocaleString()} ${h.assetClass === 'fund' ? 'units' : 'shares'})`,
+    label: `${h.ticker} · ${h.name} (${(h.units ?? 0).toLocaleString()} ${h.assetClass === 'fund' ? 'หน่วย' : 'หุ้น'})`,
   }))
 
   // Options for cash account select dropdown
   const cashAccountOptions = [
-    { value: '', label: 'None · Do not deposit to cash (ไม่บันทึกเข้าบัญชี)' },
+    { value: '', label: 'ไม่บันทึกเข้าบัญชีเงินสด' },
     ...data.cashAccounts.map((c) => ({
       value: c.id,
       label: `${c.name} (${c.currency === 'USD' ? '$' : '฿'}${c.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`,
@@ -151,8 +151,8 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
     <Modal
       open={open}
       onClose={onClose}
-      title="Confirm Dividend Payment"
-      description="Record dividend payout into your portfolio and cash accounts."
+      title="บันทึกรับเงินปันผล"
+      description="บันทึกเงินปันผลเข้าพอร์ตและบัญชีเงินสด"
     >
       <form onSubmit={handleSubmit} className="space-y-4 pt-1">
         {/* Selected Holding Card or Selector */}
@@ -174,51 +174,51 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
               <p className="truncate text-[12.5px] text-ink-muted">{holding.name}</p>
             </div>
             <div className="text-right">
-              <span className="text-[11px] font-medium text-ink-muted">In Portfolio</span>
+              <span className="text-[11px] font-medium text-ink-muted">จำนวนที่มี</span>
               <p className="font-display text-[13px] font-bold text-ink">
-                {(holding.units ?? holding.totalUnits ?? 0).toLocaleString()} {holding.assetClass === 'fund' ? 'units' : 'shares'}
+                {(holding.units ?? holding.totalUnits ?? 0).toLocaleString()} {holding.assetClass === 'fund' ? 'หน่วย' : 'หุ้น'}
               </p>
             </div>
           </div>
         ) : (
           <SelectField
-            label="Select Holding (เลือกสินทรัพย์ที่ได้รับปันผล)"
+            label="เลือกสินทรัพย์"
             value={selectedHoldingId}
             options={holdingOptions}
             onChange={handleHoldingChange}
-            error={showErrors && !targetHolding ? 'Please select a holding' : undefined}
+            error={showErrors && !targetHolding ? 'กรุณาเลือกสินทรัพย์' : undefined}
           />
         )}
 
         {/* Date, DPS, Shares & Account Inputs (Single unified grid for perfect 2x2 horizontal alignment) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <TextField
-            label="Payment Date (วันที่รับเงิน)"
+            label="วันที่รับเงิน"
             type="date"
             value={paymentDate}
             onChange={setPaymentDate}
-            error={showErrors && !paymentDate ? 'Date is required' : undefined}
+            error={showErrors && !paymentDate ? 'กรุณาระบุวันที่' : undefined}
           />
 
           <NumberField
-            label="Dividend per Share (DPS)"
+            label="เงินปันผลต่อหุ้น"
             prefix={currencyPrefix}
             placeholder="0.00"
             value={dps}
             onChange={setDps}
-            error={showErrors && (!numDps || numDps <= 0) ? 'Required > 0' : undefined}
+            error={showErrors && (!numDps || numDps <= 0) ? 'ระบุยอดมากกว่า 0' : undefined}
           />
 
           <NumberField
-            label="Eligible Shares (จำนวนหุ้น)"
-            placeholder="e.g. 10,000"
+            label={targetHolding?.assetClass === 'fund' ? 'จำนวนหน่วยที่ถือ' : 'จำนวนหุ้นที่ถือ'}
+            placeholder="เช่น 1,000"
             value={shares}
             onChange={setShares}
-            error={showErrors && (!numShares || numShares <= 0) ? 'Required > 0' : undefined}
+            error={showErrors && (!numShares || numShares <= 0) ? 'ระบุยอดมากกว่า 0' : undefined}
           />
 
           <SelectField
-            label="Deposit Account (เข้าบัญชี)"
+            label="เข้าบัญชี"
             value={cashAccountId}
             options={cashAccountOptions}
             onChange={setCashAccountId}
@@ -228,7 +228,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
         {/* Summary & Withholding Tax Card */}
         <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-3">
           <div className="flex items-center justify-between text-[13px]">
-            <span className="text-ink-muted">Gross Dividend (ยอดปันผลรวม)</span>
+            <span className="text-ink-muted">ยอดปันผลรวม</span>
             <span className="font-semibold text-ink tnum">
               {grossAmount > 0 ? formatCur(grossAmount) : `${currencyPrefix}0.00`}
             </span>
@@ -244,7 +244,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
                 className="h-4 w-4 rounded-md border-line text-brand focus:ring-brand/30"
               />
               <span className="text-[12.5px] font-medium text-ink">
-                Deduct 10% Withholding Tax (หักภาษี ณ ที่จ่าย 10%)
+                หักภาษี ณ ที่จ่าย 10%
               </span>
             </label>
             <span className="text-[12.5px] font-semibold text-rose-500 tnum">
@@ -255,8 +255,8 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
           {/* Net Amount Box */}
           <div className="flex items-center justify-between border-t border-emerald-500/20 pt-2.5">
             <div>
-              <span className="text-[13.5px] font-bold text-ink">Net Cash Received</span>
-              <p className="text-[11px] text-ink-muted">ยอดเงินสุทธิที่จะเข้าบัญชี</p>
+              <span className="text-[13.5px] font-bold text-ink">เงินเข้าบัญชีสุทธิ</span>
+              <p className="text-[11px] text-ink-muted">ยอดเงินจริงที่จะได้รับ</p>
             </div>
             <div className="text-right">
               <span className="font-display text-[22px] font-extrabold text-emerald-600 dark:text-emerald-400 tnum">
@@ -268,8 +268,8 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
 
         {/* Note (Optional) */}
         <TextField
-          label="Note (บันทึกช่วยจำ - ถ้ามี)"
-          placeholder="e.g. ปันผลระหว่างกาล 1H/2026 หรือ ปันผลประจำปี"
+          label="บันทึกช่วยจำ (ถ้ามี)"
+          placeholder="เช่น ปันผลรอบ 1H/2569"
           value={note}
           onChange={setNote}
         />
@@ -277,7 +277,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
         {/* Action Buttons */}
         <div className="flex items-center justify-end gap-3 pt-3">
           <Button type="button" variant="ghost" onClick={onClose}>
-            Cancel
+            ยกเลิก
           </Button>
           <Button
             type="submit"
@@ -286,8 +286,8 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
           >
             <CheckCircleIcon className="h-4 w-4 mr-1.5" strokeWidth={2.2} />
             {netAmount > 0
-              ? `Confirm Received (${thb(netAmount)})`
-              : 'Confirm Received'}
+              ? `ยืนยันรับเงิน (${formatCur(netAmount)})`
+              : 'ยืนยันรับเงินปันผล'}
           </Button>
         </div>
       </form>
