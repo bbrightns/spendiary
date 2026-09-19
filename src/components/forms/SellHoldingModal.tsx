@@ -19,6 +19,7 @@ interface Props {
 }
 
 const SATS_PER_BTC = 100_000_000
+const GOLD_SELL_UNIT_KEY = 'spendiary_gold_sell_unit'
 
 export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Props) {
   const { sellHolding, data, usdThb } = useData()
@@ -55,12 +56,29 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
   const [btcLocationId, setBtcLocationId] = useState<string>('')
   const [btcThbProceeds, setBtcThbProceeds] = useState<number | ''>('')
 
-  // Gold-specific State
-  const [goldUnit, setGoldUnit] = useState<'grams' | 'baht'>('grams')
+  // Gold-specific State (remembers last choice)
+  const [goldUnit, setGoldUnit] = useState<'grams' | 'baht'>(() => {
+    try {
+      const saved = localStorage.getItem(GOLD_SELL_UNIT_KEY)
+      if (saved === 'baht' || saved === 'grams') return saved
+    } catch {
+      // ignore
+    }
+    return 'grams'
+  })
   const [goldGrams, setGoldGrams] = useState<number | ''>('')
   const [goldBaht, setGoldBaht] = useState<number | ''>('')
   const [goldLocationId, setGoldLocationId] = useState<string>('')
   const [goldThbProceeds, setGoldThbProceeds] = useState<number | ''>('')
+
+  const handleGoldUnitChange = (unit: 'grams' | 'baht') => {
+    setGoldUnit(unit)
+    try {
+      localStorage.setItem(GOLD_SELL_UNIT_KEY, unit)
+    } catch {
+      // ignore
+    }
+  }
 
   // Reset when opening
   const wasOpen = useRef(false)
@@ -114,31 +132,52 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
     })),
   ]
 
-  // Quick percent applicator
-  const applyPercent = (pct: number) => {
+  // Sell All (100%) applicator
+  const handleSellAll = () => {
     setIsCustomProceeds(false)
     setCustomProceeds('')
     setCustomFee('')
     if (isBtc) {
       const loc = (holding.btcLocations ?? []).find((l) => l.id === btcLocationId)
       const availableSats = loc ? loc.satoshi : Math.round(currentUnits * SATS_PER_BTC)
-      const targetSats = Math.round(availableSats * (pct / 100))
-      setSatoshi(targetSats > 0 ? targetSats : '')
+      setSatoshi(availableSats > 0 ? availableSats : '')
       setBtcThbProceeds('')
     } else if (isGold) {
       const loc = (holding.goldLocations ?? []).find((l) => l.id === goldLocationId)
       const availableGrams = loc ? loc.grams : currentUnits
-      const targetGrams = Number((availableGrams * (pct / 100)).toFixed(4))
-      setGoldGrams(targetGrams > 0 ? targetGrams : '')
-      setGoldBaht(targetGrams > 0 ? Number((targetGrams / GRAMS_PER_BAHT_GOLD).toFixed(4)) : '')
+      const g = Number(availableGrams.toFixed(4))
+      setGoldGrams(g > 0 ? g : '')
+      setGoldBaht(g > 0 ? Number((g / GRAMS_PER_BAHT_GOLD).toFixed(4)) : '')
       setGoldThbProceeds('')
     } else if (isStock) {
-      const targetShares = pct === 100 ? currentUnits : Number((currentUnits * (pct / 100)).toFixed(4))
-      setStockShares(targetShares > 0 ? targetShares : '')
+      setStockShares(currentUnits > 0 ? currentUnits : '')
     } else {
-      const targetUnits = pct === 100 ? currentUnits : Number((currentUnits * (pct / 100)).toFixed(4))
-      setUnits(targetUnits > 0 ? targetUnits : '')
+      setUnits(currentUnits > 0 ? currentUnits : '')
     }
+  }
+
+  const renderMaxButton = () => (
+    <button
+      type="button"
+      onClick={handleSellAll}
+      className="rounded-md bg-surface-muted hover:bg-brand/15 hover:text-brand border border-line hover:border-brand/30 px-2 py-0.5 text-[11px] font-bold text-ink-muted active:scale-95 transition-all cursor-pointer shadow-2xs"
+      title="ขายทั้งหมด 100%"
+    >
+      100%
+    </button>
+  )
+
+  const handleBtcLocationChange = (newLocId: string) => {
+    setBtcLocationId(newLocId)
+    setSatoshi('')
+    setBtcThbProceeds('')
+  }
+
+  const handleGoldLocationChange = (newLocId: string) => {
+    setGoldLocationId(newLocId)
+    setGoldGrams('')
+    setGoldBaht('')
+    setGoldThbProceeds('')
   }
 
   // Calculate sell outcomes per asset type
@@ -429,31 +468,13 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
           </div>
         </div>
 
-        {/* Quick Percent Selectors */}
-        <div className="space-y-1.5">
-          <label className="text-[12px] font-semibold uppercase tracking-wider text-ink-muted">
-            Quick Select
-          </label>
-          <div className="grid grid-cols-4 gap-2">
-            {[25, 50, 75, 100].map((pct) => (
-              <button
-                key={pct}
-                type="button"
-                onClick={() => applyPercent(pct)}
-                className="rounded-xl border border-line py-1.5 text-[12.5px] font-bold text-ink hover:bg-surface-muted active:scale-95 transition-all cursor-pointer"
-              >
-                {pct === 100 ? '100% (All)' : `${pct}%`}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Inputs per Asset Class */}
         {isStock ? (
           <div className="grid grid-cols-1 gap-3">
             <NumberField
               label="Shares to sell"
               value={stockShares}
+              rightElement={renderMaxButton()}
               error={
                 showErrors && (stockShares === '' || Number(stockShares) <= 0 || Number(stockShares) > currentUnits + 0.0001)
                   ? `Enter 0 < shares ≤ ${currentUnits.toLocaleString()}`
@@ -487,9 +508,9 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
           <div className="grid grid-cols-1 gap-3">
             {(holding.btcLocations ?? []).length > 0 && (
               <SelectField
-                label="Sell from Location"
+                label="Sell from Location (ตำแหน่งจัดเก็บที่จะขาย)"
                 value={btcLocationId}
-                onChange={setBtcLocationId}
+                onChange={handleBtcLocationChange}
                 options={(holding.btcLocations ?? []).map((l) => ({
                   value: l.id,
                   label: `${l.name} (${l.satoshi.toLocaleString()} sats · ฿${l.thbSpent.toLocaleString()})`,
@@ -499,6 +520,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
             <NumberField
               label="Satoshi to sell"
               value={satoshi}
+              rightElement={renderMaxButton()}
               error={
                 showErrors && (satoshi === '' || Number(satoshi) <= 0)
                   ? 'Required (> 0)'
@@ -534,12 +556,12 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
           <div className="grid grid-cols-1 gap-3">
             {(holding.goldLocations ?? []).length > 0 && (
               <SelectField
-                label="Sell from Location"
+                label="Sell from Location (ตำแหน่งจัดเก็บที่จะขาย)"
                 value={goldLocationId}
-                onChange={setGoldLocationId}
+                onChange={handleGoldLocationChange}
                 options={(holding.goldLocations ?? []).map((l) => ({
                   value: l.id,
-                  label: `${l.name} (${l.grams.toFixed(4)}g · ฿${l.thbSpent.toLocaleString()})`,
+                  label: `${l.name} (${l.grams.toFixed(4)}g · ${(l.grams / GRAMS_PER_BAHT_GOLD).toFixed(2)} บาท · ฿${l.thbSpent.toLocaleString()})`,
                 }))}
               />
             )}
@@ -548,7 +570,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
               <SegmentedControl
                 size="sm"
                 value={goldUnit}
-                onChange={setGoldUnit}
+                onChange={handleGoldUnitChange}
                 options={[
                   { value: 'grams', label: 'กรัม (Grams)' },
                   { value: 'baht', label: 'บาททองคำ' },
@@ -559,6 +581,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
               <NumberField
                 label="Grams to sell (กรัม)"
                 value={goldGrams}
+                rightElement={renderMaxButton()}
                 error={showErrors && (goldGrams === '' || Number(goldGrams) <= 0) ? 'Required' : undefined}
                 onChange={(val) => {
                   const num = val === '' ? '' : Number(val)
@@ -576,6 +599,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
               <NumberField
                 label="Weight to sell in บาททองคำ"
                 value={goldBaht}
+                rightElement={renderMaxButton()}
                 error={showErrors && (goldBaht === '' || Number(goldBaht) <= 0) ? 'Required' : undefined}
                 onChange={(val) => {
                   const num = val === '' ? '' : Number(val)
@@ -619,6 +643,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
             <NumberField
               label={`${label} to sell`}
               value={units}
+              rightElement={renderMaxButton()}
               error={
                 showErrors && (units === '' || Number(units) <= 0 || Number(units) > currentUnits + 0.0001)
                   ? `Enter 0 < units ≤ ${currentUnits.toLocaleString()}`

@@ -84,6 +84,7 @@ interface NumberFieldProps {
   decimals?: number
   autoFocus?: boolean
   allowString?: boolean
+  rightElement?: ReactNode
 }
 
 export function NumberField({
@@ -103,6 +104,7 @@ export function NumberField({
   decimals,
   autoFocus,
   allowString = true,
+  rightElement,
 }: NumberFieldProps) {
   const [isFocused, setIsFocused] = useState(false)
 
@@ -200,11 +202,15 @@ export function NumberField({
             {prefix}
           </span>
         )}
-        {suffix && (
+        {rightElement ? (
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex items-center">
+            {rightElement}
+          </div>
+        ) : suffix ? (
           <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[15px] font-medium text-ink-muted">
             {suffix}
           </span>
-        )}
+        ) : null}
         <input
           id={id}
           type={allowString ? 'text' : 'number'}
@@ -215,7 +221,9 @@ export function NumberField({
           autoFocus={autoFocus}
           aria-invalid={!!error}
           aria-describedby={error ? errorId : undefined}
-          className={`${getFieldClass(!!error)} tnum ${prefix ? 'pl-8' : ''} ${suffix ? 'pr-8' : ''}`}
+          className={`${getFieldClass(!!error)} tnum ${prefix ? 'pl-8' : ''} ${
+            rightElement ? 'pr-16' : suffix ? 'pr-8' : ''
+          }`}
           value={getDisplayValue()}
           placeholder={placeholder}
           onFocus={handleFocus}
