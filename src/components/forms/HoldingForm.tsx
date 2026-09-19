@@ -1398,37 +1398,39 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
         {/* ── Dividend Tracking (Optional for Fund & Stock) ── */}
         {!isBtc && !isGold && !isRealEstate && (
           <div className="rounded-2xl border border-line bg-surface-muted/30 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
+            <div className="flex items-center justify-between gap-2">
+              <label className="flex items-center gap-2 cursor-pointer select-none min-w-0">
                 <input
                   type="checkbox"
                   checked={paysDividend}
                   onChange={(e) => setPaysDividend(e.target.checked)}
-                  className="h-4 w-4 rounded-md border-line text-emerald-600 focus:ring-emerald-500/30"
+                  className="h-4 w-4 rounded-md border-line text-emerald-600 focus:ring-emerald-500/30 shrink-0"
                 />
-                <div>
-                  <span className="text-[13.5px] font-bold text-ink flex items-center gap-1.5">
-                    💰 Dividend Tracking
+                <div className="min-w-0">
+                  <span className="text-[13.5px] font-bold text-ink flex items-center gap-1.5 whitespace-nowrap">
+                    💰 ปันผล
                   </span>
-                  <p className="text-[11px] text-ink-muted">
-                    Enable if this asset pays dividends to track cash flow projections
+                  <p className="text-[11px] text-ink-muted truncate">
+                    เปิดบันทึกเงินปันผลเพื่อคำนวณกระแสเงินสด
                   </p>
                 </div>
               </label>
-              <span className="text-[11px] font-semibold text-ink-muted">Optional</span>
+              <span className="text-[11px] font-medium text-ink-muted whitespace-nowrap shrink-0">
+                (optional)
+              </span>
             </div>
 
             {paysDividend && (
               <div className="space-y-4 pt-2 border-t border-line/60">
                 {/* 12 Months selection pills */}
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[12px] font-semibold text-ink-soft">
-                      Payout Months (เดือนที่จ่ายปันผล - แตะเลือกได้หลายเดือน):
+                  <div className="flex items-center justify-between gap-2 whitespace-nowrap">
+                    <label className="text-[12.5px] font-semibold text-ink-soft whitespace-nowrap">
+                      เดือนที่จ่ายปันผล
                     </label>
                     {dividendMonths.length > 0 && (
-                      <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                        {dividendMonths.length} รอบ/ปี
+                      <span className="text-[11.5px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap shrink-0">
+                        {dividendMonths.length} ครั้ง/ปี
                       </span>
                     )}
                   </div>
