@@ -1,4 +1,4 @@
-import { pct, signedThb } from '../../lib/format'
+import { pct, signedThb, signedThbCompact } from '../../lib/format'
 import { ArrowDownRight, ArrowUpRight } from '../icons'
 
 function cx(...parts: (string | false | undefined)[]) {
@@ -33,13 +33,18 @@ export function PnLPill({ value, asPct = false, size = 'sm' }: PnLPillProps) {
 interface PnLTextProps {
   value: number
   className?: string
+  /** Format as compact currency e.g. +฿1.24M or -฿500K */
+  compact?: boolean
 }
 
-export function PnLText({ value, className }: PnLTextProps) {
+export function PnLText({ value, className, compact = false }: PnLTextProps) {
   const up = value >= 0
   return (
-    <span className={cx('tnum font-semibold', up ? 'text-gain' : 'text-loss', className)}>
-      {signedThb(value)}
+    <span
+      title={signedThb(value)}
+      className={cx('tnum font-semibold cursor-default', up ? 'text-gain' : 'text-loss', className)}
+    >
+      {compact ? signedThbCompact(value) : signedThb(value)}
     </span>
   )
 }

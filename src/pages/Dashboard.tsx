@@ -451,21 +451,25 @@ export function Dashboard() {
 
                   {/* Row 2: Values */}
                   <div className="flex items-baseline min-w-0">
-                    <p className="font-display text-[21px] sm:text-[24px] font-extrabold tracking-tight tnum text-ink leading-tight truncate">
-                      {thb(portfolio.value)}
+                    <p
+                      title={thb(portfolio.value)}
+                      className="font-display text-[18px] sm:text-[20px] xl:text-[21px] font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
+                    >
+                      {portfolio.value >= 1_000_000 ? thbCompact(portfolio.value) : thb(portfolio.value)}
                     </p>
                   </div>
                   <div className="flex items-baseline justify-end min-w-0">
                     <PnLText
                       value={portfolio.pnl}
-                      className="font-display text-[21px] sm:text-[24px] !font-extrabold tracking-tight leading-tight truncate"
+                      compact
+                      className="font-display text-[18px] sm:text-[20px] xl:text-[21px] !font-extrabold tracking-tight leading-tight truncate"
                     />
                   </div>
 
                   {/* Row 3: Subtext / Details */}
                   <div className="flex items-center min-w-0 h-6">
-                    <p className="text-[11.5px] text-ink-muted font-medium truncate">
-                      Cost: <span className="font-semibold tnum text-ink-soft">{thb(portfolio.cost)}</span>
+                    <p className="text-[11.5px] text-ink-muted font-medium truncate" title={thb(portfolio.cost)}>
+                      Cost: <span className="font-semibold tnum text-ink-soft">{portfolio.cost >= 1_000_000 ? thbCompact(portfolio.cost) : thb(portfolio.cost)}</span>
                     </p>
                   </div>
                   <div className="flex items-center justify-end gap-1.5 min-w-0 h-6">
@@ -555,13 +559,19 @@ export function Dashboard() {
 
                   {/* Row 2: Values */}
                   <div className="flex items-baseline min-w-0">
-                    <p className="font-display text-[21px] sm:text-[24px] font-extrabold tracking-tight tnum text-ink leading-tight truncate">
-                      {thb(cash)}
+                    <p
+                      title={thb(cash)}
+                      className="font-display text-[18px] sm:text-[20px] xl:text-[21px] font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
+                    >
+                      {cash >= 1_000_000 ? thbCompact(cash) : thb(cash)}
                     </p>
                   </div>
                   <div className="flex items-baseline justify-end min-w-0">
                     {cashInterest > 0 ? (
-                      <span className="font-display text-[21px] sm:text-[24px] font-extrabold tracking-tight tnum text-emerald-600 dark:text-emerald-400 leading-tight truncate">
+                      <span
+                        title={`~${thb(cashInterest)}/yr`}
+                        className="font-display text-[18px] sm:text-[20px] xl:text-[21px] font-extrabold tracking-tight tnum text-emerald-600 dark:text-emerald-400 leading-tight truncate cursor-default"
+                      >
                         ~{thbCompact(cashInterest)}<span className="text-[12px] font-semibold text-ink-muted">/yr</span>
                       </span>
                     ) : (
@@ -571,12 +581,19 @@ export function Dashboard() {
 
                   {/* Row 3: Subtext / Details */}
                   <div className="flex items-center min-w-0 h-6">
-                    <p className="text-[11.5px] text-ink-muted font-medium truncate">
+                    <p
+                      title={
+                        cashBreakdown.locked > 0
+                          ? `Instant: ${thb(cashBreakdown.spending + cashBreakdown.emergency + cashBreakdown.invest)} • Locked: ${thb(cashBreakdown.locked)}`
+                          : '100% Instant Liquidity'
+                      }
+                      className="text-[11.5px] text-ink-muted font-medium truncate cursor-default"
+                    >
                       {cashBreakdown.locked > 0 ? (
                         <>
-                          Instant: <strong className="text-ink font-semibold">{thbCompact(cashBreakdown.spending + cashBreakdown.emergency + cashBreakdown.invest)}</strong>
+                          Inst: <strong className="text-ink font-semibold">{thbCompact(cashBreakdown.spending + cashBreakdown.emergency + cashBreakdown.invest)}</strong>
                           <span className="mx-1 text-ink-muted/50">•</span>
-                          Locked: <strong className="text-ink font-semibold">{thbCompact(cashBreakdown.locked)}</strong>
+                          Lock: <strong className="text-ink font-semibold">{thbCompact(cashBreakdown.locked)}</strong>
                         </>
                       ) : (
                         <span className="text-emerald-600 dark:text-emerald-400 font-medium">100% Instant Liquidity</span>
@@ -733,15 +750,18 @@ export function Dashboard() {
                   {/* Row 2: Values */}
                   <div className="flex items-baseline min-w-0">
                     <p
-                      className={`font-display text-[19px] sm:text-[22px] font-extrabold tracking-tight tnum leading-tight truncate ${debts > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-ink dark:text-white'}`}
+                      className={`font-display text-[18px] sm:text-[20px] xl:text-[21px] font-extrabold tracking-tight tnum leading-tight truncate cursor-default ${debts > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-ink dark:text-white'}`}
                       title={debts > 0 ? `-${thb(debts)}` : '฿0'}
                     >
-                      {debts > 0 ? `-${thb(debts)}` : '฿0'}
+                      {debts > 0 ? (debts >= 1_000_000 ? `-${thbCompact(debts)}` : `-${thb(debts)}`) : '฿0'}
                     </p>
                   </div>
                   <div className="flex items-baseline justify-end min-w-0">
                     {monthlyDebt > 0 ? (
-                      <span className="font-display text-[21px] sm:text-[24px] font-extrabold tracking-tight tnum text-rose-600 dark:text-rose-400 leading-tight truncate">
+                      <span
+                        title={`~${thb(monthlyDebt)}/mo`}
+                        className="font-display text-[18px] sm:text-[20px] xl:text-[21px] font-extrabold tracking-tight tnum text-rose-600 dark:text-rose-400 leading-tight truncate cursor-default"
+                      >
                         ~{thbCompact(monthlyDebt)}<span className="text-[12px] font-semibold text-ink-muted">/mo</span>
                       </span>
                     ) : (
