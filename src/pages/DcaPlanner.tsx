@@ -15,7 +15,7 @@ import { CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, PencilIcon, TrashIcon } 
 import { IconButton } from '../components/ui/IconButton'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import {
-  ASSET_META, dcaThisMonth, isBuyDayOverdue, isBuyDayToday, isConfirmedForPeriod, isDividendReceivedThisMonth, isSkippedForPeriod,
+  ASSET_META, dcaThisMonth, getHoldingDpsForMonth, isBuyDayOverdue, isBuyDayToday, isConfirmedForPeriod, isDividendReceivedThisMonth, isSkippedForPeriod,
   nextBuyDate, shouldConfirmBuy, sortDcaPlans,
 } from '../lib/calc'
 import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
@@ -394,7 +394,7 @@ export function DcaPlanner() {
   )
   const totalEstDividendNet = scheduledDividends.reduce((sum, h) => {
     const units = h.units ?? h.totalUnits ?? 0
-    const dps = h.expectedDps ?? 0
+    const dps = getHoldingDpsForMonth(h, currentMonth)
     return sum + (units * dps * 0.90)
   }, 0)
 
@@ -807,9 +807,10 @@ export function DcaPlanner() {
                   <ul className="divide-y divide-line">
                     {scheduledDividends.map((h) => {
                       const units = h.units ?? h.totalUnits ?? 0
-                      const dps = h.expectedDps ?? 0
+                      const dps = getHoldingDpsForMonth(h, currentMonth)
                       const estNet = units * dps * 0.90
                       const isReceived = isDividendReceivedThisMonth(h.id, data.dividendRecords)
+                      const sym = h.assetClass === 'stock' ? '$' : '฿'
 
                       return (
                         <li key={h.id} className="p-4 sm:p-5 hover:bg-surface-muted/30 transition-colors">
@@ -822,7 +823,7 @@ export function DcaPlanner() {
                                   <span className="text-[12px] text-ink-muted truncate max-w-[140px] sm:max-w-xs">{h.name}</span>
                                 </div>
                                 <p className="text-[11.5px] text-ink-muted mt-0.5">
-                                  {units.toLocaleString()} shares · Est. DPS: {dps > 0 ? `฿${dps}` : '-'}
+                                  {units.toLocaleString()} shares · Est. DPS: {dps > 0 ? `${sym}${dps}` : '-'}
                                 </p>
                               </div>
                             </div>
@@ -876,7 +877,7 @@ export function DcaPlanner() {
         <ConfirmDividendModal
           open={dividendModalOpen}
           holding={selectedDividendHolding}
-          initialDps={selectedDividendHolding?.expectedDps}
+          initialDps={selectedDividendHolding ? getHoldingDpsForMonth(selectedDividendHolding, currentMonth) : undefined}
           onClose={() => {
             setDividendModalOpen(false)
             setSelectedDividendHolding(null)

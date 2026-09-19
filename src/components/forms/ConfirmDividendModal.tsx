@@ -5,7 +5,7 @@ import { Button } from '../ui/Button'
 import { AssetLogo } from '../ui/AssetLogo'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
-import { ASSET_META } from '../../lib/calc'
+import { ASSET_META, getHoldingDpsForMonth } from '../../lib/calc'
 import type { Holding } from '../../lib/types'
 import { localDateStr, thb } from '../../lib/format'
 import { CheckCircleIcon } from '../icons'
@@ -43,9 +43,11 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
       const hId = initialHolding ? initialHolding.id : ''
       setSelectedHoldingId(hId)
 
-      setPaymentDate(localDateStr(new Date()))
+      const today = new Date()
+      setPaymentDate(localDateStr(today))
 
-      const initialDpsVal = initialDps ?? initialHolding?.expectedDps
+      const paymentMonth = today.getMonth() + 1
+      const initialDpsVal = initialDps ?? (initialHolding ? getHoldingDpsForMonth(initialHolding, paymentMonth) : undefined)
       setDps(typeof initialDpsVal === 'number' && initialDpsVal > 0 ? initialDpsVal : '')
 
       const units = initialHolding ? (initialHolding.units ?? initialHolding.totalUnits ?? 0) : 0
@@ -67,8 +69,10 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
     setSelectedHoldingId(newHoldingId)
     const found = data.holdings.find((h) => h.id === newHoldingId)
     if (found) {
-      if (found.expectedDps && found.expectedDps > 0) {
-        setDps(found.expectedDps)
+      const monthNum = paymentDate ? new Date(paymentDate).getMonth() + 1 : (new Date().getMonth() + 1)
+      const foundDps = getHoldingDpsForMonth(found, monthNum)
+      if (foundDps > 0) {
+        setDps(foundDps)
       }
       const units = found.units ?? found.totalUnits ?? 0
       if (units > 0) {

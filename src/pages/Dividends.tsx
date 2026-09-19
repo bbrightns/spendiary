@@ -9,7 +9,7 @@ import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
 import { thb } from '../lib/format'
-import { isDividendReceivedThisMonth } from '../lib/calc'
+import { getHoldingDpsForMonth, isDividendReceivedThisMonth } from '../lib/calc'
 import { CheckCircleIcon, ChevronDownIcon, CoinsIcon, PlusIcon, TrashIcon } from '../components/icons'
 import type { DividendRecord, Holding } from '../lib/types'
 
@@ -76,12 +76,12 @@ export function Dividends() {
   const estimatedThisMonth = useMemo(() => {
     return upcomingHoldings.reduce((sum, h) => {
       const units = h.units ?? h.totalUnits ?? 0
-      const dps = h.expectedDps ?? 0
+      const dps = getHoldingDpsForMonth(h, currentMonth)
       const gross = units * dps
       const net = gross * 0.90 // 10% tax estimate
       return sum + net
     }, 0)
-  }, [upcomingHoldings])
+  }, [upcomingHoldings, currentMonth])
 
   // Unique years in records for filter
   const availableYears = useMemo(() => {
@@ -250,10 +250,11 @@ export function Dividends() {
                 <ul className="divide-y divide-line">
                   {upcomingHoldings.map((h) => {
                     const units = h.units ?? h.totalUnits ?? 0
-                    const dps = h.expectedDps ?? 0
+                    const dps = getHoldingDpsForMonth(h, currentMonth)
                     const estGross = units * dps
                     const estNet = estGross * 0.90
                     const isReceived = isDividendReceivedThisMonth(h.id, data.dividendRecords)
+                    const sym = h.assetClass === 'stock' ? '$' : '฿'
 
                     return (
                       <li key={h.id} className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3.5 sm:py-4 hover:bg-surface-muted/50 transition-colors">
@@ -265,7 +266,7 @@ export function Dividends() {
                               <span className="text-[12px] text-ink-muted truncate max-w-[150px] sm:max-w-xs">{h.name}</span>
                             </div>
                             <p className="text-[11.5px] text-ink-muted mt-0.5">
-                              {units.toLocaleString()} shares · Estimated DPS: {dps > 0 ? `฿${dps}` : 'N/A'}
+                              {units.toLocaleString()} shares · Estimated DPS: {dps > 0 ? `${sym}${dps}` : 'N/A'}
                             </p>
                           </div>
                         </div>
