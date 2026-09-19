@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { ConfirmDividendModal } from '../components/forms/ConfirmDividendModal'
+import { HoldingForm } from '../components/forms/HoldingForm'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
@@ -25,6 +26,7 @@ export function Dividends() {
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null)
   const [selectedDps, setSelectedDps] = useState<number | undefined>(undefined)
+  const [editingHolding, setEditingHolding] = useState<Holding | null>(null)
 
   const [deletingRecord, setDeletingRecord] = useState<DividendRecord | null>(null)
   const [yearFilter, setYearFilter] = useState<string>('all')
@@ -258,15 +260,26 @@ export function Dividends() {
 
                     return (
                       <li key={h.id} className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3.5 sm:py-4 hover:bg-surface-muted/50 transition-colors">
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          onClick={() => setEditingHolding(h)}
+                          title="แตะเพื่อดูรายละเอียดและแก้ไขการปันผล (Click to view & edit dividend details)"
+                          className="flex items-center gap-3 min-w-0 cursor-pointer group/item flex-1"
+                        >
                           <AssetLogo name={h.name} assetClass={h.assetClass} size="md" />
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="font-display font-bold text-[14.5px] text-ink">{h.ticker}</span>
+                              <span className="font-display font-bold text-[14.5px] text-ink group-hover/item:text-brand transition-colors">
+                                {h.ticker}
+                              </span>
                               <span className="text-[12px] text-ink-muted truncate max-w-[150px] sm:max-w-xs">{h.name}</span>
                             </div>
-                            <p className="text-[11.5px] text-ink-muted mt-0.5">
-                              {units.toLocaleString()} shares · Estimated DPS: {dps > 0 ? `${sym}${dps}` : 'N/A'}
+                            <p className="text-[11.5px] text-ink-muted mt-0.5 flex items-center gap-1.5 flex-wrap">
+                              <span>{units.toLocaleString()} shares</span>
+                              <span>·</span>
+                              <span>Estimated DPS: <strong className="text-ink font-semibold">{dps > 0 ? `${sym}${dps}` : 'N/A'}</strong></span>
+                              <span className="text-[10.5px] font-semibold text-brand bg-brand/10 dark:bg-brand/15 px-1.5 py-0.5 rounded opacity-80 group-hover/item:opacity-100 group-hover/item:underline transition-all">
+                                ดู/แก้ปันผล ↗
+                              </span>
                             </p>
                           </div>
                         </div>
@@ -461,6 +474,13 @@ export function Dividends() {
           setSelectedHolding(null)
           setSelectedDps(undefined)
         }}
+      />
+
+      {/* ── Edit Holding Modal (View & Edit Dividend Details) ── */}
+      <HoldingForm
+        open={Boolean(editingHolding)}
+        editing={editingHolding ? (data.holdings.find((item) => item.id === editingHolding.id) ?? editingHolding) : null}
+        onClose={() => setEditingHolding(null)}
       />
 
       {/* ── Delete Confirmation Modal ── */}
