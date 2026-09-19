@@ -8,7 +8,8 @@ import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, holdingMetrics } from '../../lib/calc'
 import type { BtcLocation, GoldLocation, Holding } from '../../lib/types'
-import { thb, localDateStr } from '../../lib/format'
+import { dateStrToTimestamp, thb, localDateStr } from '../../lib/format'
+import { TransactionDateField } from './TransactionDateField'
 
 interface Props {
   open: boolean
@@ -30,6 +31,9 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
 
   // Cash Account integration
   const [cashAccountId, setCashAccountId] = useState<string>('none')
+
+  // Backdated transaction date
+  const [txDate, setTxDate] = useState<string>(localDateStr())
 
   // Shared / Generic State
   const [units, setUnits] = useState<number | ''>('')
@@ -62,6 +66,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
   const wasOpen = useRef(false)
   useEffect(() => {
     if (open && !wasOpen.current && holding) {
+      setTxDate(localDateStr())
       setShowErrors(false)
       setCashAccountId('none')
       setIsCustomProceeds(false)
@@ -355,6 +360,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
       cashAccountId: cashAccountId !== 'none' ? cashAccountId : undefined,
       cashDepositAmount: cashAccountId !== 'none' ? totalProceedsThb : undefined,
       note,
+      timestamp: dateStrToTimestamp(txDate),
     })
 
     const pnlBadge = `${realizedPnL >= 0 ? '+' : ''}฿${Math.round(realizedPnL).toLocaleString()}`
@@ -391,6 +397,10 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
             />
           </div>
         )}
+
+        {/* Transaction Date */}
+        <TransactionDateField value={txDate} onChange={setTxDate} />
+
         {/* Context: Current holding */}
         <div className="rounded-2xl bg-surface-muted px-4 py-3">
           <div className="flex items-center justify-between text-[13px]">
