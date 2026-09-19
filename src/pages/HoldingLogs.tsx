@@ -737,8 +737,8 @@ function getDestinationLocation(log: HoldingLog): string | null {
 
 const ASSET_FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
-  { key: 'fund', label: 'Funds' },
-  { key: 'stock', label: 'Stocks' },
+  { key: 'fund', label: 'Thai Assets' },
+  { key: 'stock', label: 'US Stocks' },
   { key: 'crypto', label: 'Bitcoin' },
   { key: 'gold', label: 'Gold' },
   { key: 'real_estate', label: 'Real Estate' },
