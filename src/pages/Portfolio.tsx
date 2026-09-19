@@ -822,21 +822,46 @@ export function Portfolio() {
 
                 {/* Row 2: Values */}
                 <div className="flex items-baseline min-w-0">
-                  <p className="font-display text-[21px] sm:text-[24px] font-extrabold tracking-tight tnum text-ink leading-tight truncate">
-                    {thb(summary.value)}
+                  <p
+                    title={thb(summary.value)}
+                    className="font-display text-[18px] sm:text-[20px] 2xl:text-[22px] font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
+                  >
+                    <span className="2xl:hidden">
+                      {summary.value >= 1_000_000 ? thbCompact(summary.value) : thb(summary.value)}
+                    </span>
+                    <span className="hidden 2xl:inline">
+                      {thb(summary.value)}
+                    </span>
                   </p>
                 </div>
                 <div className="flex items-baseline justify-end min-w-0">
-                  <PnLText
-                    value={summary.pnl}
-                    className="font-display text-[21px] sm:text-[24px] !font-extrabold tracking-tight leading-tight truncate"
-                  />
+                  <div className="2xl:hidden truncate">
+                    <PnLText
+                      value={summary.pnl}
+                      compact
+                      className="font-display text-[18px] sm:text-[20px] 2xl:text-[22px] !font-extrabold tracking-tight leading-tight truncate"
+                    />
+                  </div>
+                  <div className="hidden 2xl:block truncate">
+                    <PnLText
+                      value={summary.pnl}
+                      className="font-display text-[18px] sm:text-[20px] 2xl:text-[22px] !font-extrabold tracking-tight leading-tight truncate"
+                    />
+                  </div>
                 </div>
 
                 {/* Row 3: Subtext / Details */}
                 <div className="flex items-center min-w-0 h-6">
-                  <p className="text-[11.5px] text-ink-muted font-medium truncate">
-                    Cost: <span className="font-semibold tnum text-ink-soft">{thb(summary.cost)}</span>
+                  <p className="text-[11.5px] text-ink-muted font-medium truncate" title={thb(summary.cost)}>
+                    Cost:{' '}
+                    <span className="font-semibold tnum text-ink-soft">
+                      <span className="2xl:hidden">
+                        {summary.cost >= 1_000_000 ? thbCompact(summary.cost) : thb(summary.cost)}
+                      </span>
+                      <span className="hidden 2xl:inline">
+                        {thb(summary.cost)}
+                      </span>
+                    </span>
                   </p>
                 </div>
                 <div className="flex items-center justify-end gap-1.5 min-w-0 h-6">
