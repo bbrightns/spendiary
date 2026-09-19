@@ -58,10 +58,6 @@ export function Dividends() {
     return thisYearRecords.reduce((sum, r) => sum + r.taxAmount, 0)
   }, [thisYearRecords])
 
-  const totalNetAllTime = useMemo(() => {
-    return records.reduce((sum, r) => sum + r.netAmount, 0)
-  }, [records])
-
   // Holdings that pay dividends
   const dividendHoldings = useMemo(() => {
     return (data.holdings ?? []).filter((h) => h.paysDividend)
@@ -134,53 +130,29 @@ export function Dividends() {
       />
 
       <div className="space-y-4 sm:space-y-6">
-        {/* ── KPI Stat Cards (2x2 on Mobile, 4x1 on Desktop) ── */}
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
-          <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+        {/* ── KPI Stat Cards (2 cards: This Year & This Month) ── */}
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+          <Card className="p-3.5 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
             <div>
-              <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">Net Received ({currentYear})</p>
+              <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">รับแล้วปีนี้ ({currentYear})</p>
               <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-emerald-600 dark:text-emerald-400 tnum truncate">
                 {thb(totalNetThisYear)}
               </p>
             </div>
             <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
-              Gross: {thb(totalGrossThisYear)} · Tax: -{thb(totalTaxThisYear)}
+              ก่อนหักภาษี {thb(totalGrossThisYear)} · ภาษี -{thb(totalTaxThisYear)}
             </p>
           </Card>
 
-          <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+          <Card className="p-3.5 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
             <div>
-              <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">All-Time Net</p>
-              <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-ink tnum truncate">
-                {thb(totalNetAllTime)}
-              </p>
-            </div>
-            <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
-              Total {records.length} {records.length === 1 ? 'payout' : 'payouts'}
-            </p>
-          </Card>
-
-          <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
-            <div>
-              <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">Est. This Month</p>
+              <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">คาดการณ์เดือนนี้ ({MONTH_NAMES[currentMonth - 1]})</p>
               <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-brand-ink tnum truncate">
                 {estimatedThisMonth > 0 ? `~${thb(estimatedThisMonth)}` : '-'}
               </p>
             </div>
             <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
-              {upcomingHoldings.length} {upcomingHoldings.length === 1 ? 'asset' : 'assets'} in {MONTH_NAMES[currentMonth - 1]}
-            </p>
-          </Card>
-
-          <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
-            <div>
-              <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">Dividend Holdings</p>
-              <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-ink tnum truncate">
-                {dividendHoldings.length}
-              </p>
-            </div>
-            <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
-              Configured assets
+              {upcomingHoldings.length > 0 ? `${upcomingHoldings.length} รายการที่รอรับ` : 'ไม่มีรายการในเดือนนี้'}
             </p>
           </Card>
         </div>
