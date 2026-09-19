@@ -27,7 +27,6 @@ import {
   allocations,
   calculateAnnualCashInterest,
   detectBankPreset,
-  getCashLiquidityBreakdown,
   getLiabilityDueStatus,
   isLiabilityActionableThisMonth,
   netWorth,
@@ -97,9 +96,9 @@ export function Dashboard() {
     () => calculateAnnualCashInterest(data.cashAccounts, usdThb),
     [data.cashAccounts, usdThb],
   )
-  const cashBreakdown = useMemo(
-    () => getCashLiquidityBreakdown(data.cashAccounts, usdThb),
-    [data.cashAccounts, usdThb],
+  const cashYieldRate = useMemo(
+    () => (cash > 0 && cashInterest > 0 ? (cashInterest / cash) * 100 : 0),
+    [cash, cashInterest],
   )
 
   const today = new Date().toLocaleDateString('en-GB', {
@@ -581,22 +580,13 @@ export function Dashboard() {
 
                   {/* Row 3: Subtext / Details */}
                   <div className="flex items-center min-w-0 h-6">
-                    <p
-                      title={
-                        cashBreakdown.locked > 0
-                          ? `Instant: ${thb(cashBreakdown.spending + cashBreakdown.emergency + cashBreakdown.invest)} • Locked: ${thb(cashBreakdown.locked)}`
-                          : '100% Instant Liquidity'
-                      }
-                      className="text-[11.5px] text-ink-muted font-medium truncate cursor-default"
-                    >
-                      {cashBreakdown.locked > 0 ? (
+                    <p className="text-[11.5px] text-ink-muted font-medium truncate">
+                      {cashYieldRate > 0 ? (
                         <>
-                          Inst: <strong className="text-ink font-semibold">{thbCompact(cashBreakdown.spending + cashBreakdown.emergency + cashBreakdown.invest)}</strong>
-                          <span className="mx-1 text-ink-muted/50">•</span>
-                          Lock: <strong className="text-ink font-semibold">{thbCompact(cashBreakdown.locked)}</strong>
+                          Avg Yield: <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">~{cashYieldRate.toFixed(2)}%</strong>
                         </>
                       ) : (
-                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">100% Instant Liquidity</span>
+                        <span>Liquid Reserves</span>
                       )}
                     </p>
                   </div>
