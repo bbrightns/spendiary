@@ -659,7 +659,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
             </div>
 
             {/* Installment Plan Section */}
-            <div className="rounded-2xl border border-pink-500/25 bg-pink-500/5 dark:bg-pink-500/10 p-3.5 space-y-3">
+            <div className="rounded-2xl border border-indigo-500/25 bg-indigo-500/5 dark:bg-indigo-500/10 p-3.5 space-y-3">
               <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
@@ -673,18 +673,18 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                         category: checked && d.category === 'other' ? 'installment' : d.category,
                       }))
                     }}
-                    className="h-4 w-4 rounded border-pink-400 text-pink-600 focus:ring-pink-500 cursor-pointer"
+                    className="h-4 w-4 rounded border-indigo-400 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                   />
                   <span className="text-[12.5px] font-bold text-ink dark:text-white flex items-center gap-2">
                     <span>ผ่อนชำระเป็นงวด (Installment Plan / 0%)</span>
-                    <span className="text-[10px] font-bold text-pink-600 dark:text-pink-400 bg-pink-500/15 px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 px-2 py-0.5 rounded-full">
                       Gadget / Shopping
                     </span>
                   </span>
                 </label>
 
                 {draft.isInstallment && (
-                  <span className="text-[11.5px] font-bold text-pink-600 dark:text-pink-400">
+                  <span className="text-[11.5px] font-bold text-indigo-600 dark:text-indigo-400">
                     เหลืออีก {Math.max(0, (Number(draft.totalInstallments) || 0) - (Number(draft.paidInstallments) || 0))} งวด
                   </span>
                 )}
@@ -718,7 +718,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                             }}
                             className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer ${
                               isSelected
-                                ? 'bg-pink-500 text-white border-pink-500 shadow-xs'
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
                                 : 'bg-surface dark:bg-white/10 text-ink-muted dark:text-white/80 border-line/60 dark:border-white/10 hover:text-ink dark:hover:text-white'
                             }`}
                           >
@@ -730,7 +730,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                   </div>
 
                   {/* 3 Columns: Total Terms, Paid Terms, Monthly Payment */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-pink-500/15">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-indigo-500/15">
                     <div>
                       <label className="h-5 flex items-center text-[11.5px] font-semibold text-ink-muted mb-1">
                         จำนวนงวดทั้งหมด
@@ -776,7 +776,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                     <div>
                       <label className="h-5 flex items-center justify-between text-[11.5px] font-semibold text-ink-muted mb-1">
                         <span>ค่างวดต่อเดือน (฿)</span>
-                        <span className="text-[10px] text-pink-600 dark:text-pink-400 font-normal">คำนวณให้อัตโนมัติ</span>
+                        <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-normal">คำนวณให้อัตโนมัติ</span>
                       </label>
                       <input
                         type="text"
@@ -914,7 +914,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                             {isInst && total > 0 && (
                               <>
                                 <span>•</span>
-                                <span className="font-bold text-pink-600 dark:text-pink-400">
+                                <span className="font-bold text-indigo-600 dark:text-indigo-400">
                                   ผ่อน {paid}/{total} งวด ({percent}%)
                                 </span>
                               </>
@@ -930,7 +930,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                       </div>
 
                       <div className="flex items-center gap-3 shrink-0">
-                        <span className="font-display font-bold text-[15px] text-rose-600 dark:text-rose-400 tnum">
+                        <span className="font-display font-bold text-[15px] text-ink dark:text-white tnum">
                           -{thb(l.balance)}
                         </span>
                         <div className="flex items-center gap-1">
