@@ -224,6 +224,33 @@ function getDisplayNote(log: HoldingLog): string {
     return n
   }
 
+  // Format buy / add action note into concise, easy-to-read Thai/English
+  if ((log.action === 'buy_more' || log.action === 'add') && log.note) {
+    let n = log.note
+
+    // Translate common prefixes
+    if (n.startsWith('DCA Buy: ')) {
+      n = n.replace(/^DCA Buy:\s*/, 'ซื้อ DCA: ')
+    } else if (n.startsWith('Buy ')) {
+      n = n.replace(/^Buy\s+/, 'ซื้อ ')
+    }
+
+    // Replace Paid from -> จ่ายจาก
+    n = n.replace(/·\s*Paid from\s*/g, '· จ่ายจาก ')
+    n = n.replace(/Paid from\s*/g, 'จ่ายจาก ')
+
+    // Replace Deposited ... via DCA into ... -> ฝาก ... ผ่าน DCA เข้า ...
+    if (n.startsWith('Deposited ')) {
+      n = n.replace(/^Deposited\s+/, 'ฝาก ')
+      n = n.replace(/\s+via\s+DCA\s+into\s+/, ' ผ่าน DCA เข้า ')
+      n = n.replace(/\s+into\s+/, ' เข้า ')
+    }
+
+    n = n.replace(/\s*·\s*·\s*/g, ' · ').trim()
+    n = n.replace(/\s*·\s*$/, '').trim()
+    return n
+  }
+
   return log.note
 }
 
@@ -1193,7 +1220,7 @@ export function HoldingLogs() {
 
     const showPriceRow = priceChanged && prevPriceDisplay !== currPriceDisplay && prevPriceDisplay !== '' && currPriceDisplay !== ''
 
-    if (!showTickerRow && !showNameRow && !showBalanceRow && !showAvgCostRow && !showPriceRow && log.action !== 'sell') {
+    if (!showTickerRow && !showNameRow && !showBalanceRow && !showAvgCostRow && !showPriceRow && log.action !== 'sell' && log.action !== 'buy_more' && log.action !== 'add') {
       return null
     }
 
@@ -1372,9 +1399,178 @@ export function HoldingLogs() {
               )}
             </>
           )
+        })() : (log.action === 'buy_more' || log.action === 'add') ? (() => {
+          const txDetails = getLogTransactionDetails(log, usdThb)
+          const isDetailsOpen = expandedDetails.has(log.id)
+
+          // Determine purchase price label and value
+          let buyPriceDisplay = ''
+          if (txDetails.priceDisplay && txDetails.priceDisplay !== '-') {
+            buyPriceDisplay = txDetails.priceDisplay
+            if (log.assetClass === 'gold' && !buyPriceDisplay.includes('/')) {
+              buyPriceDisplay += '/บาททอง'
+            } else if (log.assetClass === 'stock' && !buyPriceDisplay.includes('/')) {
+              buyPriceDisplay += '/share'
+            } else if (log.assetClass === 'crypto' && !buyPriceDisplay.includes('/')) {
+              buyPriceDisplay += '/BTC'
+            } else if ((log.assetClass === 'fund' || log.assetClass === 'real_estate') && !buyPriceDisplay.includes('/')) {
+              buyPriceDisplay += '/unit'
+            }
+          } else if (currPriceDisplay) {
+            buyPriceDisplay = currPriceDisplay
+          }
+
+          const hasSpent = txDetails.amountThbDisplay && txDetails.amountThbDisplay !== '-'
+          const cashItems = getCashDiffItems(log)
+
+          return (
+            <>
+              {/* ── Hero Buy / Add stats badge ── */}
+              {(hasSpent || buyPriceDisplay) && (
+                <div className={(showNameRow || showTickerRow) ? 'pt-2 border-t border-line/60' : ''}>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {/* ยอดซื้อ / ยอดลงทุน */}
+                    {hasSpent && (
+                      <div>
+                        <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold mb-1">
+                          💳 ยอดที่ซื้อ
+                        </span>
+                        <div className="inline-flex items-baseline gap-1.5 rounded-xl px-3 py-1.5 font-bold bg-brand/10 text-brand border border-brand/20">
+                          <span className="text-[17px] leading-none">
+                            {txDetails.amountThbDisplay}
+                          </span>
+                          {txDetails.sharesDisplay && txDetails.sharesDisplay !== '-' && (
+                            <span className="text-[12px] opacity-85 font-medium">
+                              ({txDetails.sharesDisplay})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ราคาที่เข้าซื้อ */}
+                    {buyPriceDisplay && (
+                      <div>
+                        <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold mb-1">
+                          🏷️ ราคาเข้าซื้อ
+                        </span>
+                        <div className="inline-flex items-baseline gap-1.5 rounded-xl px-3 py-1.5 font-bold bg-surface border border-line text-ink">
+                          <span className="text-[15.5px] leading-none text-ink">
+                            {buyPriceDisplay}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Cash deduction row (Paid from) ── */}
+              {cashItems.length > 0 && (
+                <div className="pt-1.5 border-t border-line/60 space-y-1.5">
+                  {cashItems.map((item, idx) => {
+                    const sym = item.currencySymbol
+                    return (
+                      <div key={idx}>
+                        <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">
+                          {item.diff && item.diff < 0 ? '💸 จ่ายจาก' : item.diff && item.diff > 0 ? '💵 รับเงินเข้า' : 'กระเป๋า'}: {item.accountName}
+                        </span>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
+                          {item.prevBalance !== undefined && (
+                            <>
+                              <span className="whitespace-nowrap">{sym}{item.prevBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              <span className="text-ink-faint text-[11px]">→</span>
+                            </>
+                          )}
+                          <span className="font-bold text-brand whitespace-nowrap">{sym}{item.currBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          {item.diff !== undefined && (
+                            <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${item.diff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                              {item.diff > 0 ? '+' : ''}{sym}{Math.abs(item.diff).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* ── Collapse toggle for details ── */}
+              {(showPriceRow || showBalanceRow || showAvgCostRow) && (
+                <div className="pt-1.5 border-t border-line/60">
+                  <button
+                    type="button"
+                    onClick={() => toggleDetails(log.id)}
+                    className="flex items-center gap-1 text-[11px] font-semibold text-ink-faint hover:text-ink transition-colors cursor-pointer select-none"
+                  >
+                    {isDetailsOpen ? '▲ ซ่อนรายละเอียด' : '▼ ดูรายละเอียด'}
+                  </button>
+
+                  {isDetailsOpen && (
+                    <div className="mt-2.5 space-y-2.5">
+                      {/* ราคาตลาด / NAV */}
+                      {showPriceRow && (
+                        <div>
+                          <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">
+                            {priceLabel}
+                          </span>
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
+                            <span className="whitespace-nowrap">{prevPriceDisplay}</span>
+                            <span className="text-ink-faint text-[11px]">→</span>
+                            <span className="font-semibold text-brand whitespace-nowrap">{currPriceDisplay}</span>
+                            {priceDeltaBadge && (
+                              <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${priceDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                                {priceDeltaBadge.text}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* จำนวนคงเหลือ (Holding Balance) */}
+                      {showBalanceRow && (
+                        <div className={showPriceRow ? 'pt-1.5 border-t border-line/60' : ''}>
+                          <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">Holding Balance (ยอดสะสมรวม)</span>
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
+                            <span className="whitespace-nowrap">{formatUnit(prevUnits)}</span>
+                            <span className="text-ink-faint text-[11px]">→</span>
+                            <span className="font-semibold text-brand whitespace-nowrap">{formatUnit(currUnits)}</span>
+                            {Math.abs(unitDiff) > 0.0001 && (
+                              <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${unitDiff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                                {formatUnitDiff(unitDiff)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ต้นทุนเฉลี่ย (Average Cost) */}
+                      {showAvgCostRow && (
+                        <div className={(showPriceRow || showBalanceRow) ? 'pt-1.5 border-t border-line/60' : ''}>
+                          <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">
+                            Average Cost (ต้นทุนเฉลี่ยใหม่)
+                          </span>
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
+                            <span className="whitespace-nowrap">{prevAvgCostDisplay}</span>
+                            <span className="text-ink-faint text-[11px]">→</span>
+                            <span className="font-semibold text-brand whitespace-nowrap">{currAvgCostDisplay}</span>
+                            {avgCostDeltaBadge && (
+                              <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${avgCostDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-surface-muted text-ink-muted'}`}>
+                                {avgCostDeltaBadge.text}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )
         })() : (
           <>
-            {/* ── NON-SELL: original layout ── */}
+            {/* ── NON-SELL / NON-BUY (e.g. edit): original layout ── */}
             {showPriceRow && (
               <div className={(showNameRow || showTickerRow) ? 'pt-1.5 border-t border-line/60' : ''}>
                 <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">
