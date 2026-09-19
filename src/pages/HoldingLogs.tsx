@@ -176,6 +176,23 @@ function getDisplayNote(log: HoldingLog): string {
     }
   }
 
+  // Format sell action note into concise, easy-to-read Thai (removing redundant Realized PnL)
+  if (log.action === 'sell' && log.note) {
+    let n = log.note
+    if (n.startsWith('Sold ')) {
+      n = n.replace(/^Sold\s+/, 'ขาย ')
+      n = n.replace(/\s+from\s+/, ' จาก ')
+      n = n.replace(/·\s*Proceeds:\s*/, '· ได้รับเงิน ')
+      // Remove Realized PnL text from note since hero badge shows it prominently
+      n = n.replace(/·\s*Realized PnL:[^·]+/, '')
+      n = n.replace(/·\s*Deposited to\s*/, '· ฝากเข้า ')
+      n = n.replace(/\s*·\s*·\s*/g, ' · ').trim()
+      // Remove trailing dot or spaces
+      n = n.replace(/\s*·\s*$/, '').trim()
+      return n
+    }
+  }
+
   return log.note
 }
 
@@ -1290,7 +1307,11 @@ export function HoldingLogs() {
                       {/* ต้นทุนเฉลี่ย */}
                       {showAvgCostRow && (
                         <div className={(showPriceRow || showBalanceRow) ? 'pt-1.5 border-t border-line/60' : ''}>
-                          <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">ต้นทุนเฉลี่ย (ส่วนที่เหลือ)</span>
+                          <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">
+                            {(log.assetClass === 'gold' || log.assetClass === 'crypto')
+                              ? 'ต้นทุนเฉลี่ยรวมทุกกระเป๋า (ส่วนที่เหลือ)'
+                              : 'ต้นทุนเฉลี่ย (ส่วนที่เหลือ)'}
+                          </span>
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                             <span className="whitespace-nowrap">{prevAvgCostDisplay}</span>
                             <span className="text-ink-faint text-[11px]">→</span>
@@ -1301,6 +1322,12 @@ export function HoldingLogs() {
                               </span>
                             )}
                           </div>
+                        </div>
+                      )}
+
+                      {(log.assetClass === 'gold' || log.assetClass === 'crypto') && (
+                        <div className="pt-1.5 border-t border-line/40 text-[11px] text-ink-muted">
+                          💡 <span className="font-medium text-ink-soft">ระบบคำนวณกำไร/ขาดทุนตามต้นทุนจริงของกระเป๋าที่เลือกขายโดยเฉพาะ</span>
                         </div>
                       )}
                     </div>

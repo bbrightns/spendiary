@@ -66,7 +66,7 @@ function formatCostOrFx(val: number | string): string {
 }
 
 export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
-  const { buyMoreHolding, upsertBtcLocation, upsertGoldLocation, usdThb, data } = useData()
+  const { buyMoreHolding, usdThb, data } = useData()
   const { showToast } = useToast()
 
   // Cash Account integration
@@ -354,15 +354,8 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
           grams: existingLoc.grams + g,
           thbSpent: existingLoc.thbSpent + spent,
         })
-        upsertGoldLocation(holding!.id, {
-          id: existingLoc.id,
-          name: existingLoc.name,
-          grams: existingLoc.grams + g,
-          thbSpent: existingLoc.thbSpent + spent,
-        })
       } else {
         updatedLocations = upsert(goldExistingLocations, { name: goldLocName, grams: g, thbSpent: spent })
-        upsertGoldLocation(holding!.id, { name: goldLocName, grams: g, thbSpent: spent })
       }
       const totalGrams = updatedLocations.reduce((s, l) => s + l.grams, 0)
       const totalThb = updatedLocations.reduce((s, l) => s + l.thbSpent, 0)
@@ -571,15 +564,8 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
           satoshi: existingLoc.satoshi + sats,
           thbSpent: existingLoc.thbSpent + spent,
         })
-        upsertBtcLocation(holding!.id, {
-          id: existingLoc.id,
-          name: existingLoc.name,
-          satoshi: existingLoc.satoshi + sats,
-          thbSpent: existingLoc.thbSpent + spent,
-        })
       } else {
         updatedLocations = upsert(existingLocations, { name: locName, satoshi: sats, thbSpent: spent })
-        upsertBtcLocation(holding!.id, { name: locName, satoshi: sats, thbSpent: spent })
       }
       const totalSatsAfter = updatedLocations.reduce((s, l) => s + l.satoshi, 0)
       const totalThb = updatedLocations.reduce((s, l) => s + l.thbSpent, 0)
