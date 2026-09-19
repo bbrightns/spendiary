@@ -8,7 +8,6 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { DonutChart } from '../components/charts/DonutChart'
 import { InteractiveNetWorthChart } from '../components/charts/InteractiveNetWorthChart'
 import { PnLPill, PnLText } from '../components/ui/PnL'
-import { CashAccountsForm } from '../components/forms/CashAccountsForm'
 import { LiabilitiesModal } from '../components/forms/LiabilitiesModal'
 import { AiImportModal } from '../components/forms/AiImportModal'
 import { GuideTour } from '../components/guide/GuideTour'
@@ -53,8 +52,6 @@ const CASH_COLORS = [
 export function Dashboard() {
   const { data, recordNetWorthSnapshot, usdThb, payLiabilityInstallment, undoLiabilityPayment } = useData()
   const navigate = useNavigate()
-  const [cashOpen, setCashOpen] = useState(false)
-  const [selectedCashAccountId, setSelectedCashAccountId] = useState<string | null>(null)
   const [liabilitiesOpen, setLiabilitiesOpen] = useState(false)
   const [selectedLiabilityId, setSelectedLiabilityId] = useState<string | null>(null)
   const [aiImportOpen, setAiImportOpen] = useState(false)
@@ -513,17 +510,6 @@ export function Dashboard() {
                 </div>
               </div>
             </div>
-
-            <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px]">
-              <span className="text-ink-muted">{data.holdings.length} holding positions</span>
-              <Link
-                to="/rebalance"
-                className="inline-flex items-center gap-1 font-bold text-brand hover:underline cursor-pointer"
-              >
-                <span>Rebalance Portfolio</span>
-                <span aria-hidden="true">→</span>
-              </Link>
-            </div>
           </Card>
         </div>
 
@@ -610,15 +596,12 @@ export function Dashboard() {
                       return (
                         <div
                           key={a.id}
-                          onClick={() => {
-                            setSelectedCashAccountId(a.id)
-                            setCashOpen(true)
-                          }}
+                          onClick={() => navigate('/cash')}
                           style={{
                             width: `${cash > 0 ? (thbVal / cash) * 100 : 0}%`,
                             background: color,
                           }}
-                          title={`${a.name}: ${moneyCompact(a.balance, a.currency)} (Click to edit)`}
+                          title={`${a.name}: ${moneyCompact(a.balance, a.currency)} (ไปที่ Cash Hub)`}
                           className="cursor-pointer hover:opacity-80 transition-opacity"
                         />
                       )
@@ -634,13 +617,10 @@ export function Dashboard() {
                         <button
                           key={a.id}
                           type="button"
-                          onClick={() => {
-                            setSelectedCashAccountId(a.id)
-                            setCashOpen(true)
-                          }}
-                          aria-label={`Edit ${a.name}, balance ${moneyCompact(a.balance, a.currency)}`}
+                          onClick={() => navigate('/cash')}
+                          aria-label={`View ${a.name} in Cash Hub`}
                           className="flex flex-col text-left p-2.5 rounded-xl bg-surface-muted/50 border border-line/40 hover:bg-surface-muted hover:border-brand/40 hover:shadow-xs group transition-all cursor-pointer active:scale-[0.98]"
-                          title={`Click to edit ${a.name}`}
+                          title={`คลิกเพื่อดูใน Cash Hub: ${a.name}`}
                         >
                           <span className="flex items-center justify-between gap-1.5 text-[11px] font-medium text-ink-muted truncate w-full">
                             <span className="flex items-center gap-1.5 truncate">
@@ -667,43 +647,14 @@ export function Dashboard() {
               ) : (
                 <div className="py-6 text-center">
                   <p className="text-[12.5px] text-ink-muted">No cash accounts added yet.</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedCashAccountId(null)
-                      setCashOpen(true)
-                    }}
-                    aria-label="Add first cash account"
-                    className="mt-1 text-[12px] font-semibold text-brand hover:underline cursor-pointer"
+                  <Link
+                    to="/cash"
+                    className="inline-block mt-2 text-[12px] font-semibold text-brand hover:underline cursor-pointer"
                   >
-                    + Add first account
-                  </button>
+                    + ไปที่ Cash Hub เพื่อเพิ่มบัญชี
+                  </Link>
                 </div>
               )}
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
-              <span>Emergency cash reserve</span>
-              <div className="flex items-center gap-3">
-                <Link
-                  to="/cash"
-                  className="font-semibold text-brand hover:underline cursor-pointer flex items-center gap-1"
-                >
-                  <span>ดูรายละเอียดทั้งหมด</span>
-                  <ArrowUpRightIcon className="h-3 w-3" />
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedCashAccountId(null)
-                    setCashOpen(true)
-                  }}
-                  aria-label="Add new cash account"
-                  className="font-semibold text-brand hover:underline cursor-pointer"
-                >
-                  + Add Account
-                </button>
-              </div>
             </div>
           </Card>
         </div>
@@ -935,43 +886,14 @@ export function Dashboard() {
               ) : (
                 <div className="py-6 text-center">
                   <p className="text-[12.5px] text-ink-muted">ปลอดหนี้สิน หรือยังไม่ได้เพิ่มรายการ</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedLiabilityId(null)
-                      setLiabilitiesOpen(true)
-                    }}
-                    aria-label="Add first liability"
-                    className="mt-1 text-[12px] font-semibold text-brand hover:underline cursor-pointer"
+                  <Link
+                    to="/debts"
+                    className="inline-block mt-2 text-[12px] font-semibold text-brand hover:underline cursor-pointer"
                   >
-                    + บันทึกหนี้สิน
-                  </button>
+                    + ไปที่ Debts Hub เพื่อบันทึกหนี้สิน
+                  </Link>
                 </div>
               )}
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px] text-ink-muted">
-              <span>{debts > 0 ? 'ผ่อนชำระตรงเวลาเพื่อลดภาระดอกเบี้ย' : 'ความมั่งคั่งสุทธิ = ทรัพย์สิน 100%'}</span>
-              <div className="flex items-center gap-3">
-                <Link
-                  to="/debts"
-                  className="font-semibold text-brand hover:underline cursor-pointer flex items-center gap-1"
-                >
-                  <span>ดูตารางผ่อนทั้งหมด</span>
-                  <ArrowUpRightIcon className="h-3 w-3" />
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedLiabilityId(null)
-                    setLiabilitiesOpen(true)
-                  }}
-                  aria-label="Add new liability"
-                  className="font-semibold text-brand hover:underline cursor-pointer"
-                >
-                  + Add Debt
-                </button>
-              </div>
             </div>
           </Card>
         </div>
@@ -993,15 +915,6 @@ export function Dashboard() {
           )}
         </Card>
       </div>
-
-      <CashAccountsForm
-        open={cashOpen}
-        onClose={() => {
-          setCashOpen(false)
-          setSelectedCashAccountId(null)
-        }}
-        initialAccountId={selectedCashAccountId}
-      />
 
       <LiabilitiesModal
         open={liabilitiesOpen}
