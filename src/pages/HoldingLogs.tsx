@@ -741,6 +741,7 @@ const ASSET_FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'stock', label: 'Stocks' },
   { key: 'crypto', label: 'Bitcoin' },
   { key: 'gold', label: 'Gold' },
+  { key: 'real_estate', label: 'Real Estate' },
   { key: 'cash', label: 'Cash' },
 ]
 
@@ -749,6 +750,7 @@ const ACTION_FILTERS = [
   { key: 'add', label: 'Added' },
   { key: 'buy_more', label: 'Bought more' },
   { key: 'sell', label: 'Sold' },
+  { key: 'dividend', label: 'Dividend' },
   { key: 'edit', label: 'Edited' },
 ] as const
 
@@ -783,7 +785,7 @@ export function HoldingLogs() {
   }
 
   const [assetFilter, setAssetFilter] = useState<AssetClass | 'all'>('all')
-  const [actionFilter, setActionFilter] = useState<'all' | 'add' | 'buy_more' | 'sell' | 'edit'>('all')
+  const [actionFilter, setActionFilter] = useState<'all' | 'add' | 'buy_more' | 'sell' | 'dividend' | 'edit'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'table' | 'timeline'>(() => {
     const saved = localStorage.getItem('spendiary_logs_view_mode')
