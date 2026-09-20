@@ -412,7 +412,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
           <TransactionDateField value={txDate} onChange={setTxDate} />
 
           <div className="rounded-2xl bg-surface-muted px-4 py-3">
-            <div className="flex items-center justify-between text-[13px]">
+            <div className="flex items-center justify-between text-sm">
               <span className="text-ink-muted">Currently holding</span>
               <span className="font-semibold tnum text-ink">
                 {totalGrams.toFixed(2)} g ({totalBaht.toFixed(4)} บาททองคำ)
@@ -439,7 +439,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
 
           {/* Unit selector tab */}
           <div className="space-y-1">
-            <label className="text-[13px] font-medium text-ink-soft">Purchase Unit / หน่วยซื้อ</label>
+            <label className="text-sm font-medium text-ink-soft">Purchase Unit / หน่วยซื้อ</label>
             <SegmentedControl
               size="sm"
               value={goldUnit}
@@ -510,18 +510,18 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
                 background: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 10%, transparent)`,
               }}
             >
-              <div className="flex items-center justify-between text-[13px]">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-ink-soft">Implied price / gram</span>
                 <span className="font-semibold tnum text-ink">{thb(impliedPrice, true)}</span>
               </div>
-              <div className="flex items-center justify-between text-[13px]">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-ink-soft">Implied cost / บาททองคำ</span>
                 <span className="font-semibold tnum text-brand">
                   {thb(impliedPrice * GRAMS_PER_BAHT_GOLD)}
                   {rate > 1 && ` ($${Math.round(goldThbPerGramToXauUsd(impliedPrice, rate)).toLocaleString()}/oz XAUUSD)`}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-[13px]">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-ink-soft">Gold amount</span>
                 <span className="font-semibold tnum text-ink">{g.toFixed(4)} g ({(g / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง)</span>
               </div>
@@ -622,7 +622,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
           <TransactionDateField value={txDate} onChange={setTxDate} />
 
           <div className="rounded-2xl bg-surface-muted px-4 py-3">
-            <div className="flex items-center justify-between text-[13px]">
+            <div className="flex items-center justify-between text-sm">
               <span className="text-ink-muted">Currently holding</span>
               <span className="font-semibold tnum text-ink">
                 {totalSats.toLocaleString()} sats ({(totalSats / SATS_PER_BTC).toFixed(8)} BTC)
@@ -681,13 +681,13 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
                 background: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 10%, transparent)`,
               }}
             >
-              <div className="flex items-center justify-between text-[13px]">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-ink-soft">Implied price / BTC</span>
                 <span className="font-semibold tnum text-ink">
                   {money(impliedPrice / (usdThb && usdThb > 0 ? usdThb : 35), 'USD')} (≈ {thb(impliedPrice)})
                 </span>
               </div>
-              <div className="mt-1 flex items-center justify-between text-[13px]">
+              <div className="mt-1 flex items-center justify-between text-sm">
                 <span className="text-ink-soft">BTC amount</span>
                 <span className="font-semibold tnum text-ink">{btcAmount.toFixed(8)} BTC</span>
               </div>
@@ -811,18 +811,18 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
         <TransactionDateField value={txDate} onChange={setTxDate} />
 
         {isStock && !usdThb && (
-          <div className="rounded-xl bg-warn-soft px-4 py-3 text-[13px] font-medium text-warn">
+          <div className="rounded-xl bg-warn-soft px-4 py-3 text-sm font-medium text-warn">
             USD/THB rate is loading. Please wait before saving to avoid wrong values.
           </div>
         )}
         <div className="rounded-2xl bg-surface-muted px-4 py-3">
-          <div className="flex items-center justify-between text-[13px]">
+          <div className="flex items-center justify-between text-sm">
             <span className="text-ink-muted">Currently holding</span>
             <span className="font-semibold tnum text-ink">
               {holding.units.toLocaleString(undefined, { maximumFractionDigits: 4 })} {label}
             </span>
           </div>
-          <div className="mt-1 flex items-center justify-between text-[13px]">
+          <div className="mt-1 flex items-center justify-between text-sm">
             <span className="text-ink-muted">Avg cost</span>
             <span className="font-semibold tnum text-ink">
               {isStock && rate > 1
@@ -912,7 +912,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
               background: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 10%, transparent)`,
             }}
           >
-            <div className="flex items-center justify-between text-[13px]">
+            <div className="flex items-center justify-between text-sm">
               <span className="text-ink-soft">Transaction Cost</span>
               <span className="font-semibold tnum text-ink">
                 ฿{amountSpentThbNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
@@ -921,15 +921,15 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
                 </span>
               </span>
             </div>
-            <div className="flex items-center justify-between text-[13px]">
+            <div className="flex items-center justify-between text-sm">
               <span className="text-ink-soft">Shares Added</span>
               <span className="font-semibold tnum text-ink">+{sharesBoughtNum.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} shares</span>
             </div>
-            <div className="flex items-center justify-between text-[13px]">
+            <div className="flex items-center justify-between text-sm">
               <span className="text-ink-soft">New Total Shares</span>
               <span className="font-semibold tnum text-ink">{stockNewTotalUnits.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} shares</span>
             </div>
-            <div className="flex items-center justify-between text-[13px]">
+            <div className="flex items-center justify-between text-sm">
               <span className="text-ink-soft">New Total THB Invested</span>
               <span className="font-semibold tnum text-ink">฿{stockNewTotalThbInvested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
@@ -944,17 +944,17 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
               background: `color-mix(in srgb, ${ASSET_META[holding.assetClass].color} 10%, transparent)`,
             }}
           >
-            <div className="flex items-center justify-between text-[13px]">
+            <div className="flex items-center justify-between text-sm">
               <span className="text-ink-soft">Cost of this buy</span>
               <span className="font-semibold tnum text-ink">{thb(cost)}</span>
             </div>
-            <div className="mt-1.5 flex items-center justify-between text-[14px]">
+            <div className="mt-1.5 flex items-center justify-between text-sm">
               <span className="font-semibold text-ink">New total</span>
               <span className="font-bold tnum text-ink">
                 {preview.units.toLocaleString(undefined, { maximumFractionDigits: 4 })} {label}
               </span>
             </div>
-            <div className="mt-1 flex items-center justify-between text-[12.5px]">
+            <div className="mt-1 flex items-center justify-between text-xs">
               <span className="text-ink-muted">New avg cost · value</span>
               <span className="tnum text-ink-soft">
                 {thb(preview.avgCost, true)}{' '}

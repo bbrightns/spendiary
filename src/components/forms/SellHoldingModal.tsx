@@ -160,7 +160,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
     <button
       type="button"
       onClick={handleSellAll}
-      className="rounded-md bg-surface-muted hover:bg-brand/15 hover:text-brand border border-line hover:border-brand/30 px-2 py-0.5 text-[11px] font-bold text-ink-muted active:scale-95 transition-all cursor-pointer shadow-2xs"
+      className="rounded-md bg-surface-muted hover:bg-brand/15 hover:text-brand border border-line hover:border-brand/30 px-2 py-0.5 text-xs font-bold text-ink-muted active:scale-95 transition-all cursor-pointer shadow-2xs"
       title="ขายทั้งหมด 100%"
     >
       100%
@@ -449,7 +449,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
 
         {/* Context: Current holding */}
         <div className="rounded-2xl bg-surface-muted px-4 py-3">
-          <div className="flex items-center justify-between text-[13px]">
+          <div className="flex items-center justify-between text-sm">
             <span className="text-ink-muted">Currently holding</span>
             <span className="font-semibold tnum text-ink">
               {isBtc
@@ -459,7 +459,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
                 : `${currentUnits.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${label}`}
             </span>
           </div>
-          <div className="mt-1 flex items-center justify-between text-[12.5px]">
+          <div className="mt-1 flex items-center justify-between text-xs">
             <span className="text-ink-muted">Avg Cost · Market Value</span>
             <span className="font-medium tnum text-ink-soft">
               {isStock && rate > 1
@@ -525,9 +525,9 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
                   if (!loc || loc.satoshi <= 0) return null
                   const avgBtcThb = (loc.thbSpent / loc.satoshi) * SATS_PER_BTC
                   return (
-                    <div className="flex items-center justify-between text-[11.5px] px-1 text-ink-muted">
+                    <div className="flex items-center justify-between text-xs px-1 text-ink-muted">
                       <span>ต้นทุนเฉลี่ยกระเป๋านี้: <strong className="text-ink-soft font-semibold">฿{Math.round(avgBtcThb).toLocaleString()}/BTC</strong></span>
-                      <span className="text-[10.5px] text-ink-faint">*คิดกำไรขาดทุนเฉพาะกระเป๋านี้</span>
+                      <span className="text-xs text-ink-faint">*คิดกำไรขาดทุนเฉพาะกระเป๋านี้</span>
                     </div>
                   )
                 })()}
@@ -555,7 +555,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
                 placeholder={estBtcProceeds > 0 ? `เช่น ${estBtcProceeds.toLocaleString()}` : '0'}
               />
               {estBtcProceeds > 0 && (
-                <div className="flex items-center justify-between text-[11.5px] px-1 text-ink-muted">
+                <div className="flex items-center justify-between text-xs px-1 text-ink-muted">
                   <span>ราคาตลาดประเมิน: <strong className="text-ink-soft font-medium">฿{estBtcProceeds.toLocaleString()}</strong></span>
                   <button
                     type="button"
@@ -587,16 +587,16 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
                   const avgPerBaht = (loc.thbSpent / loc.grams) * GRAMS_PER_BAHT_GOLD
                   const avgPerGram = loc.thbSpent / loc.grams
                   return (
-                    <div className="flex items-center justify-between text-[11.5px] px-1 text-ink-muted">
+                    <div className="flex items-center justify-between text-xs px-1 text-ink-muted">
                       <span>ต้นทุนเฉลี่ยกระเป๋านี้: <strong className="text-ink-soft font-semibold">฿{Math.round(avgPerBaht).toLocaleString()}/บาททอง</strong> <span className="text-ink-faint font-normal">(฿{Math.round(avgPerGram).toLocaleString()}/g)</span></span>
-                      <span className="text-[10.5px] text-ink-faint">*คิดกำไรขาดทุนเฉพาะกระเป๋านี้</span>
+                      <span className="text-xs text-ink-faint">*คิดกำไรขาดทุนเฉพาะกระเป๋านี้</span>
                     </div>
                   )
                 })()}
               </div>
             )}
             <div className="space-y-1">
-              <label className="text-[13px] font-medium text-ink-soft">Sale Unit / หน่วยขาย</label>
+              <label className="text-sm font-medium text-ink-soft">Sale Unit / หน่วยขาย</label>
               <SegmentedControl
                 size="sm"
                 value={goldUnit}
@@ -655,7 +655,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
                 placeholder={estGoldProceeds > 0 ? `เช่น ${estGoldProceeds.toLocaleString()}` : '0'}
               />
               {estGoldProceeds > 0 && (
-                <div className="flex items-center justify-between text-[11.5px] px-1 text-ink-muted">
+                <div className="flex items-center justify-between text-xs px-1 text-ink-muted">
                   <span>ราคาตลาดประเมิน: <strong className="text-ink-soft font-medium">฿{estGoldProceeds.toLocaleString()}</strong></span>
                   <button
                     type="button"
@@ -715,10 +715,10 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
           >
             {/* Total Proceeds Row */}
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-[13px] gap-2">
+              <div className="flex items-center justify-between text-sm gap-2">
                 <span className="text-ink-soft shrink-0">Total Proceeds (เงินที่จะได้รับ)</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold tnum text-ink text-[14px]">{thb(totalProceedsThb)}</span>
+                  <span className="font-bold tnum text-ink text-sm">{thb(totalProceedsThb)}</span>
                   {!isCustomProceeds ? (
                     <button
                       type="button"
@@ -727,10 +727,10 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
                         setCustomProceeds(Number(grossProceedsThb.toFixed(2)))
                         setCustomFee('')
                       }}
-                      className="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11.5px] font-medium text-sky-700 bg-sky-100 hover:bg-sky-200 dark:text-sky-200 dark:bg-sky-950 dark:hover:bg-sky-900 border border-sky-300 dark:border-sky-800 transition-colors cursor-pointer shrink-0 shadow-2xs"
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium text-sky-700 bg-sky-100 hover:bg-sky-200 dark:text-sky-200 dark:bg-sky-950 dark:hover:bg-sky-900 border border-sky-300 dark:border-sky-800 transition-colors cursor-pointer shrink-0 shadow-2xs"
                       title="ระบุยอดเงินที่ได้รับจริงเอง กรณีมีค่าธรรมเนียมหรือส่วนลด"
                     >
-                      <span className="text-[12px]">✏️</span>
+                      <span className="text-xs">✏️</span>
                       <span>ปรับยอด</span>
                     </button>
                   ) : (
@@ -741,7 +741,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
                         setCustomProceeds('')
                         setCustomFee('')
                       }}
-                      className="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11.5px] font-medium text-ink-muted hover:text-ink bg-surface border border-line hover:border-line-strong transition-colors cursor-pointer shrink-0 shadow-2xs"
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium text-ink-muted hover:text-ink bg-surface border border-line hover:border-line-strong transition-colors cursor-pointer shrink-0 shadow-2xs"
                       title="คืนค่าคำนวณอัตโนมัติ"
                     >
                       <span>↺</span>
@@ -754,9 +754,9 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
               {/* Custom Net Proceeds & Fee Input Drawer */}
               {isCustomProceeds && (
                 <div className="rounded-xl bg-surface border border-line p-3 space-y-2.5 text-left shadow-xs">
-                  <div className="flex items-center justify-between text-[11.5px] text-ink-muted">
+                  <div className="flex items-center justify-between text-xs text-ink-muted">
                     <span>มูลค่าขายตามราคาตลาด: <strong className="text-ink font-semibold tnum">{thb(grossProceedsThb)}</strong></span>
-                    <span className="text-[11px] text-ink-soft">กรอกยอดสุทธิหรือค่าธรรมเนียม</span>
+                    <span className="text-xs text-ink-soft">กรอกยอดสุทธิหรือค่าธรรมเนียม</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <NumberField
@@ -794,7 +794,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
                     />
                   </div>
                   {effectiveFee > 0 && (
-                    <div className="flex items-center justify-between text-[11.5px] text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-2.5 py-1">
+                    <div className="flex items-center justify-between text-xs text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-2.5 py-1">
                       <span>หักค่าธรรมเนียม/ต๋ง (Fee):</span>
                       <span className="font-bold tnum">
                         -฿{effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({grossProceedsThb > 0 ? ((effectiveFee / grossProceedsThb) * 100).toFixed(2) : '0'}%)
@@ -804,16 +804,16 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
                 </div>
               )}
             </div>
-            <div className="flex items-center justify-between text-[13px]">
+            <div className="flex items-center justify-between text-sm">
               <span className="text-ink-soft">
                 {isGold || isBtc ? 'ต้นทุนของส่วนที่ขาย (อิงตามกระเป๋าที่เลือก)' : 'ต้นทุนของส่วนที่ขาย'}
               </span>
               <span className="font-medium tnum text-ink-muted">{thb(costBasisSoldThb)}</span>
             </div>
-            <div className="flex items-center justify-between text-[13px] border-t border-line/60 pt-1.5">
+            <div className="flex items-center justify-between text-sm border-t border-line/60 pt-1.5">
               <span className="font-semibold text-ink">กำไร / ขาดทุนที่ได้รับ</span>
               <span
-                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[12px] font-bold tnum ${
+                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold tnum ${
                   realizedPnL >= 0
                     ? 'bg-gain/15 text-gain border border-gain/20'
                     : 'bg-loss/15 text-loss border border-loss/20'
@@ -824,7 +824,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
                 {realizedPnLPercent.toFixed(1)}%)
               </span>
             </div>
-            <div className="flex items-center justify-between text-[12.5px] text-ink-muted pt-0.5">
+            <div className="flex items-center justify-between text-xs text-ink-muted pt-0.5">
               <span>จำนวนคงเหลือหลังขาย</span>
               <span className="font-medium tnum">
                 {isFullSell ? (

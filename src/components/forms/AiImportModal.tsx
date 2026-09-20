@@ -295,7 +295,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
       <div className="space-y-5 pt-1">
         {/* Step-by-Step Instructions */}
         <div className="rounded-2xl border border-line bg-surface-muted/60 p-4 sm:p-4.5 space-y-3">
-          <div className="flex items-center gap-2 text-[13px] font-bold uppercase tracking-wider text-brand">
+          <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-brand">
             <SparkleIcon className="h-4 w-4" />
             <span>How It Works in 3 Easy Steps</span>
           </div>
@@ -303,7 +303,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
             <div className="flex flex-col gap-1 p-2.5 rounded-xl bg-surface border border-line/60">
               <span className="font-bold text-ink flex items-center gap-1.5">
-                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand/15 text-[11px] text-brand">1</span>
+                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand/15 text-xs text-brand">1</span>
                 Copy Prompt
               </span>
               <p className="text-ink-muted leading-relaxed">
@@ -313,7 +313,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
 
             <div className="flex flex-col gap-1 p-2.5 rounded-xl bg-surface border border-line/60">
               <span className="font-bold text-ink flex items-center gap-1.5">
-                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand/15 text-[11px] text-brand">2</span>
+                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand/15 text-xs text-brand">2</span>
                 Ask ChatGPT / AI
               </span>
               <p className="text-ink-muted leading-relaxed">
@@ -323,7 +323,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
 
             <div className="flex flex-col gap-1 p-2.5 rounded-xl bg-surface border border-line/60">
               <span className="font-bold text-ink flex items-center gap-1.5">
-                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand/15 text-[11px] text-brand">3</span>
+                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand/15 text-xs text-brand">3</span>
                 Paste & Import
               </span>
               <p className="text-ink-muted leading-relaxed">
@@ -365,7 +365,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
 
           {/* Collapsible Prompt Preview */}
           {showPromptPreview && (
-            <div className="relative mt-2 rounded-xl bg-ink/5 dark:bg-black/40 p-3 border border-line/50 text-[11px] font-mono text-ink-muted max-h-48 overflow-y-auto whitespace-pre-wrap">
+            <div className="relative mt-2 rounded-xl bg-ink/5 dark:bg-black/40 p-3 border border-line/50 text-xs font-mono text-ink-muted max-h-48 overflow-y-auto whitespace-pre-wrap">
               {AI_PROMPT_TEMPLATE}
             </div>
           )}
@@ -374,7 +374,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
         {/* JSON Input Section */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label htmlFor="json-paste-area" className="text-[13px] font-semibold text-ink">
+            <label htmlFor="json-paste-area" className="text-sm font-semibold text-ink">
               Paste JSON or Upload File
             </label>
             <div className="flex items-center gap-2">
@@ -456,7 +456,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
                 ]}
               />
             </div>
-            <p className="text-[11.5px] text-ink-muted">
+            <p className="text-xs text-ink-muted">
               {mode === 'merge'
                 ? 'Merge: Adds new items and updates existing ones without deleting other records.'
                 : 'Replace: Clears your existing holdings and cash accounts and replaces them with this import.'}

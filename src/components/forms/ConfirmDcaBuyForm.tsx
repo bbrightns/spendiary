@@ -466,17 +466,17 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
           <div className="space-y-4">
             <div className="rounded-2xl bg-surface-muted p-4 border border-line/50 space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-[12px] font-semibold text-ink-muted">Destination Account</span>
-                <span className="text-[13.5px] font-bold text-ink">{targetCashAccount?.name || plan.name}</span>
+                <span className="text-xs font-semibold text-ink-muted">Destination Account</span>
+                <span className="text-sm font-bold text-ink">{targetCashAccount?.name || plan.name}</span>
               </div>
-              <div className="flex items-center justify-between text-[12.5px]">
+              <div className="flex items-center justify-between text-xs">
                 <span className="text-ink-muted">Current Balance</span>
                 <span className="font-display font-semibold text-ink tnum">
                   {targetCashAccount?.currency === 'USD' ? '$' : '฿'}
                   {(targetCashAccount?.balance ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-[12.5px] border-t border-line/40 pt-2">
+              <div className="flex items-center justify-between text-xs border-t border-line/40 pt-2">
                 <span className="text-cash font-semibold">New Balance After Deposit</span>
                 <span className="font-display font-extrabold text-cash tnum">
                   {targetCashAccount?.currency === 'USD' ? '$' : '฿'}
@@ -522,18 +522,18 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
             {/* Static PURCHASE SUMMARY Preview Section: Mutual Fund */}
             <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-3 shadow-sm">
               <div className="flex items-center justify-between border-b border-line pb-2">
-                <p className="text-[12px] font-bold uppercase tracking-wider text-brand">PURCHASE PREVIEW (BEFORE → AFTER)</p>
-                <span className="text-[11px] font-medium text-ink-muted">Max 4 decimals</span>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand">PURCHASE PREVIEW (BEFORE → AFTER)</p>
+                <span className="text-xs font-medium text-ink-muted">Max 4 decimals</span>
               </div>
 
-              <div className="flex items-center justify-between text-[13px]">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-ink-muted">Execution NAV (this tx)</span>
                 <span className={valueStyle(hasValidFund)}>
                   {hasValidFund ? `฿${fmtNum(fundImpliedNav, 4)} / unit` : '฿0 / unit'}
                 </span>
               </div>
 
-              <div className="space-y-1.5 pt-1 text-[13px]">
+              <div className="space-y-1.5 pt-1 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-ink-muted">Units</span>
                   <span className="tnum text-ink-soft">
@@ -549,7 +549,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-line flex items-center justify-between text-[13px]">
+              <div className="pt-2 border-t border-line flex items-center justify-between text-sm">
                 <span className="font-medium text-ink-muted">New Avg Cost</span>
                 <span className={`tnum ${hasValidFund ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
                   {hasValidFund ? `฿${fmtNum(fundNewAvgCostThb, 4)} / unit` : `฿${fmtNum(fundCurrentUnits > 0 ? fundCurrentThbInvested / fundCurrentUnits : 0, 4)} / unit`}
@@ -568,11 +568,11 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
             {liveStockPrice !== null && liveStockPrice > 0 && (
               <div className="flex items-center justify-between rounded-xl border border-line bg-surface-muted px-4 py-2.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-[13px] font-semibold text-ink-soft">Market Price</span>
-                  <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[10.5px] font-bold text-brand">Live</span>
+                  <span className="text-sm font-semibold text-ink-soft">Market Price</span>
+                  <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-bold text-brand">Live</span>
                 </div>
-                <span className="text-[14px] font-bold tnum text-ink">
-                  ${liveStockPrice.toFixed(2)} <span className="text-[11.5px] font-normal text-ink-muted">/ share</span>
+                <span className="text-sm font-bold tnum text-ink">
+                  ${liveStockPrice.toFixed(2)} <span className="text-xs font-normal text-ink-muted">/ share</span>
                 </span>
               </div>
             )}
@@ -587,7 +587,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                 placeholder="2,000"
                 error={showErrors && amountThbNum <= 0 ? 'Required (> 0)' : undefined}
               />
-              <div className="flex items-center justify-between px-1 text-[12px] text-ink-muted">
+              <div className="flex items-center justify-between px-1 text-xs text-ink-muted">
                 <span>
                   ≈ <strong className="font-semibold text-ink">${fxRateNum > 0 ? (amountThbNum / fxRateNum).toFixed(2) : '0.00'} USD</strong>
                   {' · '}
@@ -640,14 +640,14 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               {/* Quick fill estimated shares button if live price available and user hasn't typed shares yet */}
               {liveStockPrice !== null && liveStockPrice > 0 && amountThbNum > 0 && fxRateNum > 0 && (
                 <div className="mt-1.5 flex items-center justify-between">
-                  <span className="text-[11.5px] text-ink-muted">
+                  <span className="text-xs text-ink-muted">
                     ≈ {((amountThbNum / fxRateNum) / liveStockPrice).toFixed(4)} shares @ ${liveStockPrice.toFixed(2)}
                   </span>
                   {unitsBought === '' && (
                     <button
                       type="button"
                       onClick={() => setUnitsBought(Number(((amountThbNum / fxRateNum) / liveStockPrice).toFixed(4)))}
-                      className="text-[11.5px] font-bold text-brand hover:underline cursor-pointer"
+                      className="text-xs font-bold text-brand hover:underline cursor-pointer"
                     >
                       Fill estimated
                     </button>
@@ -659,18 +659,18 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
             {/* Static PURCHASE SUMMARY Preview Section: Stock */}
             <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-3 shadow-sm">
               <div className="flex items-center justify-between border-b border-line pb-2">
-                <p className="text-[12px] font-bold uppercase tracking-wider text-brand">PURCHASE PREVIEW (BEFORE → AFTER)</p>
-                <span className="text-[11px] font-medium text-ink-muted">Max 4 decimals</span>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand">PURCHASE PREVIEW (BEFORE → AFTER)</p>
+                <span className="text-xs font-medium text-ink-muted">Max 4 decimals</span>
               </div>
 
-              <div className="flex items-center justify-between text-[13px]">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-ink-muted">Implied Price (this tx)</span>
                 <span className={valueStyle(hasValidStock)}>
                   {hasValidStock ? `$${fmtNum(stockImpliedPriceUsd, 4)} / share` : '$0 / share'}
                 </span>
               </div>
 
-              <div className="space-y-1.5 pt-1 text-[13px]">
+              <div className="space-y-1.5 pt-1 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-ink-muted">Shares</span>
                   <span className="tnum text-ink-soft">
@@ -686,7 +686,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-line flex items-center justify-between text-[13px]">
+              <div className="pt-2 border-t border-line flex items-center justify-between text-sm">
                 <span className="font-medium text-ink-muted">New Avg Cost</span>
                 <div className={`tnum ${hasValidStock ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
                   {hasValidStock ? (
@@ -744,18 +744,18 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
             {/* Static PURCHASE SUMMARY Preview Section: Crypto / BTC */}
             <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-3 shadow-sm">
               <div className="flex items-center justify-between border-b border-line pb-2">
-                <p className="text-[12px] font-bold uppercase tracking-wider text-brand">PURCHASE PREVIEW (BEFORE → AFTER)</p>
-                <span className="text-[11px] font-medium text-ink-muted">Digits only</span>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand">PURCHASE PREVIEW (BEFORE → AFTER)</p>
+                <span className="text-xs font-medium text-ink-muted">Digits only</span>
               </div>
 
-              <div className="flex items-center justify-between text-[13px]">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-ink-muted">Implied BTC Price</span>
                 <span className={valueStyle(hasValidBtc)}>
                   {hasValidBtc ? `฿${fmtNum(Math.round(btcImpliedPriceThbPerBtc), 0)} / BTC` : '฿0 / BTC'}
                 </span>
               </div>
 
-              <div className="space-y-1.5 pt-1 text-[13px]">
+              <div className="space-y-1.5 pt-1 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-ink-muted">Sats</span>
                   <span className="tnum text-ink-soft">
@@ -771,7 +771,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-line flex items-center justify-between text-[13px]">
+              <div className="pt-2 border-t border-line flex items-center justify-between text-sm">
                 <span className="font-medium text-ink-muted">New Avg Cost</span>
                 <span className={`tnum ${hasValidBtc ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
                   {hasValidBtc ? `$${fmtNum(Math.round(rate > 0 ? btcNewAvgCostThb / rate : 0), 0)} / BTC (≈ ฿${fmtNum(Math.round(btcNewAvgCostThb), 0)})` : '$0 / BTC'}
@@ -873,18 +873,18 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
             {/* Static PURCHASE SUMMARY Preview Section: Gold */}
             <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-3 shadow-sm">
               <div className="flex items-center justify-between border-b border-line pb-2">
-                <p className="text-[12px] font-bold uppercase tracking-wider text-brand">PURCHASE PREVIEW (BEFORE → AFTER)</p>
-                <span className="text-[11px] font-medium text-ink-muted">Max 4 decimals</span>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand">PURCHASE PREVIEW (BEFORE → AFTER)</p>
+                <span className="text-xs font-medium text-ink-muted">Max 4 decimals</span>
               </div>
 
-              <div className="flex items-center justify-between text-[13px]">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-ink-muted">Price / Gram</span>
                 <span className={valueStyle(hasValidGold)}>
                   {hasValidGold ? `฿${fmtNum(goldImpliedPricePerGram, 2)} / g (≈ ฿${fmtNum(goldImpliedPricePerGram * GRAMS_PER_BAHT_GOLD, 0)} / บาททอง | $${fmtNum(goldThbPerGramToXauUsd(goldImpliedPricePerGram, rate), 0)}/oz)` : '฿0 / g'}
                 </span>
               </div>
 
-              <div className="space-y-1.5 pt-1 text-[13px]">
+              <div className="space-y-1.5 pt-1 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-ink-muted">Grams</span>
                   <span className="tnum text-ink-soft">
@@ -900,7 +900,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-line flex items-center justify-between text-[13px]">
+              <div className="pt-2 border-t border-line flex items-center justify-between text-sm">
                 <span className="font-medium text-ink-muted">New Avg Cost</span>
                 <span className={`tnum ${hasValidGold ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
                   {hasValidGold ? `฿${fmtNum(goldNewAvgCostThb * GRAMS_PER_BAHT_GOLD, 0)}/บาททอง (≈ $${fmtNum(goldThbPerGramToXauUsd(goldNewAvgCostThb, rate), 0)}/oz XAUUSD)` : '฿0 / บาททอง'}

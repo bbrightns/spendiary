@@ -113,8 +113,8 @@ export function Modal({ open, onClose, title, description, children, footer, siz
       >
         <div className="flex shrink-0 items-start justify-between gap-4 px-6 pb-2.5 pt-6">
           <div>
-            <h2 id={titleId} className="font-display text-[20px] font-extrabold tracking-tight text-ink">{title}</h2>
-            {description && <p id={descId} className="mt-0.5 text-[13px] text-ink-muted">{description}</p>}
+            <h2 id={titleId} className="font-display text-xl font-extrabold tracking-tight text-ink">{title}</h2>
+            {description && <p id={descId} className="mt-0.5 text-sm text-ink-muted">{description}</p>}
           </div>
           <button
             onClick={onClose}

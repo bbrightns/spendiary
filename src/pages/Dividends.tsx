@@ -161,20 +161,20 @@ export function Dividends() {
           <Card className="p-3.5 sm:p-5 animate-rise flex flex-col justify-between col-span-2 lg:col-span-1 bg-gradient-to-br from-emerald-500/5 via-surface to-surface border-emerald-500/20" padded={false}>
             <div>
               <div className="flex items-center justify-between gap-1">
-                <p className="text-[11px] sm:text-[12px] font-semibold text-emerald-700 dark:text-emerald-300">
+                <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
                   คาดว่าจะได้ปีนี้ (ทั้งปี)
                 </p>
                 {annualDividendYieldPct > 0 && (
-                  <span className="inline-flex items-center rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[11px] sm:text-[12px] font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="inline-flex items-center rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                     ~{annualDividendYieldPct.toFixed(1)}% ต่อปี
                   </span>
                 )}
               </div>
-              <p className="mt-1 font-display text-[20px] sm:text-[24px] font-extrabold text-emerald-600 dark:text-emerald-400 tnum truncate">
+              <p className="mt-1 font-display text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tnum truncate">
                 ~{thb(totalAnnualDividendNet)}
               </p>
             </div>
-            <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11.5px] text-ink-muted truncate">
+            <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
               {annualDividendYieldPct > 0
                 ? `คิดเป็นประมาณ ${annualDividendYieldPct.toFixed(1)}% ต่อปี (เทียบเท่าดอกเบี้ยเงินฝาก)`
                 : 'ตั้งค่าเงินปันผลในหุ้นเพื่อคำนวณ'}
@@ -184,12 +184,12 @@ export function Dividends() {
           {/* Card 2: รับเข้าบัญชีแล้วปีนี้ */}
           <Card className="p-3.5 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
             <div>
-              <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">รับเข้าบัญชีแล้ว ({currentYear})</p>
-              <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-ink tnum truncate">
+              <p className="text-xs font-medium text-ink-muted">รับเข้าบัญชีแล้ว ({currentYear})</p>
+              <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-ink tnum truncate">
                 {thb(totalNetThisYear)}
               </p>
             </div>
-            <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+            <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
               ก่อนหักภาษี {thb(totalGrossThisYear)} · ภาษี -{thb(totalTaxThisYear)}
             </p>
           </Card>
@@ -197,12 +197,12 @@ export function Dividends() {
           {/* Card 3: คาดการณ์เดือนนี้ */}
           <Card className="p-3.5 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
             <div>
-              <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">รอรับเดือนนี้ ({MONTH_NAMES[currentMonth - 1]})</p>
-              <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-brand-ink tnum truncate">
+              <p className="text-xs font-medium text-ink-muted">รอรับเดือนนี้ ({MONTH_NAMES[currentMonth - 1]})</p>
+              <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-brand-ink tnum truncate">
                 {estimatedThisMonth > 0 ? `~${thb(estimatedThisMonth)}` : '-'}
               </p>
             </div>
-            <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+            <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
               {upcomingHoldings.length > 0 ? `${upcomingHoldings.length} รายการที่รอรับ` : 'ไม่มีรายการในเดือนนี้'}
             </p>
           </Card>
@@ -217,29 +217,29 @@ export function Dividends() {
             className="flex w-full items-center justify-between p-3.5 sm:p-5 text-left transition-colors hover:bg-surface-muted/50 cursor-pointer select-none"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <span className="text-[18px] shrink-0">📅</span>
+              <span className="text-lg shrink-0">📅</span>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="font-display text-[14.5px] sm:text-[16px] font-bold text-ink truncate">
+                  <h2 className="font-display text-sm sm:text-base font-bold text-ink truncate">
                     เงินปันผลที่รอรับเดือนนี้
                   </h2>
-                  <span className="rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[10.5px] font-bold">
+                  <span className="rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-xs font-bold">
                     {MONTH_NAMES[currentMonth - 1]}
                   </span>
                   {upcomingHoldings.length > 0 && (
-                    <span className="rounded-full bg-surface-muted border border-line text-ink-muted px-2 py-0.5 text-[10.5px] font-bold">
+                    <span className="rounded-full bg-surface-muted border border-line text-ink-muted px-2 py-0.5 text-xs font-bold">
                       {upcomingHoldings.length} รายการ
                     </span>
                   )}
                 </div>
                 {!upcomingOpen ? (
-                  <p className="text-[11.5px] text-ink-muted mt-0.5 truncate">
+                  <p className="text-xs text-ink-muted mt-0.5 truncate">
                     {upcomingHoldings.length === 0
                       ? `ไม่มีรายการปันผลในเดือน${MONTH_NAMES[currentMonth - 1]} (แตะเพื่อดูรายละเอียด)`
                       : `คาดว่าจะได้รับ ~${thb(estimatedThisMonth)} · แตะเพื่อดูและกดยืนยันรับเงิน`}
                   </p>
                 ) : (
-                  <p className="text-[11.5px] text-ink-muted mt-0.5 hidden sm:block">
+                  <p className="text-xs text-ink-muted mt-0.5 hidden sm:block">
                     รายการหุ้นหรือสินทรัพย์ที่มีรอบจ่ายเงินปันผลในเดือนนี้
                   </p>
                 )}
@@ -247,7 +247,7 @@ export function Dividends() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0 ml-2">
-              <span className="text-[11px] font-medium text-ink-muted hidden sm:inline">
+              <span className="text-xs font-medium text-ink-muted hidden sm:inline">
                 {upcomingOpen ? 'ย่อลง' : 'ขยายดู'}
               </span>
               <div className="rounded-full p-1 hover:bg-surface-muted text-ink-muted">
@@ -264,10 +264,10 @@ export function Dividends() {
             <div className="border-t border-line">
               {upcomingHoldings.length === 0 ? (
                 <div className="p-4 sm:p-6 text-center">
-                  <p className="text-[13px] text-ink-muted">
+                  <p className="text-sm text-ink-muted">
                     ไม่มีรายการปันผลในเดือน{MONTH_NAMES[currentMonth - 1]}
                   </p>
-                  <p className="text-[11.5px] text-ink-faint mt-1">
+                  <p className="text-xs text-ink-faint mt-1">
                     คุณสามารถตั้งรอบเดือนที่จ่ายปันผลในรายละเอียดของหุ้น หรือกดปุ่ม "+ บันทึกรับปันผล" ได้ตลอดเวลา
                   </p>
                 </div>
@@ -298,16 +298,16 @@ export function Dividends() {
                               <div className="min-w-0 flex-1">
                                 {/* บรรทัด 1.1: ชื่อย่อ + ชื่อเต็ม */}
                                 <div className="flex items-center gap-1.5 min-w-0">
-                                  <span className="font-display font-bold text-[15px] sm:text-[16px] text-ink truncate">
+                                  <span className="font-display font-bold text-base text-ink truncate">
                                     {h.ticker}
                                   </span>
-                                  <span className="text-[12px] text-ink-muted truncate max-w-[140px] sm:max-w-xs">
+                                  <span className="text-xs text-ink-muted truncate max-w-[140px] sm:max-w-xs">
                                     {h.name}
                                   </span>
                                 </div>
 
                                 {/* บรรทัด 1.2: % ต่อปี | [ปุ่มแก้ไข] */}
-                                <div className="flex items-center gap-2 mt-1 text-[11px] sm:text-[12px]">
+                                <div className="flex items-center gap-2 mt-1 text-xs">
                                   {assetYieldPct > 0 ? (
                                     <span className="inline-flex items-center rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 font-bold">
                                       ~{assetYieldPct.toFixed(1)}% ต่อปี
@@ -330,10 +330,10 @@ export function Dividends() {
                             {/* ฝั่งขวา: ยอดเงินที่จะได้รับ */}
                             {estNet > 0 && (
                               <div className="text-right shrink-0">
-                                <span className="font-display text-[16px] sm:text-[18px] font-extrabold text-emerald-600 dark:text-emerald-400 tnum">
+                                <span className="font-display text-base sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-400 tnum">
                                   ~{thb(estNet)}
                                 </span>
-                                <p className="text-[9.5px] sm:text-[10.5px] text-ink-muted">ได้สุทธิประมาณ</p>
+                                <p className="text-xs text-ink-muted">ได้สุทธิประมาณ</p>
                               </div>
                             )}
                           </div>
@@ -344,7 +344,7 @@ export function Dividends() {
                           {/* ── แถวที่ 2: จำนวนหุ้น, ปันผล xx บาท/ปี  และ  [ปุ่มยืนยันรับเงิน] ── */}
                           <div className="flex items-center justify-between gap-3 min-w-0">
                             {/* ฝั่งซ้าย: จำนวนหุ้น, ปันผล xx บาท/รอบ หรือ /ปี */}
-                            <div className="text-[12px] text-ink-muted min-w-0 truncate">
+                            <div className="text-xs text-ink-muted min-w-0 truncate">
                               <span>{units.toLocaleString()} หุ้น</span>
                               <span className="mx-1.5">·</span>
                               <span>ปันผล: <strong className="text-ink font-semibold">{dps > 0 ? `${sym}${dps}` : 'N/A'}</strong> / หุ้น</span>
@@ -359,13 +359,13 @@ export function Dividends() {
                             <div className="shrink-0">
                               {isReceived ? (
                                 <div className="flex items-center gap-1.5">
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-3 py-1 text-[11.5px] sm:text-[12px] font-bold text-gain">
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-3 py-1 text-xs font-bold text-gain">
                                     <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} /> ได้รับแล้ว
                                   </span>
                                   <button
                                     type="button"
                                     onClick={() => handleOpenAddModal(h, dps > 0 ? dps : undefined)}
-                                    className="inline-flex items-center rounded-full border border-line bg-surface hover:bg-surface-muted text-ink-muted hover:text-ink px-2.5 py-1 text-[11px] font-medium active:scale-95 transition-all cursor-pointer"
+                                    className="inline-flex items-center rounded-full border border-line bg-surface hover:bg-surface-muted text-ink-muted hover:text-ink px-2.5 py-1 text-xs font-medium active:scale-95 transition-all cursor-pointer"
                                   >
                                     + บันทึกเพิ่ม
                                   </button>
@@ -374,7 +374,7 @@ export function Dividends() {
                                 <button
                                   type="button"
                                   onClick={() => handleOpenAddModal(h, dps > 0 ? dps : undefined)}
-                                  className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 sm:px-4 py-1.5 text-[11.5px] sm:text-[12px] font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
+                                  className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 sm:px-4 py-1.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
                                 >
                                   <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.2} />
                                   ยืนยันรับเงิน
@@ -397,8 +397,8 @@ export function Dividends() {
         <Card className="animate-rise" padded={false}>
           <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-line">
             <div>
-              <h2 className="font-display text-[16px] font-bold text-ink">ประวัติการรับเงินปันผล</h2>
-              <p className="text-[12px] text-ink-muted mt-0.5">
+              <h2 className="font-display text-base font-bold text-ink">ประวัติการรับเงินปันผล</h2>
+              <p className="text-xs text-ink-muted mt-0.5">
                 รายการเงินปันผลที่บันทึกไว้ พร้อมรายละเอียดภาษีหัก ณ ที่จ่าย
               </p>
             </div>
@@ -409,7 +409,7 @@ export function Dividends() {
                 <button
                   type="button"
                   onClick={() => setYearFilter('all')}
-                  className={`px-3 py-1 rounded-full text-[11.5px] font-semibold transition-all cursor-pointer ${
+                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                     yearFilter === 'all'
                       ? 'bg-brand text-white shadow-2xs'
                       : 'bg-surface-muted text-ink-muted hover:text-ink'
@@ -422,7 +422,7 @@ export function Dividends() {
                     key={y}
                     type="button"
                     onClick={() => setYearFilter(y)}
-                    className={`px-3 py-1 rounded-full text-[11.5px] font-semibold transition-all cursor-pointer ${
+                    className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                       yearFilter === y
                         ? 'bg-brand text-white shadow-2xs'
                         : 'bg-surface-muted text-ink-muted hover:text-ink'
@@ -456,8 +456,8 @@ export function Dividends() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-[13px]">
-                <thead className="bg-surface-muted/50 border-b border-line text-[11.5px] font-bold uppercase tracking-wider text-ink-muted">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-surface-muted/50 border-b border-line text-xs font-bold uppercase tracking-wider text-ink-muted">
                   <tr>
                     <th className="px-5 py-3">วันที่รับ</th>
                     <th className="px-5 py-3">หุ้น / สินทรัพย์</th>
@@ -481,7 +481,7 @@ export function Dividends() {
                           <AssetLogo name={r.holdingName} assetClass={r.assetClass} size="sm" />
                           <div>
                             <span className="font-bold text-ink">{r.ticker}</span>
-                            <span className="block text-[11px] text-ink-muted truncate max-w-[140px] sm:max-w-none">
+                            <span className="block text-xs text-ink-muted truncate max-w-[140px] sm:max-w-none">
                               {r.holdingName}
                             </span>
                           </div>
@@ -502,7 +502,7 @@ export function Dividends() {
                       <td className="px-5 py-3.5 text-right font-display font-extrabold text-emerald-600 dark:text-emerald-400 tnum whitespace-nowrap">
                         {thb(r.netAmount)}
                       </td>
-                      <td className="px-5 py-3.5 whitespace-nowrap text-ink-muted text-[12px]">
+                      <td className="px-5 py-3.5 whitespace-nowrap text-ink-muted text-xs">
                         {r.cashAccountName ? (
                           <span className="inline-flex items-center rounded-md bg-surface-muted px-2 py-0.5 font-medium text-ink">
                             {r.cashAccountName}

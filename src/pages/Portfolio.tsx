@@ -503,21 +503,21 @@ export function Portfolio() {
             {/* Line 1: name + value */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-1.5 flex-wrap">
-                <p className="truncate text-[14px] sm:text-[14.5px] font-semibold text-ink">
-                  {h.name} <span className="text-[11px] sm:text-[11.5px] font-normal text-ink-muted ml-0.5">{h.ticker}</span>
+                <p className="truncate text-sm font-semibold text-ink">
+                  {h.name} <span className="text-xs font-normal text-ink-muted ml-0.5">{h.ticker}</span>
                 </p>
                 {h.tag && (
-                  <span className="inline-flex items-center rounded-md bg-brand/10 dark:bg-brand/20 px-1.5 py-0.5 text-[10px] sm:text-[10.5px] font-semibold text-brand tracking-tight shrink-0">
+                  <span className="inline-flex items-center rounded-md bg-brand/10 dark:bg-brand/20 px-1.5 py-0.5 text-xs font-semibold text-brand tracking-tight shrink-0">
                     #{h.tag}
                   </span>
                 )}
                 {staleIndicator}{chevron}
               </div>
-              <p className="shrink-0 text-[14px] sm:text-[14.5px] font-bold tnum text-ink">{thb(h.marketValue)}</p>
+              <p className="shrink-0 text-sm font-bold tnum text-ink">{thb(h.marketValue)}</p>
             </div>
             {/* Line 2: units + PnL% */}
             <div className="mt-0.5 flex items-center justify-between gap-2">
-              <p className="truncate text-[11.5px] sm:text-[12px] text-ink-muted">{unitsLabel}</p>
+              <p className="truncate text-xs text-ink-muted">{unitsLabel}</p>
               <PnLPill value={h.pnlPct} asPct size="sm" />
             </div>
           </div>
@@ -564,11 +564,11 @@ export function Portfolio() {
           <div className={`border-t border-line bg-surface-muted px-5 pb-3.5 pt-2.5 ${
             isLast ? 'rounded-b-[var(--radius-card)]' : ''
           }`}>
-            <p className="mb-2 text-[12px] font-semibold text-ink-muted">Storage & Purchase Locations</p>
+            <p className="mb-2 text-xs font-semibold text-ink-muted">Storage & Purchase Locations</p>
 
             {isBtc && (
               (h.btcLocations ?? []).length === 0
-                ? <p className="py-1 text-[13px] text-ink-muted">No locations yet. Use "Buy more" to add.</p>
+                ? <p className="py-1 text-sm text-ink-muted">No locations yet. Use "Buy more" to add.</p>
                 : (
                   <ul className="space-y-1.5">
                     {(h.btcLocations ?? []).map((loc) => {
@@ -577,8 +577,8 @@ export function Portfolio() {
                       return (
                         <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
                           <div className="min-w-0 flex-1">
-                            <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
-                            <p className="tnum text-[12px] text-ink-muted">
+                            <p className="text-sm font-semibold text-ink">{loc.name}</p>
+                            <p className="tnum text-xs text-ink-muted">
                               {loc.satoshi.toLocaleString()} sats · {thb(loc.thbSpent)} spent · avg {money(locCostPerBtcUsd, 'USD')}/BTC
                             </p>
                           </div>
@@ -608,7 +608,7 @@ export function Portfolio() {
 
             {isGold && (
               (h.goldLocations ?? []).length === 0
-                ? <p className="py-1 text-[13px] text-ink-muted">No locations yet. Use "Buy more" to add.</p>
+                ? <p className="py-1 text-sm text-ink-muted">No locations yet. Use "Buy more" to add.</p>
                 : (
                   <ul className="space-y-1.5">
                     {(h.goldLocations ?? []).map((loc) => {
@@ -617,8 +617,8 @@ export function Portfolio() {
                       return (
                         <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
                           <div className="min-w-0 flex-1">
-                            <p className="text-[13px] font-semibold text-ink">{loc.name}</p>
-                            <p className="tnum text-[12px] text-ink-muted">
+                            <p className="text-sm font-semibold text-ink">{loc.name}</p>
+                            <p className="tnum text-xs text-ink-muted">
                               {loc.grams.toFixed(4)} g ({locBaht.toFixed(4)} บาททอง) · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBaht)}/บาททอง
                             </p>
                           </div>
@@ -660,22 +660,22 @@ export function Portfolio() {
           <div
             role="status"
             aria-live="polite"
-            className="flex items-center gap-2 flex-wrap text-[13px] pt-0.5"
+            className="flex items-center gap-2 flex-wrap text-sm pt-0.5"
           >
             {/* Status indicator */}
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface border border-line/70 text-ink-muted shadow-2xs">
               {priceStatus === 'loading' && (
                 <>
                   <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
-                  <span className="text-[12px] font-medium">Updating prices…</span>
+                  <span className="text-xs font-medium">Updating prices…</span>
                 </>
               )}
               {priceStatus === 'ok' && (
                 <>
                   <span className="inline-block h-2 w-2 rounded-full bg-gain animate-pulse shrink-0" />
-                  <span className="text-[12px] font-medium text-ink">Live</span>
+                  <span className="text-xs font-medium text-ink">Live</span>
                   {lastUpdated && (
-                    <span className="text-[11.5px] text-ink-muted">
+                    <span className="text-xs text-ink-muted">
                       · {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   )}
@@ -684,20 +684,20 @@ export function Portfolio() {
               {priceStatus === 'partial' && (
                 <>
                   <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
-                  <span className="text-[12px] font-medium text-ink">Partial</span>
+                  <span className="text-xs font-medium text-ink">Partial</span>
                   {lastUpdated && (
-                    <span className="text-[11.5px] text-ink-muted">
+                    <span className="text-xs text-ink-muted">
                       · {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   )}
-                  {errorMsg && <span className="text-loss text-[11px]">({errorMsg})</span>}
+                  {errorMsg && <span className="text-loss text-xs">({errorMsg})</span>}
                 </>
               )}
               {priceStatus === 'error' && (
                 <>
                   <span className="inline-block h-2 w-2 rounded-full bg-loss shrink-0" />
-                  <span className="text-[12px] font-medium text-loss">Fetch failed</span>
-                  <button onClick={refreshPrices} className="text-[11.5px] underline text-brand hover:text-brand-emphasis cursor-pointer ml-0.5">
+                  <span className="text-xs font-medium text-loss">Fetch failed</span>
+                  <button onClick={refreshPrices} className="text-xs underline text-brand hover:text-brand-emphasis cursor-pointer ml-0.5">
                     retry
                   </button>
                 </>
@@ -705,7 +705,7 @@ export function Portfolio() {
               {priceStatus === 'idle' && (
                 <>
                   <span className="inline-block h-2 w-2 rounded-full bg-ink-muted shrink-0" />
-                  <span className="text-[12px] font-medium text-ink-muted">Saved prices</span>
+                  <span className="text-xs font-medium text-ink-muted">Saved prices</span>
                 </>
               )}
             </div>
@@ -716,9 +716,9 @@ export function Portfolio() {
                 title="Exchange Rate USD to THB"
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface border border-line/70 text-ink shadow-2xs"
               >
-                <span className="text-[12px] opacity-80">💵</span>
-                <span className="text-[11.5px] font-medium text-ink-muted">USD/THB</span>
-                <span className="tnum text-[12.5px] font-bold text-ink tracking-tight">
+                <span className="text-xs opacity-80">💵</span>
+                <span className="text-xs font-medium text-ink-muted">USD/THB</span>
+                <span className="tnum text-xs font-bold text-ink tracking-tight">
                   {effectiveUsdThb.toFixed(2)}
                 </span>
               </div>
@@ -730,12 +730,12 @@ export function Portfolio() {
                 title="คำนวณราคาทองคำแท่ง 96.5% ต่อบาททอง"
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface border border-line/70 text-ink shadow-2xs"
               >
-                <span className="text-[12px]">🪙</span>
-                <span className="text-[11.5px] font-medium text-ink-muted">Gold 96.5%</span>
-                <span className="tnum text-[12.5px] font-bold text-amber-600 dark:text-amber-400 tracking-tight">
+                <span className="text-xs">🪙</span>
+                <span className="text-xs font-medium text-ink-muted">Gold 96.5%</span>
+                <span className="tnum text-xs font-bold text-amber-600 dark:text-amber-400 tracking-tight">
                   ฿{effectiveGoldPerBaht.toLocaleString()}
                 </span>
-                <span className="text-[11px] text-ink-muted">/บาททอง</span>
+                <span className="text-xs text-ink-muted">/บาททอง</span>
               </div>
             )}
           </div>
@@ -759,7 +759,7 @@ export function Portfolio() {
               onClick={handleCopyMarkdown}
               aria-label="Copy portfolio markdown"
               title="Copy Portfolio as Markdown"
-              className="inline-flex h-9 items-center gap-2 rounded-full border border-line-strong bg-surface px-3.5 text-[12.5px] font-semibold text-ink shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-surface-muted active:scale-95 cursor-pointer whitespace-nowrap"
+              className="inline-flex h-9 items-center gap-2 rounded-full border border-line-strong bg-surface px-3.5 text-xs font-semibold text-ink shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-surface-muted active:scale-95 cursor-pointer whitespace-nowrap"
             >
               {copied ? (
                 <>
@@ -784,8 +784,8 @@ export function Portfolio() {
           {/* Asset Allocation card (Hero Overview & Allocation) */}
           <Card className="animate-rise">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="font-display text-[16px] font-bold text-ink">Port Allocation</h2>
-              <div className="inline-flex rounded-lg bg-surface-muted p-0.5 text-[11px] font-semibold shrink-0">
+              <h2 className="font-display text-base font-bold text-ink">Port Allocation</h2>
+              <div className="inline-flex rounded-lg bg-surface-muted p-0.5 text-xs font-semibold shrink-0">
                 <button
                   type="button"
                   onClick={() => setDonutMode('class')}
@@ -817,14 +817,14 @@ export function Portfolio() {
             <div id="guide-portfolio-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
               <div className="grid grid-cols-2 gap-x-2 gap-y-1">
                 {/* Row 1: Labels */}
-                <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Portfolio Value</span>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted text-right">All-Time PnL</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">Portfolio Value</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-ink-muted text-right">All-Time PnL</span>
 
                 {/* Row 2: Values */}
                 <div className="flex items-baseline min-w-0">
                   <p
                     title={thb(summary.value)}
-                    className="font-display text-[18px] sm:text-[20px] 2xl:text-[22px] font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
+                    className="font-display text-lg sm:text-xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
                   >
                     <span className="2xl:hidden">
                       {summary.value >= 1_000_000 ? thbCompact(summary.value) : thb(summary.value)}
@@ -839,20 +839,20 @@ export function Portfolio() {
                     <PnLText
                       value={summary.pnl}
                       compact
-                      className="font-display text-[18px] sm:text-[20px] 2xl:text-[22px] !font-extrabold tracking-tight leading-tight truncate"
+                      className="font-display text-lg sm:text-xl !font-extrabold tracking-tight leading-tight truncate"
                     />
                   </div>
                   <div className="hidden 2xl:block truncate">
                     <PnLText
                       value={summary.pnl}
-                      className="font-display text-[18px] sm:text-[20px] 2xl:text-[22px] !font-extrabold tracking-tight leading-tight truncate"
+                      className="font-display text-lg sm:text-xl !font-extrabold tracking-tight leading-tight truncate"
                     />
                   </div>
                 </div>
 
                 {/* Row 3: Subtext / Details */}
                 <div className="flex items-center min-w-0 h-6">
-                  <p className="text-[11.5px] text-ink-muted font-medium truncate" title={thb(summary.cost)}>
+                  <p className="text-xs text-ink-muted font-medium truncate" title={thb(summary.cost)}>
                     Cost:{' '}
                     <span className="font-semibold tnum text-ink-soft">
                       <span className="2xl:hidden">
@@ -866,7 +866,7 @@ export function Portfolio() {
                 </div>
                 <div className="flex items-center justify-end gap-1.5 min-w-0 h-6">
                   <PnLPill value={summary.pnlPct} asPct size="sm" />
-                  <span className="text-[11px] text-ink-muted font-medium whitespace-nowrap">all-time</span>
+                  <span className="text-xs text-ink-muted font-medium whitespace-nowrap">all-time</span>
                 </div>
               </div>
             </div>
@@ -887,7 +887,7 @@ export function Portfolio() {
                   alloc.map((a) => {
                     const pctVal = summary.value > 0 ? (a.value / summary.value) * 100 : 0
                     return (
-                      <div key={a.assetClass} className="flex items-center justify-between text-[12.5px]">
+                      <div key={a.assetClass} className="flex items-center justify-between text-xs">
                         <span className="flex items-center gap-2 font-medium text-ink truncate mr-2">
                           <span
                             className="h-2.5 w-2.5 rounded-full shrink-0"
@@ -897,7 +897,7 @@ export function Portfolio() {
                         </span>
                         <span className="font-bold tnum text-ink shrink-0">
                           {thb(a.value)}{' '}
-                          <span className="font-normal text-ink-muted text-[11px]">
+                          <span className="font-normal text-ink-muted text-xs">
                             ({pctVal.toFixed(1)}%)
                           </span>
                         </span>
@@ -907,7 +907,7 @@ export function Portfolio() {
                 ) : (
                   groupAlloc.map((g) => {
                     return (
-                      <div key={g.id} className="flex items-center justify-between text-[12.5px]">
+                      <div key={g.id} className="flex items-center justify-between text-xs">
                         <span className="flex items-center gap-2 font-medium text-ink truncate mr-2">
                           <span
                             className="h-2.5 w-2.5 rounded-full shrink-0"
@@ -915,14 +915,14 @@ export function Portfolio() {
                           />
                           <span className="truncate">{g.name}</span>
                           {g.isTag && (
-                            <span className="rounded bg-brand/10 px-1 py-0.2 text-[9.5px] font-bold text-brand shrink-0">
+                            <span className="rounded bg-brand/10 px-1 py-0.2 text-xs font-bold text-brand shrink-0">
                               Tag
                             </span>
                           )}
                         </span>
                         <span className="font-bold tnum text-ink shrink-0">
                           {thb(g.value)}{' '}
-                          <span className="font-normal text-ink-muted text-[11px]">
+                          <span className="font-normal text-ink-muted text-xs">
                             ({g.pct.toFixed(1)}%)
                           </span>
                         </span>
@@ -933,7 +933,7 @@ export function Portfolio() {
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-[11.5px]">
+            <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-xs">
               <span className="text-ink-muted">{data.holdings.length} holding positions</span>
               <Link
                 to="/rebalance"
@@ -953,16 +953,16 @@ export function Portfolio() {
               <div className="px-5">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h3 className="font-display text-[17px] font-bold text-ink">
+                    <h3 className="font-display text-lg font-bold text-ink">
                       Holdings & Assets
                     </h3>
-                    <p className="text-[12px] text-ink-muted">
+                    <p className="text-xs text-ink-muted">
                       {rows.length} of {data.holdings.length} positions shown
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     {/* View Switcher: List vs Group */}
-                    <div className="inline-flex rounded-full bg-surface-muted p-0.5 text-[11.5px] font-semibold border border-line/60">
+                    <div className="inline-flex rounded-full bg-surface-muted p-0.5 text-xs font-semibold border border-line/60">
                       <button
                         type="button"
                         onClick={() => setViewMode('list')}
@@ -1006,7 +1006,7 @@ export function Portfolio() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search by name, ticker, or tag…"
-                    className="w-full rounded-xl border border-line bg-surface-muted py-2 pl-9 pr-8 text-[13.5px] text-ink outline-none placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/20"
+                    className="w-full rounded-xl border border-line bg-surface-muted py-2 pl-9 pr-8 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/20"
                   />
                   {search && (
                     <button
@@ -1039,7 +1039,7 @@ export function Portfolio() {
 
                   {/* Sort controls */}
                   <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
-                    <span className="shrink-0 text-[11px] font-medium text-ink-faint mr-1">Sort:</span>
+                    <span className="shrink-0 text-xs font-medium text-ink-faint mr-1">Sort:</span>
                     {([ ['value','Value'], ['pnl','Profit %'], ['type','Type'] ] as const).map(([key, label]) => {
                       const active = sortBy === key
                       const showDir = active && key !== 'type'
@@ -1056,7 +1056,7 @@ export function Portfolio() {
                           }}
                           aria-label={`Sort by ${label}${active && key !== 'type' ? ` (${sortDir === 'desc' ? 'descending' : 'ascending'})` : ''}`}
                           aria-pressed={active}
-                          className={`flex shrink-0 items-center justify-center gap-0.5 rounded-full h-[30px] px-2.5 text-[12px] font-semibold transition-colors cursor-pointer select-none leading-none ${
+                          className={`flex shrink-0 items-center justify-center gap-0.5 rounded-full h-[30px] px-2.5 text-xs font-semibold transition-colors cursor-pointer select-none leading-none ${
                             active
                               ? 'bg-ink text-white dark:bg-[#4f46e5] shadow-xs'
                               : 'bg-surface-muted text-ink-soft hover:text-ink'
@@ -1064,7 +1064,7 @@ export function Portfolio() {
                         >
                           {label}
                           {showDir && (
-                            <span className="ml-0.5 text-[10px]">{sortDir === 'desc' ? '↓' : '↑'}</span>
+                            <span className="ml-0.5 text-xs">{sortDir === 'desc' ? '↓' : '↑'}</span>
                           )}
                         </button>
                       )
@@ -1095,25 +1095,25 @@ export function Portfolio() {
                               className="h-3 w-3 rounded-full shrink-0 shadow-xs"
                               style={{ background: group.color }}
                             />
-                            <h4 className="font-display text-[15px] font-bold text-ink truncate">
+                            <h4 className="font-display text-base font-bold text-ink truncate">
                               {group.name}
                             </h4>
-                            <span className="rounded-full bg-surface px-2 py-0.5 text-[10.5px] font-semibold text-ink-muted border border-line shrink-0">
+                            <span className="rounded-full bg-surface px-2 py-0.5 text-xs font-semibold text-ink-muted border border-line shrink-0">
                               {group.holdingCount} {group.holdingCount === 1 ? 'position' : 'positions'}
                             </span>
                           </div>
                           <div className="text-right shrink-0">
-                            <p className="font-display text-[15px] font-extrabold tnum text-ink">
+                            <p className="font-display text-base font-extrabold tnum text-ink">
                               {thb(group.value)}
                             </p>
-                            <p className="text-[11px] font-bold text-ink-muted">
+                            <p className="text-xs font-bold text-ink-muted">
                               {group.pct.toFixed(1)}% of portfolio
                             </p>
                           </div>
                         </div>
 
                         {/* Group Cost & PnL */}
-                        <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
+                        <div className="mt-2 flex items-center justify-between gap-2 text-xs">
                           <span className="text-ink-muted truncate">Cost: {thb(group.cost)}</span>
                           <div className="flex items-center gap-1.5 shrink-0">
                             <PnLText value={group.pnl} className="font-semibold" />
@@ -1146,7 +1146,7 @@ export function Portfolio() {
             <div className="p-8 text-center">
               <PortfolioIcon className="h-6 w-6 mx-auto text-brand mb-2" />
               <h3 className="font-display font-bold text-ink">Portfolio Value Trend</h3>
-              <p className="text-[13px] text-ink-muted mt-1 max-w-md mx-auto">
+              <p className="text-sm text-ink-muted mt-1 max-w-md mx-auto">
                 Snapshot history will record daily as your holdings and prices update.
               </p>
             </div>
@@ -1185,7 +1185,7 @@ export function Portfolio() {
                 setActiveMenuHolding(null)
                 openBuy(target)
               }}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
             >
               <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
               <span>ซื้อเพิ่ม (Buy)</span>
@@ -1198,7 +1198,7 @@ export function Portfolio() {
                 setActiveMenuHolding(null)
                 openSell(target)
               }}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
             >
               <MinusIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.4} />
               <span>ขายออก (Sell)</span>
@@ -1212,7 +1212,7 @@ export function Portfolio() {
                   setActiveMenuHolding(null)
                   openDividend(target)
                 }}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer text-left"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer text-left"
               >
                 <DividendIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={2.2} />
                 <span>รับปันผล (Dividend)</span>
@@ -1227,7 +1227,7 @@ export function Portfolio() {
                 setActiveMenuHolding(null)
                 openEdit(target)
               }}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer text-left"
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer text-left"
             >
               <PencilIcon className="h-3.5 w-3.5 shrink-0" />
               <span>แก้ไข (Edit)</span>
@@ -1285,7 +1285,7 @@ export function Portfolio() {
           />
           {locEditing && !('satoshi' in locEditing) && (
             <div className="space-y-1">
-              <label className="text-[13px] font-medium text-ink-soft">Unit / หน่วย</label>
+              <label className="text-sm font-medium text-ink-soft">Unit / หน่วย</label>
               <SegmentedControl
                 size="sm"
                 value={locGoldUnit}
@@ -1351,7 +1351,7 @@ export function Portfolio() {
             />
           </div>
           {locEditing && 'satoshi' in locEditing && Number(locSatoshi) > 0 && Number(locThbSpent) > 0 && (
-            <div className="rounded-xl border border-line bg-surface-muted px-3.5 py-2.5 text-[12.5px] space-y-1">
+            <div className="rounded-xl border border-line bg-surface-muted px-3.5 py-2.5 text-xs space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-ink-muted">BTC amount</span>
                 <span className="font-semibold text-ink tnum">{(Number(locSatoshi) / SATS_PER_BTC).toFixed(8)} BTC</span>
@@ -1365,7 +1365,7 @@ export function Portfolio() {
             </div>
           )}
           {locEditing && !('satoshi' in locEditing) && Number(locGrams) > 0 && Number(locThbSpent) > 0 && (
-            <div className="rounded-xl border border-line bg-surface-muted px-3.5 py-2.5 text-[12.5px] space-y-1">
+            <div className="rounded-xl border border-line bg-surface-muted px-3.5 py-2.5 text-xs space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-ink-muted">Weight in บาททองคำ</span>
                 <span className="font-semibold text-ink tnum">{(Number(locGrams) / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาท</span>

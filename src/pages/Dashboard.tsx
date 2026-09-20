@@ -208,7 +208,7 @@ export function Dashboard() {
                 }`}
               >
                 <span
-                  className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white ${
+                  className={`flex h-4 w-4 items-center justify-center rounded-full text-xs font-bold text-white ${
                     hasOverdueDebts ? 'bg-rose-500 animate-pulse' : 'bg-amber-500'
                   }`}
                 >
@@ -231,7 +231,7 @@ export function Dashboard() {
                 aria-label={`View ${dcaActions.length} DCA ${dcaActions.length === 1 ? 'buy' : 'buys'} ready to confirm`}
                 className="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand-soft/70 px-3.5 py-1.5 text-xs font-medium text-brand-ink transition-all hover:bg-brand hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 cursor-pointer shadow-xs"
               >
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand dark:bg-[#4f46e5] text-[10px] font-bold text-white">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand dark:bg-[#4f46e5] text-xs font-bold text-white">
                   {dcaActions.length}
                 </span>
                 <span>{dcaActions.length} DCA รอซื้อ</span>
@@ -256,15 +256,15 @@ export function Dashboard() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-ink-muted dark:text-white/70">
                 <WalletIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-[13.5px] font-semibold uppercase tracking-wider">Total Net Worth</span>
+                <span className="text-sm font-semibold uppercase tracking-wider">Total Net Worth</span>
               </div>
-              <p className="font-display text-[36px] sm:text-[44px] xl:text-[48px] font-extrabold leading-tight tracking-tight tnum text-ink dark:text-white">
+              <p className="font-display text-4xl sm:text-5xl font-extrabold leading-tight tracking-tight tnum text-ink dark:text-white">
                 {thb(nw)}
               </p>
 
               <div className="pt-1 flex flex-wrap items-center gap-2.5">
                 <PnLPill value={portfolio.pnl} size="md" />
-                <span className="text-[12.5px] text-ink-muted dark:text-white/70 font-medium">unrealised</span>
+                <span className="text-xs text-ink-muted dark:text-white/70 font-medium">unrealised</span>
                 {debts > 0 && (
                   <button
                     type="button"
@@ -272,7 +272,7 @@ export function Dashboard() {
                       setSelectedLiabilityId(null)
                       setLiabilitiesOpen(true)
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted dark:bg-white/12 px-3 py-1 text-[12px] font-semibold text-ink-soft dark:text-white/90 shadow-xs border border-line dark:border-white/10 transition-colors hover:bg-line/70 dark:hover:bg-white/20 hover:text-ink dark:hover:text-white cursor-pointer whitespace-nowrap"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted dark:bg-white/12 px-3 py-1 text-xs font-semibold text-ink-soft dark:text-white/90 shadow-xs border border-line dark:border-white/10 transition-colors hover:bg-line/70 dark:hover:bg-white/20 hover:text-ink dark:hover:text-white cursor-pointer whitespace-nowrap"
                     aria-label="Manage liabilities"
                   >
                     📉 {debtRatio.toFixed(1)}% Debt Ratio ({thbCompact(-debts)})
@@ -281,7 +281,7 @@ export function Dashboard() {
                 {data.retirement?.monthlySpend && data.retirement.monthlySpend > 0 ? (
                   <Link
                     to="/retirement"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted dark:bg-white/12 px-3 py-1 text-[12px] font-semibold text-ink-soft dark:text-white/90 shadow-xs border border-line dark:border-white/10 transition-colors hover:bg-line/70 dark:hover:bg-white/20 hover:text-ink dark:hover:text-white"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted dark:bg-white/12 px-3 py-1 text-xs font-semibold text-ink-soft dark:text-white/90 shadow-xs border border-line dark:border-white/10 transition-colors hover:bg-line/70 dark:hover:bg-white/20 hover:text-ink dark:hover:text-white"
                     aria-label="View wealth runway details on retirement page"
                   >
                     ⏳ {Math.max(0, nw / (data.retirement.monthlySpend * 12)).toFixed(1)}y runway
@@ -289,7 +289,7 @@ export function Dashboard() {
                 ) : (
                   <Link
                     to="/retirement"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted/60 dark:bg-white/10 px-3 py-1 text-[11.5px] font-semibold text-ink-faint dark:text-white/60 transition-colors hover:bg-surface-muted dark:hover:bg-white/20 hover:text-ink dark:hover:text-white"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted/60 dark:bg-white/10 px-3 py-1 text-xs font-semibold text-ink-faint dark:text-white/60 transition-colors hover:bg-surface-muted dark:hover:bg-white/20 hover:text-ink dark:hover:text-white"
                     aria-label="Set up retirement spend to see runway"
                   >
                     ⏳ Set runway target
@@ -302,27 +302,27 @@ export function Dashboard() {
             <div className={`rounded-2xl bg-surface-muted/80 dark:bg-white/10 p-3 sm:p-3.5 px-3.5 sm:px-4.5 border border-line/80 dark:border-white/15 backdrop-blur-md ${debts > 0 ? 'sm:min-w-[270px]' : 'sm:min-w-[210px]'}`}>
               <div className={`grid ${debts > 0 ? 'grid-cols-3 gap-2 sm:gap-3' : 'grid-cols-2 gap-3.5'}`}>
                 <div>
-                  <div className="flex items-center gap-1.5 text-[11px] sm:text-[11.5px] font-bold text-brand whitespace-nowrap">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-brand whitespace-nowrap">
                     <span className="h-2 w-2 rounded-full bg-brand shrink-0" />
                     <span>Invested</span>
                   </div>
-                  <p className="mt-1 font-display text-[15px] sm:text-[18px] font-extrabold tnum text-ink dark:text-white whitespace-nowrap">
+                  <p className="mt-1 font-display text-base sm:text-lg font-extrabold tnum text-ink dark:text-white whitespace-nowrap">
                     {thbCompact(portfolio.value)}
                   </p>
-                  <p className="mt-0.5 text-[11px] sm:text-[11.5px] font-semibold text-brand/80 tnum whitespace-nowrap">
+                  <p className="mt-0.5 text-xs font-semibold text-brand/80 tnum whitespace-nowrap">
                     {grossAssets > 0 ? `${((portfolio.value / grossAssets) * 100).toFixed(1)}%` : '0%'}
                   </p>
                 </div>
 
                 <div className="pl-2.5 sm:pl-3 border-l border-line dark:border-white/10">
-                  <div className="flex items-center gap-1.5 text-[11px] sm:text-[11.5px] font-bold text-gain whitespace-nowrap">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-gain whitespace-nowrap">
                     <span className="h-2 w-2 rounded-full bg-gain shrink-0" />
                     <span>Cash</span>
                   </div>
-                  <p className="mt-1 font-display text-[15px] sm:text-[18px] font-extrabold tnum text-ink dark:text-white whitespace-nowrap">
+                  <p className="mt-1 font-display text-base sm:text-lg font-extrabold tnum text-ink dark:text-white whitespace-nowrap">
                     {thbCompact(cash)}
                   </p>
-                  <p className="mt-0.5 text-[11px] sm:text-[11.5px] font-semibold text-gain/80 tnum whitespace-nowrap">
+                  <p className="mt-0.5 text-xs font-semibold text-gain/80 tnum whitespace-nowrap">
                     {grossAssets > 0 ? `${((cash / grossAssets) * 100).toFixed(1)}%` : '0%'}
                   </p>
                 </div>
@@ -337,14 +337,14 @@ export function Dashboard() {
                     className="pl-2.5 sm:pl-3 border-l border-line dark:border-white/10 text-left cursor-pointer group"
                     title="Click to manage liabilities"
                   >
-                    <div className="flex items-center gap-1.5 text-[11px] sm:text-[11.5px] font-bold text-rose-500 whitespace-nowrap">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-rose-500 whitespace-nowrap">
                       <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0" />
                       <span className="group-hover:underline">Debts</span>
                     </div>
-                    <p className="mt-1 font-display text-[15px] sm:text-[18px] font-extrabold tnum text-ink dark:text-white whitespace-nowrap">
+                    <p className="mt-1 font-display text-base sm:text-lg font-extrabold tnum text-ink dark:text-white whitespace-nowrap">
                       {thbCompact(-debts)}
                     </p>
-                    <p className="mt-0.5 text-[11px] sm:text-[11.5px] font-semibold text-rose-500/80 tnum whitespace-nowrap">
+                    <p className="mt-0.5 text-xs font-semibold text-rose-500/80 tnum whitespace-nowrap">
                       {grossAssets > 0 ? `${debtRatio.toFixed(1)}%` : '0%'}
                     </p>
                   </button>
@@ -414,7 +414,7 @@ export function Dashboard() {
                 {alloc.map((a) => (
                   <span
                     key={a.assetClass}
-                    className="flex items-center gap-1.5 text-[12px] text-ink-soft dark:text-white/85 font-semibold"
+                    className="flex items-center gap-1.5 text-xs text-ink-soft dark:text-white/85 font-semibold"
                   >
                     <span
                       className="h-2 w-2 shrink-0 rounded-full"
@@ -424,7 +424,7 @@ export function Dashboard() {
                   </span>
                 ))}
                 {cash > 0 && (
-                  <span className="flex items-center gap-1.5 text-[12px] text-ink-soft dark:text-white/85 font-semibold">
+                  <span className="flex items-center gap-1.5 text-xs text-ink-soft dark:text-white/85 font-semibold">
                     <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--color-cash)' }} />
                     Cash {Math.round((cash / grossAssets) * 100)}%
                   </span>
@@ -446,11 +446,11 @@ export function Dashboard() {
                   <div className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-500/10 text-indigo-500">
                     <PortfolioIcon className="h-4 w-4" />
                   </div>
-                  <h2 className="font-display text-[16px] font-bold text-ink">Port Allocation</h2>
+                  <h2 className="font-display text-base font-bold text-ink">Port Allocation</h2>
                 </div>
                 <Link
                   to="/portfolio"
-                  className="text-[12.5px] font-semibold text-brand hover:underline"
+                  className="text-xs font-semibold text-brand hover:underline"
                   aria-label="View portfolio details"
                 >
                   Portfolio →
@@ -461,14 +461,14 @@ export function Dashboard() {
               <div id="guide-portfolio-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
                 <div className="grid grid-cols-2 gap-x-2 gap-y-1">
                   {/* Row 1: Labels */}
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Portfolio Value</span>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted text-right">All-Time PnL</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">Portfolio Value</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-ink-muted text-right">All-Time PnL</span>
 
                   {/* Row 2: Values */}
                   <div className="flex items-baseline min-w-0">
                     <p
                       title={thb(portfolio.value)}
-                      className="font-display text-[18px] sm:text-[20px] xl:text-[21px] font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
+                      className="font-display text-lg sm:text-xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
                     >
                       {portfolio.value >= 1_000_000 ? thbCompact(portfolio.value) : thb(portfolio.value)}
                     </p>
@@ -477,19 +477,19 @@ export function Dashboard() {
                     <PnLText
                       value={portfolio.pnl}
                       compact
-                      className="font-display text-[18px] sm:text-[20px] xl:text-[21px] !font-extrabold tracking-tight leading-tight truncate"
+                      className="font-display text-lg sm:text-xl !font-extrabold tracking-tight leading-tight truncate"
                     />
                   </div>
 
                   {/* Row 3: Subtext / Details */}
                   <div className="flex items-center min-w-0 h-6">
-                    <p className="text-[11.5px] text-ink-muted font-medium truncate" title={thb(portfolio.cost)}>
+                    <p className="text-xs text-ink-muted font-medium truncate" title={thb(portfolio.cost)}>
                       Cost: <span className="font-semibold tnum text-ink-soft">{portfolio.cost >= 1_000_000 ? thbCompact(portfolio.cost) : thb(portfolio.cost)}</span>
                     </p>
                   </div>
                   <div className="flex items-center justify-end gap-1.5 min-w-0 h-6">
                     <PnLPill value={portfolio.pnlPct} asPct size="sm" />
-                    <span className="text-[11px] text-ink-muted font-medium whitespace-nowrap">all-time</span>
+                    <span className="text-xs text-ink-muted font-medium whitespace-nowrap">all-time</span>
                   </div>
                 </div>
               </div>
@@ -509,7 +509,7 @@ export function Dashboard() {
                   {alloc.map((a) => {
                     const pctVal = portfolio.value > 0 ? (a.value / portfolio.value) * 100 : 0
                     return (
-                      <div key={a.assetClass} className="flex items-center justify-between text-[12.5px]">
+                      <div key={a.assetClass} className="flex items-center justify-between text-xs">
                         <span className="flex items-center gap-2 font-medium text-ink">
                           <span
                             className="h-2.5 w-2.5 rounded-full shrink-0"
@@ -519,7 +519,7 @@ export function Dashboard() {
                         </span>
                         <span className="font-bold tnum text-ink">
                           {thb(a.value)}{' '}
-                          <span className="font-normal text-ink-muted text-[11px]">
+                          <span className="font-normal text-ink-muted text-xs">
                             ({pctVal.toFixed(1)}%)
                           </span>
                         </span>
@@ -541,13 +541,13 @@ export function Dashboard() {
                   <div className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                     <WalletIcon className="h-4 w-4" />
                   </div>
-                  <h2 className="font-display text-[16px] font-bold text-ink">Cash & Liquidity Hub</h2>
+                  <h2 className="font-display text-base font-bold text-ink">Cash & Liquidity Hub</h2>
                 </div>
 
                 <Link
                   to="/cash"
                   aria-label="Open Cash & Liquidity Hub"
-                  className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-brand hover:underline cursor-pointer"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand hover:underline cursor-pointer"
                 >
                   <span>Open Hub</span>
                   <ArrowUpRightIcon className="h-3.5 w-3.5" />
@@ -558,14 +558,14 @@ export function Dashboard() {
               <div id="guide-cash-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
                 <div className="grid grid-cols-2 gap-x-2 gap-y-1">
                   {/* Row 1: Labels */}
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Available Cash</span>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted text-right">Est. Yield</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">Available Cash</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-ink-muted text-right">Est. Yield</span>
 
                   {/* Row 2: Values */}
                   <div className="flex items-baseline min-w-0">
                     <p
                       title={thb(cash)}
-                      className="font-display text-[18px] sm:text-[20px] xl:text-[21px] font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
+                      className="font-display text-lg sm:text-xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
                     >
                       {cash >= 1_000_000 ? thbCompact(cash) : thb(cash)}
                     </p>
@@ -574,18 +574,18 @@ export function Dashboard() {
                     {cashInterest > 0 ? (
                       <span
                         title={`~${thb(cashInterest)}/yr`}
-                        className="font-display text-[18px] sm:text-[20px] xl:text-[21px] font-extrabold tracking-tight tnum text-emerald-600 dark:text-emerald-400 leading-tight truncate cursor-default"
+                        className="font-display text-lg sm:text-xl font-extrabold tracking-tight tnum text-emerald-600 dark:text-emerald-400 leading-tight truncate cursor-default"
                       >
-                        ~{thbCompact(cashInterest)}<span className="text-[12px] font-semibold text-ink-muted">/yr</span>
+                        ~{thbCompact(cashInterest)}<span className="text-xs font-semibold text-ink-muted">/yr</span>
                       </span>
                     ) : (
-                      <span className="text-[13px] text-ink-muted font-medium self-center">No yield</span>
+                      <span className="text-sm text-ink-muted font-medium self-center">No yield</span>
                     )}
                   </div>
 
                   {/* Row 3: Subtext / Details */}
                   <div className="flex items-center min-w-0 h-6">
-                    <p className="text-[11.5px] text-ink-muted font-medium truncate">
+                    <p className="text-xs text-ink-muted font-medium truncate">
                       {cashYieldRate > 0 ? (
                         <>
                           Avg Yield: <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">~{cashYieldRate.toFixed(2)}%</strong>
@@ -596,7 +596,7 @@ export function Dashboard() {
                     </p>
                   </div>
                   <div className="flex items-center justify-end gap-1.5 min-w-0 h-6">
-                    <span className="text-[11px] font-bold text-ink-muted bg-surface px-2 py-0.5 rounded-md border border-line/60">
+                    <span className="text-xs font-bold text-ink-muted bg-surface px-2 py-0.5 rounded-md border border-line/60">
                       {data.cashAccounts.length} {data.cashAccounts.length === 1 ? 'Account' : 'Accounts'}
                     </span>
                   </div>
@@ -641,7 +641,7 @@ export function Dashboard() {
                           className="flex flex-col text-left p-2.5 rounded-xl bg-surface-muted/50 border border-line/40 hover:bg-surface-muted hover:border-brand/40 hover:shadow-xs group transition-all cursor-pointer active:scale-[0.98]"
                           title={`คลิกเพื่อดูใน Cash Hub: ${a.name}`}
                         >
-                          <span className="flex items-center justify-between gap-1.5 text-[11px] font-medium text-ink-muted truncate w-full">
+                          <span className="flex items-center justify-between gap-1.5 text-xs font-medium text-ink-muted truncate w-full">
                             <span className="flex items-center gap-1.5 truncate">
                               <span
                                 className="h-2 w-2 shrink-0 rounded-full"
@@ -650,12 +650,12 @@ export function Dashboard() {
                               <span className="truncate group-hover:text-ink transition-colors">{a.name}</span>
                             </span>
                             {a.interestRate !== undefined && a.interestRate > 0 && (
-                              <span className="shrink-0 text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded font-mono">
+                              <span className="shrink-0 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded font-mono">
                                 {a.interestRate}%
                               </span>
                             )}
                           </span>
-                          <span className="mt-1 font-display font-bold tnum text-[13.5px] text-ink">
+                          <span className="mt-1 font-display font-bold tnum text-sm text-ink">
                             {moneyCompact(a.balance, a.currency)}
                           </span>
                         </button>
@@ -665,10 +665,10 @@ export function Dashboard() {
                 </div>
               ) : (
                 <div className="py-6 text-center">
-                  <p className="text-[12.5px] text-ink-muted">No cash accounts added yet.</p>
+                  <p className="text-xs text-ink-muted">No cash accounts added yet.</p>
                   <Link
                     to="/cash"
-                    className="inline-block mt-2 text-[12px] font-semibold text-brand hover:underline cursor-pointer"
+                    className="inline-block mt-2 text-xs font-semibold text-brand hover:underline cursor-pointer"
                   >
                     + ไปที่ Cash Hub เพื่อเพิ่มบัญชี
                   </Link>
@@ -687,13 +687,13 @@ export function Dashboard() {
                   <div className="grid h-7 w-7 place-items-center rounded-lg bg-surface-muted dark:bg-white/10 text-ink-muted dark:text-white/80">
                     <DebtIcon className="h-4 w-4" />
                   </div>
-                  <h2 className="font-display text-[16px] font-bold text-ink">Liabilities & Debts</h2>
+                  <h2 className="font-display text-base font-bold text-ink">Liabilities & Debts</h2>
                 </div>
 
                 <Link
                   to="/debts"
                   aria-label="Open Debts & Installments Hub"
-                  className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-brand hover:underline cursor-pointer"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand hover:underline cursor-pointer"
                 >
                   <span>Open Hub</span>
                   <ArrowUpRightIcon className="h-3.5 w-3.5" />
@@ -704,13 +704,13 @@ export function Dashboard() {
               <div id="guide-debt-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
                 <div className="grid grid-cols-2 gap-x-2 gap-y-1">
                   {/* Row 1: Labels */}
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">Total Outstanding</span>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted text-right">Monthly Payment</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">Total Outstanding</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-ink-muted text-right">Monthly Payment</span>
 
                   {/* Row 2: Values */}
                   <div className="flex items-baseline min-w-0">
                     <p
-                      className="font-display text-[18px] sm:text-[20px] xl:text-[21px] font-extrabold tracking-tight tnum leading-tight truncate cursor-default text-ink dark:text-white"
+                      className="font-display text-lg sm:text-xl font-extrabold tracking-tight tnum leading-tight truncate cursor-default text-ink dark:text-white"
                       title={debts > 0 ? `-${thb(debts)}` : '฿0'}
                     >
                       {debts > 0 ? (debts >= 1_000_000 ? `-${thbCompact(debts)}` : `-${thb(debts)}`) : '฿0'}
@@ -720,18 +720,18 @@ export function Dashboard() {
                     {monthlyDebt > 0 ? (
                       <span
                         title={`~${thb(monthlyDebt)}/mo`}
-                        className="font-display text-[18px] sm:text-[20px] xl:text-[21px] font-extrabold tracking-tight tnum text-ink dark:text-white leading-tight truncate cursor-default"
+                        className="font-display text-lg sm:text-xl font-extrabold tracking-tight tnum text-ink dark:text-white leading-tight truncate cursor-default"
                       >
-                        ~{thbCompact(monthlyDebt)}<span className="text-[12px] font-semibold text-ink-muted">/mo</span>
+                        ~{thbCompact(monthlyDebt)}<span className="text-xs font-semibold text-ink-muted">/mo</span>
                       </span>
                     ) : (
-                      <span className="text-[13px] text-emerald-600 dark:text-emerald-400 font-semibold self-center">฿0/mo</span>
+                      <span className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold self-center">฿0/mo</span>
                     )}
                   </div>
 
                   {/* Row 3: Subtext / Details */}
                   <div className="flex items-center min-w-0 h-6">
-                    <p className="text-[11.5px] text-ink-muted font-medium truncate">
+                    <p className="text-xs text-ink-muted font-medium truncate">
                       {debts > 0 ? (
                         <>
                           D/A Ratio: <strong className="text-ink font-semibold">{debtRatio.toFixed(1)}%</strong>
@@ -742,7 +742,7 @@ export function Dashboard() {
                     </p>
                   </div>
                   <div className="flex items-center justify-end gap-1.5 min-w-0 h-6">
-                    <span className="text-[11px] font-bold text-ink-muted bg-surface px-2 py-0.5 rounded-md border border-line/60">
+                    <span className="text-xs font-bold text-ink-muted bg-surface px-2 py-0.5 rounded-md border border-line/60">
                       {(data.liabilities?.length ?? 0) === 0
                         ? 'Debt Free'
                         : `${data.liabilities?.length} ${(data.liabilities?.length ?? 0) === 1 ? 'Debt' : 'Debts'}`}
@@ -802,27 +802,27 @@ export function Dashboard() {
                                 className="h-2 w-2 shrink-0 rounded-full"
                                 style={{ background: meta.color }}
                               />
-                              <span className="truncate font-semibold text-[13px] text-ink group-hover:text-brand transition-colors">
+                              <span className="truncate font-semibold text-sm text-ink group-hover:text-brand transition-colors">
                                 {l.name}
                               </span>
                               {l.interestRate !== undefined && l.interestRate > 0 && (
-                                <span className="shrink-0 text-[9.5px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded font-mono">
+                                <span className="shrink-0 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded font-mono">
                                   {l.interestRate}%
                                 </span>
                               )}
                             </div>
 
                             <div className="shrink-0 text-right">
-                              <span className={`font-display font-extrabold tnum text-[14.5px] ${l.balance > 0 ? 'text-ink dark:text-white' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                              <span className={`font-display font-extrabold tnum text-sm ${l.balance > 0 ? 'text-ink dark:text-white' : 'text-emerald-600 dark:text-emerald-400'}`}>
                                 {l.balance > 0 ? `-${thb(l.balance)}` : '฿0 (ครบแล้ว)'}
                               </span>
                             </div>
                           </div>
 
                           {/* Row 2: Left (Due badge, Monthly/Installment info) | Right (Quick Action or Status) */}
-                          <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
+                          <div className="mt-2 flex items-center justify-between gap-2 text-xs">
                             <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${dueInfo.badgeClass}`}>
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${dueInfo.badgeClass}`}>
                                 {dueInfo.label}
                               </span>
                               {l.monthlyPayment && l.monthlyPayment > 0 && l.balance > 0 && (
@@ -831,7 +831,7 @@ export function Dashboard() {
                                 </span>
                               )}
                               {isInst && totalInst > 0 && (
-                                <span className="text-[10px] font-semibold text-ink-muted dark:text-white/70 bg-surface dark:bg-white/10 border border-line dark:border-white/10 px-1.5 py-0.5 rounded shrink-0">
+                                <span className="text-xs font-semibold text-ink-muted dark:text-white/70 bg-surface dark:bg-white/10 border border-line dark:border-white/10 px-1.5 py-0.5 rounded shrink-0">
                                   {paidInst}/{totalInst} งวด
                                 </span>
                               )}
@@ -841,11 +841,11 @@ export function Dashboard() {
                             {(l.monthlyPayment || isInst) && (
                               <div className="shrink-0">
                                 {dueInfo.status === 'completed' ? (
-                                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
                                     🎉 ปลดหนี้แล้ว
                                   </span>
                                 ) : dueInfo.status === 'paid' ? (
-                                  <div className="flex items-center gap-1.5 text-[10.5px]">
+                                  <div className="flex items-center gap-1.5 text-xs">
                                     <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
                                       <CheckIcon className="h-3 w-3" strokeWidth={2.5} />
                                       <span>จ่ายงวดนี้แล้ว</span>
@@ -870,7 +870,7 @@ export function Dashboard() {
                                       payLiabilityInstallment(l.id)
                                     }}
                                     aria-label={`Pay installment for ${l.name}`}
-                                    className="inline-flex items-center gap-1 rounded-lg bg-ink text-white hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] px-2.5 py-0.5 text-[10.5px] font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
+                                    className="inline-flex items-center gap-1 rounded-lg bg-ink text-white hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] px-2.5 py-0.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
                                   >
                                     <CheckIcon className="h-3 w-3" strokeWidth={2.5} />
                                     <span>จ่ายงวดนี้</span>
@@ -883,7 +883,7 @@ export function Dashboard() {
                           {/* Progress bar for installment plans */}
                           {isInst && totalInst > 0 && (
                             <div className="mt-2 pt-1.5 border-t border-line/30 dark:border-white/5">
-                              <div className="flex items-center justify-between text-[10px] font-semibold text-ink-faint mb-1">
+                              <div className="flex items-center justify-between text-xs font-semibold text-ink-faint mb-1">
                                 <span>ความคืบหน้า ({percent}%)</span>
                                 <span>{remainingInst === 0 ? 'ครบแล้ว 🎉' : `เหลืออีก ${remainingInst} งวด`}</span>
                               </div>
@@ -904,10 +904,10 @@ export function Dashboard() {
                 </div>
               ) : (
                 <div className="py-6 text-center">
-                  <p className="text-[12.5px] text-ink-muted">ปลอดหนี้สิน หรือยังไม่ได้เพิ่มรายการ</p>
+                  <p className="text-xs text-ink-muted">ปลอดหนี้สิน หรือยังไม่ได้เพิ่มรายการ</p>
                   <Link
                     to="/debts"
-                    className="inline-block mt-2 text-[12px] font-semibold text-brand hover:underline cursor-pointer"
+                    className="inline-block mt-2 text-xs font-semibold text-brand hover:underline cursor-pointer"
                   >
                     + ไปที่ Debts Hub เพื่อบันทึกหนี้สิน
                   </Link>
@@ -927,7 +927,7 @@ export function Dashboard() {
             <div className="p-8 text-center">
               <SparkleIcon className="h-6 w-6 mx-auto text-brand mb-2" />
               <h3 className="font-display font-bold text-ink">Net Worth Performance Chart</h3>
-              <p className="text-[13px] text-ink-muted mt-1 max-w-md mx-auto">
+              <p className="text-sm text-ink-muted mt-1 max-w-md mx-auto">
                 Snapshot history will record daily as your balances and holdings update.
               </p>
             </div>

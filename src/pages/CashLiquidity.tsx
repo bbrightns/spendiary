@@ -230,12 +230,12 @@ export function CashLiquidity() {
             <Button
               variant="secondary"
               onClick={handleAutoSort}
-              className="gap-1.5 text-[12.5px]"
+              className="gap-1.5 text-xs"
               title="จัดเรียงบัญชีตามสถาบันการเงินและยอดคงเหลือ"
             >
               <span>⚡ จัดเรียงสถาบัน</span>
             </Button>
-            <Button onClick={handleOpenAddModal} className="gap-1.5 text-[12.5px]">
+            <Button onClick={handleOpenAddModal} className="gap-1.5 text-xs">
               <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
               <span>เพิ่มบัญชีใหม่</span>
             </Button>
@@ -248,12 +248,12 @@ export function CashLiquidity() {
         {/* Card 1: Total Cash */}
         <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
           <div>
-            <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">Total Liquid Cash</p>
-            <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-ink tnum truncate">
+            <p className="text-xs font-medium text-ink-muted">Total Liquid Cash</p>
+            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-ink tnum truncate">
               {thb(totalCashThb)}
             </p>
           </div>
-          <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+          <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
             {currentNetWorth > 0 ? ((totalCashThb / currentNetWorth) * 100).toFixed(1) : 0}% of Net Worth
             {usdOnlyTotal > 0 ? ` · $${usdOnlyTotal.toLocaleString()} USD` : ''}
           </p>
@@ -262,12 +262,12 @@ export function CashLiquidity() {
         {/* Card 2: Annual Yield & APY */}
         <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
           <div>
-            <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">Est. Annual Yield</p>
-            <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-emerald-600 dark:text-emerald-400 tnum truncate">
+            <p className="text-xs font-medium text-ink-muted">Est. Annual Yield</p>
+            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tnum truncate">
               {thb(totalAnnualYield)}
             </p>
           </div>
-          <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+          <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
             เฉลี่ย {thb(totalAnnualYield / 12)}/ด. · APY {effectiveApy.toFixed(2)}%
           </p>
         </Card>
@@ -275,12 +275,12 @@ export function CashLiquidity() {
         {/* Card 3: Emergency Runway */}
         <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
           <div>
-            <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">Emergency Runway</p>
-            <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-ink tnum truncate">
+            <p className="text-xs font-medium text-ink-muted">Emergency Runway</p>
+            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-ink tnum truncate">
               {emergencyRunwayMonths > 36 ? '36+ เดือน' : `${emergencyRunwayMonths.toFixed(1)} เดือน`}
             </p>
           </div>
-          <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+          <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
             สำรอง {thb(emergencyAmount)} · {emergencyRunwayMonths >= 6 ? '🛡️ แข็งแกร่ง' : emergencyRunwayMonths >= 3 ? '⚡ ปานกลาง' : '⚠️ ควรเพิ่ม'}
           </p>
         </Card>
@@ -288,12 +288,12 @@ export function CashLiquidity() {
         {/* Card 4: Investment Warchest */}
         <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
           <div>
-            <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted">Investment Warchest</p>
-            <p className="mt-1 font-display text-[18px] sm:text-[24px] font-extrabold text-ink tnum truncate">
+            <p className="text-xs font-medium text-ink-muted">Investment Warchest</p>
+            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-ink tnum truncate">
               {thb(warchestAmount)}
             </p>
           </div>
-          <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+          <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
             {warchestPct.toFixed(1)}% ของเงินสด · {warchestAmount > 0 ? 'พร้อมลงทุน' : 'ไม่มีเงินรอซื้อ'}
           </p>
         </Card>
@@ -303,14 +303,14 @@ export function CashLiquidity() {
       <Card className="p-4 sm:p-5 border-line/60 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h3 className="font-display text-[16px] font-bold text-ink flex items-center gap-2">
+            <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
               <span>📊 4-Tier Liquidity Allocation</span>
             </h3>
-            <p className="text-[12px] text-ink-muted">
+            <p className="text-xs text-ink-muted">
               จัดสรรเงินสดออกเป็น 4 ตะกร้าตามวัตถุประสงค์การใช้งานและสภาพคล่อง
             </p>
           </div>
-          <span className="text-[11.5px] font-semibold text-ink-muted">
+          <span className="text-xs font-semibold text-ink-muted">
             รวมเงินสด {thb(totalCashThb)}
           </span>
         </div>
@@ -365,16 +365,16 @@ export function CashLiquidity() {
                 }`}
               >
                 <div className="flex items-center gap-1.5 min-w-0 w-full">
-                  <span className="shrink-0 text-[13px]">{meta.icon}</span>
-                  <span className="text-[11px] sm:text-[12px] font-semibold text-ink-muted truncate" title={meta.labelTh}>
+                  <span className="shrink-0 text-sm">{meta.icon}</span>
+                  <span className="text-xs font-semibold text-ink-muted truncate" title={meta.labelTh}>
                     {meta.labelTh}
                   </span>
                 </div>
                 <div className="mt-2 flex items-baseline justify-between gap-1 w-full min-w-0">
-                  <span className="font-display font-black text-[14px] sm:text-[16px] text-ink tnum truncate">
+                  <span className="font-display font-black text-sm sm:text-base text-ink tnum truncate">
                     {thb(amount)}
                   </span>
-                  <span className="font-mono text-[10.5px] sm:text-[11px] font-bold text-ink-muted shrink-0">
+                  <span className="font-mono text-xs font-bold text-ink-muted shrink-0">
                     {pct.toFixed(1)}%
                   </span>
                 </div>
@@ -388,7 +388,7 @@ export function CashLiquidity() {
       <Card className="p-4 sm:p-5 border-line/60 space-y-4">
         {/* Controls: Search & Category Tabs */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-line/40">
-          <div className="flex flex-wrap items-center gap-1.5 text-[12px]">
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
             <button
               type="button"
               onClick={() => setActiveCategoryFilter('all')}
@@ -417,7 +417,7 @@ export function CashLiquidity() {
                 >
                   <span>{meta.icon}</span>
                   <span>{meta.labelTh}</span>
-                  <span className="text-[10px] opacity-75">({count})</span>
+                  <span className="text-xs opacity-75">({count})</span>
                 </button>
               )
             })}
@@ -432,12 +432,12 @@ export function CashLiquidity() {
                 placeholder="ค้นหาชื่อบัญชี / สถาบัน..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-9 w-full rounded-xl border border-line bg-surface-muted/40 pl-8 pr-3 text-[12.5px] font-medium text-ink outline-none placeholder:text-ink-muted/50 focus:border-brand focus:bg-surface"
+                className="h-9 w-full rounded-xl border border-line bg-surface-muted/40 pl-8 pr-3 text-xs font-medium text-ink outline-none placeholder:text-ink-muted/50 focus:border-brand focus:bg-surface"
               />
             </div>
             <Button
               onClick={handleOpenAddModal}
-              className="gap-1.5 text-[12.5px] shrink-0 h-9 px-3.5 shadow-xs"
+              className="gap-1.5 text-xs shrink-0 h-9 px-3.5 shadow-xs"
               title="เพิ่มบัญชีเงินสดใหม่"
             >
               <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
@@ -450,7 +450,7 @@ export function CashLiquidity() {
         <div className="md:hidden space-y-2">
           {/* Quick Sort Bar on Mobile */}
           {filteredAccounts.length > 1 && (
-            <div className="flex items-center justify-between text-[11px] text-ink-muted px-1 pb-1 select-none border-b border-line/30">
+            <div className="flex items-center justify-between text-xs text-ink-muted px-1 pb-1 select-none border-b border-line/30">
               <span>{filteredAccounts.length} บัญชี</span>
               <div className="flex items-center gap-2">
                 <span className="text-ink-muted">เรียง:</span>
@@ -501,28 +501,28 @@ export function CashLiquidity() {
                   >
                     {preset ? (
                       <div
-                        className="h-8.5 w-8.5 rounded-lg text-[10.5px] font-black shrink-0 flex items-center justify-center select-none shadow-xs"
+                        className="h-8.5 w-8.5 rounded-lg text-xs font-black shrink-0 flex items-center justify-center select-none shadow-xs"
                         style={{ background: preset.bg, color: preset.color, border: `1px solid ${preset.color}35` }}
                       >
                         {preset.shortName}
                       </div>
                     ) : (
-                      <div className="h-8.5 w-8.5 rounded-lg bg-surface-muted border border-line/50 text-ink-muted text-[11px] font-bold shrink-0 flex items-center justify-center">
+                      <div className="h-8.5 w-8.5 rounded-lg bg-surface-muted border border-line/50 text-ink-muted text-xs font-bold shrink-0 flex items-center justify-center">
                         <WalletIcon className="h-4 w-4 opacity-60" />
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="font-display font-bold text-[13.5px] text-ink truncate">
+                        <span className="font-display font-bold text-sm text-ink truncate">
                           {a.name || 'Untitled'}
                         </span>
                         {a.currency === 'USD' && (
-                          <span className="text-[9.5px] font-bold px-1 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 font-mono shrink-0">
+                          <span className="text-xs font-bold px-1 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 font-mono shrink-0">
                             USD
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1 mt-0.5 text-[11px] text-ink-muted truncate">
+                      <div className="flex items-center gap-1 mt-0.5 text-xs text-ink-muted truncate">
                         <span className="truncate">{catMeta?.icon} {catMeta?.labelTh}</span>
                         {rateNum > 0 && (
                           <>
@@ -545,19 +545,19 @@ export function CashLiquidity() {
                         setIsEditModalOpen(true)
                       }}
                     >
-                      <div className="font-display font-black text-[14.5px] text-ink tnum">
+                      <div className="font-display font-black text-sm text-ink tnum">
                         {a.currency === 'USD' ? `$${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : thb(a.balance)}
                       </div>
                       {annualEarned > 0 ? (
-                        <div className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        <div className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
                           +{thb(annualEarned)}/ปี
                         </div>
                       ) : a.currency === 'USD' && a.balance > 0 ? (
-                        <div className="text-[10px] font-mono text-ink-muted">
+                        <div className="text-xs font-mono text-ink-muted">
                           ≈ {thb(a.balance * rate)}
                         </div>
                       ) : (
-                        <div className="text-[10px] text-ink-muted/40">
+                        <div className="text-xs text-ink-muted/40">
                           -
                         </div>
                       )}
@@ -596,7 +596,7 @@ export function CashLiquidity() {
         <div className="hidden md:block overflow-x-auto -mx-4 sm:mx-0">
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
-              <tr className="border-b border-line/60 text-[11px] font-bold uppercase tracking-wider text-ink-muted select-none">
+              <tr className="border-b border-line/60 text-xs font-bold uppercase tracking-wider text-ink-muted select-none">
                 {/* Column 1: บัญชี / สถาบัน */}
                 <th
                   onClick={() => handleSortToggle('name')}
@@ -604,7 +604,7 @@ export function CashLiquidity() {
                 >
                   <div className="flex items-center gap-1.5">
                     <span>บัญชี / สถาบัน</span>
-                    <span className={`text-[10px] ${sortField === 'name' ? 'text-brand font-black' : 'opacity-30'}`}>
+                    <span className={`text-xs ${sortField === 'name' ? 'text-brand font-black' : 'opacity-30'}`}>
                       {sortField === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
                     </span>
                   </div>
@@ -617,7 +617,7 @@ export function CashLiquidity() {
                 >
                   <div className="flex items-center gap-1.5">
                     <span>หมวดหมู่</span>
-                    <span className={`text-[10px] ${sortField === 'category' ? 'text-brand font-black' : 'opacity-30'}`}>
+                    <span className={`text-xs ${sortField === 'category' ? 'text-brand font-black' : 'opacity-30'}`}>
                       {sortField === 'category' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
                     </span>
                   </div>
@@ -630,7 +630,7 @@ export function CashLiquidity() {
                 >
                   <div className="flex items-center gap-1.5">
                     <span>ดอกเบี้ย & ผลตอบแทน</span>
-                    <span className={`text-[10px] ${sortField === 'yield' ? 'text-brand font-black' : 'opacity-30'}`}>
+                    <span className={`text-xs ${sortField === 'yield' ? 'text-brand font-black' : 'opacity-30'}`}>
                       {sortField === 'yield' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
                     </span>
                   </div>
@@ -643,7 +643,7 @@ export function CashLiquidity() {
                 >
                   <div className="flex items-center justify-end gap-1.5">
                     <span>ยอดคงเหลือ</span>
-                    <span className={`text-[10px] ${sortField === 'balance' ? 'text-brand font-black' : 'opacity-30'}`}>
+                    <span className={`text-xs ${sortField === 'balance' ? 'text-brand font-black' : 'opacity-30'}`}>
                       {sortField === 'balance' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
                     </span>
                   </div>
@@ -655,7 +655,7 @@ export function CashLiquidity() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-line/30 text-[13px]">
+            <tbody className="divide-y divide-line/30 text-sm">
               {filteredAccounts.map((a) => {
                 const preset = detectBankPreset(a.name)
                 const cat = a.category ?? inferCashCategory(a.name)
@@ -679,23 +679,23 @@ export function CashLiquidity() {
                         <div className="flex items-center gap-2.5 min-w-0">
                           {preset ? (
                             <div
-                              className="h-8 w-8 rounded-lg text-[11px] font-black shrink-0 flex items-center justify-center select-none shadow-xs"
+                              className="h-8 w-8 rounded-lg text-xs font-black shrink-0 flex items-center justify-center select-none shadow-xs"
                               style={{ background: preset.bg, color: preset.color, border: `1px solid ${preset.color}35` }}
                               title={`สถาบัน: ${preset.name}`}
                             >
                               {preset.shortName}
                             </div>
                           ) : (
-                            <div className="h-8 w-8 rounded-lg bg-surface-muted border border-line/50 text-ink-muted text-[11px] font-bold shrink-0 flex items-center justify-center">
+                            <div className="h-8 w-8 rounded-lg bg-surface-muted border border-line/50 text-ink-muted text-xs font-bold shrink-0 flex items-center justify-center">
                               <WalletIcon className="h-4 w-4 opacity-60" />
                             </div>
                           )}
                           <div className="min-w-0">
-                            <span className="font-display font-bold text-[13.5px] text-ink block truncate group-hover:text-brand transition-colors">
+                            <span className="font-display font-bold text-sm text-ink block truncate group-hover:text-brand transition-colors">
                               {a.name || 'Untitled Account'}
                             </span>
                             {a.currency === 'USD' && a.balance > 0 && (
-                              <span className="text-[10.5px] font-mono text-ink-muted block">
+                              <span className="text-xs font-mono text-ink-muted block">
                                 ≈ {thb(a.balance * rate)} (@{rate.toFixed(2)})
                               </span>
                             )}
@@ -705,7 +705,7 @@ export function CashLiquidity() {
 
                       {/* 2. หมวดหมู่ */}
                       <td className="py-2 px-3 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium bg-surface-muted border border-line/50">
+                        <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium bg-surface-muted border border-line/50">
                           <span>{CASH_CATEGORIES[cat]?.icon}</span>
                           <span>{CASH_CATEGORIES[cat]?.labelTh}</span>
                         </span>
@@ -715,15 +715,15 @@ export function CashLiquidity() {
                       <td className="py-2 px-3 whitespace-nowrap">
                         {rateNum > 0 ? (
                           <div className="space-y-0.5">
-                            <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400 text-[12px]">
+                            <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400 text-xs">
                               <span>📈 {rateNum.toFixed(2)}%</span>
                               {capNum && capNum > 0 && (
-                                <span className="text-[10px] opacity-75 font-normal">
+                                <span className="text-xs opacity-75 font-normal">
                                   (สูงสุด {thb(capNum)})
                                 </span>
                               )}
                             </div>
-                            <div className="text-[11px] text-ink-muted font-mono">
+                            <div className="text-xs text-ink-muted font-mono">
                               ≈ {thb(annualEarned)}/ปี{' '}
                               <span className="opacity-70 font-sans">
                                 ({a.payoutSchedule === 'monthly' ? 'จ่ายทุกเดือน' : a.payoutSchedule === 'semi_annual' ? 'ปีละ 2 ครั้ง' : 'ปีละ 1 ครั้ง'})
@@ -731,7 +731,7 @@ export function CashLiquidity() {
                             </div>
                           </div>
                         ) : (
-                          <span className="text-ink-muted/50 text-[11.5px]">-</span>
+                          <span className="text-ink-muted/50 text-xs">-</span>
                         )}
                       </td>
 
@@ -742,7 +742,7 @@ export function CashLiquidity() {
                             <button
                               type="button"
                               onClick={() => handleToggleCurrency(a.id)}
-                              className={`absolute left-1 top-1/2 -translate-y-1/2 rounded px-1.5 py-0.5 text-[11px] font-extrabold transition-all cursor-pointer ${
+                              className={`absolute left-1 top-1/2 -translate-y-1/2 rounded px-1.5 py-0.5 text-xs font-extrabold transition-all cursor-pointer ${
                                 a.currency === 'USD'
                                   ? 'bg-sky-500/15 text-sky-500 hover:bg-sky-500/25 ring-1 ring-sky-500/30'
                                   : 'bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25 ring-1 ring-emerald-500/30'
@@ -754,7 +754,7 @@ export function CashLiquidity() {
                             <input
                               type="text"
                               inputMode="decimal"
-                              className="h-8 w-full rounded-lg border border-line bg-surface-muted/40 pl-8 pr-2 text-[13.5px] font-bold tnum text-ink outline-none transition-colors focus:border-brand focus:bg-surface text-right"
+                              className="h-8 w-full rounded-lg border border-line bg-surface-muted/40 pl-8 pr-2 text-sm font-bold tnum text-ink outline-none transition-colors focus:border-brand focus:bg-surface text-right"
                               value={a.balance === 0 ? '' : formatWithCommas(a.balance)}
                               placeholder="0.00"
                               onChange={(e) => handleQuickBalanceChange(a.id, e.target.value)}
@@ -811,16 +811,16 @@ export function CashLiquidity() {
                     {isExpanded && (
                       <tr className="bg-surface-muted/25 border-b border-line/40">
                         <td colSpan={5} className="py-2.5 px-4">
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11.5px]">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                             <div className="p-2 rounded-lg bg-surface border border-line/40">
-                              <span className="text-ink-muted block text-[10.5px]">วัตถุประสงค์:</span>
+                              <span className="text-ink-muted block text-xs">วัตถุประสงค์:</span>
                               <span className="font-bold text-ink flex items-center gap-1 mt-0.5">
                                 <span>{CASH_CATEGORIES[cat]?.icon}</span>
                                 <span>{CASH_CATEGORIES[cat]?.labelTh}</span>
                               </span>
                             </div>
                             <div className="p-2 rounded-lg bg-surface border border-line/40">
-                              <span className="text-ink-muted block text-[10.5px]">รอบการจ่ายดอกเบี้ย:</span>
+                              <span className="text-ink-muted block text-xs">รอบการจ่ายดอกเบี้ย:</span>
                               <span className="font-bold text-ink mt-0.5 block">
                                 {a.payoutSchedule === 'monthly'
                                   ? 'ทุกเดือน (12 ครั้ง/ปี)'
@@ -832,7 +832,7 @@ export function CashLiquidity() {
                               </span>
                             </div>
                             <div className="p-2 rounded-lg bg-surface border border-line/40">
-                              <span className="text-ink-muted block text-[10.5px]">ประมาณการดอกเบี้ย:</span>
+                              <span className="text-ink-muted block text-xs">ประมาณการดอกเบี้ย:</span>
                               <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-0.5 block">
                                 {thb(annualEarned)} / ปี
                               </span>
@@ -850,7 +850,7 @@ export function CashLiquidity() {
 
         {filteredAccounts.length === 0 && (
           <div className="text-center py-12 text-ink-muted space-y-2">
-            <p className="text-[14px] font-medium">ไม่พบบัญชีเงินสดที่ตรงกับเงื่อนไข</p>
+            <p className="text-sm font-medium">ไม่พบบัญชีเงินสดที่ตรงกับเงื่อนไข</p>
             <Button onClick={handleOpenAddModal} variant="secondary" className="text-xs">
               + เพิ่มบัญชีใหม่
             </Button>
@@ -955,7 +955,7 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
       <form id="account-edit-form" onSubmit={handleSubmit} className="space-y-4 pt-1">
         {/* Name */}
         <div>
-          <label className="block text-[12px] font-bold text-ink mb-1">
+          <label className="block text-xs font-bold text-ink mb-1">
             ชื่อบัญชี / สถาบันการเงิน <span className="text-rose-500">*</span>
           </label>
           <input
@@ -969,14 +969,14 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
                 setCategory(inferCashCategory(e.target.value))
               }
             }}
-            className="h-10 w-full rounded-xl border border-line bg-surface-muted/40 px-3 text-[14px] font-medium text-ink outline-none focus:border-brand focus:bg-surface"
+            className="h-10 w-full rounded-xl border border-line bg-surface-muted/40 px-3 text-sm font-medium text-ink outline-none focus:border-brand focus:bg-surface"
           />
         </div>
 
         {/* Balance & Currency */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-[12px] font-bold text-ink mb-1">
+            <label className="block text-xs font-bold text-ink mb-1">
               ยอดเงินคงเหลือ
             </label>
             <input
@@ -985,12 +985,12 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
               placeholder="0.00"
               value={formatWithCommas(balance)}
               onChange={(e) => setBalance(e.target.value)}
-              className="h-10 w-full rounded-xl border border-line bg-surface-muted/40 px-3 text-[14px] font-bold tnum text-ink outline-none focus:border-brand focus:bg-surface"
+              className="h-10 w-full rounded-xl border border-line bg-surface-muted/40 px-3 text-sm font-bold tnum text-ink outline-none focus:border-brand focus:bg-surface"
             />
           </div>
 
           <div>
-            <label className="block text-[12px] font-bold text-ink mb-1">
+            <label className="block text-xs font-bold text-ink mb-1">
               สกุลเงิน
             </label>
             <div className="grid grid-cols-2 gap-1.5 h-10">
@@ -1022,7 +1022,7 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
 
         {/* Category */}
         <div>
-          <label className="block text-[12px] font-bold text-ink mb-1.5">
+          <label className="block text-xs font-bold text-ink mb-1.5">
             หมวดหมู่ / วัตถุประสงค์ (Liquidity Tier)
           </label>
           <div className="grid grid-cols-2 gap-2">
@@ -1034,7 +1034,7 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
                   key={catKey}
                   type="button"
                   onClick={() => setCategory(catKey)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-medium transition-all text-left cursor-pointer border ${
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all text-left cursor-pointer border ${
                     isCatActive
                       ? 'bg-brand text-white border-brand shadow-xs font-semibold'
                       : 'bg-surface text-ink-muted border-line/60 hover:text-ink hover:border-line'
@@ -1050,13 +1050,13 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
 
         {/* Yield Booster (Interest Rate + Cap) */}
         <div className="p-3 rounded-xl bg-surface-muted/40 border border-line/60 space-y-3">
-          <span className="text-[12px] font-bold text-ink block">
+          <span className="text-xs font-bold text-ink block">
             Yield Booster (ผลตอบแทนดอกเบี้ย)
           </span>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-semibold text-ink-muted mb-1">
+              <label className="block text-xs font-semibold text-ink-muted mb-1">
                 อัตราดอกเบี้ยต่อปี (%)
               </label>
               <input
@@ -1065,12 +1065,12 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
                 placeholder="เช่น 1.50, 2.22, 5.50"
                 value={interestRate}
                 onChange={(e) => setInterestRate(e.target.value)}
-                className="h-9 w-full rounded-lg border border-line bg-surface px-2.5 text-[13px] font-bold tnum text-ink outline-none focus:border-brand"
+                className="h-9 w-full rounded-lg border border-line bg-surface px-2.5 text-sm font-bold tnum text-ink outline-none focus:border-brand"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-ink-muted mb-1" title="คิดดอกเบี้ยไม่เกินวงเงินนี้">
+              <label className="block text-xs font-semibold text-ink-muted mb-1" title="คิดดอกเบี้ยไม่เกินวงเงินนี้">
                 เพดานเงินต้นสูงสุด
               </label>
               <input
@@ -1079,17 +1079,17 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
                 placeholder="ไม่จำกัด"
                 value={formatWithCommas(maxEligibleBalance)}
                 onChange={(e) => setMaxEligibleBalance(e.target.value)}
-                className="h-9 w-full rounded-lg border border-line bg-surface px-2.5 text-[13px] font-bold tnum text-ink outline-none focus:border-brand"
+                className="h-9 w-full rounded-lg border border-line bg-surface px-2.5 text-sm font-bold tnum text-ink outline-none focus:border-brand"
               />
             </div>
           </div>
 
           {/* Payout Schedule */}
           <div>
-            <label className="block text-[11px] font-semibold text-ink-muted mb-1.5">
+            <label className="block text-xs font-semibold text-ink-muted mb-1.5">
               รอบดอกเบี้ยเข้าบัญชี
             </label>
-            <div className="grid grid-cols-4 gap-1.5 text-[11.5px]">
+            <div className="grid grid-cols-4 gap-1.5 text-xs">
               {[
                 { key: 'monthly', label: 'ทุกเดือน' },
                 { key: 'semi_annual', label: 'ปีละ 2 ครั้ง' },
@@ -1120,8 +1120,8 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
           {/* Custom Months Picker */}
           {payoutSchedule === 'custom' && (
             <div className="space-y-1.5 pt-1">
-              <span className="text-[11px] text-ink-muted block">แตะเลือกเดือนที่ดอกเบี้ยเข้า:</span>
-              <div className="grid grid-cols-6 gap-1 text-[11px]">
+              <span className="text-xs text-ink-muted block">แตะเลือกเดือนที่ดอกเบี้ยเข้า:</span>
+              <div className="grid grid-cols-6 gap-1 text-xs">
                 {THAI_MONTHS_SHORT.map((mName, idx) => {
                   const mNum = idx + 1
                   const isSelected = payoutMonths.includes(mNum)

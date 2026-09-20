@@ -43,7 +43,7 @@ export function Footer({ className = '', lightOnly = false }: FooterProps) {
           {!copied && (
             <>
               <span className={dotClass}>•</span>
-              <span className={`font-mono text-[11px] ${buildTextClass}`}>
+              <span className={`font-mono text-xs ${buildTextClass}`}>
                 build {__COMMIT_HASH__}
               </span>
             </>

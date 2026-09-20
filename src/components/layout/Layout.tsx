@@ -21,7 +21,7 @@ export function Layout({ children }: { children: ReactNode }) {
       {/* Skip to main content (keyboard / screen reader) */}
       <a
         href="#main-content"
-        className={`sr-only focus:not-sr-only focus:fixed focus:left-4 ${isTestMode ? 'focus:top-12' : 'focus:top-4'} focus:z-50 focus:rounded-xl focus:bg-ink focus:px-4 focus:py-2 focus:text-[14px] focus:font-semibold focus:text-white focus:shadow-[var(--shadow-lift)] focus:outline-none`}
+        className={`sr-only focus:not-sr-only focus:fixed focus:left-4 ${isTestMode ? 'focus:top-12' : 'focus:top-4'} focus:z-50 focus:rounded-xl focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-[var(--shadow-lift)] focus:outline-none`}
       >
         Skip to content
       </a>
@@ -40,7 +40,7 @@ export function Layout({ children }: { children: ReactNode }) {
           Spendiary
         </p>
         {isTestMode && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300 border border-amber-500/30 px-2 py-0.5 text-[10px] font-extrabold tracking-wider uppercase shadow-xs">
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300 border border-amber-500/30 px-2 py-0.5 text-xs font-extrabold tracking-wider uppercase shadow-xs">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
             Test
           </span>

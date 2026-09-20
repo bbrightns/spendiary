@@ -161,11 +161,11 @@ function HeroStat({ label, value, sub, color }: {
 }) {
   return (
     <div className="min-w-0">
-      <p className="text-[11px] font-medium text-ink-muted truncate">{label}</p>
-      <p className={`mt-0.5 font-display text-[15px] font-extrabold tnum leading-none truncate ${
+      <p className="text-xs font-medium text-ink-muted truncate">{label}</p>
+      <p className={`mt-0.5 font-display text-base font-extrabold tnum leading-none truncate ${
         color === 'gain' ? 'text-gain' : color === 'loss' ? 'text-loss' : 'text-ink'
       }`}>{value}</p>
-      {sub && <p className="mt-0.5 text-[10px] text-ink-faint truncate">{sub}</p>}
+      {sub && <p className="mt-0.5 text-xs text-ink-faint truncate">{sub}</p>}
     </div>
   )
 }
@@ -181,7 +181,7 @@ function MobileProjection({ projectedInvestment, projectedSavings, corpusNeeded,
       <BarRow color={C_INVEST}  label="พอร์ตลงทุนรวมผลตอบแทน" value={thbCompact(projectedInvestment)} pct={investPct}  targetPct={targetPct} />
       <BarRow color={C_SAVINGS} label="เงินต้นสะสม (ไม่รวมผลตอบแทน)" value={thbCompact(projectedSavings)}    pct={savingsPct} targetPct={targetPct} />
       {corpusNeeded > 0 && (
-        <div className="flex items-center justify-between text-[12px] pt-1 border-t border-line">
+        <div className="flex items-center justify-between text-xs pt-1 border-t border-line">
           <span className="flex items-center gap-1.5 text-ink-muted">
             <svg aria-hidden="true" width={16} height={2}><line x1={0} y1={1} x2={16} y2={1} stroke={C_TARGET} strokeWidth={1.5} strokeDasharray="3 2" /></svg>
             เป้าหมายเงินก้อนเกษียณ
@@ -198,7 +198,7 @@ function BarRow({ color, label, value, pct, targetPct }: {
 }) {
   return (
     <div>
-      <div className="flex items-center justify-between text-[12px] mb-1.5">
+      <div className="flex items-center justify-between text-xs mb-1.5">
         <span className="flex items-center gap-1.5 text-ink-muted">
           <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: color }} />
           {label}
@@ -220,7 +220,7 @@ function Row({ label, value, bold, highlight, hint }: {
   highlight?: 'gain' | 'loss'; hint?: string
 }) {
   return (
-    <div className="flex items-center justify-between gap-2 text-[13px]">
+    <div className="flex items-center justify-between gap-2 text-sm">
       <span className="text-ink-muted min-w-0 flex-1 leading-snug">{label}</span>
       <div className="text-right shrink-0">
         <span className={`tnum font-semibold ${
@@ -228,7 +228,7 @@ function Row({ label, value, bold, highlight, hint }: {
           highlight === 'loss' ? 'text-loss' :
           bold ? 'font-bold text-ink' : 'text-ink-soft'
         } leading-none`}>{value}</span>
-        {hint && <p className="mt-0.5 text-[11px] text-ink-faint">{hint}</p>}
+        {hint && <p className="mt-0.5 text-xs text-ink-faint">{hint}</p>}
       </div>
     </div>
   )
@@ -236,7 +236,7 @@ function Row({ label, value, bold, highlight, hint }: {
 
 function LegendItem({ color, label, dashed }: { color: string; label: string; dashed?: boolean }) {
   return (
-    <div className="flex items-center gap-2 text-[12px] text-ink-muted">
+    <div className="flex items-center gap-2 text-xs text-ink-muted">
       <svg width={20} height={10} aria-hidden="true">
         <line x1={0} y1={5} x2={20} y2={5} stroke={color} strokeWidth={dashed ? 1.5 : 2.5} strokeDasharray={dashed ? '4 3' : undefined} />
       </svg>
@@ -478,7 +478,7 @@ export function Retirement() {
           {/* ── Left: Inputs ── */}
           <div id="guide-retirement-settings">
             <Card className="animate-rise">
-            <h2 className="font-display text-[17px] font-bold text-ink mb-5">แผนการเกษียณของคุณ</h2>
+            <h2 className="font-display text-lg font-bold text-ink mb-5">แผนการเกษียณของคุณ</h2>
             <div className="space-y-4">
               <TextField
                 label="วัน/เดือน/ปี เกิด"
@@ -495,7 +495,7 @@ export function Retirement() {
                 placeholder="50,000"
               />
               <div>
-                <span className="text-[13px] font-semibold text-ink-soft block mb-1.5">
+                <span className="text-sm font-semibold text-ink-soft block mb-1.5">
                   รูปแบบการถอนเงินหลังเกษียณ
                 </span>
                 <SegmentedControl
@@ -507,7 +507,7 @@ export function Retirement() {
                       label: (
                         <span className="inline-block text-center leading-tight">
                           <span>ถอนก้อนเดียว</span>{' '}
-                          <span className="block sm:inline text-[11px] sm:text-[12px] opacity-75 font-normal">
+                          <span className="block sm:inline text-xs opacity-75 font-normal">
                             (Lump Sum)
                           </span>
                         </span>
@@ -518,7 +518,7 @@ export function Retirement() {
                       label: (
                         <span className="inline-block text-center leading-tight">
                           <span>ทยอยถอนรายปี</span>{' '}
-                          <span className="block sm:inline text-[11px] sm:text-[12px] opacity-75 font-normal">
+                          <span className="block sm:inline text-xs opacity-75 font-normal">
                             (Drawdown)
                           </span>
                         </span>
@@ -526,7 +526,7 @@ export function Retirement() {
                     },
                   ]}
                 />
-                <p className="mt-1 text-[11px] text-ink-muted leading-relaxed">
+                <p className="mt-1 text-xs text-ink-muted leading-relaxed">
                   {withdrawalStrategy === 'lump_sum'
                     ? 'ถอนเงินทั้งหมดออกมา ณ วันเกษียณ (ไม่ได้นำไปลงทุนต่อ)'
                     : 'ทยอยถอนใช้รายปี เงินส่วนที่เหลือยังคงลงทุนสร้างผลตอบแทนต่อเนื่อง'}
@@ -605,46 +605,46 @@ export function Retirement() {
         {/* ── Wealth Runway & Milestones ── */}
         <div id="guide-retirement-freedom">
           <Card className="animate-rise">
-            <h2 className="font-display text-[17px] font-bold text-ink mb-1">เงินสำรอง & ก้าวสำคัญทางการเงิน</h2>
-            <p className="text-[13px] text-ink-muted mb-4">
+            <h2 className="font-display text-lg font-bold text-ink mb-1">เงินสำรอง & ก้าวสำคัญทางการเงิน</h2>
+            <p className="text-sm text-ink-muted mb-4">
               ประเมินความอยู่รอดทางการเงินและระดับอิสรภาพทางการเงิน (Financial Independence)
             </p>
 
             {/* Runway Large display */}
             <div className="rounded-2xl bg-surface-muted px-4 py-4 mb-4 flex items-center justify-between">
               <div>
-                <p className="text-[12.5px] font-medium text-ink-muted">ระยะเวลาที่ทรัพย์สินปัจจุบันครอบคลุม</p>
-                <p className="mt-1 font-display text-[28px] font-extrabold tnum text-ink leading-none">
+                <p className="text-xs font-medium text-ink-muted">ระยะเวลาที่ทรัพย์สินปัจจุบันครอบคลุม</p>
+                <p className="mt-1 font-display text-3xl font-extrabold tnum text-ink leading-none">
                   {runwayYears !== null ? `${runwayYears.toFixed(1)} ปี` : '-'}
                 </p>
-                <p className="mt-1 text-[11px] text-ink-muted">
+                <p className="mt-1 text-xs text-ink-muted">
                   {runwayYears !== null
                     ? `ครอบคลุมค่าใช้จ่าย ฿${(monthlySpendVal * 12).toLocaleString()}/ปี`
                     : 'กรอกค่าใช้จ่ายต่อเดือนเพื่อคำนวณ'}
                 </p>
               </div>
-              <div className="h-12 w-12 shrink-0 rounded-full bg-brand-soft text-brand flex items-center justify-center font-bold text-[18px]">
+              <div className="h-12 w-12 shrink-0 rounded-full bg-brand-soft text-brand flex items-center justify-center font-bold text-lg">
                 ⏳
               </div>
             </div>
 
             {/* Milestones list */}
             <div className="space-y-3.5">
-              <h3 className="text-[13.5px] font-bold text-ink">ระดับอิสรภาพทางการเงิน (Milestones)</h3>
+              <h3 className="text-sm font-bold text-ink">ระดับอิสรภาพทางการเงิน (Milestones)</h3>
               <div className="space-y-2">
                 {milestoneList.map((m) => (
                   <div key={m.id} className="flex items-start gap-3 rounded-xl border border-line bg-surface p-3 transition-shadow hover:shadow-[var(--shadow-soft)]">
-                    <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+                    <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                       m.completed ? 'bg-gain text-white' : 'bg-surface-muted text-ink-faint border border-line-strong'
                     }`}>
                       {m.completed ? '✓' : '•'}
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-[13px] font-semibold text-ink min-w-0 flex-1 leading-snug">{m.name}</p>
-                        <span className="tnum text-[12px] font-bold text-ink-soft shrink-0">{m.valueLabel}</span>
+                        <p className="text-sm font-semibold text-ink min-w-0 flex-1 leading-snug">{m.name}</p>
+                        <span className="tnum text-xs font-bold text-ink-soft shrink-0">{m.valueLabel}</span>
                       </div>
-                      <p className="text-[11.5px] text-ink-muted mt-0.5">{m.desc}</p>
+                      <p className="text-xs text-ink-muted mt-0.5">{m.desc}</p>
                       
                       {/* Progress bar for this milestone if not completed */}
                       {!m.completed && m.progress > 0 && (
@@ -671,15 +671,15 @@ export function Retirement() {
             <div className="mb-5">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
-                  <p className="text-[12px] font-medium text-ink-muted">คาดการณ์เงินสะสม ณ วันเกษียณ</p>
-                  <p className="mt-0.5 font-display text-[32px] font-extrabold tnum text-ink leading-none">
+                  <p className="text-xs font-medium text-ink-muted">คาดการณ์เงินสะสม ณ วันเกษียณ</p>
+                  <p className="mt-0.5 font-display text-4xl font-extrabold tnum text-ink leading-none">
                     {thbCompact(projectedInvestment)}
                   </p>
                 </div>
                 <div
                   role="status"
                   aria-live="polite"
-                  className={`rounded-full px-3.5 py-1.5 text-[13px] font-bold flex items-center gap-1.5 shrink-0 ${
+                  className={`rounded-full px-3.5 py-1.5 text-sm font-bold flex items-center gap-1.5 shrink-0 ${
                     onTrack ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'
                   }`}
                 >
@@ -737,37 +737,37 @@ export function Retirement() {
                       <path d="M8 6v3M8 11.5v.5" strokeLinecap="round" />
                       <circle cx={8} cy={8} r={6.5} />
                     </svg>
-                    <p className="text-[13px] font-bold text-loss">แนวทางปรับแผนเพื่อให้ถึงเป้าหมาย:</p>
+                    <p className="text-sm font-bold text-loss">แนวทางปรับแผนเพื่อให้ถึงเป้าหมาย:</p>
                   </div>
                   {/* Path items */}
                   <div className="space-y-3">
                     {monthlyGap !== null && monthlyGap > 0 && (
                       <div className="flex items-start gap-3">
-                        <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/20 text-[10px] font-bold text-loss">1</span>
+                        <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/20 text-xs font-bold text-loss">1</span>
                         <div className="min-w-0">
-                          <p className="text-[13px] font-semibold text-loss leading-snug">
+                          <p className="text-sm font-semibold text-loss leading-snug">
                             เพิ่มเงินลงทุนอีกเดือนละ <span className="font-bold">{thbCompact(monthlyGap)}</span>
                           </p>
-                          <p className="text-[11.5px] text-loss/60 mt-0.5">รวมเป็นเดือนละ: {thbCompact(investMonthly + monthlyGap)}</p>
+                          <p className="text-xs text-loss/60 mt-0.5">รวมเป็นเดือนละ: {thbCompact(investMonthly + monthlyGap)}</p>
                         </div>
                       </div>
                     )}
                     {earliestViableAge !== null && earliestViableAge > plannedAge ? (
                       <div className="flex items-start gap-3">
-                        <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/20 text-[10px] font-bold text-loss">2</span>
+                        <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/20 text-xs font-bold text-loss">2</span>
                         <div className="min-w-0">
-                          <p className="text-[13px] font-semibold text-loss leading-snug">
+                          <p className="text-sm font-semibold text-loss leading-snug">
                             ขยับไปเกษียณตอนอายุ <span className="font-bold">{earliestViableAge}</span> ปี (จากเดิม {Number(retireAge) || 40} ปี)
                           </p>
-                          <p className="text-[11.5px] text-loss/60 mt-0.5">
+                          <p className="text-xs text-loss/60 mt-0.5">
                             ให้เงินทำงานเพิ่มอีก {earliestViableAge - (Number(retireAge) || 40)} ปี เพื่อพลังดอกเบี้ยทบต้น
                           </p>
                         </div>
                       </div>
                     ) : (
                       <div className="flex items-start gap-3">
-                        <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/10 text-[10px] font-bold text-loss/40">2</span>
-                        <p className="text-[12px] text-loss/50 leading-snug">การขยายอายุเกษียณยังไม่เพียงพอภายในกรอบอายุขัยที่กำหนด</p>
+                        <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/10 text-xs font-bold text-loss/40">2</span>
+                        <p className="text-xs text-loss/50 leading-snug">การขยายอายุเกษียณยังไม่เพียงพอภายในกรอบอายุขัยที่กำหนด</p>
                       </div>
                     )}
                   </div>
@@ -781,7 +781,7 @@ export function Retirement() {
                 <button
                   key={v}
                   onClick={() => setMobileView(v)}
-                  className={`px-3 py-1 rounded-full text-[12px] font-semibold transition-colors ${
+                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
                     mobileView === v ? 'bg-ink text-surface' : 'bg-surface-muted text-ink-soft'
                   }`}
                 >

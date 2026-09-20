@@ -58,49 +58,32 @@ colors:
   yellow-vivid: "#eab308"
 typography:
   scale:
-    tiny: "8.5px"
-    micro: "9.5px"
-    pill: "10px"
-    compact: "11px"
-    label-sm: "11.5px"
-    label: "12.5px"
-    body-sm: "13px"
-    body: "14px"
-    subhead: "15px"
-    ui: "16px"
-    title: "17px"
-    title-lg: "18px"
-    title-bar: "19px"
-    h3: "20px"
-    h3-lg: "21px"
-    title-xl: "22px"
-    h2: "24px"
-    h2-lg: "25px"
-    header-title: "27px"
-    h1: "28px"
-    display-sm: "32px"
-    display-md: "36px"
-    headline: "40px"
-    display-lg: "44px"
-    display-xl: "48px"
-    display: "52px"
+    xs: "12px (text-xs: badges, micro chips, captions, table metadata)"
+    sm: "14px (text-sm: secondary body, list subtext, button text)"
+    base: "16px (text-base: primary body copy, standard input text)"
+    lg: "18px (text-lg: subhead, card headers, medium metrics)"
+    xl: "20px (text-xl: section titles, modal headers)"
+    2xl: "24px (text-2xl: prominent metric values, large titles)"
+    3xl: "30px (text-3xl: major section displays)"
+    4xl: "36px (text-4xl: stat card displays)"
+    5xl: "48px (text-5xl: hero financial readouts, net worth display)"
   display:
     fontFamily: "'Plus Jakarta Sans', Inter, ui-sans-serif, system-ui, sans-serif"
     fontWeight: 800
-    fontSize: "52px"
+    fontSize: "48px"
     lineHeight: 1
     letterSpacing: "-0.025em"
     fontFeature: "'cv11', 'ss01', 'tnum'"
   headline:
     fontFamily: "'Plus Jakarta Sans', Inter, ui-sans-serif, system-ui, sans-serif"
     fontWeight: 800
-    fontSize: "40px"
+    fontSize: "36px"
     lineHeight: 1
     letterSpacing: "-0.02em"
   title:
     fontFamily: "'Plus Jakarta Sans', Inter, ui-sans-serif, system-ui, sans-serif"
     fontWeight: 700
-    fontSize: "17px"
+    fontSize: "18px"
     lineHeight: 1.3
     letterSpacing: "-0.01em"
   body:
@@ -111,7 +94,7 @@ typography:
   label:
     fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif"
     fontWeight: 600
-    fontSize: "12.5px"
+    fontSize: "12px"
     lineHeight: 1.4
 rounded:
   xs: "8px"
@@ -370,5 +353,5 @@ The unauthenticated entry experience uses a bright, inviting **Fastwork.com-insp
 - **Container Surface:** `bg-white/60 hover:bg-white/75 backdrop-blur-md rounded-[18px] sm:rounded-[20px] border border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)]`
 - **Icon Badge:** 44×44px (`w-11 h-11 rounded-[14px]`) with Fastwork gradient fill:
   `linear-gradient(140deg, #6079FE 0%, #765EFD 50%, #B875B4 100%)` and white outlined SVG icons.
-- **Content Hierarchy:** 14.5px bold title (`text-slate-800`) over 12.5px description (`text-slate-500 leading-relaxed`).
+- **Content Hierarchy:** 14px bold title (`text-slate-800`) over 12px description (`text-slate-500 leading-relaxed`).
 

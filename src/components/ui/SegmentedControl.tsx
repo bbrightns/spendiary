@@ -31,8 +31,8 @@ export function SegmentedControl<T extends string>({
   ariaLabel,
 }: SegmentedControlProps<T>) {
   const sizeClasses = {
-    sm: 'py-1.5 px-2.5 text-[12px]',
-    md: 'py-2 px-3 text-[12.5px] sm:text-[13px]',
+    sm: 'py-1.5 px-2.5 text-xs',
+    md: 'py-2 px-3 text-xs sm:text-sm',
   }
 
   const effectiveGridCols =

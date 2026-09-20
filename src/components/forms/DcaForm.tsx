@@ -204,9 +204,9 @@ export function DcaForm({ open, editing, onClose }: Props) {
       {/* BTC location picker */}
       {isBtc && (
         <div className="space-y-2">
-          <p className="text-[13px] font-semibold text-ink-soft">Buy into location</p>
+          <p className="text-sm font-semibold text-ink-soft">Buy into location</p>
           {btcLocations.length === 0 ? (
-            <p className="rounded-xl bg-warn-soft px-4 py-3 text-[12.5px] text-warn">
+            <p className="rounded-xl bg-warn-soft px-4 py-3 text-xs text-warn">
               No BTC locations set up yet. You can choose or create a location when confirming a buy.
             </p>
           ) : (
@@ -229,8 +229,8 @@ export function DcaForm({ open, editing, onClose }: Props) {
                     className="accent-brand"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13.5px] font-semibold text-ink">{loc.name}</p>
-                    <p className="text-[11.5px] text-ink-muted">
+                    <p className="text-sm font-semibold text-ink">{loc.name}</p>
+                    <p className="text-xs text-ink-muted">
                       {loc.satoshi.toLocaleString()} sats held
                     </p>
                   </div>
@@ -244,9 +244,9 @@ export function DcaForm({ open, editing, onClose }: Props) {
       {/* Gold location picker */}
       {isGold && (
         <div className="space-y-2">
-          <p className="text-[13px] font-semibold text-ink-soft">Buy into location</p>
+          <p className="text-sm font-semibold text-ink-soft">Buy into location</p>
           {goldLocations.length === 0 ? (
-            <p className="rounded-xl bg-warn-soft px-4 py-3 text-[12.5px] text-warn">
+            <p className="rounded-xl bg-warn-soft px-4 py-3 text-xs text-warn">
               No Gold locations set up yet. You can choose or create a location when confirming a buy.
             </p>
           ) : (
@@ -269,8 +269,8 @@ export function DcaForm({ open, editing, onClose }: Props) {
                     className="accent-brand"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13.5px] font-semibold text-ink">{loc.name}</p>
-                    <p className="text-[11.5px] text-ink-muted">
+                    <p className="text-sm font-semibold text-ink">{loc.name}</p>
+                    <p className="text-xs text-ink-muted">
                       {loc.grams.toFixed(4)} g held
                     </p>
                   </div>
@@ -331,7 +331,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
             <AssetLogo assetClass={editing.assetClass} ticker={editing.ticker} name={editing.name} size="md" />
             <div className="min-w-0 flex-1">
               <span
-                className="inline-block rounded px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider mb-0.5"
+                className="inline-block rounded px-1.5 py-0.5 text-xs font-extrabold uppercase tracking-wider mb-0.5"
                 style={{
                   color: ASSET_META[editing.assetClass]?.color ?? '#6366f1',
                   background: `color-mix(in srgb, ${ASSET_META[editing.assetClass]?.color ?? '#6366f1'} 15%, transparent)`,
@@ -339,8 +339,8 @@ export function DcaForm({ open, editing, onClose }: Props) {
               >
                 {ASSET_META[editing.assetClass]?.label}
               </span>
-              <p className="text-[15px] font-bold text-ink truncate leading-snug">{editing.name}</p>
-              {editing.ticker && <p className="text-[12px] text-ink-muted font-medium">{editing.ticker}</p>}
+              <p className="text-base font-bold text-ink truncate leading-snug">{editing.name}</p>
+              {editing.ticker && <p className="text-xs text-ink-muted font-medium">{editing.ticker}</p>}
             </div>
           </div>
         )}
@@ -348,9 +348,9 @@ export function DcaForm({ open, editing, onClose }: Props) {
         {/* ── Section A (Cash / Savings Account): Destination ── */}
         {!editing && form.source === 'cash' && (
           data.cashAccounts.length === 0 ? (
-            <div className="rounded-xl bg-warn-soft p-4 text-[13px] text-warn space-y-2">
+            <div className="rounded-xl bg-warn-soft p-4 text-sm text-warn space-y-2">
               <p className="font-semibold">No cash accounts added yet.</p>
-              <p className="text-[12px] opacity-90">Please add a cash account in the Cash Accounts Hub first.</p>
+              <p className="text-xs opacity-90">Please add a cash account in the Cash Accounts Hub first.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -375,7 +375,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
                   }
                 })}
               />
-              <div className="rounded-xl bg-surface-muted/70 p-3.5 border border-line/50 text-[12.5px] text-ink-muted leading-relaxed">
+              <div className="rounded-xl bg-surface-muted/70 p-3.5 border border-line/50 text-xs text-ink-muted leading-relaxed">
                 💡 <strong>Automatic Savings DCA</strong>: When you confirm this plan each period, Spendiary will directly increment the balance of{' '}
                 <span className="font-semibold text-ink">
                   {data.cashAccounts.find((a) => a.id === form.cashAccountId)?.name || 'the selected account'}
@@ -388,9 +388,9 @@ export function DcaForm({ open, editing, onClose }: Props) {
         {/* ── Section A: Portfolio selection ── */}
         {!editing && form.source === 'portfolio' && (
           holdingOptions.length === 0 ? (
-            <div className="rounded-xl bg-warn-soft p-4 text-[13px] text-warn space-y-2">
+            <div className="rounded-xl bg-warn-soft p-4 text-sm text-warn space-y-2">
               <p className="font-semibold">No holdings in your portfolio yet.</p>
-              <p className="text-[12px] opacity-90">Switch to <strong>Custom plan</strong> or <strong>Cash / Savings</strong> above to start DCAing.</p>
+              <p className="text-xs opacity-90">Switch to <strong>Custom plan</strong> or <strong>Cash / Savings</strong> above to start DCAing.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -458,10 +458,10 @@ export function DcaForm({ open, editing, onClose }: Props) {
                               setSuggestions([])
                             }}
                           >
-                            <span className="min-w-[52px] rounded-md bg-surface-muted px-1.5 py-0.5 text-center text-[11px] font-bold tracking-wide text-ink-muted">
+                            <span className="min-w-[52px] rounded-md bg-surface-muted px-1.5 py-0.5 text-center text-xs font-bold tracking-wide text-ink-muted">
                               {s.ticker}
                             </span>
-                            <span className="text-[13.5px] text-ink truncate">{s.name}</span>
+                            <span className="text-sm text-ink truncate">{s.name}</span>
                           </button>
                         </li>
                       ))}
@@ -483,8 +483,8 @@ export function DcaForm({ open, editing, onClose }: Props) {
                 <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface-muted p-3.5">
                   <AssetLogo assetClass="crypto" ticker="BTC" size="md" />
                   <div>
-                    <p className="text-[14px] font-bold text-ink">Bitcoin (BTC)</p>
-                    <p className="text-[12px] text-ink-muted">Recurring buy plan in Satoshis</p>
+                    <p className="text-sm font-bold text-ink">Bitcoin (BTC)</p>
+                    <p className="text-xs text-ink-muted">Recurring buy plan in Satoshis</p>
                   </div>
                 </div>
                 {locationPicker}
@@ -496,8 +496,8 @@ export function DcaForm({ open, editing, onClose }: Props) {
                 <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface-muted p-3.5">
                   <AssetLogo assetClass="gold" ticker="GOLD" size="md" />
                   <div>
-                    <p className="text-[14px] font-bold text-ink">Gold (ทองคำ / XAU)</p>
-                    <p className="text-[12px] text-ink-muted">Recurring buy plan for physical gold / grams</p>
+                    <p className="text-sm font-bold text-ink">Gold (ทองคำ / XAU)</p>
+                    <p className="text-xs text-ink-muted">Recurring buy plan for physical gold / grams</p>
                   </div>
                 </div>
                 {locationPicker}
@@ -555,7 +555,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
                   max={31}
                   step={1}
                 />
-                <p className="mt-1.5 text-[11.5px] text-ink-muted leading-relaxed">
+                <p className="mt-1.5 text-xs text-ink-muted leading-relaxed">
                   💡 Note: หากกรอก 31 จะหมายถึงวันสุดท้ายของแต่ละเดือน (เช่น 28/29 ก.พ. หรือ 30 ในเดือนที่มี 30 วัน)
                 </p>
               </div>

@@ -139,10 +139,10 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
               className="rounded-xl px-2 py-1.5 text-center min-h-[46px] flex flex-col justify-center max-w-full overflow-hidden"
               style={{ background: seg.bg }}
             >
-              <p className="text-[10px] font-semibold leading-none truncate" style={{ color: seg.textColor }}>
+              <p className="text-xs font-semibold leading-none truncate" style={{ color: seg.textColor }}>
                 {seg.label}
               </p>
-              <p className="mt-1 font-display text-[13px] font-extrabold tnum leading-none" style={{ color: seg.textColor }}>
+              <p className="mt-1 font-display text-sm font-extrabold tnum leading-none" style={{ color: seg.textColor }}>
                 {seg.isStriped ? `+${thb(seg.amount)}` : thb(seg.amount)}
               </p>
             </div>
@@ -178,8 +178,8 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
 
       {/* Explanatory summary note */}
       {isOverflow && (
-        <div className="mt-3 flex items-start gap-2 rounded-xl bg-surface-muted px-3 py-2 text-[12px] text-ink-muted">
-          <span className="text-[13px] mt-0.5">💡</span>
+        <div className="mt-3 flex items-start gap-2 rounded-xl bg-surface-muted px-3 py-2 text-xs text-ink-muted">
+          <span className="text-sm mt-0.5">💡</span>
           <p className="leading-snug">
             <span className="font-semibold text-ink">Total planned: {thb(totalAllocated)}</span>
             {' '}— includes <span className="font-semibold text-gain">{thb(savings)}</span> in savings/investments
@@ -202,17 +202,17 @@ function InlineEditStat({ label, value, editing, draft, inputRef, onOpen, onDraf
 }) {
   return (
     <div>
-      <p className="text-[12px] font-medium text-ink-muted">{label}</p>
+      <p className="text-xs font-medium text-ink-muted">{label}</p>
       {editing ? (
         <div className="mt-1 flex items-center gap-1.5">
-          <span className="text-[13px] font-semibold text-ink-muted">฿</span>
+          <span className="text-sm font-semibold text-ink-muted">฿</span>
           <input
             ref={inputRef} type="number" min="0" value={draft}
             aria-label={label}
             onChange={(e) => onDraftChange(e.target.value)}
             onBlur={onCommit}
             onKeyDown={(e) => { if (e.key === 'Enter') onCommit(); if (e.key === 'Escape') onCancel() }}
-            className="w-36 rounded-lg border border-brand bg-surface px-2.5 py-1 text-[15px] font-bold tnum text-ink outline-none focus:ring-2 focus:ring-brand/30"
+            className="w-36 rounded-lg border border-brand bg-surface px-2.5 py-1 text-base font-bold tnum text-ink outline-none focus:ring-2 focus:ring-brand/30"
           />
         </div>
       ) : (
@@ -221,11 +221,11 @@ function InlineEditStat({ label, value, editing, draft, inputRef, onOpen, onDraf
           aria-label={`Edit ${label}`}
           className="group mt-1 flex items-center gap-1.5 rounded-lg px-1 py-1 transition-colors hover:bg-surface-muted min-h-[40px]"
         >
-          <span className="font-display text-[22px] font-extrabold tnum text-ink leading-none">{value}</span>
+          <span className="font-display text-xl font-extrabold tnum text-ink leading-none">{value}</span>
           <PencilIcon className="h-3.5 w-3.5 text-ink-muted opacity-0 transition-opacity group-hover:opacity-100" />
         </button>
       )}
-      {hint && !editing && <p className="mt-0.5 text-[11.5px] text-ink-faint">{hint}</p>}
+      {hint && !editing && <p className="mt-0.5 text-xs text-ink-faint">{hint}</p>}
     </div>
   )
 }
@@ -239,9 +239,9 @@ function FixedCostRow({ item, onEdit, onDelete }: {
   return (
     <div className="group flex items-center gap-3 py-2">
       <div className="min-w-0 flex-1">
-        <span className="text-[14px] font-medium text-ink">{item.name}</span>
+        <span className="text-sm font-medium text-ink">{item.name}</span>
       </div>
-      <span className="font-display text-[14px] font-bold tnum text-ink">{thb(item.amount)}</span>
+      <span className="font-display text-sm font-bold tnum text-ink">{thb(item.amount)}</span>
       <div className="flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
         <IconButton
           icon={<PencilIcon className="h-3.5 w-3.5" />}
@@ -284,23 +284,23 @@ function FixedCostForm({ initial, onSave, onCancel }: {
         ref={nameRef} value={name} onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') onCancel() }}
         placeholder="Name (e.g. Rent)"
-        className="min-w-0 flex-1 bg-transparent text-[13px] font-medium text-ink outline-none placeholder:text-ink-faint"
+        className="min-w-0 flex-1 bg-transparent text-sm font-medium text-ink outline-none placeholder:text-ink-faint"
       />
       <div className="flex items-center gap-1">
-        <span className="text-[12px] text-ink-muted">฿</span>
+        <span className="text-xs text-ink-muted">฿</span>
         <input
           type="number" min="0" value={amount} onChange={(e) => setAmount(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') onCancel() }}
           placeholder="0"
-          className="w-24 bg-transparent text-right text-[13px] font-bold tnum text-ink outline-none placeholder:text-ink-faint"
+          className="w-24 bg-transparent text-right text-sm font-bold tnum text-ink outline-none placeholder:text-ink-faint"
         />
       </div>
       <button onClick={submit}
-        className="shrink-0 rounded-lg bg-brand px-3 py-1.5 text-[12px] font-bold text-white dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] transition-colors hover:bg-brand-ink active:scale-95">
+        className="shrink-0 rounded-lg bg-brand px-3 py-1.5 text-xs font-bold text-white dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] transition-colors hover:bg-brand-ink active:scale-95">
         Save
       </button>
       <button onClick={onCancel}
-        className="shrink-0 rounded-lg px-2 py-1.5 text-[12px] font-medium text-ink-muted transition-colors hover:bg-line">
+        className="shrink-0 rounded-lg px-2 py-1.5 text-xs font-medium text-ink-muted transition-colors hover:bg-line">
         Cancel
       </button>
     </div>
@@ -321,8 +321,8 @@ function SectionHeader({ label, total, open, onToggle, action }: {
         className="flex items-center gap-2 group cursor-pointer"
       >
         <div className="text-left">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-faint">{label}</p>
-          <p className="mt-0.5 font-display text-[20px] font-extrabold tnum text-ink leading-none">
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">{label}</p>
+          <p className="mt-0.5 font-display text-xl font-extrabold tnum text-ink leading-none">
             {thb(total)}
           </p>
         </div>
@@ -457,7 +457,7 @@ export function DcaPlanner() {
             onClick={handleCopyMarkdown}
             aria-label="Copy portfolio markdown"
             title="Copy Portfolio as Markdown"
-            className="inline-flex h-9 items-center gap-2 rounded-full border border-line-strong bg-surface px-3.5 text-[12.5px] font-semibold text-ink shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-surface-muted active:scale-95 cursor-pointer whitespace-nowrap"
+            className="inline-flex h-9 items-center gap-2 rounded-full border border-line-strong bg-surface px-3.5 text-xs font-semibold text-ink shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-surface-muted active:scale-95 cursor-pointer whitespace-nowrap"
           >
             {copied ? (
               <>
@@ -495,11 +495,11 @@ export function DcaPlanner() {
                 />
                 {salary > 0 && fixedTotal + savingsTotal > salary && (
                   <div className="text-right">
-                    <p className="text-[12px] font-medium text-ink-muted">Total Planned</p>
-                    <p className="mt-1 font-display text-[22px] font-extrabold tnum text-ink leading-none">
+                    <p className="text-xs font-medium text-ink-muted">Total Planned</p>
+                    <p className="mt-1 font-display text-xl font-extrabold tnum text-ink leading-none">
                       {thb(fixedTotal + savingsTotal)}
                     </p>
-                    <p className="mt-0.5 text-[11.5px] font-semibold text-brand dark:text-brand-ink">
+                    <p className="mt-0.5 text-xs font-semibold text-brand dark:text-brand-ink">
                       +{thb(fixedTotal + savingsTotal - salary)} from Cash
                     </p>
                   </div>
@@ -507,7 +507,7 @@ export function DcaPlanner() {
               </div>
               {salary > 0 && <BudgetBar salary={salary} fixed={fixedTotal} savings={savingsTotal} />}
               {salary <= 0 && (
-                <button onClick={openSalaryEdit} className="mt-4 text-[13px] font-semibold text-brand hover:underline cursor-pointer">
+                <button onClick={openSalaryEdit} className="mt-4 text-sm font-semibold text-brand hover:underline cursor-pointer">
                   + Add monthly salary to see breakdown
                 </button>
               )}
@@ -527,7 +527,7 @@ export function DcaPlanner() {
                   <button
                     onClick={() => setAddingItem(true)}
                     aria-label="Add fixed expense"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-loss/30 bg-loss-soft px-3 py-1.5 text-[12px] font-semibold text-loss transition-colors hover:bg-loss/20 active:scale-95 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-loss/30 bg-loss-soft px-3 py-1.5 text-xs font-semibold text-loss transition-colors hover:bg-loss/20 active:scale-95 cursor-pointer"
                   >
                     + Add expense
                   </button>
@@ -538,7 +538,7 @@ export function DcaPlanner() {
             {fixedOpen && (
               <div className="mt-4">
                 {fixedItems.length === 0 && !addingItem && (
-                  <p className="text-[13px] text-ink-muted">No fixed costs yet. Add things like rent, bills, or family support.</p>
+                  <p className="text-sm text-ink-muted">No fixed costs yet. Add things like rent, bills, or family support.</p>
                 )}
 
                 {fixedItems.length > 0 && (
@@ -586,8 +586,8 @@ export function DcaPlanner() {
 
                 {fixedItems.length > 0 && (
                   <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
-                    <span className="text-[12.5px] font-semibold text-ink-muted">Total fixed</span>
-                    <span className="font-display text-[15px] font-extrabold tnum text-ink">{thb(fixedTotal)}</span>
+                    <span className="text-xs font-semibold text-ink-muted">Total fixed</span>
+                    <span className="font-display text-base font-extrabold tnum text-ink">{thb(fixedTotal)}</span>
                   </div>
                 )}
               </div>
@@ -611,7 +611,7 @@ export function DcaPlanner() {
                     <button
                       onClick={openAdd}
                       aria-label="Add DCA investment plan"
-                      className="inline-flex items-center gap-1.5 rounded-full border border-gain/30 bg-gain-soft px-3 py-1.5 text-[12px] font-semibold text-gain transition-colors hover:bg-gain/20 active:scale-95 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-gain/30 bg-gain-soft px-3 py-1.5 text-xs font-semibold text-gain transition-colors hover:bg-gain/20 active:scale-95 cursor-pointer"
                     >
                       + Add plan
                     </button>
@@ -632,7 +632,7 @@ export function DcaPlanner() {
                         action={
                           <button
                             onClick={openAdd}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-gain/30 bg-gain-soft px-3.5 py-1.5 text-[12.5px] font-semibold text-gain transition-colors hover:bg-gain/20 cursor-pointer"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-gain/30 bg-gain-soft px-3.5 py-1.5 text-xs font-semibold text-gain transition-colors hover:bg-gain/20 cursor-pointer"
                           >
                             + Add plan
                           </button>
@@ -683,29 +683,29 @@ export function DcaPlanner() {
                               />
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center justify-between gap-2">
-                                  <p className="truncate text-[14.5px] font-semibold text-ink">{p.name}</p>
-                                  <p className="shrink-0 font-display text-[15px] font-extrabold tnum text-ink">
+                                  <p className="truncate text-sm font-semibold text-ink">{p.name}</p>
+                                  <p className="shrink-0 font-display text-base font-extrabold tnum text-ink">
                                     {thb(p.monthlyAmount)}
                                   </p>
                                 </div>
-                                  <div className="mt-1 flex items-center justify-between gap-2 text-[12px]">
+                                  <div className="mt-1 flex items-center justify-between gap-2 text-xs">
                                     <span className="text-ink-muted">
                                       {meta.label} · {freqLabel(p)}
                                     </span>
                                   {showConfirmed && !skipped ? (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-[11px] font-semibold text-gain">
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-xs font-semibold text-gain">
                                       <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Confirmed
                                     </span>
                                   ) : isOverdue ? (
-                                    <span className="inline-block text-[11px] font-bold text-loss">Overdue</span>
+                                    <span className="inline-block text-xs font-bold text-loss">Overdue</span>
                                   ) : isToday || days <= 0 ? (
-                                    <span className="inline-block text-[11px] font-bold text-warn">Today</span>
+                                    <span className="inline-block text-xs font-bold text-warn">Today</span>
                                   ) : days < 3 ? (
-                                    <span className="inline-block text-[11px] font-semibold text-warn">
+                                    <span className="inline-block text-xs font-semibold text-warn">
                                       {days === 1 ? 'Tomorrow' : `in ${days} days`}
                                     </span>
                                   ) : (
-                                    <span className="inline-block text-[11px] font-semibold text-stocks">in {days} days</span>
+                                    <span className="inline-block text-xs font-semibold text-stocks">in {days} days</span>
                                   )}
                                   </div>
                                   {needsAction && (
@@ -713,7 +713,7 @@ export function DcaPlanner() {
                                       <button
                                         onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
                                         aria-label={`Confirm DCA buy for ${p.name}`}
-                                        className="inline-flex items-center gap-1.5 rounded-full bg-[#00de9b] hover:bg-[#00c58a] text-[#052e21] px-3.5 py-1.5 text-[12px] font-bold shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
+                                        className="inline-flex items-center gap-1.5 rounded-full bg-[#00de9b] hover:bg-[#00c58a] text-[#052e21] px-3.5 py-1.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
                                       >
                                         <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
                                         <span>{p.assetClass === 'cash' ? 'Confirm Deposit' : 'Confirm Buy'}</span>
@@ -725,7 +725,7 @@ export function DcaPlanner() {
                                           showToast(`Skipped DCA buy for "${p.name}" this period`, 'info')
                                         }}
                                         aria-label={`Skip DCA buy for ${p.name} this period`}
-                                        className="inline-flex items-center rounded-full border border-line-strong bg-surface hover:bg-surface-muted text-ink-muted hover:text-ink px-3.5 py-1.5 text-[12px] font-semibold active:scale-95 transition-all cursor-pointer min-h-[34px]"
+                                        className="inline-flex items-center rounded-full border border-line-strong bg-surface hover:bg-surface-muted text-ink-muted hover:text-ink px-3.5 py-1.5 text-xs font-semibold active:scale-95 transition-all cursor-pointer min-h-[34px]"
                                       >
                                         Skip
                                       </button>
@@ -743,17 +743,17 @@ export function DcaPlanner() {
                     {plans.length > 0 && (
                       <div className="flex items-center border-t border-line py-4 px-5 bg-surface-muted/30">
                         <div>
-                          <p className="text-[11.5px] text-ink-muted">Invest rate</p>
-                          <p className="font-display text-[17px] font-extrabold tnum leading-tight mt-0.5">
+                          <p className="text-xs text-ink-muted">Invest rate</p>
+                          <p className="font-display text-lg font-extrabold tnum leading-tight mt-0.5">
                             {salary > 0 ? (
                               <>
                                 <span className="text-gain">{Math.round((savingsTotal / salary) * 100)}%</span>
-                                <span className="text-[13px] font-medium text-ink dark:text-white ml-1.5">
+                                <span className="text-sm font-medium text-ink dark:text-white ml-1.5">
                                   of Monthly Income
                                 </span>
                               </>
                             ) : (
-                              <span className="text-[13px] text-ink-muted font-normal">
+                              <span className="text-sm text-ink-muted font-normal">
                                 Set monthly income above to see invest rate
                               </span>
                             )}
@@ -770,20 +770,20 @@ export function DcaPlanner() {
               <div className="p-5 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-faint">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">
                       Dividend Income
                     </p>
-                    <span className="rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[10.5px] font-bold">
+                    <span className="rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-xs font-bold">
                       {MONTH_NAMES[currentMonth - 1]}
                     </span>
                   </div>
-                  <p className="mt-0.5 font-display text-[20px] font-extrabold tnum text-ink leading-none">
+                  <p className="mt-0.5 font-display text-xl font-extrabold tnum text-ink leading-none">
                     {totalEstDividendNet > 0 ? `~${thb(totalEstDividendNet)}` : '฿0'}
                   </p>
                 </div>
                 <Link
                   to="/dividends"
-                  className="inline-flex items-center gap-1 text-[12px] font-semibold text-brand hover:underline cursor-pointer"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline cursor-pointer"
                 >
                   <span>View All</span>
                   <span aria-hidden="true">→</span>
@@ -793,12 +793,12 @@ export function DcaPlanner() {
               <div className="border-t border-line">
                 {scheduledDividends.length === 0 ? (
                   <div className="p-5 text-center">
-                    <p className="text-[13px] text-ink-muted">
+                    <p className="text-sm text-ink-muted">
                       No holdings scheduled for dividend payout in {MONTH_NAMES[currentMonth - 1]}.
                     </p>
                     <Link
                       to="/dividends"
-                      className="mt-1.5 inline-block text-[12px] font-semibold text-brand hover:underline cursor-pointer"
+                      className="mt-1.5 inline-block text-xs font-semibold text-brand hover:underline cursor-pointer"
                     >
                       Manage Dividends & Payouts →
                     </Link>
@@ -819,10 +819,10 @@ export function DcaPlanner() {
                               <AssetLogo name={h.name} assetClass={h.assetClass} size="md" />
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-display font-bold text-[15px] text-ink">{h.ticker}</span>
-                                  <span className="text-[12px] text-ink-muted truncate max-w-[140px] sm:max-w-xs">{h.name}</span>
+                                  <span className="font-display font-bold text-base text-ink">{h.ticker}</span>
+                                  <span className="text-xs text-ink-muted truncate max-w-[140px] sm:max-w-xs">{h.name}</span>
                                 </div>
-                                <p className="text-[11.5px] text-ink-muted mt-0.5">
+                                <p className="text-xs text-ink-muted mt-0.5">
                                   {units.toLocaleString()} shares · Est. DPS: {dps > 0 ? `${sym}${dps}` : '-'}
                                 </p>
                               </div>
@@ -831,15 +831,15 @@ export function DcaPlanner() {
                             <div className="flex items-center gap-3 shrink-0">
                               {estNet > 0 && (
                                 <div className="text-right hidden sm:block">
-                                  <span className="font-display text-[14px] font-bold text-gain tnum">
+                                  <span className="font-display text-sm font-bold text-gain tnum">
                                     ~{thb(estNet)}
                                   </span>
-                                  <p className="text-[10px] text-ink-muted">Est. Net</p>
+                                  <p className="text-xs text-ink-muted">Est. Net</p>
                                 </div>
                               )}
 
                               {isReceived ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-3 py-1.5 text-[11.5px] font-semibold text-gain">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-3 py-1.5 text-xs font-semibold text-gain">
                                   <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.4} /> Confirmed
                                 </span>
                               ) : (
@@ -850,7 +850,7 @@ export function DcaPlanner() {
                                     setDividendModalOpen(true)
                                   }}
                                   aria-label={`Confirm Dividend for ${h.ticker}`}
-                                  className="inline-flex items-center gap-1.5 rounded-full bg-[#00de9b] hover:bg-[#00c58a] text-[#052e21] px-3.5 py-1.5 text-[12px] font-bold shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
+                                  className="inline-flex items-center gap-1.5 rounded-full bg-[#00de9b] hover:bg-[#00c58a] text-[#052e21] px-3.5 py-1.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
                                 >
                                   <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
                                   <span>Confirm Dividend</span>

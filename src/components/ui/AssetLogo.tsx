@@ -13,10 +13,10 @@ interface AssetLogoProps {
 }
 
 const sizeClasses = {
-  sm: 'w-7 h-7 text-[10px]',
-  md: 'w-10 h-10 text-[12px]',
-  lg: 'w-12 h-12 text-[14px]',
-  xl: 'w-14 h-14 text-[16px]',
+  sm: 'w-7 h-7 text-xs',
+  md: 'w-10 h-10 text-xs',
+  lg: 'w-12 h-12 text-sm',
+  xl: 'w-14 h-14 text-base',
 }
 
 const iconSizes = {
@@ -226,7 +226,7 @@ export function AssetLogo({
         className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-[#4E2A84] text-white ${sizeClasses[size]} ${className}`}
         style={{ boxShadow: '0 2px 8px rgba(78, 42, 132, 0.35)' }}
       >
-        <span className="font-extrabold text-[10px] tracking-tighter">SCB</span>
+        <span className="font-extrabold text-xs tracking-tighter">SCB</span>
       </div>
     )
   }
@@ -238,7 +238,7 @@ export function AssetLogo({
         className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-[#137F46] text-white ${sizeClasses[size]} ${className}`}
         style={{ boxShadow: '0 2px 8px rgba(19, 127, 70, 0.35)' }}
       >
-        <span className="font-extrabold text-[11px] tracking-tighter">K</span>
+        <span className="font-extrabold text-xs tracking-tighter">K</span>
       </div>
     )
   }
@@ -249,7 +249,7 @@ export function AssetLogo({
         title={ticker || name}
         className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-[#1E3A8A] text-white ${sizeClasses[size]} ${className}`}
       >
-        <span className="font-extrabold text-[10px] tracking-tighter">BBL</span>
+        <span className="font-extrabold text-xs tracking-tighter">BBL</span>
       </div>
     )
   }
@@ -260,7 +260,7 @@ export function AssetLogo({
         title={ticker || name}
         className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-[#00A5E5] text-white ${sizeClasses[size]} ${className}`}
       >
-        <span className="font-extrabold text-[10px] tracking-tighter">KT</span>
+        <span className="font-extrabold text-xs tracking-tighter">KT</span>
       </div>
     )
   }
@@ -271,7 +271,7 @@ export function AssetLogo({
         title={ticker || name}
         className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-[#E53935] text-white ${sizeClasses[size]} ${className}`}
       >
-        <span className="font-extrabold text-[9px] tracking-tighter">ONE</span>
+        <span className="font-extrabold text-xs tracking-tighter">ONE</span>
       </div>
     )
   }
@@ -282,7 +282,7 @@ export function AssetLogo({
         title={ticker || name}
         className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-[#002D62] text-[#00A4E4] border border-[#00A4E4]/30 ${sizeClasses[size]} ${className}`}
       >
-        <span className="font-black text-[9.5px]">ttb</span>
+        <span className="font-black text-xs">ttb</span>
       </div>
     )
   }
@@ -304,7 +304,7 @@ export function AssetLogo({
         title={cleanTicker || 'ETF'}
         className={`relative inline-flex items-center justify-center shrink-0 rounded-full shadow-sm select-none bg-gradient-to-br from-[#1e3a8a] to-[#3b82f6] text-white ${sizeClasses[size]} ${className}`}
       >
-        <span className="font-bold text-[10px] tracking-tight">{cleanTicker.slice(0, 4) || 'ETF'}</span>
+        <span className="font-bold text-xs tracking-tight">{cleanTicker.slice(0, 4) || 'ETF'}</span>
       </div>
     )
   }
@@ -315,7 +315,7 @@ export function AssetLogo({
     : cleanName.slice(0, 3) || '?'
 
   const fontSizeClass =
-    displayText.length <= 2 ? 'text-[12px]' : displayText.length === 3 ? 'text-[10.5px]' : 'text-[9.5px]'
+    displayText.length <= 2 ? 'text-xs' : displayText.length === 3 ? 'text-xs' : 'text-xs'
 
   return (
     <div

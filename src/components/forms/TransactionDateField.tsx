@@ -19,12 +19,12 @@ export function TransactionDateField({
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-between gap-2">
-        <span className="text-[13px] font-semibold text-ink-soft">{label}</span>
+        <span className="text-sm font-semibold text-ink-soft">{label}</span>
         <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => onChange(today)}
-            className={`rounded-md px-2 py-0.5 text-[11.5px] transition-colors cursor-pointer ${
+            className={`rounded-md px-2 py-0.5 text-xs transition-colors cursor-pointer ${
               value === today
                 ? 'bg-brand text-white font-bold shadow-xs'
                 : 'bg-surface-muted text-ink-muted hover:bg-surface-muted/80 hover:text-ink font-medium'
@@ -35,7 +35,7 @@ export function TransactionDateField({
           <button
             type="button"
             onClick={() => onChange(yesterday)}
-            className={`rounded-md px-2 py-0.5 text-[11.5px] transition-colors cursor-pointer ${
+            className={`rounded-md px-2 py-0.5 text-xs transition-colors cursor-pointer ${
               value === yesterday
                 ? 'bg-brand text-white font-bold shadow-xs'
                 : 'bg-surface-muted text-ink-muted hover:bg-surface-muted/80 hover:text-ink font-medium'
@@ -49,9 +49,9 @@ export function TransactionDateField({
         type="date"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-[15px] text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15"
+        className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15"
       />
-      {hint && <p className="mt-1 text-[12px] text-ink-muted">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-ink-muted">{hint}</p>}
     </div>
   )
 }

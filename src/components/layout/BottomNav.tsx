@@ -98,7 +98,7 @@ export function BottomNav() {
 
                     {/* iPhone style notification badge bubble */}
                     {badgeCount > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-xs ring-2 ring-surface">
+                      <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white shadow-xs ring-2 ring-surface">
                         {badgeCount}
                       </span>
                     )}
@@ -138,7 +138,7 @@ export function BottomNav() {
 
                   {/* Route notification badge bubble */}
                   {routeBadge > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-xs ring-2 ring-surface">
+                    <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-xs font-bold text-white shadow-xs ring-2 ring-surface">
                       {routeBadge}
                     </span>
                   )}
@@ -195,21 +195,21 @@ export function BottomNav() {
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-display font-bold text-[14px] text-ink leading-tight">
+                      <p className="font-display font-bold text-sm text-ink leading-tight">
                         {subItem.label}
                       </p>
                       {isSelected && (
-                        <span className="rounded-full bg-brand/15 text-brand-ink px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider">
+                        <span className="rounded-full bg-brand/15 text-brand-ink px-2 py-0.5 text-xs font-bold uppercase tracking-wider">
                           Active
                         </span>
                       )}
                       {subBadge > 0 && (
-                        <span className="rounded-full bg-red-500 text-white px-1.5 py-0.2 text-[9.5px] font-bold">
+                        <span className="rounded-full bg-red-500 text-white px-1.5 py-0.2 text-xs font-bold">
                           {subBadge}
                         </span>
                       )}
                     </div>
-                    <p className="text-[11.5px] text-ink-muted leading-tight mt-1 truncate">
+                    <p className="text-xs text-ink-muted leading-tight mt-1 truncate">
                       {subItem.description}
                     </p>
                   </div>
@@ -271,16 +271,16 @@ export function BottomNav() {
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-display font-bold text-[14px] text-ink leading-tight">
+                      <p className="font-display font-bold text-sm text-ink leading-tight">
                         {subItem.label}
                       </p>
                       {isSelected && (
-                        <span className="rounded-full bg-brand/15 text-brand-ink px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider">
+                        <span className="rounded-full bg-brand/15 text-brand-ink px-2 py-0.5 text-xs font-bold uppercase tracking-wider">
                           Active
                         </span>
                       )}
                     </div>
-                    <p className="text-[11.5px] text-ink-muted leading-tight mt-1 truncate">
+                    <p className="text-xs text-ink-muted leading-tight mt-1 truncate">
                       {subItem.description}
                     </p>
                   </div>

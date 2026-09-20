@@ -58,14 +58,14 @@ export function InteractiveTrendChart({
         <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-5">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="font-display text-[16px] font-bold text-ink">{title}</h2>
-              <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[11px] font-semibold text-ink-muted">
+              <h2 className="font-display text-base font-bold text-ink">{title}</h2>
+              <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs font-semibold text-ink-muted">
                 1 snapshot
               </span>
             </div>
-            <p className="mt-0.5 text-[12.5px] text-ink-muted">Building history… come back tomorrow</p>
+            <p className="mt-0.5 text-xs text-ink-muted">Building history… come back tomorrow</p>
           </div>
-          <span className="rounded-full bg-surface-muted px-3 py-1 text-[12px] font-semibold text-ink-muted">Day 1</span>
+          <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold text-ink-muted">Day 1</span>
         </div>
         <div className="relative px-4 pt-2 pb-3">
           <svg viewBox="0 0 800 200" className="w-full" style={{ height: '150px', display: 'block' }} aria-hidden>
@@ -79,9 +79,9 @@ export function InteractiveTrendChart({
             <line x1={16} y1={100} x2={784} y2={100} stroke={colorVar} strokeWidth={2} strokeDasharray="6 4" opacity="0.5" />
             <circle cx={400} cy={100} r={5} fill={colorVar} />
           </svg>
-          <div className="mt-1 flex items-center justify-between border-t border-line/60 px-2 pt-2 text-[11.5px]">
+          <div className="mt-1 flex items-center justify-between border-t border-line/60 px-2 pt-2 text-xs">
             <span className="text-ink-muted">{startDate}</span>
-            <span className="font-display font-bold tnum text-[13px] text-ink">{thb(single.value)} today</span>
+            <span className="font-display font-bold tnum text-sm text-ink">{thb(single.value)} today</span>
             <span className="text-ink-muted">{todayLabel}</span>
           </div>
         </div>
@@ -184,12 +184,12 @@ export function InteractiveTrendChart({
       <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-5">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="font-display text-[16px] font-bold text-ink">{title}</h2>
-            <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[11px] font-semibold text-ink-muted">
+            <h2 className="font-display text-base font-bold text-ink">{title}</h2>
+            <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs font-semibold text-ink-muted">
               {filteredHistory.length} snapshots
             </span>
           </div>
-          <p className="mt-0.5 text-[12.5px] text-ink-muted">
+          <p className="mt-0.5 text-xs text-ink-muted">
             {hoveredIndex !== null ? (
               <span>
                 Inspecting: <strong className="text-ink font-semibold">{activeDateLabel}</strong>
@@ -203,12 +203,12 @@ export function InteractiveTrendChart({
         {/* Right side: Gain / Value badge & Timeframe filters */}
         <div className="flex flex-wrap items-center gap-2.5">
           <div
-            className={`flex items-baseline gap-1 rounded-full px-3 py-1 text-[13px] font-bold ${
+            className={`flex items-baseline gap-1 rounded-full px-3 py-1 text-sm font-bold ${
               isUp ? 'bg-gain-soft text-gain' : 'bg-loss-soft text-loss'
             }`}
           >
             <span>{isUp ? '▲' : '▼'} {Math.abs(activeChangePct).toFixed(1)}%</span>
-            <span className="text-[11px] font-medium opacity-75">
+            <span className="text-xs font-medium opacity-75">
               ({isUp ? '+' : ''}{thbCompact(activeChangeFromStart)})
             </span>
           </div>
@@ -324,11 +324,11 @@ export function InteractiveTrendChart({
         </svg>
 
         {/* Dynamic Tooltip Bar */}
-        <div className="mt-1 flex items-center justify-between border-t border-line/60 px-2 pt-2 text-[11.5px]">
+        <div className="mt-1 flex items-center justify-between border-t border-line/60 px-2 pt-2 text-xs">
           <span className="text-ink-muted">
             Min: <strong className="font-semibold tnum text-ink">{thbCompact(minV)}</strong>
           </span>
-          <span className="font-display font-bold tnum text-[13px] text-ink">
+          <span className="font-display font-bold tnum text-sm text-ink">
             {activePoint ? thb(activePoint.value) : thb(last.value)}
           </span>
           <span className="text-ink-muted">

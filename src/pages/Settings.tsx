@@ -211,18 +211,18 @@ export function Settings() {
         <div id="guide-settings-sync">
           <Card className="animate-rise">
             <div className="flex items-start justify-between gap-3 mb-1">
-              <h2 className="font-display text-[17px] font-bold text-ink">Cloud Sync (Supabase)</h2>
+              <h2 className="font-display text-lg font-bold text-ink">Cloud Sync (Supabase)</h2>
               {syncBadge && (
-                <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${syncBadge.cls}`}>
+                <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${syncBadge.cls}`}>
                   {syncBadge.text}
                 </span>
               )}
             </div>
-            <p className="text-[13px] text-ink-muted mb-4">
+            <p className="text-sm text-ink-muted mb-4">
               Your data is securely backed up and synchronized automatically.
             </p>
 
-            <div className="flex flex-col gap-2 rounded-2xl bg-surface-muted p-4 text-[13.5px] mb-4">
+            <div className="flex flex-col gap-2 rounded-2xl bg-surface-muted p-4 text-sm mb-4">
               <div className="flex justify-between">
                 <span className="text-ink-muted">Account</span>
                 <span className="font-semibold text-ink">{user?.email ?? 'Not signed in'}</span>
@@ -238,7 +238,7 @@ export function Settings() {
             {user && (
               <button
                 onClick={logout}
-                className="w-full py-2.5 px-4 rounded-xl border border-line bg-surface hover:bg-surface-muted text-[13px] font-semibold text-loss transition-colors duration-200 active:scale-[0.98]"
+                className="w-full py-2.5 px-4 rounded-xl border border-line bg-surface hover:bg-surface-muted text-sm font-semibold text-loss transition-colors duration-200 active:scale-[0.98]"
               >
                 Sign out
               </button>
@@ -249,8 +249,8 @@ export function Settings() {
         {/* ── Profile ─────────────────────────────────────────── */}
         <div id="guide-settings-profile">
           <Card className="animate-rise">
-            <h2 className="font-display text-[17px] font-bold text-ink mb-1">Profile</h2>
-            <p className="text-[13px] text-ink-muted mb-4">Used in the Dashboard greeting.</p>
+            <h2 className="font-display text-lg font-bold text-ink mb-1">Profile</h2>
+            <p className="text-sm text-ink-muted mb-4">Used in the Dashboard greeting.</p>
             <TextField
               label="Your name"
               value={nameDraft}
@@ -265,8 +265,8 @@ export function Settings() {
 
         {/* ── Appearance ──────────────────────────────────────── */}
         <Card className="animate-rise">
-          <h2 className="font-display text-[17px] font-bold text-ink mb-1">Appearance</h2>
-          <p className="text-[13px] text-ink-muted mb-4">
+          <h2 className="font-display text-lg font-bold text-ink mb-1">Appearance</h2>
+          <p className="text-sm text-ink-muted mb-4">
             Choose how Spendiary looks on this device.
           </p>
           <SegmentedControl
@@ -311,10 +311,10 @@ export function Settings() {
           <Card className="animate-rise">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">
+                <h2 className="font-display text-lg font-bold text-ink [text-wrap:balance]">
                   Data &amp; Backup
                 </h2>
-                <p className="mt-1 text-[13px] text-ink-muted [text-wrap:pretty]">
+                <p className="mt-1 text-sm text-ink-muted [text-wrap:pretty]">
                   {dataSummary(data)} stored on this device.
                 </p>
               </div>
@@ -325,15 +325,15 @@ export function Settings() {
               {/* Export row */}
               <div className="flex items-start justify-between gap-4 py-4">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[14px] font-semibold text-ink">Export data</p>
-                  <p className="mt-0.5 text-[12.5px] text-ink-muted">
+                  <p className="text-sm font-semibold text-ink">Export data</p>
+                  <p className="mt-0.5 text-xs text-ink-muted">
                     Download all holdings, DCA plans, and transfers as a JSON file.
                   </p>
                   {exportToast.kind !== 'idle' && (
                     <p
                       role="status"
                       aria-live="polite"
-                      className={`mt-1.5 text-[12px] font-medium ${
+                      className={`mt-1.5 text-xs font-medium ${
                         exportToast.kind === 'success' ? 'text-gain' : 'text-loss'
                       }`}
                     >
@@ -344,7 +344,7 @@ export function Settings() {
                 <button
                   id="btn-export"
                   onClick={handleExport}
-                  className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95"
+                  className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95"
                 >
                   <DownloadIcon className="h-4 w-4" />
                   Export
@@ -354,15 +354,15 @@ export function Settings() {
               {/* Import row */}
               <div className="flex items-start justify-between gap-4 py-4">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[14px] font-semibold text-ink">Import data</p>
-                  <p className="mt-0.5 text-[12.5px] text-ink-muted">
+                  <p className="text-sm font-semibold text-ink">Import data</p>
+                  <p className="mt-0.5 text-xs text-ink-muted">
                     Restore from a Spendiary JSON backup. This will overwrite current data.
                   </p>
                   {importToast.kind !== 'idle' && (
                     <p
                       role="status"
                       aria-live="polite"
-                      className={`mt-1.5 flex items-center gap-1.5 text-[12px] font-medium ${
+                      className={`mt-1.5 flex items-center gap-1.5 text-xs font-medium ${
                         importToast.kind === 'success'
                           ? 'text-gain'
                           : importToast.kind === 'error'
@@ -390,7 +390,7 @@ export function Settings() {
                   onClick={handleImportClick}
                   disabled={importToast.kind === 'loading'}
                   aria-label="Import data from JSON backup file"
-                  className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 disabled:pointer-events-none disabled:opacity-50"
+                  className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 disabled:pointer-events-none disabled:opacity-50"
                 >
                   <UploadIcon className="h-4 w-4" />
                   Import
@@ -413,13 +413,13 @@ export function Settings() {
 
         {/* ── Danger zone ─────────────────────────────────────── */}
         <Card className="animate-rise border-loss/20 bg-loss-soft/20">
-          <h2 className="font-display text-[17px] font-bold text-ink [text-wrap:balance]">
+          <h2 className="font-display text-lg font-bold text-ink [text-wrap:balance]">
             Danger zone
           </h2>
           <div className="mt-4 flex items-center justify-between">
             <div>
-              <p className="text-[14px] font-semibold text-ink">Reset all data</p>
-              <p className="mt-0.5 text-[12.5px] text-ink-muted">
+              <p className="text-sm font-semibold text-ink">Reset all data</p>
+              <p className="mt-0.5 text-xs text-ink-muted">
                 Permanently clears all data of this user and brings you back to the login screen. Cannot be undone.
               </p>
             </div>
@@ -427,7 +427,7 @@ export function Settings() {
               id="btn-reset"
               onClick={() => setResetOpen(true)}
               disabled={isResetting}
-              className="ml-4 inline-flex shrink-0 items-center gap-2 rounded-full bg-loss-soft px-4 py-2 text-[13px] font-semibold text-loss transition-colors hover:bg-loss hover:text-white active:scale-95 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+              className="ml-4 inline-flex shrink-0 items-center gap-2 rounded-full bg-loss-soft px-4 py-2 text-sm font-semibold text-loss transition-colors hover:bg-loss hover:text-white active:scale-95 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
             >
               <TrashIcon className="h-4 w-4" />
               Reset
@@ -443,8 +443,8 @@ export function Settings() {
                 <img src="/logo.png" alt="Spendiary Logo" className="w-full h-full object-contain" />
               </div>
               <div>
-                <h2 className="font-display text-[17px] font-bold text-ink">About Spendiary</h2>
-                <p className="text-[12.5px] text-ink-muted mt-0.5">
+                <h2 className="font-display text-lg font-bold text-ink">About Spendiary</h2>
+                <p className="text-xs text-ink-muted mt-0.5">
                   Designed & Built by bbrightns
                 </p>
               </div>
@@ -487,15 +487,15 @@ export function Settings() {
                   className="w-12 h-12 rounded-full object-cover border-2 border-surface shadow-xs shrink-0"
                 />
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[14px] font-bold text-ink leading-tight">
+                  <span className="text-sm font-bold text-ink leading-tight">
                     Praween Piyaprapaphan (Bright)
                   </span>
-                  <span className="text-[12px] font-mono text-brand font-semibold leading-normal mt-0.5">
+                  <span className="text-xs font-mono text-brand font-semibold leading-normal mt-0.5">
                     Alias: bbrightns
                   </span>
                 </div>
               </div>
-              <p className="text-[12.5px] text-ink-muted leading-relaxed">
+              <p className="text-xs text-ink-muted leading-relaxed">
                 An Electrical Engineer who loves writing code and exploring computer & tech. Building handy tools to solve everyday challenges.
               </p>
             </div>
@@ -504,18 +504,18 @@ export function Settings() {
             <div className="rounded-2xl bg-surface-muted/40 p-4 border border-line/50">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-base">💡</span>
-                <h3 className="text-[13px] font-bold text-ink">Why I Built Spendiary</h3>
+                <h3 className="text-sm font-bold text-ink">Why I Built Spendiary</h3>
               </div>
-              <div className="space-y-2 text-[12.5px] text-ink-muted leading-relaxed">
+              <div className="space-y-2 text-xs text-ink-muted leading-relaxed">
                 <p>
                   This project started purely to solve my own personal headache: having savings and investments scattered across multiple banks and apps to the point where I lost track of where my money actually was! So I decided to build this web app to bring everything together into a clean, single cockpit:
                 </p>
-                <ul className="list-disc list-inside space-y-1 pl-1 text-[12px] text-ink-soft">
+                <ul className="list-disc list-inside space-y-1 pl-1 text-xs text-ink-soft">
                   <li><strong className="font-semibold text-ink">Real-time Market Prices:</strong> Live price feeds for US Stocks, Gold, and Bitcoin (Thai stocks not included yet).</li>
                   <li><strong className="font-semibold text-ink">Comprehensive Retirement FIRE Planner:</strong> In-depth milestone modeling with inflation adjustments and dividend calculations.</li>
                   <li><strong className="font-semibold text-ink">Privacy-First Architecture:</strong> Your financial data stays locally on your device with optional encrypted cloud backup.</li>
                 </ul>
-                <p className="text-[12px] text-ink-muted pt-1">
+                <p className="text-xs text-ink-muted pt-1">
                   It's 100% free to use. If your portfolio is scattered like mine, feel free to give it a spin! Any feedback or feature requests are always welcome.
                 </p>
               </div>
@@ -528,7 +528,7 @@ export function Settings() {
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   <h3 className="text-xs font-bold text-ink">Release Highlights</h3>
                 </div>
-                <p className="text-[11.5px] text-ink-muted leading-relaxed">
+                <p className="text-xs text-ink-muted leading-relaxed">
                   v{__APP_VERSION__} (build <span className="font-mono">{__COMMIT_HASH__}</span>) · High-yield savings max principal cap, DCA smart rebalancing, and complete dark mode optimization.
                 </p>
               </div>
@@ -539,7 +539,7 @@ export function Settings() {
                     <span className="w-2 h-2 rounded-full bg-amber-500" />
                     <h3 className="text-xs font-bold text-ink">Feedback & Issues</h3>
                   </div>
-                  <p className="text-[11.5px] text-ink-muted leading-relaxed">
+                  <p className="text-xs text-ink-muted leading-relaxed">
                     Encountered a bug or have a suggestion? Feel free to open an issue on GitHub or drop a message via Facebook.
                   </p>
                 </div>
@@ -548,7 +548,7 @@ export function Settings() {
                     href="https://github.com/bbrightns/spendiary/issues"
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="text-[11.5px] font-semibold text-brand hover:underline"
+                    className="text-xs font-semibold text-brand hover:underline"
                   >
                     Report on GitHub →
                   </a>

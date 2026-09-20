@@ -318,12 +318,12 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
           {/* Dual Currency & Total Summary */}
           <div className="rounded-xl bg-surface-muted p-3 border border-line/50 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 text-[13px] font-semibold text-ink-soft">
+              <span className="flex items-center gap-2 text-sm font-semibold text-ink-soft">
                 <WalletIcon className="h-[17px] w-[17px] text-cash" />
                 Total Cash
               </span>
               <div className="flex items-center gap-2">
-                <span className="font-display text-[18px] font-extrabold tnum text-ink">{thb(totalThb)}</span>
+                <span className="font-display text-lg font-extrabold tnum text-ink">{thb(totalThb)}</span>
                 <button
                   type="button"
                   onClick={() => setShowSummaryDetails((v) => !v)}
@@ -347,7 +347,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
 
             {/* Currency Subtotals if both THB and USD exist */}
             {usdOnlyTotal > 0 && (
-              <div className="flex items-center justify-between text-[11.5px] text-ink-muted border-t border-line/40 pt-1.5">
+              <div className="flex items-center justify-between text-xs text-ink-muted border-t border-line/40 pt-1.5">
                 <span>Currency Breakdown</span>
                 <span className="tnum font-medium">
                   THB: {thb(thbOnlyTotal)} • USD: ${usdOnlyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (≈ {thb(usdOnlyTotal * rate)})
@@ -359,7 +359,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
             {showSummaryDetails && (
               <div className="space-y-2 pt-1 border-t border-line/40">
                 {/* Liquidity Tiers Badges */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px]">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs">
                   {(['spending', 'emergency', 'invest', 'locked'] as CashAccountCategory[]).map((catKey) => {
                     const meta = CASH_CATEGORIES[catKey]
                     const val = categoryTotals[catKey]
@@ -369,7 +369,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                           <span>{meta.icon}</span>
                           <span className="truncate">{meta.labelTh}</span>
                         </span>
-                        <span className="font-display font-bold tnum text-ink text-[12px] mt-0.5">
+                        <span className="font-display font-bold tnum text-ink text-xs mt-0.5">
                           {thb(val)}
                         </span>
                       </div>
@@ -379,11 +379,11 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
 
                 {/* Passive Yield Forecast Banner */}
                 {hasAnyInterest && (
-                  <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-[12px]">
+                  <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-xs">
                     <div className="flex flex-wrap items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
                       <span>💰</span>
                       <span>ดอกเบี้ยรับรวมคาดการณ์: <strong>{thb(interestSummary.totalAnnual)} / ปี</strong></span>
-                      <span className="text-[11px] opacity-75 font-normal">(เฉลี่ยเดือนละ {thb(interestSummary.totalAnnual / 12)})</span>
+                      <span className="text-xs opacity-75 font-normal">(เฉลี่ยเดือนละ {thb(interestSummary.totalAnnual / 12)})</span>
                     </div>
                   </div>
                 )}
@@ -399,7 +399,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
     >
       <div className="space-y-3 pb-2">
         {/* Category Filter Tabs & Sorting Indicator */}
-        <div className="flex flex-wrap items-center justify-between gap-1.5 pb-1 text-[12px]">
+        <div className="flex flex-wrap items-center justify-between gap-1.5 pb-1 text-xs">
           <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
@@ -429,7 +429,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                 >
                   <span>{meta.icon}</span>
                   <span>{meta.labelTh}</span>
-                  <span className="text-[10px] opacity-75">({count})</span>
+                  <span className="text-xs opacity-75">({count})</span>
                 </button>
               )
             })}
@@ -439,7 +439,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
             type="button"
             onClick={() => setRows((rs) => sortCashAccounts(rs, rate))}
             title="จัดเรียงบัญชี: สถาบัน (Bank Avatar) เป็นหลัก และยอดเงินคงเหลือจากมากไปน้อย"
-            className="hidden sm:inline-flex items-center gap-1 text-[11px] text-ink-muted hover:text-ink bg-surface-muted/60 hover:bg-surface-muted px-2.5 py-1 rounded-full border border-line/40 transition-colors cursor-pointer"
+            className="hidden sm:inline-flex items-center gap-1 text-xs text-ink-muted hover:text-ink bg-surface-muted/60 hover:bg-surface-muted px-2.5 py-1 rounded-full border border-line/40 transition-colors cursor-pointer"
           >
             <span>⚡ จัดเรียง: สถาบัน & ยอดเงิน</span>
           </button>
@@ -476,7 +476,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                   {preset ? (
                     <div
                       title={`สถาบัน: ${preset.name}`}
-                      className="h-8 w-8 rounded-xl text-[11px] font-extrabold shrink-0 flex items-center justify-center select-none shadow-2xs"
+                      className="h-8 w-8 rounded-xl text-xs font-extrabold shrink-0 flex items-center justify-center select-none shadow-2xs"
                       style={{ background: preset.bg, color: preset.color, border: `1px solid ${preset.color}35` }}
                     >
                       {preset.shortName}
@@ -484,7 +484,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                   ) : (
                     <div
                       title="บัญชีทั่วไป"
-                      className="h-8 w-8 rounded-xl bg-surface-muted border border-line/50 text-ink-muted text-[11px] font-bold shrink-0 flex items-center justify-center"
+                      className="h-8 w-8 rounded-xl bg-surface-muted border border-line/50 text-ink-muted text-xs font-bold shrink-0 flex items-center justify-center"
                     >
                       <WalletIcon className="h-4 w-4 opacity-50" />
                     </div>
@@ -496,7 +496,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                       if (el) nameInputRefs.current.set(r.id, el)
                       else nameInputRefs.current.delete(r.id)
                     }}
-                    className="h-10 min-w-0 flex-1 rounded-xl border border-line bg-surface-muted/40 px-3 text-[14.5px] font-semibold text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:bg-surface focus:ring-2 focus:ring-brand/15"
+                    className="h-10 min-w-0 flex-1 rounded-xl border border-line bg-surface-muted/40 px-3 text-sm font-semibold text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:bg-surface focus:ring-2 focus:ring-brand/15"
                     placeholder="ชื่อบัญชี / สถาบัน"
                     value={r.name}
                     onChange={(e) => {
@@ -517,7 +517,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                         update(r.id, { currency: r.currency === 'USD' ? 'THB' : 'USD' })
                       }
                       aria-label={`Toggle currency for ${r.name || 'account'}, currently ${r.currency}`}
-                      className={`absolute left-1.5 top-1/2 -translate-y-1/2 rounded-md px-2 py-0.5 text-[12px] font-extrabold transition-all select-none cursor-pointer ${
+                      className={`absolute left-1.5 top-1/2 -translate-y-1/2 rounded-md px-2 py-0.5 text-xs font-extrabold transition-all select-none cursor-pointer ${
                         r.currency === 'USD'
                           ? 'bg-sky-500/15 text-sky-500 hover:bg-sky-500/25 ring-1 ring-sky-500/30'
                           : 'bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25 ring-1 ring-emerald-500/30'
@@ -533,7 +533,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                       }}
                       type="text"
                       inputMode="decimal"
-                      className="h-10 w-full rounded-xl border border-line bg-surface-muted/40 pl-9 pr-2.5 text-[14px] font-bold tnum text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:bg-surface focus:ring-2 focus:ring-brand/15"
+                      className="h-10 w-full rounded-xl border border-line bg-surface-muted/40 pl-9 pr-2.5 text-sm font-bold tnum text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:bg-surface focus:ring-2 focus:ring-brand/15"
                       placeholder="0.00"
                       value={r.balance}
                       onChange={(e) =>
@@ -567,13 +567,13 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                 </div>
 
                 {/* Subtitle Information Bar */}
-                <div className="flex flex-wrap items-center justify-between gap-1.5 px-1 text-[11.5px] text-ink-muted">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 px-1 text-xs text-ink-muted">
                   <div className="flex items-center gap-2">
                     {/* Category pill */}
                     <button
                       type="button"
                       onClick={() => setExpandedId(r.id)}
-                      className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] font-medium transition-colors hover:bg-surface-muted border border-line/40 cursor-pointer"
+                      className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium transition-colors hover:bg-surface-muted border border-line/40 cursor-pointer"
                     >
                       <span>{CASH_CATEGORIES[r.category]?.icon}</span>
                       <span>{CASH_CATEGORIES[r.category]?.labelTh}</span>
@@ -589,7 +589,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                       <button
                         type="button"
                         onClick={() => setExpandedId(r.id)}
-                        className="text-[11px] text-ink-muted/70 hover:text-brand hover:underline cursor-pointer"
+                        className="text-xs text-ink-muted/70 hover:text-brand hover:underline cursor-pointer"
                       >
                         + Add interest rate
                       </button>
@@ -598,7 +598,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
 
                   {/* USD FX live conversion note */}
                   {r.currency === 'USD' && balNum > 0 && (
-                    <span className="font-mono text-ink-muted text-[11px]">
+                    <span className="font-mono text-ink-muted text-xs">
                       ≈ {thb(balNum * rate)} <span className="opacity-60">(@{rate.toFixed(2)})</span>
                     </span>
                   )}
@@ -609,7 +609,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                   <div className="mt-2 pt-2.5 border-t border-line/40 space-y-3 bg-surface-muted/30 rounded-xl p-3">
                     {/* 1. Category Selection */}
                     <div>
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted block mb-1.5">
+                      <span className="text-xs font-bold uppercase tracking-wider text-ink-muted block mb-1.5">
                         หมวดหมู่ / วัตถุประสงค์
                       </span>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -621,7 +621,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                               key={catKey}
                               type="button"
                               onClick={() => update(r.id, { category: catKey })}
-                              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-medium transition-all text-left cursor-pointer border ${
+                              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all text-left cursor-pointer border ${
                                 isCatActive
                                   ? 'bg-brand text-white border-brand shadow-xs font-semibold'
                                   : 'bg-surface text-ink-muted border-line/60 hover:text-ink hover:border-line'
@@ -639,10 +639,10 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                     <div className="space-y-2.5 pt-1 border-t border-line/30">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div>
-                          <span className="text-[12.5px] font-bold text-ink">
+                          <span className="text-xs font-bold text-ink">
                             Yield Booster (อัตราดอกเบี้ย & รอบการจ่าย)
                           </span>
-                          <p className="text-[11px] text-ink-muted">
+                          <p className="text-xs text-ink-muted">
                             คำนวณผลตอบแทนและปฏิทินกระแสเงินสดดอกเบี้ยรับ
                           </p>
                         </div>
@@ -651,7 +651,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                         <div className="flex flex-wrap items-center gap-2">
                           {/* Interest Rate % Input */}
                           <div className="flex items-center gap-1.5 bg-surface-muted/40 p-1 rounded-lg border border-line/50">
-                            <label htmlFor={`rate-${r.id}`} className="text-[11.5px] font-medium text-ink-muted pl-1">
+                            <label htmlFor={`rate-${r.id}`} className="text-xs font-medium text-ink-muted pl-1">
                               อัตราดอกเบี้ย:
                             </label>
                             <div className="relative w-20">
@@ -665,9 +665,9 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                                   const clean = e.target.value.replace(/[^0-9.]/g, '')
                                   update(r.id, { interestRate: clean })
                                 }}
-                                className="h-7 w-full rounded-md border border-line bg-surface px-2 pr-5 text-[12.5px] font-bold tnum text-ink outline-none focus:border-brand"
+                                className="h-7 w-full rounded-md border border-line bg-surface px-2 pr-5 text-xs font-bold tnum text-ink outline-none focus:border-brand"
                               />
-                              <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10.5px] font-bold text-ink-muted pointer-events-none">
+                              <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs font-bold text-ink-muted pointer-events-none">
                                 %
                               </span>
                             </div>
@@ -675,7 +675,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
 
                           {/* Max Principal Cap Input */}
                           <div className="flex items-center gap-1.5 bg-surface-muted/40 p-1 rounded-lg border border-line/50">
-                            <label htmlFor={`cap-${r.id}`} className="text-[11.5px] font-medium text-ink-muted pl-1" title="จำกัดวงเงินต้นสูงสุดที่นำมาคิดดอกเบี้ย เช่น Dime 3% ไม่เกิน 10,000">
+                            <label htmlFor={`cap-${r.id}`} className="text-xs font-medium text-ink-muted pl-1" title="จำกัดวงเงินต้นสูงสุดที่นำมาคิดดอกเบี้ย เช่น Dime 3% ไม่เกิน 10,000">
                               คิดเงินต้นไม่เกิน:
                             </label>
                             <div className="relative w-24">
@@ -688,9 +688,9 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                                 onChange={(e) => {
                                   update(r.id, { maxEligibleBalance: formatWithCommas(e.target.value) })
                                 }}
-                                className="h-7 w-full rounded-md border border-line bg-surface px-2 pr-5 text-[12.5px] font-bold tnum text-ink outline-none focus:border-brand placeholder:text-ink-muted/50 placeholder:font-normal"
+                                className="h-7 w-full rounded-md border border-line bg-surface px-2 pr-5 text-xs font-bold tnum text-ink outline-none focus:border-brand placeholder:text-ink-muted/50 placeholder:font-normal"
                               />
-                              <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10.5px] font-bold text-ink-muted pointer-events-none">
+                              <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs font-bold text-ink-muted pointer-events-none">
                                 {r.currency === 'USD' ? '$' : '฿'}
                               </span>
                             </div>
@@ -700,10 +700,10 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
 
                       {/* Payout Schedule Presets (No Parentheses) */}
                       <div>
-                        <span className="text-[11px] font-semibold text-ink-muted block mb-1">
+                        <span className="text-xs font-semibold text-ink-muted block mb-1">
                           รอบดอกเบี้ยเข้าบัญชี:
                         </span>
-                        <div className="flex flex-wrap gap-1.5 text-[12px]">
+                        <div className="flex flex-wrap gap-1.5 text-xs">
                           <button
                             type="button"
                             onClick={() =>
@@ -769,11 +769,11 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                       {/* Interactive Month Selection Pills (Only shown when "กำหนดเอง" is selected) */}
                       {r.payoutSchedule === 'custom' && (
                         <div className="space-y-1.5 pt-1">
-                          <span className="text-[11.5px] text-ink-muted">
+                          <span className="text-xs text-ink-muted">
                             แตะเลือกเดือนที่ดอกเบี้ยเข้า (เลือกได้หลายเดือน):
                           </span>
 
-                          <div className="grid grid-cols-6 sm:grid-cols-12 gap-1 text-[11px]">
+                          <div className="grid grid-cols-6 sm:grid-cols-12 gap-1 text-xs">
                             {THAI_MONTHS_SHORT.map((mName, idx) => {
                               const mNum = idx + 1
                               const isSelected = r.payoutMonths.includes(mNum)
@@ -804,7 +804,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
 
                       {/* Live Calculation Preview Box for this account */}
                       {rateNum > 0 && balNum > 0 && (
-                        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-[12px] space-y-1.5 text-emerald-700 dark:text-emerald-300">
+                        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs space-y-1.5 text-emerald-700 dark:text-emerald-300">
                           <div className="flex flex-wrap items-center justify-between gap-1 font-semibold">
                             <span>
                               {r.payoutSchedule === 'monthly'
@@ -815,18 +815,18 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                                 ? `💰 ได้รับดอกเบี้ยประมาณ ${thb(annualEarned)} / ปี`
                                 : `💰 ได้รับดอกเบี้ยประมาณ ${thb(annualEarned / (r.payoutMonths.length || 1))} ในเดือน ${r.payoutMonths.map((m) => THAI_MONTHS_SHORT[m - 1]).join(', ') || 'สิ้นปี'}`}
                             </span>
-                            <span className="font-display font-bold text-[13px]">
+                            <span className="font-display font-bold text-sm">
                               รวม {thb(annualEarned)} / ปี
                             </span>
                           </div>
 
                           {capNum && capNum > 0 && balNum > capNum && (
-                            <div className="text-[11px] text-emerald-800/90 dark:text-emerald-200/90 bg-emerald-500/15 px-2.5 py-1 rounded-lg">
+                            <div className="text-xs text-emerald-800/90 dark:text-emerald-200/90 bg-emerald-500/15 px-2.5 py-1 rounded-lg">
                               ℹ️ คิดดอกเบี้ยจากเงินต้นสูงสุด {r.currency === 'USD' ? '$' : '฿'}{formatWithCommas(capNum)} (ยอดในบัญชี {r.currency === 'USD' ? '$' : '฿'}{formatWithCommas(balNum)} • ส่วนเกิน {r.currency === 'USD' ? '$' : '฿'}{formatWithCommas(balNum - capNum)} ไม่ได้นำมาคิดดอกเบี้ย)
                             </div>
                           )}
 
-                          <div className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 pt-1 border-t border-emerald-500/15 flex flex-wrap items-center justify-between gap-1">
+                          <div className="text-xs text-emerald-600/80 dark:text-emerald-400/80 pt-1 border-t border-emerald-500/15 flex flex-wrap items-center justify-between gap-1">
                             <span>💡 ดอกเบี้ยที่ได้รับจะทบเข้าเป็นเงินต้นในบัญชีให้อัตโนมัติ (Compounding)</span>
                             {r.payoutSchedule === 'monthly' && (
                               <span className="font-semibold text-emerald-700 dark:text-emerald-300">
@@ -850,12 +850,12 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
             <button
               type="button"
               onClick={add}
-              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-semibold text-brand transition-colors hover:text-brand-ink hover:bg-brand-soft/50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-semibold text-brand transition-colors hover:text-brand-ink hover:bg-brand-soft/50 cursor-pointer"
             >
               <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
               Add custom account
             </button>
-            <span className="text-[11px] text-ink-muted">Quick presets:</span>
+            <span className="text-xs text-ink-muted">Quick presets:</span>
           </div>
 
           <div className="flex flex-wrap gap-1.5 mt-2">
@@ -866,7 +866,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                   key={p.name}
                   type="button"
                   onClick={() => addPreset(p)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all hover:scale-105 cursor-pointer shadow-2xs"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border transition-all hover:scale-105 cursor-pointer shadow-2xs"
                   style={{
                     backgroundColor: presetInfo?.bg ?? 'var(--color-surface-muted)',
                     borderColor: 'var(--color-line)',
@@ -876,7 +876,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                 >
                   <PlusIcon className="h-3 w-3" strokeWidth={2.5} />
                   <span>{p.name}</span>
-                  {p.rate && <span className="opacity-80 text-[9.5px]">({p.rate}%)</span>}
+                  {p.rate && <span className="opacity-80 text-xs">({p.rate}%)</span>}
                 </button>
               )
             })}

@@ -975,27 +975,27 @@ export function HoldingLogs() {
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
             {/* Col 1: ปันผลสุทธิ */}
             <div className="flex flex-col min-w-0">
-              <span className="text-[11px] sm:text-[11.5px] font-bold text-ink-muted flex items-center gap-1 truncate">
+              <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                 <span>💰</span> <span className="truncate">ปันผลสุทธิ</span>
               </span>
-              <div className="text-[14px] sm:text-[16px] font-black tracking-tight text-emerald-600 dark:text-emerald-400 truncate mt-0.5">
+              <div className="text-sm sm:text-base font-black tracking-tight text-emerald-600 dark:text-emerald-400 truncate mt-0.5">
                 {netDiv !== null ? `฿${netDiv.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
               </div>
-              <span className="text-[10px] sm:text-[11px] font-medium text-ink-faint truncate mt-0.5" title={cashAccName ? `เข้า ${cashAccName}` : 'รับเข้ากระเป๋า'}>
+              <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={cashAccName ? `เข้า ${cashAccName}` : 'รับเข้ากระเป๋า'}>
                 {cashAccName ? `เข้า ${cashAccName}` : 'รับเข้ากระเป๋า'}
               </span>
             </div>
 
             {/* Col 2: หักภาษี */}
             <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
-              <span className="text-[11px] sm:text-[11.5px] font-bold text-ink-muted flex items-center gap-1 truncate">
+              <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                 <span>🏛️</span> <span className="truncate">หักภาษี (10%)</span>
               </span>
-              <div className="text-[13px] sm:text-[15px] font-extrabold tracking-tight text-loss/90 truncate mt-0.5">
+              <div className="text-sm sm:text-base font-extrabold tracking-tight text-loss/90 truncate mt-0.5">
                 {tax !== null ? `-฿${tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
               </div>
               {gross !== null && (
-                <span className="text-[10px] sm:text-[11px] font-medium text-ink-faint truncate mt-0.5" title={`ยอดรวม ฿${gross.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}>
+                <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={`ยอดรวม ฿${gross.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}>
                   ยอดรวม ฿{gross.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               )}
@@ -1003,14 +1003,14 @@ export function HoldingLogs() {
 
             {/* Col 3: ปันผลต่อหุ้น */}
             <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
-              <span className="text-[11px] sm:text-[11.5px] font-bold text-ink-muted flex items-center gap-1 truncate">
+              <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                 <span>🏷️</span> <span className="truncate">ปันผลต่อหุ้น</span>
               </span>
-              <div className="text-[13px] sm:text-[15px] font-extrabold tracking-tight text-ink truncate mt-0.5">
+              <div className="text-sm sm:text-base font-extrabold tracking-tight text-ink truncate mt-0.5">
                 {dps !== null ? `฿${dps.toLocaleString()}/หุ้น` : '-'}
               </div>
               {holdingUnits && (
-                <span className="text-[10px] sm:text-[11px] font-medium text-ink-faint truncate mt-0.5" title={`จาก ${holdingUnits.toLocaleString()} หุ้น`}>
+                <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={`จาก ${holdingUnits.toLocaleString()} หุ้น`}>
                   จาก {holdingUnits.toLocaleString()} หุ้น
                 </span>
               )}
@@ -1027,7 +1027,7 @@ export function HoldingLogs() {
       const cashItems = getCashDiffItems(log)
       if (cashItems.length > 0) {
         return (
-          <div className="rounded-2xl border border-line/70 bg-surface-muted/40 dark:bg-surface-muted/20 p-2.5 sm:p-3 text-[12.5px] space-y-2.5">
+          <div className="rounded-2xl border border-line/70 bg-surface-muted/40 dark:bg-surface-muted/20 p-2.5 sm:p-3 text-xs space-y-2.5">
             {cashItems.map((item, idx) => {
               const sym = item.currencySymbol
               const hasNameChange = item.prevName && item.currName && item.prevName !== item.currName
@@ -1037,12 +1037,12 @@ export function HoldingLogs() {
                   {/* Account Name Row */}
                   {hasNameChange && (
                     <div>
-                      <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">
+                      <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">
                         Account Name
                       </span>
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                         <span className="whitespace-nowrap">{item.prevName}</span>
-                        <span className="text-ink-faint text-[11px]">→</span>
+                        <span className="text-ink-faint text-xs">→</span>
                         <span className="font-semibold text-brand whitespace-nowrap">{item.currName}</span>
                       </div>
                     </div>
@@ -1050,18 +1050,18 @@ export function HoldingLogs() {
 
                   {/* Account Balance Row */}
                   <div>
-                    <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">
+                    <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">
                       {item.actionType === 'add' ? `New Account: ${item.accountName}` : `Balance: ${item.accountName}`}
                     </span>
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                       {item.actionType === 'add' ? (
                         <>
-                          <span className="text-ink-muted text-[12px]">(New Account)</span>
-                          <span className="text-ink-faint text-[11px]">→</span>
+                          <span className="text-ink-muted text-xs">(New Account)</span>
+                          <span className="text-ink-faint text-xs">→</span>
                           <span className="font-bold text-gain whitespace-nowrap">
                             {sym}{item.currBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
-                          <span className="rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap bg-gain/10 text-gain">
+                          <span className="rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap bg-gain/10 text-gain">
                             +{sym}{item.currBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         </>
@@ -1070,7 +1070,7 @@ export function HoldingLogs() {
                           <span className="whitespace-nowrap">
                             {sym}{item.prevBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
-                          <span className="text-ink-faint text-[11px]">→</span>
+                          <span className="text-ink-faint text-xs">→</span>
                           <span className="font-bold text-loss whitespace-nowrap">(Removed)</span>
                         </>
                       ) : (
@@ -1080,7 +1080,7 @@ export function HoldingLogs() {
                               <span className="whitespace-nowrap">
                                 {sym}{item.prevBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
-                              <span className="text-ink-faint text-[11px]">→</span>
+                              <span className="text-ink-faint text-xs">→</span>
                             </>
                           )}
                           <span className="font-bold text-brand whitespace-nowrap">
@@ -1088,7 +1088,7 @@ export function HoldingLogs() {
                           </span>
                           {item.diff !== undefined && Math.abs(item.diff) > 0.001 && (
                             <span
-                              className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${
+                              className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${
                                 item.diff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'
                               }`}
                             >
@@ -1298,14 +1298,14 @@ export function HoldingLogs() {
     const priceLabel = isFund ? 'NAV / Price' : 'Market Price'
 
     return (
-      <div className="rounded-2xl border border-line/70 bg-surface-muted/40 dark:bg-surface-muted/20 p-2.5 sm:p-3 text-[12.5px] space-y-2.5">
+      <div className="rounded-2xl border border-line/70 bg-surface-muted/40 dark:bg-surface-muted/20 p-2.5 sm:p-3 text-xs space-y-2.5">
         {/* Holding Name Row (if renamed) */}
         {showNameRow && (
           <div>
-            <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">ชื่อทรัพย์สิน</span>
+            <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">ชื่อทรัพย์สิน</span>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
               <span className="whitespace-nowrap">{prev.name}</span>
-              <span className="text-ink-faint text-[11px]">→</span>
+              <span className="text-ink-faint text-xs">→</span>
               <span className="font-semibold text-brand whitespace-nowrap">{curr.name}</span>
             </div>
           </div>
@@ -1314,11 +1314,11 @@ export function HoldingLogs() {
         {/* Ticker Symbol Row (if ticker updated) */}
         {showTickerRow && (
           <div className={showNameRow ? 'pt-1.5 border-t border-line/60' : ''}>
-            <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">Ticker Symbol</span>
+            <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">Ticker Symbol</span>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
-              <span className="rounded-md bg-surface px-1.5 py-0.5 tnum text-[11.5px] font-medium text-ink-muted border border-line">{prev.ticker}</span>
-              <span className="text-ink-faint text-[11px]">→</span>
-              <span className="rounded-md bg-brand/10 border border-brand/20 px-1.5 py-0.5 tnum text-[11.5px] font-bold text-brand">{curr.ticker}</span>
+              <span className="rounded-md bg-surface px-1.5 py-0.5 tnum text-xs font-medium text-ink-muted border border-line">{prev.ticker}</span>
+              <span className="text-ink-faint text-xs">→</span>
+              <span className="rounded-md bg-brand/10 border border-brand/20 px-1.5 py-0.5 tnum text-xs font-bold text-brand">{curr.ticker}</span>
             </div>
           </div>
         )}
@@ -1346,40 +1346,40 @@ export function HoldingLogs() {
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 {/* Col 1: ยอดที่ได้รับ */}
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[11px] sm:text-[11.5px] font-bold text-ink-muted flex items-center gap-1 truncate">
+                  <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                     <span>💵</span> <span className="truncate">ได้รับเงิน</span>
                   </span>
-                  <div className="text-[14px] sm:text-[16px] font-black tracking-tight text-ink truncate mt-0.5">
+                  <div className="text-sm sm:text-base font-black tracking-tight text-ink truncate mt-0.5">
                     {txDetails.amountThbDisplay && txDetails.amountThbDisplay !== '-' ? txDetails.amountThbDisplay : (log.proceeds ? thb(log.proceeds) : '-')}
                   </div>
-                  <span className="text-[10px] sm:text-[11px] font-medium text-ink-faint truncate mt-0.5" title={cashDest || 'รับเข้ากระเป๋า'}>
+                  <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={cashDest || 'รับเข้ากระเป๋า'}>
                     {cashDest || 'รับเข้ากระเป๋า'}
                   </span>
                 </div>
 
                 {/* Col 2: ขายออก */}
                 <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
-                  <span className="text-[11px] sm:text-[11.5px] font-bold text-ink-muted flex items-center gap-1 truncate">
+                  <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                     <span>📦</span> <span className="truncate">ขายออก</span>
                   </span>
-                  <div className="text-[13px] sm:text-[15px] font-extrabold tracking-tight text-ink-muted truncate mt-0.5">
+                  <div className="text-sm sm:text-base font-extrabold tracking-tight text-ink-muted truncate mt-0.5">
                     {txDetails.sharesDisplay && txDetails.sharesDisplay !== '-' ? txDetails.sharesDisplay : (Math.abs(unitDiff) > 0 ? formatUnitDiff(unitDiff) : '-')}
                   </div>
-                  <span className="text-[10px] sm:text-[11px] font-medium text-ink-faint truncate mt-0.5">
+                  <span className="text-xs font-medium text-ink-faint truncate mt-0.5">
                     หักออกจากพอร์ต
                   </span>
                 </div>
 
                 {/* Col 3: กำไร/ขาดทุน */}
                 <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
-                  <span className="text-[11px] sm:text-[11.5px] font-bold text-ink-muted flex items-center gap-1 truncate">
+                  <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                     <span>{isGain ? '💚' : '🔴'}</span> <span className="truncate">{isGain ? 'กำไรสุทธิ' : 'ขาดทุน'}</span>
                   </span>
-                  <div className={`text-[13px] sm:text-[15px] font-black tracking-tight truncate mt-0.5 ${isGain ? 'text-gain' : 'text-loss'}`}>
+                  <div className={`text-sm sm:text-base font-black tracking-tight truncate mt-0.5 ${isGain ? 'text-gain' : 'text-loss'}`}>
                     {pnl !== null ? `${isGain ? '+' : ''}${thb(pnl)}` : '-'}
                   </div>
                   {pct !== null && (
-                    <span className={`text-[10px] sm:text-[11px] font-bold truncate mt-0.5 ${isGain ? 'text-gain' : 'text-loss'}`}>
+                    <span className={`text-xs font-bold truncate mt-0.5 ${isGain ? 'text-gain' : 'text-loss'}`}>
                       {isGain ? '+' : ''}{pct.toFixed(1)}%
                     </span>
                   )}
@@ -1392,12 +1392,12 @@ export function HoldingLogs() {
                   {cashItems.map((item, idx) => {
                     const sym = item.currencySymbol
                     return (
-                      <div key={idx} className="flex flex-wrap items-center justify-between text-[11.5px] text-ink-muted">
+                      <div key={idx} className="flex flex-wrap items-center justify-between text-xs text-ink-muted">
                         <span className="font-semibold text-ink-soft flex items-center gap-1">
                           <span>{item.diff && item.diff < 0 ? '💸' : '💵'}</span>
                           <span>{item.diff && item.diff < 0 ? 'จ่ายจาก' : 'รับเงินเข้า'}: {item.accountName}</span>
                         </span>
-                        <div className="flex items-center gap-1 font-mono text-[11.5px]">
+                        <div className="flex items-center gap-1 font-mono text-xs">
                           {item.prevBalance !== undefined && (
                             <>
                               <span>{sym}{item.prevBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -1406,7 +1406,7 @@ export function HoldingLogs() {
                           )}
                           <span className="font-bold text-ink">{sym}{item.currBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           {item.diff !== undefined && (
-                            <span className={`rounded px-1 text-[10.5px] font-bold ${item.diff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                            <span className={`rounded px-1 text-xs font-bold ${item.diff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
                               {item.diff > 0 ? '+' : ''}{sym}{Math.abs(item.diff).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           )}
@@ -1423,24 +1423,24 @@ export function HoldingLogs() {
                   <button
                     type="button"
                     onClick={() => toggleDetails(log.id)}
-                    className="inline-flex items-center gap-1.5 py-0.5 text-[11.5px] sm:text-[12px] font-semibold text-ink-muted hover:text-ink active:scale-95 transition-all cursor-pointer select-none"
+                    className="inline-flex items-center gap-1.5 py-0.5 text-xs font-semibold text-ink-muted hover:text-ink active:scale-95 transition-all cursor-pointer select-none"
                   >
                     <span>{isDetailsOpen ? '▲ ซ่อนรายละเอียด' : '▼ ดูรายละเอียด'}</span>
                   </button>
 
                   {isDetailsOpen && (
-                    <div className="mt-2 space-y-2 pt-1.5 border-t border-line/40 text-[12px]">
+                    <div className="mt-2 space-y-2 pt-1.5 border-t border-line/40 text-xs">
                       {showPriceRow && (
                         <div>
-                          <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">
+                          <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">
                             {isFund ? 'NAV / ราคา' : 'ราคาตลาด ณ วันขาย'}
                           </span>
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                             <span className="whitespace-nowrap">{prevPriceDisplay}</span>
-                            <span className="text-ink-faint text-[11px]">→</span>
+                            <span className="text-ink-faint text-xs">→</span>
                             <span className="font-semibold text-brand whitespace-nowrap">{currPriceDisplay}</span>
                             {priceDeltaBadge && (
-                              <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${priceDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                              <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${priceDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
                                 {priceDeltaBadge.text}
                               </span>
                             )}
@@ -1450,17 +1450,17 @@ export function HoldingLogs() {
 
                       {showBalanceRow && (
                         <div className={showPriceRow ? 'pt-1.5 border-t border-line/60' : ''}>
-                          <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">จำนวนคงเหลือหลังขาย</span>
+                          <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">จำนวนคงเหลือหลังขาย</span>
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                             <span className="whitespace-nowrap">{formatUnit(prevUnits)}</span>
-                            <span className="text-ink-faint text-[11px]">→</span>
+                            <span className="text-ink-faint text-xs">→</span>
                             {currUnits === 0 ? (
                               <span className="font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">0 (ขายหมดแล้ว)</span>
                             ) : (
                               <span className="font-semibold text-brand whitespace-nowrap">{formatUnit(currUnits)}</span>
                             )}
                             {Math.abs(unitDiff) > 0.0001 && (
-                              <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${unitDiff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                              <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${unitDiff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
                                 {formatUnitDiff(unitDiff)}
                               </span>
                             )}
@@ -1470,17 +1470,17 @@ export function HoldingLogs() {
 
                       {showAvgCostRow && (
                         <div className={(showPriceRow || showBalanceRow) ? 'pt-1.5 border-t border-line/60' : ''}>
-                          <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">
+                          <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">
                             {(log.assetClass === 'gold' || log.assetClass === 'crypto')
                               ? 'ต้นทุนเฉลี่ยรวมทุกกระเป๋า (ส่วนที่เหลือ)'
                               : 'ต้นทุนเฉลี่ย (ส่วนที่เหลือ)'}
                           </span>
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                             <span className="whitespace-nowrap">{prevAvgCostDisplay}</span>
-                            <span className="text-ink-faint text-[11px]">→</span>
+                            <span className="text-ink-faint text-xs">→</span>
                             <span className="font-semibold text-brand whitespace-nowrap">{currAvgCostDisplay}</span>
                             {avgCostDeltaBadge && (
-                              <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${avgCostDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-surface-muted text-ink-muted'}`}>
+                              <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${avgCostDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-surface-muted text-ink-muted'}`}>
                                 {avgCostDeltaBadge.text}
                               </span>
                             )}
@@ -1489,7 +1489,7 @@ export function HoldingLogs() {
                       )}
 
                       {(log.assetClass === 'gold' || log.assetClass === 'crypto') && (
-                        <div className="pt-1.5 border-t border-line/40 text-[11px] text-ink-muted">
+                        <div className="pt-1.5 border-t border-line/40 text-xs text-ink-muted">
                           💡 <span className="font-medium text-ink-soft">ระบบคำนวณกำไร/ขาดทุนตามต้นทุนจริงของกระเป๋าที่เลือกขายโดยเฉพาะ</span>
                         </div>
                       )}
@@ -1535,39 +1535,39 @@ export function HoldingLogs() {
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 {/* Col 1: ยอดที่ซื้อ */}
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[11px] sm:text-[11.5px] font-bold text-ink-muted flex items-center gap-1 truncate">
+                  <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                     <span>💳</span> <span className="truncate">ยอดที่ซื้อ</span>
                   </span>
-                  <div className="text-[14px] sm:text-[16px] font-black tracking-tight text-sky-700 dark:text-sky-300 truncate mt-0.5">
+                  <div className="text-sm sm:text-base font-black tracking-tight text-sky-700 dark:text-sky-300 truncate mt-0.5">
                     {txDetails.amountThbDisplay && txDetails.amountThbDisplay !== '-' ? txDetails.amountThbDisplay : (txDetails.sharesDisplay || '-')}
                   </div>
-                  <span className="text-[10px] sm:text-[11px] font-medium text-ink-faint truncate mt-0.5" title={cashSource || 'ยอดลงทุน'}>
+                  <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={cashSource || 'ยอดลงทุน'}>
                     {cashSource || 'ยอดลงทุน'}
                   </span>
                 </div>
 
                 {/* Col 2: หน่วยที่ได้ */}
                 <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
-                  <span className="text-[11px] sm:text-[11.5px] font-bold text-ink-muted flex items-center gap-1 truncate">
+                  <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                     <span>📦</span> <span className="truncate">หน่วยที่ได้</span>
                   </span>
-                  <div className="text-[13px] sm:text-[15px] font-extrabold tracking-tight text-gain truncate mt-0.5">
+                  <div className="text-sm sm:text-base font-extrabold tracking-tight text-gain truncate mt-0.5">
                     {txDetails.sharesDisplay && txDetails.sharesDisplay !== '-' ? txDetails.sharesDisplay : (unitDiff > 0 ? formatUnitDiff(unitDiff) : '-')}
                   </div>
-                  <span className="text-[10px] sm:text-[11px] font-medium text-ink-faint truncate mt-0.5">
+                  <span className="text-xs font-medium text-ink-faint truncate mt-0.5">
                     สะสมเข้าพอร์ต
                   </span>
                 </div>
 
                 {/* Col 3: ราคาเข้าซื้อ */}
                 <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
-                  <span className="text-[11px] sm:text-[11.5px] font-bold text-ink-muted flex items-center gap-1 truncate">
+                  <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                     <span>🏷️</span> <span className="truncate">ราคาเข้าซื้อ</span>
                   </span>
-                  <div className="text-[13px] sm:text-[15px] font-extrabold tracking-tight text-ink truncate mt-0.5">
+                  <div className="text-sm sm:text-base font-extrabold tracking-tight text-ink truncate mt-0.5">
                     {buyPriceDisplay || '-'}
                   </div>
-                  <span className="text-[10px] sm:text-[11px] font-medium text-ink-faint truncate mt-0.5">
+                  <span className="text-xs font-medium text-ink-faint truncate mt-0.5">
                     ราคาต่อหน่วย
                   </span>
                 </div>
@@ -1579,12 +1579,12 @@ export function HoldingLogs() {
                   {cashItems.map((item, idx) => {
                     const sym = item.currencySymbol
                     return (
-                      <div key={idx} className="flex flex-wrap items-center justify-between text-[11.5px] text-ink-muted">
+                      <div key={idx} className="flex flex-wrap items-center justify-between text-xs text-ink-muted">
                         <span className="font-semibold text-ink-soft flex items-center gap-1">
                           <span>{item.diff && item.diff < 0 ? '💸' : '💵'}</span>
                           <span>{item.diff && item.diff < 0 ? 'จ่ายจาก' : 'รับเงินเข้า'}: {item.accountName}</span>
                         </span>
-                        <div className="flex items-center gap-1 font-mono text-[11.5px]">
+                        <div className="flex items-center gap-1 font-mono text-xs">
                           {item.prevBalance !== undefined && (
                             <>
                               <span>{sym}{item.prevBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -1593,7 +1593,7 @@ export function HoldingLogs() {
                           )}
                           <span className="font-bold text-ink">{sym}{item.currBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           {item.diff !== undefined && (
-                            <span className={`rounded px-1 text-[10.5px] font-bold ${item.diff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                            <span className={`rounded px-1 text-xs font-bold ${item.diff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
                               {item.diff > 0 ? '+' : ''}{sym}{Math.abs(item.diff).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           )}
@@ -1610,24 +1610,24 @@ export function HoldingLogs() {
                   <button
                     type="button"
                     onClick={() => toggleDetails(log.id)}
-                    className="inline-flex items-center gap-1.5 py-0.5 text-[11.5px] sm:text-[12px] font-semibold text-ink-muted hover:text-ink active:scale-95 transition-all cursor-pointer select-none"
+                    className="inline-flex items-center gap-1.5 py-0.5 text-xs font-semibold text-ink-muted hover:text-ink active:scale-95 transition-all cursor-pointer select-none"
                   >
                     <span>{isDetailsOpen ? '▲ ซ่อนรายละเอียด' : '▼ ดูรายละเอียด'}</span>
                   </button>
 
                   {isDetailsOpen && (
-                    <div className="mt-2 space-y-2 pt-1.5 border-t border-line/40 text-[12px]">
+                    <div className="mt-2 space-y-2 pt-1.5 border-t border-line/40 text-xs">
                       {showPriceRow && (
                         <div>
-                          <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">
+                          <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">
                             {priceLabel}
                           </span>
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                             <span className="whitespace-nowrap">{prevPriceDisplay}</span>
-                            <span className="text-ink-faint text-[11px]">→</span>
+                            <span className="text-ink-faint text-xs">→</span>
                             <span className="font-semibold text-brand whitespace-nowrap">{currPriceDisplay}</span>
                             {priceDeltaBadge && (
-                              <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${priceDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                              <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${priceDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
                                 {priceDeltaBadge.text}
                               </span>
                             )}
@@ -1637,13 +1637,13 @@ export function HoldingLogs() {
 
                       {showBalanceRow && (
                         <div className={showPriceRow ? 'pt-1.5 border-t border-line/60' : ''}>
-                          <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">Holding Balance (ยอดสะสมรวม)</span>
+                          <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">Holding Balance (ยอดสะสมรวม)</span>
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                             <span className="whitespace-nowrap">{formatUnit(prevUnits)}</span>
-                            <span className="text-ink-faint text-[11px]">→</span>
+                            <span className="text-ink-faint text-xs">→</span>
                             <span className="font-semibold text-brand whitespace-nowrap">{formatUnit(currUnits)}</span>
                             {Math.abs(unitDiff) > 0.0001 && (
-                              <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${unitDiff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                              <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${unitDiff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
                                 {formatUnitDiff(unitDiff)}
                               </span>
                             )}
@@ -1653,15 +1653,15 @@ export function HoldingLogs() {
 
                       {showAvgCostRow && (
                         <div className={(showPriceRow || showBalanceRow) ? 'pt-1.5 border-t border-line/60' : ''}>
-                          <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">
+                          <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">
                             Average Cost (ต้นทุนเฉลี่ยใหม่)
                           </span>
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                             <span className="whitespace-nowrap">{prevAvgCostDisplay}</span>
-                            <span className="text-ink-faint text-[11px]">→</span>
+                            <span className="text-ink-faint text-xs">→</span>
                             <span className="font-semibold text-brand whitespace-nowrap">{currAvgCostDisplay}</span>
                             {avgCostDeltaBadge && (
-                              <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${avgCostDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-surface-muted text-ink-muted'}`}>
+                              <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${avgCostDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-surface-muted text-ink-muted'}`}>
                                 {avgCostDeltaBadge.text}
                               </span>
                             )}
@@ -1682,40 +1682,40 @@ export function HoldingLogs() {
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 {/* Col 1: ราคาเดิม */}
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[11px] sm:text-[11.5px] font-bold text-ink-muted flex items-center gap-1 truncate">
+                  <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                     <span>🏷️</span> <span className="truncate">ราคาเดิม</span>
                   </span>
-                  <div className="text-[13px] sm:text-[15px] font-extrabold tracking-tight text-ink-muted truncate mt-0.5">
+                  <div className="text-sm sm:text-base font-extrabold tracking-tight text-ink-muted truncate mt-0.5">
                     {prevPriceDisplay}
                   </div>
-                  <span className="text-[10px] sm:text-[11px] font-medium text-ink-faint truncate mt-0.5">
+                  <span className="text-xs font-medium text-ink-faint truncate mt-0.5">
                     ก่อนอัปเดต
                   </span>
                 </div>
 
                 {/* Col 2: ราคาใหม่ */}
                 <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
-                  <span className="text-[11px] sm:text-[11.5px] font-bold text-ink-muted flex items-center gap-1 truncate">
+                  <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                     <span>🏷️</span> <span className="truncate">ราคาใหม่</span>
                   </span>
-                  <div className="text-[13px] sm:text-[15px] font-black tracking-tight text-brand truncate mt-0.5">
+                  <div className="text-sm sm:text-base font-black tracking-tight text-brand truncate mt-0.5">
                     {currPriceDisplay}
                   </div>
-                  <span className="text-[10px] sm:text-[11px] font-medium text-ink-faint truncate mt-0.5">
+                  <span className="text-xs font-medium text-ink-faint truncate mt-0.5">
                     {isFund ? 'NAV ปัจจุบัน' : 'ราคาตลาดล่าสุด'}
                   </span>
                 </div>
 
                 {/* Col 3: เปลี่ยนแปลง */}
                 <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
-                  <span className="text-[11px] sm:text-[11.5px] font-bold text-ink-muted flex items-center gap-1 truncate">
+                  <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                     <span>{priceDeltaBadge?.positive ? '📈' : '📉'}</span> <span className="truncate">เปลี่ยนแปลง</span>
                   </span>
-                  <div className={`text-[13px] sm:text-[15px] font-black tracking-tight truncate mt-0.5 ${priceDeltaBadge?.positive ? 'text-gain' : 'text-loss'}`}>
+                  <div className={`text-sm sm:text-base font-black tracking-tight truncate mt-0.5 ${priceDeltaBadge?.positive ? 'text-gain' : 'text-loss'}`}>
                     {priceDeltaBadge ? priceDeltaBadge.text.split(' ')[0] : '-'}
                   </div>
                   {priceDeltaBadge && priceDeltaBadge.text.includes('(') && (
-                    <span className={`text-[10px] sm:text-[11px] font-bold truncate mt-0.5 ${priceDeltaBadge?.positive ? 'text-gain' : 'text-loss'}`}>
+                    <span className={`text-xs font-bold truncate mt-0.5 ${priceDeltaBadge?.positive ? 'text-gain' : 'text-loss'}`}>
                       {priceDeltaBadge.text.substring(priceDeltaBadge.text.indexOf('(')).replace(/[()]/g, '')}
                     </span>
                   )}
@@ -1729,15 +1729,15 @@ export function HoldingLogs() {
               {/* ── NON-SELL / NON-BUY General Edit ── */}
               {showPriceRow && (
                 <div className={(showNameRow || showTickerRow) ? 'pt-1.5 border-t border-line/60' : ''}>
-                  <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">
+                  <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">
                     {priceLabel}
                   </span>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                     <span className="whitespace-nowrap">{prevPriceDisplay}</span>
-                    <span className="text-ink-faint text-[11px]">→</span>
+                    <span className="text-ink-faint text-xs">→</span>
                     <span className="font-semibold text-brand whitespace-nowrap">{currPriceDisplay}</span>
                     {priceDeltaBadge && (
-                      <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${priceDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                      <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${priceDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
                         {priceDeltaBadge.text}
                       </span>
                     )}
@@ -1747,13 +1747,13 @@ export function HoldingLogs() {
 
               {showBalanceRow && (
                 <div className={(showNameRow || showTickerRow || showPriceRow) ? 'pt-1.5 border-t border-line/60' : ''}>
-                  <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">Holding Balance</span>
+                  <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">Holding Balance</span>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                     <span className="whitespace-nowrap">{formatUnit(prevUnits)}</span>
-                    <span className="text-ink-faint text-[11px]">→</span>
+                    <span className="text-ink-faint text-xs">→</span>
                     <span className="font-semibold text-brand whitespace-nowrap">{formatUnit(currUnits)}</span>
                     {Math.abs(unitDiff) > 0.0001 && (
-                      <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${unitDiff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                      <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${unitDiff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
                         {formatUnitDiff(unitDiff)}
                       </span>
                     )}
@@ -1763,13 +1763,13 @@ export function HoldingLogs() {
 
               {showAvgCostRow && (
                 <div className={(showNameRow || showTickerRow || showPriceRow || showBalanceRow) ? 'pt-1.5 border-t border-line/60' : ''}>
-                  <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">Average Cost</span>
+                  <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">Average Cost</span>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                     <span className="whitespace-nowrap">{prevAvgCostDisplay}</span>
-                    <span className="text-ink-faint text-[11px]">→</span>
+                    <span className="text-ink-faint text-xs">→</span>
                     <span className="font-semibold text-brand whitespace-nowrap">{currAvgCostDisplay}</span>
                     {avgCostDeltaBadge && (
-                      <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${avgCostDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-surface-muted text-ink-muted'}`}>
+                      <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${avgCostDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-surface-muted text-ink-muted'}`}>
                         {avgCostDeltaBadge.text}
                       </span>
                     )}
@@ -1787,19 +1787,19 @@ export function HoldingLogs() {
                       const sym = item.currencySymbol
                       return (
                         <div key={idx}>
-                          <span className="text-ink-faint block text-[10.5px] uppercase tracking-wider font-semibold">
+                          <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">
                             {item.diff && item.diff > 0 ? 'Cash Deposit' : 'Cash Deduction'}: {item.accountName}
                           </span>
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                             {item.prevBalance !== undefined && (
                               <>
                                 <span className="whitespace-nowrap">{sym}{item.prevBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                <span className="text-ink-faint text-[11px]">→</span>
+                                <span className="text-ink-faint text-xs">→</span>
                               </>
                             )}
                             <span className="font-bold text-brand whitespace-nowrap">{sym}{item.currBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             {item.diff !== undefined && (
-                              <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${item.diff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                              <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${item.diff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
                                 {item.diff > 0 ? '+' : ''}{sym}{Math.abs(item.diff).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                             )}
@@ -1837,7 +1837,7 @@ export function HoldingLogs() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search ticker, asset, note, wallet..."
-              className="h-10 w-full rounded-xl border border-line bg-surface pl-9 pr-8 text-[13px] text-ink placeholder:text-ink-faint outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15"
+              className="h-10 w-full rounded-xl border border-line bg-surface pl-9 pr-8 text-sm text-ink placeholder:text-ink-faint outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15"
             />
             {searchQuery && (
               <button
@@ -1846,7 +1846,7 @@ export function HoldingLogs() {
                 aria-label="Clear search"
                 className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-ink-faint hover:text-ink cursor-pointer"
               >
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-surface-muted text-[11px] font-bold">
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-surface-muted text-xs font-bold">
                   ✕
                 </span>
               </button>
@@ -1860,7 +1860,7 @@ export function HoldingLogs() {
                 type="button"
                 onClick={() => handleViewModeChange('table')}
                 title="Table statement view"
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all cursor-pointer ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   viewMode === 'table'
                     ? 'bg-surface text-ink shadow-xs font-bold border border-line/40'
                     : 'text-ink-muted hover:text-ink'
@@ -1873,7 +1873,7 @@ export function HoldingLogs() {
                 type="button"
                 onClick={() => handleViewModeChange('timeline')}
                 title="Timeline feed view"
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all cursor-pointer ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   viewMode === 'timeline'
                     ? 'bg-surface text-ink shadow-xs font-bold border border-line/40'
                     : 'text-ink-muted hover:text-ink'
@@ -1917,7 +1917,7 @@ export function HoldingLogs() {
 
           {/* Right: Action Type pills */}
           <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
-            <span className="shrink-0 text-[11px] font-medium text-ink-faint mr-1">Action:</span>
+            <span className="shrink-0 text-xs font-medium text-ink-faint mr-1">Action:</span>
             {ACTION_FILTERS.map((f) => (
               <FilterChip
                 key={f.key}
@@ -1932,7 +1932,7 @@ export function HoldingLogs() {
         </div>
 
         {/* Results summary & Active filter reset */}
-        <div className="flex items-center justify-between text-[11.5px] text-ink-muted px-0.5">
+        <div className="flex items-center justify-between text-xs text-ink-muted px-0.5">
           <span>
             {filtered.length} {filtered.length === 1 ? 'transaction' : 'transactions'}
             {(searchQuery || assetFilter !== 'all' || actionFilter !== 'all') && (
@@ -1993,9 +1993,9 @@ export function HoldingLogs() {
         ) : viewMode === 'table' ? (
           <Card padded={false} className="overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-[13px] border-collapse min-w-[840px]">
+              <table className="w-full text-left text-sm border-collapse min-w-[840px]">
                 <thead>
-                  <tr className="border-b border-line bg-surface-muted/60 text-[11px] font-bold text-ink-muted uppercase tracking-wider">
+                  <tr className="border-b border-line bg-surface-muted/60 text-xs font-bold text-ink-muted uppercase tracking-wider">
                     <th className="py-3 px-4">Date & Time</th>
                     <th className="py-3 px-3">Action</th>
                     <th className="py-3 px-3">Asset / Ticker</th>
@@ -2041,28 +2041,28 @@ export function HoldingLogs() {
                             }}
                             title="Click to edit date / แตะเพื่อแก้ไขวันที่"
                           >
-                            <div className="font-semibold text-ink text-[12.5px] tnum group-hover/date:text-brand flex items-center gap-1">
+                            <div className="font-semibold text-ink text-xs tnum group-hover/date:text-brand flex items-center gap-1">
                               {dateStr}
                               <PencilIcon className="h-2.5 w-2.5 opacity-0 group-hover/date:opacity-100 transition-opacity text-brand" />
                             </div>
-                            <div className="text-[11px] text-ink-faint tnum">{timeStr}</div>
+                            <div className="text-xs text-ink-faint tnum">{timeStr}</div>
                           </td>
                           <td className="py-3 px-3 whitespace-nowrap">
-                            <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold ${actionMeta.style}`}>
+                            <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${actionMeta.style}`}>
                               {actionMeta.label}
                             </span>
                           </td>
                           <td className="py-3 px-3">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-bold text-ink text-[13.5px]">{log.holdingName}</span>
+                              <span className="font-bold text-ink text-sm">{log.holdingName}</span>
                               {log.ticker && log.ticker !== 'CASH' && log.ticker !== 'FIXED' && log.ticker !== 'DCA' && (
-                                <span className="rounded-md bg-surface-muted px-1.5 py-0.5 text-[10.5px] font-medium text-ink-muted">
+                                <span className="rounded-md bg-surface-muted px-1.5 py-0.5 text-xs font-medium text-ink-muted">
                                   {log.ticker}
                                 </span>
                               )}
                             </div>
                             <span
-                              className="inline-block mt-0.5 text-[10.5px] font-semibold uppercase tracking-wider"
+                              className="inline-block mt-0.5 text-xs font-semibold uppercase tracking-wider"
                               style={{
                                 color:
                                   log.ticker === 'FIXED'
@@ -2093,7 +2093,7 @@ export function HoldingLogs() {
                             </div>
                             {log.action === 'sell' && log.realizedPnL !== undefined && (
                               <div
-                                className={`text-[10.5px] font-bold mt-0.5 ${
+                                className={`text-xs font-bold mt-0.5 ${
                                   log.realizedPnL >= 0 ? 'text-gain' : 'text-loss'
                                 }`}
                               >
@@ -2108,22 +2108,22 @@ export function HoldingLogs() {
                           </td>
                           <td className="py-3 px-3 whitespace-nowrap">
                             {locName ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 border border-brand/20 px-2 py-0.5 text-[10.5px] font-semibold text-brand">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 border border-brand/20 px-2 py-0.5 text-xs font-semibold text-brand">
                                 <WalletIcon className="h-3 w-3" />
                                 {locName}
                               </span>
                             ) : (
-                              <span className="text-ink-faint text-[12px]">-</span>
+                              <span className="text-ink-faint text-xs">-</span>
                             )}
                           </td>
-                          <td className="py-3 px-4 text-[12px] text-ink-muted max-w-[260px]">
+                          <td className="py-3 px-4 text-xs text-ink-muted max-w-[260px]">
                             <div className="flex items-center gap-1.5">
                               <span className="truncate" title={getDisplayNote(log)}>
                                 {getDisplayNote(log)}
                               </span>
                               {hasComparison && (
                                 <span
-                                  className="text-[10px] text-brand hover:underline shrink-0 font-medium"
+                                  className="text-xs text-brand hover:underline shrink-0 font-medium"
                                   title="Click row to view Before/After comparison"
                                 >
                                   {isExpanded ? '▲ Hide' : '▼ Diff'}
@@ -2152,7 +2152,7 @@ export function HoldingLogs() {
                                   setUndoTarget(log)
                                 }}
                                 aria-label={`Undo activity for ${log.holdingName}`}
-                                className="rounded-lg px-2 py-1 text-[11px] font-bold text-loss hover:bg-loss/10 transition-colors cursor-pointer"
+                                className="rounded-lg px-2 py-1 text-xs font-bold text-loss hover:bg-loss/10 transition-colors cursor-pointer"
                               >
                                 Undo
                               </button>
@@ -2163,7 +2163,7 @@ export function HoldingLogs() {
                           <tr className="bg-surface-muted/20 border-b border-line">
                             <td colSpan={9} className="p-4 pl-8 sm:pl-12">
                               <div className="max-w-xl">
-                                <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-1">
+                                <p className="text-xs font-bold uppercase tracking-wider text-ink-muted mb-1">
                                   State Comparison (Before → After)
                                 </p>
                                 {renderStateComparison(log)}
@@ -2182,7 +2182,7 @@ export function HoldingLogs() {
           <div className="space-y-6">
             {groups.map((group) => (
               <div key={group.date}>
-                <p className="mb-2.5 px-1 text-[12.5px] font-bold text-ink-soft tracking-wide">{group.date}</p>
+                <p className="mb-2.5 px-1 text-xs font-bold text-ink-soft tracking-wide">{group.date}</p>
                 <Card padded={false}>
                   <ul className="divide-y divide-line">
                   {group.entries.map((log) => {
@@ -2195,7 +2195,7 @@ export function HoldingLogs() {
                           {/* Left: Asset Icon + Holding Info */}
                           <div className="flex items-start gap-3 min-w-0">
                             <span
-                              className="mt-0.5 grid h-8 w-8 sm:h-9 sm:w-9 shrink-0 place-items-center rounded-xl text-[13px] sm:text-[14px] font-bold shadow-xs"
+                              className="mt-0.5 grid h-8 w-8 sm:h-9 sm:w-9 shrink-0 place-items-center rounded-xl text-sm font-bold shadow-xs"
                               style={{
                                 color: ASSET_META[log.assetClass]?.color ?? '#6366f1',
                                 background: `color-mix(in srgb, ${ASSET_META[log.assetClass]?.color ?? '#6366f1'} 14%, transparent)`,
@@ -2205,24 +2205,24 @@ export function HoldingLogs() {
                             </span>
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                                <span className="text-[14px] sm:text-[15px] font-bold text-ink">{log.holdingName}</span>
+                                <span className="text-sm sm:text-base font-bold text-ink">{log.holdingName}</span>
                                 {log.ticker && log.ticker !== 'CASH' && log.ticker !== 'FIXED' && log.ticker !== 'DCA' && (
-                                  <span className="rounded-md bg-surface-muted px-1.5 py-0.5 text-[10.5px] sm:text-[11px] font-medium text-ink-muted">
+                                  <span className="rounded-md bg-surface-muted px-1.5 py-0.5 text-xs font-medium text-ink-muted">
                                     {log.ticker}
                                   </span>
                                 )}
-                                <span className={`rounded-full px-2 py-0.5 text-[10.5px] sm:text-[11px] font-bold ${actionMeta.style}`}>
+                                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${actionMeta.style}`}>
                                   {actionMeta.label}
                                 </span>
                                 {locName && (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 border border-brand/20 px-2 py-0.5 text-[10.5px] sm:text-[11px] font-semibold text-brand">
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 border border-brand/20 px-2 py-0.5 text-xs font-semibold text-brand">
                                     <WalletIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                     {locName}
                                   </span>
                                 )}
                               </div>
                               {getDisplayNote(log) ? (
-                                <p className="mt-1 text-[12.5px] sm:text-[13px] font-medium text-ink-muted leading-relaxed">
+                                <p className="mt-1 text-xs sm:text-sm font-medium text-ink-muted leading-relaxed">
                                   {getDisplayNote(log)}
                                 </p>
                               ) : null}
@@ -2234,7 +2234,7 @@ export function HoldingLogs() {
                             <button
                               type="button"
                               onClick={() => startEditDate(log)}
-                              className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1 text-[11px] sm:text-[11.5px] font-medium text-ink-faint hover:text-brand hover:bg-brand/5 transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-medium text-ink-faint hover:text-brand hover:bg-brand/5 transition-colors cursor-pointer"
                               title="Edit Date / แตะเพื่อแก้ไขวันที่"
                             >
                               <time>
@@ -2246,7 +2246,7 @@ export function HoldingLogs() {
                               type="button"
                               onClick={() => setUndoTarget(log)}
                               aria-label={`Undo activity for ${log.holdingName}`}
-                              className="rounded-lg px-2 py-1 text-[11px] sm:text-[11.5px] font-bold text-loss/85 hover:text-loss hover:bg-loss/10 transition-colors cursor-pointer"
+                              className="rounded-lg px-2 py-1 text-xs font-bold text-loss/85 hover:text-loss hover:bg-loss/10 transition-colors cursor-pointer"
                             >
                               Undo
                             </button>
@@ -2295,7 +2295,7 @@ export function HoldingLogs() {
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <span
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[12px] font-bold"
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs font-bold"
                     style={{
                       color: ASSET_META[undoTarget.assetClass]?.color ?? '#6366f1',
                       background: `color-mix(in srgb, ${ASSET_META[undoTarget.assetClass]?.color ?? '#6366f1'} 14%, transparent)`,
@@ -2303,19 +2303,19 @@ export function HoldingLogs() {
                   >
                     {undoMeta.icon}
                   </span>
-                  <span className="font-bold text-[14px] text-ink truncate">{undoTarget.holdingName}</span>
+                  <span className="font-bold text-sm text-ink truncate">{undoTarget.holdingName}</span>
                   {undoTarget.ticker && undoTarget.ticker !== 'CASH' && undoTarget.ticker !== 'FIXED' && undoTarget.ticker !== 'DCA' && (
-                    <span className="rounded-md bg-surface px-1.5 py-0.5 text-[11px] font-medium text-ink-muted">
+                    <span className="rounded-md bg-surface px-1.5 py-0.5 text-xs font-medium text-ink-muted">
                       {undoTarget.ticker}
                     </span>
                   )}
                 </div>
-                <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${undoMeta.style}`}>
+                <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ${undoMeta.style}`}>
                   {undoMeta.label}
                 </span>
               </div>
-              <p className="text-[12.5px] font-medium text-ink-muted leading-relaxed">{getDisplayNote(undoTarget)}</p>
-              <time className="block text-[11px] text-ink-faint">
+              <p className="text-xs font-medium text-ink-muted leading-relaxed">{getDisplayNote(undoTarget)}</p>
+              <time className="block text-xs text-ink-faint">
                 {new Date(undoTarget.timestamp).toLocaleString('en-GB', {
                   dateStyle: 'medium',
                   timeStyle: 'short',
@@ -2362,20 +2362,20 @@ export function HoldingLogs() {
             <div className="rounded-2xl border border-line bg-surface-muted p-3.5 space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-bold text-[14px] text-ink truncate">
+                  <span className="font-bold text-sm text-ink truncate">
                     {editingDateLog.holdingName}
                   </span>
                   {editingDateLog.ticker && editingDateLog.ticker !== 'CASH' && editingDateLog.ticker !== 'FIXED' && editingDateLog.ticker !== 'DCA' && (
-                    <span className="rounded-md bg-surface px-1.5 py-0.5 text-[10.5px] font-medium text-ink-muted">
+                    <span className="rounded-md bg-surface px-1.5 py-0.5 text-xs font-medium text-ink-muted">
                       {editingDateLog.ticker}
                     </span>
                   )}
                 </div>
-                <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${getLogActionMeta(editingDateLog).style}`}>
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${getLogActionMeta(editingDateLog).style}`}>
                   {getLogActionMeta(editingDateLog).label}
                 </span>
               </div>
-              <p className="text-[12px] text-ink-muted truncate">
+              <p className="text-xs text-ink-muted truncate">
                 {getDisplayNote(editingDateLog)}
               </p>
             </div>
@@ -2389,14 +2389,14 @@ export function HoldingLogs() {
 
             {/* Time Picker */}
             <div>
-              <label className="block mb-1.5 text-[13px] font-semibold text-ink-soft">
+              <label className="block mb-1.5 text-sm font-semibold text-ink-soft">
                 เวลาที่ทำรายการ (Time)
               </label>
               <input
                 type="time"
                 value={editTimeValue}
                 onChange={(e) => setEditTimeValue(e.target.value)}
-                className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-[15px] text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15"
+                className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15"
               />
             </div>
           </div>

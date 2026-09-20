@@ -226,12 +226,12 @@ export function Debts() {
         {/* Card 1: Total Outstanding */}
         <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
           <div>
-            <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted truncate">หนี้คงค้างรวม</p>
-            <p className={`mt-1 font-display text-[17px] sm:text-[24px] font-extrabold tnum truncate ${totalOutstanding > 0 ? 'text-ink dark:text-white' : 'text-emerald-600 dark:text-emerald-400'}`}>
+            <p className="text-xs font-medium text-ink-muted truncate">หนี้คงค้างรวม</p>
+            <p className={`mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate ${totalOutstanding > 0 ? 'text-ink dark:text-white' : 'text-emerald-600 dark:text-emerald-400'}`}>
               {totalOutstanding > 0 ? `-${thb(totalOutstanding)}` : '฿0'}
             </p>
           </div>
-          <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+          <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
             {totalOutstanding > 0 ? `${activeDebts.length} รายการกำลังผ่อน` : '🎉 ปลอดหนี้ 100%'}
           </p>
         </Card>
@@ -239,13 +239,13 @@ export function Debts() {
         {/* Card 2: Total Monthly Payment */}
         <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
           <div>
-            <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted truncate">ภาระผ่อน/เดือน</p>
-            <p className="mt-1 font-display text-[17px] sm:text-[24px] font-extrabold tnum text-ink dark:text-white truncate">
+            <p className="text-xs font-medium text-ink-muted truncate">ภาระผ่อน/เดือน</p>
+            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum text-ink dark:text-white truncate">
               {totalMonthlyPayment > 0 ? thb(totalMonthlyPayment) : '฿0'}
-              <span className="text-[11px] sm:text-[12px] font-semibold text-ink-muted ml-0.5">/ด.</span>
+              <span className="text-xs font-semibold text-ink-muted ml-0.5">/ด.</span>
             </p>
           </div>
-          <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+          <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
             {activeDebts.filter((l) => l.monthlyPayment).length} รายการมีค่างวดประจำ
           </p>
         </Card>
@@ -253,12 +253,12 @@ export function Debts() {
         {/* Card 3: Paid Off Progress */}
         <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
           <div>
-            <p className="text-[11px] sm:text-[12px] font-medium text-ink-muted truncate">ผ่อนสำเร็จแล้ว</p>
-            <p className="mt-1 font-display text-[17px] sm:text-[24px] font-extrabold tnum text-emerald-600 dark:text-emerald-400 truncate">
+            <p className="text-xs font-medium text-ink-muted truncate">ผ่อนสำเร็จแล้ว</p>
+            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum text-emerald-600 dark:text-emerald-400 truncate">
               +{thb(totalPaidOffAmount)}
             </p>
           </div>
-          <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+          <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
             {completedDebts.length > 0 ? `ปลดหนี้ ${completedDebts.length} รายการ 🎉` : 'ยอดสะสมจากการผ่อน'}
           </p>
         </Card>
@@ -266,12 +266,12 @@ export function Debts() {
         {/* Card 4: Estimated Debt-Free Date */}
         <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
           <div>
-            <p className="text-[11px] sm:text-[12px] font-medium text-brand truncate">คาดว่าจะปลอดหนี้</p>
-            <p className="mt-1 font-display text-[15px] sm:text-[22px] font-extrabold text-ink dark:text-white tnum truncate">
+            <p className="text-xs font-medium text-brand truncate">คาดว่าจะปลอดหนี้</p>
+            <p className="mt-1 font-display text-base sm:text-xl font-extrabold text-ink dark:text-white tnum truncate">
               {overallDebtFreeEstimation ? overallDebtFreeEstimation.dateStr : 'ไม่มีหนี้ 🎉'}
             </p>
           </div>
-          <p className="mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] text-ink-muted truncate">
+          <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
             {overallDebtFreeEstimation ? overallDebtFreeEstimation.relativeStr : 'อิสรภาพการเงิน 100%'}
           </p>
         </Card>
@@ -284,45 +284,45 @@ export function Debts() {
           <button
             type="button"
             onClick={() => setStatusTab('active')}
-            className={`px-2.5 py-1 rounded-lg text-[11.5px] font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
               statusTab === 'active'
                 ? 'bg-amber-400 text-amber-950 dark:bg-amber-400 dark:text-amber-950 shadow-xs'
                 : 'text-ink-muted hover:text-ink dark:hover:text-white'
             }`}
           >
             <span>กำลังผ่อน</span>
-            <span className="text-[10px] opacity-85">({activeDebts.length})</span>
+            <span className="text-xs opacity-85">({activeDebts.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setStatusTab('completed')}
-            className={`px-2.5 py-1 rounded-lg text-[11.5px] font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
               statusTab === 'completed'
                 ? 'bg-emerald-500 text-white shadow-xs'
                 : 'text-ink-muted hover:text-ink dark:hover:text-white'
             }`}
           >
             <span>ผ่อนสำเร็จ</span>
-            <span className="text-[10px] opacity-85">({completedDebts.length})</span>
+            <span className="text-xs opacity-85">({completedDebts.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setStatusTab('all')}
-            className={`px-2.5 py-1 rounded-lg text-[11.5px] font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
               statusTab === 'all'
                 ? 'bg-ink text-surface dark:bg-white dark:text-ink-dark shadow-xs'
                 : 'text-ink-muted hover:text-ink dark:hover:text-white'
             }`}
           >
             <span>ทั้งหมด</span>
-            <span className="text-[10px] opacity-85">({liabilities.length})</span>
+            <span className="text-xs opacity-85">({liabilities.length})</span>
           </button>
         </div>
 
         {/* Category Filter Pills (Slim) */}
-        <div className="flex flex-wrap items-center gap-1 text-[11px]">
+        <div className="flex flex-wrap items-center gap-1 text-xs">
           <button
             type="button"
             onClick={() => setActiveCategoryFilter('all')}
@@ -353,7 +353,7 @@ export function Debts() {
               >
                 <CategoryIcon category={catKey} className="h-3 w-3" />
                 <span>{meta.label}</span>
-                <span className="text-[9.5px] opacity-75">({count})</span>
+                <span className="text-xs opacity-75">({count})</span>
               </button>
             )
           })}
@@ -366,14 +366,14 @@ export function Debts() {
           <div className="inline-grid h-16 w-16 place-items-center rounded-3xl bg-brand/10 text-brand dark:text-brand-ink mb-3">
             <ShoppingBagIcon className="h-8 w-8" />
           </div>
-          <h3 className="font-display text-[18px] font-bold text-ink dark:text-white">
+          <h3 className="font-display text-lg font-bold text-ink dark:text-white">
             {statusTab === 'active'
               ? 'ไม่มีรายการหนี้ที่กำลังผ่อน (Debt Free 🎉)'
               : statusTab === 'completed'
               ? 'ยังไม่มีรายการที่ผ่อนสำเร็จ'
               : 'ยังไม่มีรายการหนี้สิน'}
           </h3>
-          <p className="text-[13px] text-ink-muted max-w-md mx-auto mt-1">
+          <p className="text-sm text-ink-muted max-w-md mx-auto mt-1">
             {statusTab === 'active'
               ? 'สุดยอดมาก! คุณไม่มีภาระผ่อนคงค้าง หรือหากต้องการบันทึกการผ่อนสินค้า 0% ชิ้นใหม่ สามารถกดเพิ่มได้เลย'
               : 'บันทึกและจัดการผ่อนสินค้า 0% สินเชื่อบ้าน รถ หรือกู้ยืมเพื่อเห็นภาพความมั่งคั่งสุทธิ'}
@@ -431,14 +431,14 @@ export function Debts() {
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <h3 className="font-bold text-[13.5px] sm:text-[15px] text-ink dark:text-white truncate">
+                        <h3 className="font-bold text-sm sm:text-base text-ink dark:text-white truncate">
                           {l.name}
                         </h3>
-                        <span className={`text-[9.5px] sm:text-[10px] font-semibold px-2 py-0.2 rounded-full ${dueInfo.badgeClass}`}>
+                        <span className={`text-xs font-semibold px-2 py-0.2 rounded-full ${dueInfo.badgeClass}`}>
                           {dueInfo.label}
                         </span>
                       </div>
-                      <p className="text-[10.5px] sm:text-[11.5px] text-ink-muted truncate mt-0.5">
+                      <p className="text-xs text-ink-muted truncate mt-0.5">
                         {meta.label} {l.dueDay ? `· ทุกวันที่ ${l.dueDay}` : ''}
                       </p>
                     </div>
@@ -446,7 +446,7 @@ export function Debts() {
 
                   {/* Header Right: Balance & Actions */}
                   <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                    <span className="font-display font-bold text-[13px] sm:text-[15px] text-ink dark:text-white tnum">
+                    <span className="font-display font-bold text-sm sm:text-base text-ink dark:text-white tnum">
                       -{thb(l.balance)}
                     </span>
 
@@ -486,22 +486,22 @@ export function Debts() {
                     <div className="rounded-xl bg-surface-muted/50 dark:bg-white/[0.03] p-2 sm:p-3 border border-line/40 dark:border-white/5 text-center">
                       <div className="grid grid-cols-3 gap-1.5 pb-2 border-b border-line/40 dark:border-white/5">
                         <div>
-                          <span className="text-[10px] sm:text-[11px] font-medium text-ink-muted block">จ่ายไปแล้ว</span>
-                          <p className="font-display font-bold text-[12px] sm:text-[13.5px] tnum text-emerald-600 dark:text-emerald-400 truncate">
+                          <span className="text-xs font-medium text-ink-muted block">จ่ายไปแล้ว</span>
+                          <p className="font-display font-bold text-xs sm:text-sm tnum text-emerald-600 dark:text-emerald-400 truncate">
                             {thb(paidAmount)}
                           </p>
                         </div>
 
                         <div>
-                          <span className="text-[10px] sm:text-[11px] font-medium text-ink-muted block">คงเหลือ</span>
-                          <p className={`font-display font-extrabold text-[12px] sm:text-[13.5px] tnum truncate ${l.balance > 0 ? 'text-ink dark:text-white' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                          <span className="text-xs font-medium text-ink-muted block">คงเหลือ</span>
+                          <p className={`font-display font-extrabold text-xs sm:text-sm tnum truncate ${l.balance > 0 ? 'text-ink dark:text-white' : 'text-emerald-600 dark:text-emerald-400'}`}>
                             {l.balance > 0 ? `-${thb(l.balance)}` : '฿0'}
                           </p>
                         </div>
 
                         <div>
-                          <span className="text-[10px] sm:text-[11px] font-medium text-ink-muted block">เงินต้น</span>
-                          <p className="font-display font-bold text-[12px] sm:text-[13.5px] tnum text-ink dark:text-white truncate">
+                          <span className="text-xs font-medium text-ink-muted block">เงินต้น</span>
+                          <p className="font-display font-bold text-xs sm:text-sm tnum text-ink dark:text-white truncate">
                             {thb(originalBal)}
                           </p>
                         </div>
@@ -509,22 +509,22 @@ export function Debts() {
 
                       <div className="grid grid-cols-3 gap-1.5 pt-2">
                         <div>
-                          <span className="text-[10px] sm:text-[11px] font-medium text-ink-muted block">ค่างวดต่อเดือน</span>
-                          <p className="font-display font-bold text-[12px] sm:text-[13.5px] tnum text-ink dark:text-white truncate">
+                          <span className="text-xs font-medium text-ink-muted block">ค่างวดต่อเดือน</span>
+                          <p className="font-display font-bold text-xs sm:text-sm tnum text-ink dark:text-white truncate">
                             {l.monthlyPayment ? thb(l.monthlyPayment) : '-'}
                           </p>
                         </div>
 
                         <div>
-                          <span className="text-[10px] sm:text-[11px] font-medium text-ink-muted block">จ่ายล่าสุด</span>
-                          <p className="font-display font-semibold text-[11px] sm:text-[12.5px] text-ink dark:text-white truncate">
+                          <span className="text-xs font-medium text-ink-muted block">จ่ายล่าสุด</span>
+                          <p className="font-display font-semibold text-xs text-ink dark:text-white truncate">
                             {formatThaiDate(l.lastPaidDate)}
                           </p>
                         </div>
 
                         <div>
-                          <span className="text-[10px] sm:text-[11px] font-medium text-ink-muted block">เจ้าหนี้</span>
-                          <p className="font-display font-semibold text-[11px] sm:text-[12.5px] text-ink dark:text-white truncate">
+                          <span className="text-xs font-medium text-ink-muted block">เจ้าหนี้</span>
+                          <p className="font-display font-semibold text-xs text-ink dark:text-white truncate">
                             {l.lender || '-'}
                           </p>
                         </div>
@@ -533,7 +533,7 @@ export function Debts() {
 
                     {/* 2. Progress Bar */}
                     <div className="space-y-1">
-                      <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-semibold text-ink-muted">
+                      <div className="flex items-center justify-between text-xs font-semibold text-ink-muted">
                         <span>ความคืบหน้า ({percent}%)</span>
                         <span>{isCompleted ? 'ผ่อนครบทุกงวดแล้ว 🎉' : `เหลืออีก ${thb(l.balance)}`}</span>
                       </div>
@@ -550,9 +550,9 @@ export function Debts() {
                     {/* 3. ตารางการผ่อนชำระ (Visual Installment Pills Matrix - 4 ต่อแถวบนมือถือ) */}
                     {totalInst > 0 && (
                       <div className="space-y-1.5 pt-0.5">
-                        <div className="flex items-center justify-between text-[11px] sm:text-[12px]">
+                        <div className="flex items-center justify-between text-xs">
                           <span className="font-bold text-ink dark:text-white">ตารางการผ่อนชำระ</span>
-                          <span className="text-ink-muted font-medium text-[10.5px]">
+                          <span className="text-ink-muted font-medium text-xs">
                             {paidInst}/{totalInst} (เหลือ {remainingInst} งวด)
                           </span>
                         </div>
@@ -582,7 +582,7 @@ export function Debts() {
                                     ? `งวดที่ ${termNum} (งวดถัดไป - คลิกเพื่อจ่าย)`
                                     : `งวดที่ ${termNum} (ยังไม่ถึงกำหนด)`
                                 }
-                                className={`flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer select-none ${
+                                className={`flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg text-xs font-bold border transition-all cursor-pointer select-none ${
                                   isPaid
                                     ? 'bg-[#b3cf82]/40 dark:bg-[#b3cf82]/25 border-[#9abf60]/60 text-[#2a4512] dark:text-[#d3ebb0] hover:brightness-95'
                                     : isNext
@@ -591,7 +591,7 @@ export function Debts() {
                                 }`}
                               >
                                 <span
-                                  className={`flex h-3.5 w-3.5 items-center justify-center rounded-full text-[8.5px] font-extrabold shrink-0 ${
+                                  className={`flex h-3.5 w-3.5 items-center justify-center rounded-full text-xs font-extrabold shrink-0 ${
                                     isPaid
                                       ? 'bg-[#7a9d3e] text-white'
                                       : isNext
@@ -601,7 +601,7 @@ export function Debts() {
                                 >
                                   {isPaid ? '✓' : termNum}
                                 </span>
-                                <span className="tnum font-semibold text-[9.5px] sm:text-[10px] truncate">
+                                <span className="tnum font-semibold text-xs truncate">
                                   {pillAmount > 0 ? (pillAmount >= 1000 ? `${(pillAmount / 1000).toFixed(pillAmount % 1000 === 0 ? 0 : 1)}k` : pillAmount) : '0'}
                                 </span>
                               </button>
@@ -613,7 +613,7 @@ export function Debts() {
 
                     {/* 4. Estimated Payoff Date */}
                     {isInst && !isCompleted && (
-                      <div className="rounded-xl bg-surface-muted/40 dark:bg-white/[0.02] px-3 py-1.5 text-[10.5px] sm:text-[11px] text-ink-muted flex items-center justify-between">
+                      <div className="rounded-xl bg-surface-muted/40 dark:bg-white/[0.02] px-3 py-1.5 text-xs text-ink-muted flex items-center justify-between">
                         <span>วันที่คาดว่าจะผ่อนหมด :</span>
                         <strong className="text-ink dark:text-white font-bold">{payoff.dateStr}</strong>
                       </div>
@@ -625,14 +625,14 @@ export function Debts() {
                         variant="secondary"
                         size="sm"
                         onClick={() => setHistoryModalLiability(l)}
-                        className="w-full text-[11.5px] sm:text-[12px] font-semibold py-1.5"
+                        className="w-full text-xs font-semibold py-1.5"
                       >
                         <ClockIcon className="h-3.5 w-3.5 mr-1 text-ink-muted" />
                         ประวัติการชำระ
                       </Button>
 
                       {isCompleted ? (
-                        <div className="flex items-center justify-center gap-1 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold text-[11.5px] sm:text-[12px] py-1.5">
+                        <div className="flex items-center justify-center gap-1 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold text-xs py-1.5">
                           <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
                           <span>ปลดหนี้แล้ว 🎉</span>
                         </div>
@@ -641,7 +641,7 @@ export function Debts() {
                           variant="secondary"
                           size="sm"
                           onClick={() => handleUndo(l)}
-                          className="w-full text-[11.5px] sm:text-[12px] font-semibold py-1.5 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                          className="w-full text-xs font-semibold py-1.5 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
                         >
                           <CheckIcon className="h-3.5 w-3.5 mr-1" strokeWidth={2.4} />
                           จ่ายแล้ว (Undo)
@@ -651,7 +651,7 @@ export function Debts() {
                           variant="primary"
                           size="sm"
                           onClick={() => handlePay(l)}
-                          className="w-full text-[11.5px] sm:text-[12px] font-bold py-1.5 bg-amber-400 hover:bg-amber-500 text-amber-950 dark:bg-amber-400 dark:text-amber-950 shadow-xs"
+                          className="w-full text-xs font-bold py-1.5 bg-amber-400 hover:bg-amber-500 text-amber-950 dark:bg-amber-400 dark:text-amber-950 shadow-xs"
                         >
                           <CheckIcon className="h-3.5 w-3.5 mr-1" strokeWidth={2.4} />
                           จ่ายค่างวด {l.monthlyPayment ? `(${thb(l.monthlyPayment)})` : ''}
@@ -683,20 +683,20 @@ export function Debts() {
       >
         <div className="space-y-3 py-1">
           {historyLogs.length === 0 ? (
-            <div className="py-8 text-center text-ink-muted text-[13px]">
+            <div className="py-8 text-center text-ink-muted text-sm">
               ยังไม่มีประวัติการทำรายการสำหรับหนี้สินรายการนี้
             </div>
           ) : (
             <div className="divide-y divide-line/60 dark:divide-white/5 max-h-[60vh] overflow-y-auto">
               {historyLogs.map((log: HoldingLog) => (
-                <div key={log.id} className="py-3 flex items-start justify-between gap-3 text-[12.5px]">
+                <div key={log.id} className="py-3 flex items-start justify-between gap-3 text-xs">
                   <div>
                     <p className="font-semibold text-ink dark:text-white">{log.note}</p>
-                    <p className="text-[11px] text-ink-faint mt-0.5">
+                    <p className="text-xs text-ink-faint mt-0.5">
                       {new Date(log.timestamp).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })}
                     </p>
                   </div>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-surface-muted text-ink-muted uppercase">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-surface-muted text-ink-muted uppercase">
                     {log.action}
                   </span>
                 </div>
@@ -723,7 +723,7 @@ export function Debts() {
           </div>
         }
       >
-        <p className="text-[13px] text-ink-muted py-2">
+        <p className="text-sm text-ink-muted py-2">
           คุณแน่ใจหรือไม่ว่าต้องการลบรายการ &ldquo;<strong className="text-ink dark:text-white">{itemToDelete?.name}</strong>&rdquo; ออกจากระบบ? การลบนี้จะไม่สามารถย้อนคืนได้
         </p>
       </Modal>

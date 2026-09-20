@@ -179,21 +179,21 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
             <AssetLogo name={holding.name} assetClass={holding.assetClass} size="md" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-display font-bold text-[15px] text-ink">{holding.ticker}</span>
+                <span className="font-display font-bold text-base text-ink">{holding.ticker}</span>
                 {assetMeta && (
                   <span
-                    className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                    className="rounded-full px-2 py-0.5 text-xs font-semibold"
                     style={{ backgroundColor: `${assetMeta.color}18`, color: assetMeta.color }}
                   >
                     {assetMeta.label}
                   </span>
                 )}
               </div>
-              <p className="truncate text-[12.5px] text-ink-muted">{holding.name}</p>
+              <p className="truncate text-xs text-ink-muted">{holding.name}</p>
             </div>
             <div className="text-right">
-              <span className="text-[11px] font-medium text-ink-muted">จำนวนที่มี</span>
-              <p className="font-display text-[13px] font-bold text-ink">
+              <span className="text-xs font-medium text-ink-muted">จำนวนที่มี</span>
+              <p className="font-display text-sm font-bold text-ink">
                 {(holding.units ?? holding.totalUnits ?? 0).toLocaleString()} {holding.assetClass === 'fund' ? 'หน่วย' : 'หุ้น'}
               </p>
             </div>
@@ -245,7 +245,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
 
         {/* Summary & Withholding Tax Card */}
         <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-3">
-          <div className="flex items-center justify-between text-[13px]">
+          <div className="flex items-center justify-between text-sm">
             <span className="text-ink-muted">ยอดปันผลรวม</span>
             <span className="font-semibold text-ink tnum">
               {grossAmount > 0 ? formatCur(grossAmount) : `${currencyPrefix}0.00`}
@@ -261,11 +261,11 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
                 onChange={(e) => setDeductTax(e.target.checked)}
                 className="h-4 w-4 rounded-md border-line text-brand focus:ring-brand/30"
               />
-              <span className="text-[12.5px] font-medium text-ink">
+              <span className="text-xs font-medium text-ink">
                 หักภาษี ณ ที่จ่าย 10%
               </span>
             </label>
-            <span className="text-[12.5px] font-semibold text-rose-500 tnum">
+            <span className="text-xs font-semibold text-rose-500 tnum">
               {taxAmount > 0 ? `-${formatCur(taxAmount)}` : `${currencyPrefix}0.00`}
             </span>
           </div>
@@ -273,11 +273,11 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
           {/* Net Amount Box */}
           <div className="flex items-center justify-between border-t border-emerald-500/20 pt-2.5">
             <div>
-              <span className="text-[13.5px] font-bold text-ink">เงินเข้าบัญชีสุทธิ</span>
-              <p className="text-[11px] text-ink-muted">ยอดเงินจริงที่จะได้รับ</p>
+              <span className="text-sm font-bold text-ink">เงินเข้าบัญชีสุทธิ</span>
+              <p className="text-xs text-ink-muted">ยอดเงินจริงที่จะได้รับ</p>
             </div>
             <div className="text-right">
-              <span className="font-display text-[22px] font-extrabold text-emerald-600 dark:text-emerald-400 tnum">
+              <span className="font-display text-xl font-extrabold text-emerald-600 dark:text-emerald-400 tnum">
                 {netAmount > 0 ? formatCur(netAmount) : `${currencyPrefix}0.00`}
               </span>
             </div>

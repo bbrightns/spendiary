@@ -17,7 +17,7 @@ export function FilterChip({
     <button
       type="button"
       aria-pressed={active}
-      className={`shrink-0 inline-flex items-center justify-center gap-1.5 rounded-full px-3 h-[30px] text-[12px] font-semibold transition-colors cursor-pointer select-none leading-none ${
+      className={`shrink-0 inline-flex items-center justify-center gap-1.5 rounded-full px-3 h-[30px] text-xs font-semibold transition-colors cursor-pointer select-none leading-none ${
         active
           ? 'bg-ink text-white dark:bg-[#4f46e5] shadow-xs'
           : 'bg-surface-muted text-ink-soft hover:text-ink'
@@ -27,7 +27,7 @@ export function FilterChip({
       <span>{children}</span>
       {count !== undefined && (
         <span
-          className={`ml-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-bold leading-none ${
+          className={`ml-0.5 rounded-full px-1.5 py-0.5 text-xs font-bold leading-none ${
             active ? 'bg-white/20 text-white' : 'bg-surface text-ink-muted'
           }`}
         >

@@ -36,7 +36,7 @@ function ToastElement({ toast, onDismiss }: { toast: ToastItem; onDismiss: () =>
       <div className={`grid h-7 w-7 shrink-0 place-items-center rounded-xl ${config.badge}`}>
         {config.icon}
       </div>
-      <p className="min-w-0 flex-1 text-[13.5px] font-semibold text-ink leading-snug">
+      <p className="min-w-0 flex-1 text-sm font-semibold text-ink leading-snug">
         {toast.message}
       </p>
       <button

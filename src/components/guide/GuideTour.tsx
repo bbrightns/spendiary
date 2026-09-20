@@ -214,10 +214,10 @@ export function GuideTour({
         {/* Header Bar */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase bg-brand/10 text-brand border border-brand/20 dark:bg-[#4f46e5]/20 dark:text-[#c7d2fe] dark:border-[#4f46e5]/30">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase bg-brand/10 text-brand border border-brand/20 dark:bg-[#4f46e5]/20 dark:text-[#c7d2fe] dark:border-[#4f46e5]/30">
               {currentStep.badge || 'แนะนำ'}
             </span>
-            <span className="text-[12px] font-medium text-ink-muted">
+            <span className="text-xs font-medium text-ink-muted">
               {currentStepIndex + 1} จาก {steps.length}
             </span>
           </div>
@@ -240,7 +240,7 @@ export function GuideTour({
         </h3>
 
         {/* Description */}
-        <p className="text-[13.5px] leading-relaxed text-ink-muted mb-5">
+        <p className="text-sm leading-relaxed text-ink-muted mb-5">
           {currentStep.description}
         </p>
 

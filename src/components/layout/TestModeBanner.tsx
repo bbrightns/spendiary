@@ -16,13 +16,13 @@ export function TestModeBanner() {
         <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-950/15 shrink-0 text-amber-950">
           <FlaskIcon className="w-3.5 h-3.5" />
         </span>
-        <span className="inline-flex items-center justify-center h-5 px-1.5 rounded bg-amber-950/15 text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider text-amber-950 leading-none shrink-0">
+        <span className="inline-flex items-center justify-center h-5 px-1.5 rounded bg-amber-950/15 text-xs font-black uppercase tracking-wider text-amber-950 leading-none shrink-0">
           Test Mode
         </span>
-        <span className="hidden sm:inline font-medium text-amber-950/90 text-[11.5px] sm:text-[12px] leading-none truncate">
+        <span className="hidden sm:inline font-medium text-amber-950/90 text-xs leading-none truncate">
           Sandbox environment — Simulated mock data, changes will not affect real accounts
         </span>
-        <span className="sm:hidden font-medium text-amber-950/90 text-[11.5px] sm:text-[12px] leading-none truncate">
+        <span className="sm:hidden font-medium text-amber-950/90 text-xs leading-none truncate">
           Mock data only, changes are not saved
         </span>
       </div>
@@ -30,7 +30,7 @@ export function TestModeBanner() {
       <button
         type="button"
         onClick={() => void logout()}
-        className="inline-flex items-center justify-center gap-1.5 shrink-0 h-[26px] px-2.5 rounded-md text-[11px] sm:text-[11.5px] font-bold leading-none bg-amber-950/15 hover:bg-amber-950/25 active:scale-95 text-amber-950 border border-amber-950/20 transition-all cursor-pointer"
+        className="inline-flex items-center justify-center gap-1.5 shrink-0 h-[26px] px-2.5 rounded-md text-xs font-bold leading-none bg-amber-950/15 hover:bg-amber-950/25 active:scale-95 text-amber-950 border border-amber-950/20 transition-all cursor-pointer"
         title="Exit test mode and return to sign in"
       >
         <LogOutIcon className="w-3.5 h-3.5 shrink-0" />
