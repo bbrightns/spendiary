@@ -201,14 +201,14 @@ export function Dashboard() {
                 type="button"
                 onClick={() => navigate('/debts')}
                 aria-label={`View ${debtActions.length} debts due for payment`}
-                className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[12.5px] font-semibold transition-all active:scale-95 cursor-pointer shadow-xs ${
+                className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer shadow-xs ${
                   hasOverdueDebts
                     ? 'border-rose-500/30 bg-rose-500/15 text-rose-700 dark:text-rose-300 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600'
                     : 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-600'
                 }`}
               >
                 <span
-                  className={`flex h-4.5 w-4.5 items-center justify-center rounded-full text-[10.5px] font-bold text-white ${
+                  className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white ${
                     hasOverdueDebts ? 'bg-rose-500 animate-pulse' : 'bg-amber-500'
                   }`}
                 >
@@ -216,8 +216,8 @@ export function Dashboard() {
                 </span>
                 <span>
                   {hasOverdueDebts
-                    ? `${debtActions.length} ${debtActions.length === 1 ? 'หนี้เลยกำหนด' : 'หนี้เลยกำหนด'}`
-                    : `${debtActions.length} ${debtActions.length === 1 ? 'หนี้รอจ่ายรอบนี้' : 'หนี้รอจ่ายรอบนี้'}`}
+                    ? `${debtActions.length} หนี้เลยกำหนด`
+                    : `${debtActions.length} หนี้รอจ่ายรอบนี้`}
                 </span>
               </button>
             </div>
