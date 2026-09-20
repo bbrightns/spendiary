@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -27,6 +28,24 @@ export function Dividends() {
   const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null)
   const [selectedDps, setSelectedDps] = useState<number | undefined>(undefined)
   const [editingHolding, setEditingHolding] = useState<Holding | null>(null)
+
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  useEffect(() => {
+    if (searchParams.get('action') === 'new') {
+      const firstDividendHolding = (data.holdings ?? []).find((h) => h.paysDividend)
+      if (firstDividendHolding) {
+        setSelectedHolding(firstDividendHolding)
+        setModalOpen(true)
+      } else if (data.holdings.length > 0) {
+        setSelectedHolding(data.holdings[0])
+        setModalOpen(true)
+      }
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('action')
+      setSearchParams(newParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams, data.holdings])
 
   const [deletingRecord, setDeletingRecord] = useState<DividendRecord | null>(null)
   const [yearFilter, setYearFilter] = useState<string>('all')

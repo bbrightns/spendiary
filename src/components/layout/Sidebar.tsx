@@ -3,7 +3,8 @@ import { Link, useLocation } from 'react-router-dom'
 import { cashflowSubItems, navItems, settingsItem, strategySubItems } from './nav'
 import { useData } from '../../store/DataContext'
 import { useTheme } from '../../hooks/useTheme'
-import { ChevronDownIcon } from '../icons'
+import { ChevronDownIcon, SearchIcon } from '../icons'
+import { openCommandPalette } from '../ui/CommandPalette'
 
 import { isDividendReceivedThisMonth, isLiabilityActionableThisMonth, shouldConfirmBuy } from '../../lib/calc'
 
@@ -90,6 +91,21 @@ export function Sidebar() {
             </span>
           )}
         </div>
+
+        {/* Quick Search & Command Bar Trigger */}
+        <button
+          type="button"
+          onClick={openCommandPalette}
+          className="mb-3 flex items-center justify-between w-full rounded-xl border border-line bg-surface-muted/60 hover:bg-surface-muted dark:hover:bg-surface-muted/80 px-3 py-2 text-left text-xs font-medium text-ink-muted hover:text-ink transition-all shadow-2xs group cursor-pointer"
+        >
+          <div className="flex items-center gap-2">
+            <SearchIcon className="h-4 w-4 text-ink-faint group-hover:text-brand transition-colors" />
+            <span className="font-semibold text-ink-soft">Search / Actions...</span>
+          </div>
+          <kbd className="inline-flex items-center gap-0.5 rounded-md bg-surface border border-line px-1.5 py-0.5 font-mono text-xs text-ink-muted shadow-2xs">
+            <span>⌘</span>K
+          </kbd>
+        </button>
 
         {/* Navigation Items */}
         <nav className="flex flex-col gap-1">

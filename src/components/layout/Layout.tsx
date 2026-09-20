@@ -4,7 +4,8 @@ import { BottomNav } from './BottomNav'
 import { Sidebar } from './Sidebar'
 import { Footer } from './Footer'
 import { TestModeBanner } from './TestModeBanner'
-import { ClockIcon, SettingsIcon } from '../icons'
+import { ClockIcon, SettingsIcon, SearchIcon } from '../icons'
+import { CommandPalette, openCommandPalette } from '../ui/CommandPalette'
 import { useData } from '../../store/DataContext'
 import { useScrollVisibility } from '../../hooks/useScrollVisibility'
 
@@ -15,6 +16,9 @@ export function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className={`min-h-dvh bg-transparent lg:dark:bg-canvas relative flex flex-col ${isTestMode ? 'pt-9' : ''}`}>
+      {/* Global Command Palette */}
+      <CommandPalette />
+
       {/* Test Mode Global Warning Banner */}
       <TestModeBanner />
 
@@ -49,6 +53,15 @@ export function Layout({ children }: { children: ReactNode }) {
           {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
         </p>
         <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={openCommandPalette}
+            aria-label="Quick Search / Command Palette"
+            title="Search (Cmd+K)"
+            className="grid h-9 w-9 place-items-center rounded-xl text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer"
+          >
+            <SearchIcon className="h-[18.5px] w-[18.5px]" />
+          </button>
           <NavLink
             to="/logs"
             aria-label="Activity Logs"

@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useRef, useState, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
@@ -369,6 +369,18 @@ export function DcaPlanner() {
   // DCA form
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<DcaPlan | null>(null)
+
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  useEffect(() => {
+    if (searchParams.get('action') === 'new') {
+      setEditing(null)
+      setFormOpen(true)
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('action')
+      setSearchParams(newParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   // Confirm buy form
   const [confirmOpen, setConfirmOpen] = useState(false)

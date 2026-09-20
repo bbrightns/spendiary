@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -97,6 +98,18 @@ export function Debts() {
   const [historyModalLiability, setHistoryModalLiability] = useState<Liability | null>(null)
   const [itemToDelete, setItemToDelete] = useState<Liability | null>(null)
 
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  useEffect(() => {
+    if (searchParams.get('action') === 'new') {
+      setEditingLiabilityId(null)
+      setLiabilitiesModalOpen(true)
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('action')
+      setSearchParams(newParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
+
   const liabilities = data.liabilities ?? []
 
   // Metrics
@@ -171,7 +184,10 @@ export function Debts() {
 
   const handlePay = (l: Liability) => {
     payLiabilityInstallment(l.id)
-    showToast(`บันทึกชำระงวด "${l.name}" เรียบร้อยแล้ว`, 'success')
+    showToast(`บันทึกชำระงวด "${l.name}" เรียบร้อยแล้ว`, 'success', {
+      label: 'เลิกทำ (Undo)',
+      onClick: () => undoLiabilityPayment(l.id),
+    })
   }
 
   const handleUndo = (l: Liability) => {

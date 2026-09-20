@@ -2,15 +2,21 @@ import { createContext, useContext, useState, useCallback, type ReactNode } from
 
 export type ToastType = 'success' | 'info' | 'error' | 'warn'
 
+export interface ToastAction {
+  label: string
+  onClick: () => void
+}
+
 export interface ToastItem {
   id: string
   message: string
   type: ToastType
+  action?: ToastAction
 }
 
 interface ToastContextValue {
   toasts: ToastItem[]
-  showToast: (message: string, type?: ToastType) => void
+  showToast: (message: string, type?: ToastType, action?: ToastAction) => void
   dismissToast: (id: string) => void
 }
 
@@ -23,14 +29,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
-  const showToast = useCallback((message: string, type: ToastType = 'success') => {
+  const showToast = useCallback((message: string, type: ToastType = 'success', action?: ToastAction) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-    const newToast: ToastItem = { id, message, type }
+    const newToast: ToastItem = { id, message, type, action }
     setToasts((prev) => [...prev, newToast])
 
+    const duration = action ? 6000 : 3500
     setTimeout(() => {
       dismissToast(id)
-    }, 3500)
+    }, duration)
   }, [dismissToast])
 
   return (

@@ -454,3 +454,21 @@ export function ArrowUpRightIcon(p: IconProps) {
     </svg>
   )
 }
+
+export function CommandIcon(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
+    </svg>
+  )
+}
+
+export function KeyboardIcon(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <rect width="20" height="16" x="2" y="4" rx="2" />
+      <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10" />
+    </svg>
+  )
+}
+

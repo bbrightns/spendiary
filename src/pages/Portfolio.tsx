@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
@@ -85,6 +85,22 @@ export function Portfolio() {
   const [viewMode, setViewMode] = useState<'list' | 'group'>('list')
   const [donutMode, setDonutMode] = useState<'class' | 'group'>('class')
   const [copied, setCopied] = useState(false)
+
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  useEffect(() => {
+    if (searchParams.get('action') === 'new') {
+      setEditing(null)
+      setFormOpen(true)
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('action')
+      setSearchParams(newParams, { replace: true })
+    }
+    const qSearch = searchParams.get('search')
+    if (qSearch) {
+      setSearch(qSearch)
+    }
+  }, [searchParams, setSearchParams])
 
   const handleCopyMarkdown = async () => {
     try {

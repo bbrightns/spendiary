@@ -18,13 +18,10 @@ const Rebalance = lazy(() => import('./pages/Rebalance').then(m => ({ default: m
 const Dividends = lazy(() => import('./pages/Dividends').then(m => ({ default: m.Dividends })))
 const Debts = lazy(() => import('./pages/Debts').then(m => ({ default: m.Debts })))
 const CashLiquidity = lazy(() => import('./pages/CashLiquidity').then(m => ({ default: m.CashLiquidity })))
+import { PageSkeleton } from './components/ui/PageSkeleton'
 
 function PageLoadingFallback() {
-  return (
-    <div className="flex min-h-[40vh] items-center justify-center">
-      <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand border-t-transparent" />
-    </div>
-  )
+  return <PageSkeleton />
 }
 
 // 💡 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้

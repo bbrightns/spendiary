@@ -39,6 +39,18 @@ function ToastElement({ toast, onDismiss }: { toast: ToastItem; onDismiss: () =>
       <p className="min-w-0 flex-1 text-sm font-semibold text-ink leading-snug">
         {toast.message}
       </p>
+      {toast.action && (
+        <button
+          type="button"
+          onClick={() => {
+            toast.action?.onClick()
+            onDismiss()
+          }}
+          className="shrink-0 rounded-xl bg-brand text-white dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] hover:bg-brand-ink px-3 py-1 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
+        >
+          {toast.action.label}
+        </button>
+      )}
       <button
         type="button"
         onClick={onDismiss}

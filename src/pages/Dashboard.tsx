@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useData } from '../store/DataContext'
+import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -52,6 +53,7 @@ const CASH_COLORS = [
 
 export function Dashboard() {
   const { data, recordNetWorthSnapshot, usdThb, payLiabilityInstallment, undoLiabilityPayment } = useData()
+  const { showToast } = useToast()
   const navigate = useNavigate()
   const [liabilitiesOpen, setLiabilitiesOpen] = useState(false)
   const [selectedLiabilityId, setSelectedLiabilityId] = useState<string | null>(null)
@@ -863,18 +865,22 @@ export function Dashboard() {
                                     </button>
                                   </div>
                                 ) : (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      payLiabilityInstallment(l.id)
-                                    }}
-                                    aria-label={`Pay installment for ${l.name}`}
-                                    className="inline-flex items-center gap-1 rounded-lg bg-ink text-white hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] px-2.5 py-0.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
-                                  >
-                                    <CheckIcon className="h-3 w-3" strokeWidth={2.5} />
-                                    <span>จ่ายงวดนี้</span>
-                                  </button>
+                                   <button
+                                     type="button"
+                                     onClick={(e) => {
+                                       e.stopPropagation()
+                                       payLiabilityInstallment(l.id)
+                                       showToast(`บันทึกชำระงวด "${l.name}" เรียบร้อยแล้ว`, 'success', {
+                                         label: 'เลิกทำ (Undo)',
+                                         onClick: () => undoLiabilityPayment(l.id),
+                                       })
+                                     }}
+                                     aria-label={`Pay installment for ${l.name}`}
+                                     className="inline-flex items-center gap-1 rounded-lg bg-ink text-white hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] px-2.5 py-0.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
+                                   >
+                                     <CheckIcon className="h-3 w-3" strokeWidth={2.5} />
+                                     <span>จ่ายงวดนี้</span>
+                                   </button>
                                 )}
                               </div>
                             )}

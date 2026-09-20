@@ -1,4 +1,5 @@
-import { useState, useMemo, Fragment } from 'react'
+import { useState, useMemo, useEffect, Fragment } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -62,6 +63,18 @@ export function CashLiquidity() {
   const [accountToEdit, setAccountToEdit] = useState<CashAccount | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [accountToDelete, setAccountToDelete] = useState<CashAccount | null>(null)
+
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  useEffect(() => {
+    if (searchParams.get('action') === 'new') {
+      setAccountToEdit(null)
+      setIsEditModalOpen(true)
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('action')
+      setSearchParams(newParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   const rate = usdThb && usdThb > 0 ? usdThb : 35
   const accounts = data.cashAccounts ?? []
