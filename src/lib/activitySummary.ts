@@ -444,11 +444,11 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
  * ──────────────────────────────────────────────────────────────────────────── */
 
 export const MONTH_LABELS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
 ]
 
-const MONTH_SHORT = MONTH_LABELS.map((m) => m.slice(0, 3))
+const MONTH_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
 
 /** Which slice of history the Summary page is looking at. */
 export interface LogPeriod {
@@ -483,8 +483,8 @@ export function resolvePeriodRange(period: LogPeriod): { start: Date; end: Date 
 }
 
 export function describePeriod(period: LogPeriod): string {
-  if (period.year === 'all') return 'All time'
-  if (period.month === 'all') return String(period.year)
+  if (period.year === 'all') return 'ทั้งหมด'
+  if (period.month === 'all') return `ปี ${period.year}`
   return `${MONTH_LABELS[period.month - 1]} ${period.year}`
 }
 

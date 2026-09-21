@@ -35,7 +35,7 @@ export function PageHeader({ eyebrow, title, subtitle, action, onStartGuide, cla
             </button>
           )}
         </div>
-        {subtitle && <p className="mt-2 text-sm text-ink-muted">{subtitle}</p>}
+        {subtitle && <div className="mt-2 text-sm text-ink-muted">{subtitle}</div>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </header>

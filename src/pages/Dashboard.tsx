@@ -461,7 +461,7 @@ export function Dashboard() {
 
               {/* Value & PnL Hero Summary */}
               <div id="guide-portfolio-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
-                <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
                   {/* Row 1: Labels */}
                   <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">Portfolio Value</span>
                   <span className="text-xs font-bold uppercase tracking-wider text-ink-muted text-right">All-Time PnL</span>
@@ -470,7 +470,7 @@ export function Dashboard() {
                   <div className="flex items-baseline min-w-0">
                     <p
                       title={thb(portfolio.value)}
-                      className="font-display text-lg sm:text-xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
+                      className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
                     >
                       {portfolio.value >= 1_000_000 ? thbCompact(portfolio.value) : thb(portfolio.value)}
                     </p>
@@ -479,7 +479,7 @@ export function Dashboard() {
                     <PnLText
                       value={portfolio.pnl}
                       compact
-                      className="font-display text-lg sm:text-xl !font-extrabold tracking-tight leading-tight truncate"
+                      className="font-display text-3xl sm:text-4xl !font-extrabold tracking-tight leading-tight truncate"
                     />
                   </div>
 

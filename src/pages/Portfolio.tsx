@@ -85,6 +85,22 @@ export function Portfolio() {
   const [viewMode, setViewMode] = useState<'list' | 'group'>('list')
   const [donutMode, setDonutMode] = useState<'class' | 'group'>('class')
   const [copied, setCopied] = useState(false)
+  // How PnL is rendered on holding rows: percentage or absolute THB amount (persisted)
+  const [pnlDisplay, setPnlDisplay] = useState<'pct' | 'thb'>(() => {
+    try {
+      return localStorage.getItem('spendiary_pnl_display') === 'thb' ? 'thb' : 'pct'
+    } catch {
+      return 'pct'
+    }
+  })
+  const changePnlDisplay = (mode: 'pct' | 'thb') => {
+    setPnlDisplay(mode)
+    try {
+      localStorage.setItem('spendiary_pnl_display', mode)
+    } catch {
+      // ignore
+    }
+  }
 
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -620,17 +636,13 @@ export function Portfolio() {
               </div>
               <p className="shrink-0 text-sm font-bold tnum text-ink">{thb(h.marketValue)}</p>
             </div>
-            {/* Line 2: tag (phones only) + units + PnL% */}
+            {/* Line 2: units first (priority) + tag demoted to plain text so it never squeezes the units info */}
             <div className="mt-0.5 flex items-center justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-1.5">
-                {h.tag && (
-                  <span className="sm:hidden inline-flex shrink-0 items-center rounded-md bg-brand/10 dark:bg-brand/20 px-1.5 py-0.5 text-xs font-semibold text-brand tracking-tight">
-                    #{h.tag}
-                  </span>
-                )}
-                <p className="truncate text-xs text-ink-muted">{unitsLabel}</p>
-              </div>
-              <PnLPill value={h.pnlPct} asPct size="sm" />
+              <p className="truncate text-xs text-ink-muted">
+                {unitsLabel}
+                {h.tag && <span className="sm:hidden text-brand font-medium"> · #{h.tag}</span>}
+              </p>
+              <PnLPill value={pnlDisplay === 'thb' ? h.pnl : h.pnlPct} asPct={pnlDisplay !== 'thb'} size="sm" />
             </div>
           </div>
 
@@ -924,7 +936,7 @@ export function Portfolio() {
         {/* Left Column (5 cols): Allocation Donut + Rebalancer + Portfolio Trend */}
         <div id="guide-portfolio-alloc" className="lg:col-span-5 xl:col-span-4 space-y-6">
           {/* Asset Allocation card (Hero Overview & Allocation) */}
-          <Card className="animate-rise">
+          <Card className="animate-rise card-bleed-mobile">
             <div className="flex items-center justify-between gap-2">
               <h2 className="font-display text-base font-bold text-ink">Port Allocation</h2>
               <div className="inline-flex rounded-lg bg-surface-muted p-0.5 text-xs font-semibold shrink-0">
@@ -957,7 +969,7 @@ export function Portfolio() {
 
             {/* Value & PnL Hero Summary */}
             <div id="guide-portfolio-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
-              <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+              <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
                 {/* Row 1: Labels */}
                 <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">Portfolio Value</span>
                 <span className="text-xs font-bold uppercase tracking-wider text-ink-muted text-right">All-Time PnL</span>
@@ -966,7 +978,7 @@ export function Portfolio() {
                 <div className="flex items-baseline min-w-0">
                   <p
                     title={thb(summary.value)}
-                    className="font-display text-lg sm:text-xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
+                    className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
                   >
                     <span className="2xl:hidden">
                       {summary.value >= 1_000_000 ? thbCompact(summary.value) : thb(summary.value)}
@@ -981,13 +993,13 @@ export function Portfolio() {
                     <PnLText
                       value={summary.pnl}
                       compact
-                      className="font-display text-lg sm:text-xl !font-extrabold tracking-tight leading-tight truncate"
+                      className="font-display text-3xl sm:text-4xl !font-extrabold tracking-tight leading-tight truncate"
                     />
                   </div>
                   <div className="hidden 2xl:block truncate">
                     <PnLText
                       value={summary.pnl}
-                      className="font-display text-lg sm:text-xl !font-extrabold tracking-tight leading-tight truncate"
+                      className="font-display text-3xl sm:text-4xl !font-extrabold tracking-tight leading-tight truncate"
                     />
                   </div>
                 </div>
@@ -1179,8 +1191,10 @@ export function Portfolio() {
                     ))}
                   </div>
 
-                  {/* Sort controls */}
-                  <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
+                  {/* Sort controls + PnL display toggle */}
+                  {/* Sort controls + PnL display toggle — full width when wrapped to its own line (mobile) so the toggle sits flush right */}
+                  <div className="flex w-full items-center justify-between gap-2 py-1.5 -my-1.5 sm:w-auto">
+                    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar min-w-0">
                     <span className="shrink-0 text-xs font-medium text-ink-faint mr-1">Sort:</span>
                     {([ ['value','Value'], ['pnl','Profit %'], ['type','Type'] ] as const).map(([key, label]) => {
                       const active = sortBy === key
@@ -1211,6 +1225,30 @@ export function Portfolio() {
                         </button>
                       )
                     })}
+                    </div>
+                    <div
+                      className="flex shrink-0 items-center rounded-full bg-surface-muted p-0.5"
+                      role="group"
+                      aria-label="PnL display mode"
+                      title="สลับการแสดงกำไร/ขาดทุน: % หรือ ฿"
+                    >
+                      {([['pct', '%'], ['thb', '฿']] as const).map(([mode, label]) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          onClick={() => changePnlDisplay(mode)}
+                          aria-pressed={pnlDisplay === mode}
+                          aria-label={`Show PnL as ${mode === 'pct' ? 'percentage' : 'THB amount'}`}
+                          className={`grid h-[30px] w-11 place-items-center rounded-full text-xs font-bold transition-colors cursor-pointer select-none ${
+                            pnlDisplay === mode
+                              ? 'bg-surface text-ink shadow-xs'
+                              : 'text-ink-muted hover:text-ink'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1281,7 +1319,7 @@ export function Portfolio() {
 
       {/* ── ROW 2: Portfolio Value Trend (Full Width at Bottom) ── */}
       <div id="guide-portfolio-chart" className="mt-6">
-        <Card className="animate-rise overflow-hidden" padded={false}>
+        <Card className="animate-rise overflow-hidden card-bleed-mobile" padded={false}>
           {(data.portfolioHistory?.length ?? 0) >= 1 ? (
             <InteractivePortfolioChart history={data.portfolioHistory!} />
           ) : (
