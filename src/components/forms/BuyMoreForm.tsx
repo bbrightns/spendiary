@@ -30,6 +30,8 @@ interface Props {
   holding: Holding | null
   onClose: () => void
   onSwitchToSell?: () => void
+  /** When set, the form is locked to this storage location — the picker is hidden. */
+  lockedLocationId?: string | null
 }
 
 const SATS_PER_BTC = 100_000_000
@@ -65,7 +67,7 @@ function formatCostOrFx(val: number | string): string {
   return roundedStr
 }
 
-export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
+export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLocationId }: Props) {
   const { buyMoreHolding, usdThb, data } = useData()
   const { showToast } = useToast()
 
@@ -285,13 +287,17 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
     setCashAccountId('none')
     setSatoshi('')
     setThbSpent('')
-    setLocationId((holding.btcLocations ?? [])[0]?.id ?? '__new__')
+    const btcLocs = holding.btcLocations ?? []
+    const lockedBtc = lockedLocationId ? btcLocs.find((l) => l.id === lockedLocationId) : undefined
+    setLocationId(lockedBtc ? lockedBtc.id : (btcLocs[0]?.id ?? '__new__'))
     setNewLocationName('')
     setGoldUnit('grams')
     setGoldGrams('')
     setGoldBaht('')
     setGoldThbSpent('')
-    setGoldLocationId((holding.goldLocations ?? [])[0]?.id ?? '__new__')
+    const goldLocs = holding.goldLocations ?? []
+    const lockedGold = lockedLocationId ? goldLocs.find((l) => l.id === lockedLocationId) : undefined
+    setGoldLocationId(lockedGold ? lockedGold.id : (goldLocs[0]?.id ?? '__new__'))
     setGoldNewLocationName('')
     // Pre-fill price: USD for stocks, THB for funds, not used for BTC
     if (!isBtc) {
@@ -342,6 +348,9 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
       ...goldExistingLocations.map((l) => ({ value: l.id, label: l.name })),
       { value: '__new__', label: '+ New location…' },
     ]
+    const lockedGoldLocName = lockedLocationId
+      ? (goldExistingLocations.find((l) => l.id === lockedLocationId)?.name ?? '')
+      : ''
 
     function saveGold() {
       if (!goldValid) { setShowErrors(true); return }
@@ -387,8 +396,10 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
       <Modal
         open={open}
         onClose={onClose}
-        title={`Buy more · ${holding.name}`}
-        description="Log a purchase in grams or บาททองคำ (ทองคำแท่ง 15.244g). Choose or create a location."
+        title={lockedGoldLocName ? `Buy more · ${holding.name} — ${lockedGoldLocName}` : `Buy more · ${holding.name}`}
+        description={lockedGoldLocName
+          ? `This purchase goes into "${lockedGoldLocName}".`
+          : "Log a purchase in grams or บาททองคำ (ทองคำแท่ง 15.244g). Choose or create a location."}
         footer={
           <Button variant="success" onClick={saveGold} className="w-full">
             Add to holding
@@ -420,12 +431,14 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
             </div>
           </div>
 
-          <SelectField
-            label="Location"
-            value={goldLocationId}
-            onChange={setGoldLocationId}
-            options={goldLocOptions}
-          />
+          {lockedLocationId && !isNewGoldLoc ? null : (
+            <SelectField
+              label="Location"
+              value={goldLocationId}
+              onChange={setGoldLocationId}
+              options={goldLocOptions}
+            />
+          )}
 
           {goldLocationId === '__new__' && (
             <TextField
@@ -552,6 +565,9 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
       ...existingLocations.map((l) => ({ value: l.id, label: l.name })),
       { value: '__new__', label: '+ New location…' },
     ]
+    const lockedBtcLocName = lockedLocationId
+      ? (existingLocations.find((l) => l.id === lockedLocationId)?.name ?? '')
+      : ''
 
     function saveBtc() {
       if (!btcValid) { setShowErrors(true); return }
@@ -597,8 +613,10 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
       <Modal
         open={open}
         onClose={onClose}
-        title={`Buy more · ${holding.name}`}
-        description="Log a purchase in Satoshi. Choose or create a location."
+        title={lockedBtcLocName ? `Buy more · ${holding.name} — ${lockedBtcLocName}` : `Buy more · ${holding.name}`}
+        description={lockedBtcLocName
+          ? `This purchase goes into "${lockedBtcLocName}".`
+          : "Log a purchase in Satoshi. Choose or create a location."}
         footer={
           <Button variant="success" onClick={saveBtc} className="w-full">
             Add to holding
@@ -630,12 +648,14 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell }: Props) {
             </div>
           </div>
 
-          <SelectField
-            label="Location"
-            value={locationId}
-            onChange={setLocationId}
-            options={locationOptions}
-          />
+          {lockedLocationId && !isNew ? null : (
+            <SelectField
+              label="Location"
+              value={locationId}
+              onChange={setLocationId}
+              options={locationOptions}
+            />
+          )}
 
           {locationId === '__new__' && (
             <TextField

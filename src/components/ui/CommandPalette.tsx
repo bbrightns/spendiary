@@ -16,6 +16,7 @@ import {
   ReceiptPercentIcon,
   SettingsIcon,
   ClockIcon,
+  PieChartIcon,
   DownloadIcon,
   SparkleIcon,
   PlusIcon,
@@ -318,6 +319,19 @@ export function CommandPalette() {
         icon: <ClockIcon className="h-4 w-4 text-ink-muted" strokeWidth={2} />,
         onSelect: () => {
           navigate('/logs')
+          closePalette()
+        },
+      },
+      {
+        id: 'nav-summary',
+        title: 'Go to P/L Summary',
+        subtitle: 'สรุปกำไร/ขาดทุนตามเดือน ปี หรือช่วงเวลาที่เลือก',
+        badge: 'G P',
+        keywords: ['summary', 'profit', 'loss', 'pnl', 'dividends', 'สรุป', 'กำไร', 'ขาดทุน', 'ปันผล'],
+        category: 'Navigation',
+        icon: <PieChartIcon className="h-4 w-4 text-ink-muted" strokeWidth={2} />,
+        onSelect: () => {
+          navigate('/logs/summary')
           closePalette()
         },
       },

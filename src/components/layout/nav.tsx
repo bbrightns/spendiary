@@ -12,6 +12,7 @@ import {
   CashflowIcon,
   DividendIcon,
   WalletIcon,
+  PieChartIcon,
 } from '../icons'
 
 export interface NavSubItem {
@@ -20,6 +21,11 @@ export interface NavSubItem {
   short: string
   description: string
   icon: ComponentType<SVGProps<SVGSVGElement>>
+  /**
+   * Match the route exactly instead of by prefix.
+   * Needed when one sub-item path is a prefix of a sibling (e.g. `/logs` vs `/logs/summary`).
+   */
+  exact?: boolean
 }
 
 export type StrategySubItem = NavSubItem
@@ -29,11 +35,13 @@ export interface NavItem {
   label: string
   short: string
   icon: ComponentType<SVGProps<SVGSVGElement>>
+  /** Match the route exactly instead of by prefix (needed for `/logs` vs `/logs/summary`) */
+  exact?: boolean
   subItems?: NavSubItem[]
 }
 
 export interface MobileNavItem {
-  id: 'home' | 'portfolio' | 'cashflow' | 'strategies'
+  id: 'home' | 'portfolio' | 'cashflow' | 'strategies' | 'summary'
   to?: string
   label: string
   short: string
@@ -104,14 +112,28 @@ export const navItems: NavItem[] = [
     icon: StrategyIcon,
     subItems: strategySubItems,
   },
-  { to: '/logs', label: 'Activity Logs', short: 'Logs', icon: ClockIcon },
+  // `exact` keeps Activity Logs from lighting up while its sibling Summary is open
+  { to: '/logs', label: 'Activity Logs', short: 'Logs', icon: ClockIcon, exact: true },
+  { to: '/logs/summary', label: 'Summary', short: 'Summary', icon: PieChartIcon },
 ]
+
+/** True when a destination should be shown as active for the current route. */
+export function isNavPathActive(to: string, pathname: string, exact?: boolean): boolean {
+  if (exact) return pathname === to
+  return to === '/' ? pathname === '/' : pathname.startsWith(to)
+}
+
+/** True when `pathname` should light up `sub` in any navigation surface. */
+export function isSubItemActive(sub: NavSubItem, pathname: string): boolean {
+  return isNavPathActive(sub.to, pathname, sub.exact)
+}
 
 export const mobileNavItems: MobileNavItem[] = [
   { id: 'home', to: '/', label: 'Dashboard', short: 'Home', icon: DashboardIcon },
   { id: 'portfolio', to: '/portfolio', label: 'Portfolio', short: 'Port', icon: PortfolioIcon },
   { id: 'cashflow', label: 'Cashflow', short: 'Flow', icon: CashflowIcon, isAction: true },
   { id: 'strategies', label: 'Strategies', short: 'Strategies', icon: StrategyIcon, isAction: true },
+  { id: 'summary', to: '/logs/summary', label: 'Summary', short: 'Summary', icon: PieChartIcon },
 ]
 
 export const settingsItem: NavItem = {

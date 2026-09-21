@@ -64,6 +64,7 @@ export function Layout({ children }: { children: ReactNode }) {
           </button>
           <NavLink
             to="/logs"
+            end
             aria-label="Activity Logs"
             title="Activity Logs"
             className={({ isActive }) =>

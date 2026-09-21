@@ -16,12 +16,14 @@ interface Props {
   holding: Holding | null
   onClose: () => void
   onSwitchToBuy?: () => void
+  /** When set, the form is locked to this storage location — the picker is hidden. */
+  lockedLocationId?: string | null
 }
 
 const SATS_PER_BTC = 100_000_000
 const GOLD_SELL_UNIT_KEY = 'spendiary_gold_sell_unit'
 
-export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Props) {
+export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, lockedLocationId }: Props) {
   const { sellHolding, data, usdThb } = useData()
   const { showToast } = useToast()
 
@@ -101,13 +103,15 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
         setSatoshi('')
         setBtcThbProceeds('')
         const locs = holding.btcLocations ?? []
-        setBtcLocationId(locs.length > 0 ? locs[0].id : '')
+        const locked = lockedLocationId ? locs.find((l) => l.id === lockedLocationId) : undefined
+        setBtcLocationId(locked ? locked.id : (locs[0]?.id ?? ''))
       } else if (holding.assetClass === 'gold') {
         setGoldGrams('')
         setGoldBaht('')
         setGoldThbProceeds('')
         const locs = holding.goldLocations ?? []
-        setGoldLocationId(locs.length > 0 ? locs[0].id : '')
+        const locked = lockedLocationId ? locs.find((l) => l.id === lockedLocationId) : undefined
+        setGoldLocationId(locked ? locked.id : (locs[0]?.id ?? ''))
       } else {
         setUnits('')
         setPrice(holding.price > 0 ? holding.price : '')
@@ -122,6 +126,12 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
   const currentUnits = holding.units ?? holding.totalUnits ?? 0
   const currentCostBasis = holding.totalThbInvested ?? (currentUnits * (holding.avgCostThb ?? holding.avgCost ?? 0))
   const avgCostPerUnitThb = currentUnits > 0 ? currentCostBasis / currentUnits : (holding.avgCostThb ?? holding.avgCost ?? 0)
+  // Pocket-locked title name ('' when unlocked or the pocket no longer exists → selector stays visible as fallback)
+  const lockedSellLocName = lockedLocationId
+    ? ((holding.btcLocations ?? []).find((l) => l.id === lockedLocationId)?.name
+      ?? (holding.goldLocations ?? []).find((l) => l.id === lockedLocationId)?.name
+      ?? '')
+    : ''
 
   // Cash Account options
   const cashAccountOptions = [
@@ -418,7 +428,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
     <Modal
       open={open}
       onClose={onClose}
-      title={`ขาย · ${holding.name}`}
+      title={lockedSellLocName ? `ขาย · ${holding.name} — ${lockedSellLocName}` : `ขาย · ${holding.name}`}
       description="บันทึกรายการขาย คำนวณผลกำไร/ขาดทุน และโอนเงินเข้าบัญชีเงินสดของคุณ"
       footer={
         <Button
@@ -511,15 +521,17 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
           <div className="grid grid-cols-1 gap-3">
             {(holding.btcLocations ?? []).length > 0 && (
               <div className="space-y-1">
-                <SelectField
-                  label="Sell from Location (ตำแหน่งจัดเก็บที่จะขาย)"
-                  value={btcLocationId}
-                  onChange={handleBtcLocationChange}
-                  options={(holding.btcLocations ?? []).map((l) => ({
-                    value: l.id,
-                    label: `${l.name} (${l.satoshi.toLocaleString()} sats · ฿${l.thbSpent.toLocaleString()})`,
-                  }))}
-                />
+                {!lockedSellLocName && (
+                  <SelectField
+                    label="Sell from Location (ตำแหน่งจัดเก็บที่จะขาย)"
+                    value={btcLocationId}
+                    onChange={handleBtcLocationChange}
+                    options={(holding.btcLocations ?? []).map((l) => ({
+                      value: l.id,
+                      label: `${l.name} (${l.satoshi.toLocaleString()} sats · ฿${l.thbSpent.toLocaleString()})`,
+                    }))}
+                  />
+                )}
                 {(() => {
                   const loc = (holding.btcLocations ?? []).find((l) => l.id === btcLocationId)
                   if (!loc || loc.satoshi <= 0) return null
@@ -572,15 +584,17 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy }: Prop
           <div className="grid grid-cols-1 gap-3">
             {(holding.goldLocations ?? []).length > 0 && (
               <div className="space-y-1">
-                <SelectField
-                  label="Sell from Location (ตำแหน่งจัดเก็บที่จะขาย)"
-                  value={goldLocationId}
-                  onChange={handleGoldLocationChange}
-                  options={(holding.goldLocations ?? []).map((l) => ({
-                    value: l.id,
-                    label: `${l.name} (${l.grams.toFixed(4)}g · ${(l.grams / GRAMS_PER_BAHT_GOLD).toFixed(2)} บาท · ฿${l.thbSpent.toLocaleString()})`,
-                  }))}
-                />
+                {!lockedSellLocName && (
+                  <SelectField
+                    label="Sell from Location (ตำแหน่งจัดเก็บที่จะขาย)"
+                    value={goldLocationId}
+                    onChange={handleGoldLocationChange}
+                    options={(holding.goldLocations ?? []).map((l) => ({
+                      value: l.id,
+                      label: `${l.name} (${l.grams.toFixed(4)}g · ${(l.grams / GRAMS_PER_BAHT_GOLD).toFixed(2)} บาท · ฿${l.thbSpent.toLocaleString()})`,
+                    }))}
+                  />
+                )}
                 {(() => {
                   const loc = (holding.goldLocations ?? []).find((l) => l.id === goldLocationId)
                   if (!loc || loc.grams <= 0) return null

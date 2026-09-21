@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { cashflowSubItems, navItems, settingsItem, strategySubItems } from './nav'
+import { isNavPathActive, isSubItemActive, navItems, settingsItem } from './nav'
 import { useData } from '../../store/DataContext'
 import { useTheme } from '../../hooks/useTheme'
 import { ChevronDownIcon, SearchIcon } from '../icons'
@@ -34,22 +34,21 @@ export function Sidebar() {
     return 0
   }
 
-  const isStrategyActive = strategySubItems.some((sub) => pathname.startsWith(sub.to))
-  const isCashflowActive = cashflowSubItems.some((sub) => pathname.startsWith(sub.to))
-  const [isStrategiesOpen, setIsStrategiesOpen] = useState(isStrategyActive)
-  const [isCashflowOpen, setIsCashflowOpen] = useState(isCashflowActive)
+  // Which collapsible group (Cashflow / Strategies / Activity Logs) owns the current route
+  const activeGroupLabel = navItems.find(
+    (item) => item.subItems?.some((sub) => isSubItemActive(sub, pathname)),
+  )?.label
+
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
+    activeGroupLabel ? { [activeGroupLabel]: true } : {},
+  )
 
   useEffect(() => {
-    if (isStrategyActive) {
-      setIsStrategiesOpen(true)
-    }
-  }, [isStrategyActive])
-
-  useEffect(() => {
-    if (isCashflowActive) {
-      setIsCashflowOpen(true)
-    }
-  }, [isCashflowActive])
+    if (!activeGroupLabel) return
+    setOpenGroups((prev) =>
+      prev[activeGroupLabel] ? prev : { ...prev, [activeGroupLabel]: true },
+    )
+  }, [activeGroupLabel])
 
   const toggleTheme = () => {
     // If currently dark (or system evaluating to dark), toggle to light, else dark
@@ -114,12 +113,10 @@ export function Sidebar() {
           </span>
           {navItems.map((item) => {
             if (item.subItems) {
-              const isChildActive = item.subItems.some((sub) => pathname.startsWith(sub.to))
-              const isExpanded = item.label === 'Cashflow' ? isCashflowOpen : isStrategiesOpen
-              const toggleExpand = () => {
-                if (item.label === 'Cashflow') setIsCashflowOpen((prev) => !prev)
-                else setIsStrategiesOpen((prev) => !prev)
-              }
+              const isChildActive = item.subItems.some((sub) => isSubItemActive(sub, pathname))
+              const isExpanded = openGroups[item.label] ?? false
+              const toggleExpand = () =>
+                setOpenGroups((prev) => ({ ...prev, [item.label]: !prev[item.label] }))
               const parentBadgeCount = item.label === 'Cashflow' ? cashflowAlertCount : 0
 
               return (
@@ -160,7 +157,7 @@ export function Sidebar() {
                   {isExpanded && (
                     <div className="flex flex-col gap-1 pl-3.5 ml-3 border-l border-line/70 py-0.5">
                       {item.subItems.map((sub) => {
-                        const isSubActive = pathname.startsWith(sub.to)
+                        const isSubActive = isSubItemActive(sub, pathname)
                         const subBadge = getBadgeCount(sub.to)
 
                         return (
@@ -200,7 +197,7 @@ export function Sidebar() {
             }
 
             const toPath = item.to || '/'
-            const isActive = toPath === '/' ? pathname === '/' : pathname.startsWith(toPath)
+            const isActive = isNavPathActive(toPath, pathname, item.exact)
             const badgeCount = getBadgeCount(toPath)
 
             return (

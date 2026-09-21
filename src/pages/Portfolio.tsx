@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, type MouseEvent as ReactMouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useSearchParams } from 'react-router-dom'
 
@@ -25,7 +25,7 @@ import { Button } from '../components/ui/Button'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import { PlusIcon, MinusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon, DownloadIcon, DotsHorizontalIcon, DividendIcon } from '../components/icons'
+import { PlusIcon, MinusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon, DownloadIcon, DotsHorizontalIcon, DividendIcon, ChevronDownIcon } from '../components/icons'
 import {
   ASSET_META,
   GRAMS_PER_BAHT_GOLD,
@@ -37,7 +37,7 @@ import {
 import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
 import { InteractivePortfolioChart } from '../components/charts/InteractiveTrendChart'
 import type { AssetClass, BtcLocation, Holding } from '../lib/types'
-import { money, thb, thbCompact } from '../lib/format'
+import { money, thb, thbCompact, pct } from '../lib/format'
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -138,6 +138,51 @@ export function Portfolio() {
   const [menuDirection, setMenuDirection] = useState<'down' | 'up'>('down')
   const [menuCoords, setMenuCoords] = useState<{ top?: number; bottom?: number; right: number } | null>(null)
 
+  // Per-pocket (storage location) action menu state
+  const [pocketMenu, setPocketMenu] = useState<{ holding: Holding; locId: string; locName: string; isBtc: boolean } | null>(null)
+  const [pocketMenuCoords, setPocketMenuCoords] = useState<{ top?: number; bottom?: number; right: number } | null>(null)
+  const [pocketMenuDirection, setPocketMenuDirection] = useState<'down' | 'up'>('down')
+  const openPocketMenu = useCallback((e: ReactMouseEvent<HTMLButtonElement>, holding: Holding, locId: string) => {
+    e.stopPropagation() // keep the same click from hitting the window close-handler
+    const locs = holding.assetClass === 'crypto'
+      ? (holding.btcLocations ?? [])
+      : (holding.goldLocations ?? [])
+    const loc = locs.find((l) => l.id === locId)
+    if (!loc) return
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const spaceBelow = window.innerHeight - rect.bottom
+    const spaceAbove = rect.top
+    const openUp = spaceBelow < 170 && spaceAbove > spaceBelow
+    setPocketMenuDirection(openUp ? 'up' : 'down')
+    setPocketMenuCoords({
+      top: openUp ? undefined : rect.bottom + 6,
+      bottom: openUp ? window.innerHeight - rect.top + 6 : undefined,
+      right: Math.max(12, window.innerWidth - rect.right),
+    })
+    setPocketMenu({ holding, locId, locName: loc.name, isBtc: holding.assetClass === 'crypto' })
+  }, [])
+
+  // Close pocket menu on outside click, scroll, or resize
+  useEffect(() => {
+    if (!pocketMenu) return
+    const handleClose = () => setPocketMenu(null)
+    window.addEventListener('click', handleClose)
+    window.addEventListener('scroll', handleClose, { passive: true })
+    window.addEventListener('resize', handleClose)
+    return () => {
+      window.removeEventListener('click', handleClose)
+      window.removeEventListener('scroll', handleClose)
+      window.removeEventListener('resize', handleClose)
+    }
+  }, [pocketMenu])
+
+  const [removeLocConfirmOpen, setRemoveLocConfirmOpen] = useState(false)
+  const [removeLocTarget, setRemoveLocTarget] = useState<{ holdingId: string; locId: string; name: string; isBtc: boolean } | null>(null)
+  const closePocketMenu = useCallback(() => {
+    setPocketMenu(null)
+    setPocketMenuCoords(null)
+  }, [])
+
   // Close action dropdown menu when clicking outside, scrolling, or resizing
   useEffect(() => {
     if (!activeMenuHoldingId) return
@@ -181,16 +226,19 @@ export function Portfolio() {
 
   const openAdd = () => { setEditing(null); setFormOpen(true) }
   const openEdit = (h: Holding) => { setEditing(h); setFormOpen(true) }
-  const openBuy = (h: Holding) => {
+  const [lockedLocationId, setLockedLocationId] = useState<string | null>(null)
+  const openBuy = (h: Holding, locationId?: string) => {
     setSelling(null)
     setSellOpen(false)
     setBuying(h)
+    setLockedLocationId(locationId ?? null)
     setBuyOpen(true)
   }
-  const openSell = (h: Holding) => {
+  const openSell = (h: Holding, locationId?: string) => {
     setBuying(null)
     setBuyOpen(false)
     setSelling(h)
+    setLockedLocationId(locationId ?? null)
     setSellOpen(true)
   }
   const [dividendOpen, setDividendOpen] = useState(false)
@@ -484,12 +532,53 @@ export function Portfolio() {
       <span title={`Price last updated: ${h.updatedAt ?? 'unknown'}`} aria-label="Price is stale" className="h-2 w-2 shrink-0 rounded-full bg-warn" />
     )
 
-    const chevron = isExpandable && (
-      <svg aria-hidden="true" width={14} height={14} viewBox="0 0 14 14" fill="none"
-        className={`shrink-0 text-ink-muted transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
-        <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+    // Pocket "⋯" button — same circular style as the row action menu for visual consistency.
+    const pocketMenuButton = (locId: string, locName: string) => (
+      <button
+        type="button"
+        aria-label={`Actions for location ${locName}`}
+        title={`Actions · ${locName}`}
+        onClick={(e) => openPocketMenu(e, h, locId)}
+        className={`grid h-8 w-8 shrink-0 place-items-center rounded-full transition-all cursor-pointer active:scale-95 ${
+          pocketMenu?.holding.id === h.id && pocketMenu.locId === locId
+            ? 'bg-ink text-white dark:bg-[#4f46e5] shadow-xs'
+            : 'bg-surface-muted text-ink-muted hover:bg-surface-elevated hover:text-ink'
+        }`}
+      >
+        <DotsHorizontalIcon className="h-4 w-4" />
+      </button>
     )
+
+    // Per-pocket unrealized P/L: current value of the pocket at the holding's
+    // live price (THB per BTC / per gram) minus what was actually spent on it.
+    const pocketPnl = (loc: { satoshi?: number; grams?: number; thbSpent: number }) => {
+      const unitsInBtc = isBtc ? (loc.satoshi ?? 0) / SATS_PER_BTC : 0
+      const units = isBtc ? unitsInBtc : (loc.grams ?? 0)
+      const currentValue = units * h.price
+      const pnl = currentValue - loc.thbSpent
+      const pnlPct = loc.thbSpent > 0 ? (pnl / loc.thbSpent) * 100 : 0
+      return { pnl, pnlPct }
+    }
+
+    // Right-side control: expand/collapse arrow for multi-pocket assets, action ⋯ menu for the rest.
+    const expandButton = isExpandable ? (
+      <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          onClick={() => setExpandedId(isExpanded ? null : h.id)}
+          aria-expanded={isExpanded}
+          aria-label={isExpanded ? `Collapse ${h.name} storage locations` : `Expand ${h.name} storage locations`}
+          title={isExpanded ? 'Hide storage locations' : 'Show storage locations'}
+          className={`grid h-8 w-8 place-items-center rounded-full transition-all cursor-pointer active:scale-95 ${
+            isExpanded
+              ? 'bg-ink text-white dark:bg-[#4f46e5] shadow-xs'
+              : 'bg-surface-muted text-ink-muted hover:bg-surface-elevated hover:text-ink'
+          }`}
+        >
+          <ChevronDownIcon className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
+    ) : null
 
     const rowClick = () => {
       if (isExpandable) setExpandedId(isExpanded ? null : h.id)
@@ -500,7 +589,7 @@ export function Portfolio() {
       <li
         key={h.id}
         className={`transition-colors hover:bg-surface-muted/50 ${
-          isLast && !isExpanded ? 'rounded-b-[var(--radius-card)]' : ''
+          isLast && !isExpanded ? 'sm:rounded-b-[var(--radius-card)]' : ''
         }`}
       >
         {/* ── Compact & Desktop Unified Row ── */}
@@ -511,7 +600,7 @@ export function Portfolio() {
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rowClick() } }}
           aria-label={isExpandable ? (isExpanded ? `Collapse ${h.name}` : `Expand ${h.name}`) : `Edit ${h.name}`}
           className={`flex cursor-pointer items-center gap-3 px-4 py-3 sm:px-5 sm:py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
-            isLast && !isExpanded ? 'rounded-b-[var(--radius-card)]' : ''
+            isLast && !isExpanded ? 'sm:rounded-b-[var(--radius-card)]' : ''
           }`}
         >
           {badge}
@@ -519,26 +608,34 @@ export function Portfolio() {
             {/* Line 1: name + value */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-1.5 flex-wrap">
-                <p className="truncate text-sm font-semibold text-ink">
+                <p className="line-clamp-2 text-sm font-semibold text-ink sm:line-clamp-none sm:truncate">
                   {h.name} <span className="text-xs font-normal text-ink-muted ml-0.5">{h.ticker}</span>
                 </p>
                 {h.tag && (
-                  <span className="inline-flex items-center rounded-md bg-brand/10 dark:bg-brand/20 px-1.5 py-0.5 text-xs font-semibold text-brand tracking-tight shrink-0">
+                  <span className="hidden sm:inline-flex items-center rounded-md bg-brand/10 dark:bg-brand/20 px-1.5 py-0.5 text-xs font-semibold text-brand tracking-tight shrink-0">
                     #{h.tag}
                   </span>
                 )}
-                {staleIndicator}{chevron}
+                {staleIndicator}
               </div>
               <p className="shrink-0 text-sm font-bold tnum text-ink">{thb(h.marketValue)}</p>
             </div>
-            {/* Line 2: units + PnL% */}
+            {/* Line 2: tag (phones only) + units + PnL% */}
             <div className="mt-0.5 flex items-center justify-between gap-2">
-              <p className="truncate text-xs text-ink-muted">{unitsLabel}</p>
+              <div className="flex min-w-0 items-center gap-1.5">
+                {h.tag && (
+                  <span className="sm:hidden inline-flex shrink-0 items-center rounded-md bg-brand/10 dark:bg-brand/20 px-1.5 py-0.5 text-xs font-semibold text-brand tracking-tight">
+                    #{h.tag}
+                  </span>
+                )}
+                <p className="truncate text-xs text-ink-muted">{unitsLabel}</p>
+              </div>
               <PnLPill value={h.pnlPct} asPct size="sm" />
             </div>
           </div>
 
-          {/* ── Action Dropdown Menu [ ⋯ ] ── */}
+          {/* ── Expand arrow for multi-pocket assets / Action Dropdown Menu [ ⋯ ] for the rest ── */}
+          {expandButton ?? (
           <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
@@ -573,18 +670,48 @@ export function Portfolio() {
               <DotsHorizontalIcon className="h-4 w-4" />
             </button>
           </div>
+          )}
         </div>
 
         {/* BTC / Gold sub-breakdown panel */}
         {isExpandable && isExpanded && (
           <div className={`border-t border-line bg-surface-muted px-5 pb-3.5 pt-2.5 ${
-            isLast ? 'rounded-b-[var(--radius-card)]' : ''
+            isLast ? 'sm:rounded-b-[var(--radius-card)]' : ''
           }`}>
-            <p className="mb-2 text-xs font-semibold text-ink-muted">Storage & Purchase Locations</p>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold text-ink-muted">Storage & Purchase Locations</p>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => openBuy(h)}
+                  className="inline-flex items-center gap-1 rounded-md bg-brand-soft px-2 py-1 text-xs font-semibold text-brand transition-colors hover:bg-brand hover:text-white cursor-pointer active:scale-95"
+                  title="ซื้อเพิ่ม / เพิ่มกระเป๋าใหม่"
+                >
+                  <PlusIcon className="h-3 w-3" strokeWidth={2.5} />
+                  เพิ่มกระเป๋า
+                </button>
+                <IconButton
+                  icon={<PencilIcon className="h-3.5 w-3.5" />}
+                  label={`Edit holding ${h.name}`}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => openEdit(h)}
+                />
+              </div>
+            </div>
 
             {isBtc && (
               (h.btcLocations ?? []).length === 0
-                ? <p className="py-1 text-sm text-ink-muted">No locations yet. Use "Buy more" to add.</p>
+                ? (
+                  <button
+                    type="button"
+                    onClick={() => openBuy(h)}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong py-2.5 text-sm font-semibold text-brand transition-colors hover:bg-brand-soft cursor-pointer active:scale-[0.99]"
+                  >
+                    <PlusIcon className="h-4 w-4" strokeWidth={2.4} />
+                    เพิ่มกระเป๋าแรก (Buy)
+                  </button>
+                )
                 : (
                   <ul className="space-y-1.5">
                     {(h.btcLocations ?? []).map((loc) => {
@@ -593,28 +720,23 @@ export function Portfolio() {
                       return (
                         <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-ink">{loc.name}</p>
+                            <div className="flex items-baseline justify-between gap-2">
+                              <p className="truncate text-sm font-semibold text-ink">{loc.name}</p>
+                              {(() => {
+                                const { pnl, pnlPct } = pocketPnl(loc)
+                                return (
+                                  <span className={`shrink-0 text-xs font-bold tnum ${pnl >= 0 ? 'text-gain' : 'text-loss'}`}>
+                                    {pnl >= 0 ? '+' : '−'}{thb(Math.abs(pnl))}
+                                    <span className="ml-1 font-semibold opacity-70">({pct(pnlPct)})</span>
+                                  </span>
+                                )
+                              })()}
+                            </div>
                             <p className="tnum text-xs text-ink-muted">
                               {loc.satoshi.toLocaleString()} sats · {thb(loc.thbSpent)} spent · avg {money(locCostPerBtcUsd, 'USD')}/BTC
                             </p>
                           </div>
-                          <IconButton
-                            icon={<PencilIcon className="h-3.5 w-3.5" />}
-                            label={`Edit location ${loc.name}`}
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openLocEdit(h.id, loc)}
-                          />
-                          <IconButton
-                            icon={<TrashIcon className="h-3.5 w-3.5" />}
-                            label={`Remove location ${loc.name}`}
-                            variant="danger"
-                            size="sm"
-                            onClick={() => {
-                              removeBtcLocation(h.id, loc.id)
-                              showToast(`Removed location "${loc.name}"`, 'info')
-                            }}
-                          />
+                          {pocketMenuButton(loc.id, loc.name)}
                         </li>
                       )
                     })}
@@ -624,7 +746,16 @@ export function Portfolio() {
 
             {isGold && (
               (h.goldLocations ?? []).length === 0
-                ? <p className="py-1 text-sm text-ink-muted">No locations yet. Use "Buy more" to add.</p>
+                ? (
+                  <button
+                    type="button"
+                    onClick={() => openBuy(h)}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong py-2.5 text-sm font-semibold text-brand transition-colors hover:bg-brand-soft cursor-pointer active:scale-[0.99]"
+                  >
+                    <PlusIcon className="h-4 w-4" strokeWidth={2.4} />
+                    เพิ่มกระเป๋าแรก (Buy)
+                  </button>
+                )
                 : (
                   <ul className="space-y-1.5">
                     {(h.goldLocations ?? []).map((loc) => {
@@ -633,28 +764,23 @@ export function Portfolio() {
                       return (
                         <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-ink">{loc.name}</p>
+                            <div className="flex items-baseline justify-between gap-2">
+                              <p className="truncate text-sm font-semibold text-ink">{loc.name}</p>
+                              {(() => {
+                                const { pnl, pnlPct } = pocketPnl(loc)
+                                return (
+                                  <span className={`shrink-0 text-xs font-bold tnum ${pnl >= 0 ? 'text-gain' : 'text-loss'}`}>
+                                    {pnl >= 0 ? '+' : '−'}{thb(Math.abs(pnl))}
+                                    <span className="ml-1 font-semibold opacity-70">({pct(pnlPct)})</span>
+                                  </span>
+                                )
+                              })()}
+                            </div>
                             <p className="tnum text-xs text-ink-muted">
                               {loc.grams.toFixed(4)} g ({locBaht.toFixed(4)} บาททอง) · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBaht)}/บาททอง
                             </p>
                           </div>
-                          <IconButton
-                            icon={<PencilIcon className="h-3.5 w-3.5" />}
-                            label={`Edit location ${loc.name}`}
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openLocEdit(h.id, loc)}
-                          />
-                          <IconButton
-                            icon={<TrashIcon className="h-3.5 w-3.5" />}
-                            label={`Remove location ${loc.name}`}
-                            variant="danger"
-                            size="sm"
-                            onClick={() => {
-                              removeGoldLocation(h.id, loc.id)
-                              showToast(`Removed location "${loc.name}"`, 'info')
-                            }}
-                          />
+                          {pocketMenuButton(loc.id, loc.name)}
                         </li>
                       )
                     })}
@@ -964,9 +1090,9 @@ export function Portfolio() {
 
         {/* Right Column (7 cols): Holdings Hub & Management */}
         <div id="guide-portfolio-holdings" className="lg:col-span-7 xl:col-span-8 space-y-6">
-          <Card className="animate-rise" padded={false}>
+          <Card className="animate-rise card-bleed-mobile" padded={false}>
             <div className="pt-5">
-              <div className="px-5">
+              <div className="px-4 sm:px-5">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h3 className="font-display text-lg font-bold text-ink">
@@ -1253,22 +1379,110 @@ export function Portfolio() {
         document.body
       )}
 
+      {/* ── Per-pocket (storage location) Action Menu Portal ── */}
+      {pocketMenu && pocketMenuCoords && typeof document !== 'undefined' && createPortal(
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={closePocketMenu}
+            aria-hidden="true"
+          />
+          <div
+            style={{
+              position: 'fixed',
+              top: pocketMenuCoords.top !== undefined ? `${pocketMenuCoords.top}px` : undefined,
+              bottom: pocketMenuCoords.bottom !== undefined ? `${pocketMenuCoords.bottom}px` : undefined,
+              right: `${pocketMenuCoords.right}px`,
+            }}
+            className={`z-50 min-w-[190px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 ${
+              pocketMenuDirection === 'up' ? 'origin-bottom-right' : 'origin-top-right'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                const t = pocketMenu
+                closePocketMenu()
+                openBuy(t.holding, t.locId)
+              }}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
+            >
+              <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
+              <span>ซื้อเข้ากระเป๋านี้ (Buy)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const t = pocketMenu
+                closePocketMenu()
+                openSell(t.holding, t.locId)
+              }}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
+            >
+              <MinusIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.4} />
+              <span>ขายจากกระเป๋านี้ (Sell)</span>
+            </button>
+            {(() => {
+              const locs = pocketMenu.isBtc
+                ? (pocketMenu.holding.btcLocations ?? [])
+                : (pocketMenu.holding.goldLocations ?? [])
+              const loc = locs.find((l) => l.id === pocketMenu.locId)
+              if (!loc) return null
+              return (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const t = pocketMenu
+                    closePocketMenu()
+                    openLocEdit(t.holding.id, loc)
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer text-left"
+                >
+                  <PencilIcon className="h-3.5 w-3.5 shrink-0" />
+                  <span>แก้ไขกระเป๋า (Edit)</span>
+                </button>
+              )
+            })()}
+            <div className="my-1 border-t border-line/60" />
+            <button
+              type="button"
+              onClick={() => {
+                const t = pocketMenu
+                closePocketMenu()
+                setRemoveLocTarget({ holdingId: t.holding.id, locId: t.locId, name: t.locName, isBtc: t.isBtc })
+                setRemoveLocConfirmOpen(true)
+              }}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
+            >
+              <TrashIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.2} />
+              <span>ลบกระเป๋า (Remove)</span>
+            </button>
+          </div>
+        </>,
+        document.body
+      )}
+
       <HoldingForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
       <BuyMoreForm
         open={buyOpen}
         holding={buying}
+        lockedLocationId={lockedLocationId}
         onClose={() => {
           setBuyOpen(false)
           setBuying(null)
+          setLockedLocationId(null)
         }}
         onSwitchToSell={switchToSell}
       />
       <SellHoldingModal
         open={sellOpen}
         holding={selling}
+        lockedLocationId={lockedLocationId}
         onClose={() => {
           setSellOpen(false)
           setSelling(null)
+          setLockedLocationId(null)
         }}
         onSwitchToBuy={switchToBuy}
       />
@@ -1414,6 +1628,27 @@ export function Portfolio() {
           }
           setRemoveConfirmOpen(false)
           setRemoveTarget(null)
+        }}
+      />
+
+      {/* Remove storage-location (pocket) confirmation */}
+      <ConfirmModal
+        open={removeLocConfirmOpen}
+        onClose={() => { setRemoveLocConfirmOpen(false); setRemoveLocTarget(null) }}
+        title={`Remove "${removeLocTarget?.name}"?`}
+        description="This removes this storage location and its units from the holding. The transaction history stays in Activity Logs. This cannot be undone."
+        confirmText="Yes, remove location"
+        confirmVariant="danger"
+        confirmIcon={<TrashIcon className="h-4 w-4" strokeWidth={2.2} />}
+        cancelText="Cancel"
+        onConfirm={() => {
+          if (removeLocTarget) {
+            if (removeLocTarget.isBtc) removeBtcLocation(removeLocTarget.holdingId, removeLocTarget.locId)
+            else removeGoldLocation(removeLocTarget.holdingId, removeLocTarget.locId)
+            showToast(`Removed location "${removeLocTarget.name}"`, 'info')
+          }
+          setRemoveLocConfirmOpen(false)
+          setRemoveLocTarget(null)
         }}
       />
 

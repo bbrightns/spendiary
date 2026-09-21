@@ -221,6 +221,21 @@
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
 }
 
+/*
+ * Mobile-only edge-to-edge list card.
+ * Cancels the page's px-5 gutter and drops the side border/radius so the
+ * surface reaches the screen edges, giving rows more room for names and money.
+ * sm and up keep the normal inset card.
+ */
+@media (max-width: 639.98px) {
+  .card-bleed-mobile {
+    margin-inline: -1.25rem;
+    border-inline-width: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
 
 @keyframes rise {
   from {

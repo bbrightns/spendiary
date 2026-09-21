@@ -246,6 +246,16 @@ export function StrategyIcon(p: IconProps) {
   )
 }
 
+export function PieChartIcon(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M12 3v9h9" />
+      <path d="M21 12a9 9 0 1 1-9-9" />
+      <path d="M14.5 9.5 20 4" opacity="0.55" />
+    </svg>
+  )
+}
+
 export function DownloadIcon(p: IconProps) {
   return (
     <svg {...base} {...p}>
@@ -363,6 +373,14 @@ export function ChevronDownIcon(p: IconProps) {
   return (
     <svg {...base} {...p}>
       <path d="m6 9 6 6 6-6" />
+    </svg>
+  )
+}
+
+export function ChevronRightIcon(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="m9 5 7 7-7 7" />
     </svg>
   )
 }

@@ -4,6 +4,7 @@ import { cashflowSubItems, mobileNavItems, strategySubItems } from './nav'
 import { useData } from '../../store/DataContext'
 import { isDividendReceivedThisMonth, isLiabilityActionableThisMonth, shouldConfirmBuy } from '../../lib/calc'
 import { Modal } from '../ui/Modal'
+import { NavSheetList } from './NavSheetList'
 
 export function BottomNav() {
   const location = useLocation()
@@ -157,79 +158,15 @@ export function BottomNav() {
         title="Cashflow"
         description="Select money allocation or dividend income"
       >
-        <div className="flex flex-col gap-2.5 py-1">
-          {cashflowSubItems.map((subItem) => {
-            const isSelected = pathname.startsWith(subItem.to)
-            const subBadge =
-              subItem.to === '/dca'
-                ? dcaAlertCount
-                : subItem.to === '/dividends'
-                ? dividendAlertCount
-                : 0
-
-            return (
-              <button
-                key={subItem.to}
-                type="button"
-                onClick={() => {
-                  setIsCashflowSheetOpen(false)
-                  navigate(subItem.to)
-                }}
-                className={[
-                  'w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-200 text-left cursor-pointer active:scale-[0.99]',
-                  isSelected
-                    ? 'border-brand/40 bg-brand-soft/70 shadow-xs'
-                    : 'border-line/70 bg-surface-muted/50 hover:bg-surface-muted hover:border-line',
-                ].join(' ')}
-              >
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div
-                    className={[
-                      'grid h-10 w-10 shrink-0 place-items-center rounded-xl transition-colors',
-                      isSelected
-                        ? 'bg-brand text-white shadow-xs'
-                        : 'bg-surface text-ink-muted border border-line',
-                    ].join(' ')}
-                  >
-                    <subItem.icon className="h-5 w-5" strokeWidth={isSelected ? 2.2 : 1.8} />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-display font-bold text-sm text-ink leading-tight">
-                        {subItem.label}
-                      </p>
-                      {isSelected && (
-                        <span className="rounded-full bg-brand/15 text-brand-ink px-2 py-0.5 text-xs font-bold uppercase tracking-wider">
-                          Active
-                        </span>
-                      )}
-                      {subBadge > 0 && (
-                        <span className="rounded-full bg-red-500 text-white px-1.5 py-0.2 text-xs font-bold">
-                          {subBadge}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-ink-muted leading-tight mt-1 truncate">
-                      {subItem.description}
-                    </p>
-                  </div>
-                </div>
-
-                <svg
-                  className={`h-4 w-4 shrink-0 transition-transform ${
-                    isSelected ? 'text-brand-ink translate-x-0.5' : 'text-ink-muted/50'
-                  }`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            )
-          })}
-        </div>
+        <NavSheetList
+          items={cashflowSubItems}
+          activePath={pathname}
+          badgeFor={(to) => (to === '/dca' ? dcaAlertCount : to === '/dividends' ? dividendAlertCount : 0)}
+          onSelect={(to) => {
+            setIsCashflowSheetOpen(false)
+            navigate(to)
+          }}
+        />
       </Modal>
 
       {/* ── Strategies Bottom Sheet Modal ── */}
@@ -239,72 +176,15 @@ export function BottomNav() {
         title="Strategies"
         description="Select an investment planning engine"
       >
-        <div className="flex flex-col gap-2.5 py-1">
-          {strategySubItems.map((subItem) => {
-            const isSelected = pathname.startsWith(subItem.to)
-
-            return (
-              <button
-                key={subItem.to}
-                type="button"
-                onClick={() => {
-                  setIsStrategySheetOpen(false)
-                  navigate(subItem.to)
-                }}
-                className={[
-                  'w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-200 text-left cursor-pointer active:scale-[0.99]',
-                  isSelected
-                    ? 'border-brand/40 bg-brand-soft/70 shadow-xs'
-                    : 'border-line/70 bg-surface-muted/50 hover:bg-surface-muted hover:border-line',
-                ].join(' ')}
-              >
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div
-                    className={[
-                      'grid h-10 w-10 shrink-0 place-items-center rounded-xl transition-colors',
-                      isSelected
-                        ? 'bg-brand text-white shadow-xs'
-                        : 'bg-surface text-ink-muted border border-line',
-                    ].join(' ')}
-                  >
-                    <subItem.icon className="h-5 w-5" strokeWidth={isSelected ? 2.2 : 1.8} />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-display font-bold text-sm text-ink leading-tight">
-                        {subItem.label}
-                      </p>
-                      {isSelected && (
-                        <span className="rounded-full bg-brand/15 text-brand-ink px-2 py-0.5 text-xs font-bold uppercase tracking-wider">
-                          Active
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-ink-muted leading-tight mt-1 truncate">
-                      {subItem.description}
-                    </p>
-                  </div>
-                </div>
-
-                <svg
-                  className={`h-4 w-4 shrink-0 transition-transform ${
-                    isSelected ? 'text-brand-ink translate-x-0.5' : 'text-ink-muted/50'
-                  }`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            )
-          })}
-        </div>
+        <NavSheetList
+          items={strategySubItems}
+          activePath={pathname}
+          onSelect={(to) => {
+            setIsStrategySheetOpen(false)
+            navigate(to)
+          }}
+        />
       </Modal>
     </>
   )
 }
-
-
-

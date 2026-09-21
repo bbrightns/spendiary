@@ -14,6 +14,7 @@ import { DcaPlanner } from './pages/DcaPlanner'
 const Retirement = lazy(() => import('./pages/Retirement').then(m => ({ default: m.Retirement })))
 const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })))
 const HoldingLogs = lazy(() => import('./pages/HoldingLogs').then(m => ({ default: m.HoldingLogs })))
+const ActivitySummary = lazy(() => import('./pages/ActivitySummary').then(m => ({ default: m.ActivitySummary })))
 const Rebalance = lazy(() => import('./pages/Rebalance').then(m => ({ default: m.Rebalance })))
 const Dividends = lazy(() => import('./pages/Dividends').then(m => ({ default: m.Dividends })))
 const Debts = lazy(() => import('./pages/Debts').then(m => ({ default: m.Debts })))
@@ -245,6 +246,7 @@ function AppContent() {
           <Route path="/retirement" element={<Retirement />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/logs" element={<HoldingLogs />} />
+          <Route path="/logs/summary" element={<ActivitySummary />} />
           <Route path="*" element={<Dashboard />} />
         </Routes>
       </Suspense>

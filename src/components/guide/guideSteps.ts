@@ -13,6 +13,7 @@ export type PageGuideKey =
   | 'rebalance'
   | 'retirement'
   | 'logs'
+  | 'summary'
   | 'settings'
 
 export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[] }> = {
@@ -94,7 +95,7 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         badge: 'สินทรัพย์รายตัว',
         title: 'รายการสินทรัพย์ในพอร์ต (Holdings)',
         description:
-          'รายการสินทรัพย์ของคุณพร้อมต้นทุนเฉลี่ยและราคาตลาด คุณสามารถคลิกเพื่อบันทึกการซื้อเพิ่ม, โยกย้าย หรือดูประวัติธุรกรรมย้อนหลังได้',
+          'รายการสินทรัพย์ของคุณพร้อมต้นทุนเฉลี่ยและราคาตลาด คุณสามารถคลิกเพื่อบันทึกการซื้อเพิ่ม, โยกย้าย หรือดูประวัติธุรกรรมย้อนหลังได้ สำหรับ Bitcoin/ทองคำ กดลูกศรด้านขวาเพื่อจัดการทีละกระเป๋า (ซื้อ/ขาย/แก้ไข/ลบ)',
         position: 'top',
       },
       {
@@ -231,6 +232,36 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         title: 'รายการบันทึกย้อนหลัง (Activity Timeline)',
         description:
           'ตรวจสอบวันที่ทำรายการ, ราคาต้นทุน, จำนวนหน่วย, และประวัติการเปลี่ยนแปลง พร้อมปุ่ม Undo เพื่อยกเลิกรายการได้ทุกเมื่อ',
+        position: 'top',
+      },
+    ],
+  },
+
+  summary: {
+    title: 'แนะนำหน้าสรุปกำไร/ขาดทุน (Activity Summary)',
+    steps: [
+      {
+        targetId: 'guide-summary-period',
+        badge: 'เลือกช่วงเวลา',
+        title: 'เลือกช่วงเวลา (Period Filter)',
+        description:
+          'กดปุ่มลัด เช่น เดือนนี้ ปีนี้ หรือทั้งหมด หรือเลือกปีและเดือนเอง เพื่อดูว่าช่วงเวลานั้นทำกำไรหรือขาดทุนเท่าไร',
+        position: 'bottom',
+      },
+      {
+        targetId: 'guide-summary-hero',
+        badge: 'กำไรสุทธิ',
+        title: 'กำไรที่เกิดขึ้นจริง (Realized Profit & Dividends)',
+        description:
+          'กำไรสุทธิ = กำไรจากการขายที่ปิดสถานะแล้ว + เงินปันผลที่รับจริงหลังหักภาษี พร้อมยอดเงินลงทุนใหม่และเงินที่ขายได้ในช่วงนั้น',
+        position: 'bottom',
+      },
+      {
+        targetId: 'guide-summary-assets',
+        badge: 'รายสินทรัพย์',
+        title: 'กำไรมาจากไหน (Per-asset Breakdown)',
+        description:
+          'แยกรายสินทรัพย์ว่าแต่ละตัวลงทุนไปเท่าไร ขายได้เท่าไร กำไรจากการขายเท่าไร และรับปันผลเท่าไรในช่วงเวลาที่เลือก',
         position: 'top',
       },
     ],
