@@ -84,6 +84,9 @@ export function InteractiveTrendChart({
             <span className="font-display font-bold tnum text-sm text-ink">{thb(single.value)} today</span>
             <span className="text-ink-muted">{todayLabel}</span>
           </div>
+          <div className="sr-only">
+            <p>{`${title}: Initial baseline snapshot recorded on ${startDate} with total value ${thb(single.value)}.`}</p>
+          </div>
         </div>
       </div>
     )
@@ -334,6 +337,30 @@ export function InteractiveTrendChart({
           <span className="text-ink-muted">
             Peak: <strong className="font-semibold tnum text-ink">{thbCompact(maxV)}</strong>
           </span>
+        </div>
+
+        {/* Screen Reader Historical Summary & Accessible Data Table */}
+        <div className="sr-only">
+          <p>
+            {`${title} historical trend from ${startDate} to ${endDate}. Starting value was ${thb(first.value)}, latest value is ${thb(last.value)}, representing an overall ${baseIsUp ? 'increase' : 'decrease'} of ${Math.abs(first.value > 0 ? (change / first.value) * 100 : 0).toFixed(1)}% (${change >= 0 ? '+' : ''}${thb(change)}). Lowest recorded value was ${thb(minV)} and peak value was ${thb(maxV)}.`}
+          </p>
+          <table>
+            <caption>{`${title} historical record`}</caption>
+            <thead>
+              <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Value (THB)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredHistory.map((s) => (
+                <tr key={s.date}>
+                  <td>{s.date}</td>
+                  <td>{thb(s.value)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
