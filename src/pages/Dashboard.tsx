@@ -218,8 +218,8 @@ export function Dashboard() {
                 </span>
                 <span>
                   {hasOverdueDebts
-                    ? `${debtActions.length} หนี้เลยกำหนด`
-                    : `${debtActions.length} หนี้รอจ่ายรอบนี้`}
+                    ? `${debtActions.length} Overdue ${debtActions.length === 1 ? 'Debt' : 'Debts'}`
+                    : `${debtActions.length} ${debtActions.length === 1 ? 'Debt' : 'Debts'} Due`}
                 </span>
               </button>
             </div>
@@ -236,7 +236,7 @@ export function Dashboard() {
                 <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand dark:bg-[#4f46e5] text-xs font-bold text-white">
                   {dcaActions.length}
                 </span>
-                <span>{dcaActions.length} DCA รอซื้อ</span>
+                <span>{dcaActions.length} DCA Ready</span>
               </button>
             </div>
           )}
@@ -622,7 +622,7 @@ export function Dashboard() {
                             width: `${cash > 0 ? (thbVal / cash) * 100 : 0}%`,
                             background: color,
                           }}
-                          title={`${a.name}: ${moneyCompact(a.balance, a.currency)} (ไปที่ Cash Hub)`}
+                          title={`${a.name}: ${moneyCompact(a.balance, a.currency)} (Go to Cash Hub)`}
                           className="cursor-pointer hover:opacity-80 transition-opacity"
                         />
                       )
@@ -641,7 +641,7 @@ export function Dashboard() {
                           onClick={() => navigate('/cash')}
                           aria-label={`View ${a.name} in Cash Hub`}
                           className="flex flex-col text-left p-2.5 rounded-xl bg-surface-muted/50 border border-line/40 hover:bg-surface-muted hover:border-brand/40 hover:shadow-xs group transition-all cursor-pointer active:scale-[0.98]"
-                          title={`คลิกเพื่อดูใน Cash Hub: ${a.name}`}
+                          title={`View in Cash Hub: ${a.name}`}
                         >
                           <span className="flex items-center justify-between gap-1.5 text-xs font-medium text-ink-muted truncate w-full">
                             <span className="flex items-center gap-1.5 truncate">
@@ -672,7 +672,7 @@ export function Dashboard() {
                     to="/cash"
                     className="inline-block mt-2 text-xs font-semibold text-brand hover:underline cursor-pointer"
                   >
-                    + ไปที่ Cash Hub เพื่อเพิ่มบัญชี
+                    + Open Cash Hub to add accounts
                   </Link>
                 </div>
               )}
@@ -816,7 +816,7 @@ export function Dashboard() {
 
                             <div className="shrink-0 text-right">
                               <span className={`font-display font-extrabold tnum text-sm ${l.balance > 0 ? 'text-ink dark:text-white' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                                {l.balance > 0 ? `-${thb(l.balance)}` : '฿0 (ครบแล้ว)'}
+                                {l.balance > 0 ? `-${thb(l.balance)}` : '฿0 (Paid Off)'}
                               </span>
                             </div>
                           </div>
@@ -829,12 +829,12 @@ export function Dashboard() {
                               </span>
                               {l.monthlyPayment && l.monthlyPayment > 0 && l.balance > 0 && (
                                 <span className="text-ink-muted font-medium shrink-0">
-                                  ~{thb(l.monthlyPayment)}/งวด
+                                  ~{thb(l.monthlyPayment)}/mo
                                 </span>
                               )}
                               {isInst && totalInst > 0 && (
                                 <span className="text-xs font-semibold text-ink-muted dark:text-white/70 bg-surface dark:bg-white/10 border border-line dark:border-white/10 px-1.5 py-0.5 rounded shrink-0">
-                                  {paidInst}/{totalInst} งวด
+                                  {paidInst}/{totalInst} terms
                                 </span>
                               )}
                             </div>
@@ -844,13 +844,13 @@ export function Dashboard() {
                               <div className="shrink-0">
                                 {dueInfo.status === 'completed' ? (
                                   <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-                                    🎉 ปลดหนี้แล้ว
+                                    🎉 Paid Off
                                   </span>
                                 ) : dueInfo.status === 'paid' ? (
                                   <div className="flex items-center gap-1.5 text-xs">
                                     <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
                                       <CheckIcon className="h-3 w-3" strokeWidth={2.5} />
-                                      <span>จ่ายงวดนี้แล้ว</span>
+                                      <span>Paid this period</span>
                                     </span>
                                     <button
                                       type="button"
@@ -859,9 +859,9 @@ export function Dashboard() {
                                         undoLiabilityPayment(l.id)
                                       }}
                                       className="font-semibold text-ink-faint hover:text-rose-600 hover:underline cursor-pointer"
-                                      title="ย้อนกลับการชำระงวดนี้"
+                                      title="Undo payment for this period"
                                     >
-                                      ยกเลิก
+                                      Undo
                                     </button>
                                   </div>
                                 ) : (
@@ -870,8 +870,8 @@ export function Dashboard() {
                                      onClick={(e) => {
                                        e.stopPropagation()
                                        payLiabilityInstallment(l.id)
-                                       showToast(`บันทึกชำระงวด "${l.name}" เรียบร้อยแล้ว`, 'success', {
-                                         label: 'เลิกทำ (Undo)',
+                                       showToast(`Recorded payment for "${l.name}"`, 'success', {
+                                         label: 'Undo',
                                          onClick: () => undoLiabilityPayment(l.id),
                                        })
                                      }}
@@ -879,7 +879,7 @@ export function Dashboard() {
                                      className="inline-flex items-center gap-1 rounded-lg bg-ink text-white hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] px-2.5 py-0.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
                                    >
                                      <CheckIcon className="h-3 w-3" strokeWidth={2.5} />
-                                     <span>จ่ายงวดนี้</span>
+                                     <span>Pay Term</span>
                                    </button>
                                 )}
                               </div>
@@ -890,10 +890,17 @@ export function Dashboard() {
                           {isInst && totalInst > 0 && (
                             <div className="mt-2 pt-1.5 border-t border-line/30 dark:border-white/5">
                               <div className="flex items-center justify-between text-xs font-semibold text-ink-faint mb-1">
-                                <span>ความคืบหน้า ({percent}%)</span>
-                                <span>{remainingInst === 0 ? 'ครบแล้ว 🎉' : `เหลืออีก ${remainingInst} งวด`}</span>
+                                <span>Progress ({percent}%)</span>
+                                <span>{remainingInst === 0 ? 'Completed 🎉' : `${remainingInst} ${remainingInst === 1 ? 'term' : 'terms'} left`}</span>
                               </div>
-                              <div className="w-full h-1.5 rounded-full bg-surface-muted dark:bg-white/10 overflow-hidden">
+                              <div
+                                role="progressbar"
+                                aria-valuenow={percent}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                                aria-label={`Repayment progress: ${percent}%`}
+                                className="w-full h-1.5 rounded-full bg-surface-muted dark:bg-white/10 overflow-hidden"
+                              >
                                 <div
                                   className={`h-full rounded-full transition-all duration-500 ${
                                     percent >= 100 ? 'bg-emerald-500' : 'bg-brand dark:bg-[#4f46e5]'
@@ -910,12 +917,12 @@ export function Dashboard() {
                 </div>
               ) : (
                 <div className="py-6 text-center">
-                  <p className="text-xs text-ink-muted">ปลอดหนี้สิน หรือยังไม่ได้เพิ่มรายการ</p>
+                  <p className="text-xs text-ink-muted">No debts recorded or completely debt-free.</p>
                   <Link
                     to="/debts"
                     className="inline-block mt-2 text-xs font-semibold text-brand hover:underline cursor-pointer"
                   >
-                    + ไปที่ Debts Hub เพื่อบันทึกหนี้สิน
+                    + Open Debts Hub to manage liabilities
                   </Link>
                 </div>
               )}
