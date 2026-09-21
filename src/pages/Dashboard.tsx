@@ -852,36 +852,36 @@ export function Dashboard() {
                                       <CheckIcon className="h-3 w-3" strokeWidth={2.5} />
                                       <span>Paid this period</span>
                                     </span>
+                                     <button
+                                       type="button"
+                                       onClick={(e) => {
+                                         e.stopPropagation()
+                                         undoLiabilityPayment(l.id)
+                                       }}
+                                       className="relative inline-flex items-center px-2 py-1 min-h-[36px] sm:min-h-0 sm:py-0.5 after:absolute after:-inset-2 after:content-[''] font-semibold text-ink-faint hover:text-rose-600 hover:underline cursor-pointer"
+                                       title="Undo payment for this period"
+                                     >
+                                       Undo
+                                     </button>
+                                   </div>
+                                 ) : (
                                     <button
                                       type="button"
                                       onClick={(e) => {
                                         e.stopPropagation()
-                                        undoLiabilityPayment(l.id)
+                                        payLiabilityInstallment(l.id)
+                                        showToast(`Recorded payment for "${l.name}"`, 'success', {
+                                          label: 'Undo',
+                                          onClick: () => undoLiabilityPayment(l.id),
+                                        })
                                       }}
-                                      className="font-semibold text-ink-faint hover:text-rose-600 hover:underline cursor-pointer"
-                                      title="Undo payment for this period"
+                                      aria-label={`Pay installment for ${l.name}`}
+                                      className="relative inline-flex items-center gap-1.5 rounded-lg bg-ink text-white hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[36px] sm:min-h-0 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer after:absolute after:-inset-1 after:content-[''] sm:after:hidden"
                                     >
-                                      Undo
+                                      <CheckIcon className="h-3 w-3" strokeWidth={2.5} />
+                                      <span>Pay Term</span>
                                     </button>
-                                  </div>
-                                ) : (
-                                   <button
-                                     type="button"
-                                     onClick={(e) => {
-                                       e.stopPropagation()
-                                       payLiabilityInstallment(l.id)
-                                       showToast(`Recorded payment for "${l.name}"`, 'success', {
-                                         label: 'Undo',
-                                         onClick: () => undoLiabilityPayment(l.id),
-                                       })
-                                     }}
-                                     aria-label={`Pay installment for ${l.name}`}
-                                     className="inline-flex items-center gap-1 rounded-lg bg-ink text-white hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] px-2.5 py-0.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
-                                   >
-                                     <CheckIcon className="h-3 w-3" strokeWidth={2.5} />
-                                     <span>Pay Term</span>
-                                   </button>
-                                )}
+                                 )}
                               </div>
                             )}
                           </div>
