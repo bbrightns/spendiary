@@ -19,7 +19,9 @@ export function PnLPill({ value, asPct = false, size = 'sm' }: PnLPillProps) {
   return (
     <span
       className={cx(
-        'inline-flex items-center gap-1 rounded-full font-semibold tnum',
+        // nowrap + shrink-0: the pill must stay on one line (arrow + amount) —
+        // sibling truncate text absorbs the squeeze instead.
+        'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full font-semibold tnum',
         size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm',
         up ? 'bg-gain-soft text-gain' : 'bg-loss-soft text-loss',
       )}
