@@ -231,9 +231,9 @@ export function Dashboard() {
                 type="button"
                 onClick={() => navigate('/dca')}
                 aria-label={`View ${dcaActions.length} DCA ${dcaActions.length === 1 ? 'buy' : 'buys'} ready to confirm`}
-                className="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand-soft/70 px-3.5 py-1.5 text-xs font-medium text-brand-ink transition-all hover:bg-brand hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand-soft/70 px-3.5 py-1.5 text-xs font-medium text-brand-ink transition-all hover:bg-brand hover:text-white dark:hover:bg-brand active:scale-95 cursor-pointer shadow-xs"
               >
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand dark:bg-[#4f46e5] text-xs font-bold text-white">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
                   {dcaActions.length}
                 </span>
                 <span>{dcaActions.length} DCA Ready</span>
@@ -247,7 +247,7 @@ export function Dashboard() {
       <div id="guide-dashboard-networth">
         <Card
           padded={false}
-          className="relative overflow-hidden bg-gradient-to-br from-white via-white to-brand-soft/40 dark:from-[#0b0d14] dark:via-[#10131e] dark:to-[#151928] border border-line dark:border-white/10 shadow-[var(--shadow-soft)] animate-rise h-full flex flex-col justify-between"
+          className="relative overflow-hidden bg-gradient-to-br from-white via-white to-brand-soft/40 dark:from-canvas dark:via-canvas dark:to-surface-muted/50 border border-line dark:border-white/10 shadow-[var(--shadow-soft)] animate-rise h-full flex flex-col justify-between"
         >
           {/* Ambient subtle glow inside card */}
           <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand/5 dark:bg-brand/15 blur-3xl" />
@@ -876,7 +876,7 @@ export function Dashboard() {
                                         })
                                       }}
                                       aria-label={`Pay installment for ${l.name}`}
-                                      className="relative inline-flex items-center gap-1.5 rounded-lg bg-ink text-white hover:bg-ink-hover dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[36px] sm:min-h-0 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer after:absolute after:-inset-1 after:content-[''] sm:after:hidden"
+                                      className="relative inline-flex items-center gap-1.5 rounded-lg bg-ink text-white hover:bg-ink-hover dark:bg-brand dark:hover:bg-brand-ink px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[36px] sm:min-h-0 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer after:absolute after:-inset-1 after:content-[''] sm:after:hidden"
                                     >
                                       <CheckIcon className="h-3 w-3" strokeWidth={2.5} />
                                       <span>Pay Term</span>
@@ -903,7 +903,7 @@ export function Dashboard() {
                               >
                                 <div
                                   className={`h-full rounded-full transition-all duration-500 ${
-                                    percent >= 100 ? 'bg-emerald-500' : 'bg-brand dark:bg-[#4f46e5]'
+                                    percent >= 100 ? 'bg-emerald-500' : 'bg-brand'
                                   }`}
                                   style={{ width: `${percent}%` }}
                                 />
