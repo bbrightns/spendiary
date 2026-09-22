@@ -19,6 +19,7 @@ import {
   DownloadIcon,
   ListIcon,
   PencilIcon,
+  PlusIcon,
   SearchIcon,
   TableIcon,
   TrashIcon,
@@ -36,6 +37,15 @@ interface ActionMeta {
 }
 
 function getLogActionMeta(log: HoldingLog): ActionMeta {
+  if (log.action === 'note') {
+    return {
+      label: 'Note',
+      style: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20',
+      icon: '✎',
+      isPriceUpdate: false,
+    }
+  }
+
   if (log.action === 'dividend') {
     return {
       label: 'Dividend',
@@ -378,7 +388,7 @@ export function HoldingLogs() {
     nextStep,
     prevStep,
   } = usePageGuide('logs')
-  const { data, removeHoldingLog, undoHoldingLog, updateHoldingLogTimestamp, usdThb } = useData()
+  const { data, addHoldingLog, removeHoldingLog, removeHoldingLogs, undoHoldingLog, updateHoldingLogTimestamp, usdThb } = useData()
   const { showToast } = useToast()
   const rawLogs = data.holdingLogs ?? []
   const logs = [...rawLogs].sort(
@@ -416,6 +426,53 @@ export function HoldingLogs() {
   })
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null)
   const [expandedDetails, setExpandedDetails] = useState<Set<string>>(new Set())
+  const [selectedLogIds, setSelectedLogIds] = useState<Set<string>>(new Set())
+  const [showBatchDeleteConfirm, setShowBatchDeleteConfirm] = useState(false)
+  const [showManualNote, setShowManualNote] = useState(false)
+  const [manualNote, setManualNote] = useState('')
+  const [manualNoteDate, setManualNoteDate] = useState(() => localDateStr(new Date()))
+  const [manualNoteTime, setManualNoteTime] = useState(() => new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
+
+  const selectedVisibleCount = filtered.filter((log) => selectedLogIds.has(log.id)).length
+  const allVisibleSelected = filtered.length > 0 && filtered.every((log) => selectedLogIds.has(log.id))
+
+  const toggleLogSelection = (logId: string) => {
+    setSelectedLogIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(logId)) next.delete(logId)
+      else next.add(logId)
+      return next
+    })
+  }
+
+  const toggleAllVisibleLogs = () => {
+    setSelectedLogIds((prev) => {
+      const next = new Set(prev)
+      if (allVisibleSelected) filtered.forEach((log) => next.delete(log.id))
+      else filtered.forEach((log) => next.add(log.id))
+      return next
+    })
+  }
+
+  const saveManualNote = () => {
+    const text = manualNote.trim()
+    if (!text) {
+      showToast('Please enter a note', 'error')
+      return
+    }
+    const timestamp = dateStrToTimestamp(manualNoteDate, manualNoteTime)
+    addHoldingLog({
+      action: 'note',
+      holdingName: 'Manual note',
+      ticker: 'NOTE',
+      assetClass: 'cash',
+      note: text,
+      timestamp,
+    })
+    setShowManualNote(false)
+    setManualNote('')
+    showToast('Added a history-only note', 'success')
+  }
 
   const toggleDetails = (logId: string) => {
     setExpandedDetails((prev) => {
@@ -429,6 +486,7 @@ export function HoldingLogs() {
   const handleViewModeChange = (mode: 'table' | 'timeline') => {
     setViewMode(mode)
     localStorage.setItem('spendiary_logs_view_mode', mode)
+    setSelectedLogIds(new Set())
   }
 
   const filtered = logs.filter((l) => {
@@ -1476,6 +1534,16 @@ export function HoldingLogs() {
             <Button
               variant="secondary"
               size="sm"
+              onClick={() => setShowManualNote(true)}
+              title="Add a history-only note"
+              className="cursor-pointer shrink-0 h-9"
+            >
+              <PlusIcon className="h-3.5 w-3.5" />
+              <span>Add note</span>
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={handleExportCsv}
               disabled={filtered.length === 0}
               title="Export activity logs to CSV"
@@ -1543,6 +1611,29 @@ export function HoldingLogs() {
             </button>
           )}
         </div>
+        {selectedVisibleCount > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand/20 bg-brand/5 px-3 py-2.5 text-sm">
+            <span className="font-semibold text-brand">{selectedLogIds.size} selected</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedLogIds(new Set())}
+                className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-ink-muted hover:bg-surface-muted hover:text-ink cursor-pointer"
+              >
+                Clear
+              </button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => setShowBatchDeleteConfirm(true)}
+                className="cursor-pointer"
+              >
+                <TrashIcon className="h-3.5 w-3.5" />
+                Delete history
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div id="guide-logs-list">
@@ -1579,11 +1670,20 @@ export function HoldingLogs() {
             />
           </Card>
         ) : viewMode === 'table' ? (
-          <Card padded={false} className="overflow-hidden">
+          <Card padded={false} className="card-bleed-wide overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm border-collapse min-w-[840px]">
                 <thead>
                   <tr className="border-b border-line bg-surface-muted/60 text-xs font-bold text-ink-muted uppercase tracking-wider">
+                    <th className="py-3 px-3 text-center">
+                      <input
+                        type="checkbox"
+                        checked={allVisibleSelected}
+                        onChange={toggleAllVisibleLogs}
+                        aria-label="Select all visible logs"
+                        className="h-4 w-4 rounded border-line-strong accent-brand"
+                      />
+                    </th>
                     <th className="py-3 px-4">Date & Time</th>
                     <th className="py-3 px-3">Action</th>
                     <th className="py-3 px-3">Asset / Ticker</th>
@@ -1621,6 +1721,16 @@ export function HoldingLogs() {
                             hasComparison ? 'cursor-pointer hover:bg-surface-muted/50' : 'hover:bg-surface-muted/30'
                           } ${isExpanded ? 'bg-surface-muted/40' : ''}`}
                         >
+                          <td className="py-3 px-3 text-center align-top">
+                            <input
+                              type="checkbox"
+                              checked={selectedLogIds.has(log.id)}
+                              onChange={() => toggleLogSelection(log.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              aria-label={`Select ${log.holdingName}`}
+                              className="mt-1 h-4 w-4 rounded border-line-strong accent-brand"
+                            />
+                          </td>
                           <td
                             className="py-3 px-4 whitespace-nowrap cursor-pointer group/date"
                             onClick={(e) => {
@@ -1749,7 +1859,7 @@ export function HoldingLogs() {
                         </tr>
                         {isExpanded && (
                           <tr className="bg-surface-muted/20 border-b border-line">
-                            <td colSpan={9} className="p-4 pl-8 sm:pl-12">
+                            <td colSpan={10} className="p-4 pl-8 sm:pl-12">
                               <div className="max-w-xl">
                                 <p className="text-xs font-bold uppercase tracking-wider text-ink-muted mb-1">
                                   State Comparison (Before → After)
@@ -1770,18 +1880,25 @@ export function HoldingLogs() {
           <div className="space-y-6">
             {groups.map((group) => (
               <div key={group.date}>
-                <p className="mb-2.5 px-1 text-xs font-bold text-ink-soft tracking-wide">{group.date}</p>
+                <p className="mb-3 px-1 text-base sm:text-lg font-extrabold text-ink tracking-tight">{group.date}</p>
                 <Card padded={false}>
                   <ul className="divide-y divide-line">
                   {group.entries.map((log) => {
                     const locName = getDestinationLocation(log)
                     const actionMeta = getLogActionMeta(log)
                     return (
-                      <li key={log.id} className="px-4 py-3.5 sm:px-5 sm:py-4 transition-colors hover:bg-surface-muted/30">
+                      <li key={log.id} className={`px-4 py-3.5 sm:px-5 sm:py-4 transition-colors hover:bg-surface-muted/30 ${selectedLogIds.has(log.id) ? 'bg-brand/5' : ''}`}>
                         {/* Header Row: Icon + Title & Badges + Time & Actions */}
                         <div className="flex items-start justify-between gap-2.5">
                           {/* Left: Asset Icon + Holding Info */}
-                          <div className="flex items-start gap-3 min-w-0">
+                          <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={selectedLogIds.has(log.id)}
+                              onChange={() => toggleLogSelection(log.id)}
+                              aria-label={`Select ${log.holdingName}`}
+                              className="mt-2 h-4 w-4 shrink-0 rounded border-line-strong accent-brand"
+                            />
                             <span
                               className="mt-0.5 grid h-8 w-8 sm:h-9 sm:w-9 shrink-0 place-items-center rounded-xl text-sm font-bold shadow-xs"
                               style={{
@@ -1857,6 +1974,74 @@ export function HoldingLogs() {
         </div>
       )}
       </div>
+
+      <ConfirmModal
+        open={showBatchDeleteConfirm}
+        onClose={() => setShowBatchDeleteConfirm(false)}
+        title={`Delete ${selectedLogIds.size} history ${selectedLogIds.size === 1 ? 'entry' : 'entries'}?`}
+        description="This removes only Activity Log records. It will not change holdings, cash accounts, dividends, or any portfolio data."
+        confirmText="Delete history only"
+        confirmVariant="danger"
+        confirmIcon={<TrashIcon className="h-4 w-4" />}
+        onConfirm={() => {
+          removeHoldingLogs(Array.from(selectedLogIds))
+          showToast(`Deleted ${selectedLogIds.size} history ${selectedLogIds.size === 1 ? 'entry' : 'entries'}`, 'success')
+          setSelectedLogIds(new Set())
+          setShowBatchDeleteConfirm(false)
+        }}
+      />
+
+      <Modal
+        open={showManualNote}
+        onClose={() => setShowManualNote(false)}
+        title="Add history-only note"
+        description="This note is saved in Activity Logs only and does not change any portfolio data."
+        size="sm"
+        footer={
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={() => setShowManualNote(false)} className="flex-1 cursor-pointer">
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={saveManualNote} className="flex-1 cursor-pointer">
+              Add note
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-3">
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-semibold text-ink-muted">Note</span>
+            <textarea
+              value={manualNote}
+              onChange={(e) => setManualNote(e.target.value)}
+              placeholder="e.g. Reviewed portfolio allocation"
+              rows={4}
+              autoFocus
+              className="w-full resize-none rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
+            />
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <label>
+              <span className="mb-1.5 block text-xs font-semibold text-ink-muted">Date</span>
+              <input
+                type="date"
+                value={manualNoteDate}
+                onChange={(e) => setManualNoteDate(e.target.value)}
+                className="h-10 w-full rounded-xl border border-line bg-surface px-2.5 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
+              />
+            </label>
+            <label>
+              <span className="mb-1.5 block text-xs font-semibold text-ink-muted">Time</span>
+              <input
+                type="time"
+                value={manualNoteTime}
+                onChange={(e) => setManualNoteTime(e.target.value)}
+                className="h-10 w-full rounded-xl border border-line bg-surface px-2.5 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
+              />
+            </label>
+          </div>
+        </div>
+      </Modal>
 
       {/* Custom Undo Confirmation Modal */}
       <ConfirmModal
