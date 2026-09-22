@@ -114,7 +114,10 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
   // Backdated transaction date
   const [txDate, setTxDate] = useState<string>(localDateStr())
 
-  const isBtc = form.assetClass === 'crypto'
+  const isBtc = form.assetClass === 'crypto' && (
+    form.ticker.trim().toUpperCase() === 'BTC' ||
+    form.name.toLowerCase().includes('bitcoin')
+  )
   const isUsd = form.assetClass === 'stock'
   const isGold = form.assetClass === 'gold'
   const isRealEstate = form.assetClass === 'real_estate'
@@ -798,6 +801,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
     ? `Prices in USD, converted to THB at ${usdThb ? `฿${usdThb.toFixed(2)}/USD` : 'live rate'}.`
     : isRealEstate
     ? 'บันทึกบ้าน คอนโด หรือที่ดิน พร้อมราคาซื้อและมูลค่าประเมินปัจจุบัน'
+    : form.assetClass === 'crypto'
+    ? 'Crypto units, cost per unit, and current price are recorded in Thai Baht.'
     : 'Thai fund, stock, or DR, valued in THB.'
 
   return (
@@ -879,7 +884,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
           options={[
             { value: 'fund', label: 'Thai Assets (Stocks, Funds, DR)' },
             { value: 'stock', label: 'US Stock' },
-            { value: 'crypto', label: 'Bitcoin' },
+            { value: 'crypto', label: 'Crypto (BTC, ETH, and other tokens)' },
             { value: 'gold', label: 'Gold' },
             { value: 'real_estate', label: 'Real Estate (House / Condo / Land)' },
           ]}
@@ -1417,11 +1422,11 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 error={showErrors && form.units === '' && !isRealEstate ? 'Units are required' : undefined}
                 onChange={(units) => setForm((f) => ({ ...f, units }))}
                 placeholder={isRealEstate ? "1" : "0"}
-                step={isRealEstate ? 1 : 0.0001}
+                step={isRealEstate ? 1 : form.assetClass === 'crypto' ? 0.00000001 : 0.0001}
               />
               <div className="grid grid-cols-1 gap-3 ">
                 <NumberField
-                  label={isRealEstate ? "Purchase Cost (THB)" : "Avg cost / unit"}
+                  label={isRealEstate ? "Purchase Cost (THB)" : form.assetClass === 'crypto' ? "Cost per Unit (THB)" : "Avg cost / unit"}
                   prefix="฿"
                   value={form.avgCost}
                   error={showErrors && form.avgCost === '' ? 'Cost is required' : undefined}
@@ -1429,7 +1434,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                   placeholder="0"
                 />
                 <NumberField
-                  label={isRealEstate ? "Current Valuation (THB)" : "Current price / unit"}
+                  label={isRealEstate ? "Current Valuation (THB)" : form.assetClass === 'crypto' ? "Current Price per Unit (THB)" : "Current price / unit"}
                   prefix="฿"
                   value={form.price}
                   error={showErrors && form.price === '' ? 'Price is required' : undefined}
@@ -1647,4 +1652,3 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
     </Modal>
   )
 }
-
