@@ -840,7 +840,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
           <button
             type="button"
             onClick={() => setIsGeneralExpanded((v) => !v)}
-            className="w-full flex items-center justify-between p-3.5 sm:p-4 text-left hover:bg-brand-soft/50 transition-colors cursor-pointer select-none"
+            className="w-full flex items-center justify-between p-3.5 sm:p-4 text-left bg-brand-soft/70 transition-colors cursor-pointer select-none"
             aria-expanded={isGeneralExpanded}
           >
             <div className="flex items-center gap-2 min-w-0 pr-2">
