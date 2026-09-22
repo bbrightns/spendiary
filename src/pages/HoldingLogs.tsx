@@ -354,6 +354,11 @@ const ASSET_FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'cash', label: 'Cash' },
 ]
 
+function getLogAssetLabel(log: HoldingLog): string {
+  if (log.ticker === 'FIXED') return 'expense'
+  return ASSET_FILTERS.find((filter) => filter.key === log.assetClass)?.label ?? log.assetClass
+}
+
 const ACTION_FILTERS = [
   { key: 'all', label: 'All' },
   { key: 'buy', label: 'Buy / Add' },
@@ -1653,7 +1658,7 @@ export function HoldingLogs() {
                                     : (ASSET_META[log.assetClass]?.color ?? '#6366f1'),
                               }}
                             >
-                              {log.ticker === 'FIXED' ? 'expense' : log.assetClass}
+                              {getLogAssetLabel(log)}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-right whitespace-nowrap tnum font-semibold text-ink">
@@ -2032,4 +2037,3 @@ export function HoldingLogs() {
     </>
   )
 }
-
