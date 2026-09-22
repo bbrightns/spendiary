@@ -302,3 +302,17 @@ export interface SpendiaryData {
   /** Timestamp in ms when this data was last modified locally */
   lastUpdatedAt?: number
 }
+
+export interface SpendiaryBackupPreferences {
+  theme?: 'light' | 'dark' | 'system'
+  pnlDisplay?: 'pct' | 'thb'
+  logsViewMode?: 'table' | 'timeline'
+  goldSellUnit?: 'grams' | 'baht'
+}
+
+export interface SpendiaryBackup {
+  schemaVersion: 1
+  exportedAt: string
+  data: SpendiaryData
+  preferences: SpendiaryBackupPreferences
+}
