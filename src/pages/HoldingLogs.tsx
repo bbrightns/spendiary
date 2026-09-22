@@ -348,7 +348,7 @@ const ASSET_FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'fund', label: 'Thai Assets' },
   { key: 'stock', label: 'US Stocks' },
-  { key: 'crypto', label: 'Bitcoin' },
+  { key: 'crypto', label: 'Crypto' },
   { key: 'gold', label: 'Gold' },
   { key: 'real_estate', label: 'Real Estate' },
   { key: 'cash', label: 'Cash' },
