@@ -845,7 +845,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
           >
             <div className="flex items-center gap-2 min-w-0 pr-2">
               <span className="text-sm">📦</span>
-              <span className="text-sm font-bold text-ink truncate">
+              <span className="rounded-lg bg-brand-soft/50 px-2 py-1 text-sm font-bold text-brand-ink truncate">
                 ข้อมูลทั่วไป (General Info)
               </span>
               {!isGeneralExpanded && (form.name || form.ticker) && (
