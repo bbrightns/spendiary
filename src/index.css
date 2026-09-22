@@ -236,6 +236,26 @@
   }
 }
 
+/* Activity Logs table uses the full content viewport at every breakpoint. */
+.card-bleed-wide {
+  margin-inline: -1.25rem;
+  border-inline-width: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media (min-width: 640px) {
+  .card-bleed-wide {
+    margin-inline: -2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .card-bleed-wide {
+    margin-inline: -2.5rem;
+  }
+}
+
 
 @keyframes rise {
   from {
@@ -335,4 +355,3 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 .dark input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
-
