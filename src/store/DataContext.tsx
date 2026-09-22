@@ -301,6 +301,7 @@ interface DataContextValue {
   }) => void
   addHoldingLog: (log: Omit<HoldingLog, 'id' | 'timestamp'> & { id?: string; timestamp?: string }) => void
   removeHoldingLog: (logId: string) => void
+  removeHoldingLogs: (logIds: string[]) => void
   undoHoldingLog: (logId: string) => void
   updateHoldingLogTimestamp: (logId: string, timestamp: string) => void
 
@@ -1288,7 +1289,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             : prev.holdings.find((h) => h.ticker === log.ticker)
           const previousHoldingState =
             log.previousHoldingState ??
-            (log.action !== 'add' && holding
+            (log.action !== 'add' && log.action !== 'note' && holding
               ? JSON.parse(JSON.stringify(holding))
               : undefined)
 
@@ -1312,6 +1313,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
           ...prev,
           holdingLogs: (prev.holdingLogs ?? []).filter((log) => log.id !== logId),
         })),
+
+      removeHoldingLogs: (logIds) =>
+        updateData((prev) => {
+          const ids = new Set(logIds)
+          return {
+            ...prev,
+            holdingLogs: (prev.holdingLogs ?? []).filter((log) => !ids.has(log.id)),
+          }
+        }),
 
       updateHoldingLogTimestamp: (logId, timestamp) =>
         updateData((prev) => {
