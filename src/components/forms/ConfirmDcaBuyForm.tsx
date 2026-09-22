@@ -764,33 +764,6 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               />
             )}
 
-            {isCrypto && !isBtc && (
-              <div className="space-y-4">
-                <NumberField
-                  label="Amount spent (THB)"
-                  prefix="฿"
-                  value={amountSpentThb}
-                  onChange={setAmountSpentThb}
-                  placeholder="2,000"
-                  error={showErrors && amountThbNum <= 0 ? 'Required (> 0)' : undefined}
-                />
-                <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-2.5">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-ink-muted">Price per unit</span>
-                    <span className="tnum font-semibold text-ink">
-                      {cryptoPricePerUnit > 0 ? `฿${fmtNum(cryptoPricePerUnit, 8)}` : 'Set a current price first'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-ink-muted">Units to add</span>
-                    <span className={`tnum font-semibold ${cryptoUnitsToAdd > 0 ? 'text-ink' : 'text-loss'}`}>
-                      {fmtNum(cryptoUnitsToAdd, 8)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Static PURCHASE SUMMARY Preview Section: Crypto / BTC */}
             <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-3 shadow-sm">
               <div className="flex items-center justify-between border-b border-line pb-2">
@@ -825,6 +798,33 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                 <span className="font-medium text-ink-muted">New Avg Cost</span>
                 <span className={`tnum ${hasValidBtc ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
                   {hasValidBtc ? `$${fmtNum(Math.round(rate > 0 ? btcNewAvgCostThb / rate : 0), 0)} / BTC (≈ ฿${fmtNum(Math.round(btcNewAvgCostThb), 0)})` : '$0 / BTC'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isCrypto && !isBtc && (
+          <div className="space-y-4">
+            <NumberField
+              label="Amount spent (THB)"
+              prefix="฿"
+              value={amountSpentThb}
+              onChange={setAmountSpentThb}
+              placeholder="2,000"
+              error={showErrors && amountThbNum <= 0 ? 'Required (> 0)' : undefined}
+            />
+            <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-2.5">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-ink-muted">Price per unit</span>
+                <span className="tnum font-semibold text-ink">
+                  {cryptoPricePerUnit > 0 ? `฿${fmtNum(cryptoPricePerUnit, 8)}` : 'Set a current price first'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-ink-muted">Units to add</span>
+                <span className={`tnum font-semibold ${cryptoUnitsToAdd > 0 ? 'text-ink' : 'text-loss'}`}>
+                  {fmtNum(cryptoUnitsToAdd, 8)}
                 </span>
               </div>
             </div>
