@@ -16,17 +16,26 @@ import type { SpendiaryData } from '../lib/types'
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 function hasData(data: SpendiaryData): boolean {
-  return data.holdings.length > 0 || data.dcaPlans.length > 0 || data.transfers.length > 0
+  return data.holdings.length > 0 ||
+    data.cashAccounts.length > 0 ||
+    data.dcaPlans.length > 0 ||
+    data.transfers.length > 0 ||
+    (data.holdingLogs?.length ?? 0) > 0 ||
+    (data.dividendRecords?.length ?? 0) > 0
 }
 
 function dataSummary(data: SpendiaryData): string {
   const parts: string[] = []
   if (data.holdings.length > 0)
     parts.push(`${data.holdings.length} holding${data.holdings.length !== 1 ? 's' : ''}`)
+  if (data.cashAccounts.length > 0)
+    parts.push(`${data.cashAccounts.length} cash account${data.cashAccounts.length !== 1 ? 's' : ''}`)
   if (data.dcaPlans.length > 0)
     parts.push(`${data.dcaPlans.length} DCA plan${data.dcaPlans.length !== 1 ? 's' : ''}`)
   if (data.transfers.length > 0)
     parts.push(`${data.transfers.length} transfer${data.transfers.length !== 1 ? 's' : ''}`)
+  if ((data.holdingLogs?.length ?? 0) > 0)
+    parts.push(`${data.holdingLogs?.length} log${data.holdingLogs?.length !== 1 ? 's' : ''}`)
   if (parts.length === 0) return 'no data'
   return parts.join(', ')
 }
@@ -327,7 +336,7 @@ export function Settings() {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-ink">Export data</p>
                   <p className="mt-0.5 text-xs text-ink-muted">
-                    Download all holdings, DCA plans, and transfers as a JSON file.
+                    Download all holdings, cash accounts, transactions, logs, settings, and history as a JSON backup.
                   </p>
                   {exportToast.kind !== 'idle' && (
                     <p
