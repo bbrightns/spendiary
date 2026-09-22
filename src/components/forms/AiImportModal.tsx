@@ -13,99 +13,51 @@ import {
 } from '../icons'
 import { useData } from '../../store/DataContext'
 
-const AI_PROMPT_TEMPLATE = `Convert my investment portfolio and cash records into a clean JSON structure for Spendiary app.
+const AI_PROMPT_TEMPLATE = `Convert my financial records into a valid JSON import for Spendiary.
 
-[Instructions]:
-1. Output RAW JSON ONLY. Do not wrap with conversational text or markdown explanation.
-   * Exception: If any unit of measurement (shares, units, grams vs baht gold, satoshi vs BTC), currency (USD vs THB), or price/cost figure is unclear or not specified in my data, DO NOT GUESS — ask me directly to clarify before outputting the JSON!
+Rules:
+1. Return RAW JSON only. Do not add Markdown or commentary. If a unit, currency, date, transaction direction, cost, or current price is ambiguous, ask a clarification question instead of guessing.
+2. Preserve every record. Never merge different tickers, accounts, transactions, or logs just because their names look similar. Numbers must be JSON numbers without commas.
+3. Use these asset classes:
+   - "fund": Thai stocks, Thai mutual funds, Thai DR/DRx, and SET/MAI assets. Values are THB.
+   - "stock": US stocks and US ETFs. Costs/prices are USD when supplied; also preserve totalThbInvested, totalUsdInvested, and FX data when present.
+   - "crypto": BTC, ETH, SOL, and other tokens. For BTC, preserve BTC-specific satoshi/location data when available. For other tokens, use fractional units (up to 8 decimal places) with avgCost and price in THB.
+   - "gold": physical gold or gold holdings. Preserve grams/baht-gold and location data when present.
+   - "real_estate": property, land, or a home, valued in THB.
+   - "cash": only for cash-account records, never for an investment holding.
+4. Keep transaction history in "holdingLogs" and dividend history in "dividendRecords". Preserve action, timestamp, holdingId, units, proceeds, realizedPnL, fees, cashAccountId, and before/after snapshots when supplied.
+5. Keep DCA plans, recurring transfers, liabilities, fixed costs, income, personal budget, retirement settings, rebalance settings, planned assets, and net-worth/portfolio history when supplied.
+6. Cash sale proceeds are not new deposits. Preserve the original action and amount so Spendiary can distinguish buys, deposits, sales, dividends, and transfers.
+7. Do not invent live prices, FX rates, IDs, dates, tax, or transaction history. If a current price is unavailable for a THB asset, use avgCost only when the source explicitly says the current value is unknown; otherwise ask.
 
-2. Asset Classification Rules for Spendiary (CRITICAL):
-   - "fund": Use for ALL Thai market assets (always set "currency": "THB"):
-     • Thai Stocks (e.g. PTT, CPALL, BDMS, DELTA, AOT, KBANK, SCB)
-     • Thai Mutual Funds (e.g. SCBDV, K-CASH, B-INNOTECH, SCBSET, funds ending in -A, -SSF, -RMF)
-     • Thai DR / DRx (Depositary Receipts e.g. E1VFVN3001, FUEVFVND01, AAPL80X, NVDA80X, NDX01)
-     • Price rule: Include current price in "price" if available in my data. If unknown, set "price" equal to "avgCost".
-   - "stock": Use ONLY for US Stocks and US ETFs (always set "currency": "USD"):
-     • US Stocks (e.g. AAPL, MSFT, NVDA, TSLA, GOOGL, AMZN, META)
-     • US ETFs (e.g. SPY, VOO, QQQ, VTI, SCHD)
-     • Price rule: Do NOT include "price" (Spendiary fetches real-time prices automatically).
-   - "crypto": Use for Cryptocurrencies (e.g. BTC, ETH). Currency "USD" or "THB".
-   - "gold": Use for Physical Gold or Gold assets (e.g. XAU, Baht Gold).
-
-3. If there are investment assets, put them in the "holdings" array:
-   - "ticker": string (e.g. "PTT", "CPALL", "SCBDV", "AAPL80X", "AAPL", "NVDA", "VOO", "BTC", "GOLD")
-   - "name": string (e.g. "PTT Public Company", "Apple Inc", "SCB Dividend Equity Fund")
-   - "assetClass": "fund" (for Thai stocks, funds, DR) | "stock" (for US stocks, US ETFs) | "crypto" | "gold"
-   - "units": number (positive, no commas, e.g. 1000)
-   - "avgCost": number (average cost per unit, no commas)
-   - "currency": "THB" (for Thai stocks/funds/DR) or "USD" (for US stocks/ETFs)
-   - "price": number (OPTIONAL. Include for Thai assets if known; do NOT include for US stocks/ETFs)
-
-4. If there are bank accounts or cash, put them in the "cashAccounts" array:
-   - "name": string (e.g. "KBank Savings", "SCB", "Cash")
-   - "balance": number (no commas, e.g. 50000)
-   - "currency": "THB" or "USD" (defaults to "THB")
-
-5. Clarification rule: If any asset's units, currency, or figures are unclear or ambiguous, do NOT guess — ask me directly to confirm.
-
-[Expected JSON Schema]:
+Expected shape:
 {
-  "cashAccounts": [
-    {
-      "name": "KBank Savings",
-      "balance": 50000,
-      "currency": "THB"
-    }
-  ],
-  "holdings": [
-    {
-      "ticker": "PTT",
-      "name": "PTT Public Company",
-      "assetClass": "fund",
-      "units": 1000,
-      "avgCost": 34.5,
-      "price": 35.0,
-      "currency": "THB"
-    },
-    {
-      "ticker": "SCBDV",
-      "name": "SCB Dividend Stock Open End Fund",
-      "assetClass": "fund",
-      "units": 500,
-      "avgCost": 12.5,
-      "price": 13.2,
-      "currency": "THB"
-    },
-    {
-      "ticker": "AAPL80X",
-      "name": "Apple Inc DRx",
-      "assetClass": "fund",
-      "units": 100,
-      "avgCost": 7.8,
-      "currency": "THB"
-    },
-    {
-      "ticker": "NVDA",
-      "name": "NVIDIA Corporation",
-      "assetClass": "stock",
-      "units": 15,
-      "avgCost": 120.5,
-      "currency": "USD"
-    },
-    {
-      "ticker": "VOO",
-      "name": "Vanguard S&P 500 ETF",
-      "assetClass": "stock",
-      "units": 10,
-      "avgCost": 480.0,
-      "currency": "USD"
-    }
-  ]
+  "userName": "optional",
+  "monthlyIncome": 0,
+  "monthlyFixedCost": 0,
+  "monthlyPersonal": 0,
+  "cashAccounts": [{ "id": "optional", "name": "KBank", "balance": 50000, "currency": "THB" }],
+  "holdings": [{
+    "id": "optional", "name": "Ethereum", "ticker": "ETH", "assetClass": "crypto",
+    "units": 0.12567891, "avgCost": 120000, "price": 135000, "currency": "THB",
+    "totalThbInvested": 15084.39
+  }],
+  "holdingLogs": [],
+  "dividendRecords": [],
+  "dcaPlans": [],
+  "transfers": [],
+  "fixedCostItems": [],
+  "liabilities": [],
+  "retirement": {},
+  "plannedAssets": [],
+  "netWorthHistory": [],
+  "portfolioHistory": [],
+  "rebalanceMode": "class",
+  "rebalanceTargets": {}
 }
 
----
-Here is my portfolio / asset data:
-[PASTE YOUR EXCEL / TEXT DATA HERE]`
+Here are my records:
+[PASTE EXCEL, CSV, notes, statements, or existing JSON HERE]`
 
 interface AiImportModalProps {
   open: boolean
