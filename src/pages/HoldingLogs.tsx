@@ -433,9 +433,6 @@ export function HoldingLogs() {
   const [manualNoteDate, setManualNoteDate] = useState(() => localDateStr(new Date()))
   const [manualNoteTime, setManualNoteTime] = useState(() => new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
 
-  const selectedVisibleCount = filtered.filter((log) => selectedLogIds.has(log.id)).length
-  const allVisibleSelected = filtered.length > 0 && filtered.every((log) => selectedLogIds.has(log.id))
-
   const toggleLogSelection = (logId: string) => {
     setSelectedLogIds((prev) => {
       const next = new Set(prev)
@@ -515,6 +512,9 @@ export function HoldingLogs() {
 
     return true
   })
+
+  const selectedVisibleCount = filtered.filter((log) => selectedLogIds.has(log.id)).length
+  const allVisibleSelected = filtered.length > 0 && filtered.every((log) => selectedLogIds.has(log.id))
 
   const handleExportCsv = () => {
     if (filtered.length === 0) {
