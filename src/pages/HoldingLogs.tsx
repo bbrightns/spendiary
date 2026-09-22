@@ -1925,7 +1925,7 @@ export function HoldingLogs() {
           title="Edit Transaction"
           description={`ปรับเปลี่ยนวันและเวลาบันทึกสำหรับ "${editingDateLog.holdingName}" (${getLogActionMeta(editingDateLog).label})`}
           footer={
-            <div className="flex items-center gap-3 w-full">
+            <div className="flex items-center justify-between gap-3 w-full">
               <button
                 type="button"
                 onClick={(e) => {
@@ -1953,29 +1953,31 @@ export function HoldingLogs() {
               >
                 {confirmDeleteLog ? 'Confirm Delete' : <TrashIcon className="h-[18px] w-[18px]" />}
               </button>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setEditingDateLog(null)
-                  setConfirmDeleteLog(false)
-                }}
-              >
-                ยกเลิก
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() => {
-                  if (editingDateLog && editDateValue) {
-                    const newTimestamp = dateStrToTimestamp(editDateValue, editTimeValue)
-                    updateHoldingLogTimestamp(editingDateLog.id, newTimestamp)
-                    showToast(`แก้ไขวันที่ของ "${editingDateLog.holdingName}" เรียบร้อยแล้ว`, 'success')
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
                     setEditingDateLog(null)
                     setConfirmDeleteLog(false)
-                  }
-                }}
-              >
-                บันทึกวันที่
-              </Button>
+                  }}
+                >
+                  ยกเลิก
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    if (editingDateLog && editDateValue) {
+                      const newTimestamp = dateStrToTimestamp(editDateValue, editTimeValue)
+                      updateHoldingLogTimestamp(editingDateLog.id, newTimestamp)
+                      showToast(`แก้ไขวันที่ของ "${editingDateLog.holdingName}" เรียบร้อยแล้ว`, 'success')
+                      setEditingDateLog(null)
+                      setConfirmDeleteLog(false)
+                    }
+                  }}
+                >
+                  บันทึกวันที่
+                </Button>
+              </div>
             </div>
           }
         >
