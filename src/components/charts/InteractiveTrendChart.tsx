@@ -45,6 +45,37 @@ export function InteractiveTrendChart({
     return subset.length >= 2 ? subset : history
   }, [history, timeframe])
 
+  // Chart dimensions & calculations
+  const W = 800
+  const H = 200
+  const PAD_X = 16
+  const PAD_Y = 24
+  const iW = W - PAD_X * 2
+  const iH = H - PAD_Y * 2
+
+  const vals = filteredHistory.map((s) => s.value)
+  const minV = vals.length > 0 ? Math.min(...vals) : 0
+  const maxV = vals.length > 0 ? Math.max(...vals) : 0
+  const range = maxV - minV || 1
+
+  const pts = useMemo(() => {
+    return filteredHistory.map((s, i) => ({
+      x: PAD_X + (i / Math.max(1, filteredHistory.length - 1)) * iW,
+      y: PAD_Y + (1 - (s.value - minV) / range) * iH,
+      ...s,
+    }))
+  }, [filteredHistory, minV, range, iW, iH])
+
+  const linePath = useMemo(() => {
+    if (pts.length === 0) return ''
+    return pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+  }, [pts])
+
+  const areaPath = useMemo(() => {
+    if (pts.length === 0) return ''
+    return `${linePath} L${pts[pts.length - 1].x.toFixed(1)},${H} L${pts[0].x.toFixed(1)},${H}Z`
+  }, [linePath, pts, H])
+
   // Single snapshot — Day 1 state
   if (history && history.length === 1) {
     const single = history[0]
@@ -91,37 +122,6 @@ export function InteractiveTrendChart({
       </div>
     )
   }
-
-  // Chart dimensions & calculations
-  const W = 800
-  const H = 200
-  const PAD_X = 16
-  const PAD_Y = 24
-  const iW = W - PAD_X * 2
-  const iH = H - PAD_Y * 2
-
-  const vals = filteredHistory.map((s) => s.value)
-  const minV = vals.length > 0 ? Math.min(...vals) : 0
-  const maxV = vals.length > 0 ? Math.max(...vals) : 0
-  const range = maxV - minV || 1
-
-  const pts = useMemo(() => {
-    return filteredHistory.map((s, i) => ({
-      x: PAD_X + (i / Math.max(1, filteredHistory.length - 1)) * iW,
-      y: PAD_Y + (1 - (s.value - minV) / range) * iH,
-      ...s,
-    }))
-  }, [filteredHistory, minV, range, iW, iH])
-
-  const linePath = useMemo(() => {
-    if (pts.length === 0) return ''
-    return pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
-  }, [pts])
-
-  const areaPath = useMemo(() => {
-    if (pts.length === 0) return ''
-    return `${linePath} L${pts[pts.length - 1].x.toFixed(1)},${H} L${pts[0].x.toFixed(1)},${H}Z`
-  }, [linePath, pts, H])
 
   if (filteredHistory.length < 2) {
     return null
