@@ -297,6 +297,7 @@ interface DataContextValue {
     timestamp?: string
   }) => void
   addHoldingLog: (log: Omit<HoldingLog, 'id' | 'timestamp'> & { id?: string; timestamp?: string }) => void
+  removeHoldingLog: (logId: string) => void
   undoHoldingLog: (logId: string) => void
   updateHoldingLogTimestamp: (logId: string, timestamp: string) => void
 
@@ -1303,6 +1304,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }
         }),
 
+      removeHoldingLog: (logId) =>
+        updateData((prev) => ({
+          ...prev,
+          holdingLogs: (prev.holdingLogs ?? []).filter((log) => log.id !== logId),
+        })),
+
       updateHoldingLogTimestamp: (logId, timestamp) =>
         updateData((prev) => {
           const logs = prev.holdingLogs ?? []
@@ -1934,6 +1941,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
               avgCost: newAvgCostThb,
             }
             logNote = `DCA Buy: ${calculatedUnits.toFixed(4)} units @ ฿${pricePerUnit.toFixed(2)}/unit (+฿${spentThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
+          } else if (holding.assetClass === 'crypto') {
+            const currentUnits = holding.units ?? holding.totalUnits ?? 0
+            const spentThb = calculatedUnits * pricePerUnit
+            const newTotalUnits = currentUnits + calculatedUnits
+            const currentThbInvested = holding.totalThbInvested ?? (currentUnits * (holding.avgCostThb ?? holding.avgCost ?? 0))
+            const newTotalThb = parseFloat((currentThbInvested + spentThb).toFixed(2))
+            const newAvgCostThb = newTotalUnits > 0 ? newTotalThb / newTotalUnits : holding.avgCost
+            newUnits = newTotalUnits
+            newAvgCost = newAvgCostThb
+            updatedFields = {
+              totalThbInvested: newTotalThb,
+              totalUnits: newTotalUnits,
+              units: newTotalUnits,
+              avgCostThb: newAvgCostThb,
+              avgCost: newAvgCostThb,
+              price: pricePerUnit > 0 ? pricePerUnit : holding.price,
+            }
+            logNote = `DCA Buy: ${calculatedUnits.toFixed(8)} units @ ฿${pricePerUnit.toFixed(8)}/unit (+฿${spentThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
           }
 
           const isBtcWithLocations = holding.assetClass === 'crypto' && (finalBtcLocations?.length ?? 0) > 0

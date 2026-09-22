@@ -70,7 +70,11 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const assetClass = plan?.assetClass ?? holding?.assetClass
   const isCash  = assetClass === 'cash' || !!plan?.cashAccountId
   const isStock = !isCash && assetClass === 'stock'
-  const isBtc   = !isCash && assetClass === 'crypto'
+  const isCrypto = !isCash && assetClass === 'crypto'
+  const isBtc   = isCrypto && (
+    (holding?.ticker ?? plan?.ticker ?? '').toUpperCase() === 'BTC' ||
+    (holding?.name ?? plan?.name ?? '').toLowerCase().includes('bitcoin')
+  )
   const isGold  = !isCash && assetClass === 'gold'
   const isFund  = !isCash && assetClass === 'fund'
   const rate = usdThb && usdThb > 0 ? usdThb : 33.40
@@ -248,6 +252,9 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   // --------------------------------------------------------------------------
   // Validation Logic
   // --------------------------------------------------------------------------
+  const cryptoPricePerUnit = holding?.price ?? holding?.avgCost ?? 0
+  const cryptoUnitsToAdd = cryptoPricePerUnit > 0 ? amountThbNum / cryptoPricePerUnit : 0
+
   const valid = isStock
     ? stockUnitsBoughtNum > 0 && amountThbNum > 0 && fxRateNum > 0
     : isFund
@@ -256,6 +263,8 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     ? goldGramsToAdd > 0 && amountThbNum > 0
     : isBtc
     ? satsNum > 0 && amountThbNum > 0
+    : isCrypto
+    ? cryptoUnitsToAdd > 0 && amountThbNum > 0
     : amountThbNum > 0
 
   const locValid = !(isBtc || isGold) ||
@@ -397,6 +406,20 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
           satsBought: satsNum,
           amountSpentThb: amountThbNum,
         },
+      )
+    } else if (isCrypto) {
+      confirmDcaBuy(
+        p.id,
+        cryptoPricePerUnit,
+        today,
+        cryptoUnitsToAdd,
+        cryptoPricePerUnit,
+        cryptoPricePerUnit,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        resolvedTargetId,
       )
     } else {
       confirmDcaBuy(
@@ -739,6 +762,33 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                 placeholder="e.g. Binance, Cold Wallet..."
                 error={showErrors && !locValid ? 'Location name required' : undefined}
               />
+            )}
+
+            {isCrypto && !isBtc && (
+              <div className="space-y-4">
+                <NumberField
+                  label="Amount spent (THB)"
+                  prefix="฿"
+                  value={amountSpentThb}
+                  onChange={setAmountSpentThb}
+                  placeholder="2,000"
+                  error={showErrors && amountThbNum <= 0 ? 'Required (> 0)' : undefined}
+                />
+                <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-2.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-ink-muted">Price per unit</span>
+                    <span className="tnum font-semibold text-ink">
+                      {cryptoPricePerUnit > 0 ? `฿${fmtNum(cryptoPricePerUnit, 8)}` : 'Set a current price first'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-ink-muted">Units to add</span>
+                    <span className={`tnum font-semibold ${cryptoUnitsToAdd > 0 ? 'text-ink' : 'text-loss'}`}>
+                      {fmtNum(cryptoUnitsToAdd, 8)}
+                    </span>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Static PURCHASE SUMMARY Preview Section: Crypto / BTC */}
