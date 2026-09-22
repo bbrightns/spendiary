@@ -16,7 +16,10 @@ import { useData } from '../../store/DataContext'
 const AI_PROMPT_TEMPLATE = `Convert my financial records into a valid JSON import for Spendiary.
 
 Rules:
-1. Return RAW JSON only. Do not add Markdown or commentary. If a unit, currency, date, transaction direction, cost, or current price is ambiguous, ask a clarification question instead of guessing.
+1. Input Completeness Check & Clarification:
+   - If any required information is missing, incomplete, or ambiguous (such as avgCost, total invested capital, exact ticker symbols, unit counts, currency, or prices), DO NOT generate the JSON.
+   - Stop immediately and return a detailed, itemized numbered list in THAI (ภาษาไทย) asking for the missing data per detected asset (e.g., breakdown by holding name/ticker: units detected, missing avgCost or totalThbInvested, ticker ambiguities).
+   - Only output RAW JSON once all necessary fields are fully satisfied. Do not include Markdown fences or conversational text when returning the final JSON.
 2. Preserve every record. Never merge different tickers, accounts, transactions, or logs just because their names look similar. Numbers must be JSON numbers without commas.
 3. Use these asset classes:
    - "fund": Thai stocks, Thai mutual funds, Thai DR/DRx, and SET/MAI assets. Values are THB.
@@ -28,7 +31,7 @@ Rules:
 4. Keep transaction history in "holdingLogs" and dividend history in "dividendRecords". Preserve action, timestamp, holdingId, units, proceeds, realizedPnL, fees, cashAccountId, and before/after snapshots when supplied.
 5. Keep DCA plans, recurring transfers, liabilities, fixed costs, income, personal budget, retirement settings, rebalance settings, planned assets, and net-worth/portfolio history when supplied.
 6. Cash sale proceeds are not new deposits. Preserve the original action and amount so Spendiary can distinguish buys, deposits, sales, dividends, and transfers.
-7. Do not invent live prices, FX rates, IDs, dates, tax, or transaction history. If a current price is unavailable for a THB asset, use avgCost only when the source explicitly says the current value is unknown; otherwise ask.
+7. Do not invent live prices, FX rates, IDs, dates, tax, or transaction history. If a current price is unavailable for a THB asset, use avgCost only when the source explicitly says the current value is unknown; otherwise, include the missing price in the Thai clarification list.
 
 Expected shape:
 {
