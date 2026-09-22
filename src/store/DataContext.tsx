@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import type { BtcLocation, CashAccount, DcaPlan, DividendRecord, FixedCostItem, GoldLocation, Holding, HoldingLog, InvestAssetClass, Liability, NetWorthSnapshot, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
+import type { BtcLocation, CashAccount, DcaPlan, DividendRecord, FixedCostItem, GoldLocation, Holding, HoldingLog, InvestAssetClass, Liability, NetWorthSnapshot, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryBackup, SpendiaryData, Transfer } from '../lib/types'
 import { localDateStr } from '../lib/format'
 import { seedData } from '../lib/seed'
 import { detectBankPreset, findMatchingHolding, inferCashCategory } from '../lib/calc'
@@ -965,7 +965,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return {
             ...prev,
             cashAccounts,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
           }
         }),
       setMonthlyIncome: (monthlyIncome) => updateData((prev) => ({ ...prev, monthlyIncome })),
@@ -990,7 +990,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return {
             ...prev,
             fixedCostItems: updatedItems,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
           }
         }),
       removeFixedCostItem: (id) =>
@@ -1012,7 +1012,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return {
             ...prev,
             fixedCostItems: updatedItems,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
           }
         }),
       setMonthlyPersonal: (monthlyPersonal) => updateData((prev) => ({ ...prev, monthlyPersonal })),
@@ -1038,7 +1038,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return {
             ...prev,
             liabilities: updatedItems,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
           }
         }),
       removeLiability: (id) =>
@@ -1058,7 +1058,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return {
             ...prev,
             liabilities: updatedItems,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
           }
         }),
       setLiabilities: (liabilities) =>
@@ -1108,7 +1108,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return {
             ...prev,
             liabilities: updatedItems,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
           }
         }),
 
@@ -1150,7 +1150,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return {
             ...prev,
             liabilities: updatedItems,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
           }
         }),
 
@@ -1230,7 +1230,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             holdings: updatedHoldings,
             rebalanceHoldingTargets: restTargets,
             cashAccounts: updatedCashAccounts,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
           }
         }),
 
@@ -1273,7 +1273,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             ...prev,
             holdings: updatedHoldings,
             cashAccounts: updatedCashAccounts,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
           }
         }),
 
@@ -1299,7 +1299,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 previousHoldingState,
               },
               ...(prev.holdingLogs ?? []),
-            ].slice(0, 200),
+            ],
           }
         }),
 
@@ -1629,7 +1629,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return {
             ...prev,
             dcaPlans: updatedPlans,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
           }
         }),
       removePlan: (id) =>
@@ -1651,7 +1651,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return {
             ...prev,
             dcaPlans: updatedPlans,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
           }
         }),
 
@@ -1719,7 +1719,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
               ...prev,
               cashAccounts: updatedCashAccounts,
               dcaPlans: updatedPlans,
-              holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+              holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
             }
           }
 
@@ -1782,7 +1782,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             return {
               ...prev,
               dcaPlans: updatedPlans,
-              holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+              holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
             }
           }
 
@@ -1976,7 +1976,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             ...prev,
             dcaPlans: updatedPlans,
             holdings: updatedHoldings,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
           }
         }),
 
@@ -2007,7 +2007,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return {
             ...prev,
             dcaPlans: updatedPlans,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
           }
         }),
 
@@ -2066,7 +2066,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             ...prev,
             cashAccounts: updatedCashAccounts,
             dividendRecords: [newRecord, ...(prev.dividendRecords ?? [])],
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
           }
         }),
 
@@ -2146,7 +2146,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       // ── Export ────────────────────────────────────────────────
       exportData: () => {
-        const json = JSON.stringify(dataRef.current, null, 2)
+        const preferences: SpendiaryBackup['preferences'] = {}
+        try {
+          const theme = localStorage.getItem('spendiary.theme')
+          const pnlDisplay = localStorage.getItem('spendiary_pnl_display')
+          const logsViewMode = localStorage.getItem('spendiary_logs_view_mode')
+          const goldSellUnit = localStorage.getItem('spendiary_gold_sell_unit')
+          if (theme === 'light' || theme === 'dark' || theme === 'system') preferences.theme = theme
+          if (pnlDisplay === 'pct' || pnlDisplay === 'thb') preferences.pnlDisplay = pnlDisplay
+          if (logsViewMode === 'table' || logsViewMode === 'timeline') preferences.logsViewMode = logsViewMode
+          if (goldSellUnit === 'grams' || goldSellUnit === 'baht') preferences.goldSellUnit = goldSellUnit
+        } catch {
+          // Preferences are optional; financial data remains exportable if storage is unavailable.
+        }
+        const backup: SpendiaryBackup = {
+          schemaVersion: 1,
+          exportedAt: new Date().toISOString(),
+          data: dataRef.current,
+          preferences,
+        }
+        const json = JSON.stringify(backup, null, 2)
         const blob = new Blob([json], { type: 'application/json' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
@@ -2168,16 +2187,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return { ok: false, error: 'The file is not valid JSON. Make sure you chose the right file.' }
         }
 
-        // 2. Strict schema validation
-        if (!validateSpendiaryData(parsed)) {
+        // 2. Accept the current envelope and legacy root-data exports.
+        const backup = typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
+          ? parsed as Partial<SpendiaryBackup> & SpendiaryData
+          : null
+        const importedData = backup && backup.schemaVersion === 1 && backup.data
+          ? backup.data
+          : parsed
+
+        // 3. Strict schema validation
+        if (!validateSpendiaryData(importedData)) {
           return {
             ok: false,
             error: 'File does not match the Spendiary data format. Required fields (holdings, dcaPlans, cashAccounts, transfers, monthlyIncome) are missing or have the wrong type.',
           }
         }
 
-        // 3. Migrate legacy fields
-        const migrated = migrate(parsed)
+        // 4. Migrate legacy fields
+        const migrated = migrate(importedData)
         // Stamp lastUpdatedAt so this import wins any cloud conflict resolution
         const stamped: SpendiaryData = { ...migrated, lastUpdatedAt: Date.now() }
 
@@ -2185,6 +2212,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
         // 5. Update React state
         setDataState(stamped)
+
+        if (backup?.schemaVersion === 1 && backup.preferences) {
+          try {
+            const { theme, pnlDisplay, logsViewMode, goldSellUnit } = backup.preferences
+            if (theme) localStorage.setItem('spendiary.theme', theme)
+            if (pnlDisplay) localStorage.setItem('spendiary_pnl_display', pnlDisplay)
+            if (logsViewMode) localStorage.setItem('spendiary_logs_view_mode', logsViewMode)
+            if (goldSellUnit) localStorage.setItem('spendiary_gold_sell_unit', goldSellUnit)
+          } catch {
+            // Preference restoration is best effort and must not invalidate the import.
+          }
+        }
 
         // 6. Force an immediate cloud push (bypass the 2-second debounce)
         if (user) {
@@ -2358,7 +2397,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
               ...prev,
               holdings: nextHoldings,
               cashAccounts: nextCash,
-              holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])].slice(0, 200),
+              holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
             }
           })
 
