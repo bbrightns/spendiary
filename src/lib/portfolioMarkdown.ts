@@ -141,14 +141,17 @@ export function generatePortfolioMarkdown(
         const marketValUsd = rate > 0 ? marketValue / rate : 0
         marketValStr = `${fmtMoney(marketValUsd, 'USD', 2)}<br/>(${fmtMoney(marketValue, 'THB', 2)})`
       } else if (isCrypto) {
-        typeLabel = 'บิตคอยน์ (BTC)'
-        const sats = Math.round(h.units * SATS_PER_BTC)
-        qtyStr = `${sats.toLocaleString()} sats<br/>(${fmtNum(h.units, 8)} BTC)`
-        const avgCostPerBtc = h.units > 0 ? costBasis / h.units : h.avgCost
-        const avgCostPerBtcUsd = rate > 0 ? avgCostPerBtc / rate : 0
-        const priceUsd = rate > 0 ? h.price / rate : 0
-        avgCostStr = `${fmtMoney(avgCostPerBtcUsd, 'USD', 0)}/BTC<br/>(${fmtMoney(avgCostPerBtc, 'THB', 0)})`
-        priceStr = `${fmtMoney(priceUsd, 'USD', 0)}/BTC<br/>(${fmtMoney(h.price, 'THB', 0)})`
+        const isBitcoin = h.ticker.toUpperCase() === 'BTC' || h.name.toLowerCase().includes('bitcoin')
+        typeLabel = isBitcoin ? 'บิตคอยน์ (BTC)' : `คริปโต (${h.ticker || 'Crypto'})`
+        if (isBitcoin) {
+          const sats = Math.round(h.units * SATS_PER_BTC)
+          qtyStr = `${sats.toLocaleString()} sats<br/>(${fmtNum(h.units, 8)} BTC)`
+        } else {
+          qtyStr = `${fmtNum(h.units, 8)} ${h.ticker || 'units'}`
+        }
+        const avgCostPerUnit = h.units > 0 ? costBasis / h.units : h.avgCost
+        avgCostStr = `${fmtMoney(avgCostPerUnit, 'THB', 8)}/unit`
+        priceStr = `${fmtMoney(h.price, 'THB', 8)}/unit`
       } else if (isGold) {
         typeLabel = 'ทองคำ (Gold)'
         const bahtGold = h.units / GRAMS_PER_BAHT_GOLD
