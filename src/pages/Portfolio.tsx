@@ -978,30 +978,17 @@ export function Portfolio() {
                 <div className="flex items-baseline min-w-0">
                   <p
                     title={thb(summary.value)}
-                    className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
+                    className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight tnum text-ink leading-tight whitespace-nowrap cursor-default"
                   >
-                    <span className="2xl:hidden">
-                      {summary.value >= 1_000_000 ? thbCompact(summary.value) : thb(summary.value)}
-                    </span>
-                    <span className="hidden 2xl:inline">
-                      {thb(summary.value)}
-                    </span>
+                    {summary.value >= 1_000_000 ? thbCompact(summary.value) : thb(summary.value)}
                   </p>
                 </div>
                 <div className="flex items-baseline justify-end min-w-0">
-                  <div className="2xl:hidden truncate">
-                    <PnLText
-                      value={summary.pnl}
-                      compact
-                      className="font-display text-3xl sm:text-4xl !font-extrabold tracking-tight leading-tight truncate"
-                    />
-                  </div>
-                  <div className="hidden 2xl:block truncate">
-                    <PnLText
-                      value={summary.pnl}
-                      className="font-display text-3xl sm:text-4xl !font-extrabold tracking-tight leading-tight truncate"
-                    />
-                  </div>
+                  <PnLText
+                    value={summary.pnl}
+                    compact
+                    className="font-display text-3xl sm:text-4xl !font-extrabold tracking-tight leading-tight whitespace-nowrap"
+                  />
                 </div>
 
                 {/* Row 3: Subtext / Details */}
@@ -1009,12 +996,7 @@ export function Portfolio() {
                   <p className="text-xs text-ink-muted font-medium truncate" title={thb(summary.cost)}>
                     Cost:{' '}
                     <span className="font-semibold tnum text-ink-soft">
-                      <span className="2xl:hidden">
-                        {summary.cost >= 1_000_000 ? thbCompact(summary.cost) : thb(summary.cost)}
-                      </span>
-                      <span className="hidden 2xl:inline">
-                        {thb(summary.cost)}
-                      </span>
+                      {summary.cost >= 1_000_000 ? thbCompact(summary.cost) : thb(summary.cost)}
                     </span>
                   </p>
                 </div>
