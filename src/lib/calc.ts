@@ -92,7 +92,7 @@ export const ASSET_META: Record<
 > = {
   fund: { label: 'Thai Assets', plural: 'Thai Assets', color: '#2563eb', cssVar: 'var(--color-funds)' },
   stock: { label: 'US Stock', plural: 'US Stocks', color: '#0284c7', cssVar: 'var(--color-stocks)' },
-  crypto: { label: 'Bitcoin', plural: 'Bitcoin', color: '#f97316', cssVar: 'var(--color-crypto)' },
+  crypto: { label: 'Crypto', plural: 'Crypto', color: '#f97316', cssVar: 'var(--color-crypto)' },
   gold: { label: 'Gold', plural: 'Gold', color: '#eab308', cssVar: 'var(--color-gold)' },
   real_estate: { label: 'Real Estate', plural: 'Real Estate', color: '#a855f7', cssVar: 'var(--color-real-estate, #a855f7)' },
   cash: { label: 'Cash', plural: 'Cash', color: '#10b981', cssVar: 'var(--color-cash)' },
@@ -1220,5 +1220,4 @@ export function getHoldingAnnualDividend(holding?: Holding | null): number {
     return sum + units * dps
   }, 0)
 }
-
 
