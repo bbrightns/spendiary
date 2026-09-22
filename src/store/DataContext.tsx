@@ -181,7 +181,10 @@ export function validateSpendiaryData(obj: unknown): obj is SpendiaryData {
     if (typeof hh.units !== 'number') return false
     if (typeof hh.avgCost !== 'number') return false
     if (typeof hh.price !== 'number') return false
-    if (!['fund', 'stock', 'crypto', 'gold'].includes(hh.assetClass as string)) return false
+    if (!['fund', 'stock', 'crypto', 'gold', 'real_estate', 'cash'].includes(hh.assetClass as string)) return false
+  }
+  for (const key of ['holdingLogs', 'dividendRecords', 'netWorthHistory', 'portfolioHistory', 'fixedCostItems', 'liabilities'] as const) {
+    if (d[key] !== undefined && !Array.isArray(d[key])) return false
   }
   // Validate each DCA plan shape
   for (const p of d.dcaPlans as unknown[]) {
@@ -229,7 +232,7 @@ export function validateSpendiaryData(obj: unknown): obj is SpendiaryData {
       if (typeof pa !== 'object' || pa === null) return false
       const paa = pa as Record<string, unknown>
       if (typeof paa.id !== 'string' || typeof paa.name !== 'string' || typeof paa.ticker !== 'string') return false
-      if (!['fund', 'stock', 'crypto', 'gold'].includes(paa.assetClass as string)) return false
+      if (!['fund', 'stock', 'crypto', 'gold', 'real_estate'].includes(paa.assetClass as string)) return false
     }
   }
   if (d.liabilities !== undefined) {
