@@ -1193,7 +1193,7 @@ export function Portfolio() {
 
                   {/* Sort controls + PnL display toggle */}
                   {/* Sort controls + PnL display toggle — full width when wrapped to its own line (mobile) so the toggle sits flush right */}
-                  <div className="flex w-full items-center justify-between gap-2 py-1.5 -my-1.5 sm:w-auto">
+                  <div className="flex w-full items-center justify-between gap-2 py-1.5 -my-1.5 sm:ml-auto sm:w-auto">
                     <div className="flex items-center gap-1 overflow-x-auto no-scrollbar min-w-0">
                     <span className="shrink-0 text-xs font-medium text-ink-faint mr-1">Sort:</span>
                     {([ ['value','Value'], ['pnl','Profit %'], ['type','Type'] ] as const).map(([key, label]) => {
@@ -1227,7 +1227,7 @@ export function Portfolio() {
                     })}
                     </div>
                     <div
-                      className="flex shrink-0 items-center rounded-full bg-surface-muted p-0.5"
+                      className="flex shrink-0 items-center rounded-full bg-surface-muted p-0.5 sm:ml-4"
                       role="group"
                       aria-label="PnL display mode"
                       title="สลับการแสดงกำไร/ขาดทุน: % หรือ ฿"
