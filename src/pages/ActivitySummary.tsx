@@ -247,7 +247,7 @@ export function ActivitySummary() {
 
             {/* Money flow */}
             <div className="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-3 border-t border-line/60 pt-4">
-              <Stat label="เงินเข้าใหม่" value={thb(summary.invested)} hint={`ซื้อ/เพิ่ม ${summary.buyCount} ครั้ง`} />
+              <Stat label="เงินลงทุนใหม่ / เงินฝากสุทธิ" value={thb(summary.netDeposits)} hint={`ซื้อ/เพิ่ม ${summary.buyCount} ครั้ง · ไม่รวมเงินจากการขาย`} />
               <Stat label="เงินออกจากการขาย" value={thb(summary.proceeds)} hint={`ขาย ${summary.sellCount} ครั้ง`} />
               <Stat label="รายการทั้งหมด" value={String(summary.transactionCount)} hint={`ซื้อ ${summary.buyCount} · ขาย ${summary.sellCount} · ปันผล ${summary.dividendCount}`} />
               <Stat label="แก้ไขรายการ" value={String(summary.editCount)} hint="อัปเดตราคา/รายละเอียด" tone="neutral" />

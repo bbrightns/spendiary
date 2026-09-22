@@ -622,6 +622,8 @@ export interface ActivitySummaryTotals {
   dividendCount: number
   editCount: number
   invested: number
+  /** Cash committed to purchases/additions; never includes sale proceeds. */
+  netDeposits: number
   proceeds: number
   costBasisSold: number
   realizedPnL: number
@@ -748,7 +750,14 @@ export function summarizeActivity(
     }
   }
 
-  const rows = Array.from(rowsByAsset.values())
+  const rows = Array.from(rowsByAsset.values()).filter((row) =>
+    row.invested !== 0 ||
+    row.proceeds !== 0 ||
+    row.costBasisSold !== 0 ||
+    row.realizedPnL !== 0 ||
+    row.dividendsGross !== 0 ||
+    row.dividendsNet !== 0,
+  )
   for (const row of rows) {
     row.net = row.realizedPnL + row.dividendsNet
   }
@@ -763,6 +772,7 @@ export function summarizeActivity(
     dividendCount,
     editCount,
     invested,
+    netDeposits: invested,
     proceeds,
     costBasisSold,
     realizedPnL,
