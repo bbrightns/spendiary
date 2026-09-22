@@ -1,4 +1,4 @@
-import { useState, Fragment } from 'react'
+import { useEffect, useRef, useState, Fragment } from 'react'
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
@@ -21,6 +21,7 @@ import {
   PencilIcon,
   SearchIcon,
   TableIcon,
+  TrashIcon,
   UndoIcon,
   WalletIcon,
 } from '../components/icons'
@@ -372,7 +373,7 @@ export function HoldingLogs() {
     nextStep,
     prevStep,
   } = usePageGuide('logs')
-  const { data, undoHoldingLog, updateHoldingLogTimestamp, usdThb } = useData()
+  const { data, removeHoldingLog, undoHoldingLog, updateHoldingLogTimestamp, usdThb } = useData()
   const { showToast } = useToast()
   const rawLogs = data.holdingLogs ?? []
   const logs = [...rawLogs].sort(
@@ -383,9 +384,18 @@ export function HoldingLogs() {
   const [editingDateLog, setEditingDateLog] = useState<HoldingLog | null>(null)
   const [editDateValue, setEditDateValue] = useState<string>('')
   const [editTimeValue, setEditTimeValue] = useState<string>('')
+  const [confirmDeleteLog, setConfirmDeleteLog] = useState(false)
+  const deleteTimerRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (deleteTimerRef.current) window.clearTimeout(deleteTimerRef.current)
+    }
+  }, [])
 
   function startEditDate(log: HoldingLog) {
     setEditingDateLog(log)
+    setConfirmDeleteLog(false)
     const dt = new Date(log.timestamp)
     setEditDateValue(localDateStr(dt))
     setEditTimeValue(dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
@@ -1903,14 +1913,47 @@ export function HoldingLogs() {
       {editingDateLog && (
         <Modal
           open={!!editingDateLog}
-          onClose={() => setEditingDateLog(null)}
-          title="แก้ไขวันที่ทำรายการ"
+          onClose={() => {
+            setEditingDateLog(null)
+            setConfirmDeleteLog(false)
+          }}
+          title="Edit Transaction"
           description={`ปรับเปลี่ยนวันและเวลาบันทึกสำหรับ "${editingDateLog.holdingName}" (${getLogActionMeta(editingDateLog).label})`}
           footer={
-            <div className="flex items-center justify-end gap-2 w-full">
+            <div className="flex items-center gap-3 w-full">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault()
+                  if (confirmDeleteLog) {
+                    if (deleteTimerRef.current) window.clearTimeout(deleteTimerRef.current)
+                    removeHoldingLog(editingDateLog.id)
+                    showToast(`ลบรายการ "${editingDateLog.holdingName}" เรียบร้อยแล้ว`, 'success')
+                    setEditingDateLog(null)
+                    setConfirmDeleteLog(false)
+                  } else {
+                    setConfirmDeleteLog(true)
+                    deleteTimerRef.current = window.setTimeout(() => {
+                      setConfirmDeleteLog(false)
+                    }, 3000)
+                  }
+                }}
+                className={[
+                  'inline-flex h-11 shrink-0 items-center justify-center rounded-full transition-all duration-200 border text-sm font-semibold',
+                  confirmDeleteLog
+                    ? 'px-4 bg-loss border-loss text-white dark:bg-rose-600 dark:border-rose-600 dark:text-white hover:opacity-90'
+                    : 'w-11 border-loss/25 bg-loss-soft text-loss hover:bg-loss/15',
+                ].join(' ')}
+                aria-label={confirmDeleteLog ? 'Confirm Delete' : 'Delete'}
+              >
+                {confirmDeleteLog ? 'Confirm Delete' : <TrashIcon className="h-[18px] w-[18px]" />}
+              </button>
               <Button
                 variant="secondary"
-                onClick={() => setEditingDateLog(null)}
+                onClick={() => {
+                  setEditingDateLog(null)
+                  setConfirmDeleteLog(false)
+                }}
               >
                 ยกเลิก
               </Button>
@@ -1922,6 +1965,7 @@ export function HoldingLogs() {
                     updateHoldingLogTimestamp(editingDateLog.id, newTimestamp)
                     showToast(`แก้ไขวันที่ของ "${editingDateLog.holdingName}" เรียบร้อยแล้ว`, 'success')
                     setEditingDateLog(null)
+                    setConfirmDeleteLog(false)
                   }
                 }}
               >
@@ -1988,5 +2032,4 @@ export function HoldingLogs() {
     </>
   )
 }
-
 
