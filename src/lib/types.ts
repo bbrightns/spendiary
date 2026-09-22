@@ -193,7 +193,7 @@ export interface DividendRecord {
 export interface HoldingLog {
   id: string
   timestamp: string        // ISO datetime
-  action: 'add' | 'buy_more' | 'edit' | 'sell' | 'dividend'
+  action: 'add' | 'buy_more' | 'edit' | 'sell' | 'dividend' | 'note'
   holdingName: string
   ticker: string
   assetClass: AssetClass
