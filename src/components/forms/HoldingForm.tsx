@@ -554,6 +554,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       avgCost: avgCostInput,
       price: Number(form.price) || 0,
       updatedAt: localDateStr(),
+      ...(editing?.btcLocations ? { btcLocations: editing.btcLocations } : {}),
+      ...(editing?.goldLocations ? { goldLocations: editing.goldLocations } : {}),
     }
 
     if (isUsd) {
