@@ -1455,7 +1455,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
             <button
               type="button"
               onClick={() => setIsDividendExpanded((v) => !v)}
-              className="w-full flex items-center justify-between p-3.5 sm:p-4 text-left hover:bg-surface-muted/50 transition-colors cursor-pointer select-none"
+              className="w-full flex items-center justify-between p-3.5 sm:p-4 text-left bg-brand-soft/70 transition-colors cursor-pointer select-none"
               aria-expanded={isDividendExpanded}
             >
               <div className="flex items-center gap-2 min-w-0 pr-2">
