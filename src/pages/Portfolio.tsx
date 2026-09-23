@@ -1719,7 +1719,9 @@ export function Portfolio() {
                     <TrashIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.2} />
                     <span>ลบกระเป๋า (Remove)</span>
                   </div>
-                  <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400">ล็อคอยู่</span>
+                  <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <LockClosedIcon className="h-3 w-3" /> ล็อคอยู่
+                  </span>
                 </div>
               ) : (
                 <button
