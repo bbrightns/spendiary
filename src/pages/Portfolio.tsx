@@ -243,9 +243,27 @@ export function Portfolio() {
   useEffect(() => { if (summary.value > 0) recordPortfolioSnapshot(summary.value) }, [summary.value])
 
   const openAdd = () => { setEditing(null); setFormOpen(true) }
-  const openEdit = (h: Holding) => { setEditing(h); setFormOpen(true) }
+  const openEdit = (h: Holding) => {
+    if (h.isLocked) {
+      showToast(`สินทรัพย์ "${h.name}" ล็อคอยู่ใน Safe-Haven (ปลดล็อคก่อนหากต้องการแก้ไข)`, 'warn')
+      return
+    }
+    setEditing(h)
+    setFormOpen(true)
+  }
   const [lockedLocationId, setLockedLocationId] = useState<string | null>(null)
   const openBuy = (h: Holding, locationId?: string) => {
+    if (h.isLocked) {
+      showToast(`สินทรัพย์ "${h.name}" ล็อคอยู่ใน Safe-Haven (ปลดล็อคก่อนหากต้องการทำรายการ)`, 'warn')
+      return
+    }
+    if (locationId) {
+      const loc = (h.btcLocations ?? []).find((l) => l.id === locationId) ?? (h.goldLocations ?? []).find((l) => l.id === locationId)
+      if (loc?.isLocked) {
+        showToast(`กระเป๋า "${loc.name}" อยู่ในสถานะล็อค (Lock) (ปลดล็อคก่อนหากต้องการซื้อเข้า)`, 'warn')
+        return
+      }
+    }
     setSelling(null)
     setSellOpen(false)
     setBuying(h)
@@ -273,6 +291,10 @@ export function Portfolio() {
   const [dividendOpen, setDividendOpen] = useState(false)
   const [dividendHolding, setDividendHolding] = useState<Holding | null>(null)
   const openDividend = (h: Holding) => {
+    if (h.isLocked) {
+      showToast(`สินทรัพย์ "${h.name}" ล็อคอยู่ใน Safe-Haven (ปลดล็อคก่อนหากต้องการบันทึกปันผล)`, 'warn')
+      return
+    }
     setDividendHolding(h)
     setDividendOpen(true)
   }
@@ -295,6 +317,10 @@ export function Portfolio() {
     }
   }
   function openLocEdit(holdingId: string, loc: BtcLocation | import('../lib/types').GoldLocation) {
+    if (loc.isLocked) {
+      showToast(`กระเป๋า "${loc.name}" อยู่ในสถานะล็อค (Lock) (ปลดล็อคก่อนหากต้องการแก้ไข)`, 'warn')
+      return
+    }
     setLocEditHoldingId(holdingId)
     setLocEditing(loc)
     setLocName(loc.name)
@@ -1417,19 +1443,34 @@ export function Portfolio() {
             </button>
             <div className="my-1 border-t border-line/60" />
 
-            <button
-              type="button"
-              onClick={() => {
-                const target = activeMenuHolding
-                setActiveMenuHoldingId(null)
-                setActiveMenuHolding(null)
-                openBuy(target)
-              }}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
-            >
-              <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
-              <span>ซื้อเพิ่ม (Buy)</span>
-            </button>
+            {activeMenuHolding.isLocked ? (
+              <div
+                title="สินทรัพย์นี้ล็อคอยู่ใน Safe-Haven (ปลดล็อคก่อนหากต้องการทำรายการ)"
+                className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
+              >
+                <div className="flex items-center gap-2.5">
+                  <PlusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
+                  <span>ซื้อเพิ่ม (Buy)</span>
+                </div>
+                <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <LockClosedIcon className="h-3 w-3" /> ล็อคอยู่
+                </span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  const target = activeMenuHolding
+                  setActiveMenuHoldingId(null)
+                  setActiveMenuHolding(null)
+                  openBuy(target)
+                }}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
+              >
+                <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
+                <span>ซื้อเพิ่ม (Buy)</span>
+              </button>
+            )}
 
             {activeMenuHolding.isLocked ? (
               <div
@@ -1461,34 +1502,64 @@ export function Portfolio() {
             )}
 
             {(activeMenuHolding.assetClass === 'fund' || activeMenuHolding.assetClass === 'stock') && (
+              activeMenuHolding.isLocked ? (
+                <div
+                  title="สินทรัพย์นี้ล็อคอยู่ใน Safe-Haven (ปลดล็อคก่อนหากต้องการบันทึกปันผล)"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <DividendIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.2} />
+                    <span>รับปันผล (Dividend)</span>
+                  </div>
+                  <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <LockClosedIcon className="h-3 w-3" /> ล็อคอยู่
+                  </span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = activeMenuHolding
+                    setActiveMenuHoldingId(null)
+                    setActiveMenuHolding(null)
+                    openDividend(target)
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer text-left"
+                >
+                  <DividendIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={2.2} />
+                  <span>รับปันผล (Dividend)</span>
+                </button>
+              )
+            )}
+            <div className="my-1 border-t border-line/60" />
+            {activeMenuHolding.isLocked ? (
+              <div
+                title="สินทรัพย์นี้ล็อคอยู่ใน Safe-Haven (ปลดล็อคก่อนหากต้องการแก้ไข)"
+                className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
+              >
+                <div className="flex items-center gap-2.5">
+                  <PencilIcon className="h-3.5 w-3.5 text-ink-muted/40 shrink-0" />
+                  <span>แก้ไข (Edit)</span>
+                </div>
+                <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <LockClosedIcon className="h-3 w-3" /> ล็อคอยู่
+                </span>
+              </div>
+            ) : (
               <button
                 type="button"
                 onClick={() => {
                   const target = activeMenuHolding
                   setActiveMenuHoldingId(null)
                   setActiveMenuHolding(null)
-                  openDividend(target)
+                  openEdit(target)
                 }}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer text-left"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer text-left"
               >
-                <DividendIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={2.2} />
-                <span>รับปันผล (Dividend)</span>
+                <PencilIcon className="h-3.5 w-3.5 shrink-0" />
+                <span>แก้ไข (Edit)</span>
               </button>
             )}
-            <div className="my-1 border-t border-line/60" />
-            <button
-              type="button"
-              onClick={() => {
-                const target = activeMenuHolding
-                setActiveMenuHoldingId(null)
-                setActiveMenuHolding(null)
-                openEdit(target)
-              }}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer text-left"
-            >
-              <PencilIcon className="h-3.5 w-3.5 shrink-0" />
-              <span>แก้ไข (Edit)</span>
-            </button>
           </div>
         </>,
         document.body
@@ -1551,18 +1622,33 @@ export function Portfolio() {
               </button>
               <div className="my-1 border-t border-line/60" />
 
-              <button
-                type="button"
-                onClick={() => {
-                  const t = pocketMenu
-                  closePocketMenu()
-                  openBuy(t.holding, t.locId)
-                }}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
-              >
-                <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
-                <span>ซื้อเข้ากระเป๋านี้ (Buy)</span>
-              </button>
+              {isLocLocked ? (
+                <div
+                  title="กระเป๋านี้อยู่ในสถานะล็อค (Lock) (ปลดล็อคก่อนหากต้องการทำรายการ)"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <PlusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
+                    <span>ซื้อเข้ากระเป๋านี้ (Buy)</span>
+                  </div>
+                  <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <LockClosedIcon className="h-3 w-3" /> ล็อคอยู่
+                  </span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const t = pocketMenu
+                    closePocketMenu()
+                    openBuy(t.holding, t.locId)
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
+                >
+                  <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
+                  <span>ซื้อเข้ากระเป๋านี้ (Buy)</span>
+                </button>
+              )}
 
               {isLocLocked ? (
                 <div
@@ -1593,18 +1679,33 @@ export function Portfolio() {
               )}
 
               {loc && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const t = pocketMenu
-                    closePocketMenu()
-                    openLocEdit(t.holding.id, loc)
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer text-left"
-                >
-                  <PencilIcon className="h-3.5 w-3.5 shrink-0" />
-                  <span>แก้ไขกระเป๋า (Edit)</span>
-                </button>
+                isLocLocked ? (
+                  <div
+                    title="กระเป๋านี้อยู่ในสถานะล็อค (Lock) (ปลดล็อคก่อนหากต้องการแก้ไข)"
+                    className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <PencilIcon className="h-3.5 w-3.5 text-ink-muted/40 shrink-0" />
+                      <span>แก้ไขกระเป๋า (Edit)</span>
+                    </div>
+                    <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <LockClosedIcon className="h-3 w-3" /> ล็อคอยู่
+                    </span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const t = pocketMenu
+                      closePocketMenu()
+                      openLocEdit(t.holding.id, loc)
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer text-left"
+                  >
+                    <PencilIcon className="h-3.5 w-3.5 shrink-0" />
+                    <span>แก้ไขกระเป๋า (Edit)</span>
+                  </button>
+                )
               )}
 
               <div className="my-1 border-t border-line/60" />
