@@ -260,7 +260,7 @@ export function Portfolio() {
     if (locationId) {
       const loc = (h.btcLocations ?? []).find((l) => l.id === locationId) ?? (h.goldLocations ?? []).find((l) => l.id === locationId)
       if (loc?.isLocked) {
-        showToast(`กระเป๋า "${loc.name}" ล็อคอยู่ใน Cold Storage (ปลดล็อคก่อนหากต้องการขาย)`, 'warn')
+        showToast(`กระเป๋า "${loc.name}" อยู่ในสถานะล็อค (Lock) (ปลดล็อคก่อนหากต้องการขาย)`, 'warn')
         return
       }
     }
@@ -762,11 +762,11 @@ export function Portfolio() {
                                 <p className="truncate text-sm font-semibold text-ink">{loc.name}</p>
                                 {loc.isLocked && (
                                   <span
-                                    title="Cold Storage Pocket (ล็อคป้องกันการขาย)"
+                                    title="กระเป๋าล็อคอยู่ (Lock - ป้องกันการขาย)"
                                     className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 shrink-0"
                                   >
                                     <LockClosedIcon className="h-2.5 w-2.5" />
-                                    <span>Cold</span>
+                                    <span>Lock</span>
                                   </span>
                                 )}
                               </div>
@@ -817,11 +817,11 @@ export function Portfolio() {
                                 <p className="truncate text-sm font-semibold text-ink">{loc.name}</p>
                                 {loc.isLocked && (
                                   <span
-                                    title="Cold Storage Pocket (ล็อคป้องกันการขาย)"
+                                    title="กระเป๋าล็อคอยู่ (Lock - ป้องกันการขาย)"
                                     className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 shrink-0"
                                   >
                                     <LockClosedIcon className="h-2.5 w-2.5" />
-                                    <span>Cold</span>
+                                    <span>Lock</span>
                                   </span>
                                 )}
                               </div>
@@ -1531,7 +1531,7 @@ export function Portfolio() {
                   showToast(
                     isLocLocked
                       ? `ปลดล็อคกระเป๋า "${t.locName}" แล้ว`
-                      : `ล็อคกระเป๋า Cold Storage "${t.locName}" เรียบร้อย (ป้องกันการขาย/ลบ)`,
+                      : `ล็อคกระเป๋า (Lock) "${t.locName}" เรียบร้อย (ป้องกันการขาย/ลบ)`,
                     'info'
                   )
                 }}
@@ -1545,7 +1545,7 @@ export function Portfolio() {
                 ) : (
                   <>
                     <LockClosedIcon className="h-4 w-4 text-amber-500 shrink-0" strokeWidth={2} />
-                    <span>ล็อคกระเป๋า Cold Storage</span>
+                    <span>ล็อคกระเป๋า (Lock)</span>
                   </>
                 )}
               </button>
@@ -1566,7 +1566,7 @@ export function Portfolio() {
 
               {isLocLocked ? (
                 <div
-                  title="กระเป๋านี้ล็อคอยู่ใน Cold Storage (ปลดล็อคก่อนหากต้องการขาย)"
+                  title="กระเป๋านี้อยู่ในสถานะล็อค (Lock) (ปลดล็อคก่อนหากต้องการขาย)"
                   className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
                 >
                   <div className="flex items-center gap-2.5">
@@ -1787,7 +1787,7 @@ export function Portfolio() {
             </div>
           )}
 
-          {/* Cold-Storage Lock switch */}
+          {/* Lock switch */}
           <label className="flex items-center gap-3 rounded-xl border border-line bg-surface-muted/50 p-3 cursor-pointer hover:bg-surface-muted transition-colors">
             <input
               type="checkbox"
@@ -1798,7 +1798,7 @@ export function Portfolio() {
             <div className="flex-1 text-xs">
               <span className="font-semibold text-ink flex items-center gap-1.5">
                 <LockClosedIcon className="h-3.5 w-3.5 text-amber-500" />
-                Cold Storage / ล็อคกระเป๋านี้
+                ล็อคกระเป๋านี้ (Lock)
               </span>
               <p className="text-ink-muted mt-0.5">ป้องกันการขายออกหรือลบกระเป๋านี้โดยไม่ได้ตั้งใจ</p>
             </div>

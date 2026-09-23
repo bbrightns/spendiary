@@ -589,11 +589,11 @@ export function Rebalance() {
                   />
                   <span className="flex items-center gap-1.5">
                     <LockClosedIcon className="h-4 w-4 text-amber-500" />
-                    <span>Exclude Safe-Haven / Cold Assets</span>
+                    <span>Exclude Safe-Haven / Locked Assets (Lock)</span>
                   </span>
                 </label>
                 <p className="mt-1 text-xs text-ink-muted leading-relaxed">
-                  ยกเว้นสินทรัพย์ใน Safe-Haven และกระเป๋า Cold Storage ออกจากการคำนวณ เพื่อไม่ให้ถูกแนะนำให้ขายออก
+                  ยกเว้นสินทรัพย์ใน Safe-Haven และกระเป๋าที่ล็อคอยู่ (Lock) ออกจากการคำนวณ เพื่อไม่ให้ถูกแนะนำให้ขายออก
                 </p>
               </div>
 

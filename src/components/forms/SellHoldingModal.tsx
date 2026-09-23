@@ -468,7 +468,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
           <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-2.5 text-xs text-amber-700 dark:text-amber-400">
             <LockClosedIcon className="h-4 w-4 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-sm">กระเป๋านี้อยู่ใน Cold Storage (Locked)</p>
+              <p className="font-semibold text-sm">กระเป๋านี้อยู่ในสถานะล็อค (Lock)</p>
               <p className="mt-0.5 text-ink-muted">ล็อคเพื่อป้องกันการกดขาย กรุณาเลือกกระเป๋าอื่น หรือปลดล็อคกระเป๋านี้ก่อนทำรายการ</p>
             </div>
           </div>
@@ -560,7 +560,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                     onChange={handleBtcLocationChange}
                     options={(holding.btcLocations ?? []).map((l) => ({
                       value: l.id,
-                      label: `${l.isLocked ? '🔒 [Locked] ' : ''}${l.name} (${l.satoshi.toLocaleString()} sats · ฿${l.thbSpent.toLocaleString()})`,
+                      label: `${l.isLocked ? '🔒 (Lock) ' : ''}${l.name} (${l.satoshi.toLocaleString()} sats · ฿${l.thbSpent.toLocaleString()})`,
                       disabled: l.isLocked,
                     }))}
                   />
@@ -624,7 +624,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                     onChange={handleGoldLocationChange}
                     options={(holding.goldLocations ?? []).map((l) => ({
                       value: l.id,
-                      label: `${l.isLocked ? '🔒 [Locked] ' : ''}${l.name} (${l.grams.toFixed(4)}g · ${(l.grams / GRAMS_PER_BAHT_GOLD).toFixed(2)} บาท · ฿${l.thbSpent.toLocaleString()})`,
+                      label: `${l.isLocked ? '🔒 (Lock) ' : ''}${l.name} (${l.grams.toFixed(4)}g · ${(l.grams / GRAMS_PER_BAHT_GOLD).toFixed(2)} บาท · ฿${l.thbSpent.toLocaleString()})`,
                       disabled: l.isLocked,
                     }))}
                   />
