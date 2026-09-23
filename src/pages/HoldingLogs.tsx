@@ -25,6 +25,7 @@ import {
   TrashIcon,
   UndoIcon,
   WalletIcon,
+  LockClosedIcon,
 } from '../components/icons'
 import { TransactionDateField } from '../components/forms/TransactionDateField'
 
@@ -1670,12 +1671,12 @@ export function HoldingLogs() {
             />
           </Card>
         ) : viewMode === 'table' ? (
-          <Card padded={false} className="card-bleed-wide overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm border-collapse min-w-[840px]">
+          <Card padded={false} className="card-bleed-wide overflow-hidden border-0 shadow-none">
+            <div className="logs-table-shell overflow-x-auto">
+              <table className="logs-table w-full text-left text-sm border-collapse min-w-[980px]">
                 <thead>
-                  <tr className="border-b border-line bg-surface-muted/60 text-xs font-bold text-ink-muted uppercase tracking-wider">
-                    <th className="py-3 px-3 text-center">
+                  <tr className="logs-table-head text-xs font-bold text-ink-muted uppercase tracking-[0.12em]">
+                    <th className="logs-table-cell logs-table-check text-center">
                       <input
                         type="checkbox"
                         checked={allVisibleSelected}
@@ -1684,18 +1685,18 @@ export function HoldingLogs() {
                         className="h-4 w-4 rounded border-line-strong accent-brand"
                       />
                     </th>
-                    <th className="py-3 px-4">Date & Time</th>
-                    <th className="py-3 px-3">Action</th>
-                    <th className="py-3 px-3">Asset / Ticker</th>
-                    <th className="py-3 px-3 text-right">Price / NAV</th>
-                    <th className="py-3 px-3 text-right">Shares / Qty</th>
-                    <th className="py-3 px-3 text-right">Amount (THB)</th>
-                    <th className="py-3 px-3">Location</th>
-                    <th className="py-3 px-4 min-w-[200px]">Note</th>
-                    <th className="py-3 px-4 text-center">Action</th>
+                    <th className="logs-table-cell logs-table-date">Date & Time</th>
+                    <th className="logs-table-cell logs-table-action">Action</th>
+                    <th className="logs-table-cell logs-table-asset">Asset / Ticker</th>
+                    <th className="logs-table-cell logs-table-metric text-right">Price / NAV</th>
+                    <th className="logs-table-cell logs-table-metric text-right">Shares / Qty</th>
+                    <th className="logs-table-cell logs-table-metric text-right">Amount (THB)</th>
+                    <th className="logs-table-cell logs-table-location">Location</th>
+                    <th className="logs-table-cell logs-table-note min-w-[220px]">Note</th>
+                    <th className="logs-table-cell logs-table-actions text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line">
+                <tbody>
                   {filtered.map((log) => {
                     const actionMeta = getLogActionMeta(log)
                     const locName = getDestinationLocation(log)
@@ -1717,11 +1718,11 @@ export function HoldingLogs() {
                               setExpandedLogId(isExpanded ? null : log.id)
                             }
                           }}
-                          className={`transition-colors ${
-                            hasComparison ? 'cursor-pointer hover:bg-surface-muted/50' : 'hover:bg-surface-muted/30'
-                          } ${isExpanded ? 'bg-surface-muted/40' : ''}`}
+                          className={`logs-table-row transition-colors ${
+                            hasComparison ? 'cursor-pointer' : ''
+                          } ${isExpanded ? 'is-expanded' : ''}`}
                         >
-                          <td className="py-3 px-3 text-center align-top">
+                          <td className="logs-table-cell logs-table-check text-center align-top">
                             <input
                               type="checkbox"
                               checked={selectedLogIds.has(log.id)}
@@ -1732,35 +1733,35 @@ export function HoldingLogs() {
                             />
                           </td>
                           <td
-                            className="py-3 px-4 whitespace-nowrap cursor-pointer group/date"
+                            className="logs-table-cell logs-table-date whitespace-nowrap cursor-pointer group/date"
                             onClick={(e) => {
                               e.stopPropagation()
                               startEditDate(log)
                             }}
                             title="Click to edit date / แตะเพื่อแก้ไขวันที่"
                           >
-                            <div className="font-semibold text-ink text-xs tnum group-hover/date:text-brand flex items-center gap-1">
-                              {dateStr}
+                            <div className="logs-table-date-main tnum flex items-center gap-1.5">
+                              <span>{dateStr}</span>
                               <PencilIcon className="h-2.5 w-2.5 opacity-0 group-hover/date:opacity-100 transition-opacity text-brand" />
                             </div>
-                            <div className="text-xs text-ink-faint tnum">{timeStr}</div>
+                            <div className="logs-table-time tnum">{timeStr}</div>
                           </td>
-                          <td className="py-3 px-3 whitespace-nowrap">
-                            <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${actionMeta.style}`}>
+                          <td className="logs-table-cell logs-table-action whitespace-nowrap">
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold tracking-[0.02em] ${actionMeta.style}`}>
                               {actionMeta.label}
                             </span>
                           </td>
-                          <td className="py-3 px-3">
+                          <td className="logs-table-cell logs-table-asset">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-bold text-ink text-sm">{log.holdingName}</span>
+                              <span className="logs-table-asset-name text-ink">{log.holdingName}</span>
                               {log.ticker && log.ticker !== 'CASH' && log.ticker !== 'FIXED' && log.ticker !== 'DCA' && (
-                                <span className="rounded-md bg-surface-muted px-1.5 py-0.5 text-xs font-medium text-ink-muted">
+                                <span className="logs-table-ticker">
                                   {log.ticker}
                                 </span>
                               )}
                             </div>
                             <span
-                              className="inline-block mt-0.5 text-xs font-semibold uppercase tracking-wider"
+                              className="logs-table-asset-type inline-block mt-1"
                               style={{
                                 color:
                                   log.ticker === 'FIXED'
@@ -1771,11 +1772,11 @@ export function HoldingLogs() {
                               {getLogAssetLabel(log)}
                             </span>
                           </td>
-                          <td className="py-3 px-3 text-right whitespace-nowrap tnum font-semibold text-ink">
+                          <td className="logs-table-cell logs-table-metric text-right whitespace-nowrap tnum font-semibold text-ink">
                             {tx.priceDisplay}
                           </td>
                           <td
-                            className={`py-3 px-3 text-right whitespace-nowrap tnum font-bold ${
+                            className={`logs-table-cell logs-table-metric text-right whitespace-nowrap tnum font-bold ${
                               tx.sharesDisplay.startsWith('+')
                                 ? 'text-gain'
                                 : tx.sharesDisplay.startsWith('-')
@@ -1785,13 +1786,13 @@ export function HoldingLogs() {
                           >
                             {tx.sharesDisplay}
                           </td>
-                          <td className="py-3 px-3 text-right whitespace-nowrap tnum">
-                            <div className="font-semibold text-ink">
+                          <td className="logs-table-cell logs-table-metric text-right whitespace-nowrap tnum">
+                            <div className="logs-table-amount font-semibold text-ink">
                               {tx.amountThbDisplay}
                             </div>
                             {log.action === 'sell' && log.realizedPnL !== undefined && (
                               <div
-                                className={`text-xs font-bold mt-0.5 ${
+                                className={`logs-table-delta text-xs font-bold mt-1 ${
                                   log.realizedPnL >= 0 ? 'text-gain' : 'text-loss'
                                 }`}
                               >
@@ -1804,9 +1805,9 @@ export function HoldingLogs() {
                               </div>
                             )}
                           </td>
-                          <td className="py-3 px-3 whitespace-nowrap">
+                          <td className="logs-table-cell logs-table-location whitespace-nowrap">
                             {locName ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 border border-brand/20 px-2 py-0.5 text-xs font-semibold text-brand">
+                              <span className="logs-table-location-badge inline-flex items-center gap-1.5">
                                 <WalletIcon className="h-3 w-3" />
                                 {locName}
                               </span>
@@ -1814,14 +1815,14 @@ export function HoldingLogs() {
                               <span className="text-ink-faint text-xs">-</span>
                             )}
                           </td>
-                          <td className="py-3 px-4 text-xs text-ink-muted max-w-[260px]">
+                          <td className="logs-table-cell logs-table-note text-xs text-ink-muted">
                             <div className="flex items-center gap-1.5">
-                              <span className="truncate" title={getDisplayNote(log)}>
+                              <span className="logs-table-note-text truncate" title={getDisplayNote(log)}>
                                 {getDisplayNote(log)}
                               </span>
                               {hasComparison && (
                                 <span
-                                  className="text-xs text-brand hover:underline shrink-0 font-medium"
+                                  className="logs-table-diff text-xs font-medium shrink-0"
                                   title="Click row to view Before/After comparison"
                                 >
                                   {isExpanded ? '▲ Hide' : '▼ Diff'}
@@ -1829,7 +1830,7 @@ export function HoldingLogs() {
                               )}
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-center whitespace-nowrap">
+                          <td className="logs-table-cell logs-table-actions text-center whitespace-nowrap">
                             <div className="flex items-center justify-center gap-1">
                               <button
                                 type="button"
@@ -2063,37 +2064,56 @@ export function HoldingLogs() {
       >
         {undoTarget && (() => {
           const undoMeta = getLogActionMeta(undoTarget)
+          const linkedHolding = undoTarget.holdingId
+            ? data.holdings.find((h) => h.id === undoTarget.holdingId)
+            : undefined
+          const isHoldingLocked = Boolean(linkedHolding?.isLocked || undoTarget.previousHoldingState?.isLocked)
+
           return (
-            <div className="rounded-2xl border border-line bg-surface-muted p-4 space-y-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs font-bold"
-                    style={{
-                      color: ASSET_META[undoTarget.assetClass]?.color ?? '#6366f1',
-                      background: `color-mix(in srgb, ${ASSET_META[undoTarget.assetClass]?.color ?? '#6366f1'} 14%, transparent)`,
-                    }}
-                  >
-                    {undoMeta.icon}
-                  </span>
-                  <span className="font-bold text-sm text-ink truncate">{undoTarget.holdingName}</span>
-                  {undoTarget.ticker && undoTarget.ticker !== 'CASH' && undoTarget.ticker !== 'FIXED' && undoTarget.ticker !== 'DCA' && (
-                    <span className="rounded-md bg-surface px-1.5 py-0.5 text-xs font-medium text-ink-muted">
-                      {undoTarget.ticker}
+            <div className="space-y-3">
+              {isHoldingLocked && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 flex items-start gap-2.5 text-xs text-amber-700 dark:text-amber-400">
+                  <LockClosedIcon className="h-4 w-4 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold block text-sm">สินทรัพย์นี้อยู่ใน Safe-Haven (Locked)</span>
+                    <span className="text-ink-muted mt-0.5 block leading-relaxed">
+                      การ Undo จะปรับปรุงจำนวนหน่วยและต้นทุนกลับตามประวัติเดิม โดยสถานะความปลอดภัย Safe-Haven จะยังคงถูกล็อคไว้อยู่เช่นเดิม
                     </span>
-                  )}
+                  </div>
                 </div>
-                <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ${undoMeta.style}`}>
-                  {undoMeta.label}
-                </span>
+              )}
+
+              <div className="rounded-2xl border border-line bg-surface-muted p-4 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs font-bold"
+                      style={{
+                        color: ASSET_META[undoTarget.assetClass]?.color ?? '#6366f1',
+                        background: `color-mix(in srgb, ${ASSET_META[undoTarget.assetClass]?.color ?? '#6366f1'} 14%, transparent)`,
+                      }}
+                    >
+                      {undoMeta.icon}
+                    </span>
+                    <span className="font-bold text-sm text-ink truncate">{undoTarget.holdingName}</span>
+                    {undoTarget.ticker && undoTarget.ticker !== 'CASH' && undoTarget.ticker !== 'FIXED' && undoTarget.ticker !== 'DCA' && (
+                      <span className="rounded-md bg-surface px-1.5 py-0.5 text-xs font-medium text-ink-muted">
+                        {undoTarget.ticker}
+                      </span>
+                    )}
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ${undoMeta.style}`}>
+                    {undoMeta.label}
+                  </span>
+                </div>
+                <p className="text-xs font-medium text-ink-muted leading-relaxed">{getDisplayNote(undoTarget)}</p>
+                <time className="block text-xs text-ink-faint">
+                  {new Date(undoTarget.timestamp).toLocaleString('en-GB', {
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
+                  })}
+                </time>
               </div>
-              <p className="text-xs font-medium text-ink-muted leading-relaxed">{getDisplayNote(undoTarget)}</p>
-              <time className="block text-xs text-ink-faint">
-                {new Date(undoTarget.timestamp).toLocaleString('en-GB', {
-                  dateStyle: 'medium',
-                  timeStyle: 'short',
-                })}
-              </time>
             </div>
           )
         })()}

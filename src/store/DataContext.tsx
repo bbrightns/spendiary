@@ -277,6 +277,8 @@ interface DataContextValue {
 
   upsertHolding: (holding: Omit<Holding, 'id'> & { id?: string }) => void
   removeHolding: (id: string) => void
+  toggleHoldingLock: (id: string) => void
+  toggleLocationLock: (holdingId: string, locationId: string, isBtc: boolean) => void
   reorderHoldings: (ids: string[]) => void
   sellHolding: (params: {
     holdingId: string
@@ -1163,6 +1165,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         updateData((prev) => ({ ...prev, holdings: upsert(prev.holdings, holding) })),
       removeHolding: (id) =>
         updateData((prev) => {
+          const target = prev.holdings.find((h) => h.id === id)
+          if (target?.isLocked) return prev // Guard against deleting safe-haven locked holding
           const { [id]: _, ...restTargets } = prev.rebalanceHoldingTargets ?? {}
           return {
             ...prev,
@@ -1170,6 +1174,34 @@ export function DataProvider({ children }: { children: ReactNode }) {
             rebalanceHoldingTargets: restTargets,
           }
         }),
+      toggleHoldingLock: (id) =>
+        updateData((prev) => ({
+          ...prev,
+          holdings: prev.holdings.map((h) =>
+            h.id === id ? { ...h, isLocked: !h.isLocked } : h
+          ),
+        })),
+      toggleLocationLock: (holdingId, locationId, isBtc) =>
+        updateData((prev) => ({
+          ...prev,
+          holdings: prev.holdings.map((h) => {
+            if (h.id !== holdingId) return h
+            if (isBtc) {
+              return {
+                ...h,
+                btcLocations: (h.btcLocations ?? []).map((l) =>
+                  l.id === locationId ? { ...l, isLocked: !l.isLocked } : l
+                ),
+              }
+            }
+            return {
+              ...h,
+              goldLocations: (h.goldLocations ?? []).map((l) =>
+                l.id === locationId ? { ...l, isLocked: !l.isLocked } : l
+              ),
+            }
+          }),
+        })),
 
       reorderHoldings: (ids) =>
         updateData((prev) => ({
@@ -1457,7 +1489,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                     } else {
                       updatedGoldLocs = [
                         ...(updatedGoldLocs ?? []),
-                        { id: locId || newId(), name: locName, grams: soldUnits, thbSpent: costBasisSold },
+                        { id: locId || newId(), name: locName, grams: soldUnits, thbSpent: costBasisSold, isLocked: candidate.isLocked },
                       ]
                     }
                   }
@@ -1487,7 +1519,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                     } else {
                       updatedBtcLocs = [
                         ...(updatedBtcLocs ?? []),
-                        { id: locId || newId(), name: locName, satoshi: soldSats, thbSpent: costBasisSold },
+                        { id: locId || newId(), name: locName, satoshi: soldSats, thbSpent: costBasisSold, isLocked: candidate.isLocked },
                       ]
                     }
                   }
@@ -2470,6 +2502,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           ...prev,
           holdings: prev.holdings.map((h) => {
             if (h.id !== holdingId) return h
+            const targetLoc = (h.btcLocations ?? []).find((l) => l.id === locId)
+            if (targetLoc?.isLocked) return h // Guard against deleting locked pocket
             const locations = (h.btcLocations ?? []).filter((l) => l.id !== locId)
             const totalSats = locations.reduce((s, l) => s + l.satoshi, 0)
             const totalThb = locations.reduce((s, l) => s + l.thbSpent, 0)
@@ -2497,6 +2531,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           ...prev,
           holdings: prev.holdings.map((h) => {
             if (h.id !== holdingId) return h
+            const targetLoc = (h.goldLocations ?? []).find((l) => l.id === locId)
+            if (targetLoc?.isLocked) return h // Guard against deleting locked pocket
             const locations = (h.goldLocations ?? []).filter((l) => l.id !== locId)
             const totalGrams = locations.reduce((s, l) => s + l.grams, 0)
             const totalThb = locations.reduce((s, l) => s + l.thbSpent, 0)

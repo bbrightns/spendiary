@@ -9,7 +9,7 @@ import { ASSET_META, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd, upsert } from 
 import type { AssetClass, DividendPayoutSchedule, Holding, PlannedAsset } from '../../lib/types'
 import { dateStrToTimestamp, localDateStr, thb } from '../../lib/format'
 import { searchSecurities, type Security } from '../../lib/securities'
-import { ChevronDownIcon, PencilIcon } from '../icons'
+import { ChevronDownIcon, PencilIcon, LockClosedIcon } from '../icons'
 import { TransactionDateField } from './TransactionDateField'
 
 interface Props {
@@ -77,6 +77,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
   // Collapsible sections state
   const [isGeneralExpanded, setIsGeneralExpanded] = useState(true)
   const [isDividendExpanded, setIsDividendExpanded] = useState(true)
+
+  // Safe-Haven Lock
+  const [isLocked, setIsLocked] = useState(false)
 
   // Generic fields
   const [form, setForm] = useState(blank)
@@ -182,6 +185,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       setPaysDividend(Boolean(editing.paysDividend))
       setDividendMonths(editing.dividendMonths ?? [])
       setDefaultCashAccountId(editing.defaultCashAccountId ?? '')
+      setIsLocked(Boolean(editing.isLocked))
 
       const initialMap: Record<number, number | string> = {}
       if (editing.dividendPayouts && editing.dividendPayouts.length > 0) {
@@ -223,6 +227,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       setDividendMonths([])
       setPayoutDpsMap({})
       setDefaultCashAccountId(data.cashAccounts[0]?.id ?? '')
+      setIsLocked(false)
     } else {
       setForm(blank)
       setSatoshi('')
@@ -235,6 +240,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       setThbInvestedInput('')
       setIsThbInvestedManuallyEdited(false)
       setIsEditingThb(false)
+      setIsLocked(false)
       setPaysDividend(false)
       setDividendMonths([])
       setPayoutDpsMap({})
@@ -556,6 +562,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       updatedAt: localDateStr(),
       ...(editing?.btcLocations ? { btcLocations: editing.btcLocations } : {}),
       ...(editing?.goldLocations ? { goldLocations: editing.goldLocations } : {}),
+      isLocked,
     }
 
     if (isUsd) {
@@ -828,7 +835,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
             canSave={true}
             onSave={save}
             onDelete={
-              editing
+              editing && !isLocked
                 ? () => { removeHolding(editing.id); onClose() }
                 : undefined
             }
@@ -1650,6 +1657,25 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
           )}
         </div>
         )}
+
+        {/* Safe-Haven Lock Toggle */}
+        <label className="flex items-center gap-3 rounded-2xl border border-line bg-surface-muted/50 p-3.5 sm:p-4 cursor-pointer hover:bg-surface-muted transition-colors">
+          <input
+            type="checkbox"
+            checked={isLocked}
+            onChange={(e) => setIsLocked(e.target.checked)}
+            className="h-4 w-4 rounded border-line text-brand focus:ring-brand accent-brand cursor-pointer"
+          />
+          <div className="flex-1 text-xs">
+            <span className="font-semibold text-ink flex items-center gap-1.5 text-sm">
+              <LockClosedIcon className="h-4 w-4 text-amber-500" />
+              Safe-Haven / ล็อคสินทรัพย์นี้
+            </span>
+            <p className="text-ink-muted mt-0.5">
+              ป้องกันการกดขาย (Sell) หรือลบ (Delete) สินทรัพย์นี้โดยไม่ได้ตั้งใจ
+            </p>
+          </div>
+        </label>
       </div>
     </Modal>
   )

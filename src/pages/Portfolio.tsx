@@ -25,7 +25,7 @@ import { Button } from '../components/ui/Button'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import { PlusIcon, MinusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon, DownloadIcon, DotsHorizontalIcon, DividendIcon, ChevronDownIcon } from '../components/icons'
+import { PlusIcon, MinusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon, DownloadIcon, DotsHorizontalIcon, DividendIcon, ChevronDownIcon, LockClosedIcon, LockOpenIcon } from '../components/icons'
 import {
   ASSET_META,
   GRAMS_PER_BAHT_GOLD,
@@ -63,8 +63,9 @@ export function Portfolio() {
   } = usePageGuide('portfolio')
   const {
     data,
-
     removeHolding,
+    toggleHoldingLock,
+    toggleLocationLock,
     upsertBtcLocation,
     removeBtcLocation,
     upsertGoldLocation,
@@ -230,6 +231,7 @@ export function Portfolio() {
   const [locGrams, setLocGrams] = useState<number | ''>('')
   const [locGoldBaht, setLocGoldBaht] = useState<number | ''>('')
   const [locThbSpent, setLocThbSpent] = useState<number | ''>('')
+  const [locIsLocked, setLocIsLocked] = useState(false)
   const [locErrors, setLocErrors] = useState(false)
 
   const summary = portfolioSummary(data.holdings)
@@ -251,6 +253,17 @@ export function Portfolio() {
     setBuyOpen(true)
   }
   const openSell = (h: Holding, locationId?: string) => {
+    if (h.isLocked) {
+      showToast(`สินทรัพย์ "${h.name}" ล็อคอยู่ใน Safe-Haven (ปลดล็อคก่อนหากต้องการขาย)`, 'warn')
+      return
+    }
+    if (locationId) {
+      const loc = (h.btcLocations ?? []).find((l) => l.id === locationId) ?? (h.goldLocations ?? []).find((l) => l.id === locationId)
+      if (loc?.isLocked) {
+        showToast(`กระเป๋า "${loc.name}" ล็อคอยู่ใน Cold Storage (ปลดล็อคก่อนหากต้องการขาย)`, 'warn')
+        return
+      }
+    }
     setBuying(null)
     setBuyOpen(false)
     setSelling(h)
@@ -286,6 +299,7 @@ export function Portfolio() {
     setLocEditing(loc)
     setLocName(loc.name)
     setLocGoldUnit('grams')
+    setLocIsLocked(!!loc.isLocked)
     if ('satoshi' in loc) {
       setLocSatoshi(loc.satoshi)
       setLocGrams('')
@@ -323,6 +337,7 @@ export function Portfolio() {
         name: locName.trim(),
         satoshi: Number(locSatoshi),
         thbSpent: Number(locThbSpent),
+        isLocked: locIsLocked,
       })
     } else {
       upsertGoldLocation(locEditHoldingId, {
@@ -330,6 +345,7 @@ export function Portfolio() {
         name: locName.trim(),
         grams: g,
         thbSpent: Number(locThbSpent),
+        isLocked: locIsLocked,
       })
     }
     showToast(`Updated location "${locName.trim()}"`, 'success')
@@ -627,6 +643,15 @@ export function Portfolio() {
                 <p className="line-clamp-2 text-sm font-semibold text-ink sm:line-clamp-none sm:truncate">
                   {h.name} <span className="text-xs font-normal text-ink-muted ml-0.5">{h.ticker}</span>
                 </p>
+                {h.isLocked && (
+                  <span
+                    title="Safe-Haven Locked (ล็อคป้องกันการขายหรือลบ)"
+                    className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 text-xs font-semibold tracking-tight shrink-0"
+                  >
+                    <LockClosedIcon className="h-3 w-3" />
+                    <span>Safe-Haven</span>
+                  </span>
+                )}
                 {h.tag && (
                   <span className="hidden sm:inline-flex items-center rounded-md bg-brand/10 dark:bg-brand/20 px-1.5 py-0.5 text-xs font-semibold text-brand tracking-tight shrink-0">
                     #{h.tag}
@@ -733,7 +758,18 @@ export function Portfolio() {
                         <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-baseline justify-between gap-2">
-                              <p className="truncate text-sm font-semibold text-ink">{loc.name}</p>
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <p className="truncate text-sm font-semibold text-ink">{loc.name}</p>
+                                {loc.isLocked && (
+                                  <span
+                                    title="Cold Storage Pocket (ล็อคป้องกันการขาย)"
+                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 shrink-0"
+                                  >
+                                    <LockClosedIcon className="h-2.5 w-2.5" />
+                                    <span>Cold</span>
+                                  </span>
+                                )}
+                              </div>
                               {(() => {
                                 const { pnl, pnlPct } = pocketPnl(loc)
                                 return (
@@ -777,7 +813,18 @@ export function Portfolio() {
                         <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-baseline justify-between gap-2">
-                              <p className="truncate text-sm font-semibold text-ink">{loc.name}</p>
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <p className="truncate text-sm font-semibold text-ink">{loc.name}</p>
+                                {loc.isLocked && (
+                                  <span
+                                    title="Cold Storage Pocket (ล็อคป้องกันการขาย)"
+                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 shrink-0"
+                                  >
+                                    <LockClosedIcon className="h-2.5 w-2.5" />
+                                    <span>Cold</span>
+                                  </span>
+                                )}
+                              </div>
                               {(() => {
                                 const { pnl, pnlPct } = pocketPnl(loc)
                                 return (
@@ -1339,6 +1386,37 @@ export function Portfolio() {
             }`}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Safe-Haven Lock / Unlock Toggle */}
+            <button
+              type="button"
+              onClick={() => {
+                const target = activeMenuHolding
+                setActiveMenuHoldingId(null)
+                setActiveMenuHolding(null)
+                toggleHoldingLock(target.id)
+                showToast(
+                  target.isLocked
+                    ? `ปลดล็อค "${target.name}" ออกจาก Safe-Haven แล้ว`
+                    : `ล็อค "${target.name}" เข้า Safe-Haven เรียบร้อย (ป้องกันการขาย/ลบ)`,
+                  'info'
+                )
+              }}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink hover:bg-surface-muted transition-colors cursor-pointer text-left"
+            >
+              {activeMenuHolding.isLocked ? (
+                <>
+                  <LockOpenIcon className="h-4 w-4 text-amber-500 shrink-0" strokeWidth={2} />
+                  <span>ปลดล็อค (Unlock)</span>
+                </>
+              ) : (
+                <>
+                  <LockClosedIcon className="h-4 w-4 text-amber-500 shrink-0" strokeWidth={2} />
+                  <span>ล็อคเข้า Safe-Haven</span>
+                </>
+              )}
+            </button>
+            <div className="my-1 border-t border-line/60" />
+
             <button
               type="button"
               onClick={() => {
@@ -1352,19 +1430,36 @@ export function Portfolio() {
               <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
               <span>ซื้อเพิ่ม (Buy)</span>
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                const target = activeMenuHolding
-                setActiveMenuHoldingId(null)
-                setActiveMenuHolding(null)
-                openSell(target)
-              }}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
-            >
-              <MinusIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.4} />
-              <span>ขายออก (Sell)</span>
-            </button>
+
+            {activeMenuHolding.isLocked ? (
+              <div
+                title="สินทรัพย์นี้ล็อคอยู่ใน Safe-Haven (ปลดล็อคก่อนหากต้องการขาย)"
+                className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
+              >
+                <div className="flex items-center gap-2.5">
+                  <MinusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
+                  <span>ขายออก (Sell)</span>
+                </div>
+                <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <LockClosedIcon className="h-3 w-3" /> ล็อคอยู่
+                </span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  const target = activeMenuHolding
+                  setActiveMenuHoldingId(null)
+                  setActiveMenuHolding(null)
+                  openSell(target)
+                }}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
+              >
+                <MinusIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.4} />
+                <span>ขายออก (Sell)</span>
+              </button>
+            )}
+
             {(activeMenuHolding.assetClass === 'fund' || activeMenuHolding.assetClass === 'stock') && (
               <button
                 type="button"
@@ -1400,56 +1495,104 @@ export function Portfolio() {
       )}
 
       {/* ── Per-pocket (storage location) Action Menu Portal ── */}
-      {pocketMenu && pocketMenuCoords && typeof document !== 'undefined' && createPortal(
-        <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={closePocketMenu}
-            aria-hidden="true"
-          />
-          <div
-            style={{
-              position: 'fixed',
-              top: pocketMenuCoords.top !== undefined ? `${pocketMenuCoords.top}px` : undefined,
-              bottom: pocketMenuCoords.bottom !== undefined ? `${pocketMenuCoords.bottom}px` : undefined,
-              right: `${pocketMenuCoords.right}px`,
-            }}
-            className={`z-50 min-w-[190px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 ${
-              pocketMenuDirection === 'up' ? 'origin-bottom-right' : 'origin-top-right'
-            }`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => {
-                const t = pocketMenu
-                closePocketMenu()
-                openBuy(t.holding, t.locId)
+      {pocketMenu && pocketMenuCoords && typeof document !== 'undefined' && (() => {
+        const locs = pocketMenu.isBtc
+          ? (pocketMenu.holding.btcLocations ?? [])
+          : (pocketMenu.holding.goldLocations ?? [])
+        const loc = locs.find((l) => l.id === pocketMenu.locId)
+        const isLocLocked = !!loc?.isLocked
+
+        return createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-40"
+              onClick={closePocketMenu}
+              aria-hidden="true"
+            />
+            <div
+              style={{
+                position: 'fixed',
+                top: pocketMenuCoords.top !== undefined ? `${pocketMenuCoords.top}px` : undefined,
+                bottom: pocketMenuCoords.bottom !== undefined ? `${pocketMenuCoords.bottom}px` : undefined,
+                right: `${pocketMenuCoords.right}px`,
               }}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
+              className={`z-50 min-w-[190px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 ${
+                pocketMenuDirection === 'up' ? 'origin-bottom-right' : 'origin-top-right'
+              }`}
+              onClick={(e) => e.stopPropagation()}
             >
-              <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
-              <span>ซื้อเข้ากระเป๋านี้ (Buy)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const t = pocketMenu
-                closePocketMenu()
-                openSell(t.holding, t.locId)
-              }}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
-            >
-              <MinusIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.4} />
-              <span>ขายจากกระเป๋านี้ (Sell)</span>
-            </button>
-            {(() => {
-              const locs = pocketMenu.isBtc
-                ? (pocketMenu.holding.btcLocations ?? [])
-                : (pocketMenu.holding.goldLocations ?? [])
-              const loc = locs.find((l) => l.id === pocketMenu.locId)
-              if (!loc) return null
-              return (
+              {/* Cold-Storage Lock / Unlock Toggle */}
+              <button
+                type="button"
+                onClick={() => {
+                  const t = pocketMenu
+                  closePocketMenu()
+                  toggleLocationLock(t.holding.id, t.locId, t.isBtc)
+                  showToast(
+                    isLocLocked
+                      ? `ปลดล็อคกระเป๋า "${t.locName}" แล้ว`
+                      : `ล็อคกระเป๋า Cold Storage "${t.locName}" เรียบร้อย (ป้องกันการขาย/ลบ)`,
+                    'info'
+                  )
+                }}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink hover:bg-surface-muted transition-colors cursor-pointer text-left"
+              >
+                {isLocLocked ? (
+                  <>
+                    <LockOpenIcon className="h-4 w-4 text-amber-500 shrink-0" strokeWidth={2} />
+                    <span>ปลดล็อคกระเป๋า (Unlock)</span>
+                  </>
+                ) : (
+                  <>
+                    <LockClosedIcon className="h-4 w-4 text-amber-500 shrink-0" strokeWidth={2} />
+                    <span>ล็อคกระเป๋า Cold Storage</span>
+                  </>
+                )}
+              </button>
+              <div className="my-1 border-t border-line/60" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  const t = pocketMenu
+                  closePocketMenu()
+                  openBuy(t.holding, t.locId)
+                }}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
+              >
+                <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
+                <span>ซื้อเข้ากระเป๋านี้ (Buy)</span>
+              </button>
+
+              {isLocLocked ? (
+                <div
+                  title="กระเป๋านี้ล็อคอยู่ใน Cold Storage (ปลดล็อคก่อนหากต้องการขาย)"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <MinusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
+                    <span>ขายจากกระเป๋านี้ (Sell)</span>
+                  </div>
+                  <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <LockClosedIcon className="h-3 w-3" /> ล็อคอยู่
+                  </span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const t = pocketMenu
+                    closePocketMenu()
+                    openSell(t.holding, t.locId)
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
+                >
+                  <MinusIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.4} />
+                  <span>ขายจากกระเป๋านี้ (Sell)</span>
+                </button>
+              )}
+
+              {loc && (
                 <button
                   type="button"
                   onClick={() => {
@@ -1462,26 +1605,41 @@ export function Portfolio() {
                   <PencilIcon className="h-3.5 w-3.5 shrink-0" />
                   <span>แก้ไขกระเป๋า (Edit)</span>
                 </button>
-              )
-            })()}
-            <div className="my-1 border-t border-line/60" />
-            <button
-              type="button"
-              onClick={() => {
-                const t = pocketMenu
-                closePocketMenu()
-                setRemoveLocTarget({ holdingId: t.holding.id, locId: t.locId, name: t.locName, isBtc: t.isBtc })
-                setRemoveLocConfirmOpen(true)
-              }}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
-            >
-              <TrashIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.2} />
-              <span>ลบกระเป๋า (Remove)</span>
-            </button>
-          </div>
-        </>,
-        document.body
-      )}
+              )}
+
+              <div className="my-1 border-t border-line/60" />
+
+              {isLocLocked ? (
+                <div
+                  title="ไม่สามารถลบกระเป๋าที่ล็อคไว้ได้ (ปลดล็อคก่อน)"
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <TrashIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.2} />
+                    <span>ลบกระเป๋า (Remove)</span>
+                  </div>
+                  <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400">ล็อคอยู่</span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const t = pocketMenu
+                    closePocketMenu()
+                    setRemoveLocTarget({ holdingId: t.holding.id, locId: t.locId, name: t.locName, isBtc: t.isBtc })
+                    setRemoveLocConfirmOpen(true)
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
+                >
+                  <TrashIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.2} />
+                  <span>ลบกระเป๋า (Remove)</span>
+                </button>
+              )}
+            </div>
+          </>,
+          document.body
+        )
+      })()}
 
       <HoldingForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
       <BuyMoreForm
@@ -1628,6 +1786,23 @@ export function Portfolio() {
               </div>
             </div>
           )}
+
+          {/* Cold-Storage Lock switch */}
+          <label className="flex items-center gap-3 rounded-xl border border-line bg-surface-muted/50 p-3 cursor-pointer hover:bg-surface-muted transition-colors">
+            <input
+              type="checkbox"
+              checked={locIsLocked}
+              onChange={(e) => setLocIsLocked(e.target.checked)}
+              className="h-4 w-4 rounded border-line text-brand focus:ring-brand accent-brand cursor-pointer"
+            />
+            <div className="flex-1 text-xs">
+              <span className="font-semibold text-ink flex items-center gap-1.5">
+                <LockClosedIcon className="h-3.5 w-3.5 text-amber-500" />
+                Cold Storage / ล็อคกระเป๋านี้
+              </span>
+              <p className="text-ink-muted mt-0.5">ป้องกันการขายออกหรือลบกระเป๋านี้โดยไม่ได้ตั้งใจ</p>
+            </div>
+          </label>
         </div>
       </Modal>
 

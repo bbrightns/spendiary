@@ -250,7 +250,7 @@ interface SelectFieldProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>,
   value: string
   error?: string
   onChange: (v: string) => void
-  options: { value: string; label: string }[]
+  options: { value: string; label: string; disabled?: boolean }[]
 }
 
 export function SelectField({ label, value, error, onChange, options }: SelectFieldProps) {
@@ -268,7 +268,7 @@ export function SelectField({ label, value, error, onChange, options }: SelectFi
           onChange={(e) => onChange(e.target.value)}
         >
           {options.map((o) => (
-            <option key={o.value} value={o.value}>
+            <option key={o.value} value={o.value} disabled={o.disabled}>
               {o.label}
             </option>
           ))}

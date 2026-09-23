@@ -15,7 +15,7 @@ import { useData } from '../store/DataContext'
 import { ASSET_META, totalCash } from '../lib/calc'
 import { thb, thbCompact } from '../lib/format'
 import type { Holding, InvestAssetClass, PlannedAsset, RebalanceMode } from '../lib/types'
-import { CheckIcon, CopyIcon, PlusIcon, TrashIcon } from '../components/icons'
+import { CheckIcon, CopyIcon, PlusIcon, TrashIcon, LockClosedIcon } from '../components/icons'
 
 
 const REBALANCE_ASSETS: InvestAssetClass[] = ['fund', 'stock', 'gold', 'crypto', 'real_estate']
@@ -44,6 +44,22 @@ export function Rebalance() {
   const [smartRebalance, setSmartRebalance] = useState(true)
   const [plannedModalOpen, setPlannedModalOpen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [excludeSafeHaven, setExcludeSafeHaven] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('spendiary_rebalance_exclude_safe_haven') === 'true'
+    } catch {
+      return false
+    }
+  })
+
+  const handleToggleExcludeSafeHaven = (val: boolean) => {
+    setExcludeSafeHaven(val)
+    try {
+      localStorage.setItem('spendiary_rebalance_exclude_safe_haven', String(val))
+    } catch {
+      // ignore
+    }
+  }
 
   // Holding & Buy form modals
   const [formOpen, setFormOpen] = useState(false)
@@ -65,7 +81,26 @@ export function Rebalance() {
 
   const mode: RebalanceMode = data.rebalanceMode ?? 'class'
   const availCash = totalCash(data, usdThb)
-  const portVal = data.holdings.reduce((sum, h) => sum + h.units * h.price, 0)
+
+  const getRebalanceUnits = (h: Holding) => {
+    if (!excludeSafeHaven) return h.units
+    if (h.isLocked) return 0
+    if (h.assetClass === 'crypto' && h.btcLocations) {
+      const lockedSats = h.btcLocations.filter((l) => l.isLocked).reduce((sum, l) => sum + l.satoshi, 0)
+      return Math.max(0, h.units - (lockedSats / 100_000_000))
+    }
+    if (h.assetClass === 'gold' && h.goldLocations) {
+      const lockedGrams = h.goldLocations.filter((l) => l.isLocked).reduce((sum, l) => sum + l.grams, 0)
+      return Math.max(0, h.units - lockedGrams)
+    }
+    return h.units
+  }
+
+  const activeHoldings = data.holdings
+    .map((h) => ({ ...h, units: getRebalanceUnits(h) }))
+    .filter((h) => !excludeSafeHaven || h.units > 0.000001)
+
+  const portVal = activeHoldings.reduce((sum, h) => sum + h.units * h.price, 0)
   const cashToDeploy = Number(newCash) || 0
   const targetTotalValue = portVal + cashToDeploy
 
@@ -80,11 +115,11 @@ export function Rebalance() {
   const [localClassTargets, setLocalClassTargets] = useState<Record<InvestAssetClass, number>>(initialClassTargets)
 
   const actualClassVals: Record<InvestAssetClass, number> = {
-    fund: data.holdings.filter((h) => h.assetClass === 'fund').reduce((s, h) => s + h.units * h.price, 0),
-    stock: data.holdings.filter((h) => h.assetClass === 'stock').reduce((s, h) => s + h.units * h.price, 0),
-    crypto: data.holdings.filter((h) => h.assetClass === 'crypto').reduce((s, h) => s + h.units * h.price, 0),
-    gold: data.holdings.filter((h) => h.assetClass === 'gold').reduce((s, h) => s + h.units * h.price, 0),
-    real_estate: data.holdings.filter((h) => h.assetClass === 'real_estate').reduce((s, h) => s + h.units * h.price, 0),
+    fund: activeHoldings.filter((h) => h.assetClass === 'fund').reduce((s, h) => s + h.units * h.price, 0),
+    stock: activeHoldings.filter((h) => h.assetClass === 'stock').reduce((s, h) => s + h.units * h.price, 0),
+    crypto: activeHoldings.filter((h) => h.assetClass === 'crypto').reduce((s, h) => s + h.units * h.price, 0),
+    gold: activeHoldings.filter((h) => h.assetClass === 'gold').reduce((s, h) => s + h.units * h.price, 0),
+    real_estate: activeHoldings.filter((h) => h.assetClass === 'real_estate').reduce((s, h) => s + h.units * h.price, 0),
   }
 
   const classTargetsSum = Object.values(localClassTargets).reduce((s, x) => s + x, 0)
@@ -200,7 +235,7 @@ export function Rebalance() {
     plannedObj?: PlannedAsset
   }
 
-  const holdingRows: HoldingRowItem[] = data.holdings.map((h) => {
+  const holdingRows: HoldingRowItem[] = activeHoldings.map((h) => {
     const actualVal = h.units * h.price
     const actualPct = portVal > 0 ? (actualVal / portVal) * 100 : 0
     const targetPct = localHoldingTargets[h.id] ?? 0
@@ -540,6 +575,25 @@ export function Rebalance() {
                 </label>
                 <p className="mt-1 text-xs text-ink-muted leading-relaxed">
                   Calculates purchases exclusively for underweight positions without generating sell advice.
+                </p>
+              </div>
+
+              {/* Exclude Safe-Haven Assets Toggle */}
+              <div className="pt-2 border-t border-line">
+                <label className="flex items-center gap-2.5 text-sm font-semibold text-ink cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={excludeSafeHaven}
+                    onChange={(e) => handleToggleExcludeSafeHaven(e.target.checked)}
+                    className="rounded border-line-strong text-brand focus:ring-brand/15 h-4 w-4"
+                  />
+                  <span className="flex items-center gap-1.5">
+                    <LockClosedIcon className="h-4 w-4 text-amber-500" />
+                    <span>Exclude Safe-Haven / Cold Assets</span>
+                  </span>
+                </label>
+                <p className="mt-1 text-xs text-ink-muted leading-relaxed">
+                  ยกเว้นสินทรัพย์ใน Safe-Haven และกระเป๋า Cold Storage ออกจากการคำนวณ เพื่อไม่ให้ถูกแนะนำให้ขายออก
                 </p>
               </div>
 

@@ -9,6 +9,8 @@ export interface BtcLocation {
   satoshi: number
   /** Total THB spent at this location */
   thbSpent: number
+  /** Whether this cold-storage pocket is locked to prevent accidental sales */
+  isLocked?: boolean
 }
 
 export interface GoldLocation {
@@ -18,6 +20,8 @@ export interface GoldLocation {
   grams: number
   /** Total THB spent at this location */
   thbSpent: number
+  /** Whether this cold-storage pocket is locked to prevent accidental sales */
+  isLocked?: boolean
 }
 
 export interface Holding {
@@ -59,6 +63,8 @@ export interface Holding {
   dividendPayouts?: DividendPayoutSchedule[]
   /** Default cash account ID to deposit dividends into */
   defaultCashAccountId?: string
+  /** Whether this holding is locked in Safe-Haven to prevent accidental sales or deletion */
+  isLocked?: boolean
 }
 
 export interface DividendPayoutSchedule {

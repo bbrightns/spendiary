@@ -10,6 +10,7 @@ import { ASSET_META, GRAMS_PER_BAHT_GOLD, holdingMetrics } from '../../lib/calc'
 import type { BtcLocation, GoldLocation, Holding } from '../../lib/types'
 import { dateStrToTimestamp, thb, localDateStr } from '../../lib/format'
 import { TransactionDateField } from './TransactionDateField'
+import { LockClosedIcon } from '../icons'
 
 interface Props {
   open: boolean
@@ -104,14 +105,16 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
         setBtcThbProceeds('')
         const locs = holding.btcLocations ?? []
         const locked = lockedLocationId ? locs.find((l) => l.id === lockedLocationId) : undefined
-        setBtcLocationId(locked ? locked.id : (locs[0]?.id ?? ''))
+        const firstUnlocked = locs.find((l) => !l.isLocked)
+        setBtcLocationId(locked ? locked.id : (firstUnlocked?.id ?? locs[0]?.id ?? ''))
       } else if (holding.assetClass === 'gold') {
         setGoldGrams('')
         setGoldBaht('')
         setGoldThbProceeds('')
         const locs = holding.goldLocations ?? []
         const locked = lockedLocationId ? locs.find((l) => l.id === lockedLocationId) : undefined
-        setGoldLocationId(locked ? locked.id : (locs[0]?.id ?? ''))
+        const firstUnlocked = locs.find((l) => !l.isLocked)
+        setGoldLocationId(locked ? locked.id : (firstUnlocked?.id ?? locs[0]?.id ?? ''))
       } else {
         setUnits('')
         setPrice(holding.price > 0 ? holding.price : '')
@@ -252,6 +255,16 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
 
   if (isCustomProceeds) {
     isValid = isValid && totalProceedsThb > 0
+  }
+
+  const isCurrentLocLocked = isBtc
+    ? !!(holding.btcLocations ?? []).find((l) => l.id === btcLocationId)?.isLocked
+    : isGold
+    ? !!(holding.goldLocations ?? []).find((l) => l.id === goldLocationId)?.isLocked
+    : false
+
+  if (holding.isLocked || isCurrentLocLocked) {
+    isValid = false
   }
 
   const realizedPnL = totalProceedsThb - costBasisSoldThb
@@ -442,6 +455,25 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
       }
     >
       <div className="space-y-4">
+        {holding.isLocked && (
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-2.5 text-xs text-amber-700 dark:text-amber-400">
+            <LockClosedIcon className="h-4 w-4 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-sm">สินทรัพย์นี้อยู่ใน Safe-Haven (Locked)</p>
+              <p className="mt-0.5 text-ink-muted">ล็อคเพื่อป้องกันการกดขายหรือลดจำนวนหน่วย กรุณาปลดล็อคที่หน้า Portfolio ก่อนทำรายการขาย</p>
+            </div>
+          </div>
+        )}
+        {!holding.isLocked && isCurrentLocLocked && (
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-2.5 text-xs text-amber-700 dark:text-amber-400">
+            <LockClosedIcon className="h-4 w-4 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-sm">กระเป๋านี้อยู่ใน Cold Storage (Locked)</p>
+              <p className="mt-0.5 text-ink-muted">ล็อคเพื่อป้องกันการกดขาย กรุณาเลือกกระเป๋าอื่น หรือปลดล็อคกระเป๋านี้ก่อนทำรายการ</p>
+            </div>
+          </div>
+        )}
+
         {onSwitchToBuy && (
           <div className="mb-2">
             <SegmentedControl
@@ -528,7 +560,8 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                     onChange={handleBtcLocationChange}
                     options={(holding.btcLocations ?? []).map((l) => ({
                       value: l.id,
-                      label: `${l.name} (${l.satoshi.toLocaleString()} sats · ฿${l.thbSpent.toLocaleString()})`,
+                      label: `${l.isLocked ? '🔒 [Locked] ' : ''}${l.name} (${l.satoshi.toLocaleString()} sats · ฿${l.thbSpent.toLocaleString()})`,
+                      disabled: l.isLocked,
                     }))}
                   />
                 )}
@@ -591,7 +624,8 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                     onChange={handleGoldLocationChange}
                     options={(holding.goldLocations ?? []).map((l) => ({
                       value: l.id,
-                      label: `${l.name} (${l.grams.toFixed(4)}g · ${(l.grams / GRAMS_PER_BAHT_GOLD).toFixed(2)} บาท · ฿${l.thbSpent.toLocaleString()})`,
+                      label: `${l.isLocked ? '🔒 [Locked] ' : ''}${l.name} (${l.grams.toFixed(4)}g · ${(l.grams / GRAMS_PER_BAHT_GOLD).toFixed(2)} บาท · ฿${l.thbSpent.toLocaleString()})`,
+                      disabled: l.isLocked,
                     }))}
                   />
                 )}
