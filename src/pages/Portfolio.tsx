@@ -1001,7 +1001,6 @@ export function Portfolio() {
                 </>
               )}
             </Button>
-            <AddButton onClick={openAdd} label="Add holding" />
           </div>
         }
       />
