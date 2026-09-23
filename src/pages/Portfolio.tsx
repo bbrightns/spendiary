@@ -1501,7 +1501,7 @@ export function Portfolio() {
               </button>
             )}
 
-            {(activeMenuHolding.assetClass === 'fund' || activeMenuHolding.assetClass === 'stock') && (
+            {(activeMenuHolding.assetClass === 'fund' || activeMenuHolding.assetClass === 'stock') && activeMenuHolding.paysDividend && (
               activeMenuHolding.isLocked ? (
                 <div
                   title="สินทรัพย์นี้ล็อคอยู่ใน Safe-Haven (ปลดล็อคก่อนหากต้องการบันทึกปันผล)"
