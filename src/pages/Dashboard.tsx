@@ -462,7 +462,7 @@ export function Dashboard() {
                   <div className="flex items-baseline min-w-0">
                     <p
                       title={thb(portfolio.value)}
-                      className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
+                      className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
                     >
                       {portfolio.value >= 1_000_000 ? thbCompact(portfolio.value) : thb(portfolio.value)}
                     </p>
@@ -471,7 +471,7 @@ export function Dashboard() {
                     <PnLText
                       value={portfolio.pnl}
                       compact
-                      className="font-display text-3xl sm:text-4xl !font-extrabold tracking-tight leading-tight truncate"
+                      className="font-display text-2xl sm:text-3xl !font-extrabold tracking-tight leading-tight truncate"
                     />
                   </div>
 
@@ -550,7 +550,7 @@ export function Dashboard() {
 
               {/* Cash & Liquidity Hero Summary */}
               <div id="guide-cash-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
-                <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
                   {/* Row 1: Labels */}
                   <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">Available Cash</span>
                   <span className="text-xs font-bold uppercase tracking-wider text-ink-muted text-right">Est. Yield</span>
@@ -559,7 +559,7 @@ export function Dashboard() {
                   <div className="flex items-baseline min-w-0">
                     <p
                       title={thb(cash)}
-                      className="font-display text-lg sm:text-xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
+                      className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
                     >
                       {cash >= 1_000_000 ? thbCompact(cash) : thb(cash)}
                     </p>
@@ -568,12 +568,14 @@ export function Dashboard() {
                     {cashInterest > 0 ? (
                       <span
                         title={`~${thb(cashInterest)}/yr`}
-                        className="font-display text-lg sm:text-xl font-extrabold tracking-tight tnum text-emerald-600 dark:text-emerald-400 leading-tight truncate cursor-default"
+                        className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum text-emerald-600 dark:text-emerald-400 leading-tight truncate cursor-default"
                       >
                         ~{thbCompact(cashInterest)}<span className="text-xs font-semibold text-ink-muted">/yr</span>
                       </span>
                     ) : (
-                      <span className="text-sm text-ink-muted font-medium self-center">No yield</span>
+                      <span className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-ink-muted leading-tight truncate cursor-default">
+                        No yield
+                      </span>
                     )}
                   </div>
 
@@ -696,7 +698,7 @@ export function Dashboard() {
 
               {/* Liabilities & Debts Hero Summary */}
               <div id="guide-debt-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
-                <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
                   {/* Row 1: Labels */}
                   <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">Total Outstanding</span>
                   <span className="text-xs font-bold uppercase tracking-wider text-ink-muted text-right">Monthly Payment</span>
@@ -704,7 +706,7 @@ export function Dashboard() {
                   {/* Row 2: Values */}
                   <div className="flex items-baseline min-w-0">
                     <p
-                      className="font-display text-lg sm:text-xl font-extrabold tracking-tight tnum leading-tight truncate cursor-default text-ink dark:text-white"
+                      className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum leading-tight truncate cursor-default text-ink dark:text-white"
                       title={debts > 0 ? `-${thb(debts)}` : '฿0'}
                     >
                       {debts > 0 ? (debts >= 1_000_000 ? `-${thbCompact(debts)}` : `-${thb(debts)}`) : '฿0'}
@@ -714,12 +716,14 @@ export function Dashboard() {
                     {monthlyDebt > 0 ? (
                       <span
                         title={`~${thb(monthlyDebt)}/mo`}
-                        className="font-display text-lg sm:text-xl font-extrabold tracking-tight tnum text-ink dark:text-white leading-tight truncate cursor-default"
+                        className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum text-ink dark:text-white leading-tight truncate cursor-default"
                       >
                         ~{thbCompact(monthlyDebt)}<span className="text-xs font-semibold text-ink-muted">/mo</span>
                       </span>
                     ) : (
-                      <span className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold self-center">฿0/mo</span>
+                      <span className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400 leading-tight truncate cursor-default">
+                        ฿0<span className="text-xs font-semibold text-ink-muted">/mo</span>
+                      </span>
                     )}
                   </div>
 
