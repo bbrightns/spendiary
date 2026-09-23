@@ -330,18 +330,10 @@ export function Dashboard() {
                 </div>
 
                 {debts > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedLiabilityId(null)
-                      setLiabilitiesOpen(true)
-                    }}
-                    className="pl-2.5 sm:pl-3 border-l border-line dark:border-white/10 text-left cursor-pointer group"
-                    title="Click to manage liabilities"
-                  >
+                  <div className="pl-2.5 sm:pl-3 border-l border-line dark:border-white/10 text-left">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-rose-500 whitespace-nowrap">
                       <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0" />
-                      <span className="group-hover:underline">Debts</span>
+                      <span>Debts</span>
                     </div>
                     <p className="mt-1 font-display text-base sm:text-lg font-extrabold tnum text-ink dark:text-white whitespace-nowrap">
                       {thbCompact(-debts)}
@@ -349,7 +341,7 @@ export function Dashboard() {
                     <p className="mt-0.5 text-xs font-semibold text-rose-500/80 tnum whitespace-nowrap">
                       {grossAssets > 0 ? `${debtRatio.toFixed(1)}%` : '0%'}
                     </p>
-                  </button>
+                  </div>
                 )}
               </div>
 
