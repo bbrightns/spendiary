@@ -32,7 +32,7 @@ function AppContent() {
   // 💡 ถ้ายังไม่ได้ล็อกอิน ให้แสดงหน้าจอ Sign In ธีม Fastwork.com
   if (!user) {
     return (
-      <div className="relative min-h-screen flex flex-col justify-between overflow-x-hidden font-sans select-none text-slate-900 bg-[#faf6f4]">
+      <div className="relative min-h-screen flex flex-col justify-between overflow-x-hidden font-sans select-none text-landing-ink bg-landing-canvas">
         <style>{`
           .fastwork-canvas {
             background-color: #faf6f4;
@@ -52,12 +52,12 @@ function AppContent() {
         <header className="relative z-10 w-full max-w-6xl mx-auto px-6 sm:px-8 py-5 sm:py-7 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             <img src="/logo.png" alt="Spendiary Logo" className="w-8 h-8 sm:w-9 sm:h-9 object-contain shrink-0" />
-            <span className="font-display font-extrabold sm:font-black text-xl sm:text-2xl tracking-tight leading-none text-slate-900">
+            <span className="font-display font-extrabold sm:font-black text-xl sm:text-2xl tracking-tight leading-none text-landing-ink">
               spendiary
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2 bg-white/85 backdrop-blur-md border border-slate-200/80 rounded-full px-3 py-1 sm:px-3.5 sm:py-1.5 shadow-xs text-xs font-semibold text-slate-700 whitespace-nowrap shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 bg-landing-surface-soft backdrop-blur-md border border-landing-line rounded-full px-3 py-1 sm:px-3.5 sm:py-1.5 shadow-xs text-xs font-semibold text-landing-ink-soft whitespace-nowrap shrink-0">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
             <span className="sm:hidden">2026 Edition</span>
             <span className="hidden sm:inline">Smart Wealth · 2026 Edition</span>
@@ -67,13 +67,13 @@ function AppContent() {
         {/* ── Main Content / Hero + Features + Sign In ── */}
         <main className="relative z-10 w-full max-w-4xl mx-auto px-6 sm:px-8 pt-2 sm:pt-4 pb-12 sm:pb-16 flex flex-col items-center">
           {/* Center Announcement Pill */}
-          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 py-1 sm:px-4 sm:py-1.5 rounded-full bg-white/85 border border-slate-200/80 shadow-xs text-xs font-medium text-slate-700 mb-4 sm:mb-6 text-center">
+          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 py-1 sm:px-4 sm:py-1.5 rounded-full bg-landing-surface-soft border border-landing-line shadow-xs text-xs font-medium text-landing-ink-soft mb-4 sm:mb-6 text-center">
             <span className="text-brand font-bold">✦</span>
             <span>The intelligent personal wealth cockpit</span>
           </div>
 
           {/* Hero Headline */}
-          <h1 className="font-display font-black text-3xl sm:text-5xl md:text-6xl text-slate-950 text-center tracking-tight leading-[1.15] max-w-2xl mb-3 sm:mb-4 px-2 text-balance">
+          <h1 className="font-display font-black text-3xl sm:text-5xl md:text-6xl text-landing-ink text-center tracking-tight leading-[1.15] max-w-2xl mb-3 sm:mb-4 px-2 text-balance">
             Spend smarter.{' '}
             <span className="block mt-1 sm:mt-2 font-black text-brand tracking-tight">
               Now live wealthier.
@@ -81,17 +81,17 @@ function AppContent() {
           </h1>
 
           {/* Subtitle */}
-          <p className="text-slate-600 text-xs sm:text-base text-center max-w-[340px] sm:max-w-xl leading-relaxed mb-6 sm:mb-8 px-2 text-pretty">
+          <p className="text-landing-ink-muted text-xs sm:text-base text-center max-w-[340px] sm:max-w-xl leading-relaxed mb-6 sm:mb-8 px-2 text-pretty">
             An intelligent personal wealth manager reinventing how you track portfolio assets, optimize DCA targets, and plan financial freedom.
           </p>
 
           {/* ── Sign In Action Box (Centered directly in the middle) ── */}
-          <div className="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-[0_12px_40px_rgba(15,23,42,0.06)] p-5 sm:p-8 mb-8 sm:mb-12">
+          <div className="w-full max-w-md bg-landing-surface-glass backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-landing-line-strong shadow-[0_12px_40px_rgba(15,23,42,0.06)] p-5 sm:p-8 mb-8 sm:mb-12">
             <div className="text-center mb-5 sm:mb-6">
-              <h2 className="font-display font-extrabold text-lg sm:text-xl text-slate-900 tracking-tight">
+              <h2 className="font-display font-extrabold text-lg sm:text-xl text-landing-ink tracking-tight">
                 Welcome to Spendiary
               </h2>
-              <p className="text-slate-500 text-xs sm:text-sm mt-1">
+              <p className="text-landing-ink-muted text-xs sm:text-sm mt-1">
                 Your private dashboard for wealth and investments
               </p>
             </div>
@@ -130,17 +130,17 @@ function AppContent() {
 
             {/* Divider */}
             <div className="flex items-center gap-3 my-3 sm:my-3.5">
-              <div className="h-px flex-1 bg-slate-200/80" />
-              <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">or</span>
-              <div className="h-px flex-1 bg-slate-200/80" />
+              <div className="h-px flex-1 bg-landing-line" />
+              <span className="text-xs font-medium text-landing-ink-faint uppercase tracking-wider">or</span>
+              <div className="h-px flex-1 bg-landing-line" />
             </div>
 
             {/* 2. Test / Offline Mode */}
             <button
               onClick={loginAsTestMode}
-              className="w-full h-11 sm:h-12 bg-slate-100 hover:bg-slate-200/80 text-slate-700 hover:text-slate-900 rounded-xl sm:rounded-2xl font-semibold text-xs sm:text-sm border border-slate-200/60 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+              className="w-full h-11 sm:h-12 bg-slate-100 hover:bg-slate-200/80 text-landing-ink-soft hover:text-landing-ink rounded-xl sm:rounded-2xl font-semibold text-xs sm:text-sm border border-slate-200/60 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
             >
-              <svg className="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="w-4 h-4 text-landing-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
@@ -148,7 +148,7 @@ function AppContent() {
             </button>
 
             {/* Trust badge under sign-in */}
-            <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-center gap-1.5 text-xs text-slate-600 font-medium">
+            <div className="mt-4 pt-3.5 border-t border-landing-line flex items-center justify-center gap-1.5 text-xs text-landing-ink-muted font-medium">
               <span className="inline-flex items-center gap-1.5 text-center">
                 <svg className="w-3.5 h-3.5 text-emerald-600 shrink-0 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -162,7 +162,7 @@ function AppContent() {
           {/* ── 3 Feature Cards ── */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4 w-full max-w-md md:max-w-4xl">
             {/* Card 1 */}
-            <div className="bg-white/75 hover:bg-white/90 backdrop-blur-md rounded-2xl border border-white/90 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
+            <div className="bg-landing-surface/75 hover:bg-landing-surface/90 backdrop-blur-md rounded-2xl border border-landing-surface/90 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
               <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-blue-50 text-blue-600 border border-blue-100/80 shadow-xs">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -170,34 +170,34 @@ function AppContent() {
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-display font-bold text-slate-800 text-sm leading-tight mb-1">
+                <h3 className="font-display font-bold text-landing-ink text-sm leading-tight mb-1">
                   Bank-grade Privacy
                 </h3>
-                <p className="text-slate-500 text-xs leading-relaxed">
+                <p className="text-landing-ink-muted text-xs leading-relaxed">
                   Your financial records stay local on your device or encrypted with secure Supabase cloud sync.
                 </p>
               </div>
             </div>
 
             {/* Card 2 */}
-            <div className="bg-white/75 hover:bg-white/90 backdrop-blur-md rounded-2xl border border-white/90 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
+            <div className="bg-landing-surface/75 hover:bg-landing-surface/90 backdrop-blur-md rounded-2xl border border-landing-surface/90 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
               <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-indigo-50 text-indigo-600 border border-indigo-100/80 shadow-xs">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-display font-bold text-slate-800 text-sm leading-tight mb-1">
+                <h3 className="font-display font-bold text-landing-ink text-sm leading-tight mb-1">
                   Smart Portfolio & DCA
                 </h3>
-                <p className="text-slate-500 text-xs leading-relaxed">
+                <p className="text-landing-ink-muted text-xs leading-relaxed">
                   Track stocks, crypto, funds, and gold with automated rebalancing & smart buy notifications.
                 </p>
               </div>
             </div>
 
             {/* Card 3 */}
-            <div className="bg-white/75 hover:bg-white/90 backdrop-blur-md rounded-2xl border border-white/90 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
+            <div className="bg-landing-surface/75 hover:bg-landing-surface/90 backdrop-blur-md rounded-2xl border border-landing-surface/90 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-start gap-3.5">
               <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-violet-50 text-violet-600 border border-violet-100/80 shadow-xs">
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="3" width="18" height="18" rx="4" />
@@ -205,10 +205,10 @@ function AppContent() {
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-display font-bold text-slate-800 text-sm leading-tight mb-1">
+                <h3 className="font-display font-bold text-landing-ink text-sm leading-tight mb-1">
                   Retirement Freedom
                 </h3>
-                <p className="text-slate-500 text-xs leading-relaxed">
+                <p className="text-landing-ink-muted text-xs leading-relaxed">
                   Simulate FIRE milestones, calculate dividend yields, and plan early financial freedom.
                 </p>
               </div>

@@ -573,6 +573,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                     <button
                       type="button"
                       onClick={() => setExpandedId(r.id)}
+                      aria-label={`Change category for ${r.name || 'account'}, currently ${CASH_CATEGORIES[r.category]?.labelTh || 'spending'}`}
                       className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium transition-colors hover:bg-surface-muted border border-line/40 cursor-pointer"
                     >
                       <span>{CASH_CATEGORIES[r.category]?.icon}</span>
@@ -589,6 +590,7 @@ export function CashAccountsForm({ open, onClose, initialAccountId }: Props) {
                       <button
                         type="button"
                         onClick={() => setExpandedId(r.id)}
+                        aria-label={`Add interest rate and yield settings for ${r.name || 'account'}`}
                         className="text-xs text-ink-muted/70 hover:text-brand hover:underline cursor-pointer"
                       >
                         + Add interest rate

@@ -850,6 +850,7 @@ export function Dashboard() {
                                          e.stopPropagation()
                                          undoLiabilityPayment(l.id)
                                        }}
+                                       aria-label={`Undo payment for ${l.name}`}
                                        className="relative inline-flex items-center px-2 py-1 min-h-[36px] sm:min-h-0 sm:py-0.5 after:absolute after:-inset-2 after:content-[''] font-semibold text-ink-faint hover:text-rose-600 hover:underline cursor-pointer"
                                        title="Undo payment for this period"
                                      >
