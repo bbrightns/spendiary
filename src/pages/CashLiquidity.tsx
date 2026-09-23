@@ -240,27 +240,16 @@ export function CashLiquidity() {
         title="Cash & Liquidity Hub"
         subtitle="ศูนย์บริหารจัดการพอร์ตเงินสด สภาพคล่องฉุกเฉิน กระสุนรอลงทุน และผลตอบแทนดอกเบี้ยเงินฝาก"
         action={
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleAutoSort}
-              className="gap-1.5 text-xs sm:text-sm h-9 cursor-pointer"
-              title="จัดเรียงบัญชีตามสถาบันการเงินและยอดคงเหลือ"
-            >
-              <SparklesIcon className="h-3.5 w-3.5 text-ink-muted" strokeWidth={2} />
-              <span>จัดเรียงสถาบัน</span>
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleOpenAddModal}
-              className="gap-1.5 text-xs sm:text-sm h-9 cursor-pointer"
-            >
-              <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
-              <span>เพิ่มบัญชีใหม่</span>
-            </Button>
-          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleAutoSort}
+            className="gap-1.5 text-xs sm:text-sm h-9 cursor-pointer"
+            title="จัดเรียงบัญชีตามสถาบันการเงินและยอดคงเหลือ"
+          >
+            <SparklesIcon className="h-3.5 w-3.5 text-ink-muted" strokeWidth={2} />
+            <span>จัดเรียงสถาบัน</span>
+          </Button>
         }
       />
 
@@ -457,12 +446,14 @@ export function CashLiquidity() {
               />
             </div>
             <Button
+              variant="primary"
+              size="sm"
               onClick={handleOpenAddModal}
-              className="gap-1.5 text-xs shrink-0 h-9 px-3.5 shadow-xs"
+              className="gap-1.5 text-xs sm:text-sm shrink-0 h-9 px-3.5 shadow-xs cursor-pointer font-semibold"
               title="เพิ่มบัญชีเงินสดใหม่"
             >
               <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
-              <span>เพิ่มบัญชี</span>
+              <span>เพิ่มบัญชีใหม่</span>
             </Button>
           </div>
         </div>

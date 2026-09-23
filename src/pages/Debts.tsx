@@ -221,20 +221,6 @@ export function Debts() {
         eyebrow="Cashflow & Liabilities"
         title="Debts & Installments"
         subtitle="ศูนย์รวมการจัดการหนี้สิน ผ่อนสินค้า 0% และวางแผนปลดหนี้สู่ความมั่งคั่งที่แท้จริง"
-        action={
-          <Button
-            onClick={() => {
-              setEditingLiabilityId(null)
-              setLiabilitiesModalOpen(true)
-            }}
-            variant="primary"
-            size="sm"
-            className="h-9 gap-1.5 text-xs sm:text-sm cursor-pointer shadow-xs"
-          >
-            <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
-            <span>เพิ่มรายการหนี้ใหม่</span>
-          </Button>
-        }
       />
 
       {/* ── Top Summary Bento (Compact 2x2 on Mobile, 4x1 on Desktop like Dividends) ── */}
@@ -374,6 +360,20 @@ export function Debts() {
             )
           })}
         </div>
+
+        {/* Action Button: Add New Debt Item */}
+        <Button
+          onClick={() => {
+            setEditingLiabilityId(null)
+            setLiabilitiesModalOpen(true)
+          }}
+          variant="primary"
+          size="sm"
+          className="h-9 gap-1.5 text-xs sm:text-sm cursor-pointer shadow-xs shrink-0 self-start sm:self-auto"
+        >
+          <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
+          <span>เพิ่มรายการหนี้ใหม่</span>
+        </Button>
       </div>
 
       {/* ── Debts List / Cards ── */}
@@ -399,12 +399,12 @@ export function Debts() {
               setEditingLiabilityId(null)
               setLiabilitiesModalOpen(true)
             }}
-            variant="secondary"
-            size="md"
-            className="mt-5"
+            variant="primary"
+            size="sm"
+            className="mt-5 h-9 gap-1.5 text-xs sm:text-sm cursor-pointer shadow-xs"
           >
-            <PlusIcon className="h-4 w-4 mr-1.5" />
-            เพิ่มรายการแรก
+            <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
+            <span>เพิ่มรายการแรก</span>
           </Button>
         </Card>
       ) : (

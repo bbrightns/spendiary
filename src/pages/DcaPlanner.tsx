@@ -465,38 +465,26 @@ export function DcaPlanner() {
         subtitle="Monthly salary allocation & recurring investments."
         onStartGuide={startTour}
         action={
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleCopyMarkdown}
-              aria-label="Copy portfolio markdown"
-              title="Copy Portfolio as Markdown"
-              className="cursor-pointer shrink-0 h-9 text-xs sm:text-sm whitespace-nowrap"
-            >
-              {copied ? (
-                <>
-                  <CheckIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.2} />
-                  <span className="text-gain">Copied MD!</span>
-                </>
-              ) : (
-                <>
-                  <CopyIcon className="h-4 w-4 text-ink-muted shrink-0" />
-                  <span>Copy Portfolio MD</span>
-                </>
-              )}
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={openAdd}
-              aria-label="Add DCA investment plan"
-              className="cursor-pointer shrink-0 h-9 text-xs sm:text-sm gap-1.5"
-            >
-              <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
-              <span>Add plan</span>
-            </Button>
-          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleCopyMarkdown}
+            aria-label="Copy portfolio markdown"
+            title="Copy Portfolio as Markdown"
+            className="cursor-pointer shrink-0 h-9 text-xs sm:text-sm whitespace-nowrap"
+          >
+            {copied ? (
+              <>
+                <CheckIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.2} />
+                <span className="text-gain">Copied MD!</span>
+              </>
+            ) : (
+              <>
+                <CopyIcon className="h-4 w-4 text-ink-muted shrink-0" />
+                <span>Copy Portfolio MD</span>
+              </>
+            )}
+          </Button>
         }
       />
 

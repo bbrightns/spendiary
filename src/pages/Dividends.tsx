@@ -160,17 +160,6 @@ export function Dividends() {
         eyebrow="กระแสเงินสด"
         title="เงินปันผล"
         subtitle="บันทึกเงินปันผลที่ได้รับ คาดการณ์รายรับต่อปี และภาษีหัก ณ ที่จ่าย"
-        action={
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => handleOpenAddModal()}
-            className="h-9 gap-1.5 text-xs sm:text-sm font-semibold cursor-pointer"
-          >
-            <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
-            <span>บันทึกรับปันผล</span>
-          </Button>
-        }
       />
 
       <div className="space-y-4 sm:space-y-6">
@@ -422,36 +411,49 @@ export function Dividends() {
               </p>
             </div>
 
-            {/* Year filter chips */}
-            {availableYears.length > 1 && (
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setYearFilter('all')}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                    yearFilter === 'all'
-                      ? 'bg-brand text-white shadow-2xs'
-                      : 'bg-surface-muted text-ink-muted hover:text-ink'
-                  }`}
-                >
-                  ทั้งหมด
-                </button>
-                {availableYears.map((y) => (
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Year filter chips */}
+              {availableYears.length > 1 && (
+                <div className="flex items-center gap-1.5">
                   <button
-                    key={y}
                     type="button"
-                    onClick={() => setYearFilter(y)}
+                    onClick={() => setYearFilter('all')}
                     className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                      yearFilter === y
+                      yearFilter === 'all'
                         ? 'bg-brand text-white shadow-2xs'
                         : 'bg-surface-muted text-ink-muted hover:text-ink'
                     }`}
                   >
-                    {y}
+                    ทั้งหมด
                   </button>
-                ))}
-              </div>
-            )}
+                  {availableYears.map((y) => (
+                    <button
+                      key={y}
+                      type="button"
+                      onClick={() => setYearFilter(y)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                        yearFilter === y
+                          ? 'bg-brand text-white shadow-2xs'
+                          : 'bg-surface-muted text-ink-muted hover:text-ink'
+                      }`}
+                    >
+                      {y}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Action Button: Record Dividend */}
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => handleOpenAddModal()}
+                className="h-9 gap-1.5 text-xs sm:text-sm font-semibold cursor-pointer shadow-xs shrink-0"
+              >
+                <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
+                <span>บันทึกรับปันผล</span>
+              </Button>
+            </div>
           </div>
 
           {filteredRecords.length === 0 ? (
@@ -465,10 +467,10 @@ export function Dividends() {
                     variant="primary"
                     size="sm"
                     onClick={() => handleOpenAddModal()}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                    className="h-9 gap-1.5 text-xs sm:text-sm font-semibold cursor-pointer shadow-xs"
                   >
-                    <PlusIcon className="h-3.5 w-3.5 mr-1" />
-                    บันทึกรายการแรก
+                    <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
+                    <span>บันทึกรายการแรก</span>
                   </Button>
                 }
               />
