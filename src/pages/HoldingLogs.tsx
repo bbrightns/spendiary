@@ -423,7 +423,7 @@ export function HoldingLogs() {
   const [viewMode, setViewMode] = useState<'table' | 'timeline'>(() => {
     const saved = localStorage.getItem('spendiary_logs_view_mode')
     if (saved === 'timeline' || saved === 'table') return saved
-    return 'table'
+    return 'timeline'
   })
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null)
   const [expandedDetails, setExpandedDetails] = useState<Set<string>>(new Set())
