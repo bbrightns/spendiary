@@ -182,7 +182,7 @@ export function Sidebar() {
 
                             {subBadge > 0 && (
                               <span
-                                className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-brand text-white dark:bg-[#4f46e5] px-1 text-xs font-bold shadow-xs"
+                                className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white shadow-xs"
                               >
                                 {subBadge}
                               </span>
@@ -221,7 +221,7 @@ export function Sidebar() {
 
                 {badgeCount > 0 && (
                   <span
-                    className="px-1.5 py-0.2 rounded-full text-xs font-bold leading-tight bg-brand text-white dark:bg-[#4f46e5]"
+                    className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white shadow-xs"
                   >
                     {badgeCount}
                   </span>
