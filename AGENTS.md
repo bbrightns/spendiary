@@ -5,10 +5,14 @@
 2. **NEVER PUSH WITHOUT EXPLICIT COMMAND**: Do **NOT** execute `git push` under any circumstances unless the user explicitly requests/commands it.
 3. **Auto-Bump Version on User Push Command**: When the user explicitly requests to push (e.g., "push", "git push", "ช่วย push ให้หน่อย"):
    - Inspect all unpushed commits (`git log origin/main..HEAD --oneline`).
-   - Determine the next Semantic Version based on the scope of changes in the unpushed batch:
-     - **MAJOR** (`X.0.0`): Breaking changes or major architectural rewrite (`feat!:`, `fix!:`, or `BREAKING CHANGE`) ➜ Bump **MAJOR** (e.g., `1.10.0` ➜ `2.0.0`)
-     - **MINOR** (`1.X.0`): Big Feature Milestone / New core module / New page system (เช่น เพิ่มระบบใหม่ทั้งระบบอย่าง Dividends Hub, AI Import, Retirement Engine) หรือเมื่อผู้ใช้สั่งให้ bump minor ➜ Bump **MINOR** (e.g., `1.10.0` ➜ `1.11.0`)
-     - **PATCH** (`1.10.X`): การ Push ประจำรอบพัฒนา, ฟีเจอร์ย่อย, ปรับปรุงต่อยอดระบบเดิม, ปรับ UI/UX, แก้ไขบั๊ก, refactor, config, docs (`feat`, `fix`, `style`, `refactor`, `perf`, `chore`, `docs`) ➜ Bump **PATCH** (e.g., `1.10.0` ➜ `1.10.1`)
+   - Determine the next Semantic Version based on the scope and significance of changes in the unpushed batch:
+     - **MAJOR** (`X.0.0`): Breaking changes หรือการรื้อสถาปัตยกรรมระดับรากฐาน (`feat!:`, `fix!:`, หรือ `BREAKING CHANGE`) ➜ Bump **MAJOR** (e.g., `1.10.0` ➜ `2.0.0`)
+     - **MINOR** (`1.X.0`):
+       - Big Feature Milestone / New core module / New page system (เช่น Dividends Hub, AI Import, Retirement Engine)
+       - **Comprehensive UI/UX Refactor / Multi-component overhaul**: การปรับปรุงดีไซน์หรือประสบการณ์ใช้งานระดับภาพรวมทั้งระบบ (เช่น ยกเครื่องปุ่มและ Design Tokens ข้ามหน้า, ปรับระบบ Navigation/Layouts ครั้งใหญ่)
+       - **High Commit Accumulation**: มีชุด unpushed commits สะสมจำนวนมาก (≥ 10 commits) ที่มีผลต่อฟังก์ชันการใช้งานหลายส่วน
+       - เมื่อผู้ใช้ระบุหรือสั่งให้ bump minor (เช่น "push minor", "ขึ้นเวอร์ชันใหม่") ➜ Bump **MINOR** (e.g., `1.10.14` ➜ `1.11.0`)
+     - **PATCH** (`1.10.X`): การ Push ประจำรอบพัฒนา, ฟีเจอร์ย่อยเฉพาะจุด, แก้ไขบั๊กเฉพาะจุด, ปรับแต่งคำ/สไตล์เล็กน้อย, config, docs ➜ Bump **PATCH** (e.g., `1.11.0` ➜ `1.11.1`)
    - Update `version` in both `package.json` and `package-lock.json`.
    - Run verification (`npm run build`).
    - Commit the version bump: `git commit -am "chore(release): bump app version to X.Y.Z"`.
