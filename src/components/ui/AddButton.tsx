@@ -14,9 +14,9 @@ export function AddButton({ onClick, label = 'Add', className = '' }: Props) {
       size="sm"
       onClick={onClick}
       aria-label={label}
-      className={`h-10 px-4 text-sm gap-1.5 cursor-pointer ${className}`}
+      className={`h-9 px-3.5 text-xs sm:text-sm gap-1.5 cursor-pointer ${className}`}
     >
-      <PlusIcon className="h-[18px] w-[18px]" strokeWidth={2.2} />
+      <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
       <span>{label}</span>
     </Button>
   )

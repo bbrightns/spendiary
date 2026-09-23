@@ -228,11 +228,11 @@ export function Debts() {
               setLiabilitiesModalOpen(true)
             }}
             variant="primary"
-            size="md"
-            className="shadow-xs"
+            size="sm"
+            className="h-9 gap-1.5 text-xs sm:text-sm cursor-pointer shadow-xs"
           >
-            <PlusIcon className="h-4 w-4 mr-1.5" />
-            เพิ่มรายการหนี้ใหม่
+            <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
+            <span>เพิ่มรายการหนี้ใหม่</span>
           </Button>
         }
       />

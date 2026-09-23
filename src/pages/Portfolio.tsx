@@ -976,17 +976,18 @@ export function Portfolio() {
               onClick={handleExportCsv}
               disabled={rows.length === 0}
               title="Export portfolio holdings to CSV"
-              className="cursor-pointer shrink-0 h-9"
+              className="cursor-pointer shrink-0 h-9 text-xs sm:text-sm"
             >
               <DownloadIcon className="h-3.5 w-3.5" />
               <span>Export CSV</span>
             </Button>
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={handleCopyMarkdown}
               aria-label="Copy portfolio markdown"
               title="Copy Portfolio as Markdown"
-              className="inline-flex h-9 items-center gap-2 rounded-full border border-line-strong bg-surface px-3.5 text-xs font-semibold text-ink shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-surface-muted active:scale-95 cursor-pointer whitespace-nowrap"
+              className="cursor-pointer shrink-0 h-9 text-xs sm:text-sm whitespace-nowrap"
             >
               {copied ? (
                 <>
@@ -999,7 +1000,8 @@ export function Portfolio() {
                   <span>Copy Portfolio MD</span>
                 </>
               )}
-            </button>
+            </Button>
+            <AddButton onClick={openAdd} label="Add holding" />
           </div>
         }
       />

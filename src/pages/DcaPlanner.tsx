@@ -4,6 +4,7 @@ import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { DcaForm } from '../components/forms/DcaForm'
 import { ConfirmDcaBuyForm } from '../components/forms/ConfirmDcaBuyForm'
@@ -11,7 +12,7 @@ import { ConfirmDividendModal } from '../components/forms/ConfirmDividendModal'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { useLivePrices } from '../hooks/useLivePrices'
-import { CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, PencilIcon, TrashIcon } from '../components/icons'
+import { CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, PencilIcon, PlusIcon, TrashIcon } from '../components/icons'
 import { IconButton } from '../components/ui/IconButton'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import {
@@ -464,25 +465,38 @@ export function DcaPlanner() {
         subtitle="Monthly salary allocation & recurring investments."
         onStartGuide={startTour}
         action={
-          <button
-            type="button"
-            onClick={handleCopyMarkdown}
-            aria-label="Copy portfolio markdown"
-            title="Copy Portfolio as Markdown"
-            className="inline-flex h-9 items-center gap-2 rounded-full border border-line-strong bg-surface px-3.5 text-xs font-semibold text-ink shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-surface-muted active:scale-95 cursor-pointer whitespace-nowrap"
-          >
-            {copied ? (
-              <>
-                <CheckIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.2} />
-                <span className="text-gain">Copied MD!</span>
-              </>
-            ) : (
-              <>
-                <CopyIcon className="h-4 w-4 text-ink-muted shrink-0" />
-                <span>Copy Portfolio MD</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleCopyMarkdown}
+              aria-label="Copy portfolio markdown"
+              title="Copy Portfolio as Markdown"
+              className="cursor-pointer shrink-0 h-9 text-xs sm:text-sm whitespace-nowrap"
+            >
+              {copied ? (
+                <>
+                  <CheckIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.2} />
+                  <span className="text-gain">Copied MD!</span>
+                </>
+              ) : (
+                <>
+                  <CopyIcon className="h-4 w-4 text-ink-muted shrink-0" />
+                  <span>Copy Portfolio MD</span>
+                </>
+              )}
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={openAdd}
+              aria-label="Add DCA investment plan"
+              className="cursor-pointer shrink-0 h-9 text-xs sm:text-sm gap-1.5"
+            >
+              <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
+              <span>Add plan</span>
+            </Button>
+          </div>
         }
       />
 
@@ -539,9 +553,10 @@ export function DcaPlanner() {
                   <button
                     onClick={() => setAddingItem(true)}
                     aria-label="Add fixed expense"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-loss/30 bg-loss-soft px-3 py-1.5 text-xs font-semibold text-loss transition-colors hover:bg-loss/20 active:scale-95 cursor-pointer"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 text-xs font-semibold text-ink shadow-2xs hover:bg-surface-muted transition-colors active:scale-95 cursor-pointer"
                   >
-                    + Add expense
+                    <PlusIcon className="h-3.5 w-3.5" strokeWidth={2.2} />
+                    <span>Add expense</span>
                   </button>
                 ) : null
               }
@@ -623,9 +638,10 @@ export function DcaPlanner() {
                     <button
                       onClick={openAdd}
                       aria-label="Add DCA investment plan"
-                      className="inline-flex items-center gap-1.5 rounded-full border border-gain/30 bg-gain-soft px-3 py-1.5 text-xs font-semibold text-gain transition-colors hover:bg-gain/20 active:scale-95 cursor-pointer"
+                      className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 text-xs font-semibold text-ink shadow-2xs hover:bg-surface-muted transition-colors active:scale-95 cursor-pointer"
                     >
-                      + Add plan
+                      <PlusIcon className="h-3.5 w-3.5" strokeWidth={2.2} />
+                      <span>Add plan</span>
                     </button>
                   ) : null
                 }
@@ -642,12 +658,15 @@ export function DcaPlanner() {
                         description="Add recurring buys to track your dollar-cost averaging."
                         accent="var(--color-brand)"
                         action={
-                          <button
+                          <Button
+                            variant="primary"
+                            size="sm"
                             onClick={openAdd}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-gain/30 bg-gain-soft px-3.5 py-1.5 text-xs font-semibold text-gain transition-colors hover:bg-gain/20 cursor-pointer"
+                            className="cursor-pointer gap-1.5 h-9"
                           >
-                            + Add plan
-                          </button>
+                            <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
+                            <span>Add plan</span>
+                          </Button>
                         }
                       />
                     </div>

@@ -432,10 +432,13 @@ export function Rebalance() {
         subtitle="Align portfolio allocation with target weights & simulate capital deployment."
         onStartGuide={startTour}
         action={
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={handleCopyPlan}
-            className="inline-flex h-9 items-center gap-2 rounded-full border border-line-strong bg-surface px-4 text-xs font-semibold text-ink shadow-[var(--shadow-soft)] transition-all duration-200 hover:bg-surface-muted active:scale-95 cursor-pointer whitespace-nowrap"
+            aria-label="Copy Action Plan"
+            title="Copy Action Plan as Text"
+            className="cursor-pointer shrink-0 h-9 text-xs sm:text-sm whitespace-nowrap"
           >
             {copied ? (
               <>
@@ -448,7 +451,7 @@ export function Rebalance() {
                 <span>Copy Action Plan</span>
               </>
             )}
-          </button>
+          </Button>
         }
       />
 

@@ -163,12 +163,12 @@ export function Dividends() {
         action={
           <Button
             variant="primary"
-            size="md"
+            size="sm"
             onClick={() => handleOpenAddModal()}
-            className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold cursor-pointer"
+            className="h-9 gap-1.5 text-xs sm:text-sm font-semibold cursor-pointer"
           >
-            <PlusIcon className="h-4 w-4" strokeWidth={2.4} />
-            + บันทึกรับปันผล
+            <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
+            <span>บันทึกรับปันผล</span>
           </Button>
         }
       />

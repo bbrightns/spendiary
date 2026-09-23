@@ -22,6 +22,7 @@ import {
   PencilIcon,
   PlusIcon,
   SearchIcon,
+  SparklesIcon,
   TrashIcon,
   WalletIcon,
 } from '../components/icons'
@@ -242,13 +243,20 @@ export function CashLiquidity() {
           <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="secondary"
+              size="sm"
               onClick={handleAutoSort}
-              className="gap-1.5 text-xs"
+              className="gap-1.5 text-xs sm:text-sm h-9 cursor-pointer"
               title="จัดเรียงบัญชีตามสถาบันการเงินและยอดคงเหลือ"
             >
-              <span>⚡ จัดเรียงสถาบัน</span>
+              <SparklesIcon className="h-3.5 w-3.5 text-ink-muted" strokeWidth={2} />
+              <span>จัดเรียงสถาบัน</span>
             </Button>
-            <Button onClick={handleOpenAddModal} className="gap-1.5 text-xs">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleOpenAddModal}
+              className="gap-1.5 text-xs sm:text-sm h-9 cursor-pointer"
+            >
               <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
               <span>เพิ่มบัญชีใหม่</span>
             </Button>
