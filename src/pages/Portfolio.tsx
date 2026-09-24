@@ -1013,32 +1013,18 @@ export function Portfolio() {
           <Card className="animate-rise card-bleed-mobile">
             <div className="flex items-center justify-between gap-2">
               <h2 className="font-display text-base font-bold text-ink">Port Allocation</h2>
-              <div className="inline-flex rounded-lg bg-surface-muted p-0.5 text-xs font-semibold shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setDonutMode('class')}
-                  aria-pressed={donutMode === 'class'}
-                  className={`rounded-md px-2 py-1 transition-all cursor-pointer ${
-                    donutMode === 'class'
-                      ? 'bg-surface text-ink shadow-xs'
-                      : 'text-ink-muted hover:text-ink'
-                  }`}
-                >
-                  By Class
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDonutMode('group')}
-                  aria-pressed={donutMode === 'group'}
-                  className={`rounded-md px-2 py-1 transition-all cursor-pointer ${
-                    donutMode === 'group'
-                      ? 'bg-surface text-ink shadow-xs'
-                      : 'text-ink-muted hover:text-ink'
-                  }`}
-                >
-                  By Group / Tag
-                </button>
-              </div>
+              <SegmentedControl
+                shape="rounded"
+                size="xs"
+                fullWidth={false}
+                value={donutMode}
+                onChange={setDonutMode}
+                options={[
+                  { value: 'class', label: 'By Class' },
+                  { value: 'group', label: 'By Group / Tag' },
+                ]}
+                ariaLabel="เลือกมุมมอง Asset Allocation"
+              />
             </div>
 
             {/* Value & PnL Hero Summary */}
@@ -1172,32 +1158,18 @@ export function Portfolio() {
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     {/* View Switcher: List vs Group */}
-                    <div className="inline-flex rounded-full bg-surface-muted p-0.5 text-xs font-semibold border border-line/60">
-                      <button
-                        type="button"
-                        onClick={() => setViewMode('list')}
-                        aria-pressed={viewMode === 'list'}
-                        className={`rounded-full px-2.5 py-1 transition-all cursor-pointer ${
-                          viewMode === 'list'
-                            ? 'bg-surface text-ink shadow-xs'
-                            : 'text-ink-muted hover:text-ink'
-                        }`}
-                      >
-                        All Holdings
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setViewMode('group')}
-                        aria-pressed={viewMode === 'group'}
-                        className={`rounded-full px-2.5 py-1 transition-all cursor-pointer ${
-                          viewMode === 'group'
-                            ? 'bg-surface text-ink shadow-xs'
-                            : 'text-ink-muted hover:text-ink'
-                        }`}
-                      >
-                        Grouped View
-                      </button>
-                    </div>
+                    <SegmentedControl
+                      shape="pill"
+                      size="xs"
+                      fullWidth={false}
+                      value={viewMode}
+                      onChange={setViewMode}
+                      options={[
+                        { value: 'list', label: 'All Holdings' },
+                        { value: 'group', label: 'Grouped View' },
+                      ]}
+                      ariaLabel="เลือกรูปแบบการแสดงรายการสินทรัพย์"
+                    />
                     <AddButton onClick={openAdd} label="Add holding" />
                   </div>
                 </div>
@@ -1282,29 +1254,18 @@ export function Portfolio() {
                       )
                     })}
                     </div>
-                    <div
-                      className="flex shrink-0 items-center rounded-full bg-surface-muted p-0.5"
-                      role="group"
-                      aria-label="PnL display mode"
-                      title="สลับการแสดงกำไร/ขาดทุน: % หรือ ฿"
-                    >
-                      {([['pct', '%'], ['thb', '฿']] as const).map(([mode, label]) => (
-                        <button
-                          key={mode}
-                          type="button"
-                          onClick={() => changePnlDisplay(mode)}
-                          aria-pressed={pnlDisplay === mode}
-                          aria-label={`Show PnL as ${mode === 'pct' ? 'percentage' : 'THB amount'}`}
-                          className={`grid h-[30px] w-11 place-items-center rounded-full text-xs font-bold transition-colors cursor-pointer select-none ${
-                            pnlDisplay === mode
-                              ? 'bg-surface text-ink shadow-xs'
-                              : 'text-ink-muted hover:text-ink'
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
+                    <SegmentedControl
+                      shape="pill"
+                      size="xs"
+                      fullWidth={false}
+                      value={pnlDisplay}
+                      onChange={changePnlDisplay}
+                      options={[
+                        { value: 'pct', label: '%' },
+                        { value: 'thb', label: '฿' },
+                      ]}
+                      ariaLabel="สลับการแสดงกำไร/ขาดทุน: % หรือ ฿"
+                    />
                   </div>
                 </div>
               </div>

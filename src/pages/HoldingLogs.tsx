@@ -8,6 +8,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { Modal } from '../components/ui/Modal'
 import { FilterChip } from '../components/ui/FilterChip'
+import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC } from '../lib/calc'
@@ -1514,34 +1515,18 @@ export function HoldingLogs() {
 
           <div className="flex items-center gap-2 shrink-0">
             {/* View Switcher */}
-            <div className="inline-flex rounded-xl bg-surface-muted p-1 border border-line-strong/30 shrink-0">
-              <button
-                type="button"
-                onClick={() => handleViewModeChange('table')}
-                title="Table statement view"
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  viewMode === 'table'
-                    ? 'bg-surface text-ink shadow-xs font-bold border border-line/40'
-                    : 'text-ink-muted hover:text-ink'
-                }`}
-              >
-                <TableIcon className="h-3.5 w-3.5" />
-                <span>Table</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleViewModeChange('timeline')}
-                title="Timeline feed view"
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  viewMode === 'timeline'
-                    ? 'bg-surface text-ink shadow-xs font-bold border border-line/40'
-                    : 'text-ink-muted hover:text-ink'
-                }`}
-              >
-                <ListIcon className="h-3.5 w-3.5" />
-                <span>Timeline</span>
-              </button>
-            </div>
+            <SegmentedControl
+              shape="rounded"
+              size="sm"
+              fullWidth={false}
+              value={viewMode}
+              onChange={(v) => handleViewModeChange(v as 'table' | 'timeline')}
+              options={[
+                { value: 'table', label: 'Table', icon: <TableIcon className="h-3.5 w-3.5" />, title: 'Table statement view' },
+                { value: 'timeline', label: 'Timeline', icon: <ListIcon className="h-3.5 w-3.5" />, title: 'Timeline feed view' },
+              ]}
+              ariaLabel="เลือกมุมมองตารางหรือไทม์ไลน์"
+            />
 
             {/* Export CSV */}
             <Button

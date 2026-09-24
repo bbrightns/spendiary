@@ -5,6 +5,7 @@ import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { FilterChip } from '../components/ui/FilterChip'
 import { AddButton } from '../components/ui/AddButton'
+import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { Modal } from '../components/ui/Modal'
 import { LiabilitiesModal } from '../components/forms/LiabilitiesModal'
 import { useData } from '../store/DataContext'
@@ -306,45 +307,20 @@ export function Debts() {
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
-                {/* Status Switcher: Segmented Pill */}
-                <div className="inline-flex rounded-full bg-surface-muted p-0.5 text-xs font-semibold border border-line/60">
-                  <button
-                    type="button"
-                    onClick={() => setStatusTab('active')}
-                    aria-pressed={statusTab === 'active'}
-                    className={`rounded-full px-2.5 py-1 transition-all cursor-pointer ${
-                      statusTab === 'active'
-                        ? 'bg-surface text-ink shadow-xs'
-                        : 'text-ink-muted hover:text-ink'
-                    }`}
-                  >
-                    กำลังผ่อน ({activeDebts.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStatusTab('completed')}
-                    aria-pressed={statusTab === 'completed'}
-                    className={`rounded-full px-2.5 py-1 transition-all cursor-pointer ${
-                      statusTab === 'completed'
-                        ? 'bg-surface text-ink shadow-xs'
-                        : 'text-ink-muted hover:text-ink'
-                    }`}
-                  >
-                    ผ่อนสำเร็จ ({completedDebts.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStatusTab('all')}
-                    aria-pressed={statusTab === 'all'}
-                    className={`rounded-full px-2.5 py-1 transition-all cursor-pointer ${
-                      statusTab === 'all'
-                        ? 'bg-surface text-ink shadow-xs'
-                        : 'text-ink-muted hover:text-ink'
-                    }`}
-                  >
-                    ทั้งหมด ({liabilities.length})
-                  </button>
-                </div>
+                {/* Status Switcher: Segmented Pill with Glider */}
+                <SegmentedControl
+                  shape="pill"
+                  size="xs"
+                  fullWidth={false}
+                  value={statusTab}
+                  onChange={setStatusTab}
+                  options={[
+                    { value: 'active', label: `กำลังผ่อน (${activeDebts.length})` },
+                    { value: 'completed', label: `ผ่อนสำเร็จ (${completedDebts.length})` },
+                    { value: 'all', label: `ทั้งหมด (${liabilities.length})` },
+                  ]}
+                  ariaLabel="เลือกสถานะหนี้สิน"
+                />
 
                 <AddButton
                   onClick={() => {
