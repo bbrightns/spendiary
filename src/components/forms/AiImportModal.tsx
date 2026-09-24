@@ -17,46 +17,69 @@ const AI_PROMPT_TEMPLATE = `Convert my financial records into a valid JSON impor
 
 Rules:
 1. Input Completeness Check & Clarification:
-   - If any required information is missing, incomplete, or ambiguous (such as avgCost, total invested capital, exact ticker symbols, unit counts, currency, or prices), DO NOT generate the JSON.
-   - Stop immediately and return a detailed, itemized numbered list in THAI (ภาษาไทย) asking for the missing data per detected asset (e.g., breakdown by holding name/ticker: units detected, missing avgCost or totalThbInvested, ticker ambiguities).
+   - If any required core holding information is missing, incomplete, or ambiguous (such as avgCost, total invested capital, exact ticker symbols, unit counts, currency, or prices), DO NOT generate the JSON.
+   - Stop immediately and return a detailed, itemized numbered list in THAI (ภาษาไทย) asking for the missing data per detected asset (breakdown by holding name/ticker: units detected, missing avgCost or totalThbInvested, ticker ambiguities).
    - Only output RAW JSON once all necessary fields are fully satisfied. Do not include Markdown fences or conversational text when returning the final JSON.
 2. Preserve every record. Never merge different tickers, accounts, transactions, or logs just because their names look similar. Numbers must be JSON numbers without commas.
 3. Use these asset classes:
    - "fund": Thai stocks, Thai mutual funds, Thai DR/DRx, and SET/MAI assets. Values are THB.
    - "stock": US stocks and US ETFs. Costs/prices are USD when supplied; also preserve totalThbInvested, totalUsdInvested, and FX data when present.
-   - "crypto": BTC, ETH, SOL, and other tokens. For BTC, preserve BTC-specific satoshi/location data when available. For other tokens, use fractional units (up to 8 decimal places) with avgCost and price in THB.
-   - "gold": physical gold or gold holdings. Preserve grams/baht-gold and location data when present.
+   - "crypto": BTC, ETH, SOL, and other tokens. For BTC, preserve btcLocations (satoshi, thbSpent) when available. For other tokens, use fractional units (up to 8 decimal places) with avgCost and price in THB.
+   - "gold": physical gold or gold holdings. Preserve grams/baht-gold and goldLocations (grams, thbSpent) when present.
    - "real_estate": property, land, or a home, valued in THB.
    - "cash": only for cash-account records, never for an investment holding.
-4. Keep transaction history in "holdingLogs" and dividend history in "dividendRecords". Preserve action, timestamp, holdingId, units, proceeds, realizedPnL, fees, cashAccountId, and before/after snapshots when supplied.
+4. Transaction & Historical Logs Policy:
+   - When explicit historical transactions or dividend records are supplied in the input, keep transaction history in "holdingLogs" and dividend history in "dividendRecords" preserving action, timestamp, holdingId, units, proceeds, realizedPnL, fees, cashAccountId, and before/after snapshots.
+   - If importing for the first time or if the source records do NOT contain historical transaction logs, simply set "holdingLogs": [] and "dividendRecords": []. Do not halt generation or ask clarification for historical logs if they are simply not part of the source input.
 5. Keep DCA plans, recurring transfers, liabilities, fixed costs, income, personal budget, retirement settings, rebalance settings, planned assets, and net-worth/portfolio history when supplied.
 6. Cash sale proceeds are not new deposits. Preserve the original action and amount so Spendiary can distinguish buys, deposits, sales, dividends, and transfers.
-7. Do not invent live prices, FX rates, IDs, dates, tax, or transaction history. If a current price is unavailable for a THB asset, use avgCost only when the source explicitly says the current value is unknown; otherwise, include the missing price in the Thai clarification list.
+7. Do not invent live prices, FX rates, IDs, dates, tax, or mock transaction history. If a current price is unavailable for a THB asset, use avgCost only when the source explicitly says the current value is unknown; otherwise, include the missing price in the Thai clarification list.
 
 Expected shape:
 {
-  "userName": "optional",
-  "monthlyIncome": 0,
-  "monthlyFixedCost": 0,
-  "monthlyPersonal": 0,
-  "cashAccounts": [{ "id": "optional", "name": "KBank", "balance": 50000, "currency": "THB" }],
-  "holdings": [{
-    "id": "optional", "name": "Ethereum", "ticker": "ETH", "assetClass": "crypto",
-    "units": 0.12567891, "avgCost": 120000, "price": 135000, "currency": "THB",
-    "totalThbInvested": 15084.39
-  }],
-  "holdingLogs": [],
-  "dividendRecords": [],
-  "dcaPlans": [],
-  "transfers": [],
-  "fixedCostItems": [],
-  "liabilities": [],
-  "retirement": {},
-  "plannedAssets": [],
-  "netWorthHistory": [],
-  "portfolioHistory": [],
-  "rebalanceMode": "class",
-  "rebalanceTargets": {}
+  "schemaVersion": 1,
+  "exportedAt": "2026-09-22T00:00:00.000Z",
+  "data": {
+    "userName": "optional",
+    "monthlyIncome": 0,
+    "cashAccounts": [
+      { "id": "optional", "name": "KBank", "balance": 50000, "category": "spending", "currency": "THB" }
+    ],
+    "holdings": [
+      {
+        "id": "optional",
+        "name": "Ethereum",
+        "ticker": "ETH",
+        "assetClass": "crypto",
+        "units": 0.12567891,
+        "avgCost": 120000,
+        "price": 135000,
+        "totalThbInvested": 15081.47
+      }
+    ],
+    "holdingLogs": [],
+    "dividendRecords": [],
+    "dcaPlans": [],
+    "transfers": [],
+    "fixedCostItems": [],
+    "liabilities": [],
+    "retirement": {},
+    "plannedAssets": [],
+    "netWorthHistory": [],
+    "portfolioHistory": [],
+    "rebalanceMode": "holding",
+    "rebalanceTargets": {
+      "fund": 40,
+      "gold": 15,
+      "stock": 35,
+      "crypto": 10
+    }
+  },
+  "preferences": {
+    "theme": "light",
+    "logsViewMode": "table",
+    "goldSellUnit": "grams"
+  }
 }
 
 Here are my records:
@@ -70,15 +93,20 @@ interface AiImportModalProps {
 
 function cleanJsonString(raw: string): string {
   let s = raw.trim()
-  if (s.startsWith('```json')) {
-    s = s.slice(7)
-  } else if (s.startsWith('```')) {
-    s = s.slice(3)
+  const match = s.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
+  if (match) {
+    s = match[1].trim()
+  } else {
+    if (s.startsWith('```json')) {
+      s = s.slice(7)
+    } else if (s.startsWith('```')) {
+      s = s.slice(3)
+    }
+    if (s.endsWith('```')) {
+      s = s.slice(0, -3)
+    }
+    s = s.trim()
   }
-  if (s.endsWith('```')) {
-    s = s.slice(0, -3)
-  }
-  s = s.trim()
   // Strip trailing comma if present (e.g. when copying an item from an array)
   s = s.replace(/,\s*$/, '').trim()
   return s
@@ -134,14 +162,18 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
         return null
       }
 
-      // Handle root array of holdings or root object
+      // Handle root array of holdings or root object (supporting both direct and backup 'data' envelope)
       let holdings: unknown[] = []
       let cashAccounts: unknown[] = []
 
       if (Array.isArray(obj)) {
         holdings = obj
       } else {
-        const d = obj as Record<string, unknown>
+        const rawObj = obj as Record<string, unknown>
+        const d = (rawObj.data && typeof rawObj.data === 'object' && !Array.isArray(rawObj.data))
+          ? (rawObj.data as Record<string, unknown>)
+          : rawObj
+
         if (Array.isArray(d.holdings)) holdings = d.holdings
         if (Array.isArray(d.cashAccounts)) cashAccounts = d.cashAccounts
         // Fallback: If user pasted a single holding object directly

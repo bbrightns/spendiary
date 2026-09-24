@@ -2358,24 +2358,34 @@ export function DataProvider({ children }: { children: ReactNode }) {
             let totalUsdInvested: number | undefined
             let price: number
 
+            const suppliedThbInvested = typeof r.totalThbInvested === 'number' && r.totalThbInvested > 0
+              ? r.totalThbInvested
+              : undefined
+            const suppliedUsdInvested = typeof r.totalUsdInvested === 'number' && r.totalUsdInvested > 0
+              ? r.totalUsdInvested
+              : undefined
+
             if (isUsd) {
               avgCostUsd = rawCost
               avgCostThb = parseFloat((rawCost * fx).toFixed(4))
-              totalUsdInvested = parseFloat((units * rawCost).toFixed(4))
-              totalThbInvested = parseFloat((units * avgCostThb).toFixed(2))
+              totalUsdInvested = suppliedUsdInvested ?? parseFloat((units * rawCost).toFixed(4))
+              totalThbInvested = suppliedThbInvested ?? parseFloat((units * avgCostThb).toFixed(2))
               price = rawPrice > 0 ? parseFloat((rawPrice * fx).toFixed(2)) : avgCostThb
             } else {
               avgCostThb = rawCost
-              totalThbInvested = parseFloat((units * avgCostThb).toFixed(2))
+              totalThbInvested = suppliedThbInvested ?? parseFloat((units * avgCostThb).toFixed(2))
               if (assetClass === 'stock') {
                 avgCostUsd = fx > 0 ? parseFloat((rawCost / fx).toFixed(4)) : rawCost
-                totalUsdInvested = fx > 0 ? parseFloat((totalThbInvested / fx).toFixed(4)) : 0
+                totalUsdInvested = suppliedUsdInvested ?? (fx > 0 ? parseFloat((totalThbInvested / fx).toFixed(4)) : 0)
               }
               price = rawPrice > 0 ? rawPrice : avgCostThb
             }
 
+            const btcLocations = Array.isArray(r.btcLocations) ? (r.btcLocations as BtcLocation[]) : undefined
+            const goldLocations = Array.isArray(r.goldLocations) ? (r.goldLocations as GoldLocation[]) : undefined
+
             sanitizedHoldings.push({
-              id: typeof r.id === 'string' && r.id ? r.id : newId(),
+              id: typeof r.id === 'string' && r.id && r.id !== 'optional' ? r.id : newId(),
               ticker,
               name,
               assetClass,
@@ -2388,6 +2398,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
               totalUsdInvested,
               price,
               updatedAt: today,
+              ...(btcLocations ? { btcLocations } : {}),
+              ...(goldLocations ? { goldLocations } : {}),
             })
           }
 
@@ -2402,10 +2414,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const rawCurr = typeof r.currency === 'string' ? r.currency.toUpperCase().trim() : 'THB'
             const currency: 'THB' | 'USD' = rawCurr === 'USD' ? 'USD' : 'THB'
             const preset = detectBankPreset(rawName)
-            const category = inferCashCategory(rawName)
+            const rawCat = typeof r.category === 'string' ? r.category.toLowerCase().trim() : ''
+            const category = (['spending', 'savings', 'emergency', 'investment', 'other'].includes(rawCat)
+              ? rawCat
+              : inferCashCategory(rawName)) as CashAccount['category']
 
             sanitizedCash.push({
-              id: typeof r.id === 'string' && r.id ? r.id : newId(),
+              id: typeof r.id === 'string' && r.id && r.id !== 'optional' ? r.id : newId(),
               name: rawName,
               balance,
               currency,
