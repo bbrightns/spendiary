@@ -873,7 +873,7 @@ export function Dashboard() {
                                         })
                                       }}
                                       aria-label={`Pay installment for ${l.name}`}
-                                      className="relative inline-flex items-center gap-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 dark:bg-rose-600 dark:hover:bg-rose-500 text-white px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[36px] sm:min-h-0 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer after:absolute after:-inset-1 after:content-[''] sm:after:hidden"
+                                      className="relative inline-flex items-center gap-1.5 rounded-lg bg-ink text-white hover:bg-ink-hover dark:bg-brand dark:hover:bg-brand-ink px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[36px] sm:min-h-0 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer after:absolute after:-inset-1 after:content-[''] sm:after:hidden"
                                     >
                                       <CheckIcon className="h-3 w-3" strokeWidth={2.5} />
                                       <span>Pay Term</span>
