@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import type { BtcLocation, CashAccount, DcaPlan, DividendRecord, FixedCostItem, GoldLocation, Holding, HoldingLog, InvestAssetClass, Liability, NetWorthSnapshot, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryBackup, SpendiaryData, Transfer } from '../lib/types'
+import type { BtcLocation, CashAccount, DcaPlan, DebtCategory, DividendRecord, FixedCostItem, GoldLocation, Holding, HoldingLog, InvestAssetClass, Liability, NetWorthSnapshot, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryBackup, SpendiaryData, Transfer } from '../lib/types'
 import { localDateStr } from '../lib/format'
 import { seedData } from '../lib/seed'
 import { detectBankPreset, findMatchingHolding, inferCashCategory } from '../lib/calc'
@@ -32,7 +32,7 @@ export type ImportResult =
 
 /** Result returned by importPortfolioAndCash */
 export type ImportPortfolioAndCashResult =
-  | { ok: true; count: { holdings: number; cashAccounts: number } }
+  | { ok: true; count: { holdings: number; cashAccounts: number; liabilities?: number } }
   | { ok: false; error: string }
 
 const THAI_TICKER_SET = new Set([
@@ -376,7 +376,7 @@ interface DataContextValue {
    * Import portfolio holdings and cash accounts, either merging with or replacing existing data.
    */
   importPortfolioAndCash: (
-    payload: { holdings?: unknown[]; cashAccounts?: unknown[] },
+    payload: { holdings?: unknown[]; cashAccounts?: unknown[]; liabilities?: unknown[] },
     mode: 'merge' | 'replace',
   ) => ImportPortfolioAndCashResult
 }
@@ -2429,15 +2429,52 @@ export function DataProvider({ children }: { children: ReactNode }) {
             })
           }
 
-          if (sanitizedHoldings.length === 0 && sanitizedCash.length === 0) {
-            return { ok: false, error: 'Could not extract any valid holdings or cash accounts. Please check your JSON format.' }
+          const rawLiabilities = Array.isArray(payload.liabilities) ? payload.liabilities : []
+          const sanitizedLiabilities: Liability[] = []
+          for (const item of rawLiabilities) {
+            if (typeof item !== 'object' || item === null) continue
+            const r = item as Record<string, unknown>
+            const rawName = typeof r.name === 'string' ? r.name.trim() : ''
+            if (!rawName) continue
+
+            const balance = parseCleanNumber(r.balance, 0)
+            const rawCat = typeof r.category === 'string' ? r.category.toLowerCase().trim() : 'other'
+            const validCategories: DebtCategory[] = ['installment', 'credit_card', 'mortgage', 'auto_loan', 'personal_loan', 'student_loan', 'other']
+            const category: DebtCategory = validCategories.includes(rawCat as DebtCategory) ? (rawCat as DebtCategory) : 'other'
+
+            sanitizedLiabilities.push({
+              id: typeof r.id === 'string' && r.id && r.id !== 'optional' ? r.id : newId(),
+              name: rawName,
+              category,
+              balance,
+              interestRate: typeof r.interestRate === 'number' ? r.interestRate : undefined,
+              monthlyPayment: typeof r.monthlyPayment === 'number' ? r.monthlyPayment : undefined,
+              lender: typeof r.lender === 'string' ? r.lender : undefined,
+              dueDay: typeof r.dueDay === 'number' ? r.dueDay : undefined,
+              note: typeof r.note === 'string' ? r.note : undefined,
+              isInstallment: typeof r.isInstallment === 'boolean' ? r.isInstallment : (category === 'installment'),
+              totalInstallments: typeof r.totalInstallments === 'number' ? r.totalInstallments : undefined,
+              paidInstallments: typeof r.paidInstallments === 'number' ? r.paidInstallments : undefined,
+              createdAt: today,
+              updatedAt: today,
+            })
           }
+
+          if (sanitizedHoldings.length === 0 && sanitizedCash.length === 0 && sanitizedLiabilities.length === 0) {
+            return { ok: false, error: 'Could not extract any valid holdings, cash accounts, or liabilities. Please check your JSON format.' }
+          }
+
+          const summaryParts = [
+            sanitizedHoldings.length > 0 ? `${sanitizedHoldings.length} holdings` : '',
+            sanitizedCash.length > 0 ? `${sanitizedCash.length} cash accounts` : '',
+            sanitizedLiabilities.length > 0 ? `${sanitizedLiabilities.length} liabilities` : '',
+          ].filter(Boolean).join(', ')
 
           const logEntry: HoldingLog = {
             id: newId(),
             timestamp: new Date().toISOString(),
             action: 'add',
-            holdingName: `AI Import (${sanitizedHoldings.length} holdings, ${sanitizedCash.length} cash accounts)`,
+            holdingName: `AI Import (${summaryParts})`,
             ticker: 'IMPORT',
             assetClass: 'stock',
             note: `Imported via AI/JSON Assistant (${mode === 'replace' ? 'Replaced' : 'Merged'})`,
@@ -2478,10 +2515,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
               nextCash = existing
             }
 
+            let nextLiabilities: Liability[] = []
+            if (mode === 'replace') {
+              nextLiabilities = sanitizedLiabilities
+            } else {
+              const existing = [...(prev.liabilities ?? [])]
+              for (const l of sanitizedLiabilities) {
+                const idx = existing.findIndex((e) => e.name.toLowerCase() === l.name.toLowerCase())
+                if (idx >= 0) {
+                  existing[idx] = { ...existing[idx], ...l, id: existing[idx].id }
+                } else {
+                  existing.push(l)
+                }
+              }
+              nextLiabilities = existing
+            }
+
             return {
               ...prev,
               holdings: nextHoldings,
               cashAccounts: nextCash,
+              liabilities: (sanitizedLiabilities.length > 0 || mode === 'replace') ? nextLiabilities : (prev.liabilities ?? []),
               holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
             }
           })
@@ -2491,6 +2545,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             count: {
               holdings: sanitizedHoldings.length,
               cashAccounts: sanitizedCash.length,
+              liabilities: sanitizedLiabilities.length,
             },
           }
         } catch (err) {

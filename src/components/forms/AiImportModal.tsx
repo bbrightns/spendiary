@@ -10,30 +10,37 @@ import {
   AlertIcon,
   PortfolioIcon,
   WalletIcon,
+  CreditCardIcon,
 } from '../icons'
 import { useData } from '../../store/DataContext'
 
 const AI_PROMPT_TEMPLATE = `Convert my financial records into a valid JSON import for Spendiary.
 
 Rules:
-1. Input Completeness Check & Clarification:
-   - If any required core holding information is missing, incomplete, or ambiguous (such as avgCost, total invested capital, exact ticker symbols, unit counts, currency, or prices), DO NOT generate the JSON.
-   - Stop immediately and return a detailed, itemized numbered list in THAI (ภาษาไทย) asking for the missing data per detected asset (breakdown by holding name/ticker: units detected, missing avgCost or totalThbInvested, ticker ambiguities).
-   - Only output RAW JSON once all necessary fields are fully satisfied. Do not include Markdown fences or conversational text when returning the final JSON.
+1. Input Completeness & Resilient Generation:
+   - Generate valid JSON for all detected assets, cash accounts, and liabilities that have sufficient information.
+   - If current market price is not provided for an asset, set price equal to avgCost so the user can import without interruption.
+   - If any specific holding is missing critical core data (such as unknown unit count or completely missing cost basis) that cannot be reasonably inferred:
+     * Exclude that specific incomplete asset from the JSON so valid items can still be imported immediately without blocking the entire import.
+     * Provide an itemized numbered checklist in THAI (ภาษาไทย) directly below the JSON detailing which assets were skipped and what missing data is needed to add them later.
+   - Only output clean JSON (wrap in \`\`\`json \`\`\` code fence) accompanied only by the Thai clarification checklist if any items were skipped.
 2. Preserve every record. Never merge different tickers, accounts, transactions, or logs just because their names look similar. Numbers must be JSON numbers without commas.
-3. Use these asset classes:
+3. Asset Classes, Cash, and Liabilities:
    - "fund": Thai stocks, Thai mutual funds, Thai DR/DRx, and SET/MAI assets. Values are THB.
    - "stock": US stocks and US ETFs. Costs/prices are USD when supplied; also preserve totalThbInvested, totalUsdInvested, and FX data when present.
    - "crypto": BTC, ETH, SOL, and other tokens. For BTC, preserve btcLocations (satoshi, thbSpent) when available. For other tokens, use fractional units (up to 8 decimal places) with avgCost and price in THB.
    - "gold": physical gold or gold holdings. Preserve grams/baht-gold and goldLocations (grams, thbSpent) when present.
    - "real_estate": property, land, or a home, valued in THB.
-   - "cash": only for cash-account records, never for an investment holding.
+   - "cashAccounts": liquid cash accounts (Thai banks, digital wallets, broker cash). Fields: name (e.g. "KBank", "Dime Save"), balance, currency ("THB" or "USD"), category ("spending", "savings", "emergency", "investment", "other"), and optional annual interestRate (%).
+   - "liabilities": debts, loans, credit cards, and installment plans. Fields: name (e.g. "KTC Credit Card", "ผ่อน iPhone"), category ("credit_card", "installment", "mortgage", "auto_loan", "personal_loan", "student_loan", "other"), balance (remaining debt amount in THB), and optional monthlyPayment, interestRate (%), dueDay (1-31), isInstallment (boolean), totalInstallments, paidInstallments.
 4. Transaction & Historical Logs Policy:
    - When explicit historical transactions or dividend records are supplied in the input, keep transaction history in "holdingLogs" and dividend history in "dividendRecords" preserving action, timestamp, holdingId, units, proceeds, realizedPnL, fees, cashAccountId, and before/after snapshots.
    - If importing for the first time or if the source records do NOT contain historical transaction logs, simply set "holdingLogs": [] and "dividendRecords": []. Do not halt generation or ask clarification for historical logs if they are simply not part of the source input.
-5. Keep DCA plans, recurring transfers, liabilities, fixed costs, income, personal budget, retirement settings, rebalance settings, planned assets, and net-worth/portfolio history when supplied.
+5. Keep DCA plans, recurring transfers, fixed costs, income, personal budget, retirement settings, rebalance settings, planned assets, and net-worth/portfolio history when supplied.
 6. Cash sale proceeds are not new deposits. Preserve the original action and amount so Spendiary can distinguish buys, deposits, sales, dividends, and transfers.
-7. Do not invent live prices, FX rates, IDs, dates, tax, or mock transaction history. If a current price is unavailable for a THB asset, use avgCost only when the source explicitly says the current value is unknown; otherwise, include the missing price in the Thai clarification list.
+7. Live prices & FX policy:
+   - Do not invent live prices, FX rates, IDs, dates, tax, or mock transaction history.
+   - If current market price is not provided, set price equal to avgCost so the user can import without interruption.
 
 Expected shape:
 {
@@ -43,7 +50,22 @@ Expected shape:
     "userName": "optional",
     "monthlyIncome": 0,
     "cashAccounts": [
-      { "id": "optional", "name": "KBank", "balance": 50000, "category": "spending", "currency": "THB" }
+      {
+        "id": "optional",
+        "name": "KBank Savings",
+        "balance": 50000,
+        "category": "spending",
+        "currency": "THB",
+        "interestRate": 0.5
+      },
+      {
+        "id": "optional",
+        "name": "Dime Save",
+        "balance": 30000,
+        "category": "savings",
+        "currency": "THB",
+        "interestRate": 3.0
+      }
     ],
     "holdings": [
       {
@@ -55,6 +77,39 @@ Expected shape:
         "avgCost": 120000,
         "price": 135000,
         "totalThbInvested": 15081.47
+      },
+      {
+        "id": "optional",
+        "name": "Apple Inc.",
+        "ticker": "AAPL",
+        "assetClass": "stock",
+        "units": 10,
+        "avgCost": 220,
+        "price": 220,
+        "totalUsdInvested": 2200,
+        "totalThbInvested": 77000
+      }
+    ],
+    "liabilities": [
+      {
+        "id": "optional",
+        "name": "KTC Visa Platinum",
+        "category": "credit_card",
+        "balance": 18500,
+        "monthlyPayment": 18500,
+        "dueDay": 25
+      },
+      {
+        "id": "optional",
+        "name": "iPhone 16 Pro Installment",
+        "category": "installment",
+        "balance": 24000,
+        "monthlyPayment": 4000,
+        "interestRate": 0,
+        "dueDay": 15,
+        "isInstallment": true,
+        "totalInstallments": 10,
+        "paidInstallments": 4
       }
     ],
     "holdingLogs": [],
@@ -62,7 +117,6 @@ Expected shape:
     "dcaPlans": [],
     "transfers": [],
     "fixedCostItems": [],
-    "liabilities": [],
     "retirement": {},
     "plannedAssets": [],
     "netWorthHistory": [],
@@ -123,7 +177,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [showPromptPreview, setShowPromptPreview] = useState(false)
 
-  const hasExistingData = data.holdings.length > 0 || data.cashAccounts.length > 0
+  const hasExistingData = data.holdings.length > 0 || data.cashAccounts.length > 0 || (data.liabilities?.length ?? 0) > 0
 
   const handleCopyPrompt = async () => {
     try {
@@ -165,6 +219,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
       // Handle root array of holdings or root object (supporting both direct and backup 'data' envelope)
       let holdings: unknown[] = []
       let cashAccounts: unknown[] = []
+      let liabilities: unknown[] = []
 
       if (Array.isArray(obj)) {
         holdings = obj
@@ -176,12 +231,18 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
 
         if (Array.isArray(d.holdings)) holdings = d.holdings
         if (Array.isArray(d.cashAccounts)) cashAccounts = d.cashAccounts
+        if (Array.isArray(d.liabilities)) liabilities = d.liabilities
+
         // Fallback: If user pasted a single holding object directly
-        if (holdings.length === 0 && cashAccounts.length === 0) {
+        if (holdings.length === 0 && cashAccounts.length === 0 && liabilities.length === 0) {
           if (d.ticker || d.assetClass || typeof d.units === 'number') {
             holdings = [d]
           } else if (typeof d.balance === 'number') {
-            cashAccounts = [d]
+            if (d.category && ['credit_card', 'installment', 'mortgage', 'auto_loan', 'personal_loan', 'student_loan'].includes(String(d.category))) {
+              liabilities = [d]
+            } else {
+              cashAccounts = [d]
+            }
           }
         }
       }
@@ -189,8 +250,10 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
       return {
         holdingsCount: holdings.length,
         cashCount: cashAccounts.length,
+        liabilitiesCount: liabilities.length,
         holdings,
         cashAccounts,
+        liabilities,
       }
     } catch {
       return null
@@ -216,8 +279,12 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
     setErrorMsg(null)
     setSuccessMsg(null)
 
-    if (!parsedPreview || (parsedPreview.holdingsCount === 0 && parsedPreview.cashCount === 0)) {
-      setErrorMsg('No valid holdings or cash accounts found. Please check your JSON format.')
+    const totalItems = parsedPreview
+      ? parsedPreview.holdingsCount + parsedPreview.cashCount + parsedPreview.liabilitiesCount
+      : 0
+
+    if (!parsedPreview || totalItems === 0) {
+      setErrorMsg('No valid holdings, cash accounts, or liabilities found. Please check your JSON format.')
       return
     }
 
@@ -225,6 +292,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
       {
         holdings: parsedPreview.holdings,
         cashAccounts: parsedPreview.cashAccounts,
+        liabilities: parsedPreview.liabilities,
       },
       mode,
     )
@@ -232,7 +300,8 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
     if (res.ok) {
       const holdingsMsg = res.count.holdings > 0 ? `${res.count.holdings} holdings` : ''
       const cashMsg = res.count.cashAccounts > 0 ? `${res.count.cashAccounts} cash accounts` : ''
-      const summary = [holdingsMsg, cashMsg].filter(Boolean).join(' and ')
+      const debtsMsg = (res.count.liabilities && res.count.liabilities > 0) ? `${res.count.liabilities} liabilities` : ''
+      const summary = [holdingsMsg, cashMsg, debtsMsg].filter(Boolean).join(', ')
 
       setSuccessMsg(`Successfully imported ${summary}!`)
       setTimeout(() => {
@@ -268,12 +337,12 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
           <Button
             variant="primary"
             onClick={handleImport}
-            disabled={!parsedPreview || (parsedPreview.holdingsCount === 0 && parsedPreview.cashCount === 0)}
+            disabled={!parsedPreview || (parsedPreview.holdingsCount === 0 && parsedPreview.cashCount === 0 && parsedPreview.liabilitiesCount === 0)}
             className="w-full sm:w-auto"
           >
             <SparkleIcon className="h-4 w-4 mr-1.5" />
-            Import {parsedPreview && (parsedPreview.holdingsCount > 0 || parsedPreview.cashCount > 0)
-              ? `(${parsedPreview.holdingsCount + parsedPreview.cashCount} items)`
+            Import {parsedPreview && (parsedPreview.holdingsCount > 0 || parsedPreview.cashCount > 0 || parsedPreview.liabilitiesCount > 0)
+              ? `(${parsedPreview.holdingsCount + parsedPreview.cashCount + parsedPreview.liabilitiesCount} items)`
               : ''}
           </Button>
         </div>
@@ -411,6 +480,12 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
                 <WalletIcon className="h-3.5 w-3.5" />
                 {parsedPreview.cashCount} {parsedPreview.cashCount === 1 ? 'Cash Account' : 'Cash Accounts'}
               </div>
+              {parsedPreview.liabilitiesCount > 0 && (
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 border border-rose-500/25 px-2.5 py-0.5 text-xs font-semibold text-rose-600 dark:text-rose-400">
+                  <CreditCardIcon className="h-3.5 w-3.5" />
+                  {parsedPreview.liabilitiesCount} {parsedPreview.liabilitiesCount === 1 ? 'Debt / Liability' : 'Debts / Liabilities'}
+                </div>
+              )}
             </div>
           )}
 
@@ -446,7 +521,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
             <p className="text-xs text-ink-muted">
               {mode === 'merge'
                 ? 'Merge: Adds new items and updates existing ones without deleting other records.'
-                : 'Replace: Clears your existing holdings and cash accounts and replaces them with this import.'}
+                : 'Replace: Clears your existing holdings, cash accounts, and debts and replaces them with this import.'}
             </p>
           </div>
         )}
