@@ -796,7 +796,9 @@ export function HoldingLogs() {
         return `${prefix}${sats.toLocaleString()} sats`
       }
       if (log.assetClass === 'gold') {
-        return `${prefix}${diff.toFixed(4)} g`
+        const baht = diff / GRAMS_PER_BAHT_GOLD
+        const formattedBaht = Number.isInteger(Number(baht.toFixed(4))) ? baht.toFixed(0) : baht.toFixed(4)
+        return `${prefix}${formattedBaht} บาททอง (${prefix}${diff.toFixed(4)} g)`
       }
       if (log.assetClass === 'stock') {
         return `${prefix}${diff.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares`
@@ -1012,6 +1014,11 @@ export function HoldingLogs() {
                   <div className="text-sm sm:text-base font-extrabold tracking-tight text-ink-muted truncate mt-0.5">
                     {txDetails.sharesDisplay && txDetails.sharesDisplay !== '-' ? txDetails.sharesDisplay : (Math.abs(unitDiff) > 0 ? formatUnitDiff(unitDiff) : '-')}
                   </div>
+                  {txDetails.sharesDisplaySecondary && (
+                    <div className="text-[11px] font-medium text-ink-faint tnum truncate">
+                      {txDetails.sharesDisplaySecondary}
+                    </div>
+                  )}
                   <span className="text-xs font-medium text-ink-faint truncate mt-0.5">
                     หักออกจากพอร์ต
                   </span>
@@ -1201,6 +1208,11 @@ export function HoldingLogs() {
                   <div className="text-sm sm:text-base font-extrabold tracking-tight text-gain truncate mt-0.5">
                     {txDetails.sharesDisplay && txDetails.sharesDisplay !== '-' ? txDetails.sharesDisplay : (unitDiff > 0 ? formatUnitDiff(unitDiff) : '-')}
                   </div>
+                  {txDetails.sharesDisplaySecondary && (
+                    <div className="text-[11px] font-medium text-ink-faint tnum truncate">
+                      {txDetails.sharesDisplaySecondary}
+                    </div>
+                  )}
                   <span className="text-xs font-medium text-ink-faint truncate mt-0.5">
                     สะสมเข้าพอร์ต
                   </span>
@@ -1784,7 +1796,12 @@ export function HoldingLogs() {
                                 : 'text-brand'
                             }`}
                           >
-                            {tx.sharesDisplay}
+                            <div>{tx.sharesDisplay}</div>
+                            {tx.sharesDisplaySecondary && (
+                              <div className="text-[11px] font-normal text-ink-faint tracking-tight mt-0.5">
+                                {tx.sharesDisplaySecondary}
+                              </div>
+                            )}
                           </td>
                           <td className="logs-table-cell logs-table-metric text-right whitespace-nowrap tnum">
                             <div className="logs-table-amount font-semibold text-ink">
