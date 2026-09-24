@@ -680,7 +680,7 @@ export function Dashboard() {
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-surface-muted dark:bg-white/10 text-ink-muted dark:text-white/80">
+                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-rose-500/10 text-rose-500 dark:bg-rose-500/20 dark:text-rose-400">
                     <DebtIcon className="h-4 w-4" />
                   </div>
                   <h2 className="font-display text-base font-bold text-ink">Liabilities & Debts</h2>
@@ -716,7 +716,7 @@ export function Dashboard() {
                     {monthlyDebt > 0 ? (
                       <span
                         title={`~${thb(monthlyDebt)}/mo`}
-                        className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum text-ink dark:text-white leading-tight truncate cursor-default"
+                        className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum text-rose-600 dark:text-rose-400 leading-tight truncate cursor-default"
                       >
                         ~{thbCompact(monthlyDebt)}<span className="text-xs font-semibold text-ink-muted">/mo</span>
                       </span>
@@ -732,7 +732,7 @@ export function Dashboard() {
                     <p className="text-xs text-ink-muted font-medium truncate">
                       {debts > 0 ? (
                         <>
-                          D/A Ratio: <strong className="text-ink font-semibold">{debtRatio.toFixed(1)}%</strong>
+                          D/A Ratio: <strong className="text-rose-600 dark:text-rose-400 font-semibold">{debtRatio.toFixed(1)}%</strong>
                         </>
                       ) : (
                         <span className="text-emerald-600 dark:text-emerald-400 font-semibold">🎉 100% Solvency</span>
