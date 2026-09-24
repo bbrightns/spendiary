@@ -218,20 +218,6 @@ export function CashLiquidity() {
     showToast(`ลบบัญชี "${accountToDelete.name}" เรียบร้อยแล้ว`, 'info')
   }
 
-  const handleQuickBalanceChange = (id: string, newBalanceStr: string) => {
-    const clean = newBalanceStr.replace(/[^0-9.]/g, '')
-    const val = clean === '' ? 0 : Number(clean)
-    const updated = accounts.map((a) => (a.id === id ? { ...a, balance: val } : a))
-    setCashAccounts(updated)
-  }
-
-  const handleToggleCurrency = (id: string) => {
-    const updated = accounts.map((a) => {
-      if (a.id !== id) return a
-      return { ...a, currency: a.currency === 'USD' ? ('THB' as const) : ('USD' as const) }
-    })
-    setCashAccounts(updated)
-  }
 
   return (
     <div className="space-y-6 pb-12">
@@ -747,31 +733,12 @@ export function CashLiquidity() {
                         )}
                       </td>
 
-                      {/* 4. ยอดคงเหลือ (In-place compact input) */}
+                      {/* 4. ยอดคงเหลือ */}
                       <td className="py-2 px-3 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center justify-end">
-                          <div className="relative w-36 sm:w-40">
-                            <button
-                              type="button"
-                              onClick={() => handleToggleCurrency(a.id)}
-                              className={`absolute left-1 top-1/2 -translate-y-1/2 rounded px-1.5 py-0.5 text-xs font-extrabold transition-all cursor-pointer ${
-                                a.currency === 'USD'
-                                  ? 'bg-sky-500/15 text-sky-500 hover:bg-sky-500/25 ring-1 ring-sky-500/30'
-                                  : 'bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25 ring-1 ring-emerald-500/30'
-                              }`}
-                              title="คลิกเพื่อสลับสกุลเงิน (THB / USD)"
-                            >
-                              {a.currency === 'USD' ? '$' : '฿'}
-                            </button>
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              className="h-8 w-full rounded-lg border border-line bg-surface-muted/40 pl-8 pr-2 text-sm font-bold tnum text-ink outline-none transition-colors focus:border-brand focus:bg-surface text-right"
-                              value={a.balance === 0 ? '' : formatWithCommas(a.balance)}
-                              placeholder="0.00"
-                              onChange={(e) => handleQuickBalanceChange(a.id, e.target.value)}
-                            />
-                          </div>
+                        <div className="font-display font-bold text-sm text-ink tnum">
+                          {a.currency === 'USD'
+                            ? `$${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+                            : thb(a.balance)}
                         </div>
                       </td>
 
