@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect, useEffect, type ReactNode } from 'react'
+import { useState, useRef, useLayoutEffect, useEffect, useCallback, type ReactNode } from 'react'
 
 export interface SegmentOption<T extends string> {
   value: T
@@ -49,20 +49,27 @@ export function SegmentedControl<T extends string>({
     ready: false,
   })
 
-  // Measure and position the glider over the active button
-  useLayoutEffect(() => {
+  // Measure and position the glider precisely over the active button
+  const updateGlider = useCallback(() => {
     const container = containerRef.current
     if (!container) return
 
     const activeBtn = container.querySelector<HTMLButtonElement>('[data-active="true"]')
     if (!activeBtn) return
 
-    const left = activeBtn.offsetLeft
-    const top = activeBtn.offsetTop
-    const width = activeBtn.offsetWidth
-    const height = activeBtn.offsetHeight
+    const containerRect = container.getBoundingClientRect()
+    const btnRect = activeBtn.getBoundingClientRect()
+
+    const left = btnRect.left - containerRect.left - (container.clientLeft || 0)
+    const top = btnRect.top - containerRect.top - (container.clientTop || 0)
+    const width = btnRect.width
+    const height = btnRect.height
 
     setGliderStyle({ left, top, width, height, ready: true })
+  }, [])
+
+  useLayoutEffect(() => {
+    updateGlider()
 
     if (isFirstRender.current) {
       const raf = requestAnimationFrame(() => {
@@ -71,28 +78,29 @@ export function SegmentedControl<T extends string>({
       })
       return () => cancelAnimationFrame(raf)
     }
-  }, [value, options])
+  }, [value, options, updateGlider])
 
-  // Re-measure on window or container resize
+  // Re-measure on window or container resize, font load, or button size change
   useEffect(() => {
     const container = containerRef.current
-    if (!container || typeof ResizeObserver === 'undefined') return
+    if (!container) return
+
+    if (typeof document !== 'undefined' && 'fonts' in document) {
+      document.fonts.ready.then(updateGlider)
+    }
+
+    if (typeof ResizeObserver === 'undefined') return
 
     const ro = new ResizeObserver(() => {
-      const activeBtn = container.querySelector<HTMLButtonElement>('[data-active="true"]')
-      if (!activeBtn) return
-      setGliderStyle({
-        left: activeBtn.offsetLeft,
-        top: activeBtn.offsetTop,
-        width: activeBtn.offsetWidth,
-        height: activeBtn.offsetHeight,
-        ready: true,
-      })
+      updateGlider()
     })
 
     ro.observe(container)
+    const buttons = container.querySelectorAll('button')
+    buttons.forEach((btn) => ro.observe(btn))
+
     return () => ro.disconnect()
-  }, [])
+  }, [updateGlider, options])
 
   const sizeClasses = {
     xs: 'py-1 px-2.5 text-xs',
@@ -149,7 +157,7 @@ export function SegmentedControl<T extends string>({
       {gliderStyle.ready && (
         <span
           aria-hidden="true"
-          className={`pointer-events-none absolute z-0 ${currentShape.item} ${gliderBgClass}`}
+          className={`pointer-events-none absolute top-0 left-0 z-0 ${currentShape.item} ${gliderBgClass}`}
           style={{
             transform: `translate3d(${gliderStyle.left}px, ${gliderStyle.top}px, 0)`,
             width: `${gliderStyle.width}px`,
