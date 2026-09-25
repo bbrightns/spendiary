@@ -2415,9 +2415,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const currency: 'THB' | 'USD' = rawCurr === 'USD' ? 'USD' : 'THB'
             const preset = detectBankPreset(rawName)
             const rawCat = typeof r.category === 'string' ? r.category.toLowerCase().trim() : ''
-            const category = (['spending', 'savings', 'emergency', 'investment', 'other'].includes(rawCat)
-              ? rawCat
-              : inferCashCategory(rawName)) as CashAccount['category']
+            const category = (rawCat === 'locked'
+              ? 'locked'
+              : rawCat === 'spending'
+                ? 'spending'
+                : inferCashCategory(rawName)) as CashAccount['category']
 
             sanitizedCash.push({
               id: typeof r.id === 'string' && r.id && r.id !== 'optional' ? r.id : newId(),

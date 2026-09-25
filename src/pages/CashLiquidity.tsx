@@ -12,6 +12,7 @@ import {
   CASH_CATEGORIES,
   calculateMonthlyCashInterest,
   detectBankPreset,
+  getCashCategory,
   inferCashCategory,
   netWorth,
   sortCashAccounts,
@@ -93,12 +94,10 @@ export function CashLiquidity() {
   const categoryBreakdown = useMemo(() => {
     const totals: Record<CashAccountCategory, number> = {
       spending: 0,
-      emergency: 0,
-      invest: 0,
       locked: 0,
     }
     for (const a of accounts) {
-      const cat = a.category ?? inferCashCategory(a.name)
+      const cat = getCashCategory(a)
       const thbVal = a.currency === 'USD' ? a.balance * rate : a.balance
       totals[cat] = (totals[cat] ?? 0) + thbVal
     }
@@ -113,27 +112,15 @@ export function CashLiquidity() {
   const totalAnnualYield = interestSummary.totalAnnual
   const effectiveApy = totalCashThb > 0 ? (totalAnnualYield / totalCashThb) * 100 : 0
 
-  // Emergency Runway Calculation (Monthly fixed outflow from debts + estimated baseline)
-  const monthlyDebtOutflow = useMemo(() => {
-    return (data.liabilities ?? []).reduce((sum, l) => {
-      if (l.balance <= 0) return sum
-      return sum + (l.monthlyPayment ?? 0)
-    }, 0)
-  }, [data.liabilities])
-
-  // Estimated baseline monthly burn (Debts + baseline 15,000 or 1.5x debt)
-  const estimatedMonthlyBurn = Math.max(monthlyDebtOutflow, 15000)
-  const emergencyAmount = categoryBreakdown.emergency
-  const emergencyRunwayMonths = estimatedMonthlyBurn > 0 ? emergencyAmount / estimatedMonthlyBurn : 0
-
-  // Warchest Dry Powder
-  const warchestAmount = categoryBreakdown.invest
-  const warchestPct = totalCashThb > 0 ? (warchestAmount / totalCashThb) * 100 : 0
+  const deployableAmount = categoryBreakdown.spending
+  const deployablePct = totalCashThb > 0 ? (deployableAmount / totalCashThb) * 100 : 0
+  const lockedAmount = categoryBreakdown.locked
+  const lockedPct = totalCashThb > 0 ? (lockedAmount / totalCashThb) * 100 : 0
 
   // Filtering and Sorting
   const filteredAccounts = useMemo(() => {
     const list = accounts.filter((a) => {
-      const matchesCategory = activeCategoryFilter === 'all' || (a.category ?? inferCashCategory(a.name)) === activeCategoryFilter
+      const matchesCategory = activeCategoryFilter === 'all' || getCashCategory(a) === activeCategoryFilter
       const matchesSearch = searchQuery.trim() === '' || a.name.toLowerCase().includes(searchQuery.toLowerCase())
       return matchesCategory && matchesSearch
     })
@@ -143,8 +130,8 @@ export function CashLiquidity() {
       if (sortField === 'name') {
         comparison = a.name.localeCompare(b.name, 'th')
       } else if (sortField === 'category') {
-        const catA = a.category ?? inferCashCategory(a.name)
-        const catB = b.category ?? inferCashCategory(b.name)
+        const catA = getCashCategory(a)
+        const catB = getCashCategory(b)
         comparison = catA.localeCompare(catB)
       } else if (sortField === 'yield') {
         const getEarned = (acc: CashAccount) => {
@@ -268,42 +255,42 @@ export function CashLiquidity() {
           </p>
         </Card>
 
-        {/* Card 3: Emergency Runway */}
+        {/* Card 3: Deployable Cash */}
         <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
           <div>
-            <p className="text-xs font-medium text-ink-muted">Emergency Runway</p>
-            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-ink tnum truncate">
-              {emergencyRunwayMonths > 36 ? '36+ เดือน' : `${emergencyRunwayMonths.toFixed(1)} เดือน`}
+            <p className="text-xs font-medium text-ink-muted">Deployable Cash</p>
+            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tnum truncate">
+              {thb(deployableAmount)}
             </p>
           </div>
           <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            สำรอง {thb(emergencyAmount)} · {emergencyRunwayMonths >= 6 ? '🛡️ แข็งแกร่ง' : emergencyRunwayMonths >= 3 ? '⚡ ปานกลาง' : '⚠️ ควรเพิ่ม'}
+            {deployablePct.toFixed(1)}% ของเงินสด · เงินสดที่คุณมีอิสระในการ deploy จริง ๆ
           </p>
         </Card>
 
-        {/* Card 4: Investment Warchest */}
+        {/* Card 4: Committed / Locked Cash */}
         <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
           <div>
-            <p className="text-xs font-medium text-ink-muted">Investment Warchest</p>
-            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-ink tnum truncate">
-              {thb(warchestAmount)}
+            <p className="text-xs font-medium text-ink-muted">Committed / Locked</p>
+            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-amber-500 tnum truncate">
+              {thb(lockedAmount)}
             </p>
           </div>
           <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            {warchestPct.toFixed(1)}% ของเงินสด · {warchestAmount > 0 ? 'พร้อมลงทุน' : 'ไม่มีเงินรอซื้อ'}
+            {lockedPct.toFixed(1)}% ของเงินสด · Cash / assets ที่ไม่ควรแตะ
           </p>
         </Card>
       </div>
 
-      {/* ── 4-Tier Liquidity Allocation Section ── */}
+      {/* ── 2-Tier Liquidity Allocation Section ── */}
       <Card className="p-4 sm:p-5 border-line/60 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
-              <span>📊 4-Tier Liquidity Allocation</span>
+              <span>📊 Liquidity Allocation (การจัดสรรสภาพคล่องเงินสด)</span>
             </h3>
             <p className="text-xs text-ink-muted">
-              จัดสรรเงินสดออกเป็น 4 ตะกร้าตามวัตถุประสงค์การใช้งานและสภาพคล่อง
+              แยกเงินสดที่คุณมีอิสระในการ deploy กับเงินออมระยะยาวที่ไม่ควรแตะ
             </p>
           </div>
           <span className="text-xs font-semibold text-ink-muted">
@@ -313,15 +300,13 @@ export function CashLiquidity() {
 
         {/* Multi-tier Progress Bar */}
         <div className="h-3.5 w-full rounded-full bg-surface-muted overflow-hidden flex shadow-inner">
-          {(['spending', 'emergency', 'invest', 'locked'] as CashAccountCategory[]).map((catKey) => {
+          {(['spending', 'locked'] as CashAccountCategory[]).map((catKey) => {
             const amount = categoryBreakdown[catKey]
             const pct = totalCashThb > 0 ? (amount / totalCashThb) * 100 : 0
             if (pct <= 0) return null
 
             const colors: Record<CashAccountCategory, string> = {
               spending: 'bg-emerald-500',
-              emergency: 'bg-blue-500',
-              invest: 'bg-violet-500',
               locked: 'bg-amber-500',
             }
 
@@ -336,9 +321,9 @@ export function CashLiquidity() {
           })}
         </div>
 
-        {/* 4 Category Badges / Breakdown Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          {(['spending', 'emergency', 'invest', 'locked'] as CashAccountCategory[]).map((catKey) => {
+        {/* 2 Category Badges / Breakdown Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {(['spending', 'locked'] as CashAccountCategory[]).map((catKey) => {
             const meta = CASH_CATEGORIES[catKey]
             const amount = categoryBreakdown[catKey]
             const pct = totalCashThb > 0 ? (amount / totalCashThb) * 100 : 0
@@ -346,8 +331,6 @@ export function CashLiquidity() {
 
             const badgeBorderColors: Record<CashAccountCategory, string> = {
               spending: 'border-emerald-500/30 hover:border-emerald-500/60',
-              emergency: 'border-blue-500/30 hover:border-blue-500/60',
-              invest: 'border-violet-500/30 hover:border-violet-500/60',
               locked: 'border-amber-500/30 hover:border-amber-500/60',
             }
 
@@ -364,6 +347,9 @@ export function CashLiquidity() {
                   <span className="shrink-0 text-sm">{meta.icon}</span>
                   <span className="text-xs font-semibold text-ink-muted truncate" title={meta.labelTh}>
                     {meta.labelTh}
+                  </span>
+                  <span className="text-xs text-ink-muted opacity-60 ml-auto">
+                    {catKey === 'spending' ? 'อิสระ deploy' : 'ไม่ควรแตะ'}
                   </span>
                 </div>
                 <div className="mt-2 flex items-baseline justify-between gap-1 w-full min-w-0">
@@ -396,9 +382,9 @@ export function CashLiquidity() {
             >
               All ({accounts.length})
             </button>
-            {(['spending', 'emergency', 'invest', 'locked'] as CashAccountCategory[]).map((catKey) => {
+            {(['spending', 'locked'] as CashAccountCategory[]).map((catKey) => {
               const meta = CASH_CATEGORIES[catKey]
-              const count = accounts.filter((a) => (a.category ?? inferCashCategory(a.name)) === catKey).length
+              const count = accounts.filter((a) => getCashCategory(a) === catKey).length
               const isSelected = activeCategoryFilter === catKey
               return (
                 <button
@@ -475,7 +461,7 @@ export function CashLiquidity() {
           <div className="divide-y divide-line/30">
             {filteredAccounts.map((a) => {
               const preset = detectBankPreset(a.name)
-              const cat = a.category ?? inferCashCategory(a.name)
+              const cat = getCashCategory(a)
               const catMeta = CASH_CATEGORIES[cat]
 
               const rateNum = a.interestRate ?? 0
@@ -656,7 +642,7 @@ export function CashLiquidity() {
             <tbody className="divide-y divide-line/30 text-sm">
               {filteredAccounts.map((a) => {
                 const preset = detectBankPreset(a.name)
-                const cat = a.category ?? inferCashCategory(a.name)
+                const cat = getCashCategory(a)
                 const isExpanded = expandedId === a.id
 
                 const rateNum = a.interestRate ?? 0
@@ -878,7 +864,7 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
   const [name, setName] = useState(initialAccount.name)
   const [balance, setBalance] = useState(initialAccount.balance ? String(initialAccount.balance) : '')
   const [currency, setCurrency] = useState<'THB' | 'USD'>(initialAccount.currency ?? 'THB')
-  const [category, setCategory] = useState<CashAccountCategory>(initialAccount.category ?? 'spending')
+  const [category, setCategory] = useState<CashAccountCategory>(initialAccount.category ? getCashCategory(initialAccount) : 'spending')
   const [interestRate, setInterestRate] = useState(initialAccount.interestRate ? String(initialAccount.interestRate) : '')
   const [maxEligibleBalance, setMaxEligibleBalance] = useState(
     initialAccount.maxEligibleBalance ? String(initialAccount.maxEligibleBalance) : ''
@@ -1005,7 +991,7 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
             หมวดหมู่ / วัตถุประสงค์ (Liquidity Tier)
           </label>
           <div className="grid grid-cols-2 gap-2">
-            {(['spending', 'emergency', 'invest', 'locked'] as CashAccountCategory[]).map((catKey) => {
+            {(['spending', 'locked'] as CashAccountCategory[]).map((catKey) => {
               const meta = CASH_CATEGORIES[catKey]
               const isCatActive = category === catKey
               return (

@@ -125,7 +125,7 @@ export interface DcaPlan {
 }
 
 export type Frequency = 'weekly' | 'biweekly' | 'monthly' | 'quarterly'
-export type CashAccountCategory = 'spending' | 'emergency' | 'invest' | 'locked'
+export type CashAccountCategory = 'spending' | 'locked'
 export type CashPayoutSchedule = 'monthly' | 'semi_annual' | 'annual' | 'custom'
 
 export interface Transfer {

@@ -641,10 +641,20 @@ export const CASH_CATEGORIES: Record<
   CashAccountCategory,
   { label: string; labelTh: string; color: string; icon: string; desc: string }
 > = {
-  spending: { label: 'Spending & Bills', labelTh: 'ใช้จ่าย/หมุนเวียน', color: '#10b981', icon: '🟢', desc: 'เงินใช้จ่ายประจำวัน และตัดบิล' },
-  emergency: { label: 'Emergency Fund', labelTh: 'สำรองฉุกเฉิน', color: '#f59e0b', icon: '🛡️', desc: 'เงินสำรอง 3-12 เดือน ยามฉุกเฉิน' },
-  invest: { label: 'Investment Powder', labelTh: 'เงินรอลงทุน', color: '#3b82f6', icon: '🎯', desc: 'เงินพักรอซื้อหุ้น กองทุน หรือเหรียญ' },
-  locked: { label: 'Committed / Locked', labelTh: 'ออมระยะยาว/มีเงื่อนไข', color: '#8b5cf6', icon: '🔒', desc: 'สหกรณ์, กองทุนสำรองเลี้ยงชีพ (PVD), ฝากประจำ' },
+  spending: {
+    label: 'Spending & Deployable',
+    labelTh: 'ใช้จ่าย/หมุนเวียน',
+    color: '#10b981',
+    icon: '🟢',
+    desc: 'เงินสดที่คุณมีอิสระในการ deploy จริง ๆ (ใช้จ่าย, ฉุกเฉิน, เงินรอลงทุน)',
+  },
+  locked: {
+    label: 'Committed / Locked',
+    labelTh: 'ออมระยะยาว/มีเงื่อนไข',
+    color: '#8b5cf6',
+    icon: '🔒',
+    desc: 'Cash / assets ที่ไม่ควรแตะ เช่น สหกรณ์, กองทุนสำรองเลี้ยงชีพ (PVD), ฝากประจำ',
+  },
 }
 
 export interface BankPreset {
@@ -683,15 +693,24 @@ export function detectBankPreset(name: string): BankPreset | undefined {
 
 export function inferCashCategory(name: string): CashAccountCategory {
   const s = name.toLowerCase().trim()
-  if (s.includes('สำรองเลี้ยงชีพ') || s.includes('pvd') || s.includes('สหกรณ์') || s.includes('ประจำ') || s.includes('locked') || s.includes('ออมทรัพย์ หุ้น') || s.includes('หุ้นสหกรณ์')) {
+  if (
+    s.includes('สำรองเลี้ยงชีพ') ||
+    s.includes('pvd') ||
+    s.includes('สหกรณ์') ||
+    s.includes('ประจำ') ||
+    s.includes('locked') ||
+    s.includes('ออมทรัพย์ หุ้น') ||
+    s.includes('หุ้นสหกรณ์')
+  ) {
     return 'locked'
   }
-  if (s.includes('dime') || s.includes('fcd') || s.includes('invest') || s.includes('crypto') || s.includes('พอร์ต')) {
-    return 'invest'
-  }
-  if (s.includes('kept') || s.includes('ฉุกเฉิน') || s.includes('emergency') || s.includes('click') || s.includes('reserve')) {
-    return 'emergency'
-  }
+  return 'spending'
+}
+
+export function getCashCategory(account: { category?: string; name?: string }): CashAccountCategory {
+  if (account.category === 'locked') return 'locked'
+  if (account.category === 'spending') return 'spending'
+  if (account.name) return inferCashCategory(account.name)
   return 'spending'
 }
 
@@ -824,17 +843,15 @@ export function getCashLiquidityBreakdown(
   usdThb?: number | null,
 ): {
   spending: number
-  emergency: number
-  invest: number
   locked: number
   total: number
 } {
   const rate = usdThb && usdThb > 0 ? usdThb : 35
-  const res = { spending: 0, emergency: 0, invest: 0, locked: 0, total: 0 }
+  const res = { spending: 0, locked: 0, total: 0 }
 
   for (const a of accounts) {
     const thbVal = a.currency === 'USD' ? a.balance * rate : a.balance
-    const cat = a.category ?? inferCashCategory(a.name)
+    const cat = getCashCategory(a)
     res[cat] = (res[cat] ?? 0) + thbVal
     res.total += thbVal
   }
