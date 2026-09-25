@@ -1,12 +1,14 @@
 import type { SpendiaryData } from './types'
 import {
   ASSET_META,
+  CASH_CATEGORIES,
   GRAMS_PER_BAHT_GOLD,
   SATS_PER_BTC,
   assetGroupAllocations,
   dcaPerMonth,
   dcaThisMonth,
   goldThbPerBahtToXauUsd,
+  inferCashCategory,
   isBuyDayOverdue,
   isBuyDayToday,
   isConfirmedForPeriod,
@@ -65,6 +67,13 @@ export function generatePortfolioMarkdown(
     const isUsd = a.currency === 'USD'
     return sum + (isUsd ? a.balance * rate : a.balance)
   }, 0)
+  const liquidCashThb = cashAccounts.reduce((sum, a) => {
+    const cat = a.category ?? inferCashCategory(a.name)
+    if (cat === 'locked') return sum
+    const isUsd = a.currency === 'USD'
+    return sum + (isUsd ? a.balance * rate : a.balance)
+  }, 0)
+  const lockedCashThb = totalCashThb - liquidCashThb
   const totalNetWorth = summary.value + totalCashThb
 
   const lines: string[] = []
@@ -89,7 +98,13 @@ export function generatePortfolioMarkdown(
   lines.push(`- **ต้นทุนเงินลงทุนรวม (Total Cost)**: **${fmtMoney(summary.cost, 'THB')}**`)
   lines.push(`- **กำไร/ขาดทุนรวม (All-time PnL)**: **${fmtSignMoney(summary.pnl, 'THB')} (${fmtPct(summary.pnlPct)})**`)
   if (cashAccounts.length > 0) {
-    lines.push(`- **เงินสดคงเหลือรวม (Liquid Cash)**: **${fmtMoney(totalCashThb, 'THB')}**`)
+    if (lockedCashThb > 0) {
+      lines.push(
+        `- **เงินสดคงเหลือรวม (Total Cash)**: **${fmtMoney(totalCashThb, 'THB')}** (💧 พร้อมใช้: ${fmtMoney(liquidCashThb, 'THB')} · 🔒 ถอนไม่ได้/มีเงื่อนไข: ${fmtMoney(lockedCashThb, 'THB')})`,
+      )
+    } else {
+      lines.push(`- **เงินสดคงเหลือรวม (Liquid Cash)**: **${fmtMoney(totalCashThb, 'THB')}**`)
+    }
     lines.push(`- **มูลค่าทรัพย์สินสุทธิ (Net Worth)**: **${fmtMoney(totalNetWorth, 'THB')}**`)
   }
   lines.push(`- **จำนวนรายการถือครอง (Holdings Count)**: **${holdings.length} รายการ**`)
@@ -283,16 +298,36 @@ export function generatePortfolioMarkdown(
 
   // Cash Accounts
   if (cashAccounts.length > 0) {
-    lines.push(`## 💵 บัญชีเงินสด (Cash Accounts)`)
+    lines.push(`## 💵 บัญชีเงินสดและสภาพคล่อง (Cash Accounts & Liquidity)`)
+    lines.push(`| บัญชี (Account) | ประเภทบัญชี (Category) | สถานะการถอน (Liquidity) | ยอดคงเหลือ (Balance) |`)
+    lines.push(`| :--- | :--- | :--- | :--- |`)
+
     for (const acc of cashAccounts) {
+      const cat = acc.category ?? inferCashCategory(acc.name)
+      const catMeta = CASH_CATEGORIES[cat]
       const isUsd = acc.currency === 'USD'
       const thbVal = isUsd ? acc.balance * rate : acc.balance
       const balStr = isUsd
-        ? `${fmtMoney(acc.balance, 'USD', 2)} (≈ ${fmtMoney(thbVal, 'THB', 2)})`
+        ? `${fmtMoney(acc.balance, 'USD', 2)}<br/>(≈ ${fmtMoney(thbVal, 'THB', 2)})`
         : fmtMoney(acc.balance, 'THB', 2)
-      lines.push(`- 🏦 **${acc.name}**: **${balStr}**`)
+
+      const interestStr = acc.interestRate && acc.interestRate > 0 ? ` (${acc.interestRate}%)` : ''
+      const nameStr = `**${acc.name}**${interestStr}`
+      const catStr = catMeta ? `${catMeta.icon} ${catMeta.labelTh}` : cat
+      const liquidityStr = cat === 'locked' ? '⚠️ ถอนไม่ได้ / มีเงื่อนไข (Locked)' : '💧 พร้อมใช้ (Liquid)'
+
+      lines.push(`| ${nameStr} | ${catStr} | ${liquidityStr} | ${balStr} |`)
     }
-    lines.push(`- **รวมเงินสดทั้งหมด**: **${fmtMoney(totalCashThb, 'THB', 2)}**`)
+    lines.push('')
+    lines.push(`- **รวมเงินสดทั้งหมด (Total Cash)**: **${fmtMoney(totalCashThb, 'THB', 2)}**`)
+    if (lockedCashThb > 0) {
+      const liquidPct = totalCashThb > 0 ? (liquidCashThb / totalCashThb) * 100 : 0
+      const lockedPct = totalCashThb > 0 ? (lockedCashThb / totalCashThb) * 100 : 0
+      if (liquidCashThb > 0) {
+        lines.push(`  - 💧 **เงินสดพร้อมใช้/สภาพคล่องสูง (Liquid Cash)**: **${fmtMoney(liquidCashThb, 'THB', 2)}** (${liquidPct.toFixed(1)}%)`)
+      }
+      lines.push(`  - 🔒 **เงินสดยึดติด/ถอนไม่ได้ (Locked / Non-withdrawable)**: **${fmtMoney(lockedCashThb, 'THB', 2)}** (${lockedPct.toFixed(1)}%)`)
+    }
     lines.push('')
   }
 
