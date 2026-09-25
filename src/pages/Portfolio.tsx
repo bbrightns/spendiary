@@ -1038,16 +1038,16 @@ export function Portfolio() {
                 <div className="flex items-baseline min-w-0">
                   <p
                     title={thb(summary.value)}
-                    className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight tnum text-ink leading-tight whitespace-nowrap cursor-default"
+                    className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
                   >
-                    {summary.value >= 1_000_000 ? thbCompact(summary.value) : thb(summary.value)}
+                    {thbCompact(summary.value)}
                   </p>
                 </div>
                 <div className="flex items-baseline justify-end min-w-0">
                   <PnLText
                     value={summary.pnl}
                     compact
-                    className="font-display text-3xl sm:text-4xl !font-extrabold tracking-tight leading-tight whitespace-nowrap"
+                    className="font-display text-2xl sm:text-3xl !font-extrabold tracking-tight leading-tight truncate"
                   />
                 </div>
 
@@ -1056,7 +1056,7 @@ export function Portfolio() {
                   <p className="text-xs text-ink-muted font-medium truncate" title={thb(summary.cost)}>
                     Cost:{' '}
                     <span className="font-semibold tnum text-ink-soft">
-                      {summary.cost >= 1_000_000 ? thbCompact(summary.cost) : thb(summary.cost)}
+                      {thbCompact(summary.cost)}
                     </span>
                   </p>
                 </div>

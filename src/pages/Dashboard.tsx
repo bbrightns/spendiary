@@ -464,7 +464,7 @@ export function Dashboard() {
                       title={thb(portfolio.value)}
                       className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
                     >
-                      {portfolio.value >= 1_000_000 ? thbCompact(portfolio.value) : thb(portfolio.value)}
+                      {thbCompact(portfolio.value)}
                     </p>
                   </div>
                   <div className="flex items-baseline justify-end min-w-0">
@@ -478,7 +478,7 @@ export function Dashboard() {
                   {/* Row 3: Subtext / Details */}
                   <div className="flex items-center min-w-0 h-6">
                     <p className="text-xs text-ink-muted font-medium truncate" title={thb(portfolio.cost)}>
-                      Cost: <span className="font-semibold tnum text-ink-soft">{portfolio.cost >= 1_000_000 ? thbCompact(portfolio.cost) : thb(portfolio.cost)}</span>
+                      Cost: <span className="font-semibold tnum text-ink-soft">{thbCompact(portfolio.cost)}</span>
                     </p>
                   </div>
                   <div className="flex items-center justify-end gap-1.5 min-w-0 h-6">
@@ -561,7 +561,7 @@ export function Dashboard() {
                       title={thb(cash)}
                       className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
                     >
-                      {cash >= 1_000_000 ? thbCompact(cash) : thb(cash)}
+                      {thbCompact(cash)}
                     </p>
                   </div>
                   <div className="flex items-baseline justify-end min-w-0">
@@ -709,7 +709,7 @@ export function Dashboard() {
                       className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum leading-tight truncate cursor-default text-ink dark:text-white"
                       title={debts > 0 ? `-${thb(debts)}` : '฿0'}
                     >
-                      {debts > 0 ? (debts >= 1_000_000 ? `-${thbCompact(debts)}` : `-${thb(debts)}`) : '฿0'}
+                      {debts > 0 ? `-${thbCompact(debts)}` : '฿0'}
                     </p>
                   </div>
                   <div className="flex items-baseline justify-end min-w-0">
