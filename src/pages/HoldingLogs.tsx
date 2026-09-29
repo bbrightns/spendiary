@@ -20,7 +20,6 @@ import {
   DownloadIcon,
   ListIcon,
   PencilIcon,
-  PlusIcon,
   SearchIcon,
   TableIcon,
   TrashIcon,
@@ -390,7 +389,7 @@ export function HoldingLogs() {
     nextStep,
     prevStep,
   } = usePageGuide('logs')
-  const { data, addHoldingLog, removeHoldingLog, removeHoldingLogs, undoHoldingLog, updateHoldingLogTimestamp, usdThb } = useData()
+  const { data, removeHoldingLog, removeHoldingLogs, undoHoldingLog, updateHoldingLogTimestamp, usdThb } = useData()
   const { showToast } = useToast()
   const rawLogs = data.holdingLogs ?? []
   const logs = [...rawLogs].sort(
@@ -430,10 +429,6 @@ export function HoldingLogs() {
   const [expandedDetails, setExpandedDetails] = useState<Set<string>>(new Set())
   const [selectedLogIds, setSelectedLogIds] = useState<Set<string>>(new Set())
   const [showBatchDeleteConfirm, setShowBatchDeleteConfirm] = useState(false)
-  const [showManualNote, setShowManualNote] = useState(false)
-  const [manualNote, setManualNote] = useState('')
-  const [manualNoteDate, setManualNoteDate] = useState(() => localDateStr(new Date()))
-  const [manualNoteTime, setManualNoteTime] = useState(() => new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
 
   const toggleLogSelection = (logId: string) => {
     setSelectedLogIds((prev) => {
@@ -453,25 +448,6 @@ export function HoldingLogs() {
     })
   }
 
-  const saveManualNote = () => {
-    const text = manualNote.trim()
-    if (!text) {
-      showToast('Please enter a note', 'error')
-      return
-    }
-    const timestamp = dateStrToTimestamp(manualNoteDate, manualNoteTime)
-    addHoldingLog({
-      action: 'note',
-      holdingName: 'Manual note',
-      ticker: 'NOTE',
-      assetClass: 'cash',
-      note: text,
-      timestamp,
-    })
-    setShowManualNote(false)
-    setManualNote('')
-    showToast('Added a history-only note', 'success')
-  }
 
   const toggleDetails = (logId: string) => {
     setExpandedDetails((prev) => {
@@ -1532,16 +1508,6 @@ export function HoldingLogs() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => setShowManualNote(true)}
-              title="Add a history-only note"
-              className="cursor-pointer shrink-0 h-9"
-            >
-              <PlusIcon className="h-3.5 w-3.5" />
-              <span>Add note</span>
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
               onClick={handleExportCsv}
               disabled={filtered.length === 0}
               title="Export activity logs to CSV"
@@ -1993,58 +1959,6 @@ export function HoldingLogs() {
           setShowBatchDeleteConfirm(false)
         }}
       />
-
-      <Modal
-        open={showManualNote}
-        onClose={() => setShowManualNote(false)}
-        title="Add history-only note"
-        description="This note is saved in Activity Logs only and does not change any portfolio data."
-        size="sm"
-        footer={
-          <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => setShowManualNote(false)} className="flex-1 cursor-pointer">
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={saveManualNote} className="flex-1 cursor-pointer">
-              Add note
-            </Button>
-          </div>
-        }
-      >
-        <div className="space-y-3">
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-ink-muted">Note</span>
-            <textarea
-              value={manualNote}
-              onChange={(e) => setManualNote(e.target.value)}
-              placeholder="e.g. Reviewed portfolio allocation"
-              rows={4}
-              autoFocus
-              className="w-full resize-none rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
-            />
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <label>
-              <span className="mb-1.5 block text-xs font-semibold text-ink-muted">Date</span>
-              <input
-                type="date"
-                value={manualNoteDate}
-                onChange={(e) => setManualNoteDate(e.target.value)}
-                className="h-10 w-full rounded-xl border border-line bg-surface px-2.5 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
-              />
-            </label>
-            <label>
-              <span className="mb-1.5 block text-xs font-semibold text-ink-muted">Time</span>
-              <input
-                type="time"
-                value={manualNoteTime}
-                onChange={(e) => setManualNoteTime(e.target.value)}
-                className="h-10 w-full rounded-xl border border-line bg-surface px-2.5 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
-              />
-            </label>
-          </div>
-        </div>
-      </Modal>
 
       {/* Custom Undo Confirmation Modal */}
       <ConfirmModal
