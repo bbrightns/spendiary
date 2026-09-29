@@ -359,11 +359,6 @@ export function DcaPlanner() {
   const [salaryDraft, setSalaryDraft] = useState('')
   const salaryRef = useRef<HTMLInputElement>(null)
 
-  // Allocation view/input mode ('amount' | 'percent')
-  const [allocMode, setAllocMode] = useState<'amount' | 'percent'>('amount')
-  const [editingPlanPercentId, setEditingPlanPercentId] = useState<string | null>(null)
-  const [draftPercent, setDraftPercent] = useState<string>('')
-
   // Section expand state — default collapsed
   const [fixedOpen, setFixedOpen] = useState(false)
   const [savingsOpen, setSavingsOpen] = useState(true)
@@ -410,20 +405,21 @@ export function DcaPlanner() {
   // DCA plans sorted by: 1. Overdue / near to the due, 2. Value
   const plans = sortDcaPlans(data.dcaPlans)
 
-  // Handler for updating a plan's target percentage
-  const handleCommitPercent = (plan: DcaPlan) => {
-    const p = parseFloat(draftPercent)
-    if (!isNaN(p) && p >= 0 && savingsTotal > 0) {
-      const newMonthlyAmount = Math.round((p / 100) * savingsTotal)
-      upsertPlan({
-        ...plan,
-        monthlyAmount: newMonthlyAmount,
-      })
-      showToast(`Updated ${plan.name} to ${p.toFixed(1)}% (฿${newMonthlyAmount.toLocaleString()})`, 'success')
-    }
-    setEditingPlanPercentId(null)
-    setDraftPercent('')
+  // Handler for sliding a plan's target percentage
+  const handleSliderPercent = (plan: DcaPlan, newPct: number) => {
+    if (savingsTotal <= 0) return
+    const newMonthlyAmount = Math.max(0, Math.round((newPct / 100) * savingsTotal))
+    upsertPlan({
+      ...plan,
+      monthlyAmount: newMonthlyAmount,
+    })
   }
+
+  // Calculate sum of percentages across all plans to warn when not 100%
+  const totalPercentSum = plans.reduce((sum, p) => {
+    return sum + (savingsTotal > 0 ? (p.monthlyAmount / savingsTotal) * 100 : 0)
+  }, 0)
+  const isPercentNot100 = plans.length > 0 && Math.abs(totalPercentSum - 100) > 0.5
 
   // Expected dividends for the current month
   const currentMonth = new Date().getMonth() + 1
@@ -666,48 +662,31 @@ export function DcaPlanner() {
                 onToggle={() => setSavingsOpen((v) => !v)}
                 action={
                   savingsOpen ? (
-                    <div className="flex items-center gap-2">
-                      {plans.length > 0 && (
-                        <div className="flex items-center rounded-full border border-line-strong bg-surface p-0.5 shadow-2xs">
-                          <button
-                            type="button"
-                            onClick={() => setAllocMode('amount')}
-                            aria-label="Display amounts in THB"
-                            className={`rounded-full px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
-                              allocMode === 'amount'
-                                ? 'bg-surface-muted text-ink shadow-xs'
-                                : 'text-ink-muted hover:text-ink'
-                            }`}
-                          >
-                            ฿ THB
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setAllocMode('percent')}
-                            aria-label="Display percentages"
-                            className={`rounded-full px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
-                              allocMode === 'percent'
-                                ? 'bg-surface-muted text-ink shadow-xs'
-                                : 'text-ink-muted hover:text-ink'
-                            }`}
-                          >
-                            % Weight
-                          </button>
-                        </div>
-                      )}
-                      <button
-                        onClick={openAdd}
-                        aria-label="Add DCA investment plan"
-                        className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 text-xs font-semibold text-ink shadow-2xs hover:bg-surface-muted transition-colors active:scale-95 cursor-pointer"
-                      >
-                        <PlusIcon className="h-3.5 w-3.5" strokeWidth={2.2} />
-                        <span>Add plan</span>
-                      </button>
-                    </div>
+                    <button
+                      onClick={openAdd}
+                      aria-label="Add DCA investment plan"
+                      className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 text-xs font-semibold text-ink shadow-2xs hover:bg-surface-muted transition-colors active:scale-95 cursor-pointer"
+                    >
+                      <PlusIcon className="h-3.5 w-3.5" strokeWidth={2.2} />
+                      <span>Add plan</span>
+                    </button>
                   ) : null
                 }
               />
             </div>
+
+            {/* Notice when sum of plan percentages does not equal 100% */}
+            {savingsOpen && isPercentNot100 && (
+              <div className="border-t border-line bg-warn-soft/40 px-5 py-2.5 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 text-warn font-medium">
+                  <span>⚠️</span>
+                  <span>
+                    Total planned weight is <strong>{totalPercentSum.toFixed(1)}%</strong> (difference of{' '}
+                    <strong>{Math.abs(100 - totalPercentSum).toFixed(1)}%</strong> {totalPercentSum > 100 ? 'over' : 'under'} 100%).
+                  </span>
+                </div>
+              </div>
+            )}
 
             {savingsOpen && (
               <div className="border-t border-line">
@@ -758,22 +737,17 @@ export function DcaPlanner() {
                         }
                         const showConfirmed = confirmed && isRecent(p.confirmedDates)
                         const planPct = savingsTotal > 0 ? (p.monthlyAmount / savingsTotal) * 100 : 0
-                        const isEditingThisPercent = editingPlanPercentId === p.id
 
                         return (
                           <li key={p.id}>
                             <div
                               role="button"
                               tabIndex={0}
-                              onClick={() => {
-                                if (!isEditingThisPercent) openEdit(p)
-                              }}
+                              onClick={() => openEdit(p)}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {
-                                  if (!isEditingThisPercent) {
-                                    e.preventDefault()
-                                    openEdit(p)
-                                  }
+                                  e.preventDefault()
+                                  openEdit(p)
                                 }
                               }}
                               aria-label={`Edit ${p.name}`}
@@ -785,106 +759,86 @@ export function DcaPlanner() {
                                 size="md"
                               />
                               <div className="min-w-0 flex-1">
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="min-w-0 flex items-center gap-2">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                  {/* Left: Asset info */}
+                                  <div className="min-w-0 flex-1">
                                     <p className="truncate text-sm font-semibold text-ink">{p.name}</p>
-                                    <span className="shrink-0 text-[11px] font-medium text-ink-faint rounded bg-surface-muted px-1.5 py-0.5">
-                                      {planPct.toFixed(1)}%
-                                    </span>
+                                    <p className="mt-0.5 text-xs text-ink-muted">
+                                      {meta.label} · {freqLabel(p)}
+                                    </p>
                                   </div>
 
-                                  <div className="shrink-0 text-right flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                                    {allocMode === 'percent' ? (
-                                      isEditingThisPercent ? (
-                                        <div className="flex items-center gap-1">
-                                          <input
-                                            type="number"
-                                            min="0"
-                                            max="100"
-                                            step="0.1"
-                                            autoFocus
-                                            value={draftPercent}
-                                            onChange={(e) => setDraftPercent(e.target.value)}
-                                            onKeyDown={(e) => {
-                                              if (e.key === 'Enter') handleCommitPercent(p)
-                                              if (e.key === 'Escape') setEditingPlanPercentId(null)
-                                            }}
-                                            onBlur={() => handleCommitPercent(p)}
-                                            className="w-16 rounded-md border border-brand bg-surface px-1.5 py-0.5 text-right font-display text-sm font-bold tnum text-ink outline-none"
-                                          />
-                                          <span className="text-xs font-bold text-ink-muted">%</span>
-                                        </div>
-                                      ) : (
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            setEditingPlanPercentId(p.id)
-                                            setDraftPercent(planPct.toFixed(1))
-                                          }}
-                                          title="Click to edit percentage"
-                                          className="group/pct flex flex-col items-end rounded px-1.5 py-0.5 hover:bg-surface-muted transition-colors cursor-pointer"
-                                        >
-                                          <span className="font-display text-base font-extrabold tnum text-ink leading-tight flex items-center gap-1">
-                                            {planPct.toFixed(1)}%
-                                            <PencilIcon className="h-3 w-3 text-ink-faint opacity-0 group-hover/pct:opacity-100 transition-opacity" />
-                                          </span>
-                                          <span className="text-xs text-ink-muted tnum leading-tight">
-                                            {thb(p.monthlyAmount)}
-                                          </span>
-                                        </button>
-                                      )
+                                  {/* Middle: Slider for quick adjustment */}
+                                  <div
+                                    className="flex items-center gap-2 sm:px-4 sm:max-w-[200px] w-full sm:w-auto"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <input
+                                      type="range"
+                                      min="0"
+                                      max="100"
+                                      step="1"
+                                      value={Math.round(planPct)}
+                                      onChange={(e) => handleSliderPercent(p, Number(e.target.value))}
+                                      aria-label={`Adjust target percentage for ${p.name}`}
+                                      className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-surface-muted accent-brand focus:outline-none"
+                                    />
+                                  </div>
+
+                                  {/* Right: Two-line display (Line 1: THB, Line 2: Percent) */}
+                                  <div className="shrink-0 text-left sm:text-right">
+                                    <p className="font-display text-base font-extrabold tnum text-ink leading-tight">
+                                      {thb(p.monthlyAmount)}
+                                    </p>
+                                    <p className="mt-0.5 text-xs font-semibold tnum text-ink-muted">
+                                      {planPct.toFixed(1)}%
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="mt-2 flex items-center justify-between gap-2 text-xs">
+                                  <div className="flex items-center gap-2">
+                                    {showConfirmed && !skipped ? (
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-xs font-semibold text-gain">
+                                        <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Confirmed
+                                      </span>
+                                    ) : isOverdue ? (
+                                      <span className="inline-block text-xs font-bold text-loss">Overdue</span>
+                                    ) : isToday || days <= 0 ? (
+                                      <span className="inline-block text-xs font-bold text-warn">Today</span>
+                                    ) : days < 3 ? (
+                                      <span className="inline-block text-xs font-semibold text-warn">
+                                        {days === 1 ? 'Tomorrow' : `in ${days} days`}
+                                      </span>
                                     ) : (
-                                      <p className="font-display text-base font-extrabold tnum text-ink">
-                                        {thb(p.monthlyAmount)}
-                                      </p>
+                                      <span className="inline-block text-xs font-semibold text-stocks">in {days} days</span>
                                     )}
                                   </div>
-                                </div>
 
-                                <div className="mt-1 flex items-center justify-between gap-2 text-xs">
-                                  <span className="text-ink-muted">
-                                    {meta.label} · {freqLabel(p)}
-                                  </span>
-                                  {showConfirmed && !skipped ? (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-xs font-semibold text-gain">
-                                      <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Confirmed
-                                    </span>
-                                  ) : isOverdue ? (
-                                    <span className="inline-block text-xs font-bold text-loss">Overdue</span>
-                                  ) : isToday || days <= 0 ? (
-                                    <span className="inline-block text-xs font-bold text-warn">Today</span>
-                                  ) : days < 3 ? (
-                                    <span className="inline-block text-xs font-semibold text-warn">
-                                      {days === 1 ? 'Tomorrow' : `in ${days} days`}
-                                    </span>
-                                  ) : (
-                                    <span className="inline-block text-xs font-semibold text-stocks">in {days} days</span>
+                                  {needsAction && (
+                                    <div id="guide-dca-confirm" className="flex items-center gap-2">
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
+                                        aria-label={`Confirm DCA buy for ${p.name}`}
+                                        className="inline-flex items-center gap-1.5 rounded-full bg-[#00de9b] hover:bg-[#00c58a] text-[#052e21] px-3.5 py-1.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
+                                      >
+                                        <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
+                                        <span>{p.assetClass === 'cash' ? 'Confirm Deposit' : 'Confirm Buy'}</span>
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          skipDcaBuy(p.id, localDateStr())
+                                          showToast(`Skipped DCA buy for "${p.name}" this period`, 'info')
+                                        }}
+                                        aria-label={`Skip DCA buy for ${p.name} this period`}
+                                        className="inline-flex items-center rounded-full border border-line-strong bg-surface hover:bg-surface-muted text-ink-muted hover:text-ink px-3.5 py-1.5 text-xs font-semibold active:scale-95 transition-all cursor-pointer min-h-[34px]"
+                                      >
+                                        Skip
+                                      </button>
+                                    </div>
                                   )}
                                 </div>
-
-                                {needsAction && (
-                                  <div id="guide-dca-confirm" className="mt-2 flex items-center gap-2">
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
-                                      aria-label={`Confirm DCA buy for ${p.name}`}
-                                      className="inline-flex items-center gap-1.5 rounded-full bg-[#00de9b] hover:bg-[#00c58a] text-[#052e21] px-3.5 py-1.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
-                                    >
-                                      <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
-                                      <span>{p.assetClass === 'cash' ? 'Confirm Deposit' : 'Confirm Buy'}</span>
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        skipDcaBuy(p.id, localDateStr())
-                                        showToast(`Skipped DCA buy for "${p.name}" this period`, 'info')
-                                      }}
-                                      aria-label={`Skip DCA buy for ${p.name} this period`}
-                                      className="inline-flex items-center rounded-full border border-line-strong bg-surface hover:bg-surface-muted text-ink-muted hover:text-ink px-3.5 py-1.5 text-xs font-semibold active:scale-95 transition-all cursor-pointer min-h-[34px]"
-                                    >
-                                      Skip
-                                    </button>
-                                  </div>
-                                )}
                               </div>
                             </div>
                           </li>
@@ -895,7 +849,7 @@ export function DcaPlanner() {
 
                   {/* Footer */}
                   {plans.length > 0 && (
-                    <div className="flex items-center border-t border-line py-4 px-5 bg-surface-muted/30">
+                    <div className="flex items-center justify-between border-t border-line py-4 px-5 bg-surface-muted/30">
                       <div>
                         <p className="text-xs text-ink-muted">Invest rate</p>
                         <p className="font-display text-lg font-extrabold tnum leading-tight mt-0.5">
@@ -911,6 +865,13 @@ export function DcaPlanner() {
                               Set monthly income above to see invest rate
                             </span>
                           )}
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="text-xs text-ink-muted">Total allocation</p>
+                        <p className={`font-display text-base font-extrabold tnum mt-0.5 ${isPercentNot100 ? 'text-warn' : 'text-gain'}`}>
+                          {totalPercentSum.toFixed(1)}%
                         </p>
                       </div>
                     </div>
