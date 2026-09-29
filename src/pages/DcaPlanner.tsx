@@ -34,6 +34,7 @@ function ChevronIcon({ open }: { open: boolean }) {
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
+      aria-hidden="true"
       className={`h-4 w-4 text-ink-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
     >
       <path d="M4 6l4 4 4-4" />
@@ -96,7 +97,7 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
         {
           pct: (cashDrawdown / totalAllocated) * 100,
           amount: cashDrawdown,
-          label: 'From Cash',
+          label: 'Cash',
           textColor: 'var(--color-brand-ink)',
           bg: 'var(--color-brand-soft)',
           barColor: cashBarColor,
@@ -152,7 +153,7 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
       </div>
 
       {/* Bar */}
-      <div className="flex h-4 overflow-hidden rounded-full bg-surface-muted gap-0.5">
+      <div className="flex h-4 overflow-hidden rounded-full bg-surface-muted gap-0.5" role="img" aria-label={`Budget allocation: ${segments.map(s => `${s.label} ${Math.round(s.pct)}%`).join(', ')}`}>
         {segments.map((seg) => (
           <div
             key={seg.label}
@@ -179,13 +180,15 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
 
       {/* Explanatory summary note */}
       {isOverflow && (
-        <div className="mt-3 flex items-start gap-2 rounded-xl bg-surface-muted px-3 py-2 text-xs text-ink-muted">
-          <span className="text-sm mt-0.5">💡</span>
-          <p className="leading-snug">
+        <div className="mt-3 rounded-xl bg-surface-muted px-3 py-2.5 text-xs text-ink-muted">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">💡</span>
             <span className="font-semibold text-ink">Total planned: {thb(totalAllocated)}</span>
-            {' '}— includes <span className="font-semibold text-gain">{thb(savings)}</span> in savings/investments
-            (<span className="text-gain">{thb(savingsFromSalary)} from salary</span> + <span className="font-semibold text-brand dark:text-brand-ink">+{thb(cashDrawdown)} from cash</span>).
-          </p>
+          </div>
+          <div className="ml-6 mt-1 flex flex-col gap-0.5">
+            <span>From salary: <span className="font-semibold text-gain">{thb(savingsFromSalary)}</span></span>
+            <span>From cash reserve: <span className="font-semibold text-brand dark:text-brand-ink">+{thb(cashDrawdown)}</span></span>
+          </div>
         </div>
       )}
     </div>
@@ -243,7 +246,7 @@ function FixedCostRow({ item, onEdit, onDelete }: {
         <span className="text-sm font-medium text-ink">{item.name}</span>
       </div>
       <span className="font-display text-sm font-bold tnum text-ink">{thb(item.amount)}</span>
-      <div className="flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
+      <div className="flex items-center gap-0.5 opacity-50 md:opacity-0 md:group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-200">
         <IconButton
           icon={<PencilIcon className="h-3.5 w-3.5" />}
           label={`Edit fixed cost ${item.name}`}
@@ -439,11 +442,6 @@ export function DcaPlanner() {
   const saveEditingPlans = () => {
     plans.forEach((p) => {
       if (draftPlanAmounts[p.id] !== undefined && draftPlanAmounts[p.id] !== p.monthlyAmount) {
-        upsertPlan({
-          ...p,
-          monthlyAmount: draftPlanAmounts[p.id],
-        })
-      } else if (draftPlanAmounts[p.id] !== undefined) {
         upsertPlan({
           ...p,
           monthlyAmount: draftPlanAmounts[p.id],
@@ -686,7 +684,7 @@ export function DcaPlanner() {
       {/* Right Column (7 cols): Savings & Invest / DCA Plans */}
       <div id="guide-dca-plans" className="lg:col-span-7 xl:col-span-8 space-y-6">
         {/* ── Savings & Invest ── */}
-        <Card className="animate-rise overflow-hidden" padded={false}>
+        <Card className={`animate-rise overflow-hidden transition-all duration-200 ${isEditingPlansMode ? 'ring-2 ring-brand/40 shadow-sm' : ''}`} padded={false}>
             <div className="p-5">
               <SectionHeader
                 label="Savings & Invest"
@@ -842,27 +840,24 @@ export function DcaPlanner() {
                                     </p>
                                   </div>
 
-                                  {/* Middle: Slider for THB adjustment (100 - 50,000 THB, step 100) */}
-                                  <div
-                                    className="flex items-center gap-2 sm:px-4 sm:max-w-[220px] w-full sm:w-auto"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <input
-                                      type="range"
-                                      min="100"
-                                      max="50000"
-                                      step="100"
-                                      disabled={!isEditingPlansMode}
-                                      value={p.monthlyAmount}
-                                      onChange={(e) => handleSliderThb(p.id, Number(e.target.value))}
-                                      aria-label={`Adjust monthly amount for ${p.name}`}
-                                      className={`h-1.5 w-full appearance-none rounded-lg bg-surface-muted transition-opacity ${
-                                        isEditingPlansMode
-                                          ? 'cursor-pointer accent-brand opacity-100'
-                                          : 'cursor-not-allowed accent-ink-muted opacity-40'
-                                      } focus:outline-none`}
-                                    />
-                                  </div>
+                                  {/* Middle: Slider for THB adjustment (only shown in editing mode) */}
+                                  {isEditingPlansMode && (
+                                    <div
+                                      className="flex items-center gap-2 sm:px-4 sm:max-w-[220px] w-full sm:w-auto"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <input
+                                        type="range"
+                                        min="100"
+                                        max="50000"
+                                        step="100"
+                                        value={p.monthlyAmount}
+                                        onChange={(e) => handleSliderThb(p.id, Number(e.target.value))}
+                                        aria-label={`Adjust monthly amount for ${p.name}`}
+                                        className="h-1.5 w-full appearance-none rounded-lg bg-surface-muted accent-brand cursor-pointer focus:outline-none"
+                                      />
+                                    </div>
+                                  )}
 
                                   {/* Right: Two-line display (Line 1: THB, Line 2: Percent) */}
                                   <div className="shrink-0 text-left sm:text-right">
@@ -998,7 +993,7 @@ export function DcaPlanner() {
                     </Link>
                   </div>
                 ) : (
-                  <ul className="divide-y divide-line">
+                  <ul className="divide-y divide-line max-h-[380px] overflow-y-auto">
                     {scheduledDividends.map((h) => {
                       const units = h.units ?? h.totalUnits ?? 0
                       const dps = getHoldingDpsForMonth(h, currentMonth)
