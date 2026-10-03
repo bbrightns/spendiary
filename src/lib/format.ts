@@ -64,27 +64,6 @@ export function signedThbCompact(value: number): string {
   return `${sign}฿${NBSP}${baht.format(Math.round(abs))}`
 }
 
-export function formatNumber(value: number, decimals = 2): string {
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(value)
-}
-
-export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
-export function formatDateShort(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-  })
-}
 
 /**
  * Returns "YYYY-MM-DD" in the user's LOCAL timezone.

@@ -464,7 +464,7 @@ export function Dashboard() {
                       title={thb(portfolio.value)}
                       className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
                     >
-                      {portfolio.value >= 1_000_000 ? thbCompact(portfolio.value) : thb(portfolio.value)}
+                      {thbCompact(portfolio.value)}
                     </p>
                   </div>
                   <div className="flex items-baseline justify-end min-w-0">
@@ -478,7 +478,7 @@ export function Dashboard() {
                   {/* Row 3: Subtext / Details */}
                   <div className="flex items-center min-w-0 h-6">
                     <p className="text-xs text-ink-muted font-medium truncate" title={thb(portfolio.cost)}>
-                      Cost: <span className="font-semibold tnum text-ink-soft">{portfolio.cost >= 1_000_000 ? thbCompact(portfolio.cost) : thb(portfolio.cost)}</span>
+                      Cost: <span className="font-semibold tnum text-ink-soft">{thbCompact(portfolio.cost)}</span>
                     </p>
                   </div>
                   <div className="flex items-center justify-end gap-1.5 min-w-0 h-6">
@@ -561,7 +561,7 @@ export function Dashboard() {
                       title={thb(cash)}
                       className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
                     >
-                      {cash >= 1_000_000 ? thbCompact(cash) : thb(cash)}
+                      {thbCompact(cash)}
                     </p>
                   </div>
                   <div className="flex items-baseline justify-end min-w-0">
@@ -680,7 +680,7 @@ export function Dashboard() {
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-surface-muted dark:bg-white/10 text-ink-muted dark:text-white/80">
+                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-rose-500/10 text-rose-500 dark:bg-rose-500/20 dark:text-rose-400">
                     <DebtIcon className="h-4 w-4" />
                   </div>
                   <h2 className="font-display text-base font-bold text-ink">Liabilities & Debts</h2>
@@ -709,14 +709,14 @@ export function Dashboard() {
                       className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum leading-tight truncate cursor-default text-ink dark:text-white"
                       title={debts > 0 ? `-${thb(debts)}` : '฿0'}
                     >
-                      {debts > 0 ? (debts >= 1_000_000 ? `-${thbCompact(debts)}` : `-${thb(debts)}`) : '฿0'}
+                      {debts > 0 ? `-${thbCompact(debts)}` : '฿0'}
                     </p>
                   </div>
                   <div className="flex items-baseline justify-end min-w-0">
                     {monthlyDebt > 0 ? (
                       <span
                         title={`~${thb(monthlyDebt)}/mo`}
-                        className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum text-ink dark:text-white leading-tight truncate cursor-default"
+                        className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum text-rose-600 dark:text-rose-400 leading-tight truncate cursor-default"
                       >
                         ~{thbCompact(monthlyDebt)}<span className="text-xs font-semibold text-ink-muted">/mo</span>
                       </span>
@@ -732,7 +732,7 @@ export function Dashboard() {
                     <p className="text-xs text-ink-muted font-medium truncate">
                       {debts > 0 ? (
                         <>
-                          D/A Ratio: <strong className="text-ink font-semibold">{debtRatio.toFixed(1)}%</strong>
+                          D/A Ratio: <strong className="text-rose-600 dark:text-rose-400 font-semibold">{debtRatio.toFixed(1)}%</strong>
                         </>
                       ) : (
                         <span className="text-emerald-600 dark:text-emerald-400 font-semibold">🎉 100% Solvency</span>

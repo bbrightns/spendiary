@@ -211,6 +211,7 @@ export function getCashDiffItems(log: HoldingLog): CashDiffItem[] {
 export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null): {
   priceDisplay: string
   sharesDisplay: string
+  sharesDisplaySecondary?: string
   amountThbDisplay: string
   amountThbValue: number | null
 } {
@@ -257,12 +258,16 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
     const soldUnits = log.soldUnits ?? (prevUnits > 0 ? prevUnits - currUnits : 0)
 
     let sharesDisplay = '-'
+    let sharesDisplaySecondary: string | undefined
     if (soldUnits > 0) {
       if (log.assetClass === 'crypto') {
         const sats = Math.round(soldUnits * SATS_PER_BTC)
         sharesDisplay = `-${sats.toLocaleString()} sats`
       } else if (log.assetClass === 'gold') {
-        sharesDisplay = `-${soldUnits.toFixed(4)} g`
+        const baht = soldUnits / GRAMS_PER_BAHT_GOLD
+        const formattedBaht = Number.isInteger(Number(baht.toFixed(4))) ? baht.toFixed(0) : baht.toFixed(4)
+        sharesDisplay = `-${formattedBaht} บาททอง`
+        sharesDisplaySecondary = `(-${soldUnits.toFixed(4)} g)`
       } else if (log.assetClass === 'stock') {
         sharesDisplay = `-${soldUnits.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares`
       } else {
@@ -302,6 +307,7 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
     return {
       priceDisplay,
       sharesDisplay,
+      sharesDisplaySecondary,
       amountThbDisplay,
       amountThbValue: proceedsThb,
     }
@@ -318,13 +324,17 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
 
     // Format units
     let sharesDisplay = '-'
+    let sharesDisplaySecondary: string | undefined
     if (Math.abs(unitDiff) > 0.00001) {
       const sign = unitDiff > 0 ? '+' : ''
       if (log.assetClass === 'crypto') {
         const sats = Math.round(unitDiff * SATS_PER_BTC)
         sharesDisplay = `${sign}${sats.toLocaleString()} sats`
       } else if (log.assetClass === 'gold') {
-        sharesDisplay = `${sign}${unitDiff.toFixed(4)} g`
+        const baht = unitDiff / GRAMS_PER_BAHT_GOLD
+        const formattedBaht = Number.isInteger(Number(baht.toFixed(4))) ? baht.toFixed(0) : baht.toFixed(4)
+        sharesDisplay = `${sign}${formattedBaht} บาททอง`
+        sharesDisplaySecondary = `(${sign}${unitDiff.toFixed(4)} g)`
       } else if (log.assetClass === 'stock') {
         sharesDisplay = `${sign}${unitDiff.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares`
       } else {
@@ -421,6 +431,7 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
     return {
       priceDisplay,
       sharesDisplay,
+      sharesDisplaySecondary,
       amountThbDisplay,
       amountThbValue,
     }

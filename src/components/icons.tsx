@@ -41,14 +41,6 @@ export function DcaIcon(p: IconProps) {
   )
 }
 
-export function TransferIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M4 8h13M14 5l3 3-3 3" />
-      <path d="M20 16H7M10 19l-3-3 3-3" />
-    </svg>
-  )
-}
 
 export function CashflowIcon(p: IconProps) {
   return (
@@ -165,15 +157,6 @@ export function CheckCircleIcon(p: IconProps) {
   )
 }
 
-export function TargetIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <circle cx="12" cy="12" r="8.5" />
-      <circle cx="12" cy="12" r="4.5" />
-      <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
-    </svg>
-  )
-}
 
 export function PencilIcon(p: IconProps) {
   return (
@@ -220,21 +203,6 @@ export function SettingsIcon(p: IconProps) {
   )
 }
 
-export function SlidersIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <line x1="3" y1="6" x2="12" y2="6" />
-      <circle cx="14" cy="6" r="2" />
-      <line x1="16" y1="6" x2="21" y2="6" />
-      <line x1="3" y1="12" x2="6" y2="12" />
-      <circle cx="8" cy="12" r="2" />
-      <line x1="10" y1="12" x2="21" y2="12" />
-      <line x1="3" y1="18" x2="15" y2="18" />
-      <circle cx="17" cy="18" r="2" />
-      <line x1="19" y1="18" x2="21" y2="18" />
-    </svg>
-  )
-}
 
 export function StrategyIcon(p: IconProps) {
   return (
@@ -285,18 +253,6 @@ export function RetirementIcon(p: IconProps) {
   )
 }
 
-export function DragHandleIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <circle cx="9" cy="6" r="1" fill="currentColor" stroke="none" />
-      <circle cx="9" cy="12" r="1" fill="currentColor" stroke="none" />
-      <circle cx="9" cy="18" r="1" fill="currentColor" stroke="none" />
-      <circle cx="15" cy="6" r="1" fill="currentColor" stroke="none" />
-      <circle cx="15" cy="12" r="1" fill="currentColor" stroke="none" />
-      <circle cx="15" cy="18" r="1" fill="currentColor" stroke="none" />
-    </svg>
-  )
-}
 
 export function UndoIcon(p: IconProps) {
   return (

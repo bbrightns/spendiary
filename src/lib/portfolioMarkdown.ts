@@ -6,6 +6,7 @@ import {
   assetGroupAllocations,
   dcaPerMonth,
   dcaThisMonth,
+  getCashCategory,
   goldThbPerBahtToXauUsd,
   isBuyDayOverdue,
   isBuyDayToday,
@@ -65,6 +66,13 @@ export function generatePortfolioMarkdown(
     const isUsd = a.currency === 'USD'
     return sum + (isUsd ? a.balance * rate : a.balance)
   }, 0)
+  const deployableCashThb = cashAccounts.reduce((sum, a) => {
+    const cat = getCashCategory(a)
+    if (cat === 'locked') return sum
+    const isUsd = a.currency === 'USD'
+    return sum + (isUsd ? a.balance * rate : a.balance)
+  }, 0)
+  const lockedCashThb = totalCashThb - deployableCashThb
   const totalNetWorth = summary.value + totalCashThb
 
   const lines: string[] = []
@@ -89,7 +97,13 @@ export function generatePortfolioMarkdown(
   lines.push(`- **ต้นทุนเงินลงทุนรวม (Total Cost)**: **${fmtMoney(summary.cost, 'THB')}**`)
   lines.push(`- **กำไร/ขาดทุนรวม (All-time PnL)**: **${fmtSignMoney(summary.pnl, 'THB')} (${fmtPct(summary.pnlPct)})**`)
   if (cashAccounts.length > 0) {
-    lines.push(`- **เงินสดคงเหลือรวม (Liquid Cash)**: **${fmtMoney(totalCashThb, 'THB')}**`)
+    if (lockedCashThb > 0) {
+      lines.push(
+        `- **เงินสดคงเหลือรวม (Total Cash)**: **${fmtMoney(totalCashThb, 'THB')}** (อิสระ deploy: ${fmtMoney(deployableCashThb, 'THB')} · ไม่ควรแตะ: ${fmtMoney(lockedCashThb, 'THB')})`,
+      )
+    } else {
+      lines.push(`- **เงินสดคงเหลือรวม (Total Cash)**: **${fmtMoney(totalCashThb, 'THB')}**`)
+    }
     lines.push(`- **มูลค่าทรัพย์สินสุทธิ (Net Worth)**: **${fmtMoney(totalNetWorth, 'THB')}**`)
   }
   lines.push(`- **จำนวนรายการถือครอง (Holdings Count)**: **${holdings.length} รายการ**`)
@@ -283,16 +297,37 @@ export function generatePortfolioMarkdown(
 
   // Cash Accounts
   if (cashAccounts.length > 0) {
-    lines.push(`## 💵 บัญชีเงินสด (Cash Accounts)`)
+    lines.push(`## บัญชีเงินสดและสภาพคล่อง (Cash Accounts & Liquidity)`)
+    lines.push(`| บัญชี (Account) | ประเภทบัญชี (Category) | สถานะการถอน (Liquidity) | ยอดคงเหลือ (Balance) |`)
+    lines.push(`| :--- | :--- | :--- | :--- |`)
+
     for (const acc of cashAccounts) {
+      const cat = getCashCategory(acc)
       const isUsd = acc.currency === 'USD'
       const thbVal = isUsd ? acc.balance * rate : acc.balance
       const balStr = isUsd
-        ? `${fmtMoney(acc.balance, 'USD', 2)} (≈ ${fmtMoney(thbVal, 'THB', 2)})`
+        ? `${fmtMoney(acc.balance, 'USD', 2)}<br/>(≈ ${fmtMoney(thbVal, 'THB', 2)})`
         : fmtMoney(acc.balance, 'THB', 2)
-      lines.push(`- 🏦 **${acc.name}**: **${balStr}**`)
+
+      const interestStr = acc.interestRate && acc.interestRate > 0 ? ` (${acc.interestRate}%)` : ''
+      const nameStr = `**${acc.name}**${interestStr}`
+      const catStr = cat === 'locked' ? 'ออมระยะยาว/มีเงื่อนไข' : 'ใช้จ่าย/หมุนเวียน'
+      const liquidityStr = cat === 'locked' ? 'ถอนไม่ได้ / มีเงื่อนไข (Locked)' : 'พร้อมใช้ (Deployable)'
+
+      lines.push(`| ${nameStr} | ${catStr} | ${liquidityStr} | ${balStr} |`)
     }
-    lines.push(`- **รวมเงินสดทั้งหมด**: **${fmtMoney(totalCashThb, 'THB', 2)}**`)
+    lines.push('')
+    lines.push(`- **รวมเงินสดทั้งหมด (Total Cash)**: **${fmtMoney(totalCashThb, 'THB', 2)}**`)
+    if (lockedCashThb > 0) {
+      const deployablePct = totalCashThb > 0 ? (deployableCashThb / totalCashThb) * 100 : 0
+      const lockedPct = totalCashThb > 0 ? (lockedCashThb / totalCashThb) * 100 : 0
+      if (deployableCashThb > 0) {
+        lines.push(`  - **เงินสดที่คุณมีอิสระในการ deploy จริง ๆ**: **${fmtMoney(deployableCashThb, 'THB', 2)}** (${deployablePct.toFixed(1)}%)`)
+      }
+      lines.push(`  - **Cash / assets ที่ไม่ควรแตะ**: **${fmtMoney(lockedCashThb, 'THB', 2)}** (${lockedPct.toFixed(1)}%)`)
+    } else {
+      lines.push(`  - **เงินสดที่คุณมีอิสระในการ deploy จริง ๆ**: **${fmtMoney(deployableCashThb, 'THB', 2)}** (100.0%)`)
+    }
     lines.push('')
   }
 

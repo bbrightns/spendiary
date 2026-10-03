@@ -8,6 +8,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { Modal } from '../components/ui/Modal'
 import { FilterChip } from '../components/ui/FilterChip'
+import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC } from '../lib/calc'
@@ -19,7 +20,6 @@ import {
   DownloadIcon,
   ListIcon,
   PencilIcon,
-  PlusIcon,
   SearchIcon,
   TableIcon,
   TrashIcon,
@@ -389,7 +389,7 @@ export function HoldingLogs() {
     nextStep,
     prevStep,
   } = usePageGuide('logs')
-  const { data, addHoldingLog, removeHoldingLog, removeHoldingLogs, undoHoldingLog, updateHoldingLogTimestamp, usdThb } = useData()
+  const { data, removeHoldingLog, removeHoldingLogs, undoHoldingLog, updateHoldingLogTimestamp, usdThb } = useData()
   const { showToast } = useToast()
   const rawLogs = data.holdingLogs ?? []
   const logs = [...rawLogs].sort(
@@ -429,10 +429,6 @@ export function HoldingLogs() {
   const [expandedDetails, setExpandedDetails] = useState<Set<string>>(new Set())
   const [selectedLogIds, setSelectedLogIds] = useState<Set<string>>(new Set())
   const [showBatchDeleteConfirm, setShowBatchDeleteConfirm] = useState(false)
-  const [showManualNote, setShowManualNote] = useState(false)
-  const [manualNote, setManualNote] = useState('')
-  const [manualNoteDate, setManualNoteDate] = useState(() => localDateStr(new Date()))
-  const [manualNoteTime, setManualNoteTime] = useState(() => new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
 
   const toggleLogSelection = (logId: string) => {
     setSelectedLogIds((prev) => {
@@ -452,25 +448,6 @@ export function HoldingLogs() {
     })
   }
 
-  const saveManualNote = () => {
-    const text = manualNote.trim()
-    if (!text) {
-      showToast('Please enter a note', 'error')
-      return
-    }
-    const timestamp = dateStrToTimestamp(manualNoteDate, manualNoteTime)
-    addHoldingLog({
-      action: 'note',
-      holdingName: 'Manual note',
-      ticker: 'NOTE',
-      assetClass: 'cash',
-      note: text,
-      timestamp,
-    })
-    setShowManualNote(false)
-    setManualNote('')
-    showToast('Added a history-only note', 'success')
-  }
 
   const toggleDetails = (logId: string) => {
     setExpandedDetails((prev) => {
@@ -796,7 +773,9 @@ export function HoldingLogs() {
         return `${prefix}${sats.toLocaleString()} sats`
       }
       if (log.assetClass === 'gold') {
-        return `${prefix}${diff.toFixed(4)} g`
+        const baht = diff / GRAMS_PER_BAHT_GOLD
+        const formattedBaht = Number.isInteger(Number(baht.toFixed(4))) ? baht.toFixed(0) : baht.toFixed(4)
+        return `${prefix}${formattedBaht} บาททอง (${prefix}${diff.toFixed(4)} g)`
       }
       if (log.assetClass === 'stock') {
         return `${prefix}${diff.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares`
@@ -1012,6 +991,11 @@ export function HoldingLogs() {
                   <div className="text-sm sm:text-base font-extrabold tracking-tight text-ink-muted truncate mt-0.5">
                     {txDetails.sharesDisplay && txDetails.sharesDisplay !== '-' ? txDetails.sharesDisplay : (Math.abs(unitDiff) > 0 ? formatUnitDiff(unitDiff) : '-')}
                   </div>
+                  {txDetails.sharesDisplaySecondary && (
+                    <div className="text-[11px] font-medium text-ink-faint tnum truncate">
+                      {txDetails.sharesDisplaySecondary}
+                    </div>
+                  )}
                   <span className="text-xs font-medium text-ink-faint truncate mt-0.5">
                     หักออกจากพอร์ต
                   </span>
@@ -1201,6 +1185,11 @@ export function HoldingLogs() {
                   <div className="text-sm sm:text-base font-extrabold tracking-tight text-gain truncate mt-0.5">
                     {txDetails.sharesDisplay && txDetails.sharesDisplay !== '-' ? txDetails.sharesDisplay : (unitDiff > 0 ? formatUnitDiff(unitDiff) : '-')}
                   </div>
+                  {txDetails.sharesDisplaySecondary && (
+                    <div className="text-[11px] font-medium text-ink-faint tnum truncate">
+                      {txDetails.sharesDisplaySecondary}
+                    </div>
+                  )}
                   <span className="text-xs font-medium text-ink-faint truncate mt-0.5">
                     สะสมเข้าพอร์ต
                   </span>
@@ -1502,46 +1491,20 @@ export function HoldingLogs() {
 
           <div className="flex items-center gap-2 shrink-0">
             {/* View Switcher */}
-            <div className="inline-flex rounded-xl bg-surface-muted p-1 border border-line-strong/30 shrink-0">
-              <button
-                type="button"
-                onClick={() => handleViewModeChange('table')}
-                title="Table statement view"
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  viewMode === 'table'
-                    ? 'bg-surface text-ink shadow-xs font-bold border border-line/40'
-                    : 'text-ink-muted hover:text-ink'
-                }`}
-              >
-                <TableIcon className="h-3.5 w-3.5" />
-                <span>Table</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleViewModeChange('timeline')}
-                title="Timeline feed view"
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  viewMode === 'timeline'
-                    ? 'bg-surface text-ink shadow-xs font-bold border border-line/40'
-                    : 'text-ink-muted hover:text-ink'
-                }`}
-              >
-                <ListIcon className="h-3.5 w-3.5" />
-                <span>Timeline</span>
-              </button>
-            </div>
+            <SegmentedControl
+              shape="rounded"
+              size="sm"
+              fullWidth={false}
+              value={viewMode}
+              onChange={(v) => handleViewModeChange(v as 'table' | 'timeline')}
+              options={[
+                { value: 'table', label: 'Table', icon: <TableIcon className="h-3.5 w-3.5" />, title: 'Table statement view' },
+                { value: 'timeline', label: 'Timeline', icon: <ListIcon className="h-3.5 w-3.5" />, title: 'Timeline feed view' },
+              ]}
+              ariaLabel="เลือกมุมมองตารางหรือไทม์ไลน์"
+            />
 
             {/* Export CSV */}
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setShowManualNote(true)}
-              title="Add a history-only note"
-              className="cursor-pointer shrink-0 h-9"
-            >
-              <PlusIcon className="h-3.5 w-3.5" />
-              <span>Add note</span>
-            </Button>
             <Button
               variant="secondary"
               size="sm"
@@ -1784,7 +1747,12 @@ export function HoldingLogs() {
                                 : 'text-brand'
                             }`}
                           >
-                            {tx.sharesDisplay}
+                            <div>{tx.sharesDisplay}</div>
+                            {tx.sharesDisplaySecondary && (
+                              <div className="text-[11px] font-normal text-ink-faint tracking-tight mt-0.5">
+                                {tx.sharesDisplaySecondary}
+                              </div>
+                            )}
                           </td>
                           <td className="logs-table-cell logs-table-metric text-right whitespace-nowrap tnum">
                             <div className="logs-table-amount font-semibold text-ink">
@@ -1991,58 +1959,6 @@ export function HoldingLogs() {
           setShowBatchDeleteConfirm(false)
         }}
       />
-
-      <Modal
-        open={showManualNote}
-        onClose={() => setShowManualNote(false)}
-        title="Add history-only note"
-        description="This note is saved in Activity Logs only and does not change any portfolio data."
-        size="sm"
-        footer={
-          <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => setShowManualNote(false)} className="flex-1 cursor-pointer">
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={saveManualNote} className="flex-1 cursor-pointer">
-              Add note
-            </Button>
-          </div>
-        }
-      >
-        <div className="space-y-3">
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-ink-muted">Note</span>
-            <textarea
-              value={manualNote}
-              onChange={(e) => setManualNote(e.target.value)}
-              placeholder="e.g. Reviewed portfolio allocation"
-              rows={4}
-              autoFocus
-              className="w-full resize-none rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
-            />
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <label>
-              <span className="mb-1.5 block text-xs font-semibold text-ink-muted">Date</span>
-              <input
-                type="date"
-                value={manualNoteDate}
-                onChange={(e) => setManualNoteDate(e.target.value)}
-                className="h-10 w-full rounded-xl border border-line bg-surface px-2.5 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
-              />
-            </label>
-            <label>
-              <span className="mb-1.5 block text-xs font-semibold text-ink-muted">Time</span>
-              <input
-                type="time"
-                value={manualNoteTime}
-                onChange={(e) => setManualNoteTime(e.target.value)}
-                className="h-10 w-full rounded-xl border border-line bg-surface px-2.5 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
-              />
-            </label>
-          </div>
-        </div>
-      </Modal>
 
       {/* Custom Undo Confirmation Modal */}
       <ConfirmModal
