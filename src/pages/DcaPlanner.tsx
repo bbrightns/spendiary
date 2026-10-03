@@ -399,6 +399,7 @@ export function DcaPlanner() {
 
   // DCA plans sorted by: 1. Overdue / near to the due, 2. Value
   const plans = sortDcaPlans(data.dcaPlans)
+  const totalAllocation = plans.reduce((s, p) => s + p.monthlyAmount, 0)
 
   // Expected dividends for the current month
   const currentMonth = new Date().getMonth() + 1
@@ -693,7 +694,7 @@ export function DcaPlanner() {
                               onClick={() => openEdit(p)}
                               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit(p) } }}
                               aria-label={`Edit ${p.name}`}
-                              className="flex cursor-pointer items-center gap-3.5 px-5 py-4 transition-colors hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                              className="flex cursor-pointer items-center gap-3 px-5 py-3 transition-colors hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:gap-3.5 sm:py-4"
                             >
                               <AssetLogo
                                 name={p.name}
@@ -707,28 +708,33 @@ export function DcaPlanner() {
                                     {thb(p.monthlyAmount)}
                                   </p>
                                 </div>
-                                  <div className="mt-1 flex items-center justify-between gap-2 text-xs">
-                                    <span className="text-ink-muted">
-                                      {meta.label} · {freqLabel(p)}
+                                  <div className="mt-0.5 flex items-center justify-between gap-2 text-xs sm:mt-1">
+                                    <span className="min-w-0 truncate text-ink-muted">
+                                      {meta.label}
+                                      <span className="sm:hidden"> · {freqLabelShort(p)}</span>
+                                      <span className="hidden sm:inline"> · {freqLabel(p)}</span>
+                                      {totalAllocation > 0 && (
+                                        <span className="tnum"> · {(p.monthlyAmount / totalAllocation * 100).toFixed(1)}%</span>
+                                      )}
                                     </span>
                                   {showConfirmed && !skipped ? (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-xs font-semibold text-gain">
+                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-xs font-semibold text-gain">
                                       <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Confirmed
                                     </span>
                                   ) : isOverdue ? (
-                                    <span className="inline-block text-xs font-bold text-loss">Overdue</span>
+                                    <span className="inline-block shrink-0 text-xs font-bold text-loss">Overdue</span>
                                   ) : isToday || days <= 0 ? (
-                                    <span className="inline-block text-xs font-bold text-warn">Today</span>
+                                    <span className="inline-block shrink-0 text-xs font-bold text-warn">Today</span>
                                   ) : days < 3 ? (
-                                    <span className="inline-block text-xs font-semibold text-warn">
+                                    <span className="inline-block shrink-0 text-xs font-semibold text-warn">
                                       {days === 1 ? 'Tomorrow' : `in ${days} days`}
                                     </span>
                                   ) : (
-                                    <span className="inline-block text-xs font-semibold text-stocks">in {days} days</span>
+                                    <span className="inline-block shrink-0 text-xs font-semibold text-stocks">in {days} days</span>
                                   )}
                                   </div>
                                   {needsAction && (
-                                    <div id="guide-dca-confirm" className="mt-2 flex items-center gap-2">
+                                    <div id="guide-dca-confirm" className="mt-1.5 flex items-center gap-2 sm:mt-2">
                                       <button
                                         onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
                                         aria-label={`Confirm DCA buy for ${p.name}`}
@@ -924,6 +930,17 @@ const MONTH_NAMES = [
 ]
 
 const WEEKDAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+const WEEKDAY_SHORT = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+/** Compact frequency label for the mobile 2-line row: "1st", "Mon", "Daily", "Last day". */
+function freqLabelShort(p: { frequency?: string; dayOfMonth: number }): string {
+  const freq = p.frequency ?? 'monthly'
+  if (freq === 'daily') return 'Daily'
+  if (freq === 'weekly') return WEEKDAY_SHORT[p.dayOfMonth] ?? 'Weekly'
+  if (p.dayOfMonth === 31) return 'Last day'
+  return ordinal(p.dayOfMonth)
+}
 
 function freqLabel(p: { frequency?: string; dayOfMonth: number }): string {
   const freq = p.frequency ?? 'monthly'
