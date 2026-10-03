@@ -4,7 +4,7 @@ import { BottomNav } from './BottomNav'
 import { Sidebar } from './Sidebar'
 import { Footer } from './Footer'
 import { TestModeBanner } from './TestModeBanner'
-import { ClockIcon, SettingsIcon, SearchIcon } from '../icons'
+import { SettingsIcon, SearchIcon } from '../icons'
 import { CommandPalette, openCommandPalette } from '../ui/CommandPalette'
 import { useData } from '../../store/DataContext'
 import { useScrollVisibility } from '../../hooks/useScrollVisibility'
@@ -43,12 +43,6 @@ export function Layout({ children }: { children: ReactNode }) {
         <p className="font-display text-base sm:text-lg font-extrabold tracking-tight leading-none text-ink -translate-y-[0.5px]">
           Spendiary
         </p>
-        {isTestMode && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300 border border-amber-500/30 px-2 py-0.5 text-xs font-extrabold tracking-wider uppercase shadow-xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-            Test
-          </span>
-        )}
         <p className="flex-1 text-right text-xs font-semibold uppercase tracking-wide text-ink-muted truncate mr-1">
           {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
         </p>
@@ -62,19 +56,6 @@ export function Layout({ children }: { children: ReactNode }) {
           >
             <SearchIcon className="h-[18.5px] w-[18.5px]" />
           </button>
-          <NavLink
-            to="/logs"
-            end
-            aria-label="Activity Logs"
-            title="Activity Logs"
-            className={({ isActive }) =>
-              `grid h-9 w-9 place-items-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
-                isActive ? 'bg-brand-soft text-brand-ink' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'
-              }`
-            }
-          >
-            <ClockIcon className="h-[18.5px] w-[18.5px]" />
-          </NavLink>
           <NavLink
             to="/settings"
             aria-label="Settings"
