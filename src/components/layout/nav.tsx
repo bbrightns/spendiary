@@ -11,6 +11,7 @@ import {
   StrategyIcon,
   CashflowIcon,
   DividendIcon,
+  DotsHorizontalIcon,
   WalletIcon,
   PieChartIcon,
 } from '../icons'
@@ -41,11 +42,13 @@ export interface NavItem {
 }
 
 export interface MobileNavItem {
-  id: 'home' | 'portfolio' | 'cashflow' | 'strategies' | 'summary'
+  id: 'home' | 'portfolio' | 'dca' | 'history' | 'more'
   to?: string
   label: string
   short: string
   icon: ComponentType<SVGProps<SVGSVGElement>>
+  /** Match the route exactly instead of by prefix (e.g. `/logs` vs `/logs/summary`) */
+  exact?: boolean
   isAction?: boolean
 }
 
@@ -131,9 +134,31 @@ export function isSubItemActive(sub: NavSubItem, pathname: string): boolean {
 export const mobileNavItems: MobileNavItem[] = [
   { id: 'home', to: '/', label: 'Dashboard', short: 'Home', icon: DashboardIcon },
   { id: 'portfolio', to: '/portfolio', label: 'Portfolio', short: 'Port', icon: PortfolioIcon },
-  { id: 'cashflow', label: 'Cashflow', short: 'Flow', icon: CashflowIcon, isAction: true },
-  { id: 'strategies', label: 'Strategies', short: 'Strategies', icon: StrategyIcon, isAction: true },
-  { id: 'summary', to: '/logs/summary', label: 'Summary', short: 'Summary', icon: PieChartIcon },
+  { id: 'dca', to: '/dca', label: 'DCA Plans', short: 'DCA', icon: DcaIcon },
+  { id: 'history', to: '/logs', label: 'Activity Logs', short: 'History', icon: ClockIcon, exact: true },
+  { id: 'more', label: 'More', short: 'More', icon: DotsHorizontalIcon, isAction: true },
+]
+
+/**
+ * Bottom-sheet contents behind the mobile "More" tab: everything that is not
+ * worth a top-level slot but must stay reachable (each keeps its own badge).
+ */
+const [cashItem, , dividendItem, debtItem] = cashflowSubItems
+const [rebalanceItem, retirementItem] = strategySubItems
+
+export const moreSheetItems: NavSubItem[] = [
+  dividendItem,
+  debtItem,
+  cashItem,
+  rebalanceItem,
+  retirementItem,
+  {
+    to: '/logs/summary',
+    label: 'Summary',
+    short: 'Summary',
+    description: 'Monthly activity summary & spending reports',
+    icon: PieChartIcon,
+  },
 ]
 
 export const settingsItem: NavItem = {

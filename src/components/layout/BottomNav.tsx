@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { cashflowSubItems, mobileNavItems, strategySubItems } from './nav'
+import { mobileNavItems, moreSheetItems, isNavPathActive } from './nav'
 import { useData } from '../../store/DataContext'
 import { isDividendReceivedThisMonth, isLiabilityActionableThisMonth, shouldConfirmBuy } from '../../lib/calc'
 import { Modal } from '../ui/Modal'
@@ -11,8 +11,7 @@ export function BottomNav() {
   const navigate = useNavigate()
   const pathname = location.pathname
   const { data } = useData()
-  const [isStrategySheetOpen, setIsStrategySheetOpen] = useState(false)
-  const [isCashflowSheetOpen, setIsCashflowSheetOpen] = useState(false)
+  const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false)
 
   // Calculate alert counts
   const dcaAlertCount = data.dcaPlans.filter((p) => shouldConfirmBuy(p)).length
@@ -23,28 +22,24 @@ export function BottomNav() {
       (h.dividendMonths ?? []).includes(currentMonth) &&
       !isDividendReceivedThisMonth(h.id, data.dividendRecords),
   ).length
-  const cashflowAlertCount = dcaAlertCount + dividendAlertCount
   const debtAlertCount = (data.liabilities ?? []).filter((l) => isLiabilityActionableThisMonth(l)).length
+  const moreAlertCount = dividendAlertCount + debtAlertCount
 
-  // Close sheets on route change
+  // Close sheet on route change
   useEffect(() => {
-    setIsStrategySheetOpen(false)
-    setIsCashflowSheetOpen(false)
+    setIsMoreSheetOpen(false)
   }, [pathname])
 
-  // Handle ESC key to close sheets
+  // Handle ESC key to close the sheet
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsStrategySheetOpen(false)
-        setIsCashflowSheetOpen(false)
-      }
+      if (e.key === 'Escape') setIsMoreSheetOpen(false)
     }
-    if (isStrategySheetOpen || isCashflowSheetOpen) {
+    if (isMoreSheetOpen) {
       window.addEventListener('keydown', handleKeyDown)
     }
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isStrategySheetOpen, isCashflowSheetOpen])
+  }, [isMoreSheetOpen])
 
   return (
     <>
@@ -53,36 +48,18 @@ export function BottomNav() {
         <div className="flex items-stretch justify-around px-2">
           {mobileNavItems.map((item) => {
             if (item.isAction) {
-              const isCashflow = item.id === 'cashflow'
-              const isStrategy = item.id === 'strategies'
-
-              const isActive = isCashflow
-                ? pathname.startsWith('/dca') ||
-                  pathname.startsWith('/dividends') ||
-                  pathname.startsWith('/cashflow')
-                : isStrategy
-                ? pathname.startsWith('/rebalance') || pathname.startsWith('/retirement')
-                : false
-
-              const badgeCount = isCashflow ? cashflowAlertCount : 0
-
-              const handleClick = () => {
-                if (isCashflow) {
-                  setIsStrategySheetOpen(false)
-                  setIsCashflowSheetOpen((prev) => !prev)
-                } else if (isStrategy) {
-                  setIsCashflowSheetOpen(false)
-                  setIsStrategySheetOpen((prev) => !prev)
-                }
-              }
+              // "More" tab lights up while browsing any of its sheet destinations
+              const isActive = moreSheetItems.some((sub) =>
+                sub.exact ? pathname === sub.to : pathname.startsWith(sub.to),
+              )
 
               return (
                 <button
                   key={item.id}
                   type="button"
-                  onClick={handleClick}
+                  onClick={() => setIsMoreSheetOpen((prev) => !prev)}
                   aria-label={item.label}
-                  aria-expanded={isCashflow ? isCashflowSheetOpen : isStrategySheetOpen}
+                  aria-expanded={isMoreSheetOpen}
                   aria-haspopup="dialog"
                   className={[
                     'group relative flex flex-1 flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-xs font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset cursor-pointer min-h-[48px]',
@@ -98,9 +75,9 @@ export function BottomNav() {
                     <item.icon className="h-5 w-5" strokeWidth={isActive ? 2 : 1.6} />
 
                     {/* iPhone style notification badge bubble */}
-                    {badgeCount > 0 && (
+                    {moreAlertCount > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white shadow-xs ring-2 ring-surface">
-                        {badgeCount}
+                        {moreAlertCount}
                       </span>
                     )}
                   </span>
@@ -111,12 +88,9 @@ export function BottomNav() {
 
             // Normal Route Link
             const toPath = item.to || '/'
-            const isActive =
-              toPath === '/'
-                ? pathname === '/'
-                : pathname.startsWith(toPath)
+            const isActive = isNavPathActive(toPath, pathname, item.exact)
 
-            const routeBadge = item.id === 'home' ? debtAlertCount : 0
+            const routeBadge = item.id === 'dca' ? dcaAlertCount : 0
 
             return (
               <Link
@@ -151,36 +125,21 @@ export function BottomNav() {
         </div>
       </nav>
 
-      {/* ── Cashflow Bottom Sheet Modal ── */}
+      {/* ── More Bottom Sheet Modal ── */}
       <Modal
-        open={isCashflowSheetOpen}
-        onClose={() => setIsCashflowSheetOpen(false)}
-        title="Cashflow"
-        description="Select money allocation or dividend income"
+        open={isMoreSheetOpen}
+        onClose={() => setIsMoreSheetOpen(false)}
+        title="More"
+        description="Dividends, debts, cash, planning tools & reports"
       >
         <NavSheetList
-          items={cashflowSubItems}
+          items={moreSheetItems}
           activePath={pathname}
-          badgeFor={(to) => (to === '/dca' ? dcaAlertCount : to === '/dividends' ? dividendAlertCount : 0)}
+          badgeFor={(to) =>
+            to === '/dividends' ? dividendAlertCount : to === '/debts' ? debtAlertCount : 0
+          }
           onSelect={(to) => {
-            setIsCashflowSheetOpen(false)
-            navigate(to)
-          }}
-        />
-      </Modal>
-
-      {/* ── Strategies Bottom Sheet Modal ── */}
-      <Modal
-        open={isStrategySheetOpen}
-        onClose={() => setIsStrategySheetOpen(false)}
-        title="Strategies"
-        description="Select an investment planning engine"
-      >
-        <NavSheetList
-          items={strategySubItems}
-          activePath={pathname}
-          onSelect={(to) => {
-            setIsStrategySheetOpen(false)
+            setIsMoreSheetOpen(false)
             navigate(to)
           }}
         />
