@@ -518,9 +518,9 @@ export function Rebalance() {
       </div>
 
       {/* Main 2-Column Workspace Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 2xl:grid-cols-12 gap-6 items-start">
         {/* Left Column (5 cols): Strategy Controls & Allocation Visualizer */}
-        <div className="lg:col-span-5 xl:col-span-4 space-y-6">
+        <div className="2xl:col-span-4 space-y-6">
           {/* Strategy & Deployment Card */}
           <Card className="animate-rise">
             <h2 className="font-display text-base font-bold text-ink">Rebalance Setup</h2>
@@ -680,7 +680,7 @@ export function Rebalance() {
         </div>
 
         {/* Right Column (7 cols): Full Interactive Target Table */}
-        <div id="guide-rebalance-weights" className="lg:col-span-7 xl:col-span-8 space-y-6">
+        <div id="guide-rebalance-weights" className="2xl:col-span-8 space-y-6">
           <Card className="animate-rise overflow-hidden" padded={false}>
             <div className="p-4 sm:p-5">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
