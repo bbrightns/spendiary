@@ -52,14 +52,14 @@ const CATEGORIES_LIST: DebtCategory[] = [
 ]
 
 const QUICK_PRESETS = [
-  { name: 'iPhone (0% 10 เดือน)', category: 'installment' as DebtCategory, rate: '0.0', isInstallment: true, totalInst: '10', dueDay: '25' },
-  { name: 'เครื่องใช้ไฟฟ้า / TV (10 ด.)', category: 'installment' as DebtCategory, rate: '0.0', isInstallment: true, totalInst: '10', dueDay: '25' },
-  { name: 'Shopee SPayLater (6 ด.)', category: 'installment' as DebtCategory, rate: '0.0', isInstallment: true, totalInst: '6', dueDay: '1' },
-  { name: 'บัตรเครดิต KBank', category: 'credit_card' as DebtCategory, rate: '16.0', isInstallment: false },
-  { name: 'บัตรเครดิต KTC', category: 'credit_card' as DebtCategory, rate: '16.0', isInstallment: false },
-  { name: 'สินเชื่อบ้าน / คอนโด', category: 'mortgage' as DebtCategory, rate: '3.75', isInstallment: false },
-  { name: 'สินเชื่อรถยนต์', category: 'auto_loan' as DebtCategory, rate: '2.50', isInstallment: false },
-  { name: 'กู้ยืม กยศ.', category: 'student_loan' as DebtCategory, rate: '1.0', isInstallment: false },
+  { name: 'iPhone (0%, 10 months)', category: 'installment' as DebtCategory, rate: '0.0', isInstallment: true, totalInst: '10', dueDay: '25' },
+  { name: 'Appliance / TV (10 months)', category: 'installment' as DebtCategory, rate: '0.0', isInstallment: true, totalInst: '10', dueDay: '25' },
+  { name: 'Shopee SPayLater (6 months)', category: 'installment' as DebtCategory, rate: '0.0', isInstallment: true, totalInst: '6', dueDay: '1' },
+  { name: 'KBank credit card', category: 'credit_card' as DebtCategory, rate: '16.0', isInstallment: false },
+  { name: 'KTC credit card', category: 'credit_card' as DebtCategory, rate: '16.0', isInstallment: false },
+  { name: 'Home / condo loan', category: 'mortgage' as DebtCategory, rate: '3.75', isInstallment: false },
+  { name: 'Car loan', category: 'auto_loan' as DebtCategory, rate: '2.50', isInstallment: false },
+  { name: 'Student loan', category: 'student_loan' as DebtCategory, rate: '1.0', isInstallment: false },
 ]
 
 function tempId(): string {
@@ -245,7 +245,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
   // Delete liability
   const handleDelete = (id: string) => {
     removeLiability(id)
-    showToast('ลบรายการหนี้สินเรียบร้อย', 'info')
+    showToast('Debt deleted', 'info')
     if (editingId === id) {
       setEditingId(null)
       setDraft(emptyDraft())
@@ -264,7 +264,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
     const balNum = cleanBal === '' ? 0 : Number(cleanBal)
 
     if (!cleanName && balNum <= 0) {
-      showToast('กรุณาระบุชื่อรายการหนี้สินหรือยอดหนี้', 'error')
+      showToast('Please enter a debt name or amount', 'error')
       return
     }
 
@@ -289,7 +289,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
 
     const liabilityData: Liability = {
       id: editingId || draft.id,
-      name: cleanName || 'หนี้สินรายการใหม่',
+      name: cleanName || 'New debt',
       category: draft.category,
       balance: balNum,
       interestRate: cleanRate !== '' ? Number(cleanRate) : undefined,
@@ -309,10 +309,10 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
     let nextList: Liability[]
     if (editingId) {
       nextList = liabilitiesList.map((l) => (l.id === editingId ? liabilityData : l))
-      showToast(`อัปเดตรายการ "${liabilityData.name}" เรียบร้อย`, 'success')
+      showToast(`Updated "${liabilityData.name}"`, 'success')
     } else {
       nextList = [...liabilitiesList, liabilityData]
-      showToast(`บันทึกรายการ "${liabilityData.name}" เรียบร้อย`, 'success')
+      showToast(`Saved "${liabilityData.name}"`, 'success')
     }
 
     setLiabilities(nextList)
@@ -320,16 +320,16 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
   }
 
   const modalTitle = editingId
-    ? 'แก้ไขรายการหนี้สิน (Edit Debt)'
+    ? 'Edit debt'
     : mode === 'list'
-    ? 'จัดการหนี้สินทั้งหมด (All Debts)'
-    : 'บันทึกรายการหนี้ใหม่ (Add Debt)'
+    ? 'All debts'
+    : 'Add debt'
 
   const modalDescription = editingId
-    ? 'ปรับปรุงยอดหนี้ ค่างวด หรือข้อมูลการผ่อนชำระ'
+    ? 'Update the amount owed, monthly payment or installment details'
     : mode === 'list'
-    ? 'ตรวจสอบและแก้ไขรายการหนี้สินทั้งหมดในระบบ'
-    : 'บันทึกรายการผ่อนสินค้า หรือหนี้สินเพื่อสะท้อน Net Worth ที่แท้จริง'
+    ? 'Review and edit all of your debts'
+    : 'Add an installment or debt so your net worth stays accurate'
 
   return (
     <Modal
@@ -347,7 +347,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                 onClick={onClose}
                 className="h-8.5 px-3 rounded-xl text-xs font-semibold text-ink-muted hover:text-ink dark:hover:text-white bg-surface-muted/60 dark:bg-white/5 border border-line/60 dark:border-white/10 active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
               >
-                ยกเลิก
+                Cancel
               </button>
               {editingId && (
                 <button
@@ -356,7 +356,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                   className="h-8.5 px-2.5 sm:px-3 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap flex items-center gap-1"
                 >
                   <TrashIcon className="h-3.5 w-3.5" />
-                  <span>ลบรายการนี้</span>
+                  <span>Delete this debt</span>
                 </button>
               )}
             </div>
@@ -366,7 +366,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
               onClick={handleSave}
               className="h-8.5 px-4 rounded-xl text-xs font-bold text-white bg-brand hover:bg-brand/90 active:scale-[0.98] transition-all cursor-pointer shadow-xs whitespace-nowrap"
             >
-              {editingId ? 'บันทึกการแก้ไข' : 'บันทึกรายการหนี้'}
+              {editingId ? 'Save changes' : 'Save debt'}
             </button>
           </div>
         ) : (
@@ -376,7 +376,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
               onClick={onClose}
               className="h-8.5 px-3.5 rounded-xl text-xs font-semibold text-ink-muted hover:text-ink dark:hover:text-white bg-surface-muted/60 dark:bg-white/5 border border-line/60 dark:border-white/10 active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
             >
-              ปิดหน้าต่าง
+              Close
             </button>
             <button
               type="button"
@@ -388,7 +388,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
               className="h-8.5 px-3.5 rounded-xl text-xs font-bold text-white bg-brand hover:bg-brand/90 active:scale-[0.98] transition-all cursor-pointer shadow-xs whitespace-nowrap flex items-center gap-1.5"
             >
               <PlusIcon className="h-3.5 w-3.5" />
-              <span>เพิ่มรายการหนี้ใหม่</span>
+              <span>Add a new debt</span>
             </button>
           </div>
         )
@@ -415,7 +415,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                 }`}
               >
                 <PlusIcon className="h-3.5 w-3.5" />
-                <span>{editingId ? 'แก้ไขรายการ' : 'เพิ่มรายการใหม่'}</span>
+                <span>{editingId ? 'Edit debt' : 'Add new debt'}</span>
               </button>
 
               <button
@@ -427,12 +427,12 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                     : 'text-ink-muted hover:text-ink dark:hover:text-white'
                 }`}
               >
-                <span>รายการทั้งหมด ({liabilitiesList.length})</span>
+                <span>All debts ({liabilitiesList.length})</span>
               </button>
             </div>
 
             <div className="text-xs text-ink-muted font-medium">
-              หนี้คงค้างรวม: <strong className="text-rose-600 dark:text-rose-400 font-bold">{thb(totalBalanceAll)}</strong>
+              Total owed: <strong className="text-rose-600 dark:text-rose-400 font-bold">{thb(totalBalanceAll)}</strong>
             </div>
           </div>
         )}
@@ -445,9 +445,9 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
               <div className="rounded-2xl bg-surface-muted/50 dark:bg-white/[0.03] p-3 border border-line/60 dark:border-white/10 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-ink-muted uppercase tracking-wider">
-                    ⚡ Quick Presets (เลือกด่วน)
+                    ⚡ Quick presets
                   </span>
-                  <span className="text-xs text-ink-faint">คลิกเพื่อใส่ข้อมูลเริ่มต้นทันที</span>
+                  <span className="text-xs text-ink-faint">Click to fill in common details</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5">
                   {QUICK_PRESETS.map((p) => {
@@ -476,7 +476,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
               {/* Name */}
               <div className="sm:col-span-7">
                 <label className="h-5 flex items-center text-xs font-semibold text-ink-muted mb-1">
-                  <span>ชื่อรายการหนี้ / สินค้า</span>
+                  <span>Debt or item name</span>
                   <span className="text-rose-500 ml-1">*</span>
                 </label>
                 <div className="relative">
@@ -485,7 +485,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                     type="text"
                     value={draft.name}
                     onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-                    placeholder="เช่น iPhone 16 Pro, บัตรเครดิต KBank"
+                    placeholder="e.g. iPhone 16 Pro, KBank credit card"
                     className="h-10 w-full rounded-xl bg-surface-muted/60 dark:bg-white/5 px-3 font-semibold text-sm text-ink dark:text-white border border-line/80 dark:border-white/10 focus:outline-none focus:border-brand focus:bg-surface dark:focus:bg-white/10 transition-colors placeholder:text-ink-faint"
                   />
                 </div>
@@ -495,11 +495,11 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
               <div className="sm:col-span-5">
                 <label className="h-5 flex items-center justify-between text-xs font-semibold text-ink-muted mb-1">
                   <span>
-                    ยอดหนี้คงเหลือ (฿) <span className="text-rose-500">*</span>
+                    Amount still owed (฿) <span className="text-rose-500">*</span>
                   </span>
                   {draft.originalBalance && Number(draft.originalBalance.replace(/[^0-9.]/g, '')) > 0 && (
                     <span className="text-xs text-ink-faint">
-                      เต็ม {draft.originalBalance}
+                      Full {draft.originalBalance}
                     </span>
                   )}
                 </label>
@@ -538,13 +538,13 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
               {/* Lender */}
               <div className="sm:col-span-7">
                 <label className="h-5 flex items-center text-xs font-semibold text-ink-muted mb-1">
-                  เจ้าหนี้ / สถาบันการเงิน
+                  Lender / bank
                 </label>
                 <input
                   type="text"
                   value={draft.lender}
                   onChange={(e) => setDraft((d) => ({ ...d, lender: e.target.value }))}
-                  placeholder="เช่น SPayLater, Apple, KBank, SCB"
+                  placeholder="e.g. SPayLater, Apple, KBank, SCB"
                   className="h-10 w-full rounded-xl bg-surface-muted/60 dark:bg-white/5 px-3 text-sm text-ink dark:text-white border border-line/80 dark:border-white/10 focus:outline-none focus:border-brand focus:bg-surface dark:focus:bg-white/10 transition-colors placeholder:text-ink-faint"
                 />
               </div>
@@ -552,8 +552,8 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
               {/* Due Day */}
               <div className="sm:col-span-5">
                 <label className="h-5 flex items-center justify-between text-xs font-semibold text-ink-muted mb-1">
-                  <span>วันครบกำหนดจ่าย</span>
-                  <span className="text-xs text-ink-faint">วันที่ 1-31</span>
+                  <span>Payment due day</span>
+                  <span className="text-xs text-ink-faint">Day 1-31</span>
                 </label>
                 <input
                   type="number"
@@ -561,13 +561,13 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                   max={31}
                   value={draft.dueDay}
                   onChange={(e) => setDraft((d) => ({ ...d, dueDay: e.target.value }))}
-                  placeholder="เช่น 1, 15, 25"
+                  placeholder="e.g. 1, 15, 25"
                   className="h-10 w-full rounded-xl bg-surface-muted/60 dark:bg-white/5 px-3 text-sm font-bold text-ink dark:text-white border border-line/80 dark:border-white/10 focus:outline-none focus:border-brand focus:bg-surface dark:focus:bg-white/10 transition-colors placeholder:text-ink-faint tnum"
                 />
               </div>
             </div>
 
-            {/* Smart Next Due Cycle Notice (เมื่อใส่วันที่เลยกำหนดของเดือนนี้) */}
+            {/* Next due cycle notice (when the due day has already passed this month) */}
             {(() => {
               const dueNum = Number(draft.dueDay)
               const now = new Date()
@@ -579,14 +579,14 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                   <div className="p-2.5 rounded-xl bg-brand/5 dark:bg-brand/10 border border-brand/20 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                       <span className="font-semibold text-brand dark:text-brand-light">
-                        💡 เลยวันที่ {dueNum} ของเดือนนี้แล้ว:
+                        💡 The {dueNum} of this month has already passed:
                       </span>{' '}
                       <span className="text-ink-muted dark:text-white/80">
-                        รอบชำระถัดไปจะเริ่มวันที่{' '}
+                        Your next payment starts on{' '}
                         <strong>
                           {draft.firstPaymentMonth === 'current'
-                            ? `${dueNum} ${curMonthName} (รอบเดือนนี้)`
-                            : `${dueNum} ${nextMonthName} (เดือนหน้า)`}
+                            ? `${curMonthName} ${dueNum} (this month)`
+                            : `${nextMonthName} ${dueNum} (next month)`}
                         </strong>
                       </span>
                     </div>
@@ -600,7 +600,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                             : 'bg-surface-muted text-ink-muted hover:text-ink dark:bg-white/10 dark:text-white/70'
                         }`}
                       >
-                        เริ่ม {dueNum} {nextMonthName} (แนะนำ)
+                        Start {nextMonthName} {dueNum} (recommended)
                       </button>
                       <button
                         type="button"
@@ -611,7 +611,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                             : 'bg-surface-muted text-ink-muted hover:text-ink dark:bg-white/10 dark:text-white/70'
                         }`}
                       >
-                        รอบ {dueNum} {curMonthName} (ค้างจ่าย)
+                        Use {curMonthName} {dueNum} (still unpaid)
                       </button>
                     </div>
                   </div>
@@ -623,8 +623,8 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
             {/* Category Selector Chips */}
             <div>
               <label className="h-5 flex items-center justify-between text-xs font-semibold text-ink-muted mb-1.5">
-                <span>หมวดหมู่หนี้สิน (Category)</span>
-                <span className="text-xs text-ink-faint">คลิกเลือกหมวดที่ตรงกัน</span>
+                <span>Category</span>
+                <span className="text-xs text-ink-faint">Pick the closest match</span>
               </label>
               <div className="flex flex-wrap items-center gap-1.5">
                 {CATEGORIES_LIST.map((catKey) => {
@@ -676,7 +676,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                     className="h-4 w-4 rounded border-indigo-400 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                   />
                   <span className="text-xs font-bold text-ink dark:text-white flex items-center gap-2">
-                    <span>ผ่อนชำระเป็นงวด (Installment Plan / 0%)</span>
+                    <span>Pay in installments (e.g. 0% plan)</span>
                     <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 px-2 py-0.5 rounded-full">
                       Gadget / Shopping
                     </span>
@@ -685,7 +685,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
 
                 {draft.isInstallment && (
                   <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                    เหลืออีก {Math.max(0, (Number(draft.totalInstallments) || 0) - (Number(draft.paidInstallments) || 0))} งวด
+                    {Math.max(0, (Number(draft.totalInstallments) || 0) - (Number(draft.paidInstallments) || 0))} payments left
                   </span>
                 )}
               </div>
@@ -695,7 +695,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                   {/* Preset term chips on their own row */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs font-semibold text-ink-muted">เลือกงวดด่วน:</span>
+                      <span className="text-xs font-semibold text-ink-muted">Quick pick:</span>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {['3', '6', '10', '12', '18', '24', '36'].map((terms) => {
@@ -722,7 +722,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                                 : 'bg-surface dark:bg-white/10 text-ink-muted dark:text-white/80 border-line/60 dark:border-white/10 hover:text-ink dark:hover:text-white'
                             }`}
                           >
-                            {terms} งวด
+                            {terms} payments
                           </button>
                         )
                       })}
@@ -733,7 +733,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-indigo-500/15">
                     <div>
                       <label className="h-5 flex items-center text-xs font-semibold text-ink-muted mb-1">
-                        จำนวนงวดทั้งหมด
+                        Total number of payments
                       </label>
                       <input
                         type="number"
@@ -753,14 +753,14 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                             monthlyPayment: suggested > 0 ? formatWithCommas(suggested) : d.monthlyPayment,
                           }))
                         }}
-                        placeholder="เช่น 10"
+                        placeholder="e.g. 10"
                         className="h-10 w-full rounded-xl bg-surface dark:bg-white/10 px-3 text-sm font-bold text-ink dark:text-white border border-line dark:border-white/15 focus:outline-none focus:border-brand tnum"
                       />
                     </div>
 
                     <div>
                       <label className="h-5 flex items-center text-xs font-semibold text-ink-muted mb-1">
-                        ผ่อนไปแล้ว (งวด)
+                        Payments already made
                       </label>
                       <input
                         type="number"
@@ -775,14 +775,14 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
 
                     <div>
                       <label className="h-5 flex items-center justify-between text-xs font-semibold text-ink-muted mb-1">
-                        <span>ค่างวดต่อเดือน (฿)</span>
-                        <span className="text-xs text-indigo-600 dark:text-indigo-400 font-normal">คำนวณให้อัตโนมัติ</span>
+                        <span>Monthly payment (฿)</span>
+                        <span className="text-xs text-indigo-600 dark:text-indigo-400 font-normal">Calculated for you</span>
                       </label>
                       <input
                         type="text"
                         value={draft.monthlyPayment}
                         onChange={(e) => setDraft((d) => ({ ...d, monthlyPayment: formatWithCommas(e.target.value) }))}
-                        placeholder="เช่น 3,500"
+                        placeholder="e.g. 3,500"
                         className="h-10 w-full rounded-xl bg-surface dark:bg-white/10 px-3 text-sm font-bold text-ink dark:text-white border border-line dark:border-white/15 focus:outline-none focus:border-brand tnum"
                       />
                     </div>
@@ -800,10 +800,10 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
               >
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold text-ink dark:text-white">
-                    ⚙️ ข้อมูลเพิ่มเติม (Optional)
+                    ⚙️ More details (optional)
                   </span>
                   <span className="text-xs text-ink-faint">
-                    (ดอกเบี้ย APR, ราคาเต็มเริ่มต้น, Note)
+                    (interest rate, original price, notes)
                   </span>
                 </div>
                 <span
@@ -820,7 +820,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="h-5 flex items-center text-xs font-semibold text-ink-muted mb-1">
-                        ดอกเบี้ยต่อปี (% APR)
+                        Interest per year (% APR)
                       </label>
                       <div className="relative">
                         <input
@@ -838,13 +838,13 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
 
                     <div>
                       <label className="h-5 flex items-center text-xs font-semibold text-ink-muted mb-1">
-                        ราคาเต็มเริ่มต้น (฿)
+                        Original price (฿)
                       </label>
                       <input
                         type="text"
                         value={draft.originalBalance}
                         onChange={(e) => setDraft((d) => ({ ...d, originalBalance: formatWithCommas(e.target.value) }))}
-                        placeholder="เช่น 35,000"
+                        placeholder="e.g. 35,000"
                         className="h-10 w-full rounded-xl bg-surface-muted/50 dark:bg-white/5 px-3 text-sm font-bold text-ink dark:text-white border border-line/70 dark:border-white/10 focus:outline-none focus:border-brand tnum"
                       />
                     </div>
@@ -852,13 +852,13 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
 
                   <div>
                     <label className="h-5 flex items-center text-xs font-semibold text-ink-muted mb-1">
-                      บันทึกเพิ่มเติม (Note)
+                      Notes
                     </label>
                     <input
                       type="text"
                       value={draft.note}
                       onChange={(e) => setDraft((d) => ({ ...d, note: e.target.value }))}
-                      placeholder="เช่น ผ่อน 0% 10 เดือน เหลือ 4 งวดสุดท้าย"
+                      placeholder="e.g. 0% for 10 months, 4 payments left"
                       className="h-10 w-full rounded-xl bg-surface-muted/50 dark:bg-white/5 px-3 text-xs text-ink dark:text-white border border-line/70 dark:border-white/10 focus:outline-none focus:border-brand"
                     />
                   </div>
@@ -873,7 +873,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
           <div className="space-y-3">
             {liabilitiesList.length === 0 ? (
               <div className="py-12 text-center">
-                <p className="text-sm text-ink-muted font-medium">ยังไม่มีรายการหนี้สินในระบบ</p>
+                <p className="text-sm text-ink-muted font-medium">No debts yet</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -884,7 +884,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                   className="mt-3 inline-flex items-center justify-center gap-1.5 h-8.5 px-3.5 rounded-xl text-xs font-bold text-white bg-brand hover:bg-brand/90 active:scale-[0.98] transition-all cursor-pointer shadow-xs"
                 >
                   <PlusIcon className="h-3.5 w-3.5" />
-                  <span>เพิ่มรายการแรก</span>
+                  <span>Add your first debt</span>
                 </button>
               </div>
             ) : (
@@ -915,14 +915,14 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                               <>
                                 <span>•</span>
                                 <span className="font-bold text-indigo-600 dark:text-indigo-400">
-                                  ผ่อน {paid}/{total} งวด ({percent}%)
+                                  Paid {paid}/{total} ({percent}%)
                                 </span>
                               </>
                             )}
                             {l.monthlyPayment && (
                               <>
                                 <span>•</span>
-                                <span>{thb(l.monthlyPayment)}/ด.</span>
+                                <span>{thb(l.monthlyPayment)}/mo</span>
                               </>
                             )}
                           </div>
@@ -938,7 +938,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                             type="button"
                             onClick={() => startEdit(l)}
                             className="p-2 rounded-xl text-ink-muted hover:text-brand hover:bg-brand/10 transition-colors cursor-pointer"
-                            title="แก้ไขรายการนี้"
+                            title="Edit this debt"
                           >
                             <PencilIcon className="h-4 w-4" />
                           </button>
@@ -946,7 +946,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
                             type="button"
                             onClick={() => handleDelete(l.id)}
                             className="p-2 rounded-xl text-ink-muted hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                            title="ลบรายการนี้"
+                            title="Delete this debt"
                           >
                             <TrashIcon className="h-4 w-4" />
                           </button>
@@ -962,10 +962,10 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
             {liabilitiesList.length > 0 && (
               <div className="p-3.5 rounded-2xl bg-surface-muted/60 dark:bg-white/5 border border-line/60 dark:border-white/10 flex items-center justify-between text-xs">
                 <div className="text-ink-muted">
-                  รวม <strong className="text-ink dark:text-white">{liabilitiesList.length} รายการ</strong>
+                  Total <strong className="text-ink dark:text-white">{liabilitiesList.length} {liabilitiesList.length === 1 ? 'debt' : 'debts'}</strong>
                   {totalMonthlyPaymentAll > 0 && (
                     <span className="ml-2">
-                      (ภาระผ่อนรวม <strong>{thb(totalMonthlyPaymentAll)}/เดือน</strong>)
+                      (monthly payments <strong>{thb(totalMonthlyPaymentAll)}/month</strong>)
                     </span>
                   )}
                 </div>
