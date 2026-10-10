@@ -64,7 +64,7 @@ function formatCostOrFx(val: number | string): string {
 const blank = {
   name: '',
   ticker: '',
-  assetClass: 'fund' as AssetClass,
+  assetClass: 'stock' as AssetClass,
   tag: '',
   units: '' as number | string | '',
   avgCost: '' as number | string | '',

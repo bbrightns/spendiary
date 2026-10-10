@@ -34,7 +34,7 @@ const blank = {
   goldLocationId: '' as string,
   name: '',
   ticker: '',
-  assetClass: 'fund' as AssetClass,
+  assetClass: 'stock' as AssetClass,
   frequency: 'monthly' as DcaFrequency,
   monthlyAmount: '' as number | '',
   dayOfMonth: 1 as number | '',
@@ -423,8 +423,8 @@ export function DcaForm({ open, editing, onClose }: Props) {
                 setSuggestions([])
               }}
               options={[
-                { value: 'fund',   label: 'Thai Assets' },
                 { value: 'stock',  label: 'US Stock' },
+                { value: 'fund',   label: 'Thai Assets' },
                 { value: 'crypto', label: 'Bitcoin' },
                 { value: 'gold',   label: 'Gold' },
               ]}
