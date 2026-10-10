@@ -27,37 +27,43 @@
     `monthlyPersonal` (unused) and `upsertFixedCostItem` / `removeFixedCostItem`
     from DataContext once the import has run on every device.
 
-## Parked: touches the Invest side (do later, on purpose)
+## Remaining tasks
 
-These were held back so the stable Invest pages stay untouched for now.
+### Next up
+1. **Backdated entries: "Already in my balance" switch** — when Quick Add's date is in the
+   past, offer a switch that records the transaction without moving the wallet balance.
+2. **Lint check** — add ESLint (flat config: typescript-eslint, react-hooks, react-refresh)
+   with an  script, fix existing violations, and add it to AGENTS.md's
+   "Bug Check Before Push". Optional follow-up: Vitest unit tests for    (periods, card cycles, recurring, balances), which are pure functions.
+3. **Smarter, wider search (Command Palette, Cmd+K)**
+   - Cover everything: Spend transactions (note, #tag, amount like  or ),
+     categories, wallets and cards, recurring bills, holdings, DCA plans, debts, settings
+     sections, and every page.
+   - Context aware: in Spend mode, Spend actions and results come first.
+   - Smarter matching: fuzzy / typo-tolerant, Thai and English keywords, ranking by recent
+     and frequent use, recent searches when empty.
+   - Actions with arguments: "65 ชานม #nosetea" → Quick Add pre-filled; "pay ktc" → Pay bill;
+     "budget food" → category budget; results grouped with counts.
 
-- **Dashboard cash-flow card** — small "In / Out / Left this month" card on
-  `pages/Dashboard.tsx` linking to `/spend`.
-- **Dividends → income** — when `recordDividend` runs, also create a Spend
-  income transaction (`source: 'dividend'`) without moving the wallet twice
-  (the dividend flow already credits the cash account).
-- **DCA confirm → transfer** — `confirmDcaBuy` deducts cash; mirror it as a
-  Spend "to invest" transfer that is excluded from spending totals.
-- **Debts / installments → expense** — `payLiabilityInstallment` could log a
-  Bills expense.
-- **DCA Planner "left this month"** — show Spend's real net next to the salary card.
-- **Retirement `monthlySpend` suggestion** — 3–6 month average of real spending.
-- **Activity Logs undo vs Spend balances** — Invest log undo restores
-  `previousCashAccountsState` snapshots, which can overwrite balance changes made
-  by Spend transactions logged after it. Needs a delta-based undo, or a warning.
-- **Credit cards → net worth / Debts** — Spend cards (`spendCards`) track what you
-  owe, but Dashboard net worth and the Debts page only read `liabilities`. Decide:
-  link a card to a `credit_card` liability, or count `spendCards` in net worth.
-  Avoid double counting with existing credit-card liabilities (seed has one: l2).
-- **Cash page "see transactions" link** per wallet → `/spend/txns?q=<wallet>`.
+### Invest-side links
+4. Debts / installments → Spend expense when an installment is paid.
+5. DCA Planner: show Spend's real "left this month" next to the salary card.
+6. Retirement: suggest  from the 3–6 month average of real spending.
+7. Cash page: per-wallet "see transactions" link → .
+8. DCA salary () read from Spend's recurring salary.
 
-## Spend-only ideas (no Invest impact)
+### Spend features
+9. Bulk import of past transactions (bank / card statement CSV or AI).
+10. Savings goals.
+11. Custom categories (add, rename, color).
+12. Monthly report: category trends, 6-month income vs. expense line.
+13. USD wallets (currently THB only).
+14. Thai public holidays when shifting payday (weekends only for now).
+15. Receipt scanning (needs a server-side function for the vision API key).
+16. Card bills: minimum payment / mark as paid.
 
-- Savings goals
-- Thai public holidays when shifting payday (weekends only for now)
-- Monthly report / charts by category over time
-- Custom categories
-- USD wallets (currently THB only)
-- Receipt scanning (needs a server-side function for the vision API key)
-- Payload size: transactions live in the single synced `user_data.payload`;
-  if it grows large, move them to their own Supabase table.
+### Tech and data
+17. Move Spend data to its own Supabase table once it grows (single payload today);
+    a foundational change — the trigger for v2.0.0.
+18. Test the DCA confirm and Activity Logs undo flows through the real UI (logic tested only).
+19. Dashboard "Total Outstanding" now includes Spend cards: label it or list cards in the Debts card.
