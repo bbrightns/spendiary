@@ -9,6 +9,7 @@ import { ASSET_META, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd, upsert } from 
 import type { AssetClass, DividendPayoutSchedule, Holding, PlannedAsset } from '../../lib/types'
 import { dateStrToTimestamp, localDateStr, thb } from '../../lib/format'
 import { searchSecurities, type Security } from '../../lib/securities'
+import { fetchStockPricesUsd } from '../../lib/prices'
 import { ChevronDownIcon, PencilIcon, LockClosedIcon } from '../icons'
 import { TransactionDateField } from './TransactionDateField'
 
@@ -129,6 +130,26 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
   // Guard: only reset form when modal freshly opens (false→true),
   // not when editing/price changes due to live price ticks.
   const wasOpen = useRef(false)
+  const priceAutoFilled = useRef(false)
+
+  // New US stock: auto-fill live price from ticker (unless the user typed one)
+  useEffect(() => {
+    if (!open || editing || !isUsd) return
+    const t = form.ticker.trim().toUpperCase()
+    if (!t) return
+    const timer = setTimeout(() => {
+      fetchStockPricesUsd([t])
+        .then((prices) => {
+          const p = prices[t]
+          if (p && p > 0) {
+            setForm((f) => (f.price === '' || priceAutoFilled.current ? { ...f, price: Number(p.toFixed(2)) } : f))
+            priceAutoFilled.current = true
+          }
+        })
+        .catch(() => {})
+    }, 600)
+    return () => clearTimeout(timer)
+  }, [open, editing, isUsd, form.ticker])
 
   useEffect(() => {
     const justOpened = !wasOpen.current && open
@@ -540,7 +561,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       form.name.trim() !== '' &&
       (isRealEstate || form.units !== '') &&
       form.avgCost !== '' &&
-      (useLivePrice || form.price !== '')
+      (useLivePrice || isUsd || form.price !== '')
     if (!valid) { setShowErrors(true); return }
 
     const cleanTag = form.tag.trim() || undefined
@@ -1411,9 +1432,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                     label="Live Market Price per Share (USD)"
                     prefix="$"
                     value={form.price}
-                    error={showErrors && form.price === '' ? 'Price is required' : undefined}
-                    onChange={(price) => setForm((f) => ({ ...f, price }))}
-                    placeholder="0"
+                    hint="Auto-filled by ticker · optional"
+                    onChange={(price) => { priceAutoFilled.current = false; setForm((f) => ({ ...f, price })) }}
+                    placeholder="Auto"
                     step={0.01}
                   />
                 )}
