@@ -453,16 +453,16 @@ export function Dashboard() {
 
               {/* Value & PnL Hero Summary */}
               <div id="guide-portfolio-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
-                <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1.5">
                   {/* Row 1: Labels */}
-                  <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">Portfolio Value</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-ink-muted whitespace-nowrap">Port Value</span>
                   <span className="text-xs font-bold uppercase tracking-wider text-ink-muted text-right">All-Time PnL</span>
 
                   {/* Row 2: Values */}
                   <div className="flex items-baseline min-w-0">
                     <p
                       title={thb(portfolio.value)}
-                      className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
+                      className="font-display text-2xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
                     >
                       {thbCompact(portfolio.value)}
                     </p>
@@ -471,7 +471,7 @@ export function Dashboard() {
                     <PnLText
                       value={portfolio.pnl}
                       compact
-                      className="font-display text-2xl sm:text-3xl !font-extrabold tracking-tight leading-tight truncate"
+                      className="font-display text-2xl !font-extrabold tracking-tight leading-tight truncate"
                     />
                   </div>
 
@@ -550,7 +550,7 @@ export function Dashboard() {
 
               {/* Cash & Liquidity Hero Summary */}
               <div id="guide-cash-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
-                <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1.5">
                   {/* Row 1: Labels */}
                   <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">Available Cash</span>
                   <span className="text-xs font-bold uppercase tracking-wider text-ink-muted text-right">Est. Yield</span>
@@ -559,7 +559,7 @@ export function Dashboard() {
                   <div className="flex items-baseline min-w-0">
                     <p
                       title={thb(cash)}
-                      className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
+                      className="font-display text-2xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
                     >
                       {thbCompact(cash)}
                     </p>
@@ -568,12 +568,12 @@ export function Dashboard() {
                     {cashInterest > 0 ? (
                       <span
                         title={`~${thb(cashInterest)}/yr`}
-                        className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum text-emerald-600 dark:text-emerald-400 leading-tight truncate cursor-default"
+                        className="font-display text-2xl font-extrabold tracking-tight tnum text-emerald-600 dark:text-emerald-400 leading-tight truncate cursor-default"
                       >
                         ~{thbCompact(cashInterest)}<span className="text-xs font-semibold text-ink-muted">/yr</span>
                       </span>
                     ) : (
-                      <span className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-ink-muted leading-tight truncate cursor-default">
+                      <span className="font-display text-2xl font-extrabold tracking-tight text-ink-muted leading-tight truncate cursor-default">
                         No yield
                       </span>
                     )}
@@ -637,22 +637,22 @@ export function Dashboard() {
                           className="flex flex-col text-left p-2.5 rounded-xl bg-surface-muted/50 border border-line/40 hover:bg-surface-muted hover:border-brand/40 hover:shadow-xs group transition-all cursor-pointer active:scale-[0.98]"
                           title={`View in Cash Hub: ${a.name}`}
                         >
-                          <span className="flex items-center justify-between gap-1.5 text-xs font-medium text-ink-muted truncate w-full">
-                            <span className="flex items-center gap-1.5 truncate">
-                              <span
-                                className="h-2 w-2 shrink-0 rounded-full"
-                                style={{ background: color }}
-                              />
-                              <span className="truncate group-hover:text-ink transition-colors">{a.name}</span>
+                          <span className="flex items-center gap-1.5 text-xs font-medium text-ink-muted w-full min-w-0">
+                            <span
+                              className="h-2 w-2 shrink-0 rounded-full"
+                              style={{ background: color }}
+                            />
+                            <span className="truncate group-hover:text-ink transition-colors">{a.name}</span>
+                          </span>
+                          <span className="mt-1 flex items-baseline justify-between gap-1.5">
+                            <span className="font-display font-bold tnum text-sm text-ink">
+                              {moneyCompact(a.balance, a.currency)}
                             </span>
                             {a.interestRate !== undefined && a.interestRate > 0 && (
                               <span className="shrink-0 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded font-mono">
                                 {a.interestRate}%
                               </span>
                             )}
-                          </span>
-                          <span className="mt-1 font-display font-bold tnum text-sm text-ink">
-                            {moneyCompact(a.balance, a.currency)}
                           </span>
                         </button>
                       )
@@ -698,7 +698,7 @@ export function Dashboard() {
 
               {/* Liabilities & Debts Hero Summary */}
               <div id="guide-debt-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
-                <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1.5">
                   {/* Row 1: Labels */}
                   <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">Total Outstanding</span>
                   <span className="text-xs font-bold uppercase tracking-wider text-ink-muted text-right">Monthly Payment</span>
@@ -706,7 +706,7 @@ export function Dashboard() {
                   {/* Row 2: Values */}
                   <div className="flex items-baseline min-w-0">
                     <p
-                      className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum leading-tight truncate cursor-default text-ink dark:text-white"
+                      className="font-display text-2xl font-extrabold tracking-tight tnum leading-tight truncate cursor-default text-ink dark:text-white"
                       title={debts > 0 ? `-${thb(debts)}` : '฿0'}
                     >
                       {debts > 0 ? `-${thbCompact(debts)}` : '฿0'}
@@ -716,12 +716,12 @@ export function Dashboard() {
                     {monthlyDebt > 0 ? (
                       <span
                         title={`~${thb(monthlyDebt)}/mo`}
-                        className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum text-rose-600 dark:text-rose-400 leading-tight truncate cursor-default"
+                        className="font-display text-2xl font-extrabold tracking-tight tnum text-rose-600 dark:text-rose-400 leading-tight truncate cursor-default"
                       >
                         ~{thbCompact(monthlyDebt)}<span className="text-xs font-semibold text-ink-muted">/mo</span>
                       </span>
                     ) : (
-                      <span className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400 leading-tight truncate cursor-default">
+                      <span className="font-display text-2xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400 leading-tight truncate cursor-default">
                         ฿0<span className="text-xs font-semibold text-ink-muted">/mo</span>
                       </span>
                     )}
