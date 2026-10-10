@@ -82,13 +82,13 @@ export function ActivitySummary() {
   )
 
   // Thai month names, Gregorian year to match the year dropdown
-  const TH_DATE = 'th-TH-u-ca-gregory'
+  const TH_DATE = 'en-GB'
   const range = resolvePeriodRange(period)
   const rangeCaption = range
     ? `${range.start.toLocaleDateString(TH_DATE, { day: 'numeric', month: 'short', year: 'numeric' })} – ${range.end.toLocaleDateString(TH_DATE, { day: 'numeric', month: 'short', year: 'numeric' })}`
     : summary.firstLogAt && summary.lastLogAt
       ? `${new Date(summary.firstLogAt).toLocaleDateString(TH_DATE, { day: 'numeric', month: 'short', year: 'numeric' })} – ${new Date(summary.lastLogAt).toLocaleDateString(TH_DATE, { day: 'numeric', month: 'short', year: 'numeric' })}`
-      : 'ยังไม่มีประวัติ'
+      : 'No history yet'
 
   const now = new Date()
   const isThisMonth =
@@ -126,8 +126,8 @@ export function ActivitySummary() {
     <>
       <PageHeader
         eyebrow="Records"
-        title="สรุปกำไร-ขาดทุน"
-        subtitle="กำไร/ขาดทุนที่เกิดขึ้นจริงในช่วงเวลาที่เลือก (จากรายการขายออกและเงินปันผลที่รับแล้ว)"
+        title="Profit & Loss Summary"
+        subtitle="Money you have actually made or lost in the selected period (from sales and dividends received)"
         onStartGuide={startTour}
       />
 
@@ -135,20 +135,20 @@ export function ActivitySummary() {
       <Card id="guide-summary-period" className="mb-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
-            <FilterChip active={isThisMonth} onClick={goToThisMonth} aria-label="แสดงเดือนนี้">
-              เดือนนี้
+            <FilterChip active={isThisMonth} onClick={goToThisMonth} aria-label="Show this month">
+              This month
             </FilterChip>
-            <FilterChip active={isThisYear} onClick={goToThisYear} aria-label="แสดงปีนี้">
-              ปีนี้
+            <FilterChip active={isThisYear} onClick={goToThisYear} aria-label="Show this year">
+              This year
             </FilterChip>
-            <FilterChip active={isAllTime(period)} onClick={goToAllTime} aria-label="แสดงทั้งหมด">
-              ทั้งหมด
+            <FilterChip active={isAllTime(period)} onClick={goToAllTime} aria-label="Show all time">
+              All time
             </FilterChip>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
             <label htmlFor="summary-year" className="text-xs font-semibold text-ink-muted">
-              ช่วงเวลา
+              Period
             </label>
             <select
               id="summary-year"
@@ -157,7 +157,7 @@ export function ActivitySummary() {
               onChange={(e) => selectYear(e.target.value)}
               aria-label="Select year"
             >
-              <option value="all">ทุกปี</option>
+              <option value="all">All years</option>
               {periods.years.map((year) => (
                 <option key={year} value={year}>
                   {year}
@@ -172,7 +172,7 @@ export function ActivitySummary() {
               disabled={period.year === 'all'}
               aria-label="Select month"
             >
-              <option value="all">ทุกเดือน</option>
+              <option value="all">All months</option>
               {selectableMonths.map((month) => (
                 <option key={month} value={month}>
                   {MONTH_LABELS[month - 1]}
@@ -184,7 +184,7 @@ export function ActivitySummary() {
 
         <p className="mt-3 text-xs text-ink-muted">
           <span className="font-semibold text-ink-soft">{describePeriod(period)}</span>
-          <span className="text-ink-faint"> · {rangeCaption} · {summary.transactionCount} รายการ</span>
+          <span className="text-ink-faint"> · {rangeCaption} · {summary.transactionCount} transactions</span>
         </p>
       </Card>
 
@@ -192,12 +192,12 @@ export function ActivitySummary() {
         <Card>
           <EmptyState
             icon={<ClockIcon className="h-7 w-7" />}
-            title={`ไม่มีรายการลงทุนในช่วง${describePeriod(period)}`}
-            description="การซื้อ ขาย และปันผล ที่คุณบันทึกในหน้าพอร์ต จะถูกสรุปรวมที่นี่ ลองเลือกช่วงเวลาอื่นเพื่อดูรายการเก่ากว่านี้"
+            title={`No investment activity in ${describePeriod(period)}`}
+            description="Buys, sales and dividends you record in your portfolio are summed up here. Try another period to see older activity."
             accent="var(--color-brand)"
             action={
               <Button variant="secondary" size="sm" onClick={goToAllTime} className="cursor-pointer">
-                ดูทั้งหมด
+                View all
               </Button>
             }
           />
@@ -209,7 +209,7 @@ export function ActivitySummary() {
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-ink-muted">
-                  กำไรสุทธิ · {describePeriod(period)}
+                  Net profit · {describePeriod(period)}
                 </p>
                 <p
                   className={`mt-1.5 font-display text-4xl font-extrabold tnum leading-none ${
@@ -219,31 +219,31 @@ export function ActivitySummary() {
                   {signedThb(netProfit)}
                 </p>
                 <p className="mt-2.5 max-w-md text-sm text-ink-muted leading-relaxed">
-                  กำไรจากการขายที่ปิดสถานะแล้ว บวกเงินปันผลที่เข้าบัญชีจริง ส่วนราคาที่ขยับจากสินทรัพย์ที่ยังถืออยู่ จะไม่ถูกนับในหน้านี้
+                  Profit from things you sold, plus dividends you received. Price changes on things you still hold are not counted here.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:w-[380px] shrink-0">
                 <Stat
-                  label="กำไรจากการขาย"
+                  label="Profit from sales"
                   value={signedThb(summary.realizedPnL)}
                   tone={summary.realizedPnL > 0 ? 'gain' : summary.realizedPnL < 0 ? 'loss' : 'neutral'}
                   hint={
                     summary.costBasisSold > 0
-                      ? `ขาย ${summary.sellCount} ครั้ง · ${pct(summary.realizedPnLPercent)} จากทุน ${thb(summary.costBasisSold)}`
-                      : 'ไม่มีรายการขายในช่วงนี้'
+                      ? `${summary.sellCount} ${summary.sellCount === 1 ? 'sale' : 'sales'} · ${pct(summary.realizedPnLPercent)} on a cost of ${thb(summary.costBasisSold)}`
+                      : 'No sales in this period'
                   }
                 />
                 <Stat
-                  label="เงินปันผลที่ได้รับ"
+                  label="Dividends received"
                   value={signedThb(summary.dividendsNet)}
                   tone={summary.dividendsNet > 0 ? 'gain' : 'neutral'}
                   hint={
                     summary.withholdingTax > 0
-                      ? `สุทธิ หักภาษี ${thb(summary.withholdingTax)} · ก่อนภาษี ${thb(summary.dividendsGross)}`
+                      ? `After ${thb(summary.withholdingTax)} tax · ${thb(summary.dividendsGross)} before tax`
                       : summary.dividendCount > 0
-                        ? 'ไม่มีภาษีหัก ณ ที่จ่าย'
-                        : 'ไม่มีปันผลในช่วงนี้'
+                        ? 'No tax withheld'
+                        : 'No dividends in this period'
                   }
                 />
               </div>
@@ -251,19 +251,19 @@ export function ActivitySummary() {
 
             {/* Money flow */}
             <div className="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-3 border-t border-line/60 pt-4">
-              <Stat label="เงินลงทุนใหม่ / เงินฝากสุทธิ" value={thb(summary.netDeposits)} hint={`ซื้อ/เพิ่ม ${summary.buyCount} ครั้ง · ไม่รวมเงินจากการขาย`} />
-              <Stat label="เงินออกจากการขาย" value={thb(summary.proceeds)} hint={`ขาย ${summary.sellCount} ครั้ง`} />
-              <Stat label="รายการทั้งหมด" value={String(summary.transactionCount)} hint={`ซื้อ ${summary.buyCount} · ขาย ${summary.sellCount} · ปันผล ${summary.dividendCount}`} />
-              <Stat label="แก้ไขรายการ" value={String(summary.editCount)} hint="อัปเดตราคา/รายละเอียด" tone="neutral" />
+              <Stat label="Money put in" value={thb(summary.netDeposits)} hint={`${summary.buyCount} ${summary.buyCount === 1 ? 'buy' : 'buys'} · sale money not included`} />
+              <Stat label="Money from sales" value={thb(summary.proceeds)} hint={`${summary.sellCount} ${summary.sellCount === 1 ? 'sale' : 'sales'}`} />
+              <Stat label="All transactions" value={String(summary.transactionCount)} hint={`${summary.buyCount} buys · ${summary.sellCount} sales · ${summary.dividendCount} dividends`} />
+              <Stat label="Edits" value={String(summary.editCount)} hint="Price and detail updates" tone="neutral" />
             </div>
           </Card>
 
           {/* ── Month by month ── */}
           {showMonthly && (
             <Card className="mb-4">
-              <h2 className="font-display text-base font-bold text-ink">รายเดือน</h2>
+              <h2 className="font-display text-base font-bold text-ink">By month</h2>
               <p className="mt-0.5 text-xs text-ink-muted">
-                กำไรที่ปิดสถานะแล้วและปันผลแยกตามเดือน — สีเขียวคือเดือนที่มีกำไร
+                Sales profit and dividends for each month — green means a profit month
               </p>
               <ul className="mt-4 flex flex-col gap-2.5">
                 {summary.months.map((month) => {
@@ -289,7 +289,7 @@ export function ActivitySummary() {
                         {hasProfit ? (
                           <PnLText value={month.net} className="text-xs" />
                         ) : (
-                          <span className="text-ink-faint" title="ไม่มีกำไรที่ปิดสถานะแล้วในเดือนนี้">
+                          <span className="text-ink-faint" title="No sales profit this month">
                             —
                           </span>
                         )}
@@ -304,9 +304,9 @@ export function ActivitySummary() {
           {/* ── Per-asset breakdown ── */}
           <Card id="guide-summary-assets" padded={false} className="mb-4 overflow-hidden">
             <div className="px-5 pt-5 pb-3">
-              <h2 className="font-display text-base font-bold text-ink">กำไรมาจากสินทรัพย์ไหน</h2>
+              <h2 className="font-display text-base font-bold text-ink">Where the profit came from</h2>
               <p className="mt-0.5 text-xs text-ink-muted">
-                แสดงเฉพาะสินทรัพย์ที่มีรายการในช่วง{describePeriod(period)}
+                Only showing assets with activity in {describePeriod(period)}
               </p>
             </div>
             <div className="overflow-x-auto">
@@ -314,13 +314,13 @@ export function ActivitySummary() {
               <table className="w-full text-left text-sm border-collapse min-w-[320px] sm:min-w-[680px]">
                 <thead>
                   <tr className="border-y border-line bg-surface-muted/60 text-xs font-bold text-ink-muted uppercase tracking-wider">
-                    <th className="py-2.5 px-4 sm:px-5">สินทรัพย์</th>
-                    <th className="py-2.5 px-3 text-right hidden sm:table-cell">จำนวนครั้ง</th>
-                    <th className="py-2.5 px-3 text-right hidden md:table-cell">เงินลงทุน</th>
-                    <th className="py-2.5 px-3 text-right hidden md:table-cell">เงินที่ขายได้</th>
-                    <th className="py-2.5 px-3 text-right hidden sm:table-cell">กำไรจากการขาย</th>
-                    <th className="py-2.5 px-3 text-right hidden sm:table-cell">ปันผล</th>
-                    <th className="py-2.5 px-4 sm:px-5 text-right">สุทธิ</th>
+                    <th className="py-2.5 px-4 sm:px-5">Asset</th>
+                    <th className="py-2.5 px-3 text-right hidden sm:table-cell">Trades</th>
+                    <th className="py-2.5 px-3 text-right hidden md:table-cell">Invested</th>
+                    <th className="py-2.5 px-3 text-right hidden md:table-cell">Sold for</th>
+                    <th className="py-2.5 px-3 text-right hidden sm:table-cell">Sales profit</th>
+                    <th className="py-2.5 px-3 text-right hidden sm:table-cell">Dividends</th>
+                    <th className="py-2.5 px-4 sm:px-5 text-right">Net</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -383,9 +383,9 @@ export function ActivitySummary() {
           <Card className="mb-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <h2 className="font-display text-base font-bold text-ink">มูลค่าพอร์ตเปลี่ยนแปลงเท่าไร</h2>
+                <h2 className="font-display text-base font-bold text-ink">How much your portfolio value changed</h2>
                 <p className="mt-0.5 text-xs text-ink-muted leading-relaxed max-w-xl">
-                  เทียบมูลค่าพอร์ตรวมต้นและปลายช่วง รวมการขยับของตลาดและเงินที่เติม/ถอน จึงอาจต่างจากกำไรสุทธิด้านบน
+                  Compares your total portfolio value at the start and end of the period. It includes market moves and money added or withdrawn, so it can differ from the net profit above.
                 </p>
               </div>
               <div className="shrink-0 sm:text-right">
@@ -407,7 +407,7 @@ export function ActivitySummary() {
                   <>
                     <p className="font-display text-xl font-bold text-ink-faint">—</p>
                     <p className="mt-0.5 text-xs text-ink-muted max-w-[220px] sm:ml-auto">
-                      ยังไม่มีข้อมูลมูลค่าพอร์ตรายวันที่ครอบคลุมช่วงนี้ (ระบบเก็บย้อนหลัง 365 วัน)
+                      No daily portfolio value data covers this period yet (we keep the last 365 days).
                     </p>
                   </>
                 )}
@@ -419,9 +419,9 @@ export function ActivitySummary() {
           <div className="flex items-start gap-3 rounded-2xl border border-line/70 bg-surface-muted/40 px-4 py-3.5">
             <PieChartIcon className="mt-0.5 h-4 w-4 shrink-0 text-ink-faint" />
             <p className="text-xs text-ink-muted leading-relaxed">
-              <span className="font-semibold text-ink-soft">กำไรสุทธิ = กำไรจากการขาย + เงินปันผลที่ได้รับ</span>{' '}
-              กำไรจากการขายนับวันที่ขาย (เงินที่ขายได้หักต้นทุน) ส่วนปันผลนับสุทธิหลังหักภาษี ณ ที่จ่าย
-              การเข้า-ออกของเงินในบัญชีสดและรายการค่าใช้จ่ายคงที่ไม่ถูกนับ และสินทรัพย์ที่ยังถืออยู่จะไม่ถูกประเมินราคาใหม่ในหน้านี้
+              <span className="font-semibold text-ink-soft">Net profit = profit from sales + dividends received</span>{' '}
+              Sales profit is counted on the day you sell (sale money minus what you paid). Dividends are counted after tax.
+              Cash moving in and out of your accounts and fixed costs are not counted, and things you still hold are not re-priced on this page.
             </p>
           </div>
         </>

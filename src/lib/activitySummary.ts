@@ -266,7 +266,7 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
       } else if (log.assetClass === 'gold') {
         const baht = soldUnits / GRAMS_PER_BAHT_GOLD
         const formattedBaht = Number.isInteger(Number(baht.toFixed(4))) ? baht.toFixed(0) : baht.toFixed(4)
-        sharesDisplay = `-${formattedBaht} บาททอง`
+        sharesDisplay = `-${formattedBaht} gold baht`
         sharesDisplaySecondary = `(-${soldUnits.toFixed(4)} g)`
       } else if (log.assetClass === 'stock') {
         sharesDisplay = `-${soldUnits.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares`
@@ -333,7 +333,7 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
       } else if (log.assetClass === 'gold') {
         const baht = unitDiff / GRAMS_PER_BAHT_GOLD
         const formattedBaht = Number.isInteger(Number(baht.toFixed(4))) ? baht.toFixed(0) : baht.toFixed(4)
-        sharesDisplay = `${sign}${formattedBaht} บาททอง`
+        sharesDisplay = `${sign}${formattedBaht} gold baht`
         sharesDisplaySecondary = `(${sign}${unitDiff.toFixed(4)} g)`
       } else if (log.assetClass === 'stock') {
         sharesDisplay = `${sign}${unitDiff.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares`
@@ -371,10 +371,10 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
           costDiff = spent
           const pricePerGram = spent / unitDiff
           const pricePerBaht = Math.round(pricePerGram * GRAMS_PER_BAHT_GOLD)
-          priceDisplay = `฿${pricePerBaht.toLocaleString()}/บาททอง`
+          priceDisplay = `฿${pricePerBaht.toLocaleString()}/gold baht`
         } else if (curr.price && curr.price > 0) {
           const pricePerBaht = Math.round((curr.price < 10000 ? curr.price * GRAMS_PER_BAHT_GOLD : curr.price))
-          priceDisplay = `฿${pricePerBaht.toLocaleString()}/บาททอง`
+          priceDisplay = `฿${pricePerBaht.toLocaleString()}/gold baht`
         }
       } else {
         const notePriceMatch = log.note.match(/@\s*฿([0-9,.]+)/)
@@ -455,11 +455,11 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
  * ──────────────────────────────────────────────────────────────────────────── */
 
 export const MONTH_LABELS = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
 ]
 
-const MONTH_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 /** Which slice of history the Summary page is looking at. */
 export interface LogPeriod {
@@ -494,8 +494,8 @@ export function resolvePeriodRange(period: LogPeriod): { start: Date; end: Date 
 }
 
 export function describePeriod(period: LogPeriod): string {
-  if (period.year === 'all') return 'ทั้งหมด'
-  if (period.month === 'all') return `ปี ${period.year}`
+  if (period.year === 'all') return 'All time'
+  if (period.month === 'all') return `Year ${period.year}`
   return `${MONTH_LABELS[period.month - 1]} ${period.year}`
 }
 
