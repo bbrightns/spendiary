@@ -319,6 +319,11 @@ export interface SpendTransaction {
   /** ISO timestamp */
   createdAt: string
   updatedAt?: string
+  /**
+   * Set only on read-only rows derived from the Invest side (never stored):
+   * dividends received and DCA buys. Their cash moves are already applied there.
+   */
+  source?: 'dividend' | 'dca'
 }
 
 export interface SpendSettings {

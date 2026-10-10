@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useData } from '../../store/DataContext'
 import type { SpendCard, SpendRecurring, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
+import { investTransactions } from './invest'
 import { DEFAULT_BILL_REMINDER_DAYS, applyToBalances, cardBill, dueRecurring, parseTags, sortTxns, spendWallets } from './logic'
 
 export type SpendTxnInput = Omit<SpendTransaction, 'id' | 'createdAt' | 'updatedAt' | 'tags'>
@@ -41,8 +42,10 @@ function balancesOf(d: SpendiaryData) {
  * everything else, but never touch Invest-side state other than wallet balances.
  */
 export function useSpend() {
-  const { data, setData } = useData()
-  const transactions = useMemo(() => sortTxns(data.spendTransactions ?? []), [data.spendTransactions])
+  const { data, setData, usdThb } = useData()
+  // Stored Spend rows + read-only rows from Invest (dividends, DCA buys)
+  const fromInvest = useMemo(() => investTransactions(data, usdThb), [data, usdThb])
+  const transactions = useMemo(() => sortTxns([...(data.spendTransactions ?? []), ...fromInvest]), [data.spendTransactions, fromInvest])
   const wallets = useMemo(() => spendWallets(data.cashAccounts ?? []), [data.cashAccounts])
   const cards = useMemo(() => data.spendCards ?? [], [data.spendCards])
   const settings: SpendSettings = useMemo(() => data.spendSettings ?? {}, [data.spendSettings])

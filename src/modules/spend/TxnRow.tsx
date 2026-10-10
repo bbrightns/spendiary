@@ -1,4 +1,6 @@
+import { useNavigate } from 'react-router-dom'
 import type { SpendTransaction } from '../../lib/types'
+import { PortfolioIcon } from '../../components/icons'
 import { thb } from '../../lib/format'
 import { TransferIcon, getCategory } from './categories'
 import { openQuickAdd } from './QuickAddSheet'
@@ -18,30 +20,35 @@ function plainNote(note?: string): string {
 }
 
 export function TxnRow({ txn, methods, onTagClick }: Props) {
+  const navigate = useNavigate()
   const cat = getCategory(txn.categoryId)
-  const Icon = txn.type === 'transfer' ? TransferIcon : cat?.icon ?? TransferIcon
+  const isDca = txn.source === 'dca'
+  const Icon = isDca ? PortfolioIcon : txn.type === 'transfer' ? TransferIcon : cat?.icon ?? TransferIcon
   const walletName = (id?: string) => methods.find((m) => m.id === id)?.name
   const from = walletName(txn.accountId)
   const title = plainNote(txn.note) || (txn.type === 'transfer' ? 'Transfer' : cat?.label ?? 'Other')
-  const meta =
-    txn.type === 'transfer'
+  const meta = isDca
+    ? ['Invested', from && `from ${from}`].filter(Boolean).join(' · ')
+    : txn.type === 'transfer'
       ? `${from ?? '—'} → ${walletName(txn.toAccountId) ?? '—'}`
       : [cat?.label, from].filter(Boolean).join(' · ')
 
   const sign = txn.type === 'income' ? '+' : txn.type === 'expense' ? '−' : ''
   const amountClass = txn.type === 'income' ? 'text-gain' : txn.type === 'transfer' ? 'text-ink-muted' : 'text-ink'
+  // Rows from Invest are edited where they came from
+  const sourcePage = txn.source === 'dividend' ? '/dividends' : isDca ? '/dca' : null
 
   return (
     <div className="group flex items-center gap-3 py-3">
       <button
         type="button"
-        onClick={() => openQuickAdd({ editId: txn.id })}
+        onClick={() => (sourcePage ? navigate(sourcePage) : openQuickAdd({ editId: txn.id }))}
         className="flex min-w-0 flex-1 items-center gap-3 text-left cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-        aria-label={`Edit ${title}, ${sign}${thb(txn.amount)}`}
+        aria-label={sourcePage ? `${title}, ${sign}${thb(txn.amount)}, open in Invest` : `Edit ${title}, ${sign}${thb(txn.amount)}`}
       >
         <span
           className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
-            txn.type === 'transfer' ? TONES.sky.chip : TONES[cat?.tone ?? 'slate'].chip
+            isDca ? TONES.indigo.chip : txn.type === 'transfer' ? TONES.sky.chip : TONES[cat?.tone ?? 'slate'].chip
           }`}
         >
           <Icon className="h-[18px] w-[18px]" />

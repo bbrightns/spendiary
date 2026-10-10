@@ -155,6 +155,8 @@ export function SpendAnalysis() {
   const biggest = inRange.filter((t) => t.type === 'expense').sort((a, b) => b.amount - a.amount)[0]
   const topCat = totals.byCategory[0]
   const savingsRate = totals.income > 0 ? (totals.net / totals.income) * 100 : null
+  // DCA buys from Invest: not spending, but worth seeing next to what you kept
+  const invested = inRange.filter((t) => t.source === 'dca').reduce((s, t) => s + t.amount, 0)
   const tagTotals = useMemo(() => {
     const m = new Map<string, number>()
     for (const t of inRange) if (t.type === 'expense') for (const tag of t.tags ?? []) m.set(tag, (m.get(tag) ?? 0) + t.amount)
@@ -241,6 +243,7 @@ export function SpendAnalysis() {
         <Card className="p-3 sm:p-4" padded={false}>
           <p className="text-xs text-ink-muted">Saved of income</p>
           <p className="mt-1 font-display text-lg font-extrabold tnum text-ink">{savingsRate === null ? '—' : `${Math.round(savingsRate)}%`}</p>
+          {invested > 0 && <p className="text-xs text-ink-muted tnum">{thb(invested)} invested</p>}
         </Card>
       </div>
 

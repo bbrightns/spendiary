@@ -11,6 +11,7 @@ import {
   SparkleIcon,
   SparklesIcon,
   WalletIcon,
+  DividendIcon,
   ArrowUpRightIcon,
 } from '../../components/icons'
 
@@ -109,6 +110,8 @@ export interface SpendCategory {
   tone: Tone
   /** Extra search words (Thai included) so "อาหาร" finds Food */
   keywords: string[]
+  /** Not offered in pickers (filled in automatically, e.g. dividends from Invest) */
+  hidden?: boolean
 }
 
 export const SPEND_CATEGORIES: SpendCategory[] = [
@@ -129,6 +132,7 @@ export const SPEND_CATEGORIES: SpendCategory[] = [
   { id: 'interest', label: 'Interest', type: 'income', tone: 'cyan', icon: ArrowUpRightIcon, keywords: ['ดอกเบี้ย'] },
   { id: 'gift_in', label: 'Gift received', type: 'income', tone: 'pink', icon: GiftIcon, keywords: ['ได้รับ', 'อั่งเปา'] },
   { id: 'other_in', label: 'Other', type: 'income', tone: 'slate', icon: DotsHorizontalIcon, keywords: ['อื่นๆ'] },
+  { id: 'dividend', label: 'Dividends', type: 'income', tone: 'indigo', icon: DividendIcon, keywords: ['ปันผล', 'dividend'], hidden: true },
 ]
 
 const byId = new Map(SPEND_CATEGORIES.map((c) => [c.id, c]))
@@ -138,5 +142,5 @@ export function getCategory(id?: string): SpendCategory | undefined {
 }
 
 export function categoriesFor(type: SpendTxnType): SpendCategory[] {
-  return SPEND_CATEGORIES.filter((c) => c.type === type)
+  return SPEND_CATEGORIES.filter((c) => c.type === type && !c.hidden)
 }
