@@ -11,6 +11,7 @@ import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { shortDay } from './RecurringDue'
 import { TONES, TYPE_ACTIVE } from './tones'
 import { useSpend } from './useSpend'
+import { SwitchVisual } from './AccountSheets'
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 const MONTHS = Array.from({ length: 12 }, (_, i) => new Date(2000, i, 1).toLocaleDateString('en-GB', { month: 'long' }))
@@ -263,23 +264,35 @@ export function RecurringSheet({ open, rec, onClose }: { open: boolean; rec?: Sp
         </div>
 
         {form.type === 'expense' && (
-          <label className="flex items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 cursor-pointer">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={form.fixedCost}
+            onClick={() => set('fixedCost', !form.fixedCost)}
+            className="flex w-full items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 text-left cursor-pointer hover:bg-surface-muted/50"
+          >
             <span>
               <span className="block text-sm font-bold text-ink">Count as a fixed cost</span>
               <span className="block text-xs text-ink-muted">Subtracted from your salary on DCA Plans</span>
             </span>
-            <input type="checkbox" className="h-5 w-5 accent-[var(--color-brand)]" checked={form.fixedCost} onChange={(e) => set('fixedCost', e.target.checked)} />
-          </label>
+            <SwitchVisual on={form.fixedCost} />
+          </button>
         )}
 
         {rec && (
-          <label className="flex items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 cursor-pointer">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={form.paused}
+            onClick={() => set('paused', !form.paused)}
+            className="flex w-full items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 text-left cursor-pointer hover:bg-surface-muted/50"
+          >
             <span>
               <span className="block text-sm font-bold text-ink">Paused</span>
               <span className="block text-xs text-ink-muted">Stop asking until you turn it back on</span>
             </span>
-            <input type="checkbox" className="h-5 w-5 accent-[var(--color-brand)]" checked={form.paused} onChange={(e) => set('paused', e.target.checked)} />
-          </label>
+            <SwitchVisual on={form.paused} />
+          </button>
         )}
       </div>
     </Modal>
