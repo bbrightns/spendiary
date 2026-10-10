@@ -1,8 +1,23 @@
 # Spend module — roadmap & parked items
 
-Phase 1 (done): transaction model, Quick Add (+ note with #tags), Overview with
-monthly budget → "per day left", Transactions (search by text / #tag, month
-stepper, type filter), Wallets, Invest ↔ Spend mode switch, command palette entries.
+## Phases
+
+- **Phase 1 (done)** — transaction model, Quick Add (+ note with #tags), Overview with
+  monthly budget → "per day left", Transactions (search by text / #tag, month
+  stepper, type filter), Wallets, Invest ↔ Spend mode switch, command palette entries.
+- **Phase 2 (done)** — pastel categories, recent #tags, credit cards (limit, statement /
+  due day), Accounts page, favorite + default payment method, full Test Mode seed.
+- **Phase 3 (in progress)** — pay cycle: count a "month" by calendar or from payday
+  (fixed day, or N days before month end, with weekend shifting), Spend settings page.
+- **Phase 4 — credit card bill reminders**
+  - Reminder when a card's statement closes / due date is near (badge on the
+    Accounts tab + banner on Overview, e.g. 5 days before due).
+  - Tapping it opens a "Pay bill" sheet that totals what the statement billed
+    (charges between the two statement dates, minus refunds and payments already made),
+    lists those charges, and pre-fills a transfer wallet → card for that amount.
+  - Optional: partial payment / minimum payment, mark as paid.
+- **Phase 5** — budget per category; recurring transactions (rent, subscriptions).
+- **Phase 6** — Invest-side links (see Parked below).
 
 ## Parked: touches the Invest side (do later, on purpose)
 
@@ -30,9 +45,8 @@ These were held back so the stable Invest pages stay untouched for now.
 
 ## Spend-only ideas (no Invest impact)
 
-- Budget per category
 - Savings goals
-- Recurring transactions (rent, subscriptions)
+- Thai public holidays when shifting payday (weekends only for now)
 - Monthly report / charts by category over time
 - Custom categories
 - USD wallets (currently THB only)
