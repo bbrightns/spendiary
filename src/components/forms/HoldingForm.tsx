@@ -24,8 +24,8 @@ interface Props {
 const SATS_PER_BTC = 100_000_000
 
 const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ]
 
 const newId = () => crypto?.randomUUID?.() ?? `id-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -531,7 +531,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         holdingName: 'Gold',
         ticker: 'XAU',
         assetClass: 'gold',
-        note: `${g.toFixed(4)} g (${bahtAmount} บาททอง) · ฿${spent.toLocaleString()} spent · ${locName} (merged into existing)`,
+        note: `${g.toFixed(4)} g (${bahtAmount} gold baht) · ฿${spent.toLocaleString()} spent · ${locName} (merged into existing)`,
         afterHoldingState: mergedHolding,
       })
       onClose()
@@ -565,7 +565,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       holdingName: 'Gold',
       ticker: 'XAU',
       assetClass: 'gold',
-      note: `${g.toFixed(4)} g (${bahtAmount} บาททอง) · ฿${spent.toLocaleString()} spent · ${locName}`,
+      note: `${g.toFixed(4)} g (${bahtAmount} gold baht) · ฿${spent.toLocaleString()} spent · ${locName}`,
       afterHoldingState: savedHolding,
     })
     onClose()
@@ -721,7 +721,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         } else if (form.assetClass === 'crypto') {
           changes.push(`Updated BTC price to ฿${currPrice.toLocaleString()}`)
         } else if (form.assetClass === 'gold') {
-          changes.push(`Updated gold price to ฿${(currPrice * GRAMS_PER_BAHT_GOLD).toLocaleString()}/บาททอง`)
+          changes.push(`Updated gold price to ฿${(currPrice * GRAMS_PER_BAHT_GOLD).toLocaleString()}/gold baht`)
         } else {
           changes.push(`Updated price to ฿${currPrice.toLocaleString()}`)
         }
@@ -797,7 +797,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
   // Dividend derived values & actions
   const isStock = form.assetClass === 'stock'
   const currencyPrefix = isStock ? '$' : '฿'
-  const currencyUnit = isStock ? '$/share' : '฿/หุ้น'
+  const currencyUnit = isStock ? '$/share' : '฿/share'
 
   const totalAnnualDps = dividendMonths.reduce((sum, m) => {
     const raw = payoutDpsMap[m]
@@ -847,7 +847,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       })
       return next
     })
-    showToast('คัดลอกยอดเงินปันผลไปยังทุกรอบเรียบร้อย', 'info')
+    showToast('Copied the dividend amount to every payout', 'info')
   }
 
   const modalDescription = isBtc
@@ -857,7 +857,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
     : isUsd
     ? `Prices in USD, converted to THB at ${usdThb ? `฿${usdThb.toFixed(2)}/USD` : 'live rate'}.`
     : isRealEstate
-    ? 'บันทึกบ้าน คอนโด หรือที่ดิน พร้อมราคาซื้อและมูลค่าประเมินปัจจุบัน'
+    ? 'Record a house, condo or land with its purchase price and current estimated value'
     : form.assetClass === 'crypto'
     ? 'Crypto units, cost per unit, and current price are recorded in Thai Baht.'
     : 'Thai fund, stock, or DR, valued in THB.'
@@ -892,7 +892,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       }
     >
       <div className="space-y-4">
-        {/* Accordion 1: ข้อมูลทั่วไป (General Info) */}
+        {/* Accordion 1: General info */}
         <div className="rounded-2xl border border-line bg-surface overflow-hidden shadow-2xs">
           <button
             type="button"
@@ -903,7 +903,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
             <div className="flex items-center gap-2 min-w-0 pr-2">
               <span className="text-sm">📦</span>
               <span className="text-sm font-bold text-ink truncate">
-                ข้อมูลทั่วไป (General Info)
+                General info
               </span>
               {!isGeneralExpanded && (form.name || form.ticker) && (
                 <span className="hidden sm:inline-flex items-center rounded-md bg-surface-muted px-2 py-0.5 text-xs font-medium text-ink-muted truncate max-w-[200px]">
@@ -913,7 +913,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {!isGeneralExpanded && (
-                <span className="text-xs text-brand font-medium">แตะเพื่อดู/แก้ไข</span>
+                <span className="text-xs text-brand font-medium">Tap to view / edit</span>
               )}
               <ChevronDownIcon
                 className={`h-4 w-4 text-ink-muted transition-transform duration-200 ${
@@ -1188,7 +1188,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
 
             {/* Unit selector tab */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-ink-soft">Purchase Unit / หน่วยซื้อ</label>
+              <label className="text-sm font-medium text-ink-soft">Purchase unit</label>
               <div className="flex rounded-xl bg-surface-muted p-1 gap-1">
                 <button
                   type="button"
@@ -1199,7 +1199,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                       : 'text-ink-muted hover:text-ink'
                   }`}
                 >
-                  กรัม (Grams)
+                  Grams
                 </button>
                 <button
                   type="button"
@@ -1210,7 +1210,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                       : 'text-ink-muted hover:text-ink'
                   }`}
                 >
-                  บาททองคำ (15.244g)
+                  Gold baht (15.244 g)
                 </button>
               </div>
             </div>
@@ -1218,7 +1218,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
             <div className="grid grid-cols-1 gap-3">
               {goldUnit === 'grams' ? (
                 <NumberField
-                  label="Grams bought (กรัม)"
+                  label="Grams bought"
                   value={grams}
                   error={showErrors && (grams === '' || Number(grams) <= 0) ? 'Required (> 0)' : undefined}
                   onChange={(val) => {
@@ -1234,7 +1234,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 />
               ) : (
                 <NumberField
-                  label="Weight bought in บาททองคำ (ทองคำแท่ง)"
+                  label="Weight bought in gold baht"
                   value={goldBaht}
                   error={showErrors && (goldBaht === '' || Number(goldBaht) <= 0) ? 'Required (> 0)' : undefined}
                   onChange={(val) => {
@@ -1250,7 +1250,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 />
               )}
               <NumberField
-                label="THB spent (บาท)"
+                label="THB spent"
                 prefix="฿"
                 value={goldThbSpent}
                 error={showErrors && (goldThbSpent === '' || Number(goldThbSpent) <= 0) ? 'Required (> 0)' : undefined}
@@ -1271,7 +1271,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                   <span className="font-semibold tnum text-ink">{thb(goldImpliedPrice)}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-ink-soft">Implied cost / บาททองคำ</span>
+                  <span className="text-ink-soft">Implied cost / gold baht</span>
                   <span className="font-semibold tnum text-brand">
                     {thb(goldImpliedPrice * GRAMS_PER_BAHT_GOLD)}
                     {rate > 1 && ` ($${Math.round(goldThbPerGramToXauUsd(goldImpliedPrice, rate)).toLocaleString()}/oz XAUUSD)`}
@@ -1279,7 +1279,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-ink-soft">Total weight</span>
-                  <span className="font-semibold tnum text-ink">{goldGrams.toFixed(4)} g ({(goldGrams / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง)</span>
+                  <span className="font-semibold tnum text-ink">{goldGrams.toFixed(4)} g ({(goldGrams / GRAMS_PER_BAHT_GOLD).toFixed(4)} gold baht)</span>
                 </div>
               </div>
             )}
@@ -1300,7 +1300,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
               />
               {Number(form.units) > 0 && (
                 <p className="mt-1 text-xs text-ink-muted">
-                  ≈ {(Number(form.units) / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททองคำ
+                  ≈ {(Number(form.units) / GRAMS_PER_BAHT_GOLD).toFixed(4)} gold baht
                 </p>
               )}
             </div>
@@ -1316,7 +1316,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 />
                 {Number(form.avgCost) > 0 && (
                   <p className="mt-1 text-xs text-ink-muted">
-                    ≈ {thb(Number(form.avgCost) * GRAMS_PER_BAHT_GOLD)} / บาททองคำ
+                    ≈ {thb(Number(form.avgCost) * GRAMS_PER_BAHT_GOLD)} / gold baht
                   </p>
                 )}
               </div>
@@ -1331,7 +1331,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 />
                 {Number(form.price) > 0 && (
                   <p className="mt-1 text-xs text-ink-muted">
-                    ≈ {thb(Number(form.price) * GRAMS_PER_BAHT_GOLD)} / บาททองคำ
+                    ≈ {thb(Number(form.price) * GRAMS_PER_BAHT_GOLD)} / gold baht
                   </p>
                 )}
               </div>
@@ -1533,7 +1533,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
           )}
         </div>
 
-        {/* Accordion 2: ข้อมูลเงินปันผล (Dividend Tracking - Optional for Fund & Stock) */}
+        {/* Accordion 2: Dividend tracking (optional for funds and stocks) */}
         {!isBtc && !isGold && !isRealEstate && (
           <div className="rounded-2xl border border-line bg-surface overflow-hidden shadow-2xs">
             <button
@@ -1545,7 +1545,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
               <div className="flex items-center gap-2 min-w-0 pr-2">
                 <span className="text-sm">💰</span>
                 <span className="text-sm font-bold text-ink truncate">
-                  ข้อมูลเงินปันผล (Dividend & Payouts)
+                  Dividends & payouts
                 </span>
                 <span
                   className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium shrink-0 ${
@@ -1554,12 +1554,12 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                       : 'bg-surface-muted text-ink-muted'
                   }`}
                 >
-                  {paysDividend ? `${dividendMonths.length} ครั้ง/ปี` : 'ไม่ได้เปิด'}
+                  {paysDividend ? `${dividendMonths.length} per year` : 'Off'}
                 </span>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {!isDividendExpanded && (
-                  <span className="text-xs text-brand font-medium">แตะเพื่อดู/แก้ไข</span>
+                  <span className="text-xs text-brand font-medium">Tap to view / edit</span>
                 )}
                 <ChevronDownIcon
                   className={`h-4 w-4 text-ink-muted transition-transform duration-200 ${
@@ -1581,10 +1581,10 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                     />
                     <div className="min-w-0">
                       <span className="text-sm font-bold text-ink flex items-center gap-1.5 whitespace-nowrap">
-                        เปิดบันทึกเงินปันผล
+                        Track dividends
                       </span>
                       <p className="text-xs text-ink-muted truncate">
-                        เปิดบันทึกเงินปันผลเพื่อคำนวณกระแสเงินสด
+                        Turn on dividend tracking to estimate your income
                       </p>
                     </div>
                   </label>
@@ -1599,11 +1599,11 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between gap-2 whitespace-nowrap">
                     <label className="text-xs font-semibold text-ink-soft whitespace-nowrap">
-                      เดือนที่จ่ายปันผล
+                      Months it pays dividends
                     </label>
                     {dividendMonths.length > 0 && (
                       <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap shrink-0">
-                        {dividendMonths.length} ครั้ง/ปี
+                        {dividendMonths.length} per year
                       </span>
                     )}
                   </div>
@@ -1630,7 +1630,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                   </div>
                   {dividendMonths.length > 0 && (
                     <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium pt-0.5">
-                      📅 แจ้งเตือนรับเงินปันผลในเดือน: {dividendMonths.slice().sort((a, b) => a - b).map((m) => THAI_MONTHS_SHORT[m - 1]).join(', ')}
+                      📅 Dividend reminders in: {dividendMonths.slice().sort((a, b) => a - b).map((m) => THAI_MONTHS_SHORT[m - 1]).join(', ')}
                     </p>
                   )}
                 </div>
@@ -1639,7 +1639,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 {dividendMonths.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-line bg-surface/40 p-3 text-center">
                     <p className="text-xs text-ink-muted">
-                      👆 แตะเลือกเดือนด้านบน เพื่อกำหนดงวดที่คาดว่าจะได้รับเงินปันผล
+                      👆 Tap the months above that it pays a dividend
                     </p>
                   </div>
                 ) : (
@@ -1647,10 +1647,10 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div>
                         <span className="text-xs font-bold text-ink flex items-center gap-1.5">
-                          💵 กำหนดเงินปันผลต่อหุ้น (DPS) ในแต่ละงวด
+                          💵 Dividend per share for each payout
                         </span>
                         <p className="text-xs text-ink-muted">
-                          ระบุยอดเงินปันผลต่อหุ้นแยกตามแต่ละรอบที่จ่ายจริง
+                          Enter the dividend per share for each payout
                         </p>
                       </div>
                       {dividendMonths.length > 1 && (
@@ -1659,7 +1659,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                           onClick={handleApplyDpsToAll}
                           className="inline-flex items-center text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
                         >
-                          ⚡ ใช้ยอดเท่ากันทุกรอบ
+                          ⚡ Use the same amount every time
                         </button>
                       )}
                     </div>
@@ -1672,7 +1672,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
                                 {roundIdx + 1}
                               </span>
-                              รอบเดือน {THAI_MONTHS_SHORT[mNum - 1]}
+                              {THAI_MONTHS_SHORT[mNum - 1]} payout
                             </span>
                             <span className="text-xs font-medium text-ink-muted">
                               {currencyUnit}
@@ -1694,18 +1694,18 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                     {/* Summary box */}
                     <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
                       <div>
-                        <span className="text-ink-muted block text-xs">รวมปันผลทั้งปี (Total Annual DPS):</span>
+                        <span className="text-ink-muted block text-xs">Total dividend per year:</span>
                         <span className="font-display font-extrabold text-sm text-emerald-600 dark:text-emerald-400 tnum">
                           {currencyPrefix}{totalAnnualDps.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
-                          <span className="text-xs font-normal text-ink-muted ml-1">/{isStock ? 'share' : 'หุ้น'}</span>
+                          <span className="text-xs font-normal text-ink-muted ml-1">/{isStock ? 'share' : 'share'}</span>
                         </span>
                       </div>
                       {currentUnits > 0 && estAnnualGross > 0 && (
                         <div className="text-right">
-                          <span className="text-ink-muted block text-xs">ประมาณการปันผลต่อปี ({currentUnits.toLocaleString()} หุ้น):</span>
+                          <span className="text-ink-muted block text-xs">Estimated dividends per year ({currentUnits.toLocaleString()} shares):</span>
                           <span className="font-display font-bold text-sm text-ink tnum">
                             ~{currencyPrefix}{estAnnualNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            <span className="text-xs text-ink-muted ml-1 font-normal">(สุทธิหลังหักภาษี 10%)</span>
+                            <span className="text-xs text-ink-muted ml-1 font-normal">(after 10% tax)</span>
                           </span>
                         </div>
                       )}
@@ -1715,10 +1715,10 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
 
                 {/* Default Cash Account */}
                 <SelectField
-                  label="Default Cash Account (เข้าบัญชีเริ่มต้น)"
+                  label="Default cash account"
                   value={defaultCashAccountId}
                   options={[
-                    { value: '', label: 'None (ไม่ระบุ)' },
+                    { value: '', label: 'None' },
                     ...(data.cashAccounts ?? []).map((c) => ({
                       value: c.id,
                       label: `${c.name} (${c.currency === 'USD' ? '$' : '฿'}${c.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`,
@@ -1744,10 +1744,10 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
           <div className="flex-1 text-xs">
             <span className="font-semibold text-ink flex items-center gap-1.5 text-sm">
               <LockClosedIcon className="h-4 w-4 text-amber-500" />
-              Safe-Haven / ล็อคสินทรัพย์นี้
+              Lock this asset
             </span>
             <p className="text-ink-muted mt-0.5">
-              ป้องกันการกดขาย (Sell) หรือลบ (Delete) สินทรัพย์นี้โดยไม่ได้ตั้งใจ
+              Protects it from being sold or deleted by accident
             </p>
           </div>
         </label>
