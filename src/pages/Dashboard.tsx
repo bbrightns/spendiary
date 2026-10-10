@@ -10,6 +10,7 @@ import { DonutChart } from '../components/charts/DonutChart'
 import { InteractiveNetWorthChart } from '../components/charts/InteractiveNetWorthChart'
 import { PnLPill, PnLText } from '../components/ui/PnL'
 import { LiabilitiesModal } from '../components/forms/LiabilitiesModal'
+import { SpendSnapshotCard } from '../modules/spend/SpendSnapshotCard'
 import { AiImportModal } from '../components/forms/AiImportModal'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
@@ -468,6 +469,9 @@ export function Dashboard() {
           )}
         </Card>
       </div>
+
+      {/* ── Spend cash flow (this spending month) ── */}
+      <SpendSnapshotCard />
 
       {/* ── ROW 2: Holdings Donut Breakdown & Cash Hub & Liabilities Hub ── */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 items-stretch">
