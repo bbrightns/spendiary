@@ -89,10 +89,13 @@ export function Sidebar() {
         </button>
 
         {/* Navigation Items — flat, grouped by intent */}
-        <nav className="flex flex-col gap-4">
-          {desktopNavSections.map((section) => (
-            <div key={section.title} className="flex flex-col gap-1">
-              <span className="px-3 text-xs font-semibold tracking-normal text-ink-muted mb-0.5">
+        <nav className="flex flex-col">
+          {desktopNavSections.map((section, index) => (
+            <div
+              key={section.title}
+              className={`flex flex-col gap-0.5 ${index > 0 ? 'mt-3 border-t border-line/60 pt-3' : ''}`}
+            >
+              <span className="px-3 pb-1 text-[11px] font-bold uppercase tracking-wider text-ink-faint">
                 {section.title}
               </span>
               {section.items.map((item) => {
