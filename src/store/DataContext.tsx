@@ -584,7 +584,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const supabaseKey = import.meta.env.VITE_API_TOKEN || ''
 
     if (!supabaseUrl || !supabaseKey) {
-      setAuthError('ยังไม่ได้ตั้งค่า Supabase URL หรือ Token ในไฟล์ .env (กรุณาดูไฟล์ .env.example หรือใช้โหมดทดลองใช้งาน Test Mode ด้านล่าง)')
+      setAuthError('Supabase URL or token is missing in your .env file (see .env.example, or use Test Mode below).')
       return
     }
 
@@ -595,7 +595,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       window.location.href = targetUrl
     } catch (err: any) {
       console.error('Sign in exception:', err)
-      setAuthError(`เกิดข้อผิดพลาดในการ Sign In: ${err?.message || 'ไม่สามารถติดต่อ Supabase ได้'}`)
+      setAuthError(`Sign-in failed: ${err?.message || 'could not reach Supabase'}`)
     }
   }
 

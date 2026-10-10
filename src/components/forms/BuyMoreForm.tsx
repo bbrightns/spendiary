@@ -13,13 +13,13 @@ import { TransactionDateField } from './TransactionDateField'
 export const BUY_SELL_SEGMENT_OPTIONS: SegmentOption<'buy' | 'sell'>[] = [
   {
     value: 'buy',
-    label: '+ ซื้อเพิ่ม (Buy)',
+    label: '+ Buy more',
     activeClassName: 'bg-gain text-white shadow-sm dark:bg-emerald-600',
     inactiveClassName: 'text-gain hover:bg-gain/10 dark:text-emerald-400',
   },
   {
     value: 'sell',
-    label: '− ขายออก (Sell)',
+    label: '− Sell',
     activeClassName: 'bg-loss text-white shadow-sm dark:bg-rose-600',
     inactiveClassName: 'text-loss hover:bg-loss/10 dark:text-rose-400',
   },
@@ -318,7 +318,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
   if (!holding) return null
 
   const cashAccountOptions = [
-    { value: 'none', label: 'None · Do not deduct / ไม่หักเงินสด' },
+    { value: 'none', label: 'None · Do not deduct from cash' },
     ...(data.cashAccounts ?? []).map((c) => ({
       value: c.id,
       label: `${c.name} (${c.currency === 'USD' ? '$' : '฿'}${c.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`,
@@ -385,10 +385,10 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         updatedHolding: afterHoldingState,
         cashAccountId: cashAccountId !== 'none' ? cashAccountId : undefined,
         cashDeductAmount: cashAccountId !== 'none' ? spent : undefined,
-        note: `+${g.toFixed(4)} g (${bahtAmount} บาททอง) · ฿${spent.toLocaleString()} spent · ${goldLocName}${cashSuffix}`,
+        note: `+${g.toFixed(4)} g (${bahtAmount} gold baht) · ฿${spent.toLocaleString()} spent · ${goldLocName}${cashSuffix}`,
         timestamp: dateStrToTimestamp(txDate),
       })
-      showToast(`Bought ${g.toFixed(4)}g (${bahtAmount} บาททอง) gold for ${holding!.name}`, 'success', undefined, { celebrate: true })
+      showToast(`Bought ${g.toFixed(4)}g (${bahtAmount} gold baht) gold for ${holding!.name}`, 'success', undefined, { celebrate: true })
       onClose()
     }
 
@@ -399,7 +399,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         title={lockedGoldLocName ? `Buy more · ${holding.name} — ${lockedGoldLocName}` : `Buy more · ${holding.name}`}
         description={lockedGoldLocName
           ? `This purchase goes into "${lockedGoldLocName}".`
-          : "Log a purchase in grams or บาททองคำ (ทองคำแท่ง 15.244g). Choose or create a location."}
+          : "Log a purchase in grams or gold baht (1 gold baht = 15.244 g). Choose or create a location."}
         footer={
           <Button variant="success" onClick={saveGold} className="w-full">
             Add to holding
@@ -426,7 +426,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
             <div className="flex items-center justify-between text-sm">
               <span className="text-ink-muted">Currently holding</span>
               <span className="font-semibold tnum text-ink">
-                {totalGrams.toFixed(2)} g ({totalBaht.toFixed(4)} บาททองคำ)
+                {totalGrams.toFixed(2)} g ({totalBaht.toFixed(4)} gold baht)
               </span>
             </div>
           </div>
@@ -452,14 +452,14 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
 
           {/* Unit selector tab */}
           <div className="space-y-1">
-            <label className="text-sm font-medium text-ink-soft">Purchase Unit / หน่วยซื้อ</label>
+            <label className="text-sm font-medium text-ink-soft">Purchase unit</label>
             <SegmentedControl
               size="sm"
               value={goldUnit}
               onChange={setGoldUnit}
               options={[
-                { value: 'grams', label: 'กรัม (Grams)' },
-                { value: 'baht', label: 'บาททองคำ (15.244g)' },
+                { value: 'grams', label: 'Grams' },
+                { value: 'baht', label: 'Gold baht (15.244 g)' },
               ]}
             />
           </div>
@@ -467,7 +467,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
           <div className="grid grid-cols-1 gap-3">
             {goldUnit === 'grams' ? (
               <NumberField
-                label="Grams bought (กรัม)"
+                label="Grams bought"
                 value={goldGrams}
                 error={showErrors && (goldGrams === '' || Number(goldGrams) <= 0) ? 'Required (> 0)' : undefined}
                 onChange={(val) => {
@@ -483,7 +483,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
               />
             ) : (
               <NumberField
-                label="Weight bought in บาททองคำ (ทองคำแท่ง)"
+                label="Weight bought in gold baht"
                 value={goldBaht}
                 error={showErrors && (goldBaht === '' || Number(goldBaht) <= 0) ? 'Required (> 0)' : undefined}
                 onChange={(val) => {
@@ -499,7 +499,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
               />
             )}
             <NumberField
-              label="THB spent (บาท)"
+              label="THB spent"
               prefix="฿"
               value={goldThbSpent}
               error={showErrors && (goldThbSpent === '' || Number(goldThbSpent) <= 0) ? 'Required (> 0)' : undefined}
@@ -509,7 +509,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
           </div>
 
           <SelectField
-            label="Deduct payment from Cash (หักเงินจากกระเป๋าเงินสด)"
+            label="Take the payment from a cash account"
             value={cashAccountId}
             onChange={setCashAccountId}
             options={cashAccountOptions}
@@ -528,7 +528,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
                 <span className="font-semibold tnum text-ink">{thb(impliedPrice, true)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-ink-soft">Implied cost / บาททองคำ</span>
+                <span className="text-ink-soft">Implied cost / gold baht</span>
                 <span className="font-semibold tnum text-brand">
                   {thb(impliedPrice * GRAMS_PER_BAHT_GOLD)}
                   {rate > 1 && ` ($${Math.round(goldThbPerGramToXauUsd(impliedPrice, rate)).toLocaleString()}/oz XAUUSD)`}
@@ -536,7 +536,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-ink-soft">Gold amount</span>
-                <span className="font-semibold tnum text-ink">{g.toFixed(4)} g ({(g / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง)</span>
+                <span className="font-semibold tnum text-ink">{g.toFixed(4)} g ({(g / GRAMS_PER_BAHT_GOLD).toFixed(4)} gold baht)</span>
               </div>
             </div>
           )}
@@ -687,7 +687,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
           </div>
 
           <SelectField
-            label="Deduct payment from Cash (หักเงินจากกระเป๋าเงินสด)"
+            label="Take the payment from a cash account"
             value={cashAccountId}
             onChange={setCashAccountId}
             options={cashAccountOptions}
@@ -918,7 +918,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         )}
 
         <SelectField
-          label="Deduct payment from Cash (หักเงินจากกระเป๋าเงินสด)"
+          label="Take the payment from a cash account"
           value={cashAccountId}
           onChange={setCashAccountId}
           options={cashAccountOptions}
