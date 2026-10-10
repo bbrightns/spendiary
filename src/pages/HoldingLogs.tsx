@@ -194,25 +194,22 @@ function getDisplayNote(log: HoldingLog): string {
     return ''
   }
 
-  // Format sell action note: remove redundant units, proceeds, price, and realized PnL
+  // Format sell action note: remove redundant units, proceeds, price, and realized PnL.
+  // Older logs may contain Thai wording, so each pattern accepts both languages.
   if (log.action === 'sell' && log.note) {
     let n = log.note
-    if (n.startsWith('Sold ')) {
-      n = n.replace(/^Sold\s+/, 'ขาย ')
-      n = n.replace(/\s+from\s+/, ' จาก ')
-      n = n.replace(/·\s*Proceeds:\s*/, '· ได้รับเงิน: ')
-      n = n.replace(/·\s*Deposited to\s*/, '· ฝากเข้า ')
-    }
 
-    // Remove redundant units sold e.g. "ขาย 5,000,000 sats" or "ขาย 800 units @ ฿25.50"
-    n = n.replace(/^ขาย\s+[0-9,.]+\s*(?:sats|g|units|shares)?(?:\s*@[^·\n]+)?\s*(?:·\s*)?/i, '')
-    // Remove redundant proceeds e.g. "· ได้รับเงิน: ฿146,000" or "ได้รับเงิน: ฿146,000"
-    n = n.replace(/(?:·\s*)?ได้รับเงิน:\s*[฿$][0-9,.]+\s*(?:·\s*)?/gi, '')
-    n = n.replace(/(?:·\s*)?Proceeds:\s*[฿$][0-9,.]+\s*(?:·\s*)?/gi, '')
-    // Remove redundant Realized PnL / กำไร / ขาดทุน
+    // Remove redundant units sold e.g. "Sold 5,000,000 sats" or "Sold 800 units @ ฿25.50"
+    n = n.replace(/^(?:Sold|ขาย)\s+[0-9,.]+\s*(?:sats|g|units|shares)?(?:\s*@[^·\n]+)?\s*(?:·\s*)?/i, '')
+    // Remove redundant proceeds e.g. "· Proceeds: ฿146,000"
+    n = n.replace(/(?:·\s*)?(?:Proceeds|ได้รับเงิน):\s*[฿$][0-9,.]+\s*(?:·\s*)?/gi, '')
+    // Remove redundant realized profit / loss
     n = n.replace(/(?:·\s*)?(?:กำไร|ขาดทุน|Realized PnL):\s*[^·]+(?:\s*·\s*)?/gi, '')
-    // Remove redundant price e.g. "ที่ราคา ฿42,500/บาททอง"
+    // Remove redundant price e.g. "@ ฿42,500/baht"
     n = n.replace(/(?:·\s*)?(?:@|ที่ราคา)\s*[฿$]?[0-9,.]+(?:\/[^·\n]+)?(?:\s*·\s*)?/gi, '')
+    // Legacy Thai wording for "Deposited to" / "from"
+    n = n.replace(/·\s*ฝากเข้า\s*/, '· Deposited to ')
+    n = n.replace(/\s+จาก\s+/, ' from ')
 
     n = n.replace(/\s*·\s*·\s*/g, ' · ').trim()
     n = n.replace(/^·\s*/, '').replace(/\s*·$/, '').trim()
@@ -223,51 +220,37 @@ function getDisplayNote(log: HoldingLog): string {
   if ((log.action === 'buy_more' || log.action === 'add') && log.note) {
     let n = log.note
 
-    // Translate common prefixes
-    if (n.startsWith('DCA Buy: ')) {
-      n = n.replace(/^DCA Buy:\s*/, 'ซื้อ DCA: ')
-    } else if (n.startsWith('Buy ')) {
-      n = n.replace(/^Buy\s+/, 'ซื้อ ')
-    }
+    // Legacy Thai wording -> English
+    n = n.replace(/^ซื้อ DCA:\s*/, 'DCA Buy: ').replace(/^ซื้อ\s+/, 'Buy ')
+    n = n.replace(/จ่ายจาก\s*/g, 'Paid from ')
 
-    // Replace Paid from -> จ่ายจาก
-    n = n.replace(/·\s*Paid from\s*/g, '· จ่ายจาก ')
-    n = n.replace(/Paid from\s*/g, 'จ่ายจาก ')
-
-    // Replace Deposited ... via DCA into ... -> ฝาก ... ผ่าน DCA เข้า ...
-    if (n.startsWith('Deposited ')) {
-      n = n.replace(/^Deposited\s+/, 'ฝาก ')
-      n = n.replace(/\s+via\s+DCA\s+into\s+/, ' ผ่าน DCA เข้า ')
-      n = n.replace(/\s+into\s+/, ' เข้า ')
-    }
-
-    // Remove "+15.2440 g (1.0000 บาททอง) · ฿42,500 spent · "
+    // Remove "+15.2440 g (1.0000 gold baht) · ฿42,500 spent · "
     n = n.replace(/^\+[0-9,.]+\s*g(?:\s*\([^)]+\))?\s*·\s*฿[0-9,.]+\s*spent\s*·\s*/i, '')
     // Remove "฿42,500 spent · "
     n = n.replace(/(?:·\s*)?฿[0-9,.]+\s*spent\s*(?:·\s*)?/gi, '')
-    // Remove "ซื้อ DCA: 800 units @ ฿22.50 (+฿18,000.00)" or "ซื้อ 800 units @ ฿22.50"
-    n = n.replace(/^(?:ซื้อ DCA:|ซื้อ)\s*[0-9,.]+\s*(?:units|shares|g|sats)?\s*@[^·\n(]+(?:\(\+?[฿$][0-9,.]+\))?\s*(?:·\s*)?/i, '')
+    // Remove "DCA Buy: 800 units @ ฿22.50 (+฿18,000.00)" or "Buy 800 units @ ฿22.50"
+    n = n.replace(/^(?:DCA Buy:|Buy)\s*[0-9,.]+\s*(?:units|shares|g|sats)?\s*@[^·\n(]+(?:\(\+?[฿$][0-9,.]+\))?\s*(?:·\s*)?/i, '')
 
     n = n.replace(/\s*·\s*·\s*/g, ' · ').trim()
     n = n.replace(/^·\s*/, '').replace(/\s*·$/, '').trim()
 
-    // If only DCA buy prefix was present without extra memo, provide clean label
+    // If only the DCA buy prefix was present without extra memo, provide a clean label
     if (!n && (log.dcaPlanId || log.note.includes('DCA'))) {
-      return 'ซื้อแบบ DCA (อัตโนมัติ)'
+      return 'Automatic DCA buy'
     }
     return n
   }
 
-  // Format dividend note: e.g. "Received dividend ฿3,024.00 (DPS: ฿0.28, Tax 10%: -฿336.00) into SCB Easy (ใช้จ่ายทั่วไป & QR)"
+  // Format dividend note: e.g. "Received dividend ฿3,024.00 (DPS: ฿0.28, Tax 10%: -฿336.00) into SCB Easy"
   if (log.action === 'dividend' && log.note) {
     const intoMatch = log.note.match(/into\s+([^·\n]+)/i)
     if (intoMatch) {
-      return `เงินปันผลเข้าบัญชี ${intoMatch[1].trim()}`
+      return `Dividend paid into ${intoMatch[1].trim()}`
     }
     let n = log.note.replace(/Received dividend\s*฿?[0-9,.]+(?:\s*\([^)]+\))?\s*/i, '')
     n = n.replace(/\s*·\s*·\s*/g, ' · ').trim()
     n = n.replace(/^·\s*/, '').replace(/\s*·$/, '').trim()
-    return n || 'รับเงินปันผล'
+    return n || 'Dividend received'
   }
 
   return log.note
@@ -620,45 +603,45 @@ export function HoldingLogs() {
       return (
         <div className="rounded-2xl border border-line/70 bg-surface-muted/40 dark:bg-surface-muted/20 p-2.5 sm:p-3 space-y-2.5">
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            {/* Col 1: ปันผลสุทธิ */}
+            {/* Col 1: net dividend */}
             <div className="flex flex-col min-w-0">
               <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                <span>💰</span> <span className="truncate">ปันผลสุทธิ</span>
+                <span>💰</span> <span className="truncate">Net dividend</span>
               </span>
               <div className="text-sm sm:text-base font-black tracking-tight text-emerald-600 dark:text-emerald-400 truncate mt-0.5">
                 {netDiv !== null ? `฿${netDiv.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
               </div>
-              <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={cashAccName ? `เข้า ${cashAccName}` : 'รับเข้ากระเป๋า'}>
-                {cashAccName ? `เข้า ${cashAccName}` : 'รับเข้ากระเป๋า'}
+              <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={cashAccName ? `Into ${cashAccName}` : 'Received into wallet'}>
+                {cashAccName ? `Into ${cashAccName}` : 'Received into wallet'}
               </span>
             </div>
 
-            {/* Col 2: หักภาษี */}
+            {/* Col 2: tax withheld */}
             <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
               <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                <span>🏛️</span> <span className="truncate">หักภาษี (10%)</span>
+                <span>🏛️</span> <span className="truncate">Tax withheld (10%)</span>
               </span>
               <div className="text-sm sm:text-base font-extrabold tracking-tight text-loss/90 truncate mt-0.5">
                 {tax !== null ? `-฿${tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
               </div>
               {gross !== null && (
-                <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={`ยอดรวม ฿${gross.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}>
-                  ยอดรวม ฿{gross.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={`Gross ฿${gross.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}>
+                  Gross ฿{gross.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               )}
             </div>
 
-            {/* Col 3: ปันผลต่อหุ้น */}
+            {/* Col 3: dividend per share */}
             <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
               <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                <span>🏷️</span> <span className="truncate">ปันผลต่อหุ้น</span>
+                <span>🏷️</span> <span className="truncate">Dividend per share</span>
               </span>
               <div className="text-sm sm:text-base font-extrabold tracking-tight text-ink truncate mt-0.5">
-                {dps !== null ? `฿${dps.toLocaleString()}/หุ้น` : '-'}
+                {dps !== null ? `฿${dps.toLocaleString()}/share` : '-'}
               </div>
               {holdingUnits && (
-                <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={`จาก ${holdingUnits.toLocaleString()} หุ้น`}>
-                  จาก {holdingUnits.toLocaleString()} หุ้น
+                <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={`From ${holdingUnits.toLocaleString()} shares`}>
+                  From {holdingUnits.toLocaleString()} shares
                 </span>
               )}
             </div>
@@ -784,7 +767,7 @@ export function HoldingLogs() {
         const sats = Math.round(val * SATS_PER_BTC)
         return `${sats.toLocaleString()} sats`
       }
-      if (log.assetClass === 'gold') return `${val.toFixed(4)} g (${(val / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง)`
+      if (log.assetClass === 'gold') return `${val.toFixed(4)} g (${(val / GRAMS_PER_BAHT_GOLD).toFixed(4)} gold baht)`
       if (log.assetClass === 'stock') return val.toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' shares'
       return val.toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' units'
     }
@@ -798,7 +781,7 @@ export function HoldingLogs() {
       if (log.assetClass === 'gold') {
         const baht = diff / GRAMS_PER_BAHT_GOLD
         const formattedBaht = Number.isInteger(Number(baht.toFixed(4))) ? baht.toFixed(0) : baht.toFixed(4)
-        return `${prefix}${formattedBaht} บาททอง (${prefix}${diff.toFixed(4)} g)`
+        return `${prefix}${formattedBaht} gold baht (${prefix}${diff.toFixed(4)} g)`
       }
       if (log.assetClass === 'stock') {
         return `${prefix}${diff.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares`
@@ -841,13 +824,13 @@ export function HoldingLogs() {
       const prevBaht = prevAvgCostThb * GRAMS_PER_BAHT_GOLD
       const currBaht = currAvgCostThb * GRAMS_PER_BAHT_GOLD
 
-      prevAvgCostDisplay = `฿${Math.round(prevBaht).toLocaleString()}/บาททอง`
-      currAvgCostDisplay = `฿${Math.round(currBaht).toLocaleString()}/บาททอง`
+      prevAvgCostDisplay = `฿${Math.round(prevBaht).toLocaleString()}/gold baht`
+      currAvgCostDisplay = `฿${Math.round(currBaht).toLocaleString()}/gold baht`
       const diffBaht = Math.round(currBaht - prevBaht)
       if (diffBaht !== 0 && prevUnits > 0) {
         const sign = diffBaht > 0 ? '+' : '-'
         avgCostDeltaBadge = {
-          text: `${sign}฿${Math.abs(diffBaht).toLocaleString()}/บาททอง`,
+          text: `${sign}฿${Math.abs(diffBaht).toLocaleString()}/gold baht`,
           positive: diffBaht < 0,
         }
       }
@@ -913,8 +896,8 @@ export function HoldingLogs() {
       } else if (log.assetClass === 'gold') {
         const prevBaht = prevPriceThb * GRAMS_PER_BAHT_GOLD
         const currBaht = currPriceThb * GRAMS_PER_BAHT_GOLD
-        prevPriceDisplay = `฿${Math.round(prevBaht).toLocaleString()}/บาททอง`
-        currPriceDisplay = `฿${Math.round(currBaht).toLocaleString()}/บาททอง`
+        prevPriceDisplay = `฿${Math.round(prevBaht).toLocaleString()}/gold baht`
+        currPriceDisplay = `฿${Math.round(currBaht).toLocaleString()}/gold baht`
         const diffBaht = Math.round(currBaht - prevBaht)
         const pct = prevBaht > 0 ? ((diffBaht / prevBaht) * 100).toFixed(2) : '0.00'
         if (diffBaht !== 0) {
@@ -951,7 +934,7 @@ export function HoldingLogs() {
         {/* Holding Name Row (if renamed) */}
         {showNameRow && (
           <div>
-            <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">ชื่อทรัพย์สิน</span>
+            <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">Asset name</span>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
               <span className="whitespace-nowrap">{prev.name}</span>
               <span className="text-ink-faint text-xs">→</span>
@@ -983,33 +966,33 @@ export function HoldingLogs() {
           let cashDest = ''
           if (cashItems.length > 0) {
             const deposit = cashItems.find((c) => c.diff && c.diff > 0) || cashItems[0]
-            if (deposit) cashDest = `เข้า ${deposit.accountName}`
+            if (deposit) cashDest = `Into ${deposit.accountName}`
           } else {
             const depMatch = log.note.match(/(?:Deposited to|ฝากเข้า)\s*([^·\n()]+)/i)
-            if (depMatch) cashDest = `เข้า ${depMatch[1].trim()}`
+            if (depMatch) cashDest = `Into ${depMatch[1].trim()}`
           }
 
           return (
             <>
               {/* ── Unified 3-Column Strip for Sell ── */}
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                {/* Col 1: ยอดที่ได้รับ */}
+                {/* Col 1: amount received */}
                 <div className="flex flex-col min-w-0">
                   <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                    <span>💵</span> <span className="truncate">ได้รับเงิน</span>
+                    <span>💵</span> <span className="truncate">Money received</span>
                   </span>
                   <div className="text-sm sm:text-base font-black tracking-tight text-ink truncate mt-0.5">
                     {txDetails.amountThbDisplay && txDetails.amountThbDisplay !== '-' ? txDetails.amountThbDisplay : (log.proceeds ? thb(log.proceeds) : '-')}
                   </div>
-                  <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={cashDest || 'รับเข้ากระเป๋า'}>
-                    {cashDest || 'รับเข้ากระเป๋า'}
+                  <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={cashDest || 'Received into wallet'}>
+                    {cashDest || 'Received into wallet'}
                   </span>
                 </div>
 
-                {/* Col 2: ขายออก */}
+                {/* Col 2: sold */}
                 <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
                   <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                    <span>📦</span> <span className="truncate">ขายออก</span>
+                    <span>📦</span> <span className="truncate">Sold</span>
                   </span>
                   <div className="text-sm sm:text-base font-extrabold tracking-tight text-ink-muted truncate mt-0.5">
                     {txDetails.sharesDisplay && txDetails.sharesDisplay !== '-' ? txDetails.sharesDisplay : (Math.abs(unitDiff) > 0 ? formatUnitDiff(unitDiff) : '-')}
@@ -1020,14 +1003,14 @@ export function HoldingLogs() {
                     </div>
                   )}
                   <span className="text-xs font-medium text-ink-faint truncate mt-0.5">
-                    หักออกจากพอร์ต
+                    Taken out of portfolio
                   </span>
                 </div>
 
-                {/* Col 3: กำไร/ขาดทุน */}
+                {/* Col 3: profit / loss */}
                 <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
                   <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                    <span>{isGain ? '💚' : '🔴'}</span> <span className="truncate">{isGain ? 'กำไรสุทธิ' : 'ขาดทุน'}</span>
+                    <span>{isGain ? '💚' : '🔴'}</span> <span className="truncate">{isGain ? 'Net profit' : 'Loss'}</span>
                   </span>
                   <div className={`text-sm sm:text-base font-black tracking-tight truncate mt-0.5 ${isGain ? 'text-gain' : 'text-loss'}`}>
                     {pnl !== null ? `${isGain ? '+' : ''}${thb(pnl)}` : '-'}
@@ -1049,7 +1032,7 @@ export function HoldingLogs() {
                       <div key={idx} className="flex flex-wrap items-center justify-between text-xs text-ink-muted">
                         <span className="font-semibold text-ink-soft flex items-center gap-1">
                           <span>{item.diff && item.diff < 0 ? '💸' : '💵'}</span>
-                          <span>{item.diff && item.diff < 0 ? 'จ่ายจาก' : 'รับเงินเข้า'}: {item.accountName}</span>
+                          <span>{item.diff && item.diff < 0 ? 'Paid from' : 'Received into'}: {item.accountName}</span>
                         </span>
                         <div className="flex items-center gap-1 font-mono text-xs">
                           {item.prevBalance !== undefined && (
@@ -1079,7 +1062,7 @@ export function HoldingLogs() {
                     onClick={() => toggleDetails(log.id)}
                     className="inline-flex items-center gap-1.5 py-0.5 text-xs font-semibold text-ink-muted hover:text-ink active:scale-95 transition-all cursor-pointer select-none"
                   >
-                    <span>{isDetailsOpen ? '▲ ซ่อนรายละเอียด' : '▼ ดูรายละเอียด'}</span>
+                    <span>{isDetailsOpen ? '▲ Hide details' : '▼ Show details'}</span>
                   </button>
 
                   {isDetailsOpen && (
@@ -1087,7 +1070,7 @@ export function HoldingLogs() {
                       {showPriceRow && (
                         <div>
                           <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">
-                            {isFund ? 'NAV / ราคา' : 'ราคาตลาด ณ วันขาย'}
+                            {isFund ? 'NAV / price' : 'Market price on sale day'}
                           </span>
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                             <span className="whitespace-nowrap">{prevPriceDisplay}</span>
@@ -1104,12 +1087,12 @@ export function HoldingLogs() {
 
                       {showBalanceRow && (
                         <div className={showPriceRow ? 'pt-1.5 border-t border-line/60' : ''}>
-                          <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">จำนวนคงเหลือหลังขาย</span>
+                          <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">Amount left after sale</span>
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                             <span className="whitespace-nowrap">{formatUnit(prevUnits)}</span>
                             <span className="text-ink-faint text-xs">→</span>
                             {currUnits === 0 ? (
-                              <span className="font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">0 (ขายหมดแล้ว)</span>
+                              <span className="font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">0 (all sold)</span>
                             ) : (
                               <span className="font-semibold text-brand whitespace-nowrap">{formatUnit(currUnits)}</span>
                             )}
@@ -1126,8 +1109,8 @@ export function HoldingLogs() {
                         <div className={(showPriceRow || showBalanceRow) ? 'pt-1.5 border-t border-line/60' : ''}>
                           <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">
                             {(log.assetClass === 'gold' || log.assetClass === 'crypto')
-                              ? 'ต้นทุนเฉลี่ยรวมทุกกระเป๋า (ส่วนที่เหลือ)'
-                              : 'ต้นทุนเฉลี่ย (ส่วนที่เหลือ)'}
+                              ? 'Average cost across all locations (remaining)'
+                              : 'Average cost (remaining)'}
                           </span>
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                             <span className="whitespace-nowrap">{prevAvgCostDisplay}</span>
@@ -1144,7 +1127,7 @@ export function HoldingLogs() {
 
                       {(log.assetClass === 'gold' || log.assetClass === 'crypto') && (
                         <div className="pt-1.5 border-t border-line/40 text-xs text-ink-muted">
-                          💡 <span className="font-medium text-ink-soft">ระบบคำนวณกำไร/ขาดทุนตามต้นทุนจริงของกระเป๋าที่เลือกขายโดยเฉพาะ</span>
+                          💡 <span className="font-medium text-ink-soft">Profit or loss is worked out from the actual cost of the location you sold from.</span>
                         </div>
                       )}
                     </div>
@@ -1162,7 +1145,7 @@ export function HoldingLogs() {
           if (txDetails.priceDisplay && txDetails.priceDisplay !== '-') {
             buyPriceDisplay = txDetails.priceDisplay
             if (log.assetClass === 'gold' && !buyPriceDisplay.includes('/')) {
-              buyPriceDisplay += '/บาททอง'
+              buyPriceDisplay += '/gold baht'
             } else if (log.assetClass === 'stock' && !buyPriceDisplay.includes('/')) {
               buyPriceDisplay += '/sh'
             } else if (log.assetClass === 'crypto' && !buyPriceDisplay.includes('/')) {
@@ -1177,33 +1160,33 @@ export function HoldingLogs() {
           let cashSource = ''
           if (cashItems.length > 0) {
             const deduction = cashItems.find((c) => c.diff && c.diff < 0) || cashItems[0]
-            if (deduction) cashSource = `จาก ${deduction.accountName}`
+            if (deduction) cashSource = `From ${deduction.accountName}`
           } else {
             const paidMatch = log.note.match(/(?:Paid from|จ่ายจาก)\s*([^·\n()]+)/i)
-            if (paidMatch) cashSource = `จาก ${paidMatch[1].trim()}`
+            if (paidMatch) cashSource = `From ${paidMatch[1].trim()}`
           }
 
           return (
             <>
               {/* ── Unified 3-Column Strip for Buy / Add ── */}
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                {/* Col 1: ยอดที่ซื้อ */}
+                {/* Col 1: amount bought */}
                 <div className="flex flex-col min-w-0">
                   <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                    <span>💳</span> <span className="truncate">ยอดที่ซื้อ</span>
+                    <span>💳</span> <span className="truncate">Amount bought</span>
                   </span>
                   <div className="text-sm sm:text-base font-black tracking-tight text-sky-700 dark:text-sky-300 truncate mt-0.5">
                     {txDetails.amountThbDisplay && txDetails.amountThbDisplay !== '-' ? txDetails.amountThbDisplay : (txDetails.sharesDisplay || '-')}
                   </div>
-                  <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={cashSource || 'ยอดลงทุน'}>
-                    {cashSource || 'ยอดลงทุน'}
+                  <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={cashSource || 'Invested'}>
+                    {cashSource || 'Invested'}
                   </span>
                 </div>
 
-                {/* Col 2: หน่วยที่ได้ */}
+                {/* Col 2: units received */}
                 <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
                   <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                    <span>📦</span> <span className="truncate">หน่วยที่ได้</span>
+                    <span>📦</span> <span className="truncate">Units received</span>
                   </span>
                   <div className="text-sm sm:text-base font-extrabold tracking-tight text-gain truncate mt-0.5">
                     {txDetails.sharesDisplay && txDetails.sharesDisplay !== '-' ? txDetails.sharesDisplay : (unitDiff > 0 ? formatUnitDiff(unitDiff) : '-')}
@@ -1214,20 +1197,20 @@ export function HoldingLogs() {
                     </div>
                   )}
                   <span className="text-xs font-medium text-ink-faint truncate mt-0.5">
-                    สะสมเข้าพอร์ต
+                    Added to portfolio
                   </span>
                 </div>
 
-                {/* Col 3: ราคาเข้าซื้อ */}
+                {/* Col 3: purchase price */}
                 <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
                   <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                    <span>🏷️</span> <span className="truncate">ราคาเข้าซื้อ</span>
+                    <span>🏷️</span> <span className="truncate">Buy price</span>
                   </span>
                   <div className="text-sm sm:text-base font-extrabold tracking-tight text-ink truncate mt-0.5">
                     {buyPriceDisplay || '-'}
                   </div>
                   <span className="text-xs font-medium text-ink-faint truncate mt-0.5">
-                    ราคาต่อหน่วย
+                    Price per unit
                   </span>
                 </div>
               </div>
@@ -1241,7 +1224,7 @@ export function HoldingLogs() {
                       <div key={idx} className="flex flex-wrap items-center justify-between text-xs text-ink-muted">
                         <span className="font-semibold text-ink-soft flex items-center gap-1">
                           <span>{item.diff && item.diff < 0 ? '💸' : '💵'}</span>
-                          <span>{item.diff && item.diff < 0 ? 'จ่ายจาก' : 'รับเงินเข้า'}: {item.accountName}</span>
+                          <span>{item.diff && item.diff < 0 ? 'Paid from' : 'Received into'}: {item.accountName}</span>
                         </span>
                         <div className="flex items-center gap-1 font-mono text-xs">
                           {item.prevBalance !== undefined && (
@@ -1271,7 +1254,7 @@ export function HoldingLogs() {
                     onClick={() => toggleDetails(log.id)}
                     className="inline-flex items-center gap-1.5 py-0.5 text-xs font-semibold text-ink-muted hover:text-ink active:scale-95 transition-all cursor-pointer select-none"
                   >
-                    <span>{isDetailsOpen ? '▲ ซ่อนรายละเอียด' : '▼ ดูรายละเอียด'}</span>
+                    <span>{isDetailsOpen ? '▲ Hide details' : '▼ Show details'}</span>
                   </button>
 
                   {isDetailsOpen && (
@@ -1296,7 +1279,7 @@ export function HoldingLogs() {
 
                       {showBalanceRow && (
                         <div className={showPriceRow ? 'pt-1.5 border-t border-line/60' : ''}>
-                          <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">Holding Balance (ยอดสะสมรวม)</span>
+                          <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">Total holding</span>
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                             <span className="whitespace-nowrap">{formatUnit(prevUnits)}</span>
                             <span className="text-ink-faint text-xs">→</span>
@@ -1313,7 +1296,7 @@ export function HoldingLogs() {
                       {showAvgCostRow && (
                         <div className={(showPriceRow || showBalanceRow) ? 'pt-1.5 border-t border-line/60' : ''}>
                           <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">
-                            Average Cost (ต้นทุนเฉลี่ยใหม่)
+                            New average cost
                           </span>
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                             <span className="whitespace-nowrap">{prevAvgCostDisplay}</span>
@@ -1339,36 +1322,36 @@ export function HoldingLogs() {
           if (isPriceOnly) {
             return (
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                {/* Col 1: ราคาเดิม */}
+                {/* Col 1: old price */}
                 <div className="flex flex-col min-w-0">
                   <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                    <span>🏷️</span> <span className="truncate">ราคาเดิม</span>
+                    <span>🏷️</span> <span className="truncate">Old price</span>
                   </span>
                   <div className="text-sm sm:text-base font-extrabold tracking-tight text-ink-muted truncate mt-0.5">
                     {prevPriceDisplay}
                   </div>
                   <span className="text-xs font-medium text-ink-faint truncate mt-0.5">
-                    ก่อนอัปเดต
+                    Before update
                   </span>
                 </div>
 
-                {/* Col 2: ราคาใหม่ */}
+                {/* Col 2: new price */}
                 <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
                   <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                    <span>🏷️</span> <span className="truncate">ราคาใหม่</span>
+                    <span>🏷️</span> <span className="truncate">New price</span>
                   </span>
                   <div className="text-sm sm:text-base font-black tracking-tight text-brand truncate mt-0.5">
                     {currPriceDisplay}
                   </div>
                   <span className="text-xs font-medium text-ink-faint truncate mt-0.5">
-                    {isFund ? 'NAV ปัจจุบัน' : 'ราคาตลาดล่าสุด'}
+                    {isFund ? 'Current NAV' : 'Latest market price'}
                   </span>
                 </div>
 
-                {/* Col 3: เปลี่ยนแปลง */}
+                {/* Col 3: change */}
                 <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
                   <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                    <span>{priceDeltaBadge?.positive ? '📈' : '📉'}</span> <span className="truncate">เปลี่ยนแปลง</span>
+                    <span>{priceDeltaBadge?.positive ? '📈' : '📉'}</span> <span className="truncate">Change</span>
                   </span>
                   <div className={`text-sm sm:text-base font-black tracking-tight truncate mt-0.5 ${priceDeltaBadge?.positive ? 'text-gain' : 'text-loss'}`}>
                     {priceDeltaBadge ? priceDeltaBadge.text.split(' ')[0] : '-'}
@@ -1524,7 +1507,7 @@ export function HoldingLogs() {
                 { value: 'table', label: 'Table', icon: <TableIcon className="h-3.5 w-3.5" />, title: 'Table statement view' },
                 { value: 'timeline', label: 'Timeline', icon: <ListIcon className="h-3.5 w-3.5" />, title: 'Timeline feed view' },
               ]}
-              ariaLabel="เลือกมุมมองตารางหรือไทม์ไลน์"
+              ariaLabel="Choose table or timeline view"
             />
 
             {/* Export CSV */}
@@ -1772,7 +1755,7 @@ export function HoldingLogs() {
                               e.stopPropagation()
                               startEditDate(log)
                             }}
-                            title="Click to edit date / แตะเพื่อแก้ไขวันที่"
+                            title="Click to edit date"
                           >
                             <div className="logs-table-date-main tnum flex items-center gap-1.5">
                               <span>{dateStr}</span>
@@ -1877,7 +1860,7 @@ export function HoldingLogs() {
                                   e.stopPropagation()
                                   startEditDate(log)
                                 }}
-                                title="Edit Date / แก้ไขวันที่"
+                                title="Edit date"
                                 aria-label={`Edit date for ${log.holdingName}`}
                                 className="rounded-lg p-1.5 text-ink-muted hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
                               >
@@ -1980,7 +1963,7 @@ export function HoldingLogs() {
                               type="button"
                               onClick={() => startEditDate(log)}
                               className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-medium text-ink-faint hover:text-brand hover:bg-brand/5 transition-colors cursor-pointer"
-                              title="Edit Date / แตะเพื่อแก้ไขวันที่"
+                              title="Edit date"
                             >
                               <time>
                                 {new Date(log.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
@@ -2062,9 +2045,9 @@ export function HoldingLogs() {
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 flex items-start gap-2.5 text-xs text-amber-700 dark:text-amber-400">
                   <LockClosedIcon className="h-4 w-4 shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-semibold block text-sm">สินทรัพย์นี้อยู่ใน Safe-Haven (Locked)</span>
+                    <span className="font-semibold block text-sm">This asset is locked</span>
                     <span className="text-ink-muted mt-0.5 block leading-relaxed">
-                      การ Undo จะปรับปรุงจำนวนหน่วยและต้นทุนกลับตามประวัติเดิม โดยสถานะความปลอดภัย Safe-Haven จะยังคงถูกล็อคไว้อยู่เช่นเดิม
+                      Undo will restore the units and cost from before this change. The asset will stay locked.
                     </span>
                   </div>
                 </div>
@@ -2115,7 +2098,7 @@ export function HoldingLogs() {
             setConfirmDeleteLog(false)
           }}
           title="Edit Transaction"
-          description={`ปรับเปลี่ยนวันและเวลาบันทึกสำหรับ "${editingDateLog.holdingName}" (${getLogActionMeta(editingDateLog).label})`}
+          description={`Change the date and time recorded for "${editingDateLog.holdingName}" (${getLogActionMeta(editingDateLog).label})`}
           footer={
             <div className="flex items-center justify-between gap-3 w-full">
               <button
@@ -2125,7 +2108,7 @@ export function HoldingLogs() {
                   if (confirmDeleteLog) {
                     if (deleteTimerRef.current) window.clearTimeout(deleteTimerRef.current)
                     removeHoldingLog(editingDateLog.id)
-                    showToast(`ลบรายการ "${editingDateLog.holdingName}" เรียบร้อยแล้ว`, 'success')
+                    showToast(`Deleted "${editingDateLog.holdingName}"`, 'success')
                     setEditingDateLog(null)
                     setConfirmDeleteLog(false)
                   } else {
@@ -2153,7 +2136,7 @@ export function HoldingLogs() {
                     setConfirmDeleteLog(false)
                   }}
                 >
-                  ยกเลิก
+                  Cancel
                 </Button>
                 <Button
                   variant="primary"
@@ -2161,13 +2144,13 @@ export function HoldingLogs() {
                     if (editingDateLog && editDateValue) {
                       const newTimestamp = dateStrToTimestamp(editDateValue, editTimeValue)
                       updateHoldingLogTimestamp(editingDateLog.id, newTimestamp)
-                      showToast(`แก้ไขวันที่ของ "${editingDateLog.holdingName}" เรียบร้อยแล้ว`, 'success')
+                      showToast(`Updated the date for "${editingDateLog.holdingName}"`, 'success')
                       setEditingDateLog(null)
                       setConfirmDeleteLog(false)
                     }
                   }}
                 >
-                  บันทึกวันที่
+                  Save date
                 </Button>
               </div>
             </div>
@@ -2200,13 +2183,13 @@ export function HoldingLogs() {
             <TransactionDateField
               value={editDateValue}
               onChange={setEditDateValue}
-              label="วันที่ทำรายการ (Transaction Date)"
+              label="Transaction date"
             />
 
             {/* Time Picker */}
             <div>
               <label className="block mb-1.5 text-sm font-semibold text-ink-soft">
-                เวลาที่ทำรายการ (Time)
+                Transaction time
               </label>
               <input
                 type="time"
