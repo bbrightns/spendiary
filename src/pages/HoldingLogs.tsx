@@ -1562,7 +1562,7 @@ export function HoldingLogs() {
         </div>
 
         {/* Row 2: Asset category pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1.5 -my-1.5 pt-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
           {ASSET_FILTERS.map((f) => (
             <FilterChip
               key={f.key}
@@ -1577,7 +1577,7 @@ export function HoldingLogs() {
 
         {/* Row 3: Action pills + result summary */}
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1">
             <span className="shrink-0 text-xs font-medium text-ink-faint mr-1">Action:</span>
             {ACTION_FILTERS.map((f) => (
               <FilterChip
