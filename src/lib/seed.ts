@@ -20,7 +20,6 @@ const baseSeed: SpendiaryData = {
     { id: 'fc1', name: 'Condo Mortgage & Common Fees', amount: 18_000 },
     { id: 'fc2', name: 'Family Allowance', amount: 12_000 },
     { id: 'fc3', name: 'Health & Life Insurance', amount: 4_500 },
-    { id: 'fc4', name: 'Utilities & Subscriptions', amount: 2_500 },
   ],
   cashAccounts: [
     {
@@ -1206,7 +1205,7 @@ const spendRecurring: SpendRecurring[] = [
     inDays(1),
   ),
   recurring(
-    { id: 'rec-gym', name: 'Gym membership', type: 'expense', amount: 2_200, categoryId: 'health', accountId: 'card-uob', frequency: 'monthly', day: dayOf(4), startDate: inDays(-120), note: 'Gym membership #fitness' },
+    { id: 'rec-gym', name: 'Gym membership', type: 'expense', amount: 2_200, categoryId: 'health', accountId: 'card-uob', frequency: 'monthly', day: dayOf(4), startDate: inDays(-120), note: 'Gym membership #fitness', fixedCost: false },
     inDays(1),
   ),
   recurring(

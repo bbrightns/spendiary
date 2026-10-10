@@ -378,6 +378,18 @@ function ordinalDay(n: number): string {
   return n + (s[(v - 20) % 10] || s[v] || s[0])
 }
 
+/** Rough monthly amount, so weekly and yearly items add up with monthly ones */
+export function perMonth(r: Pick<SpendRecurring, 'amount' | 'frequency'>): number {
+  if (r.frequency === 'weekly') return (r.amount * 52) / 12
+  if (r.frequency === 'yearly') return r.amount / 12
+  return r.amount
+}
+
+/** Recurring expenses counted as fixed costs (opt-out per item), active only */
+export function fixedCostRecurring(list: SpendRecurring[]): SpendRecurring[] {
+  return list.filter((r) => r.type === 'expense' && r.fixedCost !== false && !r.paused)
+}
+
 // ── Category budgets ─────────────────────────────────────────────────────────
 
 export type BudgetState = 'ok' | 'near' | 'over'

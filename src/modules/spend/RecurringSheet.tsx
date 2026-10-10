@@ -40,6 +40,7 @@ interface Form {
   startDate: string
   note: string
   paused: boolean
+  fixedCost: boolean
 }
 
 const blank = (): Form => ({
@@ -55,6 +56,7 @@ const blank = (): Form => ({
   startDate: localDateStr(),
   note: '',
   paused: false,
+  fixedCost: true,
 })
 
 export function RecurringSheet({ open, rec, onClose }: { open: boolean; rec?: SpendRecurring; onClose: () => void }) {
@@ -80,6 +82,7 @@ export function RecurringSheet({ open, rec, onClose }: { open: boolean; rec?: Sp
               startDate: rec.startDate,
               note: rec.note ?? '',
               paused: !!rec.paused,
+              fixedCost: rec.fixedCost !== false,
             }
           : { ...blank(), accountId: settings.defaultAccountId ?? NOT_TRACKED },
       )
@@ -103,6 +106,7 @@ export function RecurringSheet({ open, rec, onClose }: { open: boolean; rec?: Sp
     startDate: form.startDate,
     note: form.note.trim() || undefined,
     paused: form.paused || undefined,
+    fixedCost: form.type === 'expense' ? form.fixedCost : undefined,
     doneDates: rec?.doneDates,
     skippedDates: rec?.skippedDates,
   }
@@ -257,6 +261,16 @@ export function RecurringSheet({ open, rec, onClose }: { open: boolean; rec?: Sp
             <input className={inputClass} value={form.note} onChange={(e) => set('note', e.target.value)} placeholder="#subscription" />
           </Field>
         </div>
+
+        {form.type === 'expense' && (
+          <label className="flex items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 cursor-pointer">
+            <span>
+              <span className="block text-sm font-bold text-ink">Count as a fixed cost</span>
+              <span className="block text-xs text-ink-muted">Subtracted from your salary on DCA Plans</span>
+            </span>
+            <input type="checkbox" className="h-5 w-5 accent-[var(--color-brand)]" checked={form.fixedCost} onChange={(e) => set('fixedCost', e.target.checked)} />
+          </label>
+        )}
 
         {rec && (
           <label className="flex items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 cursor-pointer">

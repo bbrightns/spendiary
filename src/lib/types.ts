@@ -334,6 +334,8 @@ export interface SpendSettings {
   billReminderDays?: number
   /** Spending limit per expense category id, in THB per spending month */
   categoryBudgets?: Record<string, number>
+  /** Set once the old Invest-side fixed cost list has been copied into Spend recurring */
+  fixedCostsImported?: boolean
 }
 
 export type RecurringFrequency = 'weekly' | 'monthly' | 'yearly'
@@ -356,6 +358,11 @@ export interface SpendRecurring {
   /** No occurrences before this date (YYYY-MM-DD) */
   startDate: string
   note?: string
+  /**
+   * Expense only: count toward fixed costs (DCA Plans salary split). Unset = yes,
+   * so bills are fixed costs unless you opt one out.
+   */
+  fixedCost?: boolean
   /** Occurrence dates already logged */
   doneDates?: string[]
   /** Occurrence dates skipped */
@@ -402,7 +409,10 @@ export interface SpendiaryData {
   cashAccounts: CashAccount[]
   /** Monthly take-home salary in THB, used to compute the savings/invest rate. */
   monthlyIncome: number
-  /** Monthly fixed costs broken down by category */
+  /**
+   * @deprecated Kept as a backup after the move to Spend: fixed costs now live in
+   * `spendRecurring` (expense items with `fixedCost` not false). Copied over once on load.
+   */
   fixedCostItems?: FixedCostItem[]
   /** Legacy single fixed-cost number — migrated to fixedCostItems on load */
   monthlyFixedCost?: number

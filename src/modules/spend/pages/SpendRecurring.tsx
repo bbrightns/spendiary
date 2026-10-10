@@ -5,24 +5,40 @@ import { AddButton } from '../../../components/ui/AddButton'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import { ChevronRightIcon } from '../../../components/icons'
 import { localDateStr, thb } from '../../../lib/format'
-import type { SpendRecurring } from '../../../lib/types'
+import type { Liability, SpendRecurring } from '../../../lib/types'
+import { useData } from '../../../store/DataContext'
 import { RepeatIcon, getCategory } from '../categories'
-import { frequencyLabel, nextOccurrence } from '../logic'
+import { fixedCostRecurring, frequencyLabel, nextOccurrence, perMonth } from '../logic'
 import { RecurringSheet } from '../RecurringSheet'
 import { RecurringDue, shortDay } from '../RecurringDue'
 import { TONES } from '../tones'
 import { useSpend } from '../useSpend'
 
-/** Rough monthly cost, so weekly and yearly items can be compared */
-const perMonth = (r: SpendRecurring) => (r.frequency === 'weekly' ? (r.amount * 52) / 12 : r.frequency === 'yearly' ? r.amount / 12 : r.amount)
+const words = (s: string) => s.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 4)
+
+/**
+ * A debt that looks like the same payment (same monthly amount or a shared name word).
+ * Informational only: Debts tracks the balance, the fixed cost covers the monthly payment.
+ */
+function lookalikeDebt(r: SpendRecurring, debts: Liability[]): Liability | undefined {
+  const mine = words(r.name)
+  return debts.find(
+    (d) =>
+      d.balance > 0 &&
+      ((d.monthlyPayment !== undefined && Math.abs(d.monthlyPayment - r.amount) < 1) || words(d.name).some((w) => mine.includes(w))),
+  )
+}
 
 export function SpendRecurringPage() {
   const { recurring, methods } = useSpend()
+  const debts = useData().data.liabilities ?? []
   const [sheet, setSheet] = useState<{ open: boolean; rec?: SpendRecurring }>({ open: false })
   const today = localDateStr()
   const active = recurring.filter((r) => !r.paused)
   const out = active.filter((r) => r.type === 'expense').reduce((s, r) => s + perMonth(r), 0)
   const inc = active.filter((r) => r.type === 'income').reduce((s, r) => s + perMonth(r), 0)
+  const fixedIds = new Set(fixedCostRecurring(recurring).map((r) => r.id))
+  const fixed = fixedCostRecurring(recurring).reduce((s, r) => s + perMonth(r), 0)
 
   const sorted = [...recurring].sort((a, b) => {
     if (!!a.paused !== !!b.paused) return a.paused ? 1 : -1
@@ -53,6 +69,7 @@ export function SpendRecurringPage() {
             <Card className="p-3 sm:p-5 animate-rise" padded={false}>
               <p className="text-xs font-medium text-ink-muted">Bills per month</p>
               <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate text-ink">≈ {thb(out)}</p>
+              <p className="mt-0.5 text-xs text-ink-muted tnum">Fixed costs ≈ {thb(fixed)}</p>
             </Card>
             <Card className="p-3 sm:p-5 animate-rise" padded={false}>
               <p className="text-xs font-medium text-ink-muted">Recurring income</p>
@@ -82,12 +99,18 @@ export function SpendRecurringPage() {
                     <span className="block truncate text-sm font-semibold text-ink">
                       {r.name}
                       {r.paused && <span className="ml-1.5 rounded-full bg-surface-muted px-1.5 py-0.5 text-[11px] font-bold text-ink-muted">Paused</span>}
+                      {fixedIds.has(r.id) && <span className="ml-1.5 rounded-full bg-brand-soft px-1.5 py-0.5 text-[11px] font-bold text-brand-ink">Fixed</span>}
                     </span>
                     <span className="block truncate text-xs text-ink-muted">
                       {next ? `Next ${shortDay(next)} · ` : ''}
                       {frequencyLabel(r)}
                       {method && ` · ${method}`}
                     </span>
+                    {fixedIds.has(r.id) && lookalikeDebt(r, debts) && (
+                      <span className="mt-0.5 block truncate text-xs text-ink-muted">
+                        Also in Debts: {lookalikeDebt(r, debts)!.name}
+                      </span>
+                    )}
                   </span>
                   <span className={`shrink-0 text-sm font-bold tnum ${r.type === 'income' ? 'text-gain' : 'text-ink'}`}>
                     {r.type === 'income' ? '+' : ''}

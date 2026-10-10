@@ -12,15 +12,15 @@ import { ConfirmDividendModal } from '../components/forms/ConfirmDividendModal'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { useLivePrices } from '../hooks/useLivePrices'
-import { CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, PencilIcon, PlusIcon, TrashIcon } from '../components/icons'
-import { IconButton } from '../components/ui/IconButton'
+import { CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, PencilIcon, PlusIcon } from '../components/icons'
 import { AssetLogo } from '../components/ui/AssetLogo'
+import { fixedCostRecurring, perMonth } from '../modules/spend/logic'
 import {
   ASSET_META, dcaThisMonth, getHoldingDpsForMonth, isBuyDayOverdue, isBuyDayToday, isConfirmedForPeriod, isDividendReceivedThisMonth, isSkippedForPeriod,
   nextBuyDate, shouldConfirmBuy, sortDcaPlans,
 } from '../lib/calc'
 import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
-import type { DcaPlan, FixedCostItem, Holding } from '../lib/types'
+import type { DcaPlan, Holding, SpendRecurring } from '../lib/types'
 import { daysUntil, localDateStr, ordinal, thb } from '../lib/format'
 
 // ─── Chevron icon ─────────────────────────────────────────────────────────────
@@ -241,77 +241,24 @@ function InlineEditStat({ label, value, editing, draft, inputRef, onOpen, onDraf
 
 // ─── Fixed cost item row ──────────────────────────────────────────────────────
 
-function FixedCostRow({ item, onEdit, onDelete }: {
-  item: FixedCostItem; onEdit: (item: FixedCostItem) => void; onDelete: (id: string) => void
-}) {
+/** Read-only: fixed costs are edited as recurring bills in Spend. */
+function FixedCostRow({ item }: { item: SpendRecurring }) {
+  const monthly = perMonth(item)
   return (
-    <div className="group flex items-center gap-3 py-2">
+    <Link
+      to="/spend/recurring"
+      className="flex items-center gap-3 py-2 -mx-2 px-2 rounded-lg hover:bg-surface-muted/60 transition-colors"
+    >
       <div className="min-w-0 flex-1">
-        <span className="text-sm font-medium text-ink">{item.name}</span>
+        <span className="block truncate text-sm font-medium text-ink">{item.name}</span>
+        {item.frequency !== 'monthly' && (
+          <span className="block text-xs text-ink-muted tnum">
+            {thb(item.amount)} {item.frequency === 'yearly' ? 'a year' : 'a week'}
+          </span>
+        )}
       </div>
-      <span className="font-display text-sm font-bold tnum text-ink">{thb(item.amount)}</span>
-      <div className="flex items-center gap-0.5 opacity-50 md:opacity-0 md:group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-200">
-        <IconButton
-          icon={<PencilIcon className="h-3.5 w-3.5" />}
-          label={`Edit fixed cost ${item.name}`}
-          variant="ghost"
-          size="sm"
-          onClick={() => onEdit(item)}
-        />
-        <IconButton
-          icon={<TrashIcon className="h-3.5 w-3.5" />}
-          label={`Delete fixed cost ${item.name}`}
-          variant="danger"
-          size="sm"
-          onClick={() => onDelete(item.id)}
-        />
-      </div>
-    </div>
-  )
-}
-
-// ─── Fixed cost inline form ───────────────────────────────────────────────────
-
-function FixedCostForm({ initial, onSave, onCancel }: {
-  initial?: FixedCostItem; onSave: (name: string, amount: number) => void; onCancel: () => void
-}) {
-  const [name, setName] = useState(initial?.name ?? '')
-  const [amount, setAmount] = useState(initial?.amount ? String(initial.amount) : '')
-  const nameRef = useRef<HTMLInputElement>(null)
-  React.useEffect(() => { nameRef.current?.focus() }, [])
-
-  function submit() {
-    const a = parseFloat(amount)
-    if (!name.trim() || isNaN(a) || a <= 0) return
-    onSave(name.trim(), a)
-  }
-
-  return (
-    <div className="flex items-center gap-2 rounded-xl bg-surface-muted px-3 py-2.5">
-      <input
-        ref={nameRef} value={name} onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') onCancel() }}
-        placeholder="Name (e.g. Rent)"
-        className="min-w-0 flex-1 bg-transparent text-sm font-medium text-ink outline-none placeholder:text-ink-faint"
-      />
-      <div className="flex items-center gap-1">
-        <span className="text-xs text-ink-muted">฿</span>
-        <input
-          type="number" min="0" value={amount} onChange={(e) => setAmount(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') onCancel() }}
-          placeholder="0"
-          className="w-24 bg-transparent text-right text-sm font-bold tnum text-ink outline-none placeholder:text-ink-faint"
-        />
-      </div>
-      <button onClick={submit}
-        className="shrink-0 rounded-lg bg-brand px-3 py-1.5 text-xs font-bold text-white dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] transition-colors hover:bg-brand-ink active:scale-95">
-        Save
-      </button>
-      <button onClick={onCancel}
-        className="shrink-0 rounded-lg px-2 py-1.5 text-xs font-medium text-ink-muted transition-colors hover:bg-line">
-        Cancel
-      </button>
-    </div>
+      <span className="font-display text-sm font-bold tnum text-ink">{thb(monthly)}</span>
+    </Link>
   )
 }
 
@@ -356,7 +303,6 @@ export function DcaPlanner() {
   } = usePageGuide('dca')
   const {
     data, setMonthlyIncome,
-    upsertFixedCostItem, removeFixedCostItem,
     upsertPlan, skipDcaBuy,
   } = useData()
   const { showToast } = useToast()
@@ -369,10 +315,6 @@ export function DcaPlanner() {
   // Section expand state — default collapsed
   const [fixedOpen, setFixedOpen] = useState(false)
   const [savingsOpen, setSavingsOpen] = useState(true)
-
-  // Fixed cost item editing
-  const [editingItem, setEditingItem] = useState<FixedCostItem | null>(null)
-  const [addingItem, setAddingItem] = useState(false)
 
   // DCA form
   const [formOpen, setFormOpen] = useState(false)
@@ -402,8 +344,9 @@ export function DcaPlanner() {
   const [isEditingPlansMode, setIsEditingPlansMode] = useState(false)
   const [draftPlanAmounts, setDraftPlanAmounts] = useState<Record<string, number>>({})
 
-  const fixedItems = [...(data.fixedCostItems ?? [])].sort((a, b) => b.amount - a.amount)
-  const fixedTotal = fixedItems.reduce((s, x) => s + x.amount, 0)
+  // Fixed costs live in Spend as recurring bills; weekly / yearly ones count at their monthly rate
+  const fixedItems = fixedCostRecurring(data.spendRecurring ?? []).sort((a, b) => perMonth(b) - perMonth(a))
+  const fixedTotal = fixedItems.reduce((s, x) => s + perMonth(x), 0)
   const dcaMonth   = dcaThisMonth(data.dcaPlans)
   const salary = data.monthlyIncome
 
@@ -612,65 +555,32 @@ export function DcaPlanner() {
               open={fixedOpen}
               onToggle={() => setFixedOpen((v) => !v)}
               action={
-                fixedOpen && !addingItem && !editingItem ? (
-                  <button
-                    onClick={() => setAddingItem(true)}
-                    aria-label="Add fixed expense"
-                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 text-xs font-semibold text-ink shadow-2xs hover:bg-surface-muted transition-colors active:scale-95 cursor-pointer"
+                fixedOpen ? (
+                  <Link
+                    to="/spend/recurring"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 text-xs font-semibold text-ink shadow-2xs hover:bg-surface-muted transition-colors active:scale-95"
                   >
-                    <PlusIcon className="h-3.5 w-3.5" strokeWidth={2.2} />
-                    <span>Add expense</span>
-                  </button>
+                    Manage in Spend
+                  </Link>
                 ) : null
               }
             />
 
             {fixedOpen && (
               <div className="mt-4">
-                {fixedItems.length === 0 && !addingItem && (
-                  <p className="text-sm text-ink-muted">No fixed costs yet. Add things like rent, bills, or family support.</p>
-                )}
-
-                {fixedItems.length > 0 && (
+                {fixedItems.length === 0 ? (
+                  <p className="text-sm text-ink-muted">
+                    No fixed costs yet. Add rent, bills or family support as{' '}
+                    <Link to="/spend/recurring" className="font-semibold text-brand hover:underline">
+                      recurring bills in Spend
+                    </Link>
+                    .
+                  </p>
+                ) : (
                   <div className="divide-y divide-line">
-                    {fixedItems.map((item) =>
-                      editingItem?.id === item.id ? (
-                        <div key={item.id} className="py-2">
-                          <FixedCostForm
-                            initial={item}
-                            onSave={(name, amount) => {
-                              upsertFixedCostItem({ id: item.id, name, amount })
-                              showToast(`Updated "${name}"`, 'success')
-                              setEditingItem(null)
-                            }}
-                            onCancel={() => setEditingItem(null)}
-                          />
-                        </div>
-                      ) : (
-                        <FixedCostRow
-                          key={item.id}
-                          item={item}
-                          onEdit={setEditingItem}
-                          onDelete={(id) => {
-                            removeFixedCostItem(id)
-                            showToast(`Removed "${item.name}"`, 'info')
-                          }}
-                        />
-                      )
-                    )}
-                  </div>
-                )}
-
-                {addingItem && (
-                  <div className="mt-3">
-                    <FixedCostForm
-                      onSave={(name, amount) => {
-                        upsertFixedCostItem({ name, amount })
-                        showToast(`Added "${name}"`, 'success')
-                        setAddingItem(false)
-                      }}
-                      onCancel={() => setAddingItem(false)}
-                    />
+                    {fixedItems.map((item) => (
+                      <FixedCostRow key={item.id} item={item} />
+                    ))}
                   </div>
                 )}
 

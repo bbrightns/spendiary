@@ -6,6 +6,7 @@ import { localDateStr } from '../lib/format'
 import { seedData } from '../lib/seed'
 import { detectBankPreset, findMatchingHolding, inferCashCategory } from '../lib/calc'
 import { THAI_STOCKS, THAI_DRS, US_STOCKS } from '../lib/securities'
+import { importFixedCosts } from '../modules/spend/migrate'
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
 
@@ -464,7 +465,12 @@ function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
   })
   delete (merged as { cash?: number }).cash
   merged.liabilities = Array.isArray(merged.liabilities) ? merged.liabilities : []
-  return merged
+  // Fixed costs moved to Spend (recurring bills); copy the old list over once
+  return importFixedCosts(merged)
+}
+
+function justImportedFixedCosts(before: Partial<SpendiaryData> | null | undefined, after: SpendiaryData): boolean {
+  return !before?.spendSettings?.fixedCostsImported && !!after.spendSettings?.fixedCostsImported
 }
 
 
@@ -712,7 +718,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         try {
           const parsed = JSON.parse(local)
           const migrated = migrate(parsed)
-          lastSynced.current = JSON.stringify(migrated)
+          lastSynced.current = justImportedFixedCosts(parsed, migrated) ? '' : JSON.stringify(migrated)
           setDataState(migrated)
         } catch {
           setDataState(emptyData)
@@ -794,8 +800,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         console.log('Successfully loaded remote data from Supabase')
         const migrated = migrate(remotePayload)
         const migratedStr = JSON.stringify(migrated)
-        
-        lastSynced.current = migratedStr
+
+        // A one-time move just happened: leave lastSynced stale so it gets saved back once
+        lastSynced.current = justImportedFixedCosts(remotePayload, migrated) ? '' : migratedStr
         setDataState(migrated)
         setSyncStatus('synced')
         updateLastSynced(new Date())
