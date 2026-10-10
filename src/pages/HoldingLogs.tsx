@@ -1456,7 +1456,7 @@ export function HoldingLogs() {
   return (
     <>
       <PageHeader
-        eyebrow="Portfolio"
+        eyebrow="Records"
         title="Activity Logs"
         onStartGuide={startTour}
       />

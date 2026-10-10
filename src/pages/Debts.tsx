@@ -230,7 +230,7 @@ export function Debts() {
     <div className="space-y-6">
       {/* ── Page Header ── */}
       <PageHeader
-        eyebrow="Cashflow & Liabilities"
+        eyebrow="Plan"
         title="Debts & Installments"
         subtitle="ศูนย์รวมการจัดการหนี้สิน ผ่อนสินค้า 0% และวางแผนปลดหนี้สู่ความมั่งคั่งที่แท้จริง"
       />

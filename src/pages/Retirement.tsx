@@ -466,7 +466,7 @@ export function Retirement() {
   return (
     <>
       <PageHeader
-        eyebrow="วางแผนการเงิน"
+        eyebrow="Analyze"
         title="วางแผนเกษียณ"
         onStartGuide={startTour}
         subtitle={`อายุ ${currentAge} ปี · เหลือเวลาอีก ${yearsLeft} ปีก่อนเกษียณ`}

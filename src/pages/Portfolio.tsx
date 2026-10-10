@@ -382,7 +382,7 @@ export function Portfolio() {
   if (data.holdings.length === 0) {
     return (
       <>
-        <PageHeader eyebrow="Holdings" title="Portfolio" />
+        <PageHeader eyebrow="Overview" title="Portfolio" />
         <Card>
           <EmptyState
             icon={<PortfolioIcon className="h-7 w-7" />}
@@ -881,7 +881,7 @@ export function Portfolio() {
   return (
     <>
       <PageHeader
-        eyebrow="Holdings"
+        eyebrow="Overview"
         title="Portfolio"
         subtitle={
           <div

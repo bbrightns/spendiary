@@ -210,6 +210,7 @@ export function CashLiquidity() {
     <div className="space-y-6 pb-12">
       {/* ── Page Header ── */}
       <PageHeader
+        eyebrow="Plan"
         title="Cash & Liquidity Hub"
         subtitle="ศูนย์บริหารจัดการพอร์ตเงินสด สภาพคล่องฉุกเฉิน กระสุนรอลงทุน และผลตอบแทนดอกเบี้ยเงินฝาก"
         action={

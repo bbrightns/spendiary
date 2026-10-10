@@ -121,7 +121,7 @@ export function ActivitySummary() {
   return (
     <>
       <PageHeader
-        eyebrow="สรุปผลการลงทุน"
+        eyebrow="Records"
         title="สรุปกำไร-ขาดทุน"
         subtitle="กำไร/ขาดทุนที่เกิดขึ้นจริงในช่วงเวลาที่เลือก (จากรายการขายออกและเงินปันผลที่รับแล้ว)"
         onStartGuide={startTour}

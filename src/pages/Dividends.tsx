@@ -157,7 +157,7 @@ export function Dividends() {
   return (
     <>
       <PageHeader
-        eyebrow="กระแสเงินสด"
+        eyebrow="Plan"
         title="เงินปันผล"
         subtitle="บันทึกเงินปันผลที่ได้รับ คาดการณ์รายรับต่อปี และภาษีหัก ณ ที่จ่าย"
       />

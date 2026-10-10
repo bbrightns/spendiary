@@ -427,7 +427,7 @@ export function Rebalance() {
   return (
     <>
       <PageHeader
-        eyebrow="Portfolio Management"
+        eyebrow="Analyze"
         title="Portfolio Rebalance"
         subtitle="Align portfolio allocation with target weights & simulate capital deployment."
         onStartGuide={startTour}
