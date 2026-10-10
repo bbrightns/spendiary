@@ -446,7 +446,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
                     placeholder={isStock ? 'e.g. Apple Inc.' : 'e.g. SCB S&P 500 Index'}
                   />
                   {suggestions.length > 0 && (
-                    <ul className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-line bg-surface shadow-lg">
+                    <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-xl border border-line bg-surface shadow-lg">
                       {suggestions.map((s) => (
                         <li key={s.ticker}>
                           <button

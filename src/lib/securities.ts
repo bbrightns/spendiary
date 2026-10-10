@@ -199,6 +199,11 @@ export const ALL_SECURITIES: Security[] = [
   ...GOLD_SECURITIES,
 ]
 
+/** 0 when ticker/name starts with the query (best match), 1 otherwise. */
+function startsWithRank(s: Security, q: string): number {
+  return s.ticker.toLowerCase().startsWith(q) || s.name.toLowerCase().startsWith(q) ? 0 : 1
+}
+
 export function searchSecurities(query: string, assetClass: AssetClass): Security[] {
   if (!query || query.trim().length < 1) return []
   const q = query.toLowerCase()
@@ -206,5 +211,7 @@ export function searchSecurities(query: string, assetClass: AssetClass): Securit
     (s) =>
       s.assetClass === assetClass &&
       (s.name.toLowerCase().includes(q) || s.ticker.toLowerCase().includes(q)),
-  ).slice(0, 6)
+  )
+    .sort((a, b) => startsWithRank(a, q) - startsWithRank(b, q))
+    .slice(0, 20)
 }
