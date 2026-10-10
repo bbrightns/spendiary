@@ -264,7 +264,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
     const balNum = cleanBal === '' ? 0 : Number(cleanBal)
 
     if (!cleanName && balNum <= 0) {
-      showToast('Please enter a debt name or amount', 'error')
+      showToast('Please enter a debt name or amount', 'warn')
       return
     }
 

@@ -126,7 +126,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
       note: note.trim() || undefined,
     })
 
-    showToast(`Recorded ${formatCur(netAmount)} dividend from ${targetHolding.ticker}`, 'success')
+    showToast(`${formatCur(netAmount)} from ${targetHolding.ticker} has been recorded.`, 'success', undefined, { celebrate: true, title: 'Dividend received!' })
     onClose()
   }
 

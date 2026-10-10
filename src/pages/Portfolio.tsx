@@ -443,7 +443,7 @@ export function Portfolio() {
 
   const handleExportCsv = () => {
     if (rows.length === 0) {
-      showToast('No holdings to export', 'error')
+      showToast('No holdings to export', 'warn')
       return
     }
 

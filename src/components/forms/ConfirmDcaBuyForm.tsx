@@ -26,7 +26,7 @@ function fmtNum(val: number | undefined | null, maxDec = 4): string {
 
 export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const { data, confirmDcaBuy, usdThb } = useData()
-  const { showToast } = useToast()
+  const { showToast, showResult, hideResult } = useToast()
 
   // Target Holding state
   const [targetHoldingId, setTargetHoldingId] = useState<string>('')
@@ -277,12 +277,26 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     if (submitting) return
     if (!valid || !locValid) { setShowErrors(true); return }
     setSubmitting(true)
+    showResult({
+      status: 'loading',
+      title: isCash ? 'Adding your deposit…' : 'Recording your buy…',
+      message: plan?.name,
+    })
     requestAnimationFrame(() => {
       window.setTimeout(() => {
         try {
           applyConfirm()
+        } catch (err) {
+          console.error('Confirm DCA buy failed:', err)
+          showResult({
+            status: 'error',
+            title: 'Could not save this buy',
+            message: 'Nothing was changed. Please try again.',
+          })
         } finally {
           setSubmitting(false)
+          // If nothing replaced the working popup (e.g. no plan), close it
+          hideResult(true)
         }
       }, 0)
     })
@@ -311,7 +325,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         undefined,
         undefined,
       )
-      showToast(`Deposited ฿${amountThbNum.toLocaleString()} into ${targetCashAccount?.name || p.name}`, 'success', undefined, { celebrate: true })
+      showToast(`Added ฿${amountThbNum.toLocaleString()} to ${targetCashAccount?.name || p.name}`, 'success', undefined, { celebrate: true, title: 'Deposit added!' })
       onClose()
       return
     }
@@ -453,7 +467,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
       )
     }
 
-    showToast(`Confirmed DCA buy for "${holding?.name ?? plan.name}"`, 'success', undefined, { celebrate: true })
+    showToast(`Your DCA buy for ${holding?.name ?? plan.name} is recorded.`, 'success', undefined, { celebrate: true, title: 'Buy confirmed!' })
     onClose()
   }
 

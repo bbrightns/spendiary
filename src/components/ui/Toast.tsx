@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
 import { useToast, type ToastItem } from '../../store/ToastContext'
-import { ConfettiBurst } from './ConfettiBurst'
+import { ResultOverlay } from './ResultOverlay'
 import { CheckIcon, AlertIcon, SparkleIcon, CloseIcon } from '../icons'
 
 const TYPE_CONFIG = {
@@ -70,18 +69,11 @@ function ToastElement({ toast, onDismiss }: { toast: ToastItem; onDismiss: () =>
 }
 
 export function ToastContainer() {
-  const { toasts, dismissToast, celebrationId } = useToast()
-  // One burst per celebration; cleared when it finishes so the next one can replay
-  const [activeBurst, setActiveBurst] = useState<number | null>(null)
-  const clearBurst = useCallback(() => setActiveBurst(null), [])
-
-  useEffect(() => {
-    if (celebrationId > 0) setActiveBurst(celebrationId)
-  }, [celebrationId])
+  const { toasts, dismissToast } = useToast()
 
   return (
     <>
-      {activeBurst !== null && <ConfettiBurst key={activeBurst} onDone={clearBurst} />}
+      <ResultOverlay />
       {toasts.length > 0 && (
         <div
           aria-label="Notifications"

@@ -502,7 +502,7 @@ export function HoldingLogs() {
 
   const handleExportCsv = () => {
     if (filtered.length === 0) {
-      showToast('No transactions to export', 'error')
+      showToast('No transactions to export', 'warn')
       return
     }
 

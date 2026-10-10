@@ -496,6 +496,81 @@
   }
 }
 
+/* Centered result popup */
+.result-backdrop-in {
+  animation: fadeIn 0.2s ease-out both;
+}
+
+.result-backdrop-out {
+  animation: fadeOut 0.18s ease-in both;
+}
+
+.result-card-in {
+  animation: result-card-in 0.42s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+.result-card-out {
+  animation: result-card-out 0.18s ease-in both;
+}
+
+.result-draw {
+  stroke-dasharray: 30;
+  stroke-dashoffset: 30;
+  animation: result-draw 0.45s ease-out 0.28s forwards;
+}
+
+.animate-shake {
+  animation: pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both, shake 0.5s ease-in-out 0.45s both;
+}
+
+.result-progress {
+  transform-origin: left center;
+  animation: result-progress linear forwards;
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes result-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes result-card-out {
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+}
+
+@keyframes result-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(3px); }
+}
+
+@keyframes result-progress {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
 @keyframes draw {
   to {
     stroke-dashoffset: var(--dash-to);
