@@ -918,7 +918,12 @@ export const DEBT_CATEGORIES: Record<
 
 /** Total outstanding liabilities in THB */
 export function totalLiabilities(data: SpendiaryData): number {
-  return (data.liabilities ?? []).reduce((sum, l) => sum + (Number(l.balance) || 0), 0)
+  const debts = (data.liabilities ?? []).reduce((sum, l) => sum + (Number(l.balance) || 0), 0)
+  // Spend credit cards count too, unless one is already tracked in Debts
+  const cards = (data.spendCards ?? [])
+    .filter((c) => !c.excludeFromNetWorth)
+    .reduce((sum, c) => sum + Math.max(0, Number(c.balance) || 0), 0)
+  return debts + cards
 }
 
 /** Total monthly debt service / installment payments in THB */

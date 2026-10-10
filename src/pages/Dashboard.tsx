@@ -88,11 +88,11 @@ export function Dashboard() {
     [alloc],
   )
   const cash = useMemo(() => totalCash(data, usdThb), [data.cashAccounts, usdThb])
-  const debts = useMemo(() => totalLiabilities(data), [data.liabilities])
+  const debts = useMemo(() => totalLiabilities(data), [data.liabilities, data.spendCards])
   const monthlyDebt = useMemo(() => totalMonthlyDebtPayment(data), [data.liabilities])
   const grossAssets = portfolio.value + cash
   const debtRatio = grossAssets > 0 ? (debts / grossAssets) * 100 : (debts > 0 ? 100 : 0)
-  const nw = useMemo(() => netWorth(data, usdThb), [data.cashAccounts, data.holdings, data.liabilities, usdThb])
+  const nw = useMemo(() => netWorth(data, usdThb), [data.cashAccounts, data.holdings, data.liabilities, data.spendCards, usdThb])
   const cashInterest = useMemo(
     () => calculateAnnualCashInterest(data.cashAccounts, usdThb),
     [data.cashAccounts, usdThb],

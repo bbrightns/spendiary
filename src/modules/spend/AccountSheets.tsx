@@ -18,17 +18,21 @@ export function StarIcon({ filled, className = 'h-4 w-4' }: { filled?: boolean; 
   )
 }
 
+/** The look of an on/off switch; the parent button carries role="switch". */
+function SwitchVisual({ on }: { on: boolean }) {
+  return (
+    <span className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${on ? 'bg-brand' : 'bg-line-strong'}`}>
+      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-xs transition-all ${on ? 'left-[18px]' : 'left-0.5'}`} />
+    </span>
+  )
+}
+
 /** Favorite + default switches, shared by the card and wallet sheets. */
 function QuickAddPrefs({ id }: { id: string }) {
   const { settings, toggleFavorite, setDefaultAccount } = useSpend()
   const fav = (settings.favoriteAccountIds ?? []).includes(id)
   const isDefault = settings.defaultAccountId === id
   const row = 'flex w-full items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 text-left cursor-pointer hover:bg-surface-muted/50'
-  const sw = (on: boolean) => (
-    <span className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${on ? 'bg-brand' : 'bg-line-strong'}`}>
-      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-xs transition-all ${on ? 'left-[18px]' : 'left-0.5'}`} />
-    </span>
-  )
   return (
     <div className="space-y-2">
       <p className="text-sm font-semibold text-ink-soft">Quick add</p>
@@ -39,14 +43,14 @@ function QuickAddPrefs({ id }: { id: string }) {
           </span>
           <span className="block text-xs text-ink-muted">Show as a one-tap choice</span>
         </span>
-        {sw(fav)}
+        <SwitchVisual on={fav} />
       </button>
       <button type="button" role="switch" aria-checked={isDefault} onClick={() => setDefaultAccount(isDefault ? undefined : id)} className={row}>
         <span>
           <span className="block text-sm font-bold text-ink">Default</span>
           <span className="block text-xs text-ink-muted">Preselected when you add an expense</span>
         </span>
-        {sw(isDefault)}
+        <SwitchVisual on={isDefault} />
       </button>
     </div>
   )
@@ -81,9 +85,11 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
   const { upsertCard, removeCard } = useSpend()
   const { showToast } = useToast()
   const [form, setForm] = useState({ name: '', last4: '', limit: '', owed: '', statementDay: '25', dueDay: '10', color: CARD_COLORS[0] })
+  const [inNetWorth, setInNetWorth] = useState(true)
   const [lastOpen, setLastOpen] = useState(false)
   if (open !== lastOpen) {
     setLastOpen(open)
+    if (open) setInNetWorth(!card?.excludeFromNetWorth)
     if (open)
       setForm(
         card
@@ -114,6 +120,7 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
       creditLimit: num(form.limit),
       balance: num(form.owed || '0'),
       statementDay: Number(form.statementDay),
+      excludeFromNetWorth: inNetWorth ? undefined : true,
       dueDay: Number(form.dueDay),
     })
     showToast(card ? 'Card updated' : 'Card added')
@@ -192,6 +199,20 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
             ))}
           </div>
         </div>
+
+        <button
+          type="button"
+          role="switch"
+          aria-checked={inNetWorth}
+          onClick={() => setInNetWorth((v) => !v)}
+          className="flex w-full items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 text-left cursor-pointer hover:bg-surface-muted/50"
+        >
+          <span>
+            <span className="block text-sm font-bold text-ink">Count in net worth</span>
+            <span className="block text-xs text-ink-muted">Turn off if this card is already in Debts, so it isn't counted twice</span>
+          </span>
+          <SwitchVisual on={inNetWorth} />
+        </button>
 
         {card && <QuickAddPrefs id={card.id} />}
       </div>

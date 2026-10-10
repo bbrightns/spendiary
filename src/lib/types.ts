@@ -405,6 +405,8 @@ export interface SpendCard {
   statementDay: number
   /** Payment due day of month (วันครบกำหนดชำระ), 1–31 */
   dueDay: number
+  /** Leave out of net worth / total debts (e.g. it's already tracked in Debts) */
+  excludeFromNetWorth?: boolean
 }
 
 export interface SpendiaryData {
