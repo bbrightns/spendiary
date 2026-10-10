@@ -138,7 +138,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
 
   // Cash Account options
   const cashAccountOptions = [
-    { value: 'none', label: 'None · Do not deposit to Cash / ไม่บันทึกเงินสด' },
+    { value: 'none', label: 'None · Do not deposit to cash' },
     ...(data.cashAccounts ?? []).map((c) => ({
       value: c.id,
       label: `${c.name} (${c.currency === 'USD' ? '$' : '฿'}${c.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`,
@@ -174,7 +174,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
       type="button"
       onClick={handleSellAll}
       className="rounded-md bg-surface-muted hover:bg-brand/15 hover:text-brand border border-line hover:border-brand/30 px-2 py-0.5 text-xs font-bold text-ink-muted active:scale-95 transition-all cursor-pointer shadow-2xs"
-      title="ขายทั้งหมด 100%"
+      title="Sell everything (100%)"
     >
       100%
     </button>
@@ -315,10 +315,10 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
         }
       }
 
-      const feeNote = effectiveFee > 0 ? ` · ค่าธรรมเนียม: ฿${effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''
+      const feeNote = effectiveFee > 0 ? ` · Fee: ฿${effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''
       const pnlSign = realizedPnL >= 0 ? '+' : ''
-      const pnlWord = realizedPnL >= 0 ? 'กำไร' : 'ขาดทุน'
-      note = `ขาย ${sShares.toLocaleString(undefined, { maximumFractionDigits: 4 })} หุ้น @ $${sPriceUsd.toFixed(2)} (FX ${sFx.toFixed(2)})${feeNote} · ได้รับเงิน: ฿${totalProceedsThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · ${pnlWord}: ${pnlSign}฿${realizedPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${pnlSign}${realizedPnLPercent.toFixed(1)}%)${cashNoteSuffix}`
+      const pnlWord = 'Realized PnL'
+      note = `Sold ${sShares.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${sPriceUsd.toFixed(2)} (FX ${sFx.toFixed(2)})${feeNote} · Proceeds: ฿${totalProceedsThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · ${pnlWord}: ${pnlSign}฿${realizedPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${pnlSign}${realizedPnLPercent.toFixed(1)}%)${cashNoteSuffix}`
     } else if (isBtc) {
       const sSats = Number(satoshi)
       const loc = (holding.btcLocations ?? []).find((l) => l.id === btcLocationId)
@@ -353,10 +353,10 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
         }
       }
 
-      const feeNote = effectiveFee > 0 ? ` · ค่าธรรมเนียม: ฿${effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''
+      const feeNote = effectiveFee > 0 ? ` · Fee: ฿${effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''
       const pnlSign = realizedPnL >= 0 ? '+' : ''
-      const pnlWord = realizedPnL >= 0 ? 'กำไร' : 'ขาดทุน'
-      note = `ขาย ${sSats.toLocaleString()} sats จาก ${locName}${feeNote} · ได้รับเงิน: ฿${totalProceedsThb.toLocaleString()} · ${pnlWord}: ${pnlSign}฿${realizedPnL.toLocaleString()} (${pnlSign}${realizedPnLPercent.toFixed(1)}%)${cashNoteSuffix}`
+      const pnlWord = 'Realized PnL'
+      note = `Sold ${sSats.toLocaleString()} sats from ${locName}${feeNote} · Proceeds: ฿${totalProceedsThb.toLocaleString()} · ${pnlWord}: ${pnlSign}฿${realizedPnL.toLocaleString()} (${pnlSign}${realizedPnLPercent.toFixed(1)}%)${cashNoteSuffix}`
     } else if (isGold) {
       const sGrams = Number(goldGrams)
       const sBaht = Number((sGrams / GRAMS_PER_BAHT_GOLD).toFixed(4))
@@ -391,9 +391,9 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
         }
       }
 
-      const feeNote = effectiveFee > 0 ? ` · ค่าธรรมเนียม: ฿${effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''
+      const feeNote = effectiveFee > 0 ? ` · Fee: ฿${effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''
       const soldPricePerBaht = Math.round(soldPriceDisplay * GRAMS_PER_BAHT_GOLD)
-      note = `ขาย ${sGrams.toFixed(4)} g (${sBaht.toFixed(4)} บาททอง) จาก ${locName} ที่ราคา ฿${soldPricePerBaht.toLocaleString()}/บาททอง${feeNote} · ได้รับเงิน: ฿${totalProceedsThb.toLocaleString()}${cashNoteSuffix}`
+      note = `Sold ${sGrams.toFixed(4)} g (${sBaht.toFixed(4)} gold baht) from ${locName} @ ฿${soldPricePerBaht.toLocaleString()}/gold baht${feeNote} · Proceeds: ฿${totalProceedsThb.toLocaleString()}${cashNoteSuffix}`
     } else {
       const u = Number(units)
       const p = Number(price)
@@ -411,10 +411,10 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
         }
       }
 
-      const feeNote = effectiveFee > 0 ? ` · ค่าธรรมเนียม: ฿${effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''
+      const feeNote = effectiveFee > 0 ? ` · Fee: ฿${effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''
       const pnlSign = realizedPnL >= 0 ? '+' : ''
-      const pnlWord = realizedPnL >= 0 ? 'กำไร' : 'ขาดทุน'
-      note = `ขาย ${u.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${label} @ ฿${p.toLocaleString()}${feeNote} · ได้รับเงิน: ฿${totalProceedsThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · ${pnlWord}: ${pnlSign}฿${realizedPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${pnlSign}${realizedPnLPercent.toFixed(1)}%)${cashNoteSuffix}`
+      const pnlWord = 'Realized PnL'
+      note = `Sold ${u.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${label} @ ฿${p.toLocaleString()}${feeNote} · Proceeds: ฿${totalProceedsThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · ${pnlWord}: ${pnlSign}฿${realizedPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${pnlSign}${realizedPnLPercent.toFixed(1)}%)${cashNoteSuffix}`
     }
 
     sellHolding({
@@ -433,7 +433,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     })
 
     const pnlBadge = `${realizedPnL >= 0 ? '+' : ''}฿${Math.round(realizedPnL).toLocaleString()}`
-    showToast(`ขาย ${holding.name} สำเร็จ (${realizedPnL >= 0 ? 'กำไร' : 'ขาดทุน'}: ${pnlBadge})`, realizedPnL >= 0 ? 'success' : 'info')
+    showToast(`Sold ${holding.name} (${realizedPnL >= 0 ? 'profit' : 'loss'}: ${pnlBadge})`, realizedPnL >= 0 ? 'success' : 'info')
     onClose()
   }
 
@@ -441,8 +441,8 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     <Modal
       open={open}
       onClose={onClose}
-      title={lockedSellLocName ? `ขาย · ${holding.name} — ${lockedSellLocName}` : `ขาย · ${holding.name}`}
-      description="บันทึกรายการขาย คำนวณผลกำไร/ขาดทุน และโอนเงินเข้าบัญชีเงินสดของคุณ"
+      title={lockedSellLocName ? `Sell · ${holding.name} — ${lockedSellLocName}` : `Sell · ${holding.name}`}
+      description="Record a sale, see your profit or loss, and move the money into a cash account"
       footer={
         <Button
           variant="danger"
@@ -450,7 +450,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
           className="w-full"
           disabled={!isValid}
         >
-          {isFullSell ? 'ยืนยันขายทั้งหมด (ปิดสถานะ)' : 'ยืนยันการขาย'}
+          {isFullSell ? 'Confirm sell all' : 'Confirm sale'}
         </Button>
       }
     >
@@ -459,8 +459,8 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
           <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-2.5 text-xs text-amber-700 dark:text-amber-400">
             <LockClosedIcon className="h-4 w-4 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-sm">สินทรัพย์นี้อยู่ใน Safe-Haven (Locked)</p>
-              <p className="mt-0.5 text-ink-muted">ล็อคเพื่อป้องกันการกดขายหรือลดจำนวนหน่วย กรุณาปลดล็อคที่หน้า Portfolio ก่อนทำรายการขาย</p>
+              <p className="font-semibold text-sm">This asset is locked</p>
+              <p className="mt-0.5 text-ink-muted">It is locked to protect it from being sold. Unlock it on the Portfolio page before selling.</p>
             </div>
           </div>
         )}
@@ -468,8 +468,8 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
           <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-2.5 text-xs text-amber-700 dark:text-amber-400">
             <LockClosedIcon className="h-4 w-4 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-sm">กระเป๋านี้อยู่ในสถานะล็อค (Lock)</p>
-              <p className="mt-0.5 text-ink-muted">ล็อคเพื่อป้องกันการกดขาย กรุณาเลือกกระเป๋าอื่น หรือปลดล็อคกระเป๋านี้ก่อนทำรายการ</p>
+              <p className="font-semibold text-sm">This location is locked</p>
+              <p className="mt-0.5 text-ink-muted">It is locked to protect it from being sold. Pick another location or unlock this one first.</p>
             </div>
           </div>
         )}
@@ -497,7 +497,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
               {isBtc
                 ? `${Math.round(currentUnits * SATS_PER_BTC).toLocaleString()} sats (${currentUnits.toFixed(8)} BTC)`
                 : isGold
-                ? `${currentUnits.toFixed(4)} g (${(currentUnits / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง)`
+                ? `${currentUnits.toFixed(4)} g (${(currentUnits / GRAMS_PER_BAHT_GOLD).toFixed(4)} gold baht)`
                 : `${currentUnits.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${label}`}
             </span>
           </div>
@@ -555,12 +555,12 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
               <div className="space-y-1">
                 {!lockedSellLocName && (
                   <SelectField
-                    label="Sell from Location (ตำแหน่งจัดเก็บที่จะขาย)"
+                    label="Sell from location"
                     value={btcLocationId}
                     onChange={handleBtcLocationChange}
                     options={(holding.btcLocations ?? []).map((l) => ({
                       value: l.id,
-                      label: `${l.isLocked ? '🔒 (Lock) ' : ''}${l.name} (${l.satoshi.toLocaleString()} sats · ฿${l.thbSpent.toLocaleString()})`,
+                      label: `${l.isLocked ? '🔒 ' : ''}${l.name} (${l.satoshi.toLocaleString()} sats · ฿${l.thbSpent.toLocaleString()})`,
                       disabled: l.isLocked,
                     }))}
                   />
@@ -571,8 +571,8 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                   const avgBtcThb = (loc.thbSpent / loc.satoshi) * SATS_PER_BTC
                   return (
                     <div className="flex items-center justify-between text-xs px-1 text-ink-muted">
-                      <span>ต้นทุนเฉลี่ยกระเป๋านี้: <strong className="text-ink-soft font-semibold">฿{Math.round(avgBtcThb).toLocaleString()}/BTC</strong></span>
-                      <span className="text-xs text-ink-faint">*คิดกำไรขาดทุนเฉพาะกระเป๋านี้</span>
+                      <span>Average cost of this location: <strong className="text-ink-soft font-semibold">฿{Math.round(avgBtcThb).toLocaleString()}/BTC</strong></span>
+                      <span className="text-xs text-ink-faint">*Profit or loss is based on this location only</span>
                     </div>
                   )
                 })()}
@@ -592,22 +592,22 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
             />
             <div className="space-y-1.5">
               <NumberField
-                label="THB proceeds received (เงินบาทที่ได้รับ)"
+                label="THB received"
                 prefix="฿"
                 value={btcThbProceeds}
                 error={showErrors && (btcThbProceeds === '' || Number(btcThbProceeds) <= 0) ? 'Required' : undefined}
                 onChange={(val) => setBtcThbProceeds(val === '' ? '' : Number(val))}
-                placeholder={estBtcProceeds > 0 ? `เช่น ${estBtcProceeds.toLocaleString()}` : '0'}
+                placeholder={estBtcProceeds > 0 ? `e.g. ${estBtcProceeds.toLocaleString()}` : '0'}
               />
               {estBtcProceeds > 0 && (
                 <div className="flex items-center justify-between text-xs px-1 text-ink-muted">
-                  <span>ราคาตลาดประเมิน: <strong className="text-ink-soft font-medium">฿{estBtcProceeds.toLocaleString()}</strong></span>
+                  <span>Estimated at market price: <strong className="text-ink-soft font-medium">฿{estBtcProceeds.toLocaleString()}</strong></span>
                   <button
                     type="button"
                     onClick={() => setBtcThbProceeds(estBtcProceeds)}
                     className="text-brand hover:underline font-medium cursor-pointer"
                   >
-                    ใช้ราคานี้
+                    Use this
                   </button>
                 </div>
               )}
@@ -619,12 +619,12 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
               <div className="space-y-1">
                 {!lockedSellLocName && (
                   <SelectField
-                    label="Sell from Location (ตำแหน่งจัดเก็บที่จะขาย)"
+                    label="Sell from location"
                     value={goldLocationId}
                     onChange={handleGoldLocationChange}
                     options={(holding.goldLocations ?? []).map((l) => ({
                       value: l.id,
-                      label: `${l.isLocked ? '🔒 (Lock) ' : ''}${l.name} (${l.grams.toFixed(4)}g · ${(l.grams / GRAMS_PER_BAHT_GOLD).toFixed(2)} บาท · ฿${l.thbSpent.toLocaleString()})`,
+                      label: `${l.isLocked ? '🔒 ' : ''}${l.name} (${l.grams.toFixed(4)}g · ${(l.grams / GRAMS_PER_BAHT_GOLD).toFixed(2)} gold baht · ฿${l.thbSpent.toLocaleString()})`,
                       disabled: l.isLocked,
                     }))}
                   />
@@ -636,28 +636,28 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                   const avgPerGram = loc.thbSpent / loc.grams
                   return (
                     <div className="flex items-center justify-between text-xs px-1 text-ink-muted">
-                      <span>ต้นทุนเฉลี่ยกระเป๋านี้: <strong className="text-ink-soft font-semibold">฿{Math.round(avgPerBaht).toLocaleString()}/บาททอง</strong> <span className="text-ink-faint font-normal">(฿{Math.round(avgPerGram).toLocaleString()}/g)</span></span>
-                      <span className="text-xs text-ink-faint">*คิดกำไรขาดทุนเฉพาะกระเป๋านี้</span>
+                      <span>Average cost of this location: <strong className="text-ink-soft font-semibold">฿{Math.round(avgPerBaht).toLocaleString()}/gold baht</strong> <span className="text-ink-faint font-normal">(฿{Math.round(avgPerGram).toLocaleString()}/g)</span></span>
+                      <span className="text-xs text-ink-faint">*Profit or loss is based on this location only</span>
                     </div>
                   )
                 })()}
               </div>
             )}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-ink-soft">Sale Unit / หน่วยขาย</label>
+              <label className="text-sm font-medium text-ink-soft">Sale unit</label>
               <SegmentedControl
                 size="sm"
                 value={goldUnit}
                 onChange={handleGoldUnitChange}
                 options={[
-                  { value: 'grams', label: 'กรัม (Grams)' },
-                  { value: 'baht', label: 'บาททองคำ' },
+                  { value: 'grams', label: 'Grams' },
+                  { value: 'baht', label: 'Gold baht' },
                 ]}
               />
             </div>
             {goldUnit === 'grams' ? (
               <NumberField
-                label="Grams to sell (กรัม)"
+                label="Grams to sell"
                 value={goldGrams}
                 rightElement={renderMaxButton()}
                 error={showErrors && (goldGrams === '' || Number(goldGrams) <= 0) ? 'Required' : undefined}
@@ -675,7 +675,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
               />
             ) : (
               <NumberField
-                label="Weight to sell in บาททองคำ"
+                label="Weight to sell in gold baht"
                 value={goldBaht}
                 rightElement={renderMaxButton()}
                 error={showErrors && (goldBaht === '' || Number(goldBaht) <= 0) ? 'Required' : undefined}
@@ -695,22 +695,22 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
             )}
             <div className="space-y-1.5">
               <NumberField
-                label="THB proceeds received (เงินบาทที่ได้รับ)"
+                label="THB received"
                 prefix="฿"
                 value={goldThbProceeds}
                 error={showErrors && (goldThbProceeds === '' || Number(goldThbProceeds) <= 0) ? 'Required' : undefined}
                 onChange={(val) => setGoldThbProceeds(val === '' ? '' : Number(val))}
-                placeholder={estGoldProceeds > 0 ? `เช่น ${estGoldProceeds.toLocaleString()}` : '0'}
+                placeholder={estGoldProceeds > 0 ? `e.g. ${estGoldProceeds.toLocaleString()}` : '0'}
               />
               {estGoldProceeds > 0 && (
                 <div className="flex items-center justify-between text-xs px-1 text-ink-muted">
-                  <span>ราคาตลาดประเมิน: <strong className="text-ink-soft font-medium">฿{estGoldProceeds.toLocaleString()}</strong></span>
+                  <span>Estimated at market price: <strong className="text-ink-soft font-medium">฿{estGoldProceeds.toLocaleString()}</strong></span>
                   <button
                     type="button"
                     onClick={() => setGoldThbProceeds(estGoldProceeds)}
                     className="text-brand hover:underline font-medium cursor-pointer"
                   >
-                    ใช้ราคานี้
+                    Use this
                   </button>
                 </div>
               )}
@@ -745,7 +745,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
         {/* Cash Deposit Selection */}
         <div className="pt-1">
           <SelectField
-            label="Deposit proceeds to Cash (นำเงินเข้ากระเป๋าเงินสด)"
+            label="Deposit the money into a cash account"
             value={cashAccountId}
             onChange={setCashAccountId}
             options={cashAccountOptions}
@@ -764,7 +764,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
             {/* Total Proceeds Row */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-sm gap-2">
-                <span className="text-ink-soft shrink-0">Total Proceeds (เงินที่จะได้รับ)</span>
+                <span className="text-ink-soft shrink-0">Total you receive</span>
                 <div className="flex items-center gap-2">
                   <span className="font-bold tnum text-ink text-sm">{thb(totalProceedsThb)}</span>
                   {!isCustomProceeds ? (
@@ -776,10 +776,10 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                         setCustomFee('')
                       }}
                       className="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium text-sky-700 bg-sky-100 hover:bg-sky-200 dark:text-sky-200 dark:bg-sky-950 dark:hover:bg-sky-900 border border-sky-300 dark:border-sky-800 transition-colors cursor-pointer shrink-0 shadow-2xs"
-                      title="ระบุยอดเงินที่ได้รับจริงเอง กรณีมีค่าธรรมเนียมหรือส่วนลด"
+                      title="Enter the exact amount you received if there were fees or discounts"
                     >
                       <span className="text-xs">✏️</span>
-                      <span>ปรับยอด</span>
+                      <span>Adjust</span>
                     </button>
                   ) : (
                     <button
@@ -790,10 +790,10 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                         setCustomFee('')
                       }}
                       className="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium text-ink-muted hover:text-ink bg-surface border border-line hover:border-line-strong transition-colors cursor-pointer shrink-0 shadow-2xs"
-                      title="คืนค่าคำนวณอัตโนมัติ"
+                      title="Go back to the automatic amount"
                     >
                       <span>↺</span>
-                      <span>อัตโนมัติ</span>
+                      <span>Auto</span>
                     </button>
                   )}
                 </div>
@@ -803,12 +803,12 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
               {isCustomProceeds && (
                 <div className="rounded-xl bg-surface border border-line p-3 space-y-2.5 text-left shadow-xs">
                   <div className="flex items-center justify-between text-xs text-ink-muted">
-                    <span>มูลค่าขายตามราคาตลาด: <strong className="text-ink font-semibold tnum">{thb(grossProceedsThb)}</strong></span>
-                    <span className="text-xs text-ink-soft">กรอกยอดสุทธิหรือค่าธรรมเนียม</span>
+                    <span>Sale value at market price: <strong className="text-ink font-semibold tnum">{thb(grossProceedsThb)}</strong></span>
+                    <span className="text-xs text-ink-soft">Enter the amount received or the fee</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <NumberField
-                      label="เงินสุทธิที่ได้รับจริง (฿)"
+                      label="Amount actually received (฿)"
                       prefix="฿"
                       value={customProceeds}
                       onChange={(val) => {
@@ -825,7 +825,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                       step={0.01}
                     />
                     <NumberField
-                      label="หรือค่าธรรมเนียมที่หัก (฿)"
+                      label="Or the fee taken (฿)"
                       prefix="฿"
                       value={customFee}
                       onChange={(val) => {
@@ -843,7 +843,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                   </div>
                   {effectiveFee > 0 && (
                     <div className="flex items-center justify-between text-xs text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-2.5 py-1">
-                      <span>หักค่าธรรมเนียม/ต๋ง (Fee):</span>
+                      <span>Fee taken:</span>
                       <span className="font-bold tnum">
                         -฿{effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({grossProceedsThb > 0 ? ((effectiveFee / grossProceedsThb) * 100).toFixed(2) : '0'}%)
                       </span>
@@ -854,12 +854,12 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-ink-soft">
-                {isGold || isBtc ? 'ต้นทุนของส่วนที่ขาย (อิงตามกระเป๋าที่เลือก)' : 'ต้นทุนของส่วนที่ขาย'}
+                {isGold || isBtc ? 'Cost of what you sold (based on the selected location)' : 'Cost of what you sold'}
               </span>
               <span className="font-medium tnum text-ink-muted">{thb(costBasisSoldThb)}</span>
             </div>
             <div className="flex items-center justify-between text-sm border-t border-line/60 pt-1.5">
-              <span className="font-semibold text-ink">กำไร / ขาดทุนที่ได้รับ</span>
+              <span className="font-semibold text-ink">Profit / loss from this sale</span>
               <span
                 className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold tnum ${
                   realizedPnL >= 0
@@ -873,11 +873,11 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
               </span>
             </div>
             <div className="flex items-center justify-between text-xs text-ink-muted pt-0.5">
-              <span>จำนวนคงเหลือหลังขาย</span>
+              <span>Left after sale</span>
               <span className="font-medium tnum">
                 {isFullSell ? (
                   <span className="text-rose-600 dark:text-rose-400 font-semibold">
-                    0 {label} (ขายหมดพอร์ต)
+                    0 {label} (sold everything)
                   </span>
                 ) : (
                   `${remainingUnits.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${label}`
