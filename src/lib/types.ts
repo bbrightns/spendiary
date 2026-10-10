@@ -417,13 +417,13 @@ export interface SpendiaryData {
   /** Monthly take-home salary in THB, used to compute the savings/invest rate. */
   monthlyIncome: number
   /**
-   * @deprecated Kept as a backup after the move to Spend: fixed costs now live in
-   * `spendRecurring` (expense items with `fixedCost` not false). Copied over once on load.
+   * @deprecated Read only from old data / backups: fixed costs now live in `spendRecurring`
+   * (expense items with `fixedCost` not false). Copied over on load, then removed.
    */
   fixedCostItems?: FixedCostItem[]
   /** Legacy single fixed-cost number — migrated to fixedCostItems on load */
   monthlyFixedCost?: number
-  /** Monthly personal / wants budget in THB (shopping, travel, fun) */
+  /** @deprecated Unused; replaced by Spend's monthly budget. Removed from data on load. */
   monthlyPersonal?: number
   /** Daily net worth snapshots — one per day, auto-recorded, last 365 */
   netWorthHistory?: NetWorthSnapshot[]

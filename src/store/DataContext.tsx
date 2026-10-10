@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import type { BtcLocation, CashAccount, DcaPlan, DebtCategory, DividendRecord, FixedCostItem, GoldLocation, Holding, HoldingLog, InvestAssetClass, Liability, NetWorthSnapshot, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryBackup, SpendiaryData, Transfer } from '../lib/types'
+import type { BtcLocation, CashAccount, DcaPlan, DebtCategory, DividendRecord, GoldLocation, Holding, HoldingLog, InvestAssetClass, Liability, NetWorthSnapshot, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryBackup, SpendiaryData, Transfer } from '../lib/types'
 import { localDateStr } from '../lib/format'
 import { seedData } from '../lib/seed'
 import { detectBankPreset, findMatchingHolding, inferCashCategory } from '../lib/calc'
@@ -265,10 +265,6 @@ interface DataContextValue {
   setCashAccounts: (accounts: CashAccount[]) => void
   setMonthlyIncome: (income: number) => void
   setUserName: (name: string) => void
-  setMonthlyFixedCost: (cost: number) => void
-  upsertFixedCostItem: (item: Omit<FixedCostItem, 'id'> & { id?: string }) => void
-  removeFixedCostItem: (id: string) => void
-  setMonthlyPersonal: (amount: number) => void
   upsertLiability: (item: Omit<Liability, 'id'> & { id?: string }) => void
   removeLiability: (id: string) => void
   setLiabilities: (liabilities: Liability[]) => void
@@ -1030,52 +1026,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }),
       setMonthlyIncome: (monthlyIncome) => updateData((prev) => ({ ...prev, monthlyIncome })),
       setUserName: (userName) => updateData((prev) => ({ ...prev, userName })),
-      setMonthlyFixedCost: (monthlyFixedCost) => updateData((prev) => ({ ...prev, monthlyFixedCost })),
-      upsertFixedCostItem: (item) =>
-        updateData((prev) => {
-          const isEdit = item.id && (prev.fixedCostItems ?? []).some((x) => x.id === item.id)
-          const updatedItems = upsert(prev.fixedCostItems ?? [], item)
-          const savedItem = updatedItems.find((x) => x.id === item.id) || updatedItems[updatedItems.length - 1]
-          
-          const logEntry: import('../lib/types').HoldingLog = {
-            id: newId(),
-            timestamp: new Date().toISOString(),
-            action: isEdit ? 'edit' : 'add',
-            holdingName: `Fixed Cost: ${savedItem.name}`,
-            ticker: 'FIXED',
-            assetClass: 'fund', // fallback
-            note: `${isEdit ? 'Updated' : 'Added'} fixed expense item of ฿${savedItem.amount.toLocaleString()}`,
-          }
-
-          return {
-            ...prev,
-            fixedCostItems: updatedItems,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
-          }
-        }),
-      removeFixedCostItem: (id) =>
-        updateData((prev) => {
-          const item = (prev.fixedCostItems ?? []).find((x) => x.id === id)
-          if (!item) return prev
-          const updatedItems = (prev.fixedCostItems ?? []).filter((x) => x.id !== id)
-          
-          const logEntry: import('../lib/types').HoldingLog = {
-            id: newId(),
-            timestamp: new Date().toISOString(),
-            action: 'edit',
-            holdingName: `Fixed Cost: ${item.name}`,
-            ticker: 'FIXED',
-            assetClass: 'fund',
-            note: `Removed fixed expense item of ฿${item.amount.toLocaleString()}`,
-          }
-
-          return {
-            ...prev,
-            fixedCostItems: updatedItems,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
-          }
-        }),
-      setMonthlyPersonal: (monthlyPersonal) => updateData((prev) => ({ ...prev, monthlyPersonal })),
 
       upsertLiability: (item) =>
         updateData((prev) => {

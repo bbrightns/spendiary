@@ -116,7 +116,6 @@ Expected shape:
     "dividendRecords": [],
     "dcaPlans": [],
     "transfers": [],
-    "fixedCostItems": [],
     "retirement": {},
     "plannedAssets": [],
     "netWorthHistory": [],

@@ -11,13 +11,20 @@ function guessCategory(name: string): string {
   return 'bills'
 }
 
+/** Legacy Invest-side fields, dropped once their contents live in Spend. */
+function stripLegacy(data: SpendiaryData): SpendiaryData {
+  const { fixedCostItems, monthlyFixedCost, monthlyPersonal, ...rest } = data
+  return rest
+}
+
 /**
  * One-time move of the Invest-side fixed cost list into Spend as monthly recurring
- * bills (counted as fixed costs). The old list is left in place as a backup.
+ * bills (counted as fixed costs), then the old fields are removed. Old backups and
+ * devices that never ran it still import on load.
  * Starts today, so nothing shows up as overdue; the first one is due next month.
  */
 export function importFixedCosts(data: SpendiaryData): SpendiaryData {
-  if (data.spendSettings?.fixedCostsImported) return data
+  if (data.spendSettings?.fixedCostsImported) return stripLegacy(data)
   const items = data.fixedCostItems ?? []
   const existing = data.spendRecurring ?? []
   const imported: SpendRecurring[] = items
@@ -33,9 +40,9 @@ export function importFixedCosts(data: SpendiaryData): SpendiaryData {
       startDate: localDateStr(),
       fixedCost: true,
     }))
-  return {
+  return stripLegacy({
     ...data,
     spendRecurring: [...existing, ...imported],
     spendSettings: { ...data.spendSettings, fixedCostsImported: true },
-  }
+  })
 }
