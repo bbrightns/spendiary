@@ -420,6 +420,9 @@ export function HoldingLogs() {
   const [assetFilter, setAssetFilter] = useState<AssetClass | 'all'>('all')
   const [actionFilter, setActionFilter] = useState<'all' | 'buy' | 'sell' | 'dividend' | 'edit'>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [datePreset, setDatePreset] = useState<'all' | 'month' | '30d' | 'year' | 'custom'>('all')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [viewMode, setViewMode] = useState<'table' | 'timeline'>(() => {
     const saved = localStorage.getItem('spendiary_logs_view_mode')
     if (saved === 'timeline' || saved === 'table') return saved
@@ -464,8 +467,28 @@ export function HoldingLogs() {
     setSelectedLogIds(new Set())
   }
 
+  // Inclusive local-date bounds (YYYY-MM-DD) for the selected date preset
+  const dateBounds = (() => {
+    const now = new Date()
+    if (datePreset === 'month') return { from: localDateStr(new Date(now.getFullYear(), now.getMonth(), 1)), to: '' }
+    if (datePreset === '30d') {
+      const d = new Date(now)
+      d.setDate(d.getDate() - 29)
+      return { from: localDateStr(d), to: '' }
+    }
+    if (datePreset === 'year') return { from: localDateStr(new Date(now.getFullYear(), 0, 1)), to: '' }
+    if (datePreset === 'custom') return { from: dateFrom, to: dateTo }
+    return { from: '', to: '' }
+  })()
+  const hasDateFilter = datePreset !== 'all' && (dateBounds.from !== '' || dateBounds.to !== '')
+
   const filtered = logs.filter((l) => {
     if (assetFilter !== 'all' && l.assetClass !== assetFilter) return false
+    if (hasDateFilter) {
+      const day = localDateStr(new Date(l.timestamp))
+      if (dateBounds.from && day < dateBounds.from) return false
+      if (dateBounds.to && day > dateBounds.to) return false
+    }
     if (actionFilter !== 'all') {
       if (actionFilter === 'buy') {
         if (l.action !== 'add' && l.action !== 'buy_more') return false
@@ -1551,23 +1574,68 @@ export function HoldingLogs() {
           </div>
         </div>
 
+        {/* Date range filter */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="shrink-0 text-xs font-medium text-ink-faint mr-1">Date:</span>
+          {([
+            { key: 'all', label: 'All time' },
+            { key: 'month', label: 'This month' },
+            { key: '30d', label: 'Last 30 days' },
+            { key: 'year', label: 'This year' },
+            { key: 'custom', label: 'Custom' },
+          ] as const).map((f) => (
+            <FilterChip
+              key={f.key}
+              active={datePreset === f.key}
+              onClick={() => setDatePreset(f.key)}
+              aria-label={`Filter by date: ${f.label}`}
+            >
+              {f.label}
+            </FilterChip>
+          ))}
+          {datePreset === 'custom' && (
+            <div className="flex items-center gap-1.5 text-xs text-ink-muted">
+              <input
+                type="date"
+                value={dateFrom}
+                max={dateTo || undefined}
+                onChange={(e) => setDateFrom(e.target.value)}
+                aria-label="From date"
+                className="h-8 rounded-lg border border-line bg-surface px-2 text-xs text-ink"
+              />
+              <span>to</span>
+              <input
+                type="date"
+                value={dateTo}
+                min={dateFrom || undefined}
+                onChange={(e) => setDateTo(e.target.value)}
+                aria-label="To date"
+                className="h-8 rounded-lg border border-line bg-surface px-2 text-xs text-ink"
+              />
+            </div>
+          )}
+        </div>
+
         {/* Results summary & Active filter reset */}
         <div className="flex items-center justify-between text-xs text-ink-muted px-0.5">
           <span>
             {filtered.length} {filtered.length === 1 ? 'transaction' : 'transactions'}
-            {(searchQuery || assetFilter !== 'all' || actionFilter !== 'all') && (
+            {(searchQuery || assetFilter !== 'all' || actionFilter !== 'all' || hasDateFilter) && (
               <span className="text-ink-faint ml-1">
                 (filtered from {logs.length})
               </span>
             )}
           </span>
-          {(searchQuery || assetFilter !== 'all' || actionFilter !== 'all') && (
+          {(searchQuery || assetFilter !== 'all' || actionFilter !== 'all' || hasDateFilter) && (
             <button
               type="button"
               onClick={() => {
                 setSearchQuery('')
                 setAssetFilter('all')
                 setActionFilter('all')
+                setDatePreset('all')
+                setDateFrom('')
+                setDateTo('')
               }}
               className="text-brand hover:underline font-medium cursor-pointer"
             >
@@ -1625,6 +1693,9 @@ export function HoldingLogs() {
                     setSearchQuery('')
                     setAssetFilter('all')
                     setActionFilter('all')
+                    setDatePreset('all')
+                    setDateFrom('')
+                    setDateTo('')
                   }}
                   className="mt-2 cursor-pointer"
                 >
