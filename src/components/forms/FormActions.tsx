@@ -69,7 +69,7 @@ export function FormActions({ editing, canSave, onSave, onDelete }: Props) {
           )}
         </button>
       )}
-      <Button onClick={handleSave} disabled={!canSave} loading={saving} className="flex-1">
+      <Button data-modal-submit onClick={handleSave} disabled={!canSave} loading={saving} className="flex-1">
         {saving ? 'Saving…' : editing ? 'Save changes' : 'Add'}
       </Button>
     </div>

@@ -414,6 +414,12 @@ export function HoldingLogs() {
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null)
   const [expandedDetails, setExpandedDetails] = useState<Set<string>>(new Set())
   const [selectedLogIds, setSelectedLogIds] = useState<Set<string>>(new Set())
+  // Selecting, re-dating and undoing only appear while editing, to keep the list calm
+  const [editMode, setEditMode] = useState(false)
+  const toggleEditMode = () => {
+    setEditMode((v) => !v)
+    setSelectedLogIds(new Set())
+  }
   const [showBatchDeleteConfirm, setShowBatchDeleteConfirm] = useState(false)
 
   const toggleLogSelection = (logId: string) => {
@@ -1495,7 +1501,24 @@ export function HoldingLogs() {
             )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {/* Date range dropdown */}
+            <label className="sr-only" htmlFor="logs-date-filter">Date range</label>
+            <select
+              id="logs-date-filter"
+              value={datePreset}
+              onChange={(e) => setDatePreset(e.target.value as typeof datePreset)}
+              className={`h-9 cursor-pointer rounded-xl border bg-surface px-3 text-sm font-medium outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15 ${
+                datePreset === 'all' ? 'border-line text-ink-muted' : 'border-brand/40 text-brand-ink'
+              }`}
+            >
+              <option value="all">All time</option>
+              <option value="month">This month</option>
+              <option value="30d">Last 30 days</option>
+              <option value="year">This year</option>
+              <option value="custom">Custom range…</option>
+            </select>
+
             {/* View Switcher */}
             <SegmentedControl
               shape="rounded"
@@ -1522,26 +1545,38 @@ export function HoldingLogs() {
               <DownloadIcon className="h-3.5 w-3.5" />
               <span>Export CSV</span>
             </Button>
+
+            {/* Edit mode: reveals select / re-date / undo controls */}
+            <Button
+              variant={editMode ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={toggleEditMode}
+              aria-pressed={editMode}
+              title={editMode ? 'Finish editing' : 'Select, re-date or undo entries'}
+              className="cursor-pointer shrink-0 h-9"
+            >
+              <PencilIcon className="h-3.5 w-3.5" />
+              <span>{editMode ? 'Done' : 'Edit'}</span>
+            </Button>
           </div>
         </div>
 
-        {/* Filter bar: Asset filters (Left) & Action filters (Right) */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
-          {/* Left: Asset Category pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
-            {ASSET_FILTERS.map((f) => (
-              <FilterChip
-                key={f.key}
-                active={assetFilter === f.key}
-                onClick={() => setAssetFilter(f.key)}
-                aria-label={`Filter by ${f.label}`}
-              >
-                {f.label}
-              </FilterChip>
-            ))}
-          </div>
+        {/* Row 2: Asset category pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1.5 -my-1.5 pt-1">
+          {ASSET_FILTERS.map((f) => (
+            <FilterChip
+              key={f.key}
+              active={assetFilter === f.key}
+              onClick={() => setAssetFilter(f.key)}
+              aria-label={`Filter by ${f.label}`}
+            >
+              {f.label}
+            </FilterChip>
+          ))}
+        </div>
 
-          {/* Right: Action Type pills */}
+        {/* Row 3: Action pills + result summary */}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
             <span className="shrink-0 text-xs font-medium text-ink-faint mr-1">Action:</span>
             {ACTION_FILTERS.map((f) => (
@@ -1555,77 +1590,56 @@ export function HoldingLogs() {
               </FilterChip>
             ))}
           </div>
-        </div>
 
-        {/* Date range filter */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="shrink-0 text-xs font-medium text-ink-faint mr-1">Date:</span>
-          {([
-            { key: 'all', label: 'All time' },
-            { key: 'month', label: 'This month' },
-            { key: '30d', label: 'Last 30 days' },
-            { key: 'year', label: 'This year' },
-            { key: 'custom', label: 'Custom' },
-          ] as const).map((f) => (
-            <FilterChip
-              key={f.key}
-              active={datePreset === f.key}
-              onClick={() => setDatePreset(f.key)}
-              aria-label={`Filter by date: ${f.label}`}
-            >
-              {f.label}
-            </FilterChip>
-          ))}
-          {datePreset === 'custom' && (
-            <div className="flex items-center gap-1.5 text-xs text-ink-muted">
-              <input
-                type="date"
-                value={dateFrom}
-                max={dateTo || undefined}
-                onChange={(e) => setDateFrom(e.target.value)}
-                aria-label="From date"
-                className="h-8 rounded-lg border border-line bg-surface px-2 text-xs text-ink"
-              />
-              <span>to</span>
-              <input
-                type="date"
-                value={dateTo}
-                min={dateFrom || undefined}
-                onChange={(e) => setDateTo(e.target.value)}
-                aria-label="To date"
-                className="h-8 rounded-lg border border-line bg-surface px-2 text-xs text-ink"
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Results summary & Active filter reset */}
-        <div className="flex items-center justify-between text-xs text-ink-muted px-0.5">
-          <span>
-            {filtered.length} {filtered.length === 1 ? 'transaction' : 'transactions'}
+          <div className="flex items-center gap-3 text-xs text-ink-muted px-0.5">
+            <span>
+              {filtered.length} {filtered.length === 1 ? 'transaction' : 'transactions'}
+              {(searchQuery || assetFilter !== 'all' || actionFilter !== 'all' || hasDateFilter) && (
+                <span className="text-ink-faint ml-1">(of {logs.length})</span>
+              )}
+            </span>
             {(searchQuery || assetFilter !== 'all' || actionFilter !== 'all' || hasDateFilter) && (
-              <span className="text-ink-faint ml-1">
-                (filtered from {logs.length})
-              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('')
+                  setAssetFilter('all')
+                  setActionFilter('all')
+                  setDatePreset('all')
+                  setDateFrom('')
+                  setDateTo('')
+                }}
+                className="text-brand hover:underline font-medium cursor-pointer"
+              >
+                Reset filters
+              </button>
             )}
-          </span>
-          {(searchQuery || assetFilter !== 'all' || actionFilter !== 'all' || hasDateFilter) && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearchQuery('')
-                setAssetFilter('all')
-                setActionFilter('all')
-                setDatePreset('all')
-                setDateFrom('')
-                setDateTo('')
-              }}
-              className="text-brand hover:underline font-medium cursor-pointer"
-            >
-              Reset filters
-            </button>
-          )}
+          </div>
         </div>
+
+        {/* Custom date range (only when "Custom" is chosen in the Date dropdown) */}
+        {datePreset === 'custom' && (
+          <div className="flex flex-wrap items-center gap-2 text-xs text-ink-muted">
+            <span className="font-medium text-ink-faint">Custom range:</span>
+            <input
+              type="date"
+              value={dateFrom}
+              max={dateTo || undefined}
+              onChange={(e) => setDateFrom(e.target.value)}
+              aria-label="From date"
+              className="h-8 rounded-lg border border-line bg-surface px-2 text-xs text-ink"
+            />
+            <span>to</span>
+            <input
+              type="date"
+              value={dateTo}
+              min={dateFrom || undefined}
+              onChange={(e) => setDateTo(e.target.value)}
+              aria-label="To date"
+              className="h-8 rounded-lg border border-line bg-surface px-2 text-xs text-ink"
+            />
+          </div>
+        )}
         {selectedVisibleCount > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand/20 bg-brand/5 px-3 py-2.5 text-sm">
             <span className="font-semibold text-brand">{selectedLogIds.size} selected</span>
@@ -1693,6 +1707,7 @@ export function HoldingLogs() {
               <table className="logs-table w-full text-left text-sm border-collapse min-w-[980px]">
                 <thead>
                   <tr className="logs-table-head text-xs font-bold text-ink-muted uppercase tracking-[0.12em]">
+                    {editMode && (
                     <th className="logs-table-cell logs-table-check text-center">
                       <input
                         type="checkbox"
@@ -1702,6 +1717,7 @@ export function HoldingLogs() {
                         className="h-4 w-4 rounded border-line-strong accent-brand"
                       />
                     </th>
+                    )}
                     <th className="logs-table-cell logs-table-date">Date & Time</th>
                     <th className="logs-table-cell logs-table-action">Action</th>
                     <th className="logs-table-cell logs-table-asset">Asset / Ticker</th>
@@ -1710,7 +1726,7 @@ export function HoldingLogs() {
                     <th className="logs-table-cell logs-table-metric text-right">Amount (THB)</th>
                     <th className="logs-table-cell logs-table-location">Location</th>
                     <th className="logs-table-cell logs-table-note min-w-[220px]">Note</th>
-                    <th className="logs-table-cell logs-table-actions text-center">Action</th>
+                    {editMode && <th className="logs-table-cell logs-table-actions text-center">Edit</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -1739,6 +1755,7 @@ export function HoldingLogs() {
                             hasComparison ? 'cursor-pointer' : ''
                           } ${isExpanded ? 'is-expanded' : ''}`}
                         >
+                          {editMode && (
                           <td className="logs-table-cell logs-table-check text-center align-top">
                             <input
                               type="checkbox"
@@ -1749,17 +1766,18 @@ export function HoldingLogs() {
                               className="mt-1 h-4 w-4 rounded border-line-strong accent-brand"
                             />
                           </td>
+                          )}
                           <td
-                            className="logs-table-cell logs-table-date whitespace-nowrap cursor-pointer group/date"
-                            onClick={(e) => {
+                            className={`logs-table-cell logs-table-date whitespace-nowrap group/date ${editMode ? 'cursor-pointer' : ''}`}
+                            onClick={editMode ? (e) => {
                               e.stopPropagation()
                               startEditDate(log)
-                            }}
-                            title="Click to edit date"
+                            } : undefined}
+                            title={editMode ? 'Click to edit date' : undefined}
                           >
                             <div className="logs-table-date-main tnum flex items-center gap-1.5">
                               <span>{dateStr}</span>
-                              <PencilIcon className="h-2.5 w-2.5 opacity-0 group-hover/date:opacity-100 transition-opacity text-brand" />
+                              {editMode && <PencilIcon className="h-2.5 w-2.5 opacity-70 text-brand" />}
                             </div>
                             <div className="logs-table-time tnum">{timeStr}</div>
                           </td>
@@ -1852,6 +1870,7 @@ export function HoldingLogs() {
                               )}
                             </div>
                           </td>
+                          {editMode && (
                           <td className="logs-table-cell logs-table-actions text-center whitespace-nowrap">
                             <div className="flex items-center justify-center gap-1">
                               <button
@@ -1879,10 +1898,11 @@ export function HoldingLogs() {
                               </button>
                             </div>
                           </td>
+                          )}
                         </tr>
                         {isExpanded && (
                           <tr className="bg-surface-muted/20 border-b border-line">
-                            <td colSpan={10} className="p-4 pl-8 sm:pl-12">
+                            <td colSpan={editMode ? 10 : 8} className="p-4 pl-8 sm:pl-12">
                               <div className="max-w-xl">
                                 <p className="text-xs font-bold uppercase tracking-wider text-ink-muted mb-1">
                                   State Comparison (Before → After)
@@ -1915,6 +1935,7 @@ export function HoldingLogs() {
                         <div className="flex items-start justify-between gap-2.5">
                           {/* Left: Asset Icon + Holding Info */}
                           <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+                            {editMode && (
                             <input
                               type="checkbox"
                               checked={selectedLogIds.has(log.id)}
@@ -1922,6 +1943,7 @@ export function HoldingLogs() {
                               aria-label={`Select ${log.holdingName}`}
                               className="mt-2 h-4 w-4 shrink-0 rounded border-line-strong accent-brand"
                             />
+                            )}
                             <span
                               className="mt-0.5 grid h-8 w-8 sm:h-9 sm:w-9 shrink-0 place-items-center rounded-xl text-sm font-bold shadow-xs"
                               style={{
@@ -1959,25 +1981,33 @@ export function HoldingLogs() {
 
                           {/* Right: Time + Edit Date pencil + Undo */}
                           <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
-                            <button
-                              type="button"
-                              onClick={() => startEditDate(log)}
-                              className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-medium text-ink-faint hover:text-brand hover:bg-brand/5 transition-colors cursor-pointer"
-                              title="Edit date"
-                            >
-                              <time>
+                            {editMode ? (
+                              <button
+                                type="button"
+                                onClick={() => startEditDate(log)}
+                                className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-medium text-ink-faint hover:text-brand hover:bg-brand/5 transition-colors cursor-pointer"
+                                title="Edit date"
+                              >
+                                <time>
+                                  {new Date(log.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                                </time>
+                                <PencilIcon className="h-2.5 w-2.5 opacity-70" />
+                              </button>
+                            ) : (
+                              <time className="px-1.5 py-1 text-xs font-medium text-ink-faint">
                                 {new Date(log.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                               </time>
-                              <PencilIcon className="h-2.5 w-2.5 opacity-70" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setUndoTarget(log)}
-                              aria-label={`Undo activity for ${log.holdingName}`}
-                              className="rounded-lg px-2 py-1 text-xs font-bold text-loss/85 hover:text-loss hover:bg-loss/10 transition-colors cursor-pointer"
-                            >
-                              Undo
-                            </button>
+                            )}
+                            {editMode && (
+                              <button
+                                type="button"
+                                onClick={() => setUndoTarget(log)}
+                                aria-label={`Undo activity for ${log.holdingName}`}
+                                className="rounded-lg px-2 py-1 text-xs font-bold text-loss/85 hover:text-loss hover:bg-loss/10 transition-colors cursor-pointer"
+                              >
+                                Undo
+                              </button>
+                            )}
                           </div>
                         </div>
 

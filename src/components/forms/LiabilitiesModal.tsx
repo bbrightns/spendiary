@@ -363,6 +363,7 @@ export function LiabilitiesModal({ open, onClose, initialLiabilityId }: Props) {
 
             <button
               type="button"
+              data-modal-submit
               onClick={handleSave}
               className="h-8.5 px-4 rounded-xl text-xs font-bold text-white bg-brand hover:bg-brand/90 active:scale-[0.98] transition-all cursor-pointer shadow-xs whitespace-nowrap"
             >

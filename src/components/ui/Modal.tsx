@@ -9,6 +9,11 @@ interface ModalProps {
   children: ReactNode
   footer?: ReactNode
   size?: 'sm' | 'md' | 'lg' | 'xl'
+  /**
+   * Pressing Enter in a text field presses the footer's primary action
+   * (the button marked `data-modal-submit`, else the last enabled footer button).
+   */
+  enterToSubmit?: boolean
 }
 
 const SIZE_CLASSES = {
@@ -18,8 +23,11 @@ const SIZE_CLASSES = {
   xl: 'sm:max-w-[760px]',
 }
 
-export function Modal({ open, onClose, title, description, children, footer, size = 'md' }: ModalProps) {
+export function Modal({ open, onClose, title, description, children, footer, size = 'md', enterToSubmit = true }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
+  const footerRef = useRef<HTMLDivElement>(null)
+  const enterToSubmitRef = useRef(enterToSubmit)
+  enterToSubmitRef.current = enterToSubmit
   const titleId = useRef(`modal-title-${Math.random().toString(36).substring(2, 9)}`).current
   const descId = useRef(`modal-desc-${Math.random().toString(36).substring(2, 9)}`).current
 
@@ -53,6 +61,24 @@ export function Modal({ open, onClose, title, description, children, footer, siz
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onCloseRef.current()
+        return
+      }
+
+      if (e.key === 'Enter' && enterToSubmitRef.current && !e.isComposing && !e.defaultPrevented) {
+        const target = e.target
+        const textTypes = ['text', 'number', 'email', 'search', 'tel', 'url', 'password', 'date', 'time']
+        if (
+          target instanceof HTMLInputElement &&
+          textTypes.includes(target.type) &&
+          dialogRef.current?.contains(target)
+        ) {
+          const buttons = Array.from(footerRef.current?.querySelectorAll<HTMLButtonElement>('button:not([disabled])') ?? [])
+          const submit = buttons.find((b) => b.hasAttribute('data-modal-submit')) ?? buttons[buttons.length - 1]
+          if (submit) {
+            e.preventDefault()
+            submit.click()
+          }
+        }
         return
       }
 
@@ -130,6 +156,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
         </div>
         {footer && (
           <div
+            ref={footerRef}
             className="shrink-0 border-t border-line bg-surface px-6 pt-3.5"
             style={{ paddingBottom: 'max(1.5rem, calc(0.75rem + env(safe-area-inset-bottom, 0px)))' }}
           >

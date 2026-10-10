@@ -33,10 +33,12 @@ export function ConfirmModal({
       onClose={onClose}
       title={title}
       description={description}
+      enterToSubmit={confirmVariant !== 'danger'}
       footer={
         <div className="flex flex-col gap-2.5 w-full">
           <Button
             variant={confirmVariant}
+            data-modal-submit
             onClick={onConfirm}
             className="w-full flex items-center justify-center gap-2 cursor-pointer"
           >

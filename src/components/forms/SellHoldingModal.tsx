@@ -446,6 +446,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
       footer={
         <Button
           variant="danger"
+          data-modal-submit
           onClick={handleSave}
           className="w-full"
           disabled={!isValid}
