@@ -24,9 +24,9 @@ References: Apple (restraint, typographic precision), Linear (density without cl
 
 - **Robinhood / crypto trading apps**: flashy charts, dopamine green/red excitement, confetti on gains, infinite scroll of market data. Spendiary tracks, it does not trade. No excitement mechanics.
 - Avoid anything that feels like it's celebrating volatility or nudging behavior.
-- Exception, Spend side only: friendly touches are welcome in small doses, such as pastel category
-  colors and a short spending insight with one emoji ("฿1,240 less than last month 👏"). Keep it
-  to one line, never on investment performance, and never confetti or streaks.
+- Exception, both Invest and Spend: friendly touches are welcome in small doses, such as pastel
+  colors and a short one-line insight with one emoji ("฿1,240 less than last month 👏"). Keep it
+  rare and factual; never celebrate market swings, and never confetti spam or streaks.
 
 ## Design Principles
 
