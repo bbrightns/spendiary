@@ -174,7 +174,7 @@ export function Sidebar() {
             onClick={toggleTheme}
             className="grid h-11 w-11 place-items-center rounded-xl text-ink-muted hover:bg-surface hover:text-ink hover:shadow-xs transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             title="Toggle theme"
-            aria-label="เปลี่ยนธีม (Toggle light and dark theme)"
+            aria-label="Toggle light and dark theme"
           >
             <svg className="h-5 w-5 dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />

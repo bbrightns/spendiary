@@ -596,7 +596,7 @@ export function Rebalance() {
                   </span>
                 </label>
                 <p className="mt-1 text-xs text-ink-muted leading-relaxed">
-                  ยกเว้นสินทรัพย์ใน Safe-Haven และกระเป๋าที่ล็อคอยู่ (Lock) ออกจากการคำนวณ เพื่อไม่ให้ถูกแนะนำให้ขายออก
+                  Leaves safe-haven and locked assets out of the calculation so they are never suggested for selling.
                 </p>
               </div>
 

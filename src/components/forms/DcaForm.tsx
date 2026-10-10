@@ -496,7 +496,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
                 <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface-muted p-3.5">
                   <AssetLogo assetClass="gold" ticker="GOLD" size="md" />
                   <div>
-                    <p className="text-sm font-bold text-ink">Gold (ทองคำ / XAU)</p>
+                    <p className="text-sm font-bold text-ink">Gold (XAU)</p>
                     <p className="text-xs text-ink-muted">Recurring buy plan for physical gold / grams</p>
                   </div>
                 </div>
@@ -556,7 +556,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
                   step={1}
                 />
                 <p className="mt-1.5 text-xs text-ink-muted leading-relaxed">
-                  💡 Note: หากกรอก 31 จะหมายถึงวันสุดท้ายของแต่ละเดือน (เช่น 28/29 ก.พ. หรือ 30 ในเดือนที่มี 30 วัน)
+                  💡 Note: Entering 31 means the last day of each month (e.g. 28/29 Feb, or 30 in 30-day months).
                 </p>
               </div>
             )}

@@ -514,10 +514,10 @@ export function DcaPlanner() {
         document.body.removeChild(textarea)
       }
       setCopied(true)
-      showToast('คัดลอกข้อมูลพอร์ตในรูปแบบ Markdown สำเร็จแล้ว', 'success')
+      showToast('Portfolio copied as Markdown', 'success')
       setTimeout(() => setCopied(false), 2500)
     } catch {
-      showToast('ไม่สามารถคัดลอก Markdown ได้', 'error')
+      showToast('Could not copy Markdown', 'error')
     }
   }
 

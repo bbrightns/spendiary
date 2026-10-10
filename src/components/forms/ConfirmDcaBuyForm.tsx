@@ -868,9 +868,9 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               onChange={setGoldInputMode}
               options={[
                 { value: 'grams', label: 'Weight (g)' },
-                { value: 'baht', label: 'Weight (บาททอง)' },
+                { value: 'baht', label: 'Weight (gold baht)' },
                 { value: 'price', label: 'Price / Gram (฿/g)' },
-                { value: 'price_baht', label: 'Price / บาท (฿/บาท)' },
+                { value: 'price_baht', label: 'Price / gold baht' },
               ]}
             />
 
@@ -887,13 +887,13 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
             )}
             {goldInputMode === 'baht' && (
               <NumberField
-                label="Weight bought in บาททองคำ (ทองคำแท่ง 15.244g)"
+                label="Weight bought in gold baht (1 gold baht = 15.244 g)"
                 value={goldBaht}
                 onChange={setGoldBaht}
                 placeholder="e.g. 1.0"
                 autoFocus
                 step={0.0001}
-                error={showErrors && goldGramsToAdd <= 0 ? 'Weight in บาททองคำ required (> 0)' : undefined}
+                error={showErrors && goldGramsToAdd <= 0 ? 'Weight in gold baht required (> 0)' : undefined}
               />
             )}
             {goldInputMode === 'price' && (
@@ -909,13 +909,13 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
             )}
             {goldInputMode === 'price_baht' && (
               <NumberField
-                label="Price per บาททองคำ (฿/บาททองคำ)"
+                label="Price per gold baht (฿)"
                 prefix="฿"
                 value={goldPricePerBaht}
                 onChange={setGoldPricePerBaht}
                 placeholder="e.g. 43,500"
                 autoFocus
-                error={showErrors && goldGramsToAdd <= 0 ? 'Price per บาททองคำ required (> 0)' : undefined}
+                error={showErrors && goldGramsToAdd <= 0 ? 'Price per gold baht required (> 0)' : undefined}
               />
             )}
 
@@ -946,7 +946,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-ink-muted">Price / Gram</span>
                 <span className={valueStyle(hasValidGold)}>
-                  {hasValidGold ? `฿${fmtNum(goldImpliedPricePerGram, 2)} / g (≈ ฿${fmtNum(goldImpliedPricePerGram * GRAMS_PER_BAHT_GOLD, 0)} / บาททอง | $${fmtNum(goldThbPerGramToXauUsd(goldImpliedPricePerGram, rate), 0)}/oz)` : '฿0 / g'}
+                  {hasValidGold ? `฿${fmtNum(goldImpliedPricePerGram, 2)} / g (≈ ฿${fmtNum(goldImpliedPricePerGram * GRAMS_PER_BAHT_GOLD, 0)} / gold baht | $${fmtNum(goldThbPerGramToXauUsd(goldImpliedPricePerGram, rate), 0)}/oz)` : '฿0 / g'}
                 </span>
               </div>
 
@@ -954,7 +954,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                 <div className="flex items-center justify-between">
                   <span className="text-ink-muted">Grams</span>
                   <span className="tnum text-ink-soft">
-                    {fmtNum(goldCurrentTotalGrams, 4)}g <span className="text-ink-muted font-normal">+ ({hasValidGold ? fmtNum(goldGramsToAdd, 4) : '0'})</span> → <strong className={valueStyle(hasValidGold)}>{fmtNum(hasValidGold ? goldNewTotalGrams : goldCurrentTotalGrams, 4)} g (≈ {fmtNum((hasValidGold ? goldNewTotalGrams : goldCurrentTotalGrams) / GRAMS_PER_BAHT_GOLD, 4)} บาททอง)</strong>
+                    {fmtNum(goldCurrentTotalGrams, 4)}g <span className="text-ink-muted font-normal">+ ({hasValidGold ? fmtNum(goldGramsToAdd, 4) : '0'})</span> → <strong className={valueStyle(hasValidGold)}>{fmtNum(hasValidGold ? goldNewTotalGrams : goldCurrentTotalGrams, 4)} g (≈ {fmtNum((hasValidGold ? goldNewTotalGrams : goldCurrentTotalGrams) / GRAMS_PER_BAHT_GOLD, 4)} gold baht)</strong>
                   </span>
                 </div>
 
@@ -969,7 +969,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               <div className="pt-2 border-t border-line flex items-center justify-between text-sm">
                 <span className="font-medium text-ink-muted">New Avg Cost</span>
                 <span className={`tnum ${hasValidGold ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
-                  {hasValidGold ? `฿${fmtNum(goldNewAvgCostThb * GRAMS_PER_BAHT_GOLD, 0)}/บาททอง (≈ $${fmtNum(goldThbPerGramToXauUsd(goldNewAvgCostThb, rate), 0)}/oz XAUUSD)` : '฿0 / บาททอง'}
+                  {hasValidGold ? `฿${fmtNum(goldNewAvgCostThb * GRAMS_PER_BAHT_GOLD, 0)}/gold baht (≈ $${fmtNum(goldThbPerGramToXauUsd(goldNewAvgCostThb, rate), 0)}/oz XAUUSD)` : '฿0 / gold baht'}
                 </span>
               </div>
             </div>
