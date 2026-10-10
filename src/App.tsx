@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { ScrollToTop } from './components/ScrollToTop'
 import { DataProvider, useData } from './store/DataContext'
@@ -28,6 +28,17 @@ function PageLoadingFallback() {
 // 💡 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
 function AppContent() {
   const { user, loginWithGoogle, loginAsTestMode, authError, dataReady } = useData()
+
+  // Safety net: if the first load stalls (silent network), show the app after a while instead of a skeleton forever
+  const [loadTimedOut, setLoadTimedOut] = useState(false)
+  useEffect(() => {
+    if (dataReady || !user) {
+      setLoadTimedOut(false)
+      return
+    }
+    const t = window.setTimeout(() => setLoadTimedOut(true), 8000)
+    return () => window.clearTimeout(t)
+  }, [dataReady, user])
 
   // 💡 ถ้ายังไม่ได้ล็อกอิน ให้แสดงหน้าจอ Sign In ธีม Fastwork.com
   if (!user) {
@@ -231,7 +242,7 @@ function AppContent() {
     <Layout>
       <ScrollToTop />
       {/* Hold back the pages until the first load finishes, so users never see fake empty states */}
-      {!dataReady ? (
+      {!dataReady && !loadTimedOut ? (
         <PageLoadingFallback />
       ) : (
       <Suspense fallback={<PageLoadingFallback />}>
