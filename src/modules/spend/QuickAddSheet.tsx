@@ -191,8 +191,8 @@ export function QuickAddSheet() {
     <Modal
       open={open}
       onClose={() => setOpen(false)}
-      title={editId ? 'Edit transaction' : fromRecurring ? `Log ${fromRecurring.name}` : 'Quick add'}
-      description={fromRecurring ? 'Recurring — adjust the amount if this one was different' : undefined}
+      title={editId ? 'Edit transaction' : fromRecurring ? fromRecurring.name : 'Quick add'}
+      description={fromRecurring ? `Mark as ${type === 'income' ? 'received' : 'paid'}. Adjust the amount if this one was different.` : undefined}
       size="md"
       footer={<FormActions editing={!!editId} canSave={canSave} onSave={save} onDelete={remove} />}
     >

@@ -70,7 +70,7 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
                   type="button"
                   onClick={() => openQuickAdd({ prefill: recurringInput(rec, date), recurring: { id: rec.id, date, name: rec.name } })}
                   className="flex min-w-0 flex-1 items-center gap-3 text-left cursor-pointer"
-                  aria-label={`Review ${rec.name} before logging`}
+                  aria-label={`Review ${rec.name} and adjust the amount`}
                 >
                   <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${TONES[cat?.tone ?? 'slate'].chip}`}>
                     {Icon && <Icon className="h-[18px] w-[18px]" />}
@@ -98,11 +98,11 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
                     confirmRecurring(rec, date)
                     showToast(`${rec.type === 'income' ? '+' : '−'}${thb(rec.amount)} · ${rec.name}`)
                   }}
-                  aria-label={`Log ${rec.name} for ${thb(rec.amount)}`}
+                  aria-label={`Mark ${rec.name} ${rec.type === 'income' ? 'received' : 'paid'}, ${thb(rec.amount)}`}
                   className="flex shrink-0 items-center gap-1 rounded-full bg-ink px-3 py-1.5 text-xs font-bold text-white cursor-pointer dark:bg-[#4f46e5]"
                 >
                   <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.6} />
-                  Log
+                  {rec.type === 'income' ? 'Received' : 'Paid'}
                 </button>
               </li>
             )

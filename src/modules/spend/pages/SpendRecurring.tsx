@@ -50,7 +50,7 @@ export function SpendRecurringPage() {
       <PageHeader
         eyebrow="Spend"
         title="Recurring"
-        subtitle="Bills and income that repeat. Each one waits for you to log or skip it."
+        subtitle="Bills and income that repeat. Each one waits for you to mark it paid (or received) or skip it."
         action={recurring.length > 0 ? <AddButton onClick={() => setSheet({ open: true })} label="Add" /> : undefined}
       />
 
@@ -59,7 +59,7 @@ export function SpendRecurringPage() {
           <EmptyState
             icon={<RepeatIcon className="h-7 w-7" />}
             title="Add your first recurring bill"
-            description="Rent, subscriptions, phone, insurance. You'll get a one-tap Log when each one is due."
+            description="Rent, subscriptions, phone, insurance. You'll get a one-tap Paid when each one is due."
             action={<AddButton onClick={() => setSheet({ open: true })} label="Add recurring" />}
           />
         </Card>
