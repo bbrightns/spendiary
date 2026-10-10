@@ -272,7 +272,8 @@ function SearchSheet({
   }
 
   const words = q.toLowerCase().split(/\s+/).filter(Boolean)
-  const last = words[words.length - 1] ?? ''
+  // The word being typed; empty right after a space (e.g. once a tag was picked)
+  const last = /\s$/.test(q) ? '' : words[words.length - 1] ?? ''
   const walletName = (id?: string) => methods.find((m) => m.id === id)?.name ?? ''
   const count = words.length ? transactions.filter((t) => matches(t, words, walletName)).length : 0
 
@@ -290,6 +291,18 @@ function SearchSheet({
   }, [transactions])
   const tagFilter = last.replace(/^#/, '')
   const shownTags = tagStats.filter(([tag]) => !tagFilter || tag.startsWith(tagFilter)).slice(0, 10)
+
+  // Categories: all expense ones when empty; while typing a plain word, any category
+  // (expense or income) whose name or a keyword starts with it. A #tag hides them.
+  const shownCats = !last
+    ? categoriesFor('expense')
+    : last.startsWith('#')
+      ? []
+      : [...categoriesFor('expense'), ...categoriesFor('income')].filter(
+          (c) =>
+            c.label.toLowerCase().split(/\s+/).some((w) => w.startsWith(last)) ||
+            c.keywords.some((k) => k.toLowerCase().startsWith(last)),
+        )
 
   const apply = (value: string) => {
     const v = value.trim()
@@ -367,15 +380,16 @@ function SearchSheet({
           </div>
         )}
 
-        {!q && (
+        {shownCats.length > 0 && (
           <div>
             <p className="mb-2 text-sm font-semibold text-ink-soft">Categories</p>
             <div className="flex flex-wrap gap-1.5">
-              {categoriesFor('expense').map((c) => (
+              {shownCats.map((c) => (
                 <button
                   key={c.id}
                   type="button"
-                  onClick={() => apply(c.label.toLowerCase())}
+                  // Replace the half-typed word with the category, then search
+                  onClick={() => apply([...words.slice(0, last ? -1 : undefined), c.label.toLowerCase()].join(' '))}
                   className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold cursor-pointer ${TONES[c.tone].chip}`}
                 >
                   <c.icon className="h-3.5 w-3.5" />
