@@ -95,14 +95,12 @@ export function Sidebar() {
               key={section.title}
               className={`flex flex-col gap-0.5 ${index > 0 ? 'mt-3 border-t border-line/60 pt-3' : ''}`}
             >
-              <span className="px-3 pb-1 text-[11px] font-bold uppercase tracking-wider text-ink-faint">
+              <span className="px-3 pb-1 text-[11px] font-bold uppercase tracking-wider text-brand/70">
                 {section.title}
               </span>
               {section.items.map((item) => {
                 const isActive = isSubItemActive(item, pathname)
                 const badgeCount = getBadgeCount(item.to)
-                // First two sections are the frequent destinations (same as mobile tabs); the rest are secondary
-                const isPrimary = index < 2
 
                 return (
                   <Link
@@ -110,17 +108,15 @@ export function Sidebar() {
                     to={item.to}
                     title={item.description}
                     className={[
-                      `flex items-center justify-between px-3 rounded-xl font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset ${isPrimary ? 'py-2 text-sm' : 'py-1.5 text-[13px]'}`,
+                      'flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
                       isActive
                         ? 'text-brand-ink bg-brand-soft/70 shadow-xs font-bold'
-                        : isPrimary
-                        ? 'text-ink hover:bg-surface-muted'
-                        : 'text-ink-muted hover:bg-surface-muted hover:text-ink',
+                        : 'text-ink hover:bg-surface-muted',
                     ].join(' ')}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <item.icon
-                        className={`shrink-0 ${isPrimary ? 'h-4.5 w-4.5' : 'h-4 w-4'} ${isActive ? 'text-brand-ink' : isPrimary ? 'text-ink-soft' : 'text-ink-muted'}`}
+                        className={`h-4.5 w-4.5 shrink-0 ${isActive ? 'text-brand-ink' : 'text-ink-soft'}`}
                         strokeWidth={isActive ? 2.2 : 1.7}
                       />
                       <span className="truncate">{item.label}</span>
