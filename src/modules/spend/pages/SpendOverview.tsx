@@ -132,7 +132,7 @@ export function SpendOverview() {
           />
         </Card>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
           {/* ── Where it went ── */}
           <Card>
             <h2 className="font-display text-lg font-extrabold text-ink">Where it went</h2>

@@ -1,15 +1,18 @@
-import type { SpendiaryData } from './types'
+import type { NetWorthSnapshot, SpendCard, SpendTransaction, SpendiaryData } from './types'
+import { localDateStr } from './format'
+import { netWorth, portfolioValue } from './calc'
+import { cardCycle, parseTags } from '../modules/spend/logic'
 
-/** Build an ISO date N days from today, so demo data always looks fresh. */
+/** Build a local YYYY-MM-DD date N days from today, so demo data always looks fresh. */
 function inDays(days: number): string {
   const d = new Date()
   d.setDate(d.getDate() + days)
-  return d.toISOString().slice(0, 10)
+  return localDateStr(d)
 }
 
-const today = new Date().toISOString().slice(0, 10)
+const today = localDateStr()
 
-export const seedData: SpendiaryData = {
+const baseSeed: SpendiaryData = {
   userName: 'Tester',
   monthlyIncome: 110_000,
   monthlyPersonal: 20_000,
@@ -419,6 +422,20 @@ export const seedData: SpendiaryData = {
     gold: 10,
     real_estate: 15,
   },
+  // Used when Rebalance is switched to per-holding mode (sums to 100)
+  rebalanceHoldingTargets: {
+    'h-sp500': 18,
+    'h-tech': 7,
+    'h-cpnreit': 5,
+    'h-aapl': 8,
+    'h-nvda': 9,
+    'h-msft': 6,
+    'h-btc': 20,
+    'h-gold': 10,
+    'h-condo': 12,
+    'pa-vt': 5,
+  },
+  plannedAssets: [{ id: 'pa-vt', name: 'Vanguard Total World Stock ETF', ticker: 'VT', assetClass: 'stock' }],
   dividendRecords: [
     {
       id: 'div-seed-1',
@@ -1026,5 +1043,147 @@ export const seedData: SpendiaryData = {
     expectedReturn: 0.08,
     birthDate: '1995-06-15',
     withdrawalStrategy: 'drawdown',
+  },
+}
+
+// ── Trend history ────────────────────────────────────────────────────────────
+// Daily snapshots for the last 120 days that drift up to today's real value with
+// gentle, deterministic wobble. Today itself is recorded live by the app.
+
+function trendHistory(endValue: number, days: number, growth: number, wobble: number): NetWorthSnapshot[] {
+  const out: NetWorthSnapshot[] = []
+  for (let i = days; i >= 1; i--) {
+    const t = i / days // 1 = oldest, → 0 = yesterday
+    const noise = Math.sin(i * 0.37) * 0.6 + Math.sin(i * 0.11 + 1.3) * 0.4
+    out.push({ date: inDays(-i), value: Math.round(endValue * (1 - growth * t) * (1 + wobble * noise)) })
+  }
+  return out
+}
+
+const SEED_USD_THB = 34
+
+// ── Spend module ─────────────────────────────────────────────────────────────
+
+/** Most recent date (today or earlier) that falls on `day` of a month, N months back. */
+function lastDayOf(day: number, monthsBack = 0): string {
+  const now = new Date()
+  let d = new Date(now.getFullYear(), now.getMonth(), day)
+  if (d > now) d = new Date(now.getFullYear(), now.getMonth() - 1, day)
+  d.setMonth(d.getMonth() - monthsBack)
+  return localDateStr(d)
+}
+
+const spendCardsBase: SpendCard[] = [
+  { id: 'card-ktc', name: 'KTC Visa Platinum', last4: '4821', color: '#7c3aed', creditLimit: 120_000, balance: 0, statementDay: 25, dueDay: 10 },
+  { id: 'card-uob', name: 'UOB YOLO', last4: '0937', color: '#0ea5e9', creditLimit: 60_000, balance: 0, statementDay: 5, dueDay: 25 },
+]
+
+type T = [daysAgo: number, type: SpendTransaction['type'], amount: number, categoryId: string | undefined, accountId: string, note?: string, toAccountId?: string]
+
+const spendRows: T[] = [
+  [0, 'expense', 65, 'drinks', 'c-scb', 'Brown sugar milk tea #nosetea'],
+  [0, 'expense', 44, 'transport', 'c-scb', 'BTS #commute'],
+  [1, 'expense', 320, 'food', 'card-ktc', 'Team lunch #office'],
+  [1, 'expense', 1_290, 'shopping', 'card-ktc', 'Uniqlo shirts #clothes'],
+  [2, 'expense', 65, 'drinks', 'c-scb', 'Milk tea #nosetea'],
+  [2, 'expense', 459, 'bills', 'card-ktc', 'Netflix + Spotify #subscription'],
+  [3, 'expense', 1_890, 'food', 'card-ktc', 'Omakase dinner #datenight'],
+  [4, 'expense', 44, 'transport', 'c-scb', 'BTS #commute'],
+  [4, 'expense', 145, 'food', 'c-scb', 'ข้าวมันไก่ #ร้านโปรด'],
+  [5, 'expense', 2_200, 'health', 'card-uob', 'Gym membership #fitness'],
+  [6, 'income', 4_500, 'side', 'c-kbank', 'Logo design #freelance'],
+  [6, 'expense', 780, 'fun', 'card-uob', 'Movie night'],
+  [7, 'transfer', 15_000, undefined, 'c-kbank', 'Top up everyday wallet', 'c-scb'],
+  [8, 'expense', 65, 'drinks', 'c-scb', '#nosetea'],
+  [9, 'expense', 3_200, 'family', 'c-kbank', "Mom's birthday dinner #family"],
+  [10, 'expense', 1_450, 'bills', 'c-kbank', 'Electricity #utilities'],
+  [11, 'expense', 1_120, 'food', 'card-ktc', 'Groceries #tops'],
+  [12, 'expense', 120, 'food', 'c-scb', 'ก๋วยเตี๋ยวเรือ #ร้านโปรด'],
+  [13, 'expense', 890, 'transport', 'card-ktc', 'Grab to airport'],
+  [14, 'expense', 65, 'drinks', 'c-scb', '#nosetea'],
+  [16, 'expense', 2_650, 'shopping', 'card-uob', 'Running shoes #fitness'],
+  [18, 'expense', 980, 'food', 'card-ktc', 'Groceries #tops'],
+  [20, 'expense', 350, 'fun', 'c-scb', 'Board game cafe'],
+  [22, 'expense', 65, 'drinks', 'c-scb', '#nosetea'],
+  [24, 'expense', 1_380, 'bills', 'c-kbank', 'Electricity #utilities'],
+  [27, 'expense', 2_400, 'food', 'card-ktc', 'Family dinner #family'],
+  [30, 'expense', 459, 'bills', 'card-ktc', 'Netflix + Spotify #subscription'],
+  [33, 'expense', 170, 'food', 'c-scb', '#ร้านโปรด'],
+  [36, 'expense', 1_900, 'health', 'c-kbank', 'Dentist'],
+  [40, 'expense', 65, 'drinks', 'c-scb', '#nosetea'],
+]
+
+let seq = 0
+const mk = (date: string, [, type, amount, categoryId, accountId, note, toAccountId]: T): SpendTransaction => {
+  seq += 1
+  return {
+    id: `sp-${seq}`,
+    type,
+    amount,
+    categoryId,
+    accountId,
+    toAccountId,
+    date,
+    note,
+    tags: parseTags(note),
+    createdAt: new Date(`${date}T12:00:00`).toISOString(),
+  }
+}
+
+const baseTxns: SpendTransaction[] = [
+  ...spendRows.map((r) => mk(inDays(-r[0]), r)),
+  // Salary lands on the 25th
+  mk(lastDayOf(25), [0, 'income', 110_000, 'salary', 'c-kbank', 'Monthly salary']),
+  mk(lastDayOf(25, 1), [0, 'income', 110_000, 'salary', 'c-kbank', 'Monthly salary']),
+]
+
+const chargesOn = (cardId: string, after: string, upTo = '9999-12-31') =>
+  baseTxns
+    .filter((t) => t.accountId === cardId && t.type === 'expense' && t.date > after && t.date <= upTo)
+    .reduce((s, t) => s + t.amount, 0)
+
+/** What the card's last statement billed: charges between the two most recent closing dates. */
+function lastStatementAmount(card: SpendCard): number {
+  const cyc = cardCycle(card)
+  const [y, m, d] = cyc.lastStatement.split('-').map(Number)
+  const prev = cardCycle(card, new Date(y, m - 1, d - 1)).lastStatement
+  return chargesOn(card.id, prev, cyc.lastStatement)
+}
+
+// KTC's last statement was paid in full from KBank; UOB's is still open
+const ktc = spendCardsBase[0]
+const ktcStatement = cardCycle(ktc).lastStatement
+// Paid two days after the statement closed (never in the future)
+const ktcPaidOn = (() => {
+  const [y, m, d] = ktcStatement.split('-').map(Number)
+  const paid = localDateStr(new Date(y, m - 1, d + 2))
+  return paid > today ? today : paid
+})()
+const ktcBill = lastStatementAmount(ktc)
+const spendTransactions: SpendTransaction[] =
+  ktcBill > 0 && ktcPaidOn > ktcStatement
+    ? [...baseTxns, mk(ktcPaidOn, [0, 'transfer', ktcBill, undefined, 'c-kbank', 'Pay KTC bill', 'card-ktc'])]
+    : baseTxns
+
+/** Owed = this cycle's charges + last statement if not paid and not yet past due. */
+const spendCards: SpendCard[] = spendCardsBase.map((card) => {
+  const cyc = cardCycle(card)
+  const paid = spendTransactions
+    .filter((t) => t.type === 'transfer' && t.toAccountId === card.id && t.date > cyc.lastStatement)
+    .reduce((s, t) => s + t.amount, 0)
+  const unpaid = cyc.lastStatementDue >= today ? Math.max(0, lastStatementAmount(card) - paid) : 0
+  return { ...card, balance: chargesOn(card.id, cyc.lastStatement) + unpaid }
+})
+
+export const seedData: SpendiaryData = {
+  ...baseSeed,
+  netWorthHistory: trendHistory(netWorth(baseSeed, SEED_USD_THB), 120, 0.07, 0.012),
+  portfolioHistory: trendHistory(portfolioValue(baseSeed.holdings), 120, 0.1, 0.02),
+  spendCards,
+  spendTransactions,
+  spendSettings: {
+    monthlyBudget: 25_000,
+    defaultAccountId: 'card-ktc',
+    favoriteAccountIds: ['card-ktc', 'c-scb'],
   },
 }
