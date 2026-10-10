@@ -1,4 +1,6 @@
+import { useCallback, useEffect, useState } from 'react'
 import { useToast, type ToastItem } from '../../store/ToastContext'
+import { ConfettiBurst } from './ConfettiBurst'
 import { CheckIcon, AlertIcon, SparkleIcon, CloseIcon } from '../icons'
 
 const TYPE_CONFIG = {
@@ -33,7 +35,11 @@ function ToastElement({ toast, onDismiss }: { toast: ToastItem; onDismiss: () =>
       aria-live="polite"
       className={`pointer-events-auto flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-[var(--shadow-lift)] transition-all duration-300 animate-rise ${config.style}`}
     >
-      <div className={`grid h-7 w-7 shrink-0 place-items-center rounded-xl ${config.badge}`}>
+      <div
+        className={`grid h-7 w-7 shrink-0 place-items-center rounded-xl ${config.badge} ${
+          toast.type === 'success' ? 'animate-pop success-ring' : ''
+        }`}
+      >
         {config.icon}
       </div>
       <p className="min-w-0 flex-1 text-sm font-semibold text-ink leading-snug">
@@ -64,22 +70,32 @@ function ToastElement({ toast, onDismiss }: { toast: ToastItem; onDismiss: () =>
 }
 
 export function ToastContainer() {
-  const { toasts, dismissToast } = useToast()
+  const { toasts, dismissToast, celebrationId } = useToast()
+  // One burst per celebration; cleared when it finishes so the next one can replay
+  const [activeBurst, setActiveBurst] = useState<number | null>(null)
+  const clearBurst = useCallback(() => setActiveBurst(null), [])
 
-  if (toasts.length === 0) return null
+  useEffect(() => {
+    if (celebrationId > 0) setActiveBurst(celebrationId)
+  }, [celebrationId])
 
   return (
-    <div
-      aria-label="Notifications"
-      className="pointer-events-none fixed bottom-20 left-4 right-4 z-50 flex flex-col gap-2.5 sm:bottom-6 sm:left-auto sm:right-6 sm:w-96"
-    >
-      {toasts.map((toast) => (
-        <ToastElement
-          key={toast.id}
-          toast={toast}
-          onDismiss={() => dismissToast(toast.id)}
-        />
-      ))}
-    </div>
+    <>
+      {activeBurst !== null && <ConfettiBurst key={activeBurst} onDone={clearBurst} />}
+      {toasts.length > 0 && (
+        <div
+          aria-label="Notifications"
+          className="pointer-events-none fixed bottom-20 left-4 right-4 z-[60] flex flex-col gap-2.5 sm:bottom-6 sm:left-auto sm:right-6 sm:w-96"
+        >
+          {toasts.map((toast) => (
+            <ToastElement
+              key={toast.id}
+              toast={toast}
+              onDismiss={() => dismissToast(toast.id)}
+            />
+          ))}
+        </div>
+      )}
+    </>
   )
 }

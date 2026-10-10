@@ -195,7 +195,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
       confirmedDates: editing?.confirmedDates,
       skippedDates: editing?.skippedDates,
     })
-    showToast(editing ? `Updated DCA plan "${nameToUse}"` : `Created DCA plan "${nameToUse}"`, 'success')
+    showToast(editing ? `Updated DCA plan "${nameToUse}"` : `Created DCA plan "${nameToUse}"`, 'success', undefined, { celebrate: !editing })
     onClose()
   }
 

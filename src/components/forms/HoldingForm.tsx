@@ -760,7 +760,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       previousHoldingState: editing ? JSON.parse(JSON.stringify(editing)) : undefined,
       afterHoldingState: savedHolding,
     })
-    showToast(editing ? `Updated ${name}` : `Added ${name} to portfolio`, 'success')
+    showToast(editing ? `Updated ${name}` : `Added ${name} to portfolio`, 'success', undefined, { celebrate: !editing })
     onClose()
   }
 

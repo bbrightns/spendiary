@@ -11,6 +11,7 @@ interface Props {
 
 export function FormActions({ editing, canSave, onSave, onDelete }: Props) {
   const [confirm, setConfirm] = useState(false)
+  const [saving, setSaving] = useState(false)
   const timerRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -18,6 +19,21 @@ export function FormActions({ editing, canSave, onSave, onDelete }: Props) {
       if (timerRef.current) window.clearTimeout(timerRef.current)
     }
   }, [])
+
+  // Paint the spinner first, then run the (synchronous) save so the click feels instant and can't be double-fired
+  function handleSave() {
+    if (saving) return
+    setSaving(true)
+    requestAnimationFrame(() => {
+      window.setTimeout(() => {
+        try {
+          onSave()
+        } finally {
+          setSaving(false)
+        }
+      }, 0)
+    })
+  }
 
   function handleDeleteClick(e: React.MouseEvent) {
     e.preventDefault()
@@ -53,8 +69,8 @@ export function FormActions({ editing, canSave, onSave, onDelete }: Props) {
           )}
         </button>
       )}
-      <Button onClick={onSave} disabled={!canSave} className="flex-1">
-        {editing ? 'Save changes' : 'Add'}
+      <Button onClick={handleSave} disabled={!canSave} loading={saving} className="flex-1">
+        {saving ? 'Saving…' : editing ? 'Save changes' : 'Add'}
       </Button>
     </div>
   )

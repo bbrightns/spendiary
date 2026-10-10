@@ -388,7 +388,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         note: `+${g.toFixed(4)} g (${bahtAmount} บาททอง) · ฿${spent.toLocaleString()} spent · ${goldLocName}${cashSuffix}`,
         timestamp: dateStrToTimestamp(txDate),
       })
-      showToast(`Bought ${g.toFixed(4)}g (${bahtAmount} บาททอง) gold for ${holding!.name}`, 'success')
+      showToast(`Bought ${g.toFixed(4)}g (${bahtAmount} บาททอง) gold for ${holding!.name}`, 'success', undefined, { celebrate: true })
       onClose()
     }
 
@@ -605,7 +605,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         note: `+${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} spent · ${locName}${cashSuffix}`,
         timestamp: dateStrToTimestamp(txDate),
       })
-      showToast(`Bought ${sats.toLocaleString()} sats for ${holding!.name}`, 'success')
+      showToast(`Bought ${sats.toLocaleString()} sats for ${holding!.name}`, 'success', undefined, { celebrate: true })
       onClose()
     }
 
@@ -765,7 +765,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         note: `+${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${priceUsdNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/unit${cashSuffix}`,
         timestamp: dateStrToTimestamp(txDate),
       })
-      showToast(`Bought ${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares of ${holding!.name}`, 'success')
+      showToast(`Bought ${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares of ${holding!.name}`, 'success', undefined, { celebrate: true })
       onClose()
     } else {
       if (!valid) { setShowErrors(true); return }
@@ -791,7 +791,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         note: `+${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${label} @ ฿${Number(price).toLocaleString()}/unit${cashSuffix}`,
         timestamp: dateStrToTimestamp(txDate),
       })
-      showToast(`Bought ${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} units of ${holding!.name}`, 'success')
+      showToast(`Bought ${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} units of ${holding!.name}`, 'success', undefined, { celebrate: true })
       onClose()
     }
   }

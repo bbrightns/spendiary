@@ -58,6 +58,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const [newLocName, setNewLocName] = useState('')
 
   const [showErrors, setShowErrors] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const wasOpen = useRef(false)
   const SATS_PER_BTC = 100_000_000
 
@@ -271,8 +272,23 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     (selectedLocId !== '__new__') ||
     (newLocName.trim().length > 0)
 
+  // Paint the spinner first, then apply the buy — instant feedback and no double-confirm
   function confirm() {
+    if (submitting) return
     if (!valid || !locValid) { setShowErrors(true); return }
+    setSubmitting(true)
+    requestAnimationFrame(() => {
+      window.setTimeout(() => {
+        try {
+          applyConfirm()
+        } finally {
+          setSubmitting(false)
+        }
+      }, 0)
+    })
+  }
+
+  function applyConfirm() {
     if (!plan) return
     const p = plan
     const today = localDateStr()
@@ -295,7 +311,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         undefined,
         undefined,
       )
-      showToast(`Deposited ฿${amountThbNum.toLocaleString()} into ${targetCashAccount?.name || p.name}`, 'success')
+      showToast(`Deposited ฿${amountThbNum.toLocaleString()} into ${targetCashAccount?.name || p.name}`, 'success', undefined, { celebrate: true })
       onClose()
       return
     }
@@ -437,7 +453,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
       )
     }
 
-    showToast(`Confirmed DCA buy for "${holding?.name ?? plan.name}"`, 'success')
+    showToast(`Confirmed DCA buy for "${holding?.name ?? plan.name}"`, 'success', undefined, { celebrate: true })
     onClose()
   }
 
@@ -462,8 +478,8 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
       title={isCash ? `Confirm Deposit: ${targetCashAccount?.name ?? plan.name}` : `Confirm Buy: ${holding?.name ?? plan.name}`}
       description={isCash ? `Record DCA savings deposit into ${targetSubtitleText}` : `Record DCA purchase into ${targetSubtitleText}`}
       footer={
-        <Button onClick={confirm} className="w-full">
-          {isCash ? '✓ Confirm deposit' : '✓ Confirm purchase'}
+        <Button onClick={confirm} loading={submitting} className="w-full">
+          {submitting ? 'Saving…' : isCash ? '✓ Confirm deposit' : '✓ Confirm purchase'}
         </Button>
       }
     >

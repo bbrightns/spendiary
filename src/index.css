@@ -429,6 +429,73 @@
   animation: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+.confetti-piece {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  animation: confetti-burst 1.7s cubic-bezier(0.22, 0.8, 0.3, 1) forwards;
+}
+
+@keyframes confetti-burst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) scale(0.6);
+  }
+  45% {
+    opacity: 1;
+    transform: translate(var(--dx), var(--dy)) rotate(calc(var(--rot) * 0.6)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--dx) * 1.2), calc(var(--dy) + 280px)) rotate(var(--rot)) scale(0.9);
+  }
+}
+
+/* Success badge: springy pop + one expanding ring */
+.animate-pop {
+  animation: pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.success-ring {
+  position: relative;
+}
+
+.success-ring::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid currentColor;
+  opacity: 0;
+  animation: ring-out 0.9s ease-out 0.15s 1 both;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes ring-out {
+  0% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
 @keyframes draw {
   to {
     stroke-dashoffset: var(--dash-to);
