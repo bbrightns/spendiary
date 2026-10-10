@@ -3,21 +3,21 @@
 ## Git Workflow Rules
 1. **Commit after every file modification**: Every time you modify, add, or delete files in this project, you MUST perform a `git commit` with a clear commit message detailing the changes.
 2. **NEVER PUSH WITHOUT EXPLICIT COMMAND**: Do **NOT** execute `git push` under any circumstances unless the user explicitly requests/commands it.
-3. **Auto-Bump Version on User Push Command**: When the user explicitly requests to push (e.g., "push", "git push", "ช่วย push ให้หน่อย"):
+3. **Auto-Bump Version on User Push Command**: When the user explicitly requests to push (e.g., "push", "git push", "help me push"):
    - Inspect all unpushed commits (`git log origin/main..HEAD --oneline`).
    - Determine the next Semantic Version based on the scope and significance of changes in the unpushed batch:
-     - **MAJOR** (`X.0.0`): Breaking changes หรือการรื้อสถาปัตยกรรมระดับรากฐาน (`feat!:`, `fix!:`, หรือ `BREAKING CHANGE`) ➜ Bump **MAJOR** (e.g., `1.10.0` ➜ `2.0.0`)
+     - **MAJOR** (`X.0.0`): Breaking changes or foundational architecture rewrites (`feat!:`, `fix!:`, or `BREAKING CHANGE`) ➜ Bump **MAJOR** (e.g., `1.10.0` ➜ `2.0.0`)
      - **MINOR** (`1.X.0`):
-       - Big Feature Milestone / New core module / New page system (เช่น Dividends Hub, AI Import, Retirement Engine)
-       - **Comprehensive UI/UX Refactor / Multi-component overhaul**: การปรับปรุงดีไซน์หรือประสบการณ์ใช้งานระดับภาพรวมทั้งระบบ (เช่น ยกเครื่องปุ่มและ Design Tokens ข้ามหน้า, ปรับระบบ Navigation/Layouts ครั้งใหญ่)
-       - **High Commit Accumulation**: มีชุด unpushed commits สะสมจำนวนมาก (≥ 10 commits) ที่มีผลต่อฟังก์ชันการใช้งานหลายส่วน
-       - เมื่อผู้ใช้ระบุหรือสั่งให้ bump minor (เช่น "push minor", "ขึ้นเวอร์ชันใหม่") ➜ Bump **MINOR** (e.g., `1.10.14` ➜ `1.11.0`)
-     - **PATCH** (`1.10.X`): การ Push ประจำรอบพัฒนา, ฟีเจอร์ย่อยเฉพาะจุด, แก้ไขบั๊กเฉพาะจุด, ปรับแต่งคำ/สไตล์เล็กน้อย, config, docs ➜ Bump **PATCH** (e.g., `1.11.0` ➜ `1.11.1`)
+       - Big Feature Milestone / New core module / New page system (e.g., Dividends Hub, AI Import, Retirement Engine)
+       - **Comprehensive UI/UX Refactor / Multi-component overhaul**: System-wide redesign or UX changes (e.g., overhauling buttons and Design Tokens across pages, major Navigation/Layout changes)
+       - **High Commit Accumulation**: A large batch of unpushed commits (≥ 10 commits) affecting multiple areas of functionality
+       - When the user asks for a minor bump (e.g., "push minor", "bump the version") ➜ Bump **MINOR** (e.g., `1.10.14` ➜ `1.11.0`)
+     - **PATCH** (`1.10.X`): Routine push within a development cycle, localized features, localized bug fixes, minor text/style tweaks, config, docs ➜ Bump **PATCH** (e.g., `1.11.0` ➜ `1.11.1`)
    - Update `version` in both `package.json` and `package-lock.json`.
    - Run verification (`npm run build`).
    - Commit the version bump: `git commit -am "chore(release): bump app version to X.Y.Z"`.
    - Only then execute `git push`.
-4. **Report Commit Details in Responses**: Every time you perform a commit, you MUST explicitly report the commit hash (short SHA) and the exact commit message in your response to the user so the user is always informed of the changes (ต้องรายงาน commit hash และ commit message ทุกครั้งในคำตอบ).
+4. **Report Commit Details in Responses**: Every time you perform a commit, you MUST explicitly report the commit hash (short SHA) and the exact commit message in your response to the user so the user is always informed of the changes.
 
 ## Quality & Pre-Commit Verification Rules
 1. **Strict TypeScript & Unused Import Checking**:
@@ -27,13 +27,18 @@
    - Review `git diff` before every commit to ensure no orphaned variables, unused imports, or broken contracts exist.
 3. **Verify Type Consistency**:
    - Ensure all type definitions, props, and function signatures across caller/callee components are 100% matched.
+4. **Visual Consistency Check (Before Every Commit That Touches UI)**:
+   - If the change affects any UI (components, pages, styles, Tailwind classes, layout, or theme tokens), verify it before committing:
+     - **Dark / Light theme**: Confirm the change renders correctly in both themes. No hardcoded colors that break in one theme, no unreadable text or low-contrast elements, and no missing `dark:` variants where needed.
+     - **PC (wide screen)**: Confirm the layout works at desktop/wide widths (e.g., ≥ 1280px). No stretched, overflowing, or misaligned elements.
+     - **Mobile**: Confirm the layout works at phone widths (e.g., 375px–430px). No horizontal scrolling, clipped content, or touch targets that are too small.
+   - Check the result in the browser preview (or dev server) for all three cases. If a check cannot be performed, state that explicitly in the response instead of skipping it silently.
+   - Fix any inconsistency found before committing.
 
 ## File Deletion & Safety Rules
-1. **Never delete files without explicit permission**: Strictly prohibited from deleting any files or directories without asking for and receiving explicit confirmation from the user (ห้ามลบไฟล์โดยไม่ถามเด็ดขาด).
+1. **Never delete files without explicit permission**: Strictly prohibited from deleting any files or directories without asking for and receiving explicit confirmation from the user.
 
 ## General Project Overview
 - **App Name**: Spendiary
 - **Stack**: React 18 + TypeScript + Vite + Tailwind CSS v4
 - **Storage**: `localStorage` (single-user dashboard)
-
-
