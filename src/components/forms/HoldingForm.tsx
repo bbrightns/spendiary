@@ -567,7 +567,14 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
 
     if (isUsd) {
       const fxRateVal = Number(fxRateInput) || usdThb || 35
-      const totalThbInvested = parseFloat((Number(thbInvestedInput) || 0).toFixed(2))
+      let totalThbInvested = parseFloat((Number(thbInvestedInput) || 0).toFixed(2))
+      // Never silently save a zero cost basis for a position that has shares and a cost:
+      // an emptied/stale THB field would otherwise wipe the real basis (e.g. from a DCA buy).
+      if (totalThbInvested <= 0 && unitsNum > 0 && avgCostInput > 0) {
+        totalThbInvested = parseFloat((editing?.totalThbInvested && editing.totalThbInvested > 0
+          ? editing.totalThbInvested
+          : unitsNum * avgCostInput * fxRateVal).toFixed(2))
+      }
       const totalUsdInvested = Number((unitsNum * avgCostInput).toFixed(4))
       const avgCostUsd = avgCostInput
       const avgCostThb = unitsNum > 0 ? parseFloat((totalThbInvested / unitsNum).toFixed(2)) : 0
