@@ -132,11 +132,15 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
       ].filter((s) => s.pct > 0)
 
   return (
-    <div className="mt-5">
-      {/* Labels: each section has the same proportional width as its bar segment */}
-      <div className="flex mb-2.5">
+    <div className="@container mt-5">
+      {/* Labels: a wrapping row when the card is narrow; once wide, each label spans its bar segment */}
+      <div className="mb-2.5 flex flex-wrap gap-1.5 @min-[26rem]:flex-nowrap @min-[26rem]:gap-0">
         {segments.map((seg) => (
-          <div key={seg.label} style={{ width: `${seg.pct}%` }} className="flex justify-center min-w-0">
+          <div
+            key={seg.label}
+            style={{ '--seg-w': `${seg.pct}%` } as React.CSSProperties}
+            className="flex min-w-0 justify-center @min-[26rem]:w-[var(--seg-w)]"
+          >
             <div
               className="rounded-xl px-2 py-1.5 text-center min-h-[46px] flex flex-col justify-center max-w-full overflow-hidden"
               style={{ background: seg.bg }}
@@ -173,7 +177,7 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
             style={{ width: `${salaryPct}%` }}
             className="border-b border-l border-r border-line-strong rounded-b-md pt-1 pb-0.5 text-center transition-all duration-500"
           >
-            <span className="font-semibold text-ink-soft">Monthly Salary ({thb(salary)})</span>
+            <span className="block truncate px-1 font-semibold text-ink-soft">Monthly Salary ({thb(salary)})</span>
           </div>
         </div>
       )}
@@ -560,8 +564,8 @@ export function DcaPlanner() {
         <div className="lg:col-span-5 xl:col-span-4 space-y-6">
           {/* ── Income + Budget Bar ── */}
           <div id="guide-dca-summary">
-            <Card className="animate-rise">
-              <div className="flex flex-wrap items-start justify-between gap-4">
+            <Card className="animate-rise @container">
+              <div className="flex flex-col items-start gap-4 @min-[26rem]:flex-row @min-[26rem]:justify-between">
                 <InlineEditStat
                   label="Monthly Salary"
                   value={salary > 0 ? thb(salary) : '-'}
@@ -575,12 +579,12 @@ export function DcaPlanner() {
                   hint={salary <= 0 ? 'Tap to set your salary' : undefined}
                 />
                 {salary > 0 && fixedTotal + savingsTotal > salary && (
-                  <div className="text-right">
+                  <div className="@min-[26rem]:text-right">
                     <p className="text-xs font-medium text-ink-muted">Total Planned</p>
                     <p className="mt-1 font-display text-xl font-extrabold tnum text-ink leading-none">
                       {thb(fixedTotal + savingsTotal)}
                     </p>
-                    <div className="mt-1 flex flex-col items-end gap-0.5">
+                    <div className="mt-1 flex flex-col items-start gap-0.5 @min-[26rem]:items-end">
                       <span className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-bold text-brand dark:text-brand-ink">
                         +{thb(requiredCashInjection)} from Cash
                       </span>
