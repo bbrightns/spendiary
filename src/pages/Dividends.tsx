@@ -16,8 +16,8 @@ import { CheckCircleIcon, ChevronDownIcon, CoinsIcon, PlusIcon, TrashIcon } from
 import type { DividendRecord, Holding } from '../lib/types'
 
 const MONTH_NAMES = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
 ]
 
 export function Dividends() {
@@ -158,23 +158,23 @@ export function Dividends() {
     <>
       <PageHeader
         eyebrow="Plan"
-        title="เงินปันผล"
-        subtitle="บันทึกเงินปันผลที่ได้รับ คาดการณ์รายรับต่อปี และภาษีหัก ณ ที่จ่าย"
+        title="Dividends"
+        subtitle="Record dividends you receive, see what to expect this year, and track tax withheld"
       />
 
       <div className="space-y-4 sm:space-y-6">
         {/* ── KPI Stat Cards ── */}
         <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-3">
-          {/* Card 1: เงินปันผลที่คาดว่าจะได้ต่อปี & อัตราผลตอบแทน (% ต่อปี) */}
+          {/* Card 1: expected dividends this year & yield */}
           <Card className="p-3.5 sm:p-5 animate-rise flex flex-col justify-between col-span-2 lg:col-span-1 bg-gradient-to-br from-emerald-500/5 via-surface to-surface border-emerald-500/20" padded={false}>
             <div>
               <div className="flex items-center justify-between gap-1">
                 <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                  คาดว่าจะได้ปีนี้ (ทั้งปี)
+                  Expected this year
                 </p>
                 {annualDividendYieldPct > 0 && (
                   <span className="inline-flex items-center rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    ~{annualDividendYieldPct.toFixed(1)}% ต่อปี
+                    ~{annualDividendYieldPct.toFixed(1)}% per year
                   </span>
                 )}
               </div>
@@ -184,34 +184,34 @@ export function Dividends() {
             </div>
             <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
               {annualDividendYieldPct > 0
-                ? `คิดเป็นประมาณ ${annualDividendYieldPct.toFixed(1)}% ต่อปี (เทียบเท่าดอกเบี้ยเงินฝาก)`
-                : 'ตั้งค่าเงินปันผลในหุ้นเพื่อคำนวณ'}
+                ? `About ${annualDividendYieldPct.toFixed(1)}% per year, like interest on a deposit`
+                : 'Set up dividends on your stocks to see this'}
             </p>
           </Card>
 
-          {/* Card 2: รับเข้าบัญชีแล้วปีนี้ */}
+          {/* Card 2: received this year */}
           <Card className="p-3.5 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
             <div>
-              <p className="text-xs font-medium text-ink-muted">รับเข้าบัญชีแล้ว ({currentYear})</p>
+              <p className="text-xs font-medium text-ink-muted">Received ({currentYear})</p>
               <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-ink tnum truncate">
                 {thb(totalNetThisYear)}
               </p>
             </div>
             <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-              ก่อนหักภาษี {thb(totalGrossThisYear)} · ภาษี -{thb(totalTaxThisYear)}
+              Before tax {thb(totalGrossThisYear)} · tax -{thb(totalTaxThisYear)}
             </p>
           </Card>
 
-          {/* Card 3: คาดการณ์เดือนนี้ */}
+          {/* Card 3: expected this month */}
           <Card className="p-3.5 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
             <div>
-              <p className="text-xs font-medium text-ink-muted">รอรับเดือนนี้ ({MONTH_NAMES[currentMonth - 1]})</p>
+              <p className="text-xs font-medium text-ink-muted">Due this month ({MONTH_NAMES[currentMonth - 1]})</p>
               <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-brand-ink tnum truncate">
                 {estimatedThisMonth > 0 ? `~${thb(estimatedThisMonth)}` : '-'}
               </p>
             </div>
             <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-              {upcomingHoldings.length > 0 ? `${upcomingHoldings.length} รายการที่รอรับ` : 'ไม่มีรายการในเดือนนี้'}
+              {upcomingHoldings.length > 0 ? `${upcomingHoldings.length} waiting to be received` : 'Nothing due this month'}
             </p>
           </Card>
         </div>
@@ -229,26 +229,26 @@ export function Dividends() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="font-display text-sm sm:text-base font-bold text-ink truncate">
-                    เงินปันผลที่รอรับเดือนนี้
+                    Dividends due this month
                   </h2>
                   <span className="rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-xs font-bold">
                     {MONTH_NAMES[currentMonth - 1]}
                   </span>
                   {upcomingHoldings.length > 0 && (
                     <span className="rounded-full bg-surface-muted border border-line text-ink-muted px-2 py-0.5 text-xs font-bold">
-                      {upcomingHoldings.length} รายการ
+                      {upcomingHoldings.length} {upcomingHoldings.length === 1 ? 'item' : 'items'}
                     </span>
                   )}
                 </div>
                 {!upcomingOpen ? (
                   <p className="text-xs text-ink-muted mt-0.5 truncate">
                     {upcomingHoldings.length === 0
-                      ? `ไม่มีรายการปันผลในเดือน${MONTH_NAMES[currentMonth - 1]} (แตะเพื่อดูรายละเอียด)`
-                      : `คาดว่าจะได้รับ ~${thb(estimatedThisMonth)} · แตะเพื่อดูและกดยืนยันรับเงิน`}
+                      ? `No dividends due in ${MONTH_NAMES[currentMonth - 1]} (tap for details)`
+                      : `Expecting ~${thb(estimatedThisMonth)} · tap to review and confirm`}
                   </p>
                 ) : (
                   <p className="text-xs text-ink-muted mt-0.5 hidden sm:block">
-                    รายการหุ้นหรือสินทรัพย์ที่มีรอบจ่ายเงินปันผลในเดือนนี้
+                    Stocks and assets that pay a dividend this month
                   </p>
                 )}
               </div>
@@ -256,7 +256,7 @@ export function Dividends() {
 
             <div className="flex items-center gap-2 shrink-0 ml-2">
               <span className="text-xs font-medium text-ink-muted hidden sm:inline">
-                {upcomingOpen ? 'ย่อลง' : 'ขยายดู'}
+                {upcomingOpen ? 'Hide' : 'Show'}
               </span>
               <div className="rounded-full p-1 hover:bg-surface-muted text-ink-muted">
                 <ChevronDownIcon
@@ -273,10 +273,10 @@ export function Dividends() {
               {upcomingHoldings.length === 0 ? (
                 <div className="p-4 sm:p-6 text-center">
                   <p className="text-sm text-ink-muted">
-                    ไม่มีรายการปันผลในเดือน{MONTH_NAMES[currentMonth - 1]}
+                    No dividends due in {MONTH_NAMES[currentMonth - 1]}
                   </p>
                   <p className="text-xs text-ink-faint mt-1">
-                    คุณสามารถตั้งรอบเดือนที่จ่ายปันผลในรายละเอียดของหุ้น หรือกดปุ่ม "+ บันทึกรับปันผล" ได้ตลอดเวลา
+                    You can set the months a stock pays in its details, or tap "+ Record dividend" at any time.
                   </p>
                 </div>
               ) : (
@@ -298,13 +298,13 @@ export function Dividends() {
                       <li key={h.id} className="p-3.5 sm:px-5 sm:py-4 hover:bg-surface-muted/50 transition-colors">
                         <div className="flex flex-col gap-2.5">
                           
-                          {/* ── แถวที่ 1: ข้อมูลหุ้น / ยอดเงิน & % ต่อปี / ปุ่มแก้ไข ── */}
+                          {/* ── Row 1: stock info / amount & yield / edit button ── */}
                           <div className="flex items-start justify-between gap-3 min-w-0">
-                            {/* ฝั่งซ้าย: Logo + ชื่อหุ้น + บรรทัดต่อมาเป็น % ต่อปี | ปุ่มแก้ไข */}
+                            {/* Left: logo + name + yield | edit button */}
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                               <AssetLogo name={h.name} assetClass={h.assetClass} size="md" />
                               <div className="min-w-0 flex-1">
-                                {/* บรรทัด 1.1: ชื่อย่อ + ชื่อเต็ม */}
+                                {/* Line 1.1: ticker + full name */}
                                 <div className="flex items-center gap-1.5 min-w-0">
                                   <span className="font-display font-bold text-base text-ink truncate">
                                     {h.ticker}
@@ -314,11 +314,11 @@ export function Dividends() {
                                   </span>
                                 </div>
 
-                                {/* บรรทัด 1.2: % ต่อปี | [ปุ่มแก้ไข] */}
+                                {/* Line 1.2: yield | [edit button] */}
                                 <div className="flex items-center gap-2 mt-1 text-xs">
                                   {assetYieldPct > 0 ? (
                                     <span className="inline-flex items-center rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 font-bold">
-                                      ~{assetYieldPct.toFixed(1)}% ต่อปี
+                                      ~{assetYieldPct.toFixed(1)}% per year
                                     </span>
                                   ) : (
                                     <span className="text-ink-muted">-</span>
@@ -329,53 +329,53 @@ export function Dividends() {
                                     onClick={() => setEditingHolding(h)}
                                     className="inline-flex items-center text-brand hover:text-brand-ink font-semibold hover:underline cursor-pointer transition-colors"
                                   >
-                                    แก้ไขปันผล ↗
+                                    Edit dividend ↗
                                   </button>
                                 </div>
                               </div>
                             </div>
 
-                            {/* ฝั่งขวา: ยอดเงินที่จะได้รับ */}
+                            {/* Right: amount to receive */}
                             {estNet > 0 && (
                               <div className="text-right shrink-0">
                                 <span className="font-display text-base sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-400 tnum">
                                   ~{thb(estNet)}
                                 </span>
-                                <p className="text-xs text-ink-muted">ได้สุทธิประมาณ</p>
+                                <p className="text-xs text-ink-muted">About (after tax)</p>
                               </div>
                             )}
                           </div>
 
-                          {/* ── เส้นคั่นบางๆ ── */}
+                          {/* ── Divider ── */}
                           <div className="border-t border-line/60" />
 
-                          {/* ── แถวที่ 2: จำนวนหุ้น, ปันผล xx บาท/ปี  และ  [ปุ่มยืนยันรับเงิน] ── */}
+                          {/* ── Row 2: shares, dividend per share, and [confirm button] ── */}
                           <div className="flex items-center justify-between gap-3 min-w-0">
-                            {/* ฝั่งซ้าย: จำนวนหุ้น, ปันผล xx บาท/รอบ หรือ /ปี */}
+                            {/* Left: shares and dividend per share */}
                             <div className="text-xs text-ink-muted min-w-0 truncate">
-                              <span>{units.toLocaleString()} หุ้น</span>
+                              <span>{units.toLocaleString()} {units === 1 ? 'share' : 'shares'}</span>
                               <span className="mx-1.5">·</span>
-                              <span>ปันผล: <strong className="text-ink font-semibold">{dps > 0 ? `${sym}${dps}` : 'N/A'}</strong> / หุ้น</span>
+                              <span>Dividend: <strong className="text-ink font-semibold">{dps > 0 ? `${sym}${dps}` : 'N/A'}</strong> / share</span>
                               {annualGross > 0 && (
                                 <span className="hidden sm:inline text-ink-muted">
-                                  {' '}(รวมทั้งปี ~{thb(annualGross)})
+                                  {' '}(~{thb(annualGross)} per year)
                                 </span>
                               )}
                             </div>
 
-                            {/* ฝั่งขวา: ปุ่ม Action */}
+                            {/* Right: action buttons */}
                             <div className="shrink-0">
                               {isReceived ? (
                                 <div className="flex items-center gap-1.5">
                                   <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-3 py-1 text-xs font-bold text-gain">
-                                    <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} /> ได้รับแล้ว
+                                    <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} /> Received
                                   </span>
                                   <button
                                     type="button"
                                     onClick={() => handleOpenAddModal(h, dps > 0 ? dps : undefined)}
                                     className="inline-flex items-center rounded-full border border-line bg-surface hover:bg-surface-muted text-ink-muted hover:text-ink px-2.5 py-1 text-xs font-medium active:scale-95 transition-all cursor-pointer"
                                   >
-                                    + บันทึกเพิ่ม
+                                    + Add another
                                   </button>
                                 </div>
                               ) : (
@@ -385,7 +385,7 @@ export function Dividends() {
                                   className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 sm:px-4 py-1.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
                                 >
                                   <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.2} />
-                                  ยืนยันรับเงิน
+                                  Confirm received
                                 </button>
                               )}
                             </div>
@@ -405,9 +405,9 @@ export function Dividends() {
         <Card className="animate-rise" padded={false}>
           <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-line">
             <div>
-              <h2 className="font-display text-base font-bold text-ink">ประวัติการรับเงินปันผล</h2>
+              <h2 className="font-display text-base font-bold text-ink">Dividend history</h2>
               <p className="text-xs text-ink-muted mt-0.5">
-                รายการเงินปันผลที่บันทึกไว้ พร้อมรายละเอียดภาษีหัก ณ ที่จ่าย
+                Dividends you have recorded, with the tax withheld
               </p>
             </div>
 
@@ -424,7 +424,7 @@ export function Dividends() {
                         : 'bg-surface-muted text-ink-muted hover:text-ink'
                     }`}
                   >
-                    ทั้งหมด
+                    All
                   </button>
                   {availableYears.map((y) => (
                     <button
@@ -451,7 +451,7 @@ export function Dividends() {
                 className="h-9 gap-1.5 text-xs sm:text-sm font-semibold cursor-pointer shadow-xs shrink-0"
               >
                 <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
-                <span>บันทึกรับปันผล</span>
+                <span>Record dividend</span>
               </Button>
             </div>
           </div>
@@ -460,8 +460,8 @@ export function Dividends() {
             <div className="p-8">
               <EmptyState
                 icon={<CoinsIcon className="h-8 w-8 text-ink-muted" />}
-                title="ยังไม่มีประวัติการรับเงินปันผล"
-                description="เมื่อกดยืนยันการรับเงินปันผล ประวัติและรายละเอียดภาษีจะปรากฏที่นี่"
+                title="No dividends recorded yet"
+                description="When you confirm a dividend, it will show up here along with the tax details."
                 action={
                   <Button
                     variant="primary"
@@ -470,7 +470,7 @@ export function Dividends() {
                     className="h-9 gap-1.5 text-xs sm:text-sm font-semibold cursor-pointer shadow-xs"
                   >
                     <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
-                    <span>บันทึกรายการแรก</span>
+                    <span>Record your first dividend</span>
                   </Button>
                 }
               />
@@ -480,15 +480,15 @@ export function Dividends() {
               <table className="w-full text-left text-sm">
                 <thead className="bg-surface-muted/50 border-b border-line text-xs font-bold uppercase tracking-wider text-ink-muted">
                   <tr>
-                    <th className="px-5 py-3">วันที่รับ</th>
-                    <th className="px-5 py-3">หุ้น / สินทรัพย์</th>
-                    <th className="px-5 py-3 text-right">ปันผล/หุ้น</th>
-                    <th className="px-5 py-3 text-right">จำนวนหุ้น</th>
-                    <th className="px-5 py-3 text-right">ยอดก่อนหักภาษี</th>
-                    <th className="px-5 py-3 text-right">ภาษี (10%)</th>
-                    <th className="px-5 py-3 text-right">ยอดสุทธิที่ได้รับ</th>
-                    <th className="px-5 py-3">เข้าบัญชี</th>
-                    <th className="px-4 py-3 text-right">จัดการ</th>
+                    <th className="px-5 py-3">Date received</th>
+                    <th className="px-5 py-3">Stock / asset</th>
+                    <th className="px-5 py-3 text-right">Dividend / share</th>
+                    <th className="px-5 py-3 text-right">Shares</th>
+                    <th className="px-5 py-3 text-right">Before tax</th>
+                    <th className="px-5 py-3 text-right">Tax (10%)</th>
+                    <th className="px-5 py-3 text-right">Net received</th>
+                    <th className="px-5 py-3">Paid into</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
