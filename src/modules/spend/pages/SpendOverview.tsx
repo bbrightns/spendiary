@@ -6,10 +6,10 @@ import { AddButton } from '../../../components/ui/AddButton'
 import { Button } from '../../../components/ui/Button'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import { Modal } from '../../../components/ui/Modal'
-import { PencilIcon, WalletIcon } from '../../../components/icons'
-import { thb } from '../../../lib/format'
+import { PencilIcon, SettingsIcon, WalletIcon } from '../../../components/icons'
+import { localDateStr, thb } from '../../../lib/format'
 import { getCategory } from '../categories'
-import { daysInMonth, monthKey, totalsFor } from '../logic'
+import { daysLeftIn, inPeriod, periodFor, totalsFor } from '../logic'
 import { MonthStepper } from '../MonthStepper'
 import { openQuickAdd } from '../QuickAddSheet'
 import { TxnRow } from '../TxnRow'
@@ -18,16 +18,19 @@ import { TONES } from '../tones'
 
 export function SpendOverview() {
   const { transactions, methods, settings, setMonthlyBudget } = useSpend()
-  const [month, setMonth] = useState(monthKey())
+  const cycle = settings.cycle
+  // Anchor on a date so the view follows along when the cycle setting changes
+  const [anchor, setAnchor] = useState(localDateStr())
+  const period = useMemo(() => periodFor(anchor, cycle), [anchor, cycle])
   const [budgetOpen, setBudgetOpen] = useState(false)
 
-  const monthTxns = useMemo(() => transactions.filter((t) => t.date.startsWith(month)), [transactions, month])
+  const monthTxns = useMemo(() => transactions.filter((t) => inPeriod(period, t.date)), [transactions, period])
   const totals = useMemo(() => totalsFor(monthTxns), [monthTxns])
 
-  const isCurrent = month === monthKey()
+  const isCurrent = inPeriod(period, localDateStr())
   const budget = settings.monthlyBudget ?? 0
   const left = budget - totals.expense
-  const daysLeft = isCurrent ? daysInMonth(month) - new Date().getDate() + 1 : 0
+  const daysLeft = isCurrent ? daysLeftIn(period) : 0
   const perDay = daysLeft > 0 ? left / daysLeft : 0
   const usedPct = budget > 0 ? Math.min(100, (totals.expense / budget) * 100) : 0
 
@@ -36,7 +39,19 @@ export function SpendOverview() {
       <PageHeader
         eyebrow="Spend"
         title="Overview"
-        subtitle={<MonthStepper value={month} onChange={setMonth} />}
+        subtitle={
+          <div className="flex items-center gap-2">
+            <MonthStepper value={period} cycle={cycle} onChange={(p) => setAnchor(p.start)} />
+            <Link
+              to="/spend/settings"
+              aria-label="Spend settings: pay cycle and budget"
+              title="Pay cycle and budget"
+              className="grid h-10 w-10 place-items-center rounded-full border border-line bg-surface text-ink-muted shadow-xs hover:text-ink"
+            >
+              <SettingsIcon className="h-[18px] w-[18px]" />
+            </Link>
+          </div>
+        }
         action={
           // Phones use the + in the bottom bar
           <div className="hidden lg:block">

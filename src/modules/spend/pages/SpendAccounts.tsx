@@ -6,10 +6,10 @@ import { AddButton } from '../../../components/ui/AddButton'
 import { Button } from '../../../components/ui/Button'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import { ChevronRightIcon, CreditCardIcon } from '../../../components/icons'
-import { thb } from '../../../lib/format'
+import { localDateStr, thb } from '../../../lib/format'
 import type { SpendCard } from '../../../lib/types'
 import { CardSheet, StarIcon, WalletSheet } from '../AccountSheets'
-import { cardCycle, monthKey, upcomingDue } from '../logic'
+import { cardCycle, inPeriod, isCalendar, periodFor, upcomingDue } from '../logic'
 import { MethodIcon } from '../PayMethodPicker'
 import { useSpend, type PayMethod } from '../useSpend'
 
@@ -23,7 +23,8 @@ export function SpendAccounts() {
   const navigate = useNavigate()
   const [cardSheet, setCardSheet] = useState<{ open: boolean; card?: SpendCard }>({ open: false })
   const [walletSheet, setWalletSheet] = useState<PayMethod | undefined>()
-  const month = monthKey()
+  const period = useMemo(() => periodFor(localDateStr(), settings.cycle), [settings.cycle])
+  const periodName = isCalendar(settings.cycle) ? 'This month' : 'This pay cycle'
   const favs = settings.favoriteAccountIds ?? []
 
   const wallets = methods.filter((m) => m.kind === 'cash')
@@ -41,7 +42,7 @@ export function SpendAccounts() {
       map.set(id, f)
     }
     for (const t of transactions) {
-      if (!t.date.startsWith(month)) continue
+      if (!inPeriod(period, t.date)) continue
       if (t.type === 'income') bump(t.accountId, 'in', t.amount)
       else if (t.type === 'expense') bump(t.accountId, 'out', t.amount)
       else {
@@ -50,7 +51,7 @@ export function SpendAccounts() {
       }
     }
     return map
-  }, [transactions, month])
+  }, [transactions, period])
 
   /** Charges minus refunds on a card since its last statement. */
   const cycleSpend = (card: SpendCard, since: string) =>
@@ -232,10 +233,10 @@ export function SpendAccounts() {
                     <span className="block truncate text-xs text-ink-muted tnum">
                       {f ? (
                         <>
-                          This month <span className="text-gain">+{thb(f.in)}</span> · −{thb(f.out)}
+                          {periodName} <span className="text-gain">+{thb(f.in)}</span> · −{thb(f.out)}
                         </>
                       ) : (
-                        'No activity this month'
+                        `No activity ${periodName.toLowerCase()}`
                       )}
                       {w.locked ? ' · Locked savings' : ''}
                     </span>

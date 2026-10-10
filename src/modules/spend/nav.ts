@@ -1,5 +1,5 @@
 import type { NavSection, NavSubItem } from '../../components/layout/nav'
-import { DashboardIcon, WalletIcon } from '../../components/icons'
+import { DashboardIcon, SettingsIcon, WalletIcon } from '../../components/icons'
 import { ListBulletIcon } from './categories'
 
 export const SPEND_ROOT = '/spend'
@@ -33,7 +33,15 @@ export const spendAccountsItem: NavSubItem = {
   icon: WalletIcon,
 }
 
+export const spendSettingsItem: NavSubItem = {
+  to: `${SPEND_ROOT}/settings`,
+  label: 'Spend settings',
+  short: 'Settings',
+  description: 'Pay cycle, monthly budget and Quick add defaults',
+  icon: SettingsIcon,
+}
+
 export const spendNavSections: NavSection[] = [
   { title: 'Spend', items: [spendOverviewItem, spendTxnsItem] },
-  { title: 'Money', items: [spendAccountsItem] },
+  { title: 'Money', items: [spendAccountsItem, spendSettingsItem] },
 ]

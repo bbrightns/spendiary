@@ -136,6 +136,7 @@ export function useSpend() {
     upsertCard,
     removeCard,
     toggleFavorite,
+    updateSettings,
     setDefaultAccount: (id: string | undefined) => updateSettings({ defaultAccountId: id }),
     setMonthlyBudget: (amount: number | undefined) => updateSettings({ monthlyBudget: amount }),
   }

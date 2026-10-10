@@ -1,4 +1,4 @@
-import type { CashAccount, SpendCard, SpendTransaction } from '../../lib/types'
+import type { CashAccount, PayCycle, SpendCard, SpendTransaction } from '../../lib/types'
 import { localDateStr } from '../../lib/format'
 
 /** Letters, digits and combining marks so Thai tags like #ร้านโปรด stay whole. */
@@ -103,25 +103,93 @@ export function cardCycle(card: Pick<SpendCard, 'statementDay' | 'dueDay'>, toda
   }
 }
 
-/** "YYYY-MM" key for a date string or Date. */
-export function monthKey(d: string | Date = new Date()): string {
-  return (typeof d === 'string' ? d : localDateStr(d)).slice(0, 7)
+// ── Spending periods ─────────────────────────────────────────────────────────
+// A "month" is either the calendar month or a pay cycle: from one payday up to
+// the day before the next. Dates are local YYYY-MM-DD strings throughout.
+
+/** Inclusive date range */
+export interface Period {
+  start: string
+  end: string
 }
 
-export function shiftMonth(key: string, delta: number): string {
-  const [y, m] = key.split('-').map(Number)
-  const d = new Date(y, m - 1 + delta, 1)
-  return monthKey(d)
+const parse = (s: string) => {
+  const [y, m, d] = s.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+const addDays = (s: string, n: number) => {
+  const d = parse(s)
+  d.setDate(d.getDate() + n)
+  return localDateStr(d)
 }
 
-export function monthLabel(key: string): string {
-  const [y, m] = key.split('-').map(Number)
-  return new Date(y, m - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+export const isCalendar = (cycle?: PayCycle) => !cycle || cycle.mode === 'calendar' || !cycle.rule
+
+/** Payday for a month (`month` is 0-based and may overflow, like the Date constructor). */
+export function paydayIn(year: number, month: number, cycle: PayCycle): Date {
+  const lastDay = new Date(year, month + 1, 0).getDate()
+  const rule = cycle.rule ?? { kind: 'day', day: 1 }
+  const day =
+    rule.kind === 'day'
+      ? Math.min(Math.max(1, rule.day), lastDay)
+      : Math.max(1, lastDay - Math.max(0, rule.daysBefore))
+  const d = new Date(year, month, day)
+  const shift = cycle.weekend ?? 'before'
+  if (shift !== 'keep') {
+    const step = shift === 'before' ? -1 : 1
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + step)
+  }
+  return d
 }
 
-export function daysInMonth(key: string): number {
-  const [y, m] = key.split('-').map(Number)
-  return new Date(y, m, 0).getDate()
+/** The spending period that contains `date`. */
+export function periodFor(date: string, cycle?: PayCycle): Period {
+  const d = parse(date)
+  if (isCalendar(cycle)) {
+    return {
+      start: localDateStr(new Date(d.getFullYear(), d.getMonth(), 1)),
+      end: localDateStr(new Date(d.getFullYear(), d.getMonth() + 1, 0)),
+    }
+  }
+  // Paydays around the date; weekend shifts can push one across a month boundary
+  const paydays = [-2, -1, 0, 1, 2].map((o) => localDateStr(paydayIn(d.getFullYear(), d.getMonth() + o, cycle!)))
+  const start = [...paydays].reverse().find((p) => p <= date)!
+  const next = paydays.find((p) => p > date)!
+  return { start, end: addDays(next, -1) }
+}
+
+export function shiftPeriod(p: Period, delta: number, cycle?: PayCycle): Period {
+  let cur = p
+  for (let i = 0; i < Math.abs(delta); i++) cur = periodFor(delta > 0 ? addDays(cur.end, 1) : addDays(cur.start, -1), cycle)
+  return cur
+}
+
+export const inPeriod = (p: Period, date: string) => date >= p.start && date <= p.end
+
+/** Days from `today` to the period's end, counting both (0 if the period is over). */
+export function daysLeftIn(p: Period, today = localDateStr()): number {
+  if (today > p.end) return 0
+  const from = today < p.start ? p.start : today
+  return Math.round((parse(p.end).getTime() - parse(from).getTime()) / 86_400_000) + 1
+}
+
+export function periodLabel(p: Period, cycle?: PayCycle): string {
+  const s = parse(p.start)
+  if (isCalendar(cycle)) return s.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+  const e = parse(p.end)
+  const short = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  return `${short(s)} – ${short(e)} ${e.getFullYear()}`
+}
+
+/** Next `count` paydays from today (for previews). */
+export function upcomingPaydays(cycle: PayCycle, count = 3, today = localDateStr()): string[] {
+  const t = parse(today)
+  const out: string[] = []
+  for (let o = 0; out.length < count && o < count + 3; o++) {
+    const p = localDateStr(paydayIn(t.getFullYear(), t.getMonth() + o, cycle))
+    if (p >= today && !out.includes(p)) out.push(p)
+  }
+  return out
 }
 
 export interface MonthTotals {

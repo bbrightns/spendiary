@@ -1,7 +1,7 @@
-import type { NetWorthSnapshot, SpendCard, SpendTransaction, SpendiaryData } from './types'
+import type { NetWorthSnapshot, PayCycle, SpendCard, SpendTransaction, SpendiaryData } from './types'
 import { localDateStr } from './format'
 import { netWorth, portfolioValue } from './calc'
-import { cardCycle, parseTags } from '../modules/spend/logic'
+import { cardCycle, parseTags, periodFor, shiftPeriod } from '../modules/spend/logic'
 
 /** Build a local YYYY-MM-DD date N days from today, so demo data always looks fresh. */
 function inDays(days: number): string {
@@ -1064,14 +1064,10 @@ const SEED_USD_THB = 34
 
 // ── Spend module ─────────────────────────────────────────────────────────────
 
-/** Most recent date (today or earlier) that falls on `day` of a month, N months back. */
-function lastDayOf(day: number, monthsBack = 0): string {
-  const now = new Date()
-  let d = new Date(now.getFullYear(), now.getMonth(), day)
-  if (d > now) d = new Date(now.getFullYear(), now.getMonth() - 1, day)
-  d.setMonth(d.getMonth() - monthsBack)
-  return localDateStr(d)
-}
+/** Paid the day before the month's last day, moved to Friday if that's a weekend */
+const payCycle: PayCycle = { mode: 'payday', rule: { kind: 'fromEnd', daysBefore: 1 }, weekend: 'before' }
+const thisCycle = periodFor(today, payCycle)
+const lastCycle = shiftPeriod(thisCycle, -1, payCycle)
 
 const spendCardsBase: SpendCard[] = [
   { id: 'card-ktc', name: 'KTC Visa Platinum', last4: '4821', color: '#7c3aed', creditLimit: 120_000, balance: 0, statementDay: 25, dueDay: 10 },
@@ -1132,9 +1128,9 @@ const mk = (date: string, [, type, amount, categoryId, accountId, note, toAccoun
 
 const baseTxns: SpendTransaction[] = [
   ...spendRows.map((r) => mk(inDays(-r[0]), r)),
-  // Salary lands on the 25th
-  mk(lastDayOf(25), [0, 'income', 110_000, 'salary', 'c-kbank', 'Monthly salary']),
-  mk(lastDayOf(25, 1), [0, 'income', 110_000, 'salary', 'c-kbank', 'Monthly salary']),
+  // Salary on each payday: the start of this pay cycle and the one before
+  mk(thisCycle.start, [0, 'income', 110_000, 'salary', 'c-kbank', 'Monthly salary']),
+  mk(lastCycle.start, [0, 'income', 110_000, 'salary', 'c-kbank', 'Monthly salary']),
 ]
 
 const chargesOn = (cardId: string, after: string, upTo = '9999-12-31') =>
@@ -1182,6 +1178,7 @@ export const seedData: SpendiaryData = {
   spendCards,
   spendTransactions,
   spendSettings: {
+    cycle: payCycle,
     monthlyBudget: 25_000,
     defaultAccountId: 'card-ktc',
     favoriteAccountIds: ['card-ktc', 'c-scb'],

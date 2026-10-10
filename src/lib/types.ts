@@ -328,6 +328,24 @@ export interface SpendSettings {
   defaultAccountId?: string
   /** Payment methods pinned as one-tap chips in Quick Add */
   favoriteAccountIds?: string[]
+  /** How a spending "month" is counted; calendar month when unset */
+  cycle?: PayCycle
+}
+
+/** When the payday rule lands on Sat/Sun: move to Friday before, Monday after, or keep it */
+export type WeekendShift = 'before' | 'after' | 'keep'
+
+export type PayDayRule =
+  /** A fixed day of the month, e.g. 25 (clamped to short months) */
+  | { kind: 'day'; day: number }
+  /** Counted back from the month's last day: 0 = last day, 1 = the day before, … */
+  | { kind: 'fromEnd'; daysBefore: number }
+
+export interface PayCycle {
+  /** calendar: 1st → last day. payday: from one payday up to the day before the next */
+  mode: 'calendar' | 'payday'
+  rule?: PayDayRule
+  weekend?: WeekendShift
 }
 
 export interface SpendCard {

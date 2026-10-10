@@ -6,10 +6,10 @@ import { AddButton } from '../../../components/ui/AddButton'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import { FilterChip } from '../../../components/ui/FilterChip'
 import { CloseIcon, SearchIcon } from '../../../components/icons'
-import { thb } from '../../../lib/format'
+import { localDateStr, thb } from '../../../lib/format'
 import type { SpendTransaction, SpendTxnType } from '../../../lib/types'
 import { ListBulletIcon, getCategory } from '../categories'
-import { monthKey, topTags } from '../logic'
+import { inPeriod, periodFor, topTags } from '../logic'
 import { MonthStepper } from '../MonthStepper'
 import { openQuickAdd } from '../QuickAddSheet'
 import { TxnRow } from '../TxnRow'
@@ -47,10 +47,12 @@ function dayLabel(date: string): string {
 }
 
 export function SpendTransactions() {
-  const { transactions, methods } = useSpend()
+  const { transactions, methods, settings } = useSpend()
+  const cycle = settings.cycle
   const [params, setParams] = useSearchParams()
   const query = params.get('q') ?? ''
-  const [month, setMonth] = useState(monthKey())
+  const [anchor, setAnchor] = useState(localDateStr())
+  const period = useMemo(() => periodFor(anchor, cycle), [anchor, cycle])
   const [type, setType] = useState<TypeFilter>('all')
 
   const setQuery = (q: string) => {
@@ -68,9 +70,9 @@ export function SpendTransactions() {
     const walletName = (id?: string) => methods.find((m) => m.id === id)?.name ?? ''
     const words = query.toLowerCase().split(/\s+/).filter(Boolean)
     return transactions.filter(
-      (t) => (words.length > 0 || t.date.startsWith(month)) && (type === 'all' || t.type === type) && matches(t, words, walletName),
+      (t) => (words.length > 0 || inPeriod(period, t.date)) && (type === 'all' || t.type === type) && matches(t, words, walletName),
     )
-  }, [transactions, methods, month, type, query])
+  }, [transactions, methods, period, type, query])
 
   const groups = useMemo(() => {
     const map = new Map<string, SpendTransaction[]>()
@@ -92,7 +94,7 @@ export function SpendTransactions() {
       <PageHeader
         eyebrow="Spend"
         title="Transactions"
-        subtitle={searching ? 'Searching all months' : <MonthStepper value={month} onChange={setMonth} />}
+        subtitle={searching ? 'Searching all months' : <MonthStepper value={period} cycle={cycle} onChange={(p) => setAnchor(p.start)} />}
         action={
           // Phones use the + in the bottom bar
           <div className="hidden lg:block">
