@@ -425,6 +425,22 @@ export function Settings() {
           <h2 className="font-display text-lg font-bold text-ink [text-wrap:balance]">
             Danger zone
           </h2>
+          <div className="mt-4 flex items-center justify-between rounded-xl border border-line bg-surface px-4 py-3">
+            <div>
+              <p className="text-sm font-semibold text-ink">Back up first</p>
+              <p className="mt-0.5 text-xs text-ink-muted">
+                Download a full JSON copy of your data before resetting, so you can restore it later.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleExport}
+              className="ml-4 inline-flex shrink-0 items-center gap-2 rounded-full border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted active:scale-95 cursor-pointer"
+            >
+              <DownloadIcon className="h-4 w-4" />
+              Export backup
+            </button>
+          </div>
           <div className="mt-4 flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-ink">Reset all data</p>
