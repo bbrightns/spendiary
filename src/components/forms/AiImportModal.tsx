@@ -22,8 +22,8 @@ Rules:
    - If current market price is not provided for an asset, set price equal to avgCost so the user can import without interruption.
    - If any specific holding is missing critical core data (such as unknown unit count or completely missing cost basis) that cannot be reasonably inferred:
      * Exclude that specific incomplete asset from the JSON so valid items can still be imported immediately without blocking the entire import.
-     * Provide an itemized numbered checklist in THAI (ภาษาไทย) directly below the JSON detailing which assets were skipped and what missing data is needed to add them later.
-   - Only output clean JSON (wrap in \`\`\`json \`\`\` code fence) accompanied only by the Thai clarification checklist if any items were skipped.
+     * Provide an itemized numbered checklist in English directly below the JSON detailing which assets were skipped and what missing data is needed to add them later.
+   - Only output clean JSON (wrap in \`\`\`json \`\`\` code fence) accompanied only by the clarification checklist if any items were skipped.
 2. Preserve every record. Never merge different tickers, accounts, transactions, or logs just because their names look similar. Numbers must be JSON numbers without commas.
 3. Asset Classes, Cash, and Liabilities:
    - "fund": Thai stocks, Thai mutual funds, Thai DR/DRx, and SET/MAI assets. Values are THB.
@@ -32,7 +32,7 @@ Rules:
    - "gold": physical gold or gold holdings. Preserve grams/baht-gold and goldLocations (grams, thbSpent) when present.
    - "real_estate": property, land, or a home, valued in THB.
    - "cashAccounts": liquid cash accounts (Thai banks, digital wallets, broker cash). Fields: name (e.g. "KBank", "Dime Save"), balance, currency ("THB" or "USD"), category ("spending", "savings", "emergency", "investment", "other"), and optional annual interestRate (%).
-   - "liabilities": debts, loans, credit cards, and installment plans. Fields: name (e.g. "KTC Credit Card", "ผ่อน iPhone"), category ("credit_card", "installment", "mortgage", "auto_loan", "personal_loan", "student_loan", "other"), balance (remaining debt amount in THB), and optional monthlyPayment, interestRate (%), dueDay (1-31), isInstallment (boolean), totalInstallments, paidInstallments.
+   - "liabilities": debts, loans, credit cards, and installment plans. Fields: name (e.g. "KTC Credit Card", "iPhone installment"), category ("credit_card", "installment", "mortgage", "auto_loan", "personal_loan", "student_loan", "other"), balance (remaining debt amount in THB), and optional monthlyPayment, interestRate (%), dueDay (1-31), isInstallment (boolean), totalInstallments, paidInstallments.
 4. Transaction & Historical Logs Policy:
    - When explicit historical transactions or dividend records are supplied in the input, keep transaction history in "holdingLogs" and dividend history in "dividendRecords" preserving action, timestamp, holdingId, units, proceeds, realizedPnL, fees, cashAccountId, and before/after snapshots.
    - If importing for the first time or if the source records do NOT contain historical transaction logs, simply set "holdingLogs": [] and "dividendRecords": []. Do not halt generation or ask clarification for historical logs if they are simply not part of the source input.
