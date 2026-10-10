@@ -8,8 +8,6 @@ import {
   SettingsIcon,
   ClockIcon,
   ScaleIcon,
-  StrategyIcon,
-  CashflowIcon,
   DividendIcon,
   DotsHorizontalIcon,
   WalletIcon,
@@ -100,24 +98,51 @@ export const strategySubItems: NavSubItem[] = [
   },
 ]
 
-export const navItems: NavItem[] = [
-  { to: '/', label: 'Dashboard', short: 'Home', icon: DashboardIcon },
-  { to: '/portfolio', label: 'Portfolio', short: 'Portfolio', icon: PortfolioIcon },
-  {
-    label: 'Cashflow',
-    short: 'Flow',
-    icon: CashflowIcon,
-    subItems: cashflowSubItems,
-  },
-  {
-    label: 'Strategies',
-    short: 'Strategies',
-    icon: StrategyIcon,
-    subItems: strategySubItems,
-  },
-  // `exact` keeps Activity Logs from lighting up while its sibling Summary is open
-  { to: '/logs', label: 'Activity Logs', short: 'Logs', icon: ClockIcon, exact: true },
-  { to: '/logs/summary', label: 'Summary', short: 'Summary', icon: PieChartIcon },
+export interface NavSection {
+  title: string
+  items: NavSubItem[]
+}
+
+const dashboardItem: NavSubItem = {
+  to: '/',
+  label: 'Dashboard',
+  short: 'Home',
+  description: 'Net worth, allocation & monthly overview',
+  icon: DashboardIcon,
+}
+
+const portfolioItem: NavSubItem = {
+  to: '/portfolio',
+  label: 'Portfolio',
+  short: 'Portfolio',
+  description: 'All holdings, allocation & profit / loss',
+  icon: PortfolioIcon,
+}
+
+// `exact` keeps Activity Logs from lighting up while its sibling Summary is open
+const logsItem: NavSubItem = {
+  to: '/logs',
+  label: 'Activity Logs',
+  short: 'Logs',
+  description: 'History of every buy, sell, dividend & edit',
+  icon: ClockIcon,
+  exact: true,
+}
+
+const summaryItem: NavSubItem = {
+  to: '/logs/summary',
+  label: 'Summary',
+  short: 'Summary',
+  description: 'Monthly activity summary & spending reports',
+  icon: PieChartIcon,
+}
+
+/** Desktop sidebar: flat, grouped by intent (frequent actions first, mirrors the mobile bottom nav). */
+export const desktopNavSections: NavSection[] = [
+  { title: 'Overview', items: [dashboardItem, portfolioItem] },
+  { title: 'Plan', items: [cashflowSubItems[1], cashflowSubItems[2], cashflowSubItems[0], cashflowSubItems[3]] },
+  { title: 'Analyze', items: strategySubItems },
+  { title: 'Records', items: [logsItem, summaryItem] },
 ]
 
 /** True when a destination should be shown as active for the current route. */
@@ -152,13 +177,7 @@ export const moreSheetItems: NavSubItem[] = [
   cashItem,
   rebalanceItem,
   retirementItem,
-  {
-    to: '/logs/summary',
-    label: 'Summary',
-    short: 'Summary',
-    description: 'Monthly activity summary & spending reports',
-    icon: PieChartIcon,
-  },
+  summaryItem,
 ]
 
 export const settingsItem: NavItem = {

@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { isNavPathActive, isSubItemActive, navItems, settingsItem } from './nav'
+import { desktopNavSections, isSubItemActive, settingsItem } from './nav'
 import { useData } from '../../store/DataContext'
 import { useTheme } from '../../hooks/useTheme'
-import { ChevronDownIcon, SearchIcon } from '../icons'
+import { SearchIcon } from '../icons'
 import { openCommandPalette } from '../ui/CommandPalette'
 
 import { isDividendReceivedThisMonth, isLiabilityActionableThisMonth, shouldConfirmBuy } from '../../lib/calc'
@@ -24,7 +23,6 @@ export function Sidebar() {
       (h.dividendMonths ?? []).includes(currentMonth) &&
       !isDividendReceivedThisMonth(h.id, data.dividendRecords),
   ).length
-  const cashflowAlertCount = dcaAlertCount + dividendAlertCount
   const debtAlertCount = (data.liabilities ?? []).filter((l) => isLiabilityActionableThisMonth(l)).length
 
   const getBadgeCount = (path?: string) => {
@@ -33,22 +31,6 @@ export function Sidebar() {
     if (path === '/dividends') return dividendAlertCount
     return 0
   }
-
-  // Which collapsible group (Cashflow / Strategies / Activity Logs) owns the current route
-  const activeGroupLabel = navItems.find(
-    (item) => item.subItems?.some((sub) => isSubItemActive(sub, pathname)),
-  )?.label
-
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
-    activeGroupLabel ? { [activeGroupLabel]: true } : {},
-  )
-
-  useEffect(() => {
-    if (!activeGroupLabel) return
-    setOpenGroups((prev) =>
-      prev[activeGroupLabel] ? prev : { ...prev, [activeGroupLabel]: true },
-    )
-  }, [activeGroupLabel])
 
   const toggleTheme = () => {
     // If currently dark (or system evaluating to dark), toggle to light, else dark
@@ -106,129 +88,47 @@ export function Sidebar() {
           </kbd>
         </button>
 
-        {/* Navigation Items */}
-        <nav className="flex flex-col gap-1">
-          <span className="px-3 text-xs font-semibold tracking-normal text-ink-muted mb-1">
-            Navigation
-          </span>
-          {navItems.map((item) => {
-            if (item.subItems) {
-              const isChildActive = item.subItems.some((sub) => isSubItemActive(sub, pathname))
-              const isExpanded = openGroups[item.label] ?? false
-              const toggleExpand = () =>
-                setOpenGroups((prev) => ({ ...prev, [item.label]: !prev[item.label] }))
-              const parentBadgeCount = item.label === 'Cashflow' ? cashflowAlertCount : 0
+        {/* Navigation Items — flat, grouped by intent */}
+        <nav className="flex flex-col gap-4">
+          {desktopNavSections.map((section) => (
+            <div key={section.title} className="flex flex-col gap-1">
+              <span className="px-3 text-xs font-semibold tracking-normal text-ink-muted mb-0.5">
+                {section.title}
+              </span>
+              {section.items.map((item) => {
+                const isActive = isSubItemActive(item, pathname)
+                const badgeCount = getBadgeCount(item.to)
 
-              return (
-                <div key={item.label} className="flex flex-col gap-1">
-                  <button
-                    type="button"
-                    onClick={toggleExpand}
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    title={item.description}
                     className={[
-                      'w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset cursor-pointer select-none',
-                      isChildActive
-                        ? 'text-brand-ink bg-brand-soft/50 font-bold'
+                      'flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
+                      isActive
+                        ? 'text-brand-ink bg-brand-soft/70 shadow-xs font-bold'
                         : 'text-ink-muted hover:bg-surface-muted hover:text-ink',
                     ].join(' ')}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <item.icon
-                        className={`h-4.5 w-4.5 ${isChildActive ? 'text-brand-ink' : 'text-ink-muted'}`}
-                        strokeWidth={isChildActive ? 2.2 : 1.7}
+                        className={`h-4.5 w-4.5 shrink-0 ${isActive ? 'text-brand-ink' : 'text-ink-muted'}`}
+                        strokeWidth={isActive ? 2.2 : 1.7}
                       />
-                      <span>{item.label}</span>
+                      <span className="truncate">{item.label}</span>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      {parentBadgeCount > 0 && !isExpanded && (
-                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white shadow-xs">
-                          {parentBadgeCount}
-                        </span>
-                      )}
-                      <ChevronDownIcon
-                        className={`h-4 w-4 transition-transform duration-200 ${
-                          isExpanded ? 'rotate-180 text-ink' : 'text-ink-muted'
-                        }`}
-                        strokeWidth={2}
-                      />
-                    </div>
-                  </button>
-
-                  {isExpanded && (
-                    <div className="flex flex-col gap-1 pl-3.5 ml-3 border-l border-line/70 py-0.5">
-                      {item.subItems.map((sub) => {
-                        const isSubActive = isSubItemActive(sub, pathname)
-                        const subBadge = getBadgeCount(sub.to)
-
-                        return (
-                          <Link
-                            key={sub.to}
-                            to={sub.to}
-                            title={sub.description}
-                            className={[
-                              'flex items-center justify-between px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
-                              isSubActive
-                                ? 'text-brand-ink bg-brand-soft/80 shadow-xs font-bold'
-                                : 'text-ink-muted hover:bg-surface-muted hover:text-ink',
-                            ].join(' ')}
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <sub.icon
-                                className={`h-4 w-4 shrink-0 ${isSubActive ? 'text-brand-ink' : 'text-ink-muted'}`}
-                                strokeWidth={isSubActive ? 2.2 : 1.7}
-                              />
-                              <span className="truncate">{sub.label}</span>
-                            </div>
-
-                            {subBadge > 0 && (
-                              <span
-                                className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white shadow-xs"
-                              >
-                                {subBadge}
-                              </span>
-                            )}
-                          </Link>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              )
-            }
-
-            const toPath = item.to || '/'
-            const isActive = isNavPathActive(toPath, pathname, item.exact)
-            const badgeCount = getBadgeCount(toPath)
-
-            return (
-              <Link
-                key={toPath}
-                to={toPath}
-                className={[
-                  'flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
-                  isActive
-                    ? 'text-brand-ink bg-brand-soft/70 shadow-xs font-bold'
-                    : 'text-ink-muted hover:bg-surface-muted hover:text-ink',
-                ].join(' ')}
-              >
-                <div className="flex items-center gap-3">
-                  <item.icon
-                    className={`h-4.5 w-4.5 ${isActive ? 'text-brand-ink' : 'text-ink-muted'}`}
-                    strokeWidth={isActive ? 2.2 : 1.7}
-                  />
-                  <span>{item.label}</span>
-                </div>
-
-                {badgeCount > 0 && (
-                  <span
-                    className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white shadow-xs"
-                  >
-                    {badgeCount}
-                  </span>
-                )}
-              </Link>
-            )
-          })}
+                    {badgeCount > 0 && (
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white shadow-xs">
+                        {badgeCount}
+                      </span>
+                    )}
+                  </Link>
+                )
+              })}
+            </div>
+          ))}
         </nav>
       </div>
 
