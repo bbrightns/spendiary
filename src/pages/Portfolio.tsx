@@ -962,7 +962,7 @@ export function Portfolio() {
                 <span className="tnum text-xs font-bold text-amber-600 dark:text-amber-400 tracking-tight">
                   ฿{effectiveGoldPerBaht.toLocaleString()}
                 </span>
-                <span className="text-xs text-ink-muted">/บาททอง</span>
+                <span className="hidden sm:inline text-xs text-ink-muted">/บาททอง</span>
               </div>
             )}
           </div>
@@ -976,10 +976,11 @@ export function Portfolio() {
               onClick={handleExportCsv}
               disabled={rows.length === 0}
               title="Export portfolio holdings to CSV"
+              aria-label="Export portfolio holdings to CSV"
               className="cursor-pointer shrink-0 h-9 text-xs sm:text-sm"
             >
               <DownloadIcon className="h-3.5 w-3.5" />
-              <span>Export CSV</span>
+              <span className="hidden sm:inline">Export CSV</span>
             </Button>
             <Button
               variant="secondary"
@@ -992,12 +993,12 @@ export function Portfolio() {
               {copied ? (
                 <>
                   <CheckIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.2} />
-                  <span className="text-gain">Copied MD!</span>
+                  <span className="text-gain hidden sm:inline">Copied MD!</span>
                 </>
               ) : (
                 <>
                   <CopyIcon className="h-4 w-4 text-ink-muted shrink-0" />
-                  <span>Copy Portfolio MD</span>
+                  <span className="hidden sm:inline">Copy Portfolio MD</span>
                 </>
               )}
             </Button>

@@ -34,9 +34,10 @@ export function PortfolioIcon(p: IconProps) {
 export function DcaIcon(p: IconProps) {
   return (
     <svg {...base} {...p}>
-      <path d="M12 21a9 9 0 1 0-9-9" />
-      <path d="M3 12 5.5 9.5M3 12l2.5 2.5" />
-      <path d="M12 7v5l3 2" />
+      <rect x="3" y="5" width="18" height="16" rx="2.5" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+      <path d="M14.8 14.2a3 3 0 1 0 .4 2.6" />
+      <path d="M15.2 12.2v2.2h-2.2" />
     </svg>
   )
 }
