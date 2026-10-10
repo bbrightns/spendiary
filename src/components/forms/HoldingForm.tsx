@@ -9,7 +9,7 @@ import { ASSET_META, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd, upsert } from 
 import type { AssetClass, DividendPayoutSchedule, Holding, PlannedAsset } from '../../lib/types'
 import { dateStrToTimestamp, localDateStr, thb } from '../../lib/format'
 import { searchSecurities, type Security } from '../../lib/securities'
-import { fetchStockPricesUsd } from '../../lib/prices'
+import { fetchStockQuote } from '../../lib/prices'
 import { ChevronDownIcon, PencilIcon, LockClosedIcon } from '../icons'
 import { TransactionDateField } from './TransactionDateField'
 
@@ -131,24 +131,42 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
   // not when editing/price changes due to live price ticks.
   const wasOpen = useRef(false)
   const priceAutoFilled = useRef(false)
+  const [tickerCheck, setTickerCheck] = useState<
+    | { state: 'idle' | 'checking' | 'notfound' }
+    | { state: 'notusd'; currency: string; name?: string }
+    | { state: 'ok'; name?: string; price: number }
+  >({ state: 'idle' })
 
   // New US stock: auto-fill live price from ticker (unless the user typed one)
   useEffect(() => {
-    if (!open || editing || !isUsd) return
+    setTickerCheck({ state: 'idle' })
+    if (!open || !isUsd) return
     const t = form.ticker.trim().toUpperCase()
     if (!t) return
+    setTickerCheck({ state: 'checking' })
+    let cancelled = false
     const timer = setTimeout(() => {
-      fetchStockPricesUsd([t])
-        .then((prices) => {
-          const p = prices[t]
-          if (p && p > 0) {
-            setForm((f) => (f.price === '' || priceAutoFilled.current ? { ...f, price: Number(p.toFixed(2)) } : f))
+      fetchStockQuote(t).then(({ checked, quote }) => {
+        if (cancelled) return
+        if (!checked) {
+          setTickerCheck({ state: 'idle' })
+        } else if (!quote) {
+          setTickerCheck({ state: 'notfound' })
+        } else if (quote.currency && quote.currency !== 'USD') {
+          setTickerCheck({ state: 'notusd', currency: quote.currency, name: quote.name })
+        } else {
+          setTickerCheck({ state: 'ok', name: quote.name, price: quote.price })
+          if (!editing && quote.price > 0) {
+            setForm((f) => (f.price === '' || priceAutoFilled.current ? { ...f, price: Number(quote.price.toFixed(2)) } : f))
             priceAutoFilled.current = true
           }
-        })
-        .catch(() => {})
+        }
+      })
     }, 600)
-    return () => clearTimeout(timer)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
   }, [open, editing, isUsd, form.ticker])
 
   useEffect(() => {
@@ -975,6 +993,18 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
               onChange={(ticker) => setForm((f) => ({ ...f, ticker: ticker.toUpperCase() }))}
               placeholder={isBtc ? 'BTC' : isUsd ? 'AAPL' : isGold ? 'XAU' : isRealEstate ? 'e.g. CONDO-IDEO, HOME' : 'e.g. KF-CASH'}
             />
+            {isUsd && tickerCheck.state !== 'idle' && (
+              <p
+                className={`-mt-2 text-xs ${
+                  tickerCheck.state === 'ok' ? 'text-gain' : tickerCheck.state === 'checking' ? 'text-ink-muted' : 'text-loss'
+                }`}
+              >
+                {tickerCheck.state === 'checking' && 'Checking ticker…'}
+                {tickerCheck.state === 'ok' && `✓ ${tickerCheck.name ?? form.ticker} · $${tickerCheck.price.toFixed(2)}`}
+                {tickerCheck.state === 'notfound' && 'Ticker not found — live price will not update for this holding'}
+                {tickerCheck.state === 'notusd' && `Quoted in ${tickerCheck.currency}, not USD — live price is disabled for this ticker`}
+              </p>
+            )}
 
             {/* Tag / Category */}
             <div className="space-y-1.5">

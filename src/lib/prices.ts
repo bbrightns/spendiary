@@ -79,6 +79,42 @@ export async function fetchBtcThb(): Promise<number> {
   return btcUsdt * usdThb
 }
 
+export interface StockQuote {
+  price: number
+  currency: string
+  name?: string
+}
+
+/** Single-ticker lookup for validation. `checked: false` = service unreachable; `checked: true` without `quote` = ticker not found. */
+export async function fetchStockQuote(ticker: string): Promise<{ checked: boolean; quote?: StockQuote }> {
+  const supabaseUrl = import.meta.env.VITE_API_URL || ''
+  const supabaseKey = import.meta.env.VITE_API_TOKEN || ''
+  if (!supabaseUrl) return { checked: false }
+  const symbol = ticker.toUpperCase()
+  try {
+    const res = await fetch(`${supabaseUrl}/functions/v1/smart-responder`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseKey}`,
+        'apikey': supabaseKey,
+      },
+      body: JSON.stringify({ symbols: symbol }),
+    })
+    if (!res.ok) return { checked: false }
+    const json = await res.json()
+    if (json.error) return { checked: false }
+    const quote = (json.quotes as Record<string, StockQuote> | undefined)?.[symbol]
+    if (quote) return { checked: true, quote }
+    const price = (json.prices as Record<string, number> | undefined)?.[symbol]
+    if (price) return { checked: true, quote: { price, currency: 'USD' } }
+    // Old function versions have no `quotes`; an empty result still means "not found"
+    return { checked: true }
+  } catch {
+    return { checked: false }
+  }
+}
+
 /** Stock prices in USD via Supabase Edge Function (proxies Yahoo Finance — no API key needed). */
 export async function fetchStockPricesUsd(tickers: string[]): Promise<Record<string, number>> {
   if (tickers.length === 0) return {}
