@@ -47,7 +47,7 @@ function dayLabel(date: string): string {
 }
 
 export function SpendTransactions() {
-  const { transactions, wallets } = useSpend()
+  const { transactions, methods } = useSpend()
   const [params, setParams] = useSearchParams()
   const query = params.get('q') ?? ''
   const [month, setMonth] = useState(monthKey())
@@ -65,12 +65,12 @@ export function SpendTransactions() {
   const searching = terms.length > 0
 
   const filtered = useMemo(() => {
-    const walletName = (id?: string) => wallets.find((w) => w.id === id)?.name ?? ''
+    const walletName = (id?: string) => methods.find((m) => m.id === id)?.name ?? ''
     const words = query.toLowerCase().split(/\s+/).filter(Boolean)
     return transactions.filter(
       (t) => (words.length > 0 || t.date.startsWith(month)) && (type === 'all' || t.type === type) && matches(t, words, walletName),
     )
-  }, [transactions, wallets, month, type, query])
+  }, [transactions, methods, month, type, query])
 
   const groups = useMemo(() => {
     const map = new Map<string, SpendTransaction[]>()
@@ -191,7 +191,7 @@ export function SpendTransactions() {
                 </div>
                 <div className="divide-y divide-line">
                   {txns.map((t) => (
-                    <TxnRow key={t.id} txn={t} wallets={wallets} onTagClick={toggleTag} />
+                    <TxnRow key={t.id} txn={t} methods={methods} onTagClick={toggleTag} />
                   ))}
                 </div>
               </Card>

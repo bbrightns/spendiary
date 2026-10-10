@@ -324,6 +324,26 @@ export interface SpendTransaction {
 export interface SpendSettings {
   /** Monthly spending budget in THB, drives the "per day left" readout */
   monthlyBudget?: number
+  /** Payment method (cash account or card id) preselected in Quick Add */
+  defaultAccountId?: string
+  /** Payment methods pinned as one-tap chips in Quick Add */
+  favoriteAccountIds?: string[]
+}
+
+export interface SpendCard {
+  id: string
+  name: string
+  /** Last 4 digits, display only */
+  last4?: string
+  color?: string
+  /** Credit limit in THB */
+  creditLimit: number
+  /** Amount currently owed in THB */
+  balance: number
+  /** Statement closing day of month (วันตัดรอบ), 1–31 */
+  statementDay: number
+  /** Payment due day of month (วันครบกำหนดชำระ), 1–31 */
+  dueDay: number
 }
 
 export interface SpendiaryData {
@@ -358,6 +378,8 @@ export interface SpendiaryData {
   spendTransactions?: SpendTransaction[]
   /** Spend module: user settings such as the monthly spending budget */
   spendSettings?: SpendSettings
+  /** Spend module: credit cards usable as a payment method */
+  spendCards?: SpendCard[]
   /** Timestamp in ms when this data was last modified locally */
   lastUpdatedAt?: number
 }

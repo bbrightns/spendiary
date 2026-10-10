@@ -17,7 +17,7 @@ import { useSpend } from '../useSpend'
 import { TONES } from '../tones'
 
 export function SpendOverview() {
-  const { transactions, wallets, settings, setMonthlyBudget } = useSpend()
+  const { transactions, methods, settings, setMonthlyBudget } = useSpend()
   const [month, setMonth] = useState(monthKey())
   const [budgetOpen, setBudgetOpen] = useState(false)
 
@@ -181,7 +181,7 @@ export function SpendOverview() {
             </div>
             <div className="mt-1 divide-y divide-line">
               {monthTxns.slice(0, 8).map((t) => (
-                <TxnRow key={t.id} txn={t} wallets={wallets} />
+                <TxnRow key={t.id} txn={t} methods={methods} />
               ))}
             </div>
           </Card>

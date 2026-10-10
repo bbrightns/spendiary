@@ -22,6 +22,10 @@ These were held back so the stable Invest pages stay untouched for now.
 - **Activity Logs undo vs Spend balances** — Invest log undo restores
   `previousCashAccountsState` snapshots, which can overwrite balance changes made
   by Spend transactions logged after it. Needs a delta-based undo, or a warning.
+- **Credit cards → net worth / Debts** — Spend cards (`spendCards`) track what you
+  owe, but Dashboard net worth and the Debts page only read `liabilities`. Decide:
+  link a card to a `credit_card` liability, or count `spendCards` in net worth.
+  Avoid double counting with existing credit-card liabilities (seed has one: l2).
 - **Cash page "see transactions" link** per wallet → `/spend/txns?q=<wallet>`.
 
 ## Spend-only ideas (no Invest impact)

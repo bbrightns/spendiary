@@ -1,4 +1,4 @@
-import type { CashAccount, SpendTransaction } from '../../lib/types'
+import type { SpendTransaction } from '../../lib/types'
 import { thb } from '../../lib/format'
 import { TransferIcon, getCategory } from './categories'
 import { openQuickAdd } from './QuickAddSheet'
@@ -6,7 +6,8 @@ import { TONES } from './tones'
 
 interface Props {
   txn: SpendTransaction
-  wallets: CashAccount[]
+  /** Wallets and cards, to name the payment method */
+  methods: { id: string; name: string }[]
   /** Called when a #tag chip is tapped (e.g. to filter by it) */
   onTagClick?: (tag: string) => void
 }
@@ -16,10 +17,10 @@ function plainNote(note?: string): string {
   return (note ?? '').replace(/#[\p{L}\p{N}\p{M}_]+/gu, '').replace(/\s+/g, ' ').trim()
 }
 
-export function TxnRow({ txn, wallets, onTagClick }: Props) {
+export function TxnRow({ txn, methods, onTagClick }: Props) {
   const cat = getCategory(txn.categoryId)
   const Icon = txn.type === 'transfer' ? TransferIcon : cat?.icon ?? TransferIcon
-  const walletName = (id?: string) => wallets.find((w) => w.id === id)?.name
+  const walletName = (id?: string) => methods.find((m) => m.id === id)?.name
   const from = walletName(txn.accountId)
   const title = plainNote(txn.note) || (txn.type === 'transfer' ? 'Transfer' : cat?.label ?? 'Other')
   const meta =

@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Modal } from '../../components/ui/Modal'
 import { SegmentedControl } from '../../components/ui/SegmentedControl'
-import { SelectField } from '../../components/ui/Field'
 import { FormActions } from '../../components/forms/FormActions'
 import { TransactionDateField } from '../../components/forms/TransactionDateField'
 import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb } from '../../lib/format'
-import type { SpendTxnType } from '../../lib/types'
+import type { SpendSettings, SpendTransaction, SpendTxnType } from '../../lib/types'
 import { categoriesFor, getCategory } from './categories'
 import { recentTags, topTags } from './logic'
 import { TONES, TYPE_ACTIVE } from './tones'
-import { useSpend } from './useSpend'
+import { useSpend, type PayMethod } from './useSpend'
+import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 
 const OPEN_EVENT = 'spendiary:open-quick-add'
 
@@ -37,10 +37,31 @@ const AMOUNT_COLOR: Record<SpendTxnType, string> = {
   transfer: 'text-sky-600 dark:text-sky-300',
 }
 
-const NO_WALLET = ''
+const NO_WALLET = NOT_TRACKED
+
+/** Preselected "from" / "to" for a new entry: the default method first, then habit. */
+function pickDefaults(type: SpendTxnType, txns: SpendTransaction[], methods: PayMethod[], settings: SpendSettings) {
+  const valid = (id?: string) => (id && methods.some((m) => m.id === id) ? id : undefined)
+  const isCash = (id?: string) => methods.find((m) => m.id === id)?.kind === 'cash'
+  const cash = methods.filter((m) => m.kind === 'cash')
+  const firstCash = cash.find((m) => !m.locked)?.id ?? cash[0]?.id
+  const def = valid(settings.defaultAccountId)
+  const lastUsed = (t: SpendTxnType) => valid(txns.find((x) => x.type === t && x.accountId)?.accountId)
+
+  if (type === 'expense') {
+    return { from: def ?? lastUsed('expense') ?? methods.find((m) => !m.locked)?.id ?? NO_WALLET, to: NO_WALLET }
+  }
+  if (type === 'income') {
+    return { from: (isCash(def) ? def : undefined) ?? lastUsed('income') ?? firstCash ?? NO_WALLET, to: NO_WALLET }
+  }
+  const from = (isCash(def) ? def : undefined) ?? firstCash ?? NO_WALLET
+  // Paying a card bill is the most common transfer, so suggest a card first
+  const to = methods.find((m) => m.kind === 'card')?.id ?? cash.find((m) => m.id !== from)?.id ?? NO_WALLET
+  return { from, to }
+}
 
 export function QuickAddSheet() {
-  const { transactions, wallets, addTransaction, updateTransaction, removeTransaction } = useSpend()
+  const { transactions, methods, settings, addTransaction, updateTransaction, removeTransaction } = useSpend()
   const { showToast } = useToast()
 
   const [open, setOpen] = useState(false)
@@ -55,17 +76,14 @@ export function QuickAddSheet() {
   const amountRef = useRef<HTMLInputElement>(null)
 
   // Latest values for the event listener without re-subscribing on every keystroke
-  const stateRef = useRef({ transactions, wallets })
-  stateRef.current = { transactions, wallets }
+  const stateRef = useRef({ transactions, methods, settings })
+  stateRef.current = { transactions, methods, settings }
 
   useEffect(() => {
     function onOpen(e: Event) {
       const detail = (e as CustomEvent<OpenDetail>).detail ?? {}
-      const { transactions: txns, wallets: ws } = stateRef.current
+      const { transactions: txns, methods: ms, settings: st } = stateRef.current
       const existing = detail.editId ? txns.find((t) => t.id === detail.editId) : undefined
-      // Default wallet: the one used last, else the first spending wallet
-      const lastWallet = txns.find((t) => t.accountId && ws.some((w) => w.id === t.accountId))?.accountId
-      const defaultWallet = lastWallet ?? ws.find((w) => w.category !== 'locked')?.id ?? ws[0]?.id ?? NO_WALLET
 
       if (existing) {
         setEditId(existing.id)
@@ -78,12 +96,13 @@ export function QuickAddSheet() {
         setNote(existing.note ?? '')
       } else {
         const t = detail.type ?? 'expense'
+        const d = pickDefaults(t, txns, ms, st)
         setEditId(null)
         setType(t)
         setAmount('')
         setCategoryId(categoriesFor(t)[0]?.id ?? '')
-        setAccountId(defaultWallet)
-        setToAccountId(ws.find((w) => w.id !== defaultWallet)?.id ?? NO_WALLET)
+        setAccountId(d.from)
+        setToAccountId(d.to)
         setDate(localDateStr())
         setNote('')
       }
@@ -111,6 +130,12 @@ export function QuickAddSheet() {
   const changeType = (t: SpendTxnType) => {
     setType(t)
     if (t !== 'transfer' && getCategory(categoryId)?.type !== t) setCategoryId(categoriesFor(t)[0]?.id ?? '')
+    // New entries follow the defaults for the new type; edits keep what was recorded
+    if (!editId) {
+      const d = pickDefaults(t, transactions, methods, settings)
+      setAccountId(d.from)
+      setToAccountId(d.to)
+    }
   }
 
   const appendTag = (tag: string) => {
@@ -148,11 +173,11 @@ export function QuickAddSheet() {
     setOpen(false)
   }
 
-  const walletOptions = [
-    ...(type === 'transfer' ? [] : [{ value: NO_WALLET, label: 'No wallet (not tracked)' }]),
-    ...wallets.map((w) => ({ value: w.id, label: `${w.name} · ${thb(w.balance)}` })),
-  ]
-  const pickWalletOption = [{ value: NO_WALLET, label: 'Choose a wallet' }]
+  const pickerProps = {
+    methods,
+    favoriteIds: settings.favoriteAccountIds ?? [],
+    defaultId: settings.defaultAccountId,
+  }
 
   return (
     <Modal
@@ -211,24 +236,25 @@ export function QuickAddSheet() {
           </div>
         )}
 
-        {/* Wallets */}
+        {/* Pay with / into */}
         {type === 'transfer' ? (
-          <div className="grid grid-cols-2 gap-3">
-            <SelectField label="From" value={accountId} onChange={setAccountId} options={[...pickWalletOption, ...walletOptions]} />
-            <SelectField
-              label="To"
+          <>
+            <PayMethodPicker {...pickerProps} label="From" value={accountId} onChange={setAccountId} />
+            <PayMethodPicker
+              {...pickerProps}
+              label="To (a card here pays its bill)"
               value={toAccountId}
               onChange={setToAccountId}
-              error={accountId && accountId === toAccountId ? 'Pick another wallet' : undefined}
-              options={[...pickWalletOption, ...walletOptions]}
+              excludeId={accountId}
             />
-          </div>
+          </>
         ) : (
-          <SelectField
-            label={type === 'income' ? 'Into wallet' : 'From wallet'}
+          <PayMethodPicker
+            {...pickerProps}
+            label={type === 'income' ? 'Into' : 'Pay with'}
             value={accountId}
             onChange={setAccountId}
-            options={walletOptions}
+            allowNone
           />
         )}
 

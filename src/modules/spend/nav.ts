@@ -25,15 +25,15 @@ export const spendTxnsItem: NavSubItem = {
   icon: ListBulletIcon,
 }
 
-export const spendWalletsItem: NavSubItem = {
-  to: `${SPEND_ROOT}/wallets`,
-  label: 'Wallets',
-  short: 'Wallets',
-  description: 'Cash wallets shared with Invest, with this month in and out',
+export const spendAccountsItem: NavSubItem = {
+  to: `${SPEND_ROOT}/accounts`,
+  label: 'Accounts',
+  short: 'Accounts',
+  description: 'Credit cards and cash wallets you pay with',
   icon: WalletIcon,
 }
 
 export const spendNavSections: NavSection[] = [
   { title: 'Spend', items: [spendOverviewItem, spendTxnsItem] },
-  { title: 'Money', items: [spendWalletsItem] },
+  { title: 'Money', items: [spendAccountsItem] },
 ]

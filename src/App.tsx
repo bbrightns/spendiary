@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { ScrollToTop } from './components/ScrollToTop'
 import { DataProvider, useData } from './store/DataContext'
 import { ToastProvider } from './store/ToastContext'
@@ -21,7 +21,7 @@ const Debts = lazy(() => import('./pages/Debts').then(m => ({ default: m.Debts }
 const CashLiquidity = lazy(() => import('./pages/CashLiquidity').then(m => ({ default: m.CashLiquidity })))
 const SpendOverview = lazy(() => import('./modules/spend/pages/SpendOverview').then(m => ({ default: m.SpendOverview })))
 const SpendTransactions = lazy(() => import('./modules/spend/pages/SpendTransactions').then(m => ({ default: m.SpendTransactions })))
-const SpendWallets = lazy(() => import('./modules/spend/pages/SpendWallets').then(m => ({ default: m.SpendWallets })))
+const SpendAccounts = lazy(() => import('./modules/spend/pages/SpendAccounts').then(m => ({ default: m.SpendAccounts })))
 import { PageSkeleton } from './components/ui/PageSkeleton'
 
 function PageLoadingFallback() {
@@ -267,7 +267,8 @@ function AppContent() {
           <Route path="/logs/summary" element={<ActivitySummary />} />
           <Route path="/spend" element={<SpendOverview />} />
           <Route path="/spend/txns" element={<SpendTransactions />} />
-          <Route path="/spend/wallets" element={<SpendWallets />} />
+          <Route path="/spend/accounts" element={<SpendAccounts />} />
+          <Route path="/spend/wallets" element={<Navigate to="/spend/accounts" replace />} />
           <Route path="*" element={<Dashboard />} />
         </Routes>
       </Suspense>

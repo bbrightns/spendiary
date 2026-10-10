@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { isNavPathActive, type NavSubItem } from '../../components/layout/nav'
 import { PlusIcon, PortfolioIcon } from '../../components/icons'
-import { spendOverviewItem, spendTxnsItem, spendWalletsItem } from './nav'
+import { spendOverviewItem, spendTxnsItem, spendAccountsItem } from './nav'
 import { openQuickAdd } from './QuickAddSheet'
 import { lastPathFor } from './ModeSwitcher'
 
@@ -25,7 +25,7 @@ function Tab({ item, pathname }: { item: NavSubItem; pathname: string }) {
   )
 }
 
-/** Mobile bottom bar while in Spend: Home · Txns · [+] · Wallets · Invest */
+/** Mobile bottom bar while in Spend: Home · History · [+] · Accounts · Invest */
 export function SpendBottomNav() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
@@ -45,7 +45,7 @@ export function SpendBottomNav() {
             <PlusIcon className="h-6 w-6" strokeWidth={2.4} />
           </button>
         </div>
-        <Tab item={spendWalletsItem} pathname={pathname} />
+        <Tab item={spendAccountsItem} pathname={pathname} />
         <button
           type="button"
           onClick={() => navigate(lastPathFor(false))}
