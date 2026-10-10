@@ -29,8 +29,8 @@ import {
 } from '../components/icons'
 
 const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ]
 
 function tempId(): string {
@@ -163,7 +163,7 @@ export function CashLiquidity() {
   const handleAutoSort = () => {
     const sorted = sortCashAccounts(accounts, rate)
     setCashAccounts(sorted)
-    showToast('จัดเรียงบัญชีตามสถาบันและยอดเงินเรียบร้อยแล้ว', 'success')
+    showToast('Accounts sorted by bank and balance', 'success')
   }
 
   const handleOpenAddModal = () => {
@@ -194,7 +194,7 @@ export function CashLiquidity() {
     setCashAccounts(sorted)
     setIsEditModalOpen(false)
     setAccountToEdit(null)
-    showToast(`บันทึกบัญชี "${savedAcc.name}" เรียบร้อยแล้ว`, 'success')
+    showToast(`Saved account "${savedAcc.name}"`, 'success')
   }
 
   const handleDeleteAccount = () => {
@@ -202,7 +202,7 @@ export function CashLiquidity() {
     const updated = accounts.filter((a) => a.id !== accountToDelete.id)
     setCashAccounts(updated)
     setAccountToDelete(null)
-    showToast(`ลบบัญชี "${accountToDelete.name}" เรียบร้อยแล้ว`, 'info')
+    showToast(`Deleted account "${accountToDelete.name}"`, 'info')
   }
 
 
@@ -212,17 +212,17 @@ export function CashLiquidity() {
       <PageHeader
         eyebrow="Plan"
         title="Cash & Liquidity Hub"
-        subtitle="ศูนย์บริหารจัดการพอร์ตเงินสด สภาพคล่องฉุกเฉิน กระสุนรอลงทุน และผลตอบแทนดอกเบี้ยเงินฝาก"
+        subtitle="Your cash accounts, emergency savings, money ready to invest, and the interest you earn"
         action={
           <Button
             variant="secondary"
             size="sm"
             onClick={handleAutoSort}
             className="gap-1.5 text-xs sm:text-sm h-9 cursor-pointer"
-            title="จัดเรียงบัญชีตามสถาบันการเงินและยอดคงเหลือ"
+            title="Sort accounts by bank and balance"
           >
             <SparklesIcon className="h-3.5 w-3.5 text-ink-muted" strokeWidth={2} />
-            <span>จัดเรียงสถาบัน</span>
+            <span>Sort by bank</span>
           </Button>
         }
       />
@@ -252,7 +252,7 @@ export function CashLiquidity() {
             </p>
           </div>
           <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            เฉลี่ย {thb(totalAnnualYield / 12)}/ด. · APY {effectiveApy.toFixed(2)}%
+            about {thb(totalAnnualYield / 12)}/month · APY {effectiveApy.toFixed(2)}%
           </p>
         </Card>
 
@@ -265,7 +265,7 @@ export function CashLiquidity() {
             </p>
           </div>
           <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            {deployablePct.toFixed(1)}% ของเงินสด · เงินสดที่คุณมีอิสระในการ deploy จริง ๆ
+            {deployablePct.toFixed(1)}% of your cash · money you are free to spend or invest
           </p>
         </Card>
 
@@ -278,7 +278,7 @@ export function CashLiquidity() {
             </p>
           </div>
           <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            {lockedPct.toFixed(1)}% ของเงินสด · Cash / assets ที่ไม่ควรแตะ
+            {lockedPct.toFixed(1)}% of your cash · savings you should leave alone
           </p>
         </Card>
       </div>
@@ -288,14 +288,14 @@ export function CashLiquidity() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
-              <span>📊 Liquidity Allocation (การจัดสรรสภาพคล่องเงินสด)</span>
+              <span>📊 How your cash is split</span>
             </h3>
             <p className="text-xs text-ink-muted">
-              แยกเงินสดที่คุณมีอิสระในการ deploy กับเงินออมระยะยาวที่ไม่ควรแตะ
+              Money you can use now vs. long-term savings you should not touch
             </p>
           </div>
           <span className="text-xs font-semibold text-ink-muted">
-            รวมเงินสด {thb(totalCashThb)}
+            Total cash {thb(totalCashThb)}
           </span>
         </div>
 
@@ -350,7 +350,7 @@ export function CashLiquidity() {
                     {meta.labelTh}
                   </span>
                   <span className="text-xs text-ink-muted opacity-60 ml-auto">
-                    {catKey === 'spending' ? 'อิสระ deploy' : 'ไม่ควรแตะ'}
+                    {catKey === 'spending' ? 'Free to use' : 'Leave alone'}
                   </span>
                 </div>
                 <div className="mt-2 flex items-baseline justify-between gap-1 w-full min-w-0">
@@ -412,7 +412,7 @@ export function CashLiquidity() {
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-ink-muted" />
               <input
                 type="text"
-                placeholder="ค้นหาชื่อบัญชี / สถาบัน..."
+                placeholder="Search account or bank..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-9 w-full rounded-xl border border-line bg-surface-muted/40 pl-8 pr-3 text-xs font-medium text-ink outline-none placeholder:text-ink-muted/50 focus:border-brand focus:bg-surface"
@@ -423,10 +423,10 @@ export function CashLiquidity() {
               size="sm"
               onClick={handleOpenAddModal}
               className="gap-1.5 text-xs sm:text-sm shrink-0 h-9 px-3.5 shadow-xs cursor-pointer font-semibold"
-              title="เพิ่มบัญชีเงินสดใหม่"
+              title="Add a new cash account"
             >
               <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
-              <span>เพิ่มบัญชีใหม่</span>
+              <span>Add account</span>
             </Button>
           </div>
         </div>
@@ -436,15 +436,15 @@ export function CashLiquidity() {
           {/* Quick Sort Bar on Mobile */}
           {filteredAccounts.length > 1 && (
             <div className="flex items-center justify-between text-xs text-ink-muted px-1 pb-1 select-none border-b border-line/30">
-              <span>{filteredAccounts.length} บัญชี</span>
+              <span>{filteredAccounts.length} {filteredAccounts.length === 1 ? 'account' : 'accounts'}</span>
               <div className="flex items-center gap-2">
-                <span className="text-ink-muted">เรียง:</span>
+                <span className="text-ink-muted">Sort:</span>
                 <button
                   type="button"
                   onClick={() => handleSortToggle('balance')}
                   className={`font-semibold cursor-pointer ${sortField === 'balance' ? 'text-brand font-bold' : 'hover:text-ink'}`}
                 >
-                  ยอดคงเหลือ {sortField === 'balance' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                  Balance {sortField === 'balance' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
                 </button>
                 <span>·</span>
                 <button
@@ -452,7 +452,7 @@ export function CashLiquidity() {
                   onClick={() => handleSortToggle('yield')}
                   className={`font-semibold cursor-pointer ${sortField === 'yield' ? 'text-brand font-bold' : 'hover:text-ink'}`}
                 >
-                  ดอกเบี้ย {sortField === 'yield' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                  Interest {sortField === 'yield' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
                 </button>
               </div>
             </div>
@@ -535,7 +535,7 @@ export function CashLiquidity() {
                       </div>
                       {annualEarned > 0 ? (
                         <div className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                          +{thb(annualEarned)}/ปี
+                          +{thb(annualEarned)}/year
                         </div>
                       ) : a.currency === 'USD' && a.balance > 0 ? (
                         <div className="text-xs font-mono text-ink-muted">
@@ -557,7 +557,7 @@ export function CashLiquidity() {
                           setIsEditModalOpen(true)
                         }}
                         className="p-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
-                        title="แก้ไขบัญชี"
+                        title="Edit account"
                       >
                         <PencilIcon className="h-3.5 w-3.5" />
                       </button>
@@ -565,7 +565,7 @@ export function CashLiquidity() {
                         type="button"
                         onClick={() => setAccountToDelete(a)}
                         className="p-1.5 rounded-lg text-ink-muted hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                        title="ลบบัญชี"
+                        title="Delete account"
                       >
                         <TrashIcon className="h-3.5 w-3.5" />
                       </button>
@@ -582,61 +582,61 @@ export function CashLiquidity() {
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
               <tr className="border-b border-line/60 text-xs font-bold uppercase tracking-wider text-ink-muted select-none">
-                {/* Column 1: บัญชี / สถาบัน */}
+                {/* Column 1: Account */}
                 <th
                   onClick={() => handleSortToggle('name')}
                   className="py-2.5 px-3 cursor-pointer hover:text-ink transition-colors"
                 >
                   <div className="flex items-center gap-1.5">
-                    <span>บัญชี / สถาบัน</span>
+                    <span>Account / bank</span>
                     <span className={`text-xs ${sortField === 'name' ? 'text-brand font-black' : 'opacity-30'}`}>
                       {sortField === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
                     </span>
                   </div>
                 </th>
 
-                {/* Column 2: หมวดหมู่ */}
+                {/* Column 2: Category */}
                 <th
                   onClick={() => handleSortToggle('category')}
                   className="py-2.5 px-3 cursor-pointer hover:text-ink transition-colors"
                 >
                   <div className="flex items-center gap-1.5">
-                    <span>หมวดหมู่</span>
+                    <span>Category</span>
                     <span className={`text-xs ${sortField === 'category' ? 'text-brand font-black' : 'opacity-30'}`}>
                       {sortField === 'category' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
                     </span>
                   </div>
                 </th>
 
-                {/* Column 3: ดอกเบี้ย / ผลตอบแทน */}
+                {/* Column 3: Interest */}
                 <th
                   onClick={() => handleSortToggle('yield')}
                   className="py-2.5 px-3 cursor-pointer hover:text-ink transition-colors"
                 >
                   <div className="flex items-center gap-1.5">
-                    <span>ดอกเบี้ย & ผลตอบแทน</span>
+                    <span>Interest</span>
                     <span className={`text-xs ${sortField === 'yield' ? 'text-brand font-black' : 'opacity-30'}`}>
                       {sortField === 'yield' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
                     </span>
                   </div>
                 </th>
 
-                {/* Column 4: ยอดคงเหลือ (Right aligned) */}
+                {/* Column 4: Balance (right aligned) */}
                 <th
                   onClick={() => handleSortToggle('balance')}
                   className="py-2.5 px-3 text-right cursor-pointer hover:text-ink transition-colors"
                 >
                   <div className="flex items-center justify-end gap-1.5">
-                    <span>ยอดคงเหลือ</span>
+                    <span>Balance</span>
                     <span className={`text-xs ${sortField === 'balance' ? 'text-brand font-black' : 'opacity-30'}`}>
                       {sortField === 'balance' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
                     </span>
                   </div>
                 </th>
 
-                {/* Column 5: จัดการ (Actions) */}
+                {/* Column 5: Actions */}
                 <th className="py-2.5 px-3 text-right w-24">
-                  <span>จัดการ</span>
+                  <span>Actions</span>
                 </th>
               </tr>
             </thead>
@@ -659,14 +659,14 @@ export function CashLiquidity() {
                         isExpanded ? 'bg-surface-muted/60' : 'hover:bg-surface-muted/40'
                       }`}
                     >
-                      {/* 1. บัญชี / สถาบัน */}
+                      {/* 1. Account */}
                       <td className="py-2 px-3">
                         <div className="flex items-center gap-2.5 min-w-0">
                           {preset ? (
                             <div
                               className="h-8 w-8 rounded-lg text-xs font-black shrink-0 flex items-center justify-center select-none shadow-xs"
                               style={{ background: preset.bg, color: preset.color, border: `1px solid ${preset.color}35` }}
-                              title={`สถาบัน: ${preset.name}`}
+                              title={`Bank: ${preset.name}`}
                             >
                               {preset.shortName}
                             </div>
@@ -688,7 +688,7 @@ export function CashLiquidity() {
                         </div>
                       </td>
 
-                      {/* 2. หมวดหมู่ */}
+                      {/* 2. Category */}
                       <td className="py-2 px-3 whitespace-nowrap">
                         <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium bg-surface-muted border border-line/50">
                           <span>{CASH_CATEGORIES[cat]?.icon}</span>
@@ -696,7 +696,7 @@ export function CashLiquidity() {
                         </span>
                       </td>
 
-                      {/* 3. ดอกเบี้ย & ผลตอบแทน */}
+                      {/* 3. Interest */}
                       <td className="py-2 px-3 whitespace-nowrap">
                         {rateNum > 0 ? (
                           <div className="space-y-0.5">
@@ -704,14 +704,14 @@ export function CashLiquidity() {
                               <span>📈 {rateNum.toFixed(2)}%</span>
                               {capNum && capNum > 0 && (
                                 <span className="text-xs opacity-75 font-normal">
-                                  (สูงสุด {thb(capNum)})
+                                  (up to {thb(capNum)})
                                 </span>
                               )}
                             </div>
                             <div className="text-xs text-ink-muted font-mono">
-                              ≈ {thb(annualEarned)}/ปี{' '}
+                              ≈ {thb(annualEarned)}/year{' '}
                               <span className="opacity-70 font-sans">
-                                ({a.payoutSchedule === 'monthly' ? 'จ่ายทุกเดือน' : a.payoutSchedule === 'semi_annual' ? 'ปีละ 2 ครั้ง' : 'ปีละ 1 ครั้ง'})
+                                ({a.payoutSchedule === 'monthly' ? 'paid monthly' : a.payoutSchedule === 'semi_annual' ? 'paid twice a year' : 'paid once a year'})
                               </span>
                             </div>
                           </div>
@@ -720,7 +720,7 @@ export function CashLiquidity() {
                         )}
                       </td>
 
-                      {/* 4. ยอดคงเหลือ */}
+                      {/* 4. Balance */}
                       <td className="py-2 px-3 text-right whitespace-nowrap">
                         <div className="font-display font-bold text-sm text-ink tnum">
                           {a.currency === 'USD'
@@ -729,7 +729,7 @@ export function CashLiquidity() {
                         </div>
                       </td>
 
-                      {/* 5. จัดการ (Actions: ดินสอ / ถังขยะ / Expand) */}
+                      {/* 5. Actions (edit / delete / expand) */}
                       <td className="py-2 px-3 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
                           <button
@@ -739,7 +739,7 @@ export function CashLiquidity() {
                               setIsEditModalOpen(true)
                             }}
                             className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted hover:bg-surface hover:text-ink transition-colors cursor-pointer"
-                            title="แก้ไขข้อมูลบัญชี"
+                            title="Edit account details"
                           >
                             <PencilIcon className="h-3.5 w-3.5" />
                           </button>
@@ -747,7 +747,7 @@ export function CashLiquidity() {
                             type="button"
                             onClick={() => setAccountToDelete(a)}
                             className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted hover:bg-loss-soft hover:text-loss transition-colors cursor-pointer"
-                            title="ลบบัญชีนี้"
+                            title="Delete this account"
                           >
                             <TrashIcon className="h-3.5 w-3.5" />
                           </button>
@@ -757,7 +757,7 @@ export function CashLiquidity() {
                             className={`grid h-8 w-7 place-items-center rounded-lg transition-colors cursor-pointer ${
                               isExpanded ? 'bg-brand/10 text-brand' : 'text-ink-muted hover:bg-surface hover:text-ink'
                             }`}
-                            title={isExpanded ? 'ย่อแถว' : 'ดูรายละเอียดเพิ่มเติม'}
+                            title={isExpanded ? 'Collapse' : 'Show more details'}
                           >
                             <svg
                               viewBox="0 0 16 16"
@@ -779,28 +779,28 @@ export function CashLiquidity() {
                         <td colSpan={5} className="py-2.5 px-4">
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                             <div className="p-2 rounded-lg bg-surface border border-line/40">
-                              <span className="text-ink-muted block text-xs">วัตถุประสงค์:</span>
+                              <span className="text-ink-muted block text-xs">Purpose:</span>
                               <span className="font-bold text-ink flex items-center gap-1 mt-0.5">
                                 <span>{CASH_CATEGORIES[cat]?.icon}</span>
                                 <span>{CASH_CATEGORIES[cat]?.labelTh}</span>
                               </span>
                             </div>
                             <div className="p-2 rounded-lg bg-surface border border-line/40">
-                              <span className="text-ink-muted block text-xs">รอบการจ่ายดอกเบี้ย:</span>
+                              <span className="text-ink-muted block text-xs">Interest paid:</span>
                               <span className="font-bold text-ink mt-0.5 block">
                                 {a.payoutSchedule === 'monthly'
-                                  ? 'ทุกเดือน (12 ครั้ง/ปี)'
+                                  ? 'Every month (12 times a year)'
                                   : a.payoutSchedule === 'semi_annual'
-                                  ? 'ปีละ 2 ครั้ง (มิ.ย. & ธ.ค.)'
+                                  ? 'Twice a year (Jun & Dec)'
                                   : a.payoutSchedule === 'annual'
-                                  ? 'ปีละ 1 ครั้ง'
-                                  : 'กำหนดเดือนเอง'}
+                                  ? 'Once a year'
+                                  : 'Custom months'}
                               </span>
                             </div>
                             <div className="p-2 rounded-lg bg-surface border border-line/40">
-                              <span className="text-ink-muted block text-xs">ประมาณการดอกเบี้ย:</span>
+                              <span className="text-ink-muted block text-xs">Estimated interest:</span>
                               <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-0.5 block">
-                                {thb(annualEarned)} / ปี
+                                {thb(annualEarned)} / year
                               </span>
                             </div>
                           </div>
@@ -816,9 +816,9 @@ export function CashLiquidity() {
 
         {filteredAccounts.length === 0 && (
           <div className="text-center py-12 text-ink-muted space-y-2">
-            <p className="text-sm font-medium">ไม่พบบัญชีเงินสดที่ตรงกับเงื่อนไข</p>
+            <p className="text-sm font-medium">No cash accounts match your search</p>
             <Button onClick={handleOpenAddModal} variant="secondary" className="text-xs">
-              + เพิ่มบัญชีใหม่
+              + Add account
             </Button>
           </div>
         )}
@@ -841,9 +841,9 @@ export function CashLiquidity() {
       {accountToDelete && (
         <ConfirmModal
           open={Boolean(accountToDelete)}
-          title="ยืนยันการลบบัญชี"
-          description={`คุณแน่ใจหรือไม่ว่าต้องการลบบัญชี "${accountToDelete.name}"? ยอดเงินสดในพอร์ตจะถูกปรับลดลงทันที`}
-          confirmText="ลบบัญชี"
+          title="Delete this account?"
+          description={`Are you sure you want to delete "${accountToDelete.name}"? Your total cash will go down right away.`}
+          confirmText="Delete account"
           confirmVariant="danger"
           onConfirm={handleDeleteAccount}
           onClose={() => setAccountToDelete(null)}
@@ -905,15 +905,15 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
     <Modal
       open={open}
       onClose={onClose}
-      title={initialAccount.name ? 'แก้ไขข้อมูลบัญชีเงินสด' : 'เพิ่มบัญชีเงินสดใหม่'}
+      title={initialAccount.name ? 'Edit cash account' : 'Add cash account'}
       size="md"
       footer={
         <div className="flex items-center justify-end gap-2 w-full">
           <Button type="button" variant="secondary" onClick={onClose}>
-            ยกเลิก
+            Cancel
           </Button>
           <Button type="submit" form="account-edit-form">
-            บันทึกบัญชี
+            Save account
           </Button>
         </div>
       }
@@ -922,12 +922,12 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
         {/* Name */}
         <div>
           <label className="block text-xs font-bold text-ink mb-1">
-            ชื่อบัญชี / สถาบันการเงิน <span className="text-rose-500">*</span>
+            Account name / bank <span className="text-rose-500">*</span>
           </label>
           <input
             type="text"
             required
-            placeholder="เช่น Kept, Dime, KBank, สหกรณ์ออมทรัพย์"
+            placeholder="e.g. Kept, Dime, KBank, Savings co-op"
             value={name}
             onChange={(e) => {
               setName(e.target.value)
@@ -943,7 +943,7 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-bold text-ink mb-1">
-              ยอดเงินคงเหลือ
+              Current balance
             </label>
             <input
               type="text"
@@ -957,7 +957,7 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
 
           <div>
             <label className="block text-xs font-bold text-ink mb-1">
-              สกุลเงิน
+              Currency
             </label>
             <div className="grid grid-cols-2 gap-1.5 h-10">
               <button
@@ -989,7 +989,7 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
         {/* Category */}
         <div>
           <label className="block text-xs font-bold text-ink mb-1.5">
-            หมวดหมู่ / วัตถุประสงค์ (Liquidity Tier)
+            Category / purpose
           </label>
           <div className="grid grid-cols-2 gap-2">
             {(['spending', 'locked'] as CashAccountCategory[]).map((catKey) => {
@@ -1017,18 +1017,18 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
         {/* Yield Booster (Interest Rate + Cap) */}
         <div className="p-3 rounded-xl bg-surface-muted/40 border border-line/60 space-y-3">
           <span className="text-xs font-bold text-ink block">
-            Yield Booster (ผลตอบแทนดอกเบี้ย)
+            Interest
           </span>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-ink-muted mb-1">
-                อัตราดอกเบี้ยต่อปี (%)
+                Interest rate per year (%)
               </label>
               <input
                 type="text"
                 inputMode="decimal"
-                placeholder="เช่น 1.50, 2.22, 5.50"
+                placeholder="e.g. 1.50, 2.22, 5.50"
                 value={interestRate}
                 onChange={(e) => setInterestRate(e.target.value)}
                 className="h-9 w-full rounded-lg border border-line bg-surface px-2.5 text-sm font-bold tnum text-ink outline-none focus:border-brand"
@@ -1036,13 +1036,13 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-ink-muted mb-1" title="คิดดอกเบี้ยไม่เกินวงเงินนี้">
-                เพดานเงินต้นสูงสุด
+              <label className="block text-xs font-semibold text-ink-muted mb-1" title="Interest is only paid on up to this amount">
+                Max balance earning interest
               </label>
               <input
                 type="text"
                 inputMode="decimal"
-                placeholder="ไม่จำกัด"
+                placeholder="No limit"
                 value={formatWithCommas(maxEligibleBalance)}
                 onChange={(e) => setMaxEligibleBalance(e.target.value)}
                 className="h-9 w-full rounded-lg border border-line bg-surface px-2.5 text-sm font-bold tnum text-ink outline-none focus:border-brand"
@@ -1053,14 +1053,14 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
           {/* Payout Schedule */}
           <div>
             <label className="block text-xs font-semibold text-ink-muted mb-1.5">
-              รอบดอกเบี้ยเข้าบัญชี
+              How often interest is paid
             </label>
             <div className="grid grid-cols-4 gap-1.5 text-xs">
               {[
-                { key: 'monthly', label: 'ทุกเดือน' },
-                { key: 'semi_annual', label: 'ปีละ 2 ครั้ง' },
-                { key: 'annual', label: 'ปีละ 1 ครั้ง' },
-                { key: 'custom', label: 'กำหนดเอง' },
+                { key: 'monthly', label: 'Monthly' },
+                { key: 'semi_annual', label: 'Twice a year' },
+                { key: 'annual', label: 'Once a year' },
+                { key: 'custom', label: 'Custom' },
               ].map((sch) => (
                 <button
                   key={sch.key}
@@ -1086,7 +1086,7 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
           {/* Custom Months Picker */}
           {payoutSchedule === 'custom' && (
             <div className="space-y-1.5 pt-1">
-              <span className="text-xs text-ink-muted block">แตะเลือกเดือนที่ดอกเบี้ยเข้า:</span>
+              <span className="text-xs text-ink-muted block">Tap the months interest is paid:</span>
               <div className="grid grid-cols-6 gap-1 text-xs">
                 {THAI_MONTHS_SHORT.map((mName, idx) => {
                   const mNum = idx + 1
