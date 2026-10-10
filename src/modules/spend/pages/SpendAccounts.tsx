@@ -11,6 +11,7 @@ import type { SpendCard } from '../../../lib/types'
 import { CardSheet, StarIcon, WalletSheet } from '../AccountSheets'
 import { cardCycle, inPeriod, isCalendar, periodFor, upcomingDue } from '../logic'
 import { MethodIcon } from '../PayMethodPicker'
+import { dueText, openPayBill } from '../PayBillSheet'
 import { useSpend, type PayMethod } from '../useSpend'
 
 function shortDate(iso: string): string {
@@ -19,7 +20,7 @@ function shortDate(iso: string): string {
 }
 
 export function SpendAccounts() {
-  const { transactions, methods, cards, settings, toggleFavorite } = useSpend()
+  const { transactions, methods, cards, settings, bills, toggleFavorite } = useSpend()
   const navigate = useNavigate()
   const [cardSheet, setCardSheet] = useState<{ open: boolean; card?: SpendCard }>({ open: false })
   const [walletSheet, setWalletSheet] = useState<PayMethod | undefined>()
@@ -123,8 +124,12 @@ export function SpendAccounts() {
               const cyc = cardCycle(c)
               const used = c.creditLimit > 0 ? Math.min(100, (c.balance / c.creditLimit) * 100) : 0
               const spentCycle = cycleSpend(c, cyc.lastStatement)
-              const due = upcomingDue(cyc, c.balance, spentCycle)
-              const dueSoon = due.amount > 0 && due.days <= 5
+              const bill = bills.find((b) => b.card.id === c.id)
+              // An open statement wins; otherwise show the next one forming
+              const open = bill && bill.amountDue > 0 ? bill : undefined
+              const next = upcomingDue(cyc, c.balance, spentCycle)
+              const due = open ? { date: open.dueDate, days: open.daysToDue, amount: open.amountDue } : next
+              const tone = open?.status === 'overdue' ? 'loss' : open?.status === 'due' ? 'warn' : undefined
               return (
                 <Card
                   key={c.id}
@@ -175,14 +180,33 @@ export function SpendAccounts() {
                         <p className="text-ink-muted">Statement</p>
                         <p className="font-bold text-ink">{shortDate(cyc.nextStatement)}</p>
                       </div>
-                      <div className={`rounded-xl px-2.5 py-2 ${dueSoon ? 'bg-warn-soft' : 'bg-surface-muted/70'}`}>
-                        <p className={dueSoon ? 'text-warn' : 'text-ink-muted'}>
-                          Due {shortDate(due.date)}
-                          {dueSoon && <span className="font-semibold"> · {due.days === 0 ? 'today' : `${due.days}d`}</span>}
+                      <div
+                        className={`rounded-xl px-2.5 py-2 ${tone === 'loss' ? 'bg-loss-soft' : tone === 'warn' ? 'bg-warn-soft' : 'bg-surface-muted/70'}`}
+                      >
+                        <p className={tone === 'loss' ? 'text-loss' : tone === 'warn' ? 'text-warn' : 'text-ink-muted'}>
+                          {tone === 'loss' ? 'Overdue' : `Due ${shortDate(due.date)}`}
                         </p>
-                        <p className={`font-bold tnum ${dueSoon ? 'text-warn' : 'text-ink'}`}>{thb(due.amount)}</p>
+                        <p className={`font-bold tnum ${tone === 'loss' ? 'text-loss' : tone === 'warn' ? 'text-warn' : 'text-ink'}`}>
+                          {thb(due.amount)}
+                        </p>
                       </div>
                     </div>
+
+                    {open && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          openPayBill(c.id)
+                        }}
+                        className="mt-3 flex w-full items-center justify-between rounded-xl border border-line px-3 py-2.5 text-sm font-semibold text-ink hover:bg-surface-muted/60 cursor-pointer"
+                      >
+                        <span>
+                          Pay bill <span className="text-ink-muted">· {dueText(open.daysToDue)}</span>
+                        </span>
+                        <span className="font-bold tnum">{thb(open.amountDue)} →</span>
+                      </button>
+                    )}
                   </div>
                 </Card>
               )

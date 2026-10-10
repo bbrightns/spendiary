@@ -7,9 +7,9 @@
   stepper, type filter), Wallets, Invest ↔ Spend mode switch, command palette entries.
 - **Phase 2 (done)** — pastel categories, recent #tags, credit cards (limit, statement /
   due day), Accounts page, favorite + default payment method, full Test Mode seed.
-- **Phase 3 (in progress)** — pay cycle: count a "month" by calendar or from payday
+- **Phase 3 (done)** — pay cycle: count a "month" by calendar or from payday
   (fixed day, or N days before month end, with weekend shifting), Spend settings page.
-- **Phase 4 — credit card bill reminders**
+- **Phase 4 (done) — credit card bill reminders**
   - Reminder when a card's statement closes / due date is near (badge on the
     Accounts tab + banner on Overview, e.g. 5 days before due).
   - Tapping it opens a "Pay bill" sheet that totals what the statement billed

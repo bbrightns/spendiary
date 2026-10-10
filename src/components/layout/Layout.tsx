@@ -10,6 +10,7 @@ import { useData } from '../../store/DataContext'
 import { useScrollVisibility } from '../../hooks/useScrollVisibility'
 import { ModeSwitcher } from '../../modules/spend/ModeSwitcher'
 import { QuickAddSheet } from '../../modules/spend/QuickAddSheet'
+import { PayBillSheet } from '../../modules/spend/PayBillSheet'
 import { SpendBottomNav } from '../../modules/spend/SpendBottomNav'
 import { isSpendPath } from '../../modules/spend/nav'
 
@@ -92,8 +93,9 @@ export function Layout({ children }: { children: ReactNode }) {
         {isSpend ? <SpendBottomNav /> : <BottomNav />}
       </div>
 
-      {/* Spend Quick Add — opened from the + button, sidebar or command palette */}
+      {/* Spend sheets — Quick Add (+ button, sidebar, command palette) and card Pay bill (reminders) */}
       <QuickAddSheet />
+      <PayBillSheet />
     </div>
   )
 }

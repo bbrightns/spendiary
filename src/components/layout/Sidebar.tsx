@@ -7,7 +7,8 @@ import { openCommandPalette } from '../ui/CommandPalette'
 import { Button } from '../ui/Button'
 import { ModeSwitcher } from '../../modules/spend/ModeSwitcher'
 import { openQuickAdd } from '../../modules/spend/QuickAddSheet'
-import { isSpendPath, spendNavSections } from '../../modules/spend/nav'
+import { isSpendPath, spendAccountsItem, spendNavSections } from '../../modules/spend/nav'
+import { useSpend } from '../../modules/spend/useSpend'
 
 import { isDividendReceivedThisMonth, isLiabilityActionableThisMonth, shouldConfirmBuy } from '../../lib/calc'
 
@@ -29,9 +30,11 @@ export function Sidebar() {
       !isDividendReceivedThisMonth(h.id, data.dividendRecords),
   ).length
   const debtAlertCount = (data.liabilities ?? []).filter((l) => isLiabilityActionableThisMonth(l)).length
+  const billAlertCount = useSpend().reminders.length
 
   const getBadgeCount = (path?: string) => {
     if (path === '/') return debtAlertCount
+    if (path === spendAccountsItem.to) return billAlertCount
     if (path === '/dca') return dcaAlertCount
     if (path === '/dividends') return dividendAlertCount
     return 0

@@ -4,21 +4,27 @@ import { PlusIcon, PortfolioIcon } from '../../components/icons'
 import { spendOverviewItem, spendTxnsItem, spendAccountsItem } from './nav'
 import { openQuickAdd } from './QuickAddSheet'
 import { lastPathFor } from './ModeSwitcher'
+import { useSpend } from './useSpend'
 
 const tabClass =
   'group relative flex flex-1 flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-xs font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset min-h-[48px]'
 
-function Tab({ item, pathname }: { item: NavSubItem; pathname: string }) {
+function Tab({ item, pathname, badge = 0 }: { item: NavSubItem; pathname: string; badge?: number }) {
   const active = isNavPathActive(item.to, pathname, item.exact)
   return (
     <Link
       to={item.to}
-      aria-label={item.label}
+      aria-label={badge > 0 ? `${item.label}, ${badge} ${badge === 1 ? 'bill' : 'bills'} due` : item.label}
       aria-current={active ? 'page' : undefined}
       className={`${tabClass} ${active ? 'text-brand-ink' : 'text-ink-muted'}`}
     >
-      <span className={`flex h-9 w-12 items-center justify-center rounded-full transition-all duration-200 ${active ? 'bg-brand-soft' : ''}`}>
+      <span className={`relative flex h-9 w-12 items-center justify-center rounded-full transition-all duration-200 ${active ? 'bg-brand-soft' : ''}`}>
         <item.icon className="h-5 w-5" strokeWidth={active ? 2 : 1.6} />
+        {badge > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-xs font-bold text-white shadow-xs ring-2 ring-surface">
+            {badge}
+          </span>
+        )}
       </span>
       {item.short}
     </Link>
@@ -29,6 +35,7 @@ function Tab({ item, pathname }: { item: NavSubItem; pathname: string }) {
 export function SpendBottomNav() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
+  const { reminders } = useSpend()
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-surface/85 backdrop-blur-xl safe-bottom">
@@ -45,7 +52,7 @@ export function SpendBottomNav() {
             <PlusIcon className="h-6 w-6" strokeWidth={2.4} />
           </button>
         </div>
-        <Tab item={spendAccountsItem} pathname={pathname} />
+        <Tab item={spendAccountsItem} pathname={pathname} badge={reminders.length} />
         <button
           type="button"
           onClick={() => navigate(lastPathFor(false))}

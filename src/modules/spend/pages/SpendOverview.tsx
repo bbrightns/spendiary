@@ -11,6 +11,7 @@ import { localDateStr, thb } from '../../../lib/format'
 import { getCategory } from '../categories'
 import { daysLeftIn, inPeriod, periodFor, totalsFor } from '../logic'
 import { MonthStepper } from '../MonthStepper'
+import { BillReminders } from '../BillReminders'
 import { openQuickAdd } from '../QuickAddSheet'
 import { TxnRow } from '../TxnRow'
 import { useSpend } from '../useSpend'
@@ -59,6 +60,8 @@ export function SpendOverview() {
           </div>
         }
       />
+
+      <BillReminders />
 
       {/* ── Month totals ── */}
       <div className="grid grid-cols-3 gap-2.5 sm:gap-4">

@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useData } from '../../store/DataContext'
 import type { SpendCard, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
-import { applyToBalances, parseTags, sortTxns, spendWallets } from './logic'
+import { DEFAULT_BILL_REMINDER_DAYS, applyToBalances, cardBill, parseTags, sortTxns, spendWallets } from './logic'
 
 export type SpendTxnInput = Omit<SpendTransaction, 'id' | 'createdAt' | 'updatedAt' | 'tags'>
 
@@ -45,6 +45,13 @@ export function useSpend() {
     ],
     [cards, wallets],
   )
+
+  const bills = useMemo(
+    () => cards.map((c) => cardBill(c, transactions, settings.billReminderDays ?? DEFAULT_BILL_REMINDER_DAYS)),
+    [cards, transactions, settings.billReminderDays],
+  )
+  /** Bills to nag about: due within the reminder window, or overdue */
+  const reminders = useMemo(() => bills.filter((b) => b.remind).sort((a, b) => a.daysToDue - b.daysToDue), [bills])
 
   function addTransaction(input: SpendTxnInput): SpendTransaction {
     const txn: SpendTransaction = { ...input, id: newId(), tags: parseTags(input.note), createdAt: new Date().toISOString() }
@@ -130,6 +137,8 @@ export function useSpend() {
     cards,
     methods,
     settings,
+    bills,
+    reminders,
     addTransaction,
     updateTransaction,
     removeTransaction,

@@ -103,6 +103,74 @@ export function cardCycle(card: Pick<SpendCard, 'statementDay' | 'dueDay'>, toda
   }
 }
 
+// ── Card bills ───────────────────────────────────────────────────────────────
+
+export const DEFAULT_BILL_REMINDER_DAYS = 5
+
+export type BillStatus = 'overdue' | 'due' | 'upcoming' | 'clear'
+
+export interface CardBill {
+  card: SpendCard
+  /** Statement window: after `from`, up to and including `to` */
+  from: string
+  to: string
+  dueDate: string
+  /** Negative when overdue */
+  daysToDue: number
+  /** Left to pay on the last statement */
+  amountDue: number
+  /** Charges − refunds that the statement billed (from logged transactions) */
+  statementTotal: number
+  /** Charges and refunds in the statement window, newest first */
+  items: SpendTransaction[]
+  /** Payments into the card since the statement closed */
+  paidSoFar: number
+  /** Owed beyond the logged statement items (opening balance, interest, older carry-over) */
+  other: number
+  status: BillStatus
+  /** Inside the reminder window (or overdue) with money still due */
+  remind: boolean
+}
+
+/**
+ * The last statement's bill for a card. What's due is read from the card balance:
+ * owed now minus what's been charged since the statement closed. That keeps it right
+ * even when the starting balance was typed in rather than logged.
+ */
+export function cardBill(card: SpendCard, txns: SpendTransaction[], reminderDays = DEFAULT_BILL_REMINDER_DAYS, today = localDateStr()): CardBill {
+  const t = parse(today)
+  const cyc = cardCycle(card, t)
+  const prevStatement = cardCycle(card, parse(addDays(cyc.lastStatement, -1))).lastStatement
+  const onCard = txns.filter((x) => x.accountId === card.id && (x.type === 'expense' || x.type === 'income'))
+  const net = (x: SpendTransaction) => (x.type === 'expense' ? x.amount : -x.amount)
+
+  const items = onCard.filter((x) => x.date > prevStatement && x.date <= cyc.lastStatement).sort((a, b) => b.date.localeCompare(a.date))
+  const statementTotal = items.reduce((s, x) => s + net(x), 0)
+  const sinceStatement = onCard.filter((x) => x.date > cyc.lastStatement).reduce((s, x) => s + net(x), 0)
+  const paidSoFar = txns
+    .filter((x) => x.type === 'transfer' && x.toAccountId === card.id && x.date > cyc.lastStatement)
+    .reduce((s, x) => s + x.amount, 0)
+
+  const amountDue = Math.max(0, Math.round((card.balance - sinceStatement) * 100) / 100)
+  const daysToDue = Math.round((parse(cyc.lastStatementDue).getTime() - t.getTime()) / 86_400_000)
+  const status: BillStatus = amountDue <= 0 ? 'clear' : daysToDue < 0 ? 'overdue' : daysToDue <= reminderDays ? 'due' : 'upcoming'
+
+  return {
+    card,
+    from: prevStatement,
+    to: cyc.lastStatement,
+    dueDate: cyc.lastStatementDue,
+    daysToDue,
+    amountDue,
+    statementTotal,
+    items,
+    paidSoFar,
+    other: Math.round((amountDue + paidSoFar - statementTotal) * 100) / 100,
+    status,
+    remind: status === 'due' || status === 'overdue',
+  }
+}
+
 // ── Spending periods ─────────────────────────────────────────────────────────
 // A "month" is either the calendar month or a pay cycle: from one payday up to
 // the day before the next. Dates are local YYYY-MM-DD strings throughout.

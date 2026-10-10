@@ -1071,7 +1071,17 @@ const lastCycle = shiftPeriod(thisCycle, -1, payCycle)
 
 const spendCardsBase: SpendCard[] = [
   { id: 'card-ktc', name: 'KTC Visa Platinum', last4: '4821', color: '#7c3aed', creditLimit: 120_000, balance: 0, statementDay: 25, dueDay: 10 },
-  { id: 'card-uob', name: 'UOB YOLO', last4: '0937', color: '#0ea5e9', creditLimit: 60_000, balance: 0, statementDay: 5, dueDay: 25 },
+  // Statement closed ~17 days ago and is due in ~3, whatever today is, so Test Mode always shows a bill reminder
+  {
+    id: 'card-uob',
+    name: 'UOB YOLO',
+    last4: '0937',
+    color: '#0ea5e9',
+    creditLimit: 60_000,
+    balance: 0,
+    statementDay: Math.min(28, Number(inDays(-17).slice(8))),
+    dueDay: Math.min(28, Number(inDays(3).slice(8))),
+  },
 ]
 
 type T = [daysAgo: number, type: SpendTransaction['type'], amount: number, categoryId: string | undefined, accountId: string, note?: string, toAccountId?: string]
@@ -1086,9 +1096,9 @@ const spendRows: T[] = [
   [3, 'expense', 1_890, 'food', 'card-ktc', 'Omakase dinner #datenight'],
   [4, 'expense', 44, 'transport', 'c-scb', 'BTS #commute'],
   [4, 'expense', 145, 'food', 'c-scb', 'ข้าวมันไก่ #ร้านโปรด'],
-  [5, 'expense', 2_200, 'health', 'card-uob', 'Gym membership #fitness'],
+  [24, 'expense', 2_200, 'health', 'card-uob', 'Gym membership #fitness'],
   [6, 'income', 4_500, 'side', 'c-kbank', 'Logo design #freelance'],
-  [6, 'expense', 780, 'fun', 'card-uob', 'Movie night'],
+  [29, 'expense', 780, 'fun', 'card-uob', 'Movie night'],
   [7, 'transfer', 15_000, undefined, 'c-kbank', 'Top up everyday wallet', 'c-scb'],
   [8, 'expense', 65, 'drinks', 'c-scb', '#nosetea'],
   [9, 'expense', 3_200, 'family', 'c-kbank', "Mom's birthday dinner #family"],
@@ -1097,7 +1107,7 @@ const spendRows: T[] = [
   [12, 'expense', 120, 'food', 'c-scb', 'ก๋วยเตี๋ยวเรือ #ร้านโปรด'],
   [13, 'expense', 890, 'transport', 'card-ktc', 'Grab to airport'],
   [14, 'expense', 65, 'drinks', 'c-scb', '#nosetea'],
-  [16, 'expense', 2_650, 'shopping', 'card-uob', 'Running shoes #fitness'],
+  [20, 'expense', 2_650, 'shopping', 'card-uob', 'Running shoes #fitness'],
   [18, 'expense', 980, 'food', 'card-ktc', 'Groceries #tops'],
   [20, 'expense', 350, 'fun', 'c-scb', 'Board game cafe'],
   [22, 'expense', 65, 'drinks', 'c-scb', '#nosetea'],

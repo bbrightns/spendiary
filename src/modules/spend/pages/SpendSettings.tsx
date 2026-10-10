@@ -6,7 +6,7 @@ import { SegmentedControl } from '../../../components/ui/SegmentedControl'
 import { useToast } from '../../../store/ToastContext'
 import { localDateStr, thb } from '../../../lib/format'
 import type { PayCycle, WeekendShift } from '../../../lib/types'
-import { isCalendar, periodFor, periodLabel, upcomingPaydays } from '../logic'
+import { DEFAULT_BILL_REMINDER_DAYS, isCalendar, periodFor, periodLabel, upcomingPaydays } from '../logic'
 import { useSpend } from '../useSpend'
 
 const fmtDay = (iso: string) => {
@@ -228,6 +228,24 @@ export function SpendSettings() {
             Save
           </Button>
         </div>
+      </Section>
+
+      <Section title="Card bill reminders" description="When to start reminding you on Overview and the Accounts tab, before a card bill is due.">
+        <select
+          aria-label="Remind before due date"
+          value={settings.billReminderDays ?? DEFAULT_BILL_REMINDER_DAYS}
+          onChange={(e) => {
+            updateSettings({ billReminderDays: Number(e.target.value) })
+            showToast('Reminder updated')
+          }}
+          className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
+        >
+          {[1, 3, 5, 7, 10, 14].map((d) => (
+            <option key={d} value={d}>
+              {d} {d === 1 ? 'day' : 'days'} before it's due
+            </option>
+          ))}
+        </select>
       </Section>
 
       <Section title="Quick add" description="The payment method picked for you when you add an expense. Star more on the Accounts page.">

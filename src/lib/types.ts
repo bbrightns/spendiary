@@ -330,6 +330,8 @@ export interface SpendSettings {
   favoriteAccountIds?: string[]
   /** How a spending "month" is counted; calendar month when unset */
   cycle?: PayCycle
+  /** Remind about a card bill this many days before it's due (default 5) */
+  billReminderDays?: number
 }
 
 /** When the payday rule lands on Sat/Sun: move to Friday before, Monday after, or keep it */
