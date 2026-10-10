@@ -33,6 +33,7 @@ import {
   netWorth,
   portfolioSummary,
   shouldConfirmBuy,
+  nextBuyDate,
   totalCash,
   totalLiabilities,
   totalMonthlyDebtPayment,
@@ -120,6 +121,21 @@ export function Dashboard() {
     () => data.dcaPlans.filter((p) => shouldConfirmBuy(p)),
     [data.dcaPlans],
   )
+
+  // Non-daily DCA buys landing within the next 7 days (the badges above only cover items already due)
+  const upcomingDca = useMemo(() => {
+    const now = new Date()
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+    return data.dcaPlans
+      .filter((p) => (p.frequency ?? 'monthly') !== 'daily' && !shouldConfirmBuy(p, now))
+      .map((p) => {
+        const next = nextBuyDate(p, now)
+        const days = Math.round((new Date(next.getFullYear(), next.getMonth(), next.getDate()).getTime() - startOfToday) / 86_400_000)
+        return { plan: p, days }
+      })
+      .filter((x) => x.days >= 0 && x.days <= 7)
+      .sort((a, b) => a.days - b.days)
+  }, [data.dcaPlans])
 
   const debtActions = useMemo(() => {
     return (data.liabilities ?? []).filter((l) => isLiabilityActionableThisMonth(l))
@@ -242,6 +258,30 @@ export function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* ── Coming up: DCA buys in the next 7 days ── */}
+      {upcomingDca.length > 0 && (
+        <button
+          type="button"
+          onClick={() => navigate('/dca')}
+          aria-label="View upcoming DCA buys"
+          className="flex w-full items-center gap-3 rounded-2xl border border-line bg-surface/80 px-4 py-3 text-left shadow-xs transition-all hover:bg-surface-muted cursor-pointer"
+        >
+          <span className="shrink-0 text-xs font-bold uppercase tracking-wider text-ink-muted">Coming up</span>
+          <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+            {upcomingDca.slice(0, 4).map(({ plan, days }) => (
+              <span key={plan.id} className="flex min-w-0 items-center gap-1.5">
+                <span className="truncate font-semibold text-ink">{plan.name}</span>
+                <span className="tnum text-ink-muted">{thbCompact(plan.monthlyAmount)}</span>
+                <span className={`text-xs font-semibold ${days <= 1 ? 'text-amber-600 dark:text-amber-400' : 'text-brand'}`}>
+                  {days === 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`}
+                </span>
+              </span>
+            ))}
+            {upcomingDca.length > 4 && <span className="text-xs text-ink-muted">+{upcomingDca.length - 4} more</span>}
+          </span>
+        </button>
+      )}
 
       {/* ── ROW 1: Net Worth Master Hero (Full Width Bento) ── */}
       <div id="guide-dashboard-networth">
