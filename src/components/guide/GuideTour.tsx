@@ -215,17 +215,17 @@ export function GuideTour({
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase bg-brand/10 text-brand border border-brand/20 dark:bg-[#4f46e5]/20 dark:text-[#c7d2fe] dark:border-[#4f46e5]/30">
-              {currentStep.badge || 'แนะนำ'}
+              {currentStep.badge || 'Guide'}
             </span>
             <span className="text-xs font-medium text-ink-muted">
-              {currentStepIndex + 1} จาก {steps.length}
+              {currentStepIndex + 1} of {steps.length}
             </span>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            aria-label="ปิดคำแนะนำ"
+            aria-label="Close guide"
             className="p-1 text-ink-muted hover:text-ink hover:bg-surface-muted rounded-lg transition-colors cursor-pointer"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -252,7 +252,7 @@ export function GuideTour({
             onClick={onClose}
             className="text-xs font-semibold text-ink-muted hover:text-ink transition-colors cursor-pointer px-1 py-1"
           >
-            ข้ามทั้งหมด
+            Skip all
           </button>
 
           {/* Prev / Next Buttons */}
@@ -263,7 +263,7 @@ export function GuideTour({
                 onClick={onPrev}
                 className="px-3 py-1.5 rounded-xl border border-line text-xs font-semibold text-ink hover:bg-surface-muted active:scale-95 transition-all cursor-pointer"
               >
-                ย้อนกลับ
+                Back
               </button>
             )}
 
@@ -272,7 +272,7 @@ export function GuideTour({
               onClick={isLastStep ? onFinish : onNext}
               className="px-4 py-1.5 rounded-xl bg-ink text-white dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] hover:bg-ink-hover text-xs font-bold shadow-md shadow-brand/20 dark:shadow-[#4f46e5]/30 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
             >
-              <span>{isLastStep ? 'เข้าใจแล้ว' : 'ถัดไป'}</span>
+              <span>{isLastStep ? 'Got it' : 'Next'}</span>
               {!isLastStep && (
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="m9 18 6-6-6-6" />

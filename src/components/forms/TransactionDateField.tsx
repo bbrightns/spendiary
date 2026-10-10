@@ -10,7 +10,7 @@ interface Props {
 export function TransactionDateField({
   value,
   onChange,
-  label = 'วันที่ทำรายการ (Date)',
+  label = 'Date',
   hint,
 }: Props) {
   const today = localDateStr()
@@ -30,7 +30,7 @@ export function TransactionDateField({
                 : 'bg-surface-muted text-ink-muted hover:bg-surface-muted/80 hover:text-ink font-medium'
             }`}
           >
-            วันนี้
+            Today
           </button>
           <button
             type="button"
@@ -41,7 +41,7 @@ export function TransactionDateField({
                 : 'bg-surface-muted text-ink-muted hover:bg-surface-muted/80 hover:text-ink font-medium'
             }`}
           >
-            เมื่อวาน
+            Yesterday
           </button>
         </div>
       </div>

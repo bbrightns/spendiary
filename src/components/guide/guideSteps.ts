@@ -18,280 +18,280 @@ export type PageGuideKey =
 
 export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[] }> = {
   dashboard: {
-    title: 'แนะนำหน้าภาพรวม (Dashboard)',
+    title: 'Dashboard tour',
     steps: [
       {
         targetId: 'guide-dashboard-networth',
-        badge: 'ภาพรวมพอร์ต',
-        title: 'มูลค่าความมั่งคั่งสุทธิ (Net Worth)',
+        badge: 'Portfolio overview',
+        title: 'Net worth',
         description:
-          'แสดงยอดรวมของเงินสดในทุกบัญชีและมูลค่าสินทรัพย์ลงทุนทั้งหมดของคุณ คำนวณแปลงเป็นเงินบาท (THB) ให้แบบอัตโนมัติ',
+          'Shows your cash in every account plus the value of all your investments, converted to Thai baht (THB) automatically.',
         position: 'bottom',
       },
       {
         targetId: 'guide-dashboard-dca',
-        badge: 'รอบลงทุนวันนี้',
-        title: 'แจ้งเตือน DCA ประจำรอบ (DCA Alerts)',
+        badge: 'Time to invest',
+        title: 'DCA alerts',
         description:
-          'เมื่อถึงรอบวันที่คุณวางแผน DCA ไว้ ระบบจะแสดงรายการเตือนที่นี่ ให้คุณกด "บันทึกซื้อ" เข้าพอร์ตได้สะดวกรวดเร็ว',
+          'When one of your DCA plans comes due, it shows up here. Tap "Confirm buy" to add the purchase to your portfolio in a couple of taps.',
         position: 'bottom',
       },
       {
         targetId: 'guide-dashboard-alloc',
-        badge: 'กระจายความเสี่ยง',
-        title: 'สัดส่วนสินทรัพย์ (Asset Allocation)',
+        badge: 'Spread your risk',
+        title: 'Asset allocation',
         description:
-          'กราฟแสดงสัดส่วนการลงทุนตามประเภทสินทรัพย์ เช่น หุ้น, กองทุนรวม, คริปโตเคอร์เรนซี และทองคำ เพื่อตรวจสอบความสมดุล',
+          'A chart of how your money is split across stocks, funds, crypto and gold, so you can see if it is balanced.',
         position: 'top',
       },
       {
         targetId: 'guide-dashboard-cash',
-        badge: 'เงินสดสำรอง',
-        title: 'บัญชีเงินสด & สภาพคล่อง (Cash Accounts)',
+        badge: 'Cash reserve',
+        title: 'Cash accounts & savings',
         description:
-          'จัดการบัญชีเงินฝาก บัญชีออมทรัพย์ดอกเบี้ยสูง หรือเงินสดสำรอง พร้อมกดแก้ไขยอดเงินหรือเพิ่มบัญชีใหม่ได้ทันที',
+          'Manage your savings and high-interest accounts. Edit a balance or add a new account right away.',
         position: 'bottom',
       },
       {
         targetId: 'guide-dashboard-chart',
-        badge: 'แนวโน้มการเติบโต',
-        title: 'กราฟแนวโน้มความมั่งคั่ง (Net Worth Trend)',
+        badge: 'Growth over time',
+        title: 'Net worth trend',
         description:
-          'บันทึกและพล็อตประวัติการเติบโตของความมั่งคั่งสุทธิย้อนหลัง ช่วยให้เห็นทิศทางและพัฒนาการทางการเงินของคุณ',
+          'Tracks how your net worth has changed over time so you can see where you are heading.',
         position: 'top',
       },
     ],
   },
 
   portfolio: {
-    title: 'แนะนำหน้าพอร์ตการลงทุน (Portfolio)',
+    title: 'Portfolio tour',
     steps: [
       {
         targetId: 'guide-portfolio-summary',
-        badge: 'สรุปผลตอบแทน',
-        title: 'ผลตอบแทนรวมของพอร์ต (Portfolio PnL)',
+        badge: 'Your returns',
+        title: 'Portfolio profit & loss',
         description:
-          'ดูมูลค่าตลาดปัจจุบัน (Market Value), ยอดเงินลงทุนตั้งต้น (Total Cost) และกำไร/ขาดทุนที่ยังไม่รับรู้ (Unrealized PnL) ทั้งแบบบาทและ %',
+          'See what your portfolio is worth now, how much you put in, and your profit or loss so far, in baht and %.',
         position: 'bottom',
       },
       {
         targetId: 'guide-portfolio-actions',
-        badge: 'เครื่องมือจัดการ',
-        title: 'ส่งออกข้อมูลพอร์ต (Export & Actions)',
+        badge: 'Tools',
+        title: 'Export & actions',
         description:
-          'ส่งออกข้อมูลพอร์ตการลงทุนเป็นไฟล์ CSV หรือคัดลอกสรุปพอร์ตทั้งหมดในรูปแบบ Markdown เพื่อนำไปใช้วิเคราะห์ต่อ',
+          'Export your holdings as a CSV file, or copy your whole portfolio as Markdown to use elsewhere.',
         position: 'bottom',
       },
       {
         targetId: 'guide-portfolio-alloc',
-        badge: 'สัดส่วนสินทรัพย์',
-        title: 'การกระจายพอร์ต (Asset Allocation)',
+        badge: 'How it is split',
+        title: 'Asset allocation',
         description:
-          'กราฟ Donut แสดงสัดส่วนมูลค่าและกำไรขาดทุนแยกตามกลุ่มสินทรัพย์ พร้อมปุ่มลัดไปยังหน้า Rebalance',
+          'A donut chart showing value and profit or loss for each asset group, with a shortcut to the Rebalance page.',
         position: 'bottom',
       },
       {
         targetId: 'guide-portfolio-holdings',
-        badge: 'สินทรัพย์รายตัว',
-        title: 'รายการสินทรัพย์ในพอร์ต (Holdings)',
+        badge: 'Each holding',
+        title: 'Your holdings',
         description:
-          'รายการสินทรัพย์ของคุณพร้อมต้นทุนเฉลี่ยและราคาตลาด คุณสามารถคลิกเพื่อบันทึกการซื้อเพิ่ม, โยกย้าย หรือดูประวัติธุรกรรมย้อนหลังได้ สำหรับ Bitcoin/ทองคำ กดลูกศรด้านขวาเพื่อจัดการทีละกระเป๋า (ซื้อ/ขาย/แก้ไข/ลบ)',
+          'Every asset with its average cost and market price. Tap one to buy more, move it, or see its history. For Bitcoin and gold, tap the arrow on the right to manage each location (buy, sell, edit, remove).',
         position: 'top',
       },
       {
         targetId: 'guide-portfolio-tabs',
-        badge: 'แยกหมวดหมู่',
-        title: 'ตัวกรองประเภทสินทรัพย์ (Asset Tabs)',
+        badge: 'Categories',
+        title: 'Asset tabs',
         description:
-          'สลับแท็บเพื่อดูสินทรัพย์เฉพาะกลุ่ม เช่น หุ้นรายตัว, กองทุนรวม, คริปโต หรือทองคำ พร้อมแสดงสัดส่วนของแต่ละกลุ่ม',
+          'Switch tabs to see just one group, like US stocks, funds, crypto or gold, along with each group share of the portfolio.',
         position: 'bottom',
       },
     ],
   },
 
   dca: {
-    title: 'แนะนำหน้าวางแผน DCA (DCA Planner)',
+    title: 'DCA planner tour',
     steps: [
       {
         targetId: 'guide-dca-summary',
-        badge: 'งบประมาณลงทุน',
-        title: 'ยอดเงินเดือนและงบประมาณ (Cashflow & Budget)',
+        badge: 'Your budget',
+        title: 'Salary & budget',
         description:
-          'สรุปรายได้ประจำและแถบสัดส่วนงบประมาณ ช่วยวางแผนและจัดสรรเงินออมเพื่อการลงทุนอย่างมีวินัย',
+          'Your regular income and a bar showing how it is split, so you can plan how much to save and invest.',
         position: 'bottom',
       },
       {
         targetId: 'guide-dca-transfers',
-        badge: 'ค่าใช้จ่ายคงที่',
-        title: 'รายการค่าใช้จ่ายประจำ (Fixed Costs)',
+        badge: 'Fixed costs',
+        title: 'Regular expenses',
         description:
-          'บันทึกค่าใช้จ่ายคงที่รายเดือน เช่น ค่าเช่า ค่าน้ำ-ไฟ หรือเงินที่ต้องกันไว้ เพื่อให้เห็นเงินสุทธิที่เหลือสำหรับการลงทุน',
+          'Add monthly costs like rent and bills, or money you set aside, to see what is left over to invest.',
         position: 'top',
       },
       {
         targetId: 'guide-dca-plans',
-        badge: 'แผนรายเดือน',
-        title: 'แผนการลงทุนประจำรอบ (DCA Plans)',
+        badge: 'Monthly plan',
+        title: 'Your DCA plans',
         description:
-          'กำหนดสินทรัพย์ที่ต้องการสะสม ระบุวันที่ต้องการซื้อของแต่ละเดือน จำนวนเงิน และบัญชีเงินสดต้นทางที่จะใช้ตัดเงิน',
+          'Choose what to keep buying, the day of the month, the amount, and which cash account the money comes from.',
         position: 'bottom',
       },
       {
         targetId: 'guide-dca-confirm',
-        badge: 'บันทึกอัตโนมัติ',
-        title: 'ยืนยันการซื้อจริงเข้าพอร์ต (Confirm DCA Buy)',
+        badge: 'Saved for you',
+        title: 'Confirm a buy',
         description:
-          'เมื่อถึงกำหนดวันที่ตั้งไว้ ระบบจะไฮไลต์ให้กดยืนยัน โดยจะตัดยอดเงินสดและคำนวณจำนวนหน่วยเข้าพอร์ตให้ทันทีโดยไม่ต้องคำนวณเอง',
+          'When a plan comes due, it is highlighted so you can confirm. The cash is taken and the units are worked out for you.',
         position: 'top',
       },
     ],
   },
 
   rebalance: {
-    title: 'แนะนำหน้าปรับสมดุลพอร์ต (Rebalance)',
+    title: 'Rebalance tour',
     steps: [
       {
         targetId: 'guide-rebalance-mode',
-        badge: 'เลือกรูปแบบ',
-        title: 'โหมดปรับสมดุลพอร์ต (Rebalancing Mode)',
+        badge: 'Pick a style',
+        title: 'Rebalancing mode',
         description:
-          'สามารถเลือกปรับสมดุลตาม "กลุ่มสินทรัพย์" (Asset Class) เช่น หุ้น 50% กองทุน 30% หรือปรับตาม "รายตัวสินทรัพย์" (Holdings) ได้ตามต้องการ',
+          'Rebalance by asset group (for example 50% stocks, 30% funds) or by each individual holding, whichever you prefer.',
         position: 'bottom',
       },
       {
         targetId: 'guide-rebalance-cash',
-        badge: 'เงินเติมใหม่',
-        title: 'จำลองการเติมเงินสด (Cash Injection)',
+        badge: 'New money',
+        title: 'Add cash',
         description:
-          'ใส่จำนวนเงินสดที่คุณต้องการเติมเพิ่มเข้าไปในพอร์ต ระบบจะช่วยวางแผนซื้อสินทรัพย์ที่สัดส่วนยังขาดอยู่ โดยที่คุณไม่ต้องขายสินทรัพย์เดิม',
+          'Enter how much cash you want to add. The app plans which assets to buy so you do not have to sell anything.',
         position: 'top',
       },
       {
         targetId: 'guide-rebalance-weights',
-        badge: 'กำหนดเป้าหมาย',
-        title: 'สัดส่วนเป้าหมาย (Target Allocation)',
+        badge: 'Set targets',
+        title: 'Target allocation',
         description:
-          'ปรับเปอร์เซ็นต์สัดส่วนที่คุณต้องการให้ครบ 100% เพื่อใช้เป็นเกณฑ์ในการเปรียบเทียบกับพอร์ตปัจจุบัน',
+          'Set the percentages you want, adding up to 100%, to compare against your current portfolio.',
         position: 'bottom',
       },
       {
         targetId: 'guide-rebalance-suggestions',
-        badge: 'แผนการซื้อ/ขาย',
-        title: 'คำแนะนำการปรับพอร์ต (Action Suggestions)',
+        badge: 'What to buy or sell',
+        title: 'Suggested actions',
         description:
-          'ระบบคำนวณส่วนต่างให้เห็นชัดเจนว่าต้อง "ซื้อเพิ่ม" หรือ "ขายออก" เท่าไหร่ในแต่ละรายการ เพื่อให้พอร์ตกลับมาสมดุลตามเป้าหมายที่สุด',
+          'Shows exactly how much to buy or sell for each item to bring your portfolio back to your targets.',
         position: 'top',
       },
     ],
   },
 
   retirement: {
-    title: 'แนะนำหน้าแผนเกษียณ (Retirement & FIRE)',
+    title: 'Retirement planner tour',
     steps: [
       {
         targetId: 'guide-retirement-settings',
-        badge: 'ตั้งเป้าหมาย',
-        title: 'ข้อมูลและเป้าหมายเกษียณ (FIRE Parameters)',
+        badge: 'Set your goal',
+        title: 'Your retirement details',
         description:
-          'กรอกอายุปัจจุบัน, อายุเป้าหมายที่ต้องการเกษียณ, ประมาณการผลตอบแทนการลงทุน และค่าใช้จ่ายที่ต้องการใช้ต่อเดือนหลังเกษียณ',
+          'Enter your age, the age you want to retire, the return you expect, and how much you will spend each month in retirement.',
         position: 'bottom',
       },
       {
         targetId: 'guide-retirement-chart',
-        badge: 'เส้นทางสู่อนาคต',
-        title: 'กราฟจำลองการสะสมความมั่งคั่ง (Wealth Simulation)',
+        badge: 'The road ahead',
+        title: 'Savings projection',
         description:
-          'กราฟจำลองการเติบโตของพอร์ตจากเงินต้นและการลงทุนสม่ำเสมอ เทียบกับเป้าหมายอิสรภาพทางการเงินจนถึงวัยเกษียณ',
+          'A chart showing how your savings could grow with regular investing, compared with your retirement goal.',
         position: 'bottom',
       },
       {
         targetId: 'guide-retirement-freedom',
-        badge: 'อิสรภาพการเงิน',
-        title: 'เงินสำรอง & ก้าวสำคัญ (Runway & Milestones)',
+        badge: 'Financial freedom',
+        title: 'Safety net & milestones',
         description:
-          'ประเมินความอยู่รอดทางการเงินและระดับอิสรภาพ (Coast FI, Lean FI, Full FI) เทียบกับทรัพย์สินที่มีอยู่จริงในปัจจุบัน',
+          'See how long your savings could last and how close you are to each milestone, based on what you own today.',
         position: 'top',
       },
     ],
   },
 
   logs: {
-    title: 'แนะนำหน้าประวัติธุรกรรม (Holding Logs)',
+    title: 'Activity logs tour',
     steps: [
       {
         targetId: 'guide-logs-header',
-        badge: 'ตัวกรองประวัติ',
-        title: 'ตัวกรองธุรกรรมพอร์ต (Filter Actions)',
+        badge: 'Filters',
+        title: 'Filter transactions',
         description:
-          'กรองดูเฉพาะกลุ่มสินทรัพย์ หรือประเภทกิจกรรม เช่น ซื้อเพิ่ม, อัปเดตราคา, แก้ไขข้อมูล ได้อย่างสะดวก',
+          'Show only one asset group or one kind of activity, like buys, price updates or edits.',
         position: 'bottom',
       },
       {
         targetId: 'guide-logs-list',
-        badge: 'รายละเอียด',
-        title: 'รายการบันทึกย้อนหลัง (Activity Timeline)',
+        badge: 'Details',
+        title: 'Activity timeline',
         description:
-          'ตรวจสอบวันที่ทำรายการ, ราคาต้นทุน, จำนวนหน่วย, และประวัติการเปลี่ยนแปลง พร้อมปุ่ม Undo เพื่อยกเลิกรายการได้ทุกเมื่อ',
+          'Check dates, cost, units and every change, with an Undo button to reverse an entry any time.',
         position: 'top',
       },
     ],
   },
 
   summary: {
-    title: 'แนะนำหน้าสรุปกำไร/ขาดทุน (Activity Summary)',
+    title: 'Profit & loss summary tour',
     steps: [
       {
         targetId: 'guide-summary-period',
-        badge: 'เลือกช่วงเวลา',
-        title: 'เลือกช่วงเวลา (Period Filter)',
+        badge: 'Pick a period',
+        title: 'Period filter',
         description:
-          'กดปุ่มลัด เช่น เดือนนี้ ปีนี้ หรือทั้งหมด หรือเลือกปีและเดือนเอง เพื่อดูว่าช่วงเวลานั้นทำกำไรหรือขาดทุนเท่าไร',
+          'Use the shortcuts (this month, this year, all time) or pick a year and month to see how much you made or lost.',
         position: 'bottom',
       },
       {
         targetId: 'guide-summary-hero',
-        badge: 'กำไรสุทธิ',
-        title: 'กำไรที่เกิดขึ้นจริง (Realized Profit & Dividends)',
+        badge: 'Net profit',
+        title: 'Profit you have actually made',
         description:
-          'กำไรสุทธิ = กำไรจากการขายที่ปิดสถานะแล้ว + เงินปันผลที่รับจริงหลังหักภาษี พร้อมยอดเงินลงทุนใหม่และเงินที่ขายได้ในช่วงนั้น',
+          'Net profit = profit from things you sold + dividends received after tax, plus how much you put in and sold for in that period.',
         position: 'bottom',
       },
       {
         targetId: 'guide-summary-assets',
-        badge: 'รายสินทรัพย์',
-        title: 'กำไรมาจากไหน (Per-asset Breakdown)',
+        badge: 'By asset',
+        title: 'Where the profit came from',
         description:
-          'แยกรายสินทรัพย์ว่าแต่ละตัวลงทุนไปเท่าไร ขายได้เท่าไร กำไรจากการขายเท่าไร และรับปันผลเท่าไรในช่วงเวลาที่เลือก',
+          'See for each asset how much you put in, sold for, made from sales, and received in dividends.',
         position: 'top',
       },
     ],
   },
 
   settings: {
-    title: 'แนะนำหน้าตั้งค่า (Settings)',
+    title: 'Settings tour',
     steps: [
       {
         targetId: 'guide-settings-sync',
-        badge: 'เชื่อมต่อคลาวด์',
-        title: 'การซิงค์ข้อมูลผ่าน Cloud (Supabase)',
+        badge: 'Cloud sync',
+        title: 'Sync your data (Supabase)',
         description:
-          'ล็อกอินด้วย Google Account เพื่อซิงค์ข้อมูลส่วนตัวบน Supabase Cloud ทำให้สามารถใช้งานร่วมกันได้ทุกเครื่องอย่างปลอดภัย',
+          'Sign in with Google to back up your data in the cloud and use it safely on any device.',
         position: 'bottom',
       },
       {
         targetId: 'guide-settings-profile',
-        badge: 'โปรไฟล์',
-        title: 'ข้อมูลผู้ใช้งาน (Profile)',
+        badge: 'Profile',
+        title: 'Your profile',
         description:
-          'ตั้งชื่อของคุณสำหรับแสดงข้อความทักทายในหน้า Dashboard และการระบุตัวตนบนเครื่องนี้',
+          'Set your name for the greeting on the Dashboard.',
         position: 'bottom',
       },
       {
         targetId: 'guide-settings-backup',
-        badge: 'ความปลอดภัยข้อมูล',
-        title: 'สำรองและนำเข้าข้อมูล (Backup & Restore)',
+        badge: 'Keep it safe',
+        title: 'Backup & restore',
         description:
-          'ส่งออกไฟล์สำรองข้อมูล JSON เก็บไว้ หรือนำเข้าไฟล์เดิมเพื่อย้ายเครื่องหรือกู้คืนข้อมูลได้ตลอดเวลา',
+          'Download a JSON backup, or import an old one to move to a new device or restore your data at any time.',
         position: 'bottom',
       },
     ],
