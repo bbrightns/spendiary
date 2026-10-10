@@ -15,6 +15,7 @@ import {
   MONTH_LABELS,
   availablePeriods,
   describePeriod,
+  excludeDeletedHoldings,
   isAllTime,
   portfolioValueChange,
   resolvePeriodRange,
@@ -56,7 +57,10 @@ export function ActivitySummary() {
     prevStep,
   } = usePageGuide('summary')
 
-  const logs = data.holdingLogs ?? []
+  const logs = useMemo(
+    () => excludeDeletedHoldings(data.holdingLogs ?? [], new Set(data.holdings.map((h) => h.id))),
+    [data.holdingLogs, data.holdings],
+  )
   const periods = useMemo(() => availablePeriods(logs), [logs])
 
   // Start on the current month when it has activity, otherwise show everything

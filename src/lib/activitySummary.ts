@@ -650,6 +650,22 @@ export interface ActivitySummaryTotals {
   lastLogAt: string | null
 }
 
+/**
+ * Drops the history of holdings that were deleted from the portfolio without ever being sold
+ * (typically mistakes or test entries) so they stop inflating the summary.
+ * Holdings with a recorded sale are kept even if gone, because their realized P/L is real.
+ * The Activity Logs page still shows the full, untouched history.
+ */
+export function excludeDeletedHoldings(logs: HoldingLog[], existingHoldingIds: ReadonlySet<string>): HoldingLog[] {
+  const soldIds = new Set<string>()
+  for (const log of logs) {
+    if (log.holdingId && log.action === 'sell') soldIds.add(log.holdingId)
+  }
+  return logs.filter(
+    (log) => !log.holdingId || existingHoldingIds.has(log.holdingId) || soldIds.has(log.holdingId),
+  )
+}
+
 export function summarizeActivity(
   logs: HoldingLog[],
   period: LogPeriod,
