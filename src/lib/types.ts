@@ -298,6 +298,34 @@ export interface Liability {
   originalBalance?: number
 }
 
+export type SpendTxnType = 'expense' | 'income' | 'transfer'
+
+export interface SpendTransaction {
+  id: string
+  type: SpendTxnType
+  /** Always positive, in THB */
+  amount: number
+  /** Category id (expense / income only) */
+  categoryId?: string
+  /** Wallet the money leaves (expense, transfer) or lands in (income) */
+  accountId?: string
+  /** Destination wallet for transfers */
+  toAccountId?: string
+  /** YYYY-MM-DD, local timezone */
+  date: string
+  note?: string
+  /** Lowercase hashtags parsed from the note, without the leading # */
+  tags?: string[]
+  /** ISO timestamp */
+  createdAt: string
+  updatedAt?: string
+}
+
+export interface SpendSettings {
+  /** Monthly spending budget in THB, drives the "per day left" readout */
+  monthlyBudget?: number
+}
+
 export interface SpendiaryData {
   /** Display name shown in the Dashboard greeting */
   userName?: string
@@ -326,6 +354,10 @@ export interface SpendiaryData {
   plannedAssets?: PlannedAsset[]
   dividendRecords?: DividendRecord[]
   liabilities?: Liability[]
+  /** Spend module: day-to-day income / expense / transfer records */
+  spendTransactions?: SpendTransaction[]
+  /** Spend module: user settings such as the monthly spending budget */
+  spendSettings?: SpendSettings
   /** Timestamp in ms when this data was last modified locally */
   lastUpdatedAt?: number
 }

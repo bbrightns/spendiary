@@ -1,0 +1,63 @@
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { isNavPathActive, type NavSubItem } from '../../components/layout/nav'
+import { PlusIcon, PortfolioIcon } from '../../components/icons'
+import { spendOverviewItem, spendTxnsItem, spendWalletsItem } from './nav'
+import { openQuickAdd } from './QuickAddSheet'
+import { lastPathFor } from './ModeSwitcher'
+
+const tabClass =
+  'group relative flex flex-1 flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-xs font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset min-h-[48px]'
+
+function Tab({ item, pathname }: { item: NavSubItem; pathname: string }) {
+  const active = isNavPathActive(item.to, pathname, item.exact)
+  return (
+    <Link
+      to={item.to}
+      aria-label={item.label}
+      aria-current={active ? 'page' : undefined}
+      className={`${tabClass} ${active ? 'text-brand-ink' : 'text-ink-muted'}`}
+    >
+      <span className={`flex h-9 w-12 items-center justify-center rounded-full transition-all duration-200 ${active ? 'bg-brand-soft' : ''}`}>
+        <item.icon className="h-5 w-5" strokeWidth={active ? 2 : 1.6} />
+      </span>
+      {item.short}
+    </Link>
+  )
+}
+
+/** Mobile bottom bar while in Spend: Home · Txns · [+] · Wallets · Invest */
+export function SpendBottomNav() {
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-surface/85 backdrop-blur-xl safe-bottom">
+      <div className="flex items-stretch justify-around px-2">
+        <Tab item={spendOverviewItem} pathname={pathname} />
+        <Tab item={spendTxnsItem} pathname={pathname} />
+        <div className="flex flex-1 items-start justify-center">
+          <button
+            type="button"
+            onClick={() => openQuickAdd()}
+            aria-label="Quick add transaction"
+            className="-mt-4 grid h-14 w-14 place-items-center rounded-full bg-ink text-white shadow-[var(--shadow-lift)] ring-4 ring-canvas transition-transform active:scale-95 dark:bg-[#4f46e5] cursor-pointer focus-visible:outline-none focus-visible:ring-brand"
+          >
+            <PlusIcon className="h-6 w-6" strokeWidth={2.4} />
+          </button>
+        </div>
+        <Tab item={spendWalletsItem} pathname={pathname} />
+        <button
+          type="button"
+          onClick={() => navigate(lastPathFor(false))}
+          aria-label="Switch to Invest"
+          className={`${tabClass} text-ink-muted cursor-pointer`}
+        >
+          <span className="flex h-9 w-12 items-center justify-center rounded-full">
+            <PortfolioIcon className="h-5 w-5" strokeWidth={1.6} />
+          </span>
+          Invest
+        </button>
+      </div>
+    </nav>
+  )
+}

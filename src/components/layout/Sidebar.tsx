@@ -2,8 +2,12 @@ import { Link, useLocation } from 'react-router-dom'
 import { desktopNavSections, isSubItemActive, settingsItem } from './nav'
 import { useData } from '../../store/DataContext'
 import { useTheme } from '../../hooks/useTheme'
-import { SearchIcon } from '../icons'
+import { PlusIcon, SearchIcon } from '../icons'
 import { openCommandPalette } from '../ui/CommandPalette'
+import { Button } from '../ui/Button'
+import { ModeSwitcher } from '../../modules/spend/ModeSwitcher'
+import { openQuickAdd } from '../../modules/spend/QuickAddSheet'
+import { isSpendPath, spendNavSections } from '../../modules/spend/nav'
 
 import { isDividendReceivedThisMonth, isLiabilityActionableThisMonth, shouldConfirmBuy } from '../../lib/calc'
 
@@ -13,6 +17,7 @@ export function Sidebar() {
   const { data, user } = useData()
   const { setTheme } = useTheme()
   const isTestMode = user?.id === 'test-user-local'
+  const isSpend = isSpendPath(pathname)
 
   // Calculate live badge counts
   const dcaAlertCount = data.dcaPlans.filter((p) => shouldConfirmBuy(p)).length
@@ -73,6 +78,15 @@ export function Sidebar() {
           )}
         </div>
 
+        <ModeSwitcher className="-mt-2 w-full" />
+
+        {isSpend && (
+          <Button size="sm" onClick={() => openQuickAdd()} className="-mt-3 w-full">
+            <PlusIcon className="h-4 w-4" strokeWidth={2.4} />
+            Quick add
+          </Button>
+        )}
+
         {/* Quick Search & Command Bar Trigger */}
         <button
           type="button"
@@ -90,7 +104,7 @@ export function Sidebar() {
 
         {/* Navigation Items — flat, grouped by intent */}
         <nav className="flex flex-col">
-          {desktopNavSections.map((section, index) => (
+          {(isSpend ? spendNavSections : desktopNavSections).map((section, index) => (
             <div
               key={section.title}
               className={`flex flex-col gap-0.5 ${index > 0 ? 'mt-3 border-t border-line/60 pt-3' : ''}`}

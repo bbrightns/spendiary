@@ -19,6 +19,9 @@ const Rebalance = lazy(() => import('./pages/Rebalance').then(m => ({ default: m
 const Dividends = lazy(() => import('./pages/Dividends').then(m => ({ default: m.Dividends })))
 const Debts = lazy(() => import('./pages/Debts').then(m => ({ default: m.Debts })))
 const CashLiquidity = lazy(() => import('./pages/CashLiquidity').then(m => ({ default: m.CashLiquidity })))
+const SpendOverview = lazy(() => import('./modules/spend/pages/SpendOverview').then(m => ({ default: m.SpendOverview })))
+const SpendTransactions = lazy(() => import('./modules/spend/pages/SpendTransactions').then(m => ({ default: m.SpendTransactions })))
+const SpendWallets = lazy(() => import('./modules/spend/pages/SpendWallets').then(m => ({ default: m.SpendWallets })))
 import { PageSkeleton } from './components/ui/PageSkeleton'
 
 function PageLoadingFallback() {
@@ -262,6 +265,9 @@ function AppContent() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/logs" element={<HoldingLogs />} />
           <Route path="/logs/summary" element={<ActivitySummary />} />
+          <Route path="/spend" element={<SpendOverview />} />
+          <Route path="/spend/txns" element={<SpendTransactions />} />
+          <Route path="/spend/wallets" element={<SpendWallets />} />
           <Route path="*" element={<Dashboard />} />
         </Routes>
       </Suspense>

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { BottomNav } from './BottomNav'
 import { Sidebar } from './Sidebar'
 import { Footer } from './Footer'
@@ -8,11 +8,16 @@ import { SettingsIcon, SearchIcon } from '../icons'
 import { CommandPalette, openCommandPalette } from '../ui/CommandPalette'
 import { useData } from '../../store/DataContext'
 import { useScrollVisibility } from '../../hooks/useScrollVisibility'
+import { ModeSwitcher } from '../../modules/spend/ModeSwitcher'
+import { QuickAddSheet } from '../../modules/spend/QuickAddSheet'
+import { SpendBottomNav } from '../../modules/spend/SpendBottomNav'
+import { isSpendPath } from '../../modules/spend/nav'
 
 export function Layout({ children }: { children: ReactNode }) {
   const { user } = useData()
   const isTestMode = user?.id === 'test-user-local'
   const isVisible = useScrollVisibility()
+  const isSpend = isSpendPath(useLocation().pathname)
 
   return (
     <div className={`min-h-dvh bg-transparent lg:dark:bg-canvas relative flex flex-col ${isTestMode ? 'pt-9' : ''}`}>
@@ -40,12 +45,13 @@ export function Layout({ children }: { children: ReactNode }) {
         }`}
       >
         <img src="/logo.png" alt="Spendiary Logo" className="h-7 w-7 sm:h-8 sm:w-8 object-contain shrink-0" />
-        <p className="font-display text-base sm:text-lg font-extrabold tracking-tight leading-none text-ink -translate-y-[0.5px]">
+        {/* Wordmark steps aside on very narrow phones so the mode switch never crowds Search / Settings */}
+        <p className="hidden min-[380px]:block font-display text-base sm:text-lg font-extrabold tracking-tight leading-none text-ink -translate-y-[0.5px]">
           Spendiary
         </p>
-        <p className="flex-1 text-right text-xs font-semibold uppercase tracking-wide text-ink-muted truncate mr-1">
-          {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
-        </p>
+        <div className="flex flex-1 justify-end mr-1 min-w-0">
+          <ModeSwitcher size="sm" />
+        </div>
         <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
@@ -83,8 +89,11 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {/* ── Mobile Bottom Navigation (< lg) ── */}
       <div className="lg:hidden">
-        <BottomNav />
+        {isSpend ? <SpendBottomNav /> : <BottomNav />}
       </div>
+
+      {/* Spend Quick Add — opened from the + button, sidebar or command palette */}
+      <QuickAddSheet />
     </div>
   )
 }

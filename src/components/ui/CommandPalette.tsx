@@ -23,6 +23,7 @@ import {
   CloseIcon,
   ArrowUpRightIcon,
 } from '../icons'
+import { openQuickAdd } from '../../modules/spend/QuickAddSheet'
 
 export function openCommandPalette() {
   window.dispatchEvent(new CustomEvent('spendiary:open-command-palette'))
@@ -204,7 +205,33 @@ export function CommandPalette() {
         },
       },
 
+      {
+        id: 'action-spend-add',
+        title: 'Add Transaction',
+        subtitle: 'Log an expense, income or transfer',
+        badge: 'Action',
+        keywords: ['spend', 'expense', 'income', 'transaction', 'quick add', 'จด', 'รายจ่าย', 'รายรับ', 'ใช้เงิน', 'บันทึก'],
+        category: 'Actions',
+        icon: <PlusIcon className="h-4 w-4 text-brand" strokeWidth={2.4} />,
+        onSelect: () => {
+          closePalette()
+          openQuickAdd()
+        },
+      },
+
       // ── Navigation ──
+      {
+        id: 'nav-spend',
+        title: 'Go to Spend',
+        subtitle: 'Income, spending and budget this month',
+        keywords: ['spend', 'expense', 'budget', 'transactions', 'รายรับรายจ่าย', 'งบ', 'รายจ่าย'],
+        category: 'Navigation',
+        icon: <WalletIcon className="h-4 w-4 text-ink-muted" strokeWidth={2} />,
+        onSelect: () => {
+          navigate('/spend')
+          closePalette()
+        },
+      },
       {
         id: 'nav-dashboard',
         title: 'Go to Dashboard',
