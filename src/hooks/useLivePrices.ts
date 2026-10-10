@@ -88,9 +88,11 @@ export function useLivePrices() {
         } catch {
           // ignore
         }
-        for (const h of stockHoldings) {
-          const usdPrice = stockPricesUsd[h.ticker.toUpperCase()]
-          if (usdPrice && usdRate > 0) {
+        for (const stale of stockHoldings) {
+          const usdPrice = stockPricesUsd[stale.ticker.toUpperCase()]
+          // Re-read the latest holding: units/cost may have changed (e.g. DCA confirm) while the fetch was in flight
+          const h = dataRef.current.holdings.find((x) => x.id === stale.id)
+          if (h && usdPrice && usdRate > 0) {
             upsertHolding({ ...h, price: usdPrice * usdRate, updatedAt: today })
           }
         }
