@@ -492,38 +492,35 @@ export function Dashboard() {
               </div>
 
               {/* Value & PnL Hero Summary */}
-              <div id="guide-portfolio-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1.5">
-                  {/* Row 1: Labels */}
-                  <span className="text-xs font-bold uppercase tracking-wider text-ink-muted whitespace-nowrap">Port Value</span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-ink-muted text-right">All-Time PnL</span>
-
-                  {/* Row 2: Values */}
-                  <div className="flex items-baseline min-w-0">
+              <div id="guide-portfolio-summary" className="@container mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
+                {/* Stacks when the card is narrow, sits side by side once there is room */}
+                <div className="flex flex-col gap-3 @min-[17rem]:flex-row @min-[17rem]:items-start @min-[17rem]:justify-between @min-[17rem]:gap-x-3">
+                  <div className="min-w-0 space-y-1.5">
+                    <span className="block text-xs font-bold uppercase tracking-wider text-ink-muted whitespace-nowrap">Port Value</span>
                     <p
                       title={thb(portfolio.value)}
-                      className="font-display text-2xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
+                      className="font-display text-[clamp(1.25rem,11cqw,1.5rem)] @min-[17rem]:text-[clamp(1.1rem,7cqw,1.5rem)] font-extrabold tracking-tight tnum text-ink leading-tight cursor-default"
                     >
                       {thbCompact(portfolio.value)}
                     </p>
-                  </div>
-                  <div className="flex items-baseline justify-end min-w-0">
-                    <PnLText
-                      value={portfolio.pnl}
-                      compact
-                      className="font-display text-2xl !font-extrabold tracking-tight leading-tight truncate"
-                    />
-                  </div>
-
-                  {/* Row 3: Subtext / Details */}
-                  <div className="flex items-center min-w-0 h-6">
-                    <p className="text-xs text-ink-muted font-medium truncate" title={thb(portfolio.cost)}>
+                    <p className="text-xs text-ink-muted font-medium" title={thb(portfolio.cost)}>
                       Cost: <span className="font-semibold tnum text-ink-soft">{thbCompact(portfolio.cost)}</span>
                     </p>
                   </div>
-                  <div className="flex items-center justify-end gap-1.5 min-w-0 h-6">
-                    <PnLPill value={portfolio.pnlPct} asPct size="sm" />
-                    <span className="text-xs text-ink-muted font-medium whitespace-nowrap">all-time</span>
+
+                  <div className="min-w-0 space-y-1.5 @min-[17rem]:text-right">
+                    <span className="block text-xs font-bold uppercase tracking-wider text-ink-muted whitespace-nowrap">All-Time PnL</span>
+                    <div className="flex items-baseline @min-[17rem]:justify-end">
+                      <PnLText
+                        value={portfolio.pnl}
+                        compact
+                        className="font-display text-[clamp(1.25rem,11cqw,1.5rem)] @min-[17rem]:text-[clamp(1.1rem,7cqw,1.5rem)] !font-extrabold tracking-tight leading-tight"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1.5 @min-[17rem]:justify-end">
+                      <PnLPill value={portfolio.pnlPct} asPct size="sm" />
+                      <span className="text-xs text-ink-muted font-medium whitespace-nowrap">all-time</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -589,7 +586,7 @@ export function Dashboard() {
               </div>
 
               {/* Cash & Liquidity Hero Summary */}
-              <div id="guide-cash-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
+              <div id="guide-cash-summary" className="@container mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
                 <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1.5">
                   {/* Row 1: Labels */}
                   <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">Available Cash</span>
@@ -599,7 +596,7 @@ export function Dashboard() {
                   <div className="flex items-baseline min-w-0">
                     <p
                       title={thb(cash)}
-                      className="font-display text-2xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
+                      className="font-display text-[clamp(1.1rem,7cqw,1.5rem)] font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
                     >
                       {thbCompact(cash)}
                     </p>
@@ -608,12 +605,12 @@ export function Dashboard() {
                     {cashInterest > 0 ? (
                       <span
                         title={`~${thb(cashInterest)}/yr`}
-                        className="font-display text-2xl font-extrabold tracking-tight tnum text-emerald-600 dark:text-emerald-400 leading-tight truncate cursor-default"
+                        className="font-display text-[clamp(1.1rem,7cqw,1.5rem)] font-extrabold tracking-tight tnum text-emerald-600 dark:text-emerald-400 leading-tight truncate cursor-default"
                       >
                         ~{thbCompact(cashInterest)}<span className="text-xs font-semibold text-ink-muted">/yr</span>
                       </span>
                     ) : (
-                      <span className="font-display text-2xl font-extrabold tracking-tight text-ink-muted leading-tight truncate cursor-default">
+                      <span className="font-display text-[clamp(1.1rem,7cqw,1.5rem)] font-extrabold tracking-tight text-ink-muted leading-tight truncate cursor-default">
                         No yield
                       </span>
                     )}
@@ -737,7 +734,7 @@ export function Dashboard() {
               </div>
 
               {/* Liabilities & Debts Hero Summary */}
-              <div id="guide-debt-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
+              <div id="guide-debt-summary" className="@container mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
                 <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1.5">
                   {/* Row 1: Labels */}
                   <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">Total Outstanding</span>
@@ -746,7 +743,7 @@ export function Dashboard() {
                   {/* Row 2: Values */}
                   <div className="flex items-baseline min-w-0">
                     <p
-                      className="font-display text-2xl font-extrabold tracking-tight tnum leading-tight truncate cursor-default text-ink dark:text-white"
+                      className="font-display text-[clamp(1.1rem,7cqw,1.5rem)] font-extrabold tracking-tight tnum leading-tight truncate cursor-default text-ink dark:text-white"
                       title={debts > 0 ? `-${thb(debts)}` : '฿0'}
                     >
                       {debts > 0 ? `-${thbCompact(debts)}` : '฿0'}
@@ -756,12 +753,12 @@ export function Dashboard() {
                     {monthlyDebt > 0 ? (
                       <span
                         title={`~${thb(monthlyDebt)}/mo`}
-                        className="font-display text-2xl font-extrabold tracking-tight tnum text-rose-600 dark:text-rose-400 leading-tight truncate cursor-default"
+                        className="font-display text-[clamp(1.1rem,7cqw,1.5rem)] font-extrabold tracking-tight tnum text-rose-600 dark:text-rose-400 leading-tight truncate cursor-default"
                       >
                         ~{thbCompact(monthlyDebt)}<span className="text-xs font-semibold text-ink-muted">/mo</span>
                       </span>
                     ) : (
-                      <span className="font-display text-2xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400 leading-tight truncate cursor-default">
+                      <span className="font-display text-[clamp(1.1rem,7cqw,1.5rem)] font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400 leading-tight truncate cursor-default">
                         ฿0<span className="text-xs font-semibold text-ink-muted">/mo</span>
                       </span>
                     )}

@@ -1031,41 +1031,40 @@ export function Portfolio() {
             </div>
 
             {/* Value & PnL Hero Summary */}
-            <div id="guide-portfolio-summary" className="mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
-              <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
-                {/* Row 1: Labels */}
-                <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">Portfolio Value</span>
-                <span className="text-xs font-bold uppercase tracking-wider text-ink-muted text-right">All-Time PnL</span>
-
-                {/* Row 2: Values */}
-                <div className="flex items-baseline min-w-0">
+            <div id="guide-portfolio-summary" className="@container mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
+              {/* Stacks when the card is narrow, sits side by side once there is room */}
+              <div className="flex flex-col gap-3 @min-[17rem]:flex-row @min-[17rem]:items-start @min-[17rem]:justify-between @min-[17rem]:gap-x-3">
+                {/* Portfolio value */}
+                <div className="min-w-0 space-y-1.5">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-ink-muted whitespace-nowrap">Portfolio Value</span>
                   <p
                     title={thb(summary.value)}
-                    className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
+                    className="font-display text-[clamp(1.25rem,11cqw,1.875rem)] @min-[17rem]:text-[clamp(1.1rem,7cqw,1.875rem)] font-extrabold tracking-tight tnum text-ink leading-tight cursor-default"
                   >
                     {thbCompact(summary.value)}
                   </p>
-                </div>
-                <div className="flex items-baseline justify-end min-w-0">
-                  <PnLText
-                    value={summary.pnl}
-                    compact
-                    className="font-display text-2xl sm:text-3xl !font-extrabold tracking-tight leading-tight truncate"
-                  />
-                </div>
-
-                {/* Row 3: Subtext / Details */}
-                <div className="flex items-center min-w-0 h-6">
-                  <p className="text-xs text-ink-muted font-medium truncate" title={thb(summary.cost)}>
+                  <p className="text-xs text-ink-muted font-medium" title={thb(summary.cost)}>
                     Cost:{' '}
                     <span className="font-semibold tnum text-ink-soft">
                       {thbCompact(summary.cost)}
                     </span>
                   </p>
                 </div>
-                <div className="flex items-center justify-end gap-1.5 min-w-0 h-6">
-                  <PnLPill value={summary.pnlPct} asPct size="sm" />
-                  <span className="text-xs text-ink-muted font-medium whitespace-nowrap">all-time</span>
+
+                {/* All-time profit / loss */}
+                <div className="min-w-0 space-y-1.5 @min-[17rem]:text-right">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-ink-muted whitespace-nowrap">All-Time PnL</span>
+                  <div className="flex items-baseline @min-[17rem]:justify-end">
+                    <PnLText
+                      value={summary.pnl}
+                      compact
+                      className="font-display text-[clamp(1.25rem,11cqw,1.875rem)] @min-[17rem]:text-[clamp(1.1rem,7cqw,1.875rem)] !font-extrabold tracking-tight leading-tight"
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5 @min-[17rem]:justify-end">
+                    <PnLPill value={summary.pnlPct} asPct size="sm" />
+                    <span className="text-xs text-ink-muted font-medium whitespace-nowrap">all-time</span>
+                  </div>
                 </div>
               </div>
             </div>
