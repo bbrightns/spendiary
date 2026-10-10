@@ -469,6 +469,32 @@ function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
   return importFixedCosts(merged)
 }
 
+/**
+ * Undo one logged change to the cash accounts as a delta on top of the current list:
+ * balances move back by (before − after), edited fields go back to their old values,
+ * accounts the log added are removed and accounts it deleted come back.
+ */
+export function revertCashAccountsChange(current: CashAccount[], before: CashAccount[], after: CashAccount[]): CashAccount[] {
+  const byId = (list: CashAccount[], id: string) => list.find((a) => a.id === id)
+  const reverted = current
+    .filter((c) => !(byId(after, c.id) && !byId(before, c.id)))
+    .map((c) => {
+      const b = byId(before, c.id)
+      const a = byId(after, c.id)
+      if (!b || !a) return c
+      const restored: CashAccount = { ...c }
+      for (const key of Object.keys({ ...a, ...b }) as (keyof CashAccount)[]) {
+        if (key !== 'balance' && key !== 'id' && JSON.stringify(a[key]) !== JSON.stringify(b[key])) {
+          ;(restored as unknown as Record<string, unknown>)[key] = b[key]
+        }
+      }
+      restored.balance = Math.round((c.balance + (b.balance - a.balance)) * 100) / 100
+      return restored
+    })
+  const deleted = before.filter((b) => !byId(after, b.id) && !byId(current, b.id))
+  return [...reverted, ...deleted]
+}
+
 function justImportedFixedCosts(before: Partial<SpendiaryData> | null | undefined, after: SpendiaryData): boolean {
   return !before?.spendSettings?.fixedCostsImported && !!after.spendSettings?.fixedCostsImported
 }
@@ -1556,9 +1582,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
               )
             }
           } else if (log.assetClass === 'cash' || log.holdingName === 'Cash Accounts') {
-            // For direct cash account management logs, restore previous cash accounts state if available
+            // For direct cash account management logs, undo just this log's changes so later
+            // balance moves (e.g. Spend transactions) survive; old logs without an "after"
+            // snapshot fall back to restoring the previous state
             if (log.previousCashAccountsState) {
-              updatedCashAccounts = log.previousCashAccountsState
+              updatedCashAccounts = log.afterCashAccountsState
+                ? revertCashAccountsChange(updatedCashAccounts, log.previousCashAccountsState, log.afterCashAccountsState)
+                : log.previousCashAccountsState
             }
           }
 

@@ -18,7 +18,9 @@
   - Optional: partial payment / minimum payment, mark as paid.
 - **Phase 5 (done)** — budget per category (spent vs limit on Overview, warns at 85%, red when over);
   recurring bills / income that wait for a one-tap Log or Skip (or open pre-filled to adjust the amount).
-- **Phase 6 (in progress)** — Invest-side links (see Parked below).
+- **Phase 6 (done)** — Invest-side links: dividends → income and DCA buys → "invested" (read-only,
+  derived from Invest); Spend cards in net worth (per-card opt-out); Dashboard cash-flow card;
+  delta-based undo for cash-account logs.
   - Done: fixed costs moved to Spend. Old `fixedCostItems` are copied once into
     recurring bills (`fixedCost: true`); DCA Plans reads its fixed total from Spend.
   - Later cleanup (ask first): remove `fixedCostItems`, `monthlyFixedCost`,
