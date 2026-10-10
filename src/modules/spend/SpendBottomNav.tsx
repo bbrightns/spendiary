@@ -9,12 +9,12 @@ import { useSpend } from './useSpend'
 const tabClass =
   'group relative flex flex-1 flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-xs font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset min-h-[48px]'
 
-function Tab({ item, pathname, badge = 0 }: { item: NavSubItem; pathname: string; badge?: number }) {
+function Tab({ item, pathname, badge = 0, badgeLabel = 'to review' }: { item: NavSubItem; pathname: string; badge?: number; badgeLabel?: string }) {
   const active = isNavPathActive(item.to, pathname, item.exact)
   return (
     <Link
       to={item.to}
-      aria-label={badge > 0 ? `${item.label}, ${badge} ${badge === 1 ? 'bill' : 'bills'} due` : item.label}
+      aria-label={badge > 0 ? `${item.label}, ${badge} ${badgeLabel}` : item.label}
       aria-current={active ? 'page' : undefined}
       className={`${tabClass} ${active ? 'text-brand-ink' : 'text-ink-muted'}`}
     >
@@ -35,12 +35,12 @@ function Tab({ item, pathname, badge = 0 }: { item: NavSubItem; pathname: string
 export function SpendBottomNav() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { reminders } = useSpend()
+  const { reminders, dueRecurring } = useSpend()
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-surface/85 backdrop-blur-xl safe-bottom">
       <div className="flex items-stretch justify-around px-2">
-        <Tab item={spendOverviewItem} pathname={pathname} />
+        <Tab item={spendOverviewItem} pathname={pathname} badge={dueRecurring.length} />
         <Tab item={spendTxnsItem} pathname={pathname} />
         <div className="flex flex-1 items-start justify-center">
           <button
@@ -52,7 +52,7 @@ export function SpendBottomNav() {
             <PlusIcon className="h-6 w-6" strokeWidth={2.4} />
           </button>
         </div>
-        <Tab item={spendAccountsItem} pathname={pathname} badge={reminders.length} />
+        <Tab item={spendAccountsItem} pathname={pathname} badge={reminders.length} badgeLabel={reminders.length === 1 ? 'bill due' : 'bills due'} />
         <button
           type="button"
           onClick={() => navigate(lastPathFor(false))}

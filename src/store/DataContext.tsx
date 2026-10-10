@@ -183,7 +183,7 @@ export function validateSpendiaryData(obj: unknown): obj is SpendiaryData {
     if (typeof hh.price !== 'number') return false
     if (!['fund', 'stock', 'crypto', 'gold', 'real_estate', 'cash'].includes(hh.assetClass as string)) return false
   }
-  for (const key of ['holdingLogs', 'dividendRecords', 'netWorthHistory', 'portfolioHistory', 'fixedCostItems', 'liabilities', 'spendTransactions', 'spendCards'] as const) {
+  for (const key of ['holdingLogs', 'dividendRecords', 'netWorthHistory', 'portfolioHistory', 'fixedCostItems', 'liabilities', 'spendTransactions', 'spendCards', 'spendRecurring'] as const) {
     if (d[key] !== undefined && !Array.isArray(d[key])) return false
   }
   // Validate each DCA plan shape

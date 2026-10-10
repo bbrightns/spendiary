@@ -16,7 +16,8 @@
     (charges between the two statement dates, minus refunds and payments already made),
     lists those charges, and pre-fills a transfer wallet → card for that amount.
   - Optional: partial payment / minimum payment, mark as paid.
-- **Phase 5** — budget per category; recurring transactions (rent, subscriptions).
+- **Phase 5 (done)** — budget per category (spent vs limit on Overview, warns at 85%, red when over);
+  recurring bills / income that wait for a one-tap Log or Skip (or open pre-filled to adjust the amount).
 - **Phase 6** — Invest-side links (see Parked below).
 
 ## Parked: touches the Invest side (do later, on purpose)

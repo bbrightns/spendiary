@@ -9,7 +9,7 @@ import type { SpendSettings, SpendTransaction, SpendTxnType } from '../../lib/ty
 import { categoriesFor, getCategory } from './categories'
 import { recentTags, topTags } from './logic'
 import { TONES, TYPE_ACTIVE } from './tones'
-import { useSpend, type PayMethod } from './useSpend'
+import { useSpend, type PayMethod, type SpendTxnInput } from './useSpend'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 
 const OPEN_EVENT = 'spendiary:open-quick-add'
@@ -18,6 +18,10 @@ interface OpenDetail {
   type?: SpendTxnType
   /** Edit an existing transaction */
   editId?: string
+  /** Start a new entry from these values (e.g. a recurring bill) */
+  prefill?: SpendTxnInput
+  /** Saving marks this recurring occurrence as done */
+  recurring?: { id: string; date: string; name: string }
 }
 
 /** Open the Quick Add sheet from anywhere in the app. */
@@ -66,6 +70,7 @@ export function QuickAddSheet() {
 
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  const [fromRecurring, setFromRecurring] = useState<OpenDetail['recurring'] | null>(null)
   const [type, setType] = useState<SpendTxnType>('expense')
   const [amount, setAmount] = useState('')
   const [categoryId, setCategoryId] = useState('food')
@@ -84,16 +89,19 @@ export function QuickAddSheet() {
       const detail = (e as CustomEvent<OpenDetail>).detail ?? {}
       const { transactions: txns, methods: ms, settings: st } = stateRef.current
       const existing = detail.editId ? txns.find((t) => t.id === detail.editId) : undefined
+      // Editing fills from the saved transaction; a recurring occurrence fills from its template
+      const source = existing ?? detail.prefill
+      setFromRecurring(existing ? null : detail.recurring ?? null)
 
-      if (existing) {
-        setEditId(existing.id)
-        setType(existing.type)
-        setAmount(String(existing.amount))
-        setCategoryId(existing.categoryId ?? categoriesFor(existing.type)[0]?.id ?? '')
-        setAccountId(existing.accountId ?? NO_WALLET)
-        setToAccountId(existing.toAccountId ?? NO_WALLET)
-        setDate(existing.date)
-        setNote(existing.note ?? '')
+      if (source) {
+        setEditId(existing?.id ?? null)
+        setType(source.type)
+        setAmount(String(source.amount))
+        setCategoryId(source.categoryId ?? categoriesFor(source.type)[0]?.id ?? '')
+        setAccountId(source.accountId ?? NO_WALLET)
+        setToAccountId(source.toAccountId ?? NO_WALLET)
+        setDate(source.date)
+        setNote(source.note ?? '')
       } else {
         const t = detail.type ?? 'expense'
         const d = pickDefaults(t, txns, ms, st)
@@ -159,7 +167,7 @@ export function QuickAddSheet() {
       updateTransaction(editId, input)
       showToast('Transaction updated')
     } else {
-      addTransaction(input)
+      addTransaction(input, fromRecurring ? { id: fromRecurring.id, date: fromRecurring.date } : undefined)
       const label = type === 'transfer' ? 'Transfer' : getCategory(categoryId)?.label ?? ''
       showToast(`${type === 'income' ? '+' : type === 'expense' ? '−' : ''}${thb(input.amount)} · ${label}`)
     }
@@ -183,7 +191,8 @@ export function QuickAddSheet() {
     <Modal
       open={open}
       onClose={() => setOpen(false)}
-      title={editId ? 'Edit transaction' : 'Quick add'}
+      title={editId ? 'Edit transaction' : fromRecurring ? `Log ${fromRecurring.name}` : 'Quick add'}
+      description={fromRecurring ? 'Recurring — adjust the amount if this one was different' : undefined}
       size="md"
       footer={<FormActions editing={!!editId} canSave={canSave} onSave={save} onDelete={remove} />}
     >

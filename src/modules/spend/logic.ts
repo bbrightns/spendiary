@@ -1,4 +1,4 @@
-import type { CashAccount, PayCycle, SpendCard, SpendTransaction } from '../../lib/types'
+import type { CashAccount, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
 import { localDateStr } from '../../lib/format'
 
 /** Letters, digits and combining marks so Thai tags like #ร้านโปรด stay whole. */
@@ -309,4 +309,81 @@ export function topTags(txns: SpendTransaction[], limit = 8): string[] {
   const count = new Map<string, number>()
   for (const t of txns) for (const tag of t.tags ?? []) count.set(tag, (count.get(tag) ?? 0) + 1)
   return [...count.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([tag]) => tag)
+}
+
+// ── Recurring ────────────────────────────────────────────────────────────────
+
+type Schedule = Pick<SpendRecurring, 'frequency' | 'day' | 'month' | 'startDate'>
+
+/** Occurrence dates between `from` and `to` (inclusive), never before the start date. */
+export function occurrencesBetween(r: Schedule, from: string, to: string): string[] {
+  const lo = from > r.startDate ? from : r.startDate
+  if (lo > to) return []
+  const out: string[] = []
+  const a = parse(lo)
+  const b = parse(to)
+  if (r.frequency === 'weekly') {
+    // JS: 0 = Sun; ours: 1 = Mon … 7 = Sun
+    const target = r.day % 7
+    const d = new Date(a)
+    d.setDate(d.getDate() + ((target - d.getDay() + 7) % 7))
+    for (; d <= b; d.setDate(d.getDate() + 7)) out.push(localDateStr(d))
+    return out
+  }
+  for (let y = a.getFullYear(), m = a.getMonth(); new Date(y, m, 1) <= b; m++) {
+    if (r.frequency === 'yearly' && m % 12 !== (r.month ?? 1) - 1) continue
+    const last = new Date(y, m + 1, 0).getDate()
+    const s = localDateStr(new Date(y, m, Math.min(Math.max(1, r.day), last)))
+    if (s >= lo && s <= to) out.push(s)
+  }
+  return out
+}
+
+/** How far back unconfirmed occurrences are still offered (older ones quietly drop off). */
+export const RECURRING_LOOKBACK_DAYS = 45
+
+export interface DueRecurring {
+  rec: SpendRecurring
+  date: string
+}
+
+/** Occurrences up to today that are neither logged nor skipped, oldest first. */
+export function dueRecurring(list: SpendRecurring[], today = localDateStr()): DueRecurring[] {
+  const from = addDays(today, -RECURRING_LOOKBACK_DAYS)
+  const out: DueRecurring[] = []
+  for (const rec of list) {
+    if (rec.paused) continue
+    for (const date of occurrencesBetween(rec, from, today)) {
+      if (!(rec.doneDates ?? []).includes(date) && !(rec.skippedDates ?? []).includes(date)) out.push({ rec, date })
+    }
+  }
+  return out.sort((x, y) => x.date.localeCompare(y.date))
+}
+
+/** First occurrence after today, or undefined if none within ~13 months. */
+export function nextOccurrence(r: Schedule, today = localDateStr()): string | undefined {
+  return occurrencesBetween(r, addDays(today, 1), addDays(today, 400))[0]
+}
+
+export function frequencyLabel(r: Schedule): string {
+  if (r.frequency === 'weekly') return `Every ${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][(r.day - 1 + 7) % 7]}`
+  if (r.frequency === 'monthly') return `Monthly on the ${ordinalDay(r.day)}`
+  const month = new Date(2000, (r.month ?? 1) - 1, 1).toLocaleDateString('en-GB', { month: 'short' })
+  return `Yearly on ${r.day} ${month}`
+}
+
+function ordinalDay(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd']
+  const v = n % 100
+  return n + (s[(v - 20) % 10] || s[v] || s[0])
+}
+
+// ── Category budgets ─────────────────────────────────────────────────────────
+
+export type BudgetState = 'ok' | 'near' | 'over'
+
+export function budgetState(spent: number, budget: number): BudgetState {
+  if (spent > budget) return 'over'
+  if (spent >= budget * 0.85) return 'near'
+  return 'ok'
 }

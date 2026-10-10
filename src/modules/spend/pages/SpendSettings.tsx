@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { useLocation } from 'react-router-dom'
 import { PageHeader } from '../../../components/layout/PageHeader'
 import { Card } from '../../../components/ui/Card'
 import { Button } from '../../../components/ui/Button'
@@ -8,6 +9,8 @@ import { localDateStr, thb } from '../../../lib/format'
 import type { PayCycle, WeekendShift } from '../../../lib/types'
 import { DEFAULT_BILL_REMINDER_DAYS, isCalendar, periodFor, periodLabel, upcomingPaydays } from '../logic'
 import { useSpend } from '../useSpend'
+import { categoriesFor } from '../categories'
+import { TONES } from '../tones'
 
 const fmtDay = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number)
@@ -65,6 +68,24 @@ export function SpendSettings() {
   const current = cycle ? periodFor(today, cycle) : null
   const savedCycle = JSON.stringify(settings.cycle ?? { mode: 'calendar' })
   const cycleChanged = cycle !== null && JSON.stringify(cycle) !== savedCycle
+
+  const [catDraft, setCatDraft] = useState<Record<string, string>>(() =>
+    Object.fromEntries(Object.entries(settings.categoryBudgets ?? {}).map(([k, v]) => [k, String(v)])),
+  )
+  const catParsed = Object.fromEntries(
+    Object.entries(catDraft)
+      .map(([k, v]) => [k, Number(v.replace(/,/g, ''))] as const)
+      .filter(([, n]) => Number.isFinite(n) && n > 0),
+  )
+  const catTotal = Object.values(catParsed).reduce((s, n) => s + n, 0)
+  const catOverMonthly = !!settings.monthlyBudget && catTotal > settings.monthlyBudget
+  const catChanged = JSON.stringify(catParsed) !== JSON.stringify(Object.fromEntries(Object.entries(settings.categoryBudgets ?? {}).filter(([, n]) => n > 0)))
+
+  // Arriving from "Set budgets" on Overview: jump to that section
+  const { hash } = useLocation()
+  useEffect(() => {
+    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [hash])
 
   const budgetNum = Number(budget.replace(/,/g, ''))
   const budgetValid = budget === '' || (Number.isFinite(budgetNum) && budgetNum >= 0)
@@ -229,6 +250,49 @@ export function SpendSettings() {
           </Button>
         </div>
       </Section>
+
+      <div id="category-budgets" className="scroll-mt-24">
+        <Section title="Budget per category" description="Optional limits per spending month. Leave a category empty for no limit.">
+          <ul className="divide-y divide-line">
+            {categoriesFor('expense').map((c) => (
+              <li key={c.id} className="flex items-center gap-3 py-2">
+                <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${TONES[c.tone].chip}`}>
+                  <c.icon className="h-4 w-4" />
+                </span>
+                <span className="flex-1 text-sm font-semibold text-ink">{c.label}</span>
+                <div className="flex h-10 w-36 items-center rounded-xl border border-line-strong bg-surface px-3 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
+                  <span className="mr-1.5 text-sm text-ink-muted">฿</span>
+                  <input
+                    aria-label={`${c.label} budget`}
+                    inputMode="decimal"
+                    value={catDraft[c.id] ?? ''}
+                    onChange={(e) => setCatDraft((d) => ({ ...d, [c.id]: e.target.value.replace(/[^\d.,]/g, '') }))}
+                    placeholder="—"
+                    className="w-full bg-transparent text-right text-sm font-semibold text-ink outline-none tnum placeholder:text-ink-faint"
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className={`text-xs tnum ${catOverMonthly ? 'font-semibold text-warn' : 'text-ink-muted'}`}>
+              Total {thb(catTotal)}
+              {settings.monthlyBudget ? ` of ${thb(settings.monthlyBudget)} monthly budget` : ''}
+              {catOverMonthly ? ' — more than the monthly budget' : ''}
+            </p>
+            <Button
+              size="sm"
+              disabled={!catChanged}
+              onClick={() => {
+                updateSettings({ categoryBudgets: catParsed })
+                showToast('Category budgets saved')
+              }}
+            >
+              Save
+            </Button>
+          </div>
+        </Section>
+      </div>
 
       <Section title="Card bill reminders" description="When to start reminding you on Overview and the Accounts tab, before a card bill is due.">
         <select

@@ -332,6 +332,35 @@ export interface SpendSettings {
   cycle?: PayCycle
   /** Remind about a card bill this many days before it's due (default 5) */
   billReminderDays?: number
+  /** Spending limit per expense category id, in THB per spending month */
+  categoryBudgets?: Record<string, number>
+}
+
+export type RecurringFrequency = 'weekly' | 'monthly' | 'yearly'
+
+/** A bill or income that repeats; each occurrence waits for you to confirm or skip it. */
+export interface SpendRecurring {
+  id: string
+  name: string
+  type: 'expense' | 'income'
+  /** Usual amount in THB (editable when confirming) */
+  amount: number
+  categoryId: string
+  /** Wallet or card it's paid with / paid into */
+  accountId?: string
+  frequency: RecurringFrequency
+  /** Weekly: 1 = Mon … 7 = Sun. Monthly / yearly: day of month (clamped to short months) */
+  day: number
+  /** Yearly only: 1–12 */
+  month?: number
+  /** No occurrences before this date (YYYY-MM-DD) */
+  startDate: string
+  note?: string
+  /** Occurrence dates already logged */
+  doneDates?: string[]
+  /** Occurrence dates skipped */
+  skippedDates?: string[]
+  paused?: boolean
 }
 
 /** When the payday rule lands on Sat/Sun: move to Friday before, Monday after, or keep it */
@@ -400,6 +429,8 @@ export interface SpendiaryData {
   spendSettings?: SpendSettings
   /** Spend module: credit cards usable as a payment method */
   spendCards?: SpendCard[]
+  /** Spend module: repeating bills and income */
+  spendRecurring?: SpendRecurring[]
   /** Timestamp in ms when this data was last modified locally */
   lastUpdatedAt?: number
 }

@@ -1,6 +1,6 @@
 import type { NavSection, NavSubItem } from '../../components/layout/nav'
 import { DashboardIcon, SettingsIcon, WalletIcon } from '../../components/icons'
-import { ListBulletIcon } from './categories'
+import { ListBulletIcon, RepeatIcon } from './categories'
 
 export const SPEND_ROOT = '/spend'
 
@@ -33,6 +33,14 @@ export const spendAccountsItem: NavSubItem = {
   icon: WalletIcon,
 }
 
+export const spendRecurringItem: NavSubItem = {
+  to: `${SPEND_ROOT}/recurring`,
+  label: 'Recurring',
+  short: 'Recurring',
+  description: 'Bills and income that repeat, waiting for a one-tap log',
+  icon: RepeatIcon,
+}
+
 export const spendSettingsItem: NavSubItem = {
   to: `${SPEND_ROOT}/settings`,
   label: 'Spend settings',
@@ -43,5 +51,5 @@ export const spendSettingsItem: NavSubItem = {
 
 export const spendNavSections: NavSection[] = [
   { title: 'Spend', items: [spendOverviewItem, spendTxnsItem] },
-  { title: 'Money', items: [spendAccountsItem, spendSettingsItem] },
+  { title: 'Money', items: [spendAccountsItem, spendRecurringItem, spendSettingsItem] },
 ]

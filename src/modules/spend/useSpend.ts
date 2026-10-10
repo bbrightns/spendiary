@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useData } from '../../store/DataContext'
-import type { SpendCard, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
-import { DEFAULT_BILL_REMINDER_DAYS, applyToBalances, cardBill, parseTags, sortTxns, spendWallets } from './logic'
+import type { SpendCard, SpendRecurring, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
+import { DEFAULT_BILL_REMINDER_DAYS, applyToBalances, cardBill, dueRecurring, parseTags, sortTxns, spendWallets } from './logic'
 
 export type SpendTxnInput = Omit<SpendTransaction, 'id' | 'createdAt' | 'updatedAt' | 'tags'>
 
@@ -21,6 +21,15 @@ export interface PayMethod {
 function newId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
   return `id-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+function markOccurrence(list: SpendRecurring[], id: string, date: string, key: 'doneDates' | 'skippedDates'): SpendRecurring[] {
+  return list.map((r) => (r.id === id && !(r[key] ?? []).includes(date) ? { ...r, [key]: [...(r[key] ?? []), date].slice(-24) } : r))
+}
+
+/** The transaction a recurring occurrence turns into. */
+export function recurringInput(rec: SpendRecurring, date: string): SpendTxnInput {
+  return { type: rec.type, amount: rec.amount, categoryId: rec.categoryId, accountId: rec.accountId, date, note: rec.note ?? rec.name }
 }
 
 function balancesOf(d: SpendiaryData) {
@@ -53,14 +62,48 @@ export function useSpend() {
   /** Bills to nag about: due within the reminder window, or overdue */
   const reminders = useMemo(() => bills.filter((b) => b.remind).sort((a, b) => a.daysToDue - b.daysToDue), [bills])
 
-  function addTransaction(input: SpendTxnInput): SpendTransaction {
+  const recurring = useMemo(() => data.spendRecurring ?? [], [data.spendRecurring])
+  /** Recurring occurrences waiting to be confirmed or skipped */
+  const dueRecurringList = useMemo(() => dueRecurring(recurring), [recurring])
+
+  /**
+   * Log a transaction. With `fromRecurring`, the occurrence is marked done in the same
+   * update, so a confirmed bill can never be logged twice.
+   */
+  function addTransaction(input: SpendTxnInput, fromRecurring?: { id: string; date: string }): SpendTransaction {
     const txn: SpendTransaction = { ...input, id: newId(), tags: parseTags(input.note), createdAt: new Date().toISOString() }
     setData((prev) => ({
       ...prev,
       ...applyToBalances(balancesOf(prev), txn, 1),
       spendTransactions: [...(prev.spendTransactions ?? []), txn],
+      ...(fromRecurring ? { spendRecurring: markOccurrence(prev.spendRecurring ?? [], fromRecurring.id, fromRecurring.date, 'doneDates') } : {}),
     }))
     return txn
+  }
+
+  /** Log a recurring occurrence as-is (its usual amount, on its date). */
+  function confirmRecurring(rec: SpendRecurring, date: string) {
+    return addTransaction(recurringInput(rec, date), { id: rec.id, date })
+  }
+
+  function skipRecurring(id: string, date: string) {
+    setData((prev) => ({ ...prev, spendRecurring: markOccurrence(prev.spendRecurring ?? [], id, date, 'skippedDates') }))
+  }
+
+  function upsertRecurring(rec: Omit<SpendRecurring, 'id'> & { id?: string }) {
+    const id = rec.id ?? newId()
+    setData((prev) => {
+      const list = prev.spendRecurring ?? []
+      return {
+        ...prev,
+        spendRecurring: list.some((r) => r.id === id) ? list.map((r) => (r.id === id ? { ...r, ...rec, id } : r)) : [...list, { ...rec, id }],
+      }
+    })
+    return id
+  }
+
+  function removeRecurring(id: string) {
+    setData((prev) => ({ ...prev, spendRecurring: (prev.spendRecurring ?? []).filter((r) => r.id !== id) }))
   }
 
   function updateTransaction(id: string, input: SpendTxnInput) {
@@ -139,6 +182,12 @@ export function useSpend() {
     settings,
     bills,
     reminders,
+    recurring,
+    dueRecurring: dueRecurringList,
+    confirmRecurring,
+    skipRecurring,
+    upsertRecurring,
+    removeRecurring,
     addTransaction,
     updateTransaction,
     removeTransaction,

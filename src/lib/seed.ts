@@ -1,7 +1,7 @@
-import type { NetWorthSnapshot, PayCycle, SpendCard, SpendTransaction, SpendiaryData } from './types'
+import type { NetWorthSnapshot, PayCycle, SpendCard, SpendRecurring, SpendTransaction, SpendiaryData } from './types'
 import { localDateStr } from './format'
 import { netWorth, portfolioValue } from './calc'
-import { cardCycle, parseTags, periodFor, shiftPeriod } from '../modules/spend/logic'
+import { cardCycle, occurrencesBetween, parseTags, periodFor, shiftPeriod } from '../modules/spend/logic'
 
 /** Build a local YYYY-MM-DD date N days from today, so demo data always looks fresh. */
 function inDays(days: number): string {
@@ -1102,7 +1102,6 @@ const spendRows: T[] = [
   [7, 'transfer', 15_000, undefined, 'c-kbank', 'Top up everyday wallet', 'c-scb'],
   [8, 'expense', 65, 'drinks', 'c-scb', '#nosetea'],
   [9, 'expense', 3_200, 'family', 'c-kbank', "Mom's birthday dinner #family"],
-  [10, 'expense', 1_450, 'bills', 'c-kbank', 'Electricity #utilities'],
   [11, 'expense', 1_120, 'food', 'card-ktc', 'Groceries #tops'],
   [12, 'expense', 120, 'food', 'c-scb', 'ก๋วยเตี๋ยวเรือ #ร้านโปรด'],
   [13, 'expense', 890, 'transport', 'card-ktc', 'Grab to airport'],
@@ -1111,7 +1110,7 @@ const spendRows: T[] = [
   [18, 'expense', 980, 'food', 'card-ktc', 'Groceries #tops'],
   [20, 'expense', 350, 'fun', 'c-scb', 'Board game cafe'],
   [22, 'expense', 65, 'drinks', 'c-scb', '#nosetea'],
-  [24, 'expense', 1_380, 'bills', 'c-kbank', 'Electricity #utilities'],
+  [31, 'expense', 1_380, 'bills', 'c-kbank', 'Electricity #utilities'],
   [27, 'expense', 2_400, 'food', 'card-ktc', 'Family dinner #family'],
   [30, 'expense', 459, 'bills', 'card-ktc', 'Netflix + Spotify #subscription'],
   [33, 'expense', 170, 'food', 'c-scb', '#ร้านโปรด'],
@@ -1181,16 +1180,57 @@ const spendCards: SpendCard[] = spendCardsBase.map((card) => {
   return { ...card, balance: chargesOn(card.id, cyc.lastStatement) + unpaid }
 })
 
+/** Monthly bills keyed to today so Test Mode always has something due, and something coming up */
+const dayOf = (offset: number) => Math.min(28, Number(inDays(offset).slice(8)))
+
+function recurring(r: Omit<SpendRecurring, 'doneDates'>, pendingFrom: string): SpendRecurring {
+  // Everything before `pendingFrom` was already logged (the matching rows above)
+  return { ...r, doneDates: occurrencesBetween(r, r.startDate, inDaysFrom(pendingFrom, -1)) }
+}
+function inDaysFrom(date: string, n: number): string {
+  const [y, m, d] = date.split('-').map(Number)
+  return localDateStr(new Date(y, m - 1, d + n))
+}
+
+const spendRecurring: SpendRecurring[] = [
+  recurring(
+    { id: 'rec-elec', name: 'Electricity', type: 'expense', amount: 1_450, categoryId: 'bills', accountId: 'c-kbank', frequency: 'monthly', day: dayOf(-1), startDate: inDays(-120), note: 'Electricity #utilities' },
+    inDays(-1),
+  ),
+  recurring(
+    { id: 'rec-phone', name: 'AIS phone + fiber', type: 'expense', amount: 899, categoryId: 'bills', accountId: 'card-ktc', frequency: 'monthly', day: dayOf(0), startDate: inDays(-120), note: 'AIS phone + fiber #subscription' },
+    today,
+  ),
+  recurring(
+    { id: 'rec-stream', name: 'Netflix + Spotify', type: 'expense', amount: 459, categoryId: 'bills', accountId: 'card-ktc', frequency: 'monthly', day: dayOf(-2), startDate: inDays(-120), note: 'Netflix + Spotify #subscription' },
+    inDays(1),
+  ),
+  recurring(
+    { id: 'rec-gym', name: 'Gym membership', type: 'expense', amount: 2_200, categoryId: 'health', accountId: 'card-uob', frequency: 'monthly', day: dayOf(4), startDate: inDays(-120), note: 'Gym membership #fitness' },
+    inDays(1),
+  ),
+  recurring(
+    { id: 'rec-car', name: 'Car insurance', type: 'expense', amount: 18_500, categoryId: 'bills', accountId: 'c-kbank', frequency: 'yearly', day: 15, month: ((new Date().getMonth() + 2) % 12) + 1, startDate: inDays(-400) },
+    inDays(1),
+  ),
+  recurring(
+    { id: 'rec-retainer', name: 'Freelance retainer', type: 'income', amount: 4_500, categoryId: 'side', accountId: 'c-kbank', frequency: 'monthly', day: dayOf(-6), startDate: inDays(-120), note: 'Logo design #freelance' },
+    inDays(1),
+  ),
+]
+
 export const seedData: SpendiaryData = {
   ...baseSeed,
   netWorthHistory: trendHistory(netWorth(baseSeed, SEED_USD_THB), 120, 0.07, 0.012),
   portfolioHistory: trendHistory(portfolioValue(baseSeed.holdings), 120, 0.1, 0.02),
   spendCards,
   spendTransactions,
+  spendRecurring,
   spendSettings: {
     cycle: payCycle,
     monthlyBudget: 25_000,
     defaultAccountId: 'card-ktc',
     favoriteAccountIds: ['card-ktc', 'c-scb'],
+    categoryBudgets: { food: 3_000, drinks: 1_000, transport: 1_500, shopping: 1_400, fun: 2_000, health: 3_000 },
   },
 }

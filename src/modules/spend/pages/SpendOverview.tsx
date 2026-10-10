@@ -9,7 +9,8 @@ import { Modal } from '../../../components/ui/Modal'
 import { PencilIcon, SettingsIcon, WalletIcon } from '../../../components/icons'
 import { localDateStr, thb } from '../../../lib/format'
 import { getCategory } from '../categories'
-import { daysLeftIn, inPeriod, periodFor, totalsFor } from '../logic'
+import { budgetState, daysLeftIn, inPeriod, periodFor, totalsFor } from '../logic'
+import { RecurringDue } from '../RecurringDue'
 import { MonthStepper } from '../MonthStepper'
 import { BillReminders } from '../BillReminders'
 import { openQuickAdd } from '../QuickAddSheet'
@@ -27,6 +28,20 @@ export function SpendOverview() {
 
   const monthTxns = useMemo(() => transactions.filter((t) => inPeriod(period, t.date)), [transactions, period])
   const totals = useMemo(() => totalsFor(monthTxns), [monthTxns])
+
+  // Every budgeted category shows (even at ฿0), plus the biggest unbudgeted ones
+  const catBudgets = useMemo(() => settings.categoryBudgets ?? {}, [settings.categoryBudgets])
+  const categoryRows = useMemo(() => {
+    const spent = new Map(totals.byCategory.map((c) => [c.categoryId, c.amount]))
+    const budgeted = Object.entries(catBudgets)
+      .filter(([, b]) => b > 0)
+      .map(([categoryId, budget]) => ({ categoryId, amount: spent.get(categoryId) ?? 0, budget }))
+    const rest = totals.byCategory
+      .filter((c) => !(catBudgets[c.categoryId] > 0))
+      .slice(0, Math.max(0, 6 - budgeted.length))
+      .map((c) => ({ ...c, budget: undefined as number | undefined }))
+    return [...budgeted, ...rest].sort((a, b) => b.amount - a.amount)
+  }, [totals.byCategory, catBudgets])
 
   const isCurrent = inPeriod(period, localDateStr())
   const budget = settings.monthlyBudget ?? 0
@@ -140,6 +155,8 @@ export function SpendOverview() {
         )}
       </Card>
 
+      {isCurrent && <RecurringDue />}
+
       {monthTxns.length === 0 ? (
         <Card>
           <EmptyState
@@ -153,16 +170,24 @@ export function SpendOverview() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
           {/* ── Where it went ── */}
           <Card>
-            <h2 className="font-display text-lg font-extrabold text-ink">Where it went</h2>
-            {totals.byCategory.length === 0 ? (
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-display text-lg font-extrabold text-ink">Where it went</h2>
+              <Link to="/spend/settings#category-budgets" className="text-sm font-semibold text-brand hover:underline">
+                {Object.keys(catBudgets).length > 0 ? 'Budgets' : 'Set budgets'}
+              </Link>
+            </div>
+            {categoryRows.length === 0 ? (
               <p className="mt-3 text-sm text-ink-muted">No spending yet this month.</p>
             ) : (
               <ul className="mt-4 space-y-3.5">
-                {totals.byCategory.slice(0, 6).map(({ categoryId, amount }) => {
+                {categoryRows.map(({ categoryId, amount, budget: catBudget }) => {
                   const cat = getCategory(categoryId)
                   const share = totals.expense > 0 ? (amount / totals.expense) * 100 : 0
                   const Icon = cat?.icon
                   const tone = cat?.tone ?? 'slate'
+                  const state = catBudget ? budgetState(amount, catBudget) : 'ok'
+                  const bar = state === 'over' ? 'bg-loss' : state === 'near' ? 'bg-warn' : TONES[tone].bar
+                  const width = catBudget ? Math.min(100, (amount / catBudget) * 100) : share
                   return (
                     <li key={categoryId}>
                       <div className="flex items-center justify-between gap-3 text-sm">
@@ -176,12 +201,21 @@ export function SpendOverview() {
                         </span>
                         <span className="shrink-0 tnum font-bold text-ink">
                           {thb(amount)}
-                          <span className="ml-1.5 text-xs font-semibold text-ink-muted">{Math.round(share)}%</span>
+                          {catBudget ? (
+                            <span className="ml-1 text-xs font-semibold text-ink-muted">/ {thb(catBudget)}</span>
+                          ) : (
+                            <span className="ml-1.5 text-xs font-semibold text-ink-muted">{Math.round(share)}%</span>
+                          )}
                         </span>
                       </div>
                       <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-muted">
-                        <div className={`h-full rounded-full ${TONES[tone].bar}`} style={{ width: `${share}%` }} />
+                        <div className={`h-full rounded-full transition-[width] duration-500 ${bar}`} style={{ width: `${width}%` }} />
                       </div>
+                      {catBudget ? (
+                        <p className={`mt-1 text-xs tnum ${state === 'over' ? 'font-semibold text-loss' : state === 'near' ? 'font-semibold text-warn' : 'text-ink-muted'}`}>
+                          {state === 'over' ? `Over by ${thb(amount - catBudget)}` : `${thb(catBudget - amount)} left`}
+                        </p>
+                      ) : null}
                     </li>
                   )
                 })}
