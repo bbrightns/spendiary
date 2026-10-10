@@ -27,7 +27,7 @@ function PageLoadingFallback() {
 
 // 💡 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
 function AppContent() {
-  const { user, loginWithGoogle, loginAsTestMode, authError } = useData()
+  const { user, loginWithGoogle, loginAsTestMode, authError, dataReady } = useData()
 
   // 💡 ถ้ายังไม่ได้ล็อกอิน ให้แสดงหน้าจอ Sign In ธีม Fastwork.com
   if (!user) {
@@ -230,6 +230,10 @@ function AppContent() {
   return (
     <Layout>
       <ScrollToTop />
+      {/* Hold back the pages until the first load finishes, so users never see fake empty states */}
+      {!dataReady ? (
+        <PageLoadingFallback />
+      ) : (
       <Suspense fallback={<PageLoadingFallback />}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
@@ -250,6 +254,7 @@ function AppContent() {
           <Route path="*" element={<Dashboard />} />
         </Routes>
       </Suspense>
+      )}
     </Layout>
   )
 }

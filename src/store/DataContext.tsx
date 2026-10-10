@@ -253,6 +253,8 @@ interface DataContextValue {
   loadSample: () => void
   clearAll: () => Promise<void>
   syncStatus: SyncStatus
+  /** False until the initial load (cloud / guest / test data) for the current user has finished. */
+  dataReady: boolean
   user: User | null
   loginWithGoogle: () => void
   loginAsGuest: () => void
@@ -467,6 +469,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [data, setDataState] = useState<SpendiaryData>(emptyData)
   const [usdThb, setUsdThb] = useState<number | null>(null)
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle')
+  const [dataReady, setDataReady] = useState(false)
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(() => {
     const stored = localStorage.getItem('spendiary.last_synced_time')
     return stored ? new Date(stored) : null
@@ -707,6 +710,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
       setSyncStatus('synced')
       syncReady.current = true
+      setDataReady(true)
       return
     }
 
@@ -717,6 +721,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setDataState(freshSample)
       setSyncStatus('synced')
       syncReady.current = true
+      setDataReady(true)
       return
     }
 
@@ -794,6 +799,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setSyncStatus('error')
     } finally {
       syncReady.current = true
+      setDataReady(true)
     }
   }
 
@@ -821,6 +827,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       })
 
       syncReady.current = false
+      setDataReady(false)
       fetchRemoteData(user.id)
     } else {
       syncReady.current = false
@@ -896,6 +903,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       },
       clearAll,
       syncStatus,
+      dataReady,
       lastSyncedAt,
       user,
       loginWithGoogle,
@@ -2613,7 +2621,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }),
         })),
     }),
-    [data, syncStatus, lastSyncedAt, user],
+    [data, syncStatus, dataReady, lastSyncedAt, user],
   )
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>
