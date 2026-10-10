@@ -33,10 +33,11 @@
 1. **Backdated entries: "Already in my balance" switch** — when Quick Add's date is in the
    past, offer a switch that records the transaction without moving the wallet balance.
 2. **Lint check** — add ESLint (flat config: typescript-eslint, react-hooks, react-refresh)
-   with an  script, fix existing violations, and add it to AGENTS.md's
-   "Bug Check Before Push". Optional follow-up: Vitest unit tests for    (periods, card cycles, recurring, balances), which are pure functions.
+   with an `npm run lint` script, fix existing violations, and add it to AGENTS.md's
+   "Bug Check Before Push". Optional follow-up: Vitest unit tests for
+   `modules/spend/logic.ts` (periods, card cycles, recurring, balances), which are pure functions.
 3. **Smarter, wider search (Command Palette, Cmd+K)**
-   - Cover everything: Spend transactions (note, #tag, amount like  or ),
+   - Cover everything: Spend transactions (note, #tag, amount like `65` or `>1000`),
      categories, wallets and cards, recurring bills, holdings, DCA plans, debts, settings
      sections, and every page.
    - Context aware: in Spend mode, Spend actions and results come first.
@@ -48,9 +49,9 @@
 ### Invest-side links
 4. Debts / installments → Spend expense when an installment is paid.
 5. DCA Planner: show Spend's real "left this month" next to the salary card.
-6. Retirement: suggest  from the 3–6 month average of real spending.
-7. Cash page: per-wallet "see transactions" link → .
-8. DCA salary () read from Spend's recurring salary.
+6. Retirement: suggest `monthlySpend` from the 3–6 month average of real spending.
+7. Cash page: per-wallet "see transactions" link → `/spend/txns?q=<wallet>`.
+8. DCA salary (`monthlyIncome`) read from Spend's recurring salary.
 
 ### Spend features
 9. Bulk import of past transactions (bank / card statement CSV or AI).
