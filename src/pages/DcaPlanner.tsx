@@ -132,9 +132,9 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
       ].filter((s) => s.pct > 0)
 
   return (
-    <div className="@container mt-5">
+    <div className="@container mt-4">
       {/* Labels: a wrapping row when the card is narrow; once wide, each label spans its bar segment */}
-      <div className="mb-2.5 flex flex-wrap gap-1.5 @min-[26rem]:flex-nowrap @min-[26rem]:gap-0">
+      <div className="mb-2 flex flex-wrap gap-1.5 @min-[26rem]:flex-nowrap @min-[26rem]:gap-0">
         {segments.map((seg) => (
           <div
             key={seg.label}
@@ -227,7 +227,7 @@ function InlineEditStat({ label, value, editing, draft, inputRef, onOpen, onDraf
         <button
           onClick={onOpen}
           aria-label={`Edit ${label}`}
-          className="group mt-1 flex items-center gap-1.5 rounded-lg px-1 py-1 transition-colors hover:bg-surface-muted min-h-[40px]"
+          className="group -mx-1 mt-1 flex items-center gap-1.5 rounded-lg px-1 py-1 transition-colors hover:bg-surface-muted min-h-[40px]"
         >
           <span className="font-display text-xl font-extrabold tnum text-ink leading-none">{value}</span>
           <PencilIcon className="h-3.5 w-3.5 text-ink-muted opacity-0 transition-opacity group-hover:opacity-100" />
@@ -565,7 +565,7 @@ export function DcaPlanner() {
           {/* ── Income + Budget Bar ── */}
           <div id="guide-dca-summary">
             <Card className="animate-rise @container">
-              <div className="flex flex-col items-start gap-4 @min-[26rem]:flex-row @min-[26rem]:justify-between">
+              <div className="flex flex-col items-start gap-3 @min-[19rem]:flex-row @min-[19rem]:justify-between @min-[19rem]:gap-4">
                 <InlineEditStat
                   label="Monthly Salary"
                   value={salary > 0 ? thb(salary) : '-'}
@@ -579,12 +579,13 @@ export function DcaPlanner() {
                   hint={salary <= 0 ? 'Tap to set your salary' : undefined}
                 />
                 {salary > 0 && fixedTotal + savingsTotal > salary && (
-                  <div className="@min-[26rem]:text-right">
+                  <div className="@min-[19rem]:text-right">
                     <p className="text-xs font-medium text-ink-muted">Total Planned</p>
-                    <p className="mt-1 font-display text-xl font-extrabold tnum text-ink leading-none">
+                    {/* Same 40px row as the salary value so both numbers share a baseline */}
+                    <p className="mt-1 flex min-h-[40px] items-center font-display text-xl font-extrabold tnum text-ink leading-none @min-[19rem]:justify-end">
                       {thb(fixedTotal + savingsTotal)}
                     </p>
-                    <div className="mt-1 flex flex-col items-start gap-0.5 @min-[26rem]:items-end">
+                    <div className="flex flex-col items-start gap-0.5 @min-[19rem]:items-end">
                       <span className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-bold text-brand dark:text-brand-ink">
                         +{thb(requiredCashInjection)} from Cash
                       </span>
