@@ -939,8 +939,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
             setSuggestions([])
           }}
           options={[
-            { value: 'fund', label: 'Thai Assets (Stocks, Funds, DR)' },
             { value: 'stock', label: 'US Stock' },
+            { value: 'fund', label: 'Thai Assets (Stocks, Funds, DR)' },
             { value: 'crypto', label: 'Crypto (BTC, ETH, and other tokens)' },
             { value: 'gold', label: 'Gold' },
             { value: 'real_estate', label: 'Real Estate (House / Condo / Land)' },
@@ -993,7 +993,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                           setSuggestions([])
                         }}
                       >
-                        <span className="min-w-[52px] rounded-md bg-surface-muted px-1.5 py-0.5 text-center text-xs font-bold tracking-wide text-ink-muted">
+                        <span className="w-[68px] shrink-0 truncate rounded-md bg-surface-muted px-1.5 py-0.5 text-center text-xs font-bold tracking-wide text-ink-muted">
                           {s.ticker}
                         </span>
                         <span className="text-sm text-ink">{s.name}</span>

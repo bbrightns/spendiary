@@ -130,7 +130,7 @@ export function PlannedAssetModal({ open, onClose, onAdded }: Props) {
                           setSuggestions([])
                         }}
                       >
-                        <span className="min-w-[50px] rounded bg-surface-muted px-1.5 py-0.5 text-center text-xs font-bold text-ink-muted">
+                        <span className="w-[68px] shrink-0 truncate rounded bg-surface-muted px-1.5 py-0.5 text-center text-xs font-bold text-ink-muted">
                           {s.ticker}
                         </span>
                         <span className="text-sm text-ink truncate">{s.name}</span>

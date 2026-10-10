@@ -320,7 +320,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
             options={[
               { value: 'portfolio', label: 'Portfolio' },
               { value: 'cash', label: 'Cash / Savings' },
-              { value: 'custom', label: 'Custom' },
+              { value: 'custom', label: 'New asset' },
             ]}
           />
         )}
@@ -390,7 +390,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
           holdingOptions.length === 0 ? (
             <div className="rounded-xl bg-warn-soft p-4 text-sm text-warn space-y-2">
               <p className="font-semibold">No holdings in your portfolio yet.</p>
-              <p className="text-xs opacity-90">Switch to <strong>Custom plan</strong> or <strong>Cash / Savings</strong> above to start DCAing.</p>
+              <p className="text-xs opacity-90">Switch to <strong>New asset</strong> or <strong>Cash / Savings</strong> above to start DCAing.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -458,7 +458,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
                               setSuggestions([])
                             }}
                           >
-                            <span className="min-w-[52px] rounded-md bg-surface-muted px-1.5 py-0.5 text-center text-xs font-bold tracking-wide text-ink-muted">
+                            <span className="w-[68px] shrink-0 truncate rounded-md bg-surface-muted px-1.5 py-0.5 text-center text-xs font-bold tracking-wide text-ink-muted">
                               {s.ticker}
                             </span>
                             <span className="text-sm text-ink truncate">{s.name}</span>
