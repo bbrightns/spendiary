@@ -85,6 +85,29 @@ export interface StockQuote {
   name?: string
 }
 
+/** Live US stock/ETF search by symbol or name (needs smart-responder v3+). Returns [] on any failure. */
+export async function searchStocksRemote(query: string): Promise<{ ticker: string; name: string }[]> {
+  const supabaseUrl = import.meta.env.VITE_API_URL || ''
+  const supabaseKey = import.meta.env.VITE_API_TOKEN || ''
+  if (!supabaseUrl || !query.trim()) return []
+  try {
+    const res = await fetch(`${supabaseUrl}/functions/v1/smart-responder`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseKey}`,
+        'apikey': supabaseKey,
+      },
+      body: JSON.stringify({ query }),
+    })
+    if (!res.ok) return []
+    const json = await res.json()
+    return ((json.results ?? []) as { symbol: string; name: string }[]).map((r) => ({ ticker: r.symbol, name: r.name }))
+  } catch {
+    return []
+  }
+}
+
 /** Single-ticker lookup for validation. `checked: false` = service unreachable; `checked: true` without `quote` = ticker not found. */
 export async function fetchStockQuote(ticker: string): Promise<{ checked: boolean; quote?: StockQuote }> {
   const supabaseUrl = import.meta.env.VITE_API_URL || ''

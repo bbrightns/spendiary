@@ -9,7 +9,7 @@ import { ASSET_META, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd, upsert } from 
 import type { AssetClass, DividendPayoutSchedule, Holding, PlannedAsset } from '../../lib/types'
 import { dateStrToTimestamp, localDateStr, thb } from '../../lib/format'
 import { searchSecurities, type Security } from '../../lib/securities'
-import { fetchStockQuote } from '../../lib/prices'
+import { fetchStockQuote, searchStocksRemote } from '../../lib/prices'
 import { ChevronDownIcon, PencilIcon, LockClosedIcon } from '../icons'
 import { TransactionDateField } from './TransactionDateField'
 
@@ -131,6 +131,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
   // not when editing/price changes due to live price ticks.
   const wasOpen = useRef(false)
   const priceAutoFilled = useRef(false)
+  const remoteSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const latestNameQuery = useRef('')
   const [tickerCheck, setTickerCheck] = useState<
     | { state: 'idle' | 'checking' | 'notfound' }
     | { state: 'notusd'; currency: string; name?: string }
@@ -958,7 +960,22 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 error={showErrors && form.name.trim() === '' ? 'Name is required' : undefined}
                 onChange={(name) => {
                   setForm((f) => ({ ...f, name }))
-                  setSuggestions((!isBtc && !isGold && !isRealEstate) ? searchSecurities(name, form.assetClass) : [])
+                  const local = (!isBtc && !isGold && !isRealEstate) ? searchSecurities(name, form.assetClass) : []
+                  setSuggestions(local)
+                  latestNameQuery.current = name
+                  if (remoteSearchTimer.current) clearTimeout(remoteSearchTimer.current)
+                  if (isUsd && !editing && name.trim().length >= 2) {
+                    remoteSearchTimer.current = setTimeout(() => {
+                      searchStocksRemote(name.trim()).then((remote) => {
+                        if (latestNameQuery.current !== name) return
+                        const known = new Set(local.map((s) => s.ticker))
+                        const extra: Security[] = remote
+                          .filter((r) => !known.has(r.ticker))
+                          .map((r) => ({ ticker: r.ticker, name: r.name, assetClass: 'stock' }))
+                        if (extra.length > 0) setSuggestions([...local, ...extra].slice(0, 20))
+                      })
+                    }, 350)
+                  }
                 }}
                 onBlur={() => setTimeout(() => setSuggestions([]), 150)}
                 placeholder={isBtc ? 'e.g. My Bitcoin' : isUsd ? 'e.g. Apple Inc.' : isGold ? 'e.g. My Gold' : isRealEstate ? 'e.g. Sukhumvit Condo, Modern House' : 'e.g. Kasikorn Fund'}

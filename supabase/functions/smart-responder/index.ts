@@ -1,5 +1,6 @@
 // Supabase Edge Function: smart-responder (v3 — Yahoo Finance v8 chart endpoint)
-// Request:  POST { symbols: "AAPL,BUG" }
+// Request:  POST { symbols: "AAPL,BUG" }  — price lookup
+//           POST { query: "bug" }          — symbol/name search (US-listed stocks & ETFs)
 // Response: { prices: { AAPL: 190.1 }, quotes: { AAPL: { price, currency, name } } }
 //   - `prices` only contains USD-quoted symbols (the web app converts them with the USD/THB rate)
 //   - `quotes` contains every symbol Yahoo recognised, with its currency and name
@@ -44,13 +45,43 @@ async function fetchSymbolQuote(symbol: string): Promise<Quote | null> {
   }
 }
 
+const US_EXCHANGES = new Set(['NASDAQ', 'NYSE', 'NYSE American', 'NYSE Arca', 'BATS', 'NYSEArca', 'NasdaqGS', 'NasdaqCM', 'NasdaqGM'])
+
+async function searchSymbols(query: string) {
+  try {
+    const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=15&newsCount=0`
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+      },
+    })
+    if (!res.ok) return []
+    const data = await res.json()
+    return ((data?.quotes ?? []) as Array<Record<string, string>>)
+      .filter((q) => (q.quoteType === 'EQUITY' || q.quoteType === 'ETF') && US_EXCHANGES.has(q.exchDisp ?? q.exchange))
+      .map((q) => ({ symbol: String(q.symbol).toUpperCase(), name: q.longname ?? q.shortname ?? q.symbol }))
+  } catch {
+    return []
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { symbols } = await req.json()
+    const body = await req.json()
+
+    if (typeof body.query === 'string' && body.query.trim()) {
+      return new Response(
+        JSON.stringify({ results: await searchSymbols(body.query.trim()) }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const { symbols } = body
 
     if (!symbols || typeof symbols !== 'string') {
       return new Response(
