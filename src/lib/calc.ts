@@ -643,17 +643,17 @@ export const CASH_CATEGORIES: Record<
 > = {
   spending: {
     label: 'Spending & Deployable',
-    labelTh: 'ใช้จ่าย/หมุนเวียน',
+    labelTh: 'Spending & everyday',
     color: '#10b981',
     icon: '🟢',
-    desc: 'เงินสดที่คุณมีอิสระในการ deploy จริง ๆ (ใช้จ่าย, ฉุกเฉิน, เงินรอลงทุน)',
+    desc: 'Cash you are free to use: spending, emergencies, or money waiting to be invested',
   },
   locked: {
     label: 'Committed / Locked',
-    labelTh: 'ออมระยะยาว/มีเงื่อนไข',
+    labelTh: 'Long-term savings',
     color: '#8b5cf6',
     icon: '🔒',
-    desc: 'Cash / assets ที่ไม่ควรแตะ เช่น สหกรณ์, กองทุนสำรองเลี้ยงชีพ (PVD), ฝากประจำ',
+    desc: 'Savings you should leave alone, such as savings co-ops, provident fund (PVD) and fixed deposits',
   },
 }
 
@@ -676,7 +676,7 @@ export const BANK_PRESETS: BankPreset[] = [
   { id: 'ttb', name: 'ttb', shortName: 'TTB', color: '#2563eb', bg: 'rgba(37, 99, 235, 0.15)', keywords: ['ttb', 'ทีทีบี', 'me'] },
   { id: 'ktb', name: 'Krungthai', shortName: 'KTB', color: '#0284c7', bg: 'rgba(2, 132, 199, 0.15)', keywords: ['ktb', 'กรุงไทย', 'เป๋าตัง'] },
   { id: 'bbl', name: 'BBL', shortName: 'BBL', color: '#1e3a8a', bg: 'rgba(30, 58, 138, 0.15)', keywords: ['bbl', 'กรุงเทพ', 'bangkok'] },
-  { id: 'sahakorn', name: 'สหกรณ์', shortName: 'สห', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.15)', keywords: ['สหกรณ์', 'sahakorn', 'coop', 'ออมทรัพย์ หุ้น'] },
+  { id: 'sahakorn', name: 'Savings co-op', shortName: 'Co-op', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.15)', keywords: ['สหกรณ์', 'sahakorn', 'coop', 'ออมทรัพย์ หุ้น'] },
   { id: 'pvd', name: 'PVD', shortName: 'PVD', color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)', keywords: ['สำรองเลี้ยงชีพ', 'pvd', 'provident'] },
 ]
 
@@ -866,7 +866,7 @@ export const DEBT_CATEGORIES: Record<
   { label: string; color: string; bgClass: string; textClass: string; borderClass: string }
 > = {
   installment: {
-    label: 'ผ่อนสินค้า / Shopping',
+    label: 'Installments / Shopping',
     color: '#6366f1',
     bgClass: 'bg-indigo-500/10 dark:bg-indigo-500/20',
     textClass: 'text-indigo-600 dark:text-indigo-400',
@@ -927,8 +927,8 @@ export function totalMonthlyDebtPayment(data: SpendiaryData): number {
 }
 
 export const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ]
 
 /** Check if a liability has already been marked as paid in the current month */
@@ -1006,7 +1006,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
   if (isCompleted) {
     return {
       status: 'completed',
-      label: 'ผ่อนครบแล้ว 🎉',
+      label: 'Fully paid 🎉',
       badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
     }
   }
@@ -1014,7 +1014,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
   if (isPaidThisMonth) {
     return {
       status: 'paid',
-      label: 'จ่ายงวดนี้แล้ว ✅',
+      label: 'Paid this month ✅',
       badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
     }
   }
@@ -1022,7 +1022,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
   if (!l.dueDay) {
     return {
       status: 'pending',
-      label: 'รอชำระ',
+      label: 'Awaiting payment',
       badgeClass: 'bg-surface-muted text-ink-muted border border-line/40',
     }
   }
@@ -1032,7 +1032,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
   if (currentDay === l.dueDay) {
     return {
       status: 'due_today',
-      label: 'ครบกำหนดวันนี้',
+      label: 'Due today',
       badgeClass: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse',
       daysLeft: 0,
     }
@@ -1048,7 +1048,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
 
     return {
       status: 'pending',
-      label: `อีก ${daysLeft} วัน (${l.dueDay} ${nextMonthName})`,
+      label: `In ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} (${nextMonthName} ${l.dueDay})`,
       badgeClass: 'bg-surface-muted text-ink-muted border border-line/40',
       daysLeft,
     }
@@ -1057,7 +1057,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
   if (currentDay > l.dueDay) {
     return {
       status: 'overdue',
-      label: `เลยกำหนด (วันที่ ${l.dueDay})`,
+      label: `Overdue (due on the ${l.dueDay})`,
       badgeClass: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30',
     }
   }
@@ -1066,7 +1066,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
   if (daysLeft <= 3) {
     return {
       status: 'due_soon',
-      label: `อีก ${daysLeft} วัน (วันที่ ${l.dueDay})`,
+      label: `In ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} (on the ${l.dueDay})`,
       badgeClass: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25',
       daysLeft,
     }
@@ -1074,7 +1074,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
 
   return {
     status: 'pending',
-    label: `ทุกวันที่ ${l.dueDay}`,
+    label: `Due on the ${l.dueDay} each month`,
     badgeClass: 'bg-surface-muted text-ink-muted border border-line/40',
     daysLeft,
   }
