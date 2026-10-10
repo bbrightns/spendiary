@@ -14,8 +14,12 @@ export function investTransactions(data: SpendiaryData, usdThb: number | null): 
 
   for (const r of data.dividendRecords ?? []) {
     const acct = accounts.find((a) => a.id === r.cashAccountId)
-    // netAmount is in the receiving account's currency
-    const amount = (acct?.currency ?? 'THB') === 'USD' ? (usdThb ? r.netAmount * usdThb : 0) : r.netAmount
+    // netAmount is in the receiving account's currency; with no account, in the holding's
+    // (US stocks pay in USD)
+    const holding = (data.holdings ?? []).find((h) => h.id === r.holdingId)
+    const usdHolding = !!holding && ((holding.totalUsdInvested ?? 0) > 0 || (holding.avgCostUsd ?? 0) > 0)
+    const currency = acct ? acct.currency ?? 'THB' : usdHolding ? 'USD' : 'THB'
+    const amount = currency === 'USD' ? (usdThb ? r.netAmount * usdThb : 0) : r.netAmount
     if (!(amount > 0)) continue
     out.push({
       id: `div-${r.id}`,
