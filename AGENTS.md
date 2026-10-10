@@ -16,6 +16,7 @@
    - Update `version` in both `package.json` and `package-lock.json`.
    - Run verification (`npm run build`).
    - Commit the version bump: `git commit -am "chore(release): bump app version to X.Y.Z"`.
+   - Complete the bug check (see "Bug Check Before Push") before bumping the version.
    - Only then execute `git push`.
 4. **Report Commit Details in Responses**: Every time you perform a commit, you MUST explicitly report the commit hash (short SHA) and the exact commit message in your response to the user so the user is always informed of the changes.
 
@@ -34,6 +35,13 @@
      - **Mobile**: Confirm the layout works at phone widths (e.g., 375px–430px). No horizontal scrolling, clipped content, or touch targets that are too small.
    - Check the result in the browser preview (or dev server) for all three cases. If a check cannot be performed, state that explicitly in the response instead of skipping it silently.
    - Fix any inconsistency found before committing.
+
+## Bug Check Before Push
+1. **Review all unpushed changes**: Inspect the full diff of every unpushed commit (`git diff origin/main..HEAD`) and look for logic errors, broken edge cases, missing null/undefined handling, and stale state or data-migration issues in `localStorage`.
+2. **Run the checks**: Run `npm run build` and fix any TypeScript errors. Run lint and tests if the project defines them.
+3. **Verify affected features**: Exercise every feature touched by the unpushed commits in the dev server or browser preview, and check the browser console for runtime errors and warnings.
+4. **Fix before pushing**: Any bug found MUST be fixed and committed before running `git push`. If a bug is out of scope, report it to the user and ask whether to fix it first.
+5. **Report the result**: State in the response what was checked and the outcome. If a check could not be run, say so explicitly.
 
 ## File Deletion & Safety Rules
 1. **Never delete files without explicit permission**: Strictly prohibited from deleting any files or directories without asking for and receiving explicit confirmation from the user.
