@@ -46,12 +46,12 @@ function CategoryIcon({ category, className = 'h-4 w-4' }: { category: DebtCateg
   }
 }
 
-const THAI_MONTHS = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+const MONTHS_SHORT = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ]
 
-function formatThaiDate(dateStr?: string): string {
+function formatDate(dateStr?: string): string {
   if (!dateStr) return '-'
   try {
     const parts = dateStr.slice(0, 10).split('-')
@@ -59,15 +59,15 @@ function formatThaiDate(dateStr?: string): string {
     const y = Number(parts[0])
     const m = Number(parts[1]) - 1
     const d = Number(parts[2])
-    const yearBE = y > 2400 ? y : y + 543
-    return `${d} ${THAI_MONTHS[m] || ''} ${yearBE}`
+    const year = y > 2400 ? y - 543 : y
+    return `${d} ${MONTHS_SHORT[m] || ''} ${year}`
   } catch {
     return dateStr
   }
 }
 
 function getEstimatedPayoffDate(dueDay: number | undefined, remainingTerms: number): { dateStr: string; relativeStr: string } {
-  if (remainingTerms <= 0) return { dateStr: 'ผ่อนหมดแล้ว 🎉', relativeStr: '0 เดือน' }
+  if (remainingTerms <= 0) return { dateStr: 'Fully paid 🎉', relativeStr: '0 months' }
   const now = new Date()
   const dDay = dueDay || 25
   const isNextMonthStart = now.getDate() > dDay
@@ -75,10 +75,10 @@ function getEstimatedPayoffDate(dueDay: number | undefined, remainingTerms: numb
   const targetDate = new Date(now.getFullYear(), now.getMonth() + monthsToAdd, dDay)
   const d = targetDate.getDate()
   const m = targetDate.getMonth()
-  const yearBE = targetDate.getFullYear() + 543
+  const year = targetDate.getFullYear()
   return {
-    dateStr: `${d} ${THAI_MONTHS[m]} ${yearBE}`,
-    relativeStr: `อีก ${remainingTerms} เดือน`,
+    dateStr: `${d} ${MONTHS_SHORT[m]} ${year}`,
+    relativeStr: `${remainingTerms} ${remainingTerms === 1 ? 'month' : 'months'} to go`,
   }
 }
 
@@ -196,21 +196,21 @@ export function Debts() {
 
   const handlePay = (l: Liability) => {
     payLiabilityInstallment(l.id)
-    showToast(`บันทึกชำระงวด "${l.name}" เรียบร้อยแล้ว`, 'success', {
-      label: 'เลิกทำ (Undo)',
+    showToast(`Marked "${l.name}" as paid this month`, 'success', {
+      label: 'Undo',
       onClick: () => undoLiabilityPayment(l.id),
     })
   }
 
   const handleUndo = (l: Liability) => {
     undoLiabilityPayment(l.id)
-    showToast(`ยกเลิกการชำระงวด "${l.name}" เรียบร้อย`, 'info')
+    showToast(`Payment for "${l.name}" undone`, 'info')
   }
 
   const handleDeleteConfirm = () => {
     if (itemToDelete) {
       removeLiability(itemToDelete.id)
-      showToast(`ลบรายการ "${itemToDelete.name}" เรียบร้อย`, 'info')
+      showToast(`Deleted "${itemToDelete.name}"`, 'info')
       setItemToDelete(null)
     }
   }
@@ -232,7 +232,7 @@ export function Debts() {
       <PageHeader
         eyebrow="Plan"
         title="Debts & Installments"
-        subtitle="ศูนย์รวมการจัดการหนี้สิน ผ่อนสินค้า 0% และวางแผนปลดหนี้สู่ความมั่งคั่งที่แท้จริง"
+        subtitle="Track your loans, 0% installments and card payments, and plan how to become debt-free"
       />
 
       {/* ── Top Summary Bento (Compact 2x2 on Mobile, 4x1 on Desktop like Dividends) ── */}
@@ -240,53 +240,53 @@ export function Debts() {
         {/* Card 1: Total Outstanding */}
         <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
           <div>
-            <p className="text-xs font-medium text-ink-muted truncate">หนี้คงค้างรวม</p>
+            <p className="text-xs font-medium text-ink-muted truncate">Total owed</p>
             <p className={`mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate ${totalOutstanding > 0 ? 'text-ink dark:text-white' : 'text-emerald-600 dark:text-emerald-400'}`}>
               {totalOutstanding > 0 ? `-${thb(totalOutstanding)}` : '฿0'}
             </p>
           </div>
           <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            {totalOutstanding > 0 ? `${activeDebts.length} รายการกำลังผ่อน` : '🎉 ปลอดหนี้ 100%'}
+            {totalOutstanding > 0 ? `${activeDebts.length} active ${activeDebts.length === 1 ? 'debt' : 'debts'}` : '🎉 Debt free!'}
           </p>
         </Card>
 
         {/* Card 2: Total Monthly Payment */}
         <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
           <div>
-            <p className="text-xs font-medium text-ink-muted truncate">ภาระผ่อน/เดือน</p>
+            <p className="text-xs font-medium text-ink-muted truncate">Monthly payments</p>
             <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum text-ink dark:text-white truncate">
               {totalMonthlyPayment > 0 ? thb(totalMonthlyPayment) : '฿0'}
-              <span className="text-xs font-semibold text-ink-muted ml-0.5">/ด.</span>
+              <span className="text-xs font-semibold text-ink-muted ml-0.5">/mo</span>
             </p>
           </div>
           <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            {activeDebts.filter((l) => l.monthlyPayment).length} รายการมีค่างวดประจำ
+            {activeDebts.filter((l) => l.monthlyPayment).length} with a monthly payment
           </p>
         </Card>
 
         {/* Card 3: Paid Off Progress */}
         <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
           <div>
-            <p className="text-xs font-medium text-ink-muted truncate">ผ่อนสำเร็จแล้ว</p>
+            <p className="text-xs font-medium text-ink-muted truncate">Paid off</p>
             <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum text-emerald-600 dark:text-emerald-400 truncate">
               +{thb(totalPaidOffAmount)}
             </p>
           </div>
           <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            {completedDebts.length > 0 ? `ปลดหนี้ ${completedDebts.length} รายการ 🎉` : 'ยอดสะสมจากการผ่อน'}
+            {completedDebts.length > 0 ? `${completedDebts.length} cleared 🎉` : 'Nothing cleared yet'}
           </p>
         </Card>
 
         {/* Card 4: Estimated Debt-Free Date */}
         <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
           <div>
-            <p className="text-xs font-medium text-brand truncate">คาดว่าจะปลอดหนี้</p>
+            <p className="text-xs font-medium text-brand truncate">Expected debt-free</p>
             <p className="mt-1 font-display text-base sm:text-xl font-extrabold text-ink dark:text-white tnum truncate">
-              {overallDebtFreeEstimation ? overallDebtFreeEstimation.dateStr : 'ไม่มีหนี้ 🎉'}
+              {overallDebtFreeEstimation ? overallDebtFreeEstimation.dateStr : 'No debts 🎉'}
             </p>
           </div>
           <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            {overallDebtFreeEstimation ? overallDebtFreeEstimation.relativeStr : 'อิสรภาพการเงิน 100%'}
+            {overallDebtFreeEstimation ? overallDebtFreeEstimation.relativeStr : 'Fully debt free'}
           </p>
         </Card>
       </div>
@@ -299,10 +299,10 @@ export function Debts() {
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="font-display text-lg font-bold text-ink">
-                  รายการหนี้สินและผ่อนชำระ
+                  Debts & installments
                 </h3>
                 <p className="text-xs text-ink-muted">
-                  แสดง {filteredDebts.length} จากทั้งหมด {liabilities.length} รายการ
+                  Showing {filteredDebts.length} of {liabilities.length}
                 </p>
               </div>
 
@@ -315,11 +315,11 @@ export function Debts() {
                   value={statusTab}
                   onChange={setStatusTab}
                   options={[
-                    { value: 'active', label: `กำลังผ่อน (${activeDebts.length})` },
-                    { value: 'completed', label: `ผ่อนสำเร็จ (${completedDebts.length})` },
-                    { value: 'all', label: `ทั้งหมด (${liabilities.length})` },
+                    { value: 'active', label: `Active (${activeDebts.length})` },
+                    { value: 'completed', label: `Paid off (${completedDebts.length})` },
+                    { value: 'all', label: `All (${liabilities.length})` },
                   ]}
-                  ariaLabel="เลือกสถานะหนี้สิน"
+                  ariaLabel="Choose debt status"
                 />
 
                 <AddButton
@@ -327,7 +327,7 @@ export function Debts() {
                     setEditingLiabilityId(null)
                     setLiabilitiesModalOpen(true)
                   }}
-                  label="เพิ่มรายการหนี้"
+                  label="Add debt"
                 />
               </div>
             </div>
@@ -345,7 +345,7 @@ export function Debts() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="ค้นหารายการหนี้, บัตร, สินเชื่อ หรือเจ้าหนี้…"
+                placeholder="Search debts, cards, loans or lenders…"
                 className="w-full rounded-xl border border-line bg-surface-muted py-2 pl-9 pr-8 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/20"
               />
               {search && (
@@ -366,9 +366,9 @@ export function Debts() {
               <FilterChip
                 active={activeCategoryFilter === 'all'}
                 onClick={() => setActiveCategoryFilter('all')}
-                aria-label="กรองหนี้สินทุกหมวดหมู่"
+                aria-label="Show debts in every category"
               >
-                ทุกหมวด
+                All categories
               </FilterChip>
 
               {(['installment', 'credit_card', 'mortgage', 'auto_loan', 'personal_loan', 'student_loan', 'other'] as DebtCategory[]).map((catKey) => {
@@ -382,7 +382,7 @@ export function Debts() {
                     active={isSelected}
                     onClick={() => setActiveCategoryFilter(catKey)}
                     count={count}
-                    aria-label={`กรองหนี้สินตามหมวด ${meta.label}`}
+                    aria-label={`Filter debts by category ${meta.label}`}
                   >
                     <span className="flex items-center gap-1.5">
                       <CategoryIcon category={catKey} className="h-3.5 w-3.5 shrink-0" />
@@ -403,15 +403,15 @@ export function Debts() {
                 </div>
                 <h3 className="font-display text-base font-bold text-ink dark:text-white">
                   {statusTab === 'active'
-                    ? 'ไม่มีรายการหนี้ที่กำลังผ่อน (Debt Free 🎉)'
+                    ? 'No active debts (Debt free 🎉)'
                     : statusTab === 'completed'
-                    ? 'ยังไม่มีรายการที่ผ่อนสำเร็จ'
-                    : 'ยังไม่มีรายการหนี้สิน'}
+                    ? 'Nothing paid off yet'
+                    : 'No debts yet'}
                 </h3>
                 <p className="text-xs text-ink-muted max-w-sm mx-auto mt-1">
                   {statusTab === 'active'
-                    ? 'คุณไม่มีภาระผ่อนคงค้าง หรือกดเพิ่มรายการเพื่อบันทึกรายการใหม่'
-                    : 'บันทึกและจัดการผ่อนสินค้า 0% สินเชื่อบ้าน รถ หรือกู้ยืมเพื่อเห็นภาพรวมหนี้สิน'}
+                    ? 'You have nothing left to pay, or add a new debt to start tracking.'
+                    : 'Add 0% installments, home or car loans and other borrowing to see everything in one place.'}
                 </p>
                 <Button
                   onClick={() => {
@@ -423,7 +423,7 @@ export function Debts() {
                   className="mt-4 h-9 gap-1.5 text-xs sm:text-sm cursor-pointer shadow-xs"
                 >
                   <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
-                  <span>เพิ่มรายการหนี้</span>
+                  <span>Add debt</span>
                 </Button>
               </div>
             ) : (
@@ -473,7 +473,7 @@ export function Debts() {
                               </span>
                             </div>
                             <p className="text-xs text-ink-muted truncate mt-0.5">
-                              {meta.label} {l.dueDay ? `· ทุกวันที่ ${l.dueDay}` : ''}
+                              {meta.label} {l.dueDay ? `· due on the ${l.dueDay} each month` : ''}
                             </p>
                           </div>
                         </div>
@@ -492,7 +492,7 @@ export function Debts() {
                                 setLiabilitiesModalOpen(true)
                               }}
                               className="p-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-surface-muted dark:hover:bg-white/10 transition-colors cursor-pointer"
-                              title="แก้ไขข้อมูลรายการนี้"
+                              title="Edit this debt"
                             >
                               <PencilIcon className="h-3.5 w-3.5" />
                             </button>
@@ -501,7 +501,7 @@ export function Debts() {
                               type="button"
                               onClick={() => setItemToDelete(l)}
                               className="p-1.5 rounded-lg text-ink-muted hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                              title="ลบรายการนี้"
+                              title="Delete this debt"
                             >
                               <TrashIcon className="h-3.5 w-3.5" />
                             </button>
@@ -516,25 +516,25 @@ export function Debts() {
                       {/* ── Item Body (Collapsible) ── */}
                       {!isCollapsed && (
                         <div className="p-3 sm:p-4 space-y-3 border-t border-line/60 bg-surface-muted/20">
-                          {/* 1. Grid 6 ช่องสรุปตัวเลขหลัก */}
+                          {/* 1. Summary numbers grid */}
                           <div className="rounded-xl bg-surface p-2.5 sm:p-3 border border-line/60 text-center shadow-2xs">
                             <div className="grid grid-cols-3 gap-1.5 pb-2.5 border-b border-line/50">
                               <div>
-                                <span className="text-xs font-medium text-ink-muted block">จ่ายไปแล้ว</span>
+                                <span className="text-xs font-medium text-ink-muted block">Paid so far</span>
                                 <p className="font-display font-bold text-xs sm:text-sm tnum text-emerald-600 dark:text-emerald-400 truncate">
                                   {thb(paidAmount)}
                                 </p>
                               </div>
 
                               <div>
-                                <span className="text-xs font-medium text-ink-muted block">คงเหลือ</span>
+                                <span className="text-xs font-medium text-ink-muted block">Remaining</span>
                                 <p className={`font-display font-extrabold text-xs sm:text-sm tnum truncate ${l.balance > 0 ? 'text-ink dark:text-white' : 'text-emerald-600 dark:text-emerald-400'}`}>
                                   {l.balance > 0 ? `-${thb(l.balance)}` : '฿0'}
                                 </p>
                               </div>
 
                               <div>
-                                <span className="text-xs font-medium text-ink-muted block">เงินต้น</span>
+                                <span className="text-xs font-medium text-ink-muted block">Original amount</span>
                                 <p className="font-display font-bold text-xs sm:text-sm tnum text-ink dark:text-white truncate">
                                   {thb(originalBal)}
                                 </p>
@@ -543,21 +543,21 @@ export function Debts() {
 
                             <div className="grid grid-cols-3 gap-1.5 pt-2.5">
                               <div>
-                                <span className="text-xs font-medium text-ink-muted block">ค่างวดต่อเดือน</span>
+                                <span className="text-xs font-medium text-ink-muted block">Monthly payment</span>
                                 <p className="font-display font-bold text-xs sm:text-sm tnum text-ink dark:text-white truncate">
                                   {l.monthlyPayment ? thb(l.monthlyPayment) : '-'}
                                 </p>
                               </div>
 
                               <div>
-                                <span className="text-xs font-medium text-ink-muted block">จ่ายล่าสุด</span>
+                                <span className="text-xs font-medium text-ink-muted block">Last paid</span>
                                 <p className="font-display font-semibold text-xs text-ink dark:text-white truncate">
-                                  {formatThaiDate(l.lastPaidDate)}
+                                  {formatDate(l.lastPaidDate)}
                                 </p>
                               </div>
 
                               <div>
-                                <span className="text-xs font-medium text-ink-muted block">เจ้าหนี้</span>
+                                <span className="text-xs font-medium text-ink-muted block">Lender</span>
                                 <p className="font-display font-semibold text-xs text-ink dark:text-white truncate">
                                   {l.lender || '-'}
                                 </p>
@@ -568,8 +568,8 @@ export function Debts() {
                           {/* 2. Progress Bar */}
                           <div className="space-y-1">
                             <div className="flex items-center justify-between text-xs font-semibold text-ink-muted">
-                              <span>ความคืบหน้า ({percent}%)</span>
-                              <span>{isCompleted ? 'ผ่อนครบทุกงวดแล้ว 🎉' : `เหลืออีก ${thb(l.balance)}`}</span>
+                              <span>Progress ({percent}%)</span>
+                              <span>{isCompleted ? 'All payments done 🎉' : `${thb(l.balance)} left`}</span>
                             </div>
                             <div className="h-1.5 w-full rounded-full bg-surface-muted overflow-hidden">
                               <div
@@ -581,13 +581,13 @@ export function Debts() {
                             </div>
                           </div>
 
-                          {/* 3. ตารางการผ่อนชำระ (Visual Installment Pills Matrix) */}
+                          {/* 3. Installment pills */}
                           {totalInst > 0 && (
                             <div className="space-y-1.5 pt-0.5">
                               <div className="flex items-center justify-between text-xs">
-                                <span className="font-bold text-ink dark:text-white">ตารางการผ่อนชำระ</span>
+                                <span className="font-bold text-ink dark:text-white">Payment schedule</span>
                                 <span className="text-ink-muted font-medium text-xs">
-                                  {paidInst}/{totalInst} (เหลือ {remainingInst} งวด)
+                                  {paidInst}/{totalInst} ({remainingInst} left)
                                 </span>
                               </div>
 
@@ -610,10 +610,10 @@ export function Debts() {
                                       }}
                                       title={
                                         isPaid
-                                          ? `งวดที่ ${termNum} (ชำระแล้ว - คลิกเพื่อ Undo)`
+                                          ? `Payment ${termNum} (paid, click to undo)`
                                           : isNext
-                                          ? `งวดที่ ${termNum} (งวดถัดไป - คลิกเพื่อจ่าย)`
-                                          : `งวดที่ ${termNum} (ยังไม่ถึงกำหนด)`
+                                          ? `Payment ${termNum} (next, click to mark paid)`
+                                          : `Payment ${termNum} (not due yet)`
                                       }
                                       className={`flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg text-xs font-bold border transition-all cursor-pointer select-none ${
                                         isPaid
@@ -647,7 +647,7 @@ export function Debts() {
                           {/* 4. Estimated Payoff Date */}
                           {isInst && !isCompleted && (
                             <div className="rounded-xl bg-surface px-3 py-1.5 text-xs text-ink-muted border border-line/60 flex items-center justify-between">
-                              <span>วันที่คาดว่าจะผ่อนหมด :</span>
+                              <span>Expected last payment:</span>
                               <strong className="text-ink dark:text-white font-bold">{payoff.dateStr}</strong>
                             </div>
                           )}
@@ -661,13 +661,13 @@ export function Debts() {
                               className="w-full text-xs font-semibold py-1.5"
                             >
                               <ClockIcon className="h-3.5 w-3.5 mr-1 text-ink-muted" />
-                              ประวัติการชำระ
+                              Payment history
                             </Button>
 
                             {isCompleted ? (
                               <div className="flex items-center justify-center gap-1 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold text-xs py-1.5">
                                 <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
-                                <span>ปลดหนี้แล้ว 🎉</span>
+                                <span>Paid off 🎉</span>
                               </div>
                             ) : dueInfo.status === 'paid' ? (
                               <Button
@@ -677,7 +677,7 @@ export function Debts() {
                                 className="w-full text-xs font-semibold py-1.5 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
                               >
                                 <CheckIcon className="h-3.5 w-3.5 mr-1" strokeWidth={2.4} />
-                                จ่ายแล้ว (Undo)
+                                Paid (Undo)
                               </Button>
                             ) : (
                               <Button
@@ -687,7 +687,7 @@ export function Debts() {
                                 className="w-full text-xs font-bold py-1.5 bg-amber-400 hover:bg-amber-500 text-amber-950 dark:bg-amber-400 dark:text-amber-950 shadow-xs"
                               >
                                 <CheckIcon className="h-3.5 w-3.5 mr-1" strokeWidth={2.4} />
-                                จ่ายค่างวด {l.monthlyPayment ? `(${thb(l.monthlyPayment)})` : ''}
+                                Mark as paid {l.monthlyPayment ? `(${thb(l.monthlyPayment)})` : ''}
                               </Button>
                             )}
                           </div>
@@ -706,13 +706,13 @@ export function Debts() {
       <Modal
         open={historyModalLiability !== null}
         onClose={() => setHistoryModalLiability(null)}
-        title={historyModalLiability ? `ประวัติการชำระ: ${historyModalLiability.name}` : 'ประวัติการชำระ'}
-        description="ประวัติบันทึกการตัดรอบและชำระค่างวดที่บันทึกไว้ใน Activity Logs"
+        title={historyModalLiability ? `Payment history: ${historyModalLiability.name}` : 'Payment history'}
+        description="Payments recorded for this debt in your Activity Logs"
         size="lg"
         footer={
           <div className="flex items-center justify-end w-full">
             <Button variant="secondary" onClick={() => setHistoryModalLiability(null)}>
-              ปิด
+              Close
             </Button>
           </div>
         }
@@ -720,7 +720,7 @@ export function Debts() {
         <div className="space-y-3 py-1">
           {historyLogs.length === 0 ? (
             <div className="py-8 text-center text-ink-muted text-sm">
-              ยังไม่มีประวัติการทำรายการสำหรับหนี้สินรายการนี้
+              No payment history for this debt yet
             </div>
           ) : (
             <div className="divide-y divide-line/60 dark:divide-white/5 max-h-[60vh] overflow-y-auto">
@@ -729,7 +729,7 @@ export function Debts() {
                   <div>
                     <p className="font-semibold text-ink dark:text-white">{log.note}</p>
                     <p className="text-xs text-ink-faint mt-0.5">
-                      {new Date(log.timestamp).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })}
+                      {new Date(log.timestamp).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
                     </p>
                   </div>
                   <span className="text-xs font-bold px-2 py-0.5 rounded bg-surface-muted text-ink-muted uppercase">
@@ -746,21 +746,21 @@ export function Debts() {
       <Modal
         open={itemToDelete !== null}
         onClose={() => setItemToDelete(null)}
-        title="ยืนยันการลบรายการหนี้"
+        title="Delete this debt?"
         size="sm"
         footer={
           <div className="flex items-center justify-end gap-2 w-full">
             <Button variant="secondary" onClick={() => setItemToDelete(null)}>
-              ยกเลิก
+              Cancel
             </Button>
             <Button variant="danger" onClick={handleDeleteConfirm}>
-              ลบรายการ
+              Delete
             </Button>
           </div>
         }
       >
         <p className="text-sm text-ink-muted py-2">
-          คุณแน่ใจหรือไม่ว่าต้องการลบรายการ &ldquo;<strong className="text-ink dark:text-white">{itemToDelete?.name}</strong>&rdquo; ออกจากระบบ? การลบนี้จะไม่สามารถย้อนคืนได้
+          Are you sure you want to delete &ldquo;<strong className="text-ink dark:text-white">{itemToDelete?.name}</strong>&rdquo;? This cannot be undone.
         </p>
       </Modal>
 
