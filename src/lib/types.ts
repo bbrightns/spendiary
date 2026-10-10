@@ -199,7 +199,7 @@ export interface DividendRecord {
 export interface HoldingLog {
   id: string
   timestamp: string        // ISO datetime
-  action: 'add' | 'buy_more' | 'edit' | 'sell' | 'dividend' | 'note'
+  action: 'add' | 'buy_more' | 'edit' | 'sell' | 'dividend' | 'note' | 'transfer'
   holdingName: string
   ticker: string
   assetClass: AssetClass
@@ -223,6 +223,27 @@ export interface HoldingLog {
   withholdingTax?: number
   netDividend?: number
   dividendRecordId?: string
+  /** Set on 'transfer' logs: coins / grams moved between two storage locations of one holding */
+  transfer?: LocationTransfer
+}
+
+/** Details of moving a holding between its own storage locations (units are sats for BTC, grams for gold). */
+export interface LocationTransfer {
+  fromLocationId: string
+  fromName: string
+  toLocationId: string
+  toName: string
+  /** True when the destination location was created by this transfer */
+  destCreated: boolean
+  unit: 'sats' | 'grams'
+  /** Amount that left the source location */
+  amount: number
+  /** Network / handling fee that disappeared in transit (same unit) */
+  fee: number
+  /** Amount that arrived at the destination (amount - fee) */
+  received: number
+  /** Cost basis (THB) that travelled with the coins */
+  costMoved: number
 }
 
 export interface FixedCostItem {

@@ -281,6 +281,18 @@ interface DataContextValue {
   removeHolding: (id: string) => void
   toggleHoldingLock: (id: string) => void
   toggleLocationLock: (holdingId: string, locationId: string, isBtc: boolean) => void
+  transferLocation: (params: {
+    holdingId: string
+    fromLocationId: string
+    /** Existing destination; omit to create one with `newLocationName` */
+    toLocationId?: string
+    newLocationName?: string
+    /** Sats (BTC) or grams (gold) leaving the source */
+    amount: number
+    /** Part of `amount` lost in transit (same unit) */
+    fee?: number
+    timestamp?: string
+  }) => void
   reorderHoldings: (ids: string[]) => void
   sellHolding: (params: {
     holdingId: string
@@ -1189,6 +1201,111 @@ export function DataProvider({ children }: { children: ReactNode }) {
             h.id === id ? { ...h, isLocked: !h.isLocked } : h
           ),
         })),
+      transferLocation: ({ holdingId, fromLocationId, toLocationId, newLocationName, amount, fee = 0, timestamp }) =>
+        updateData((prev) => {
+          const holding = prev.holdings.find((h) => h.id === holdingId)
+          if (!holding) return prev
+          const isBtc = holding.assetClass === 'crypto' && (holding.btcLocations?.length ?? 0) > 0
+          const isGold = holding.assetClass === 'gold' && (holding.goldLocations?.length ?? 0) > 0
+          if (!isBtc && !isGold) return prev
+
+          type Loc = { id: string; name: string; qty: number; thbSpent: number; isLocked?: boolean }
+          const rawLocs: Loc[] = isBtc
+            ? (holding.btcLocations ?? []).map((l) => ({ id: l.id, name: l.name, qty: l.satoshi, thbSpent: l.thbSpent, isLocked: l.isLocked }))
+            : (holding.goldLocations ?? []).map((l) => ({ id: l.id, name: l.name, qty: l.grams, thbSpent: l.thbSpent, isLocked: l.isLocked }))
+
+          const round = (n: number) => (isBtc ? Math.round(n) : parseFloat(n.toFixed(4)))
+          const from = rawLocs.find((l) => l.id === fromLocationId)
+          if (!from || from.isLocked) return prev
+
+          const moveAmount = round(amount)
+          const feeAmount = round(fee)
+          const eps = isBtc ? 0 : 0.00005
+          if (!(moveAmount > 0) || moveAmount > from.qty + eps || feeAmount < 0 || feeAmount >= moveAmount) return prev
+
+          const received = round(moveAmount - feeAmount)
+          const movesAll = moveAmount >= from.qty - eps
+          // Cost basis travels with the coins; moving everything moves the exact remaining cost
+          const costMoved = movesAll ? from.thbSpent : parseFloat(((from.thbSpent * moveAmount) / from.qty).toFixed(2))
+
+          // Destination: an existing location, or a (possibly same-named) one
+          const typedName = (newLocationName ?? '').trim()
+          let dest: Loc | undefined = toLocationId ? rawLocs.find((l) => l.id === toLocationId) : undefined
+          if (!dest && typedName) dest = rawLocs.find((l) => l.name.toLowerCase() === typedName.toLowerCase())
+          if (dest && dest.id === from.id) return prev
+          if (!dest && !typedName) return prev
+          const destCreated = !dest
+          const destId = dest ? dest.id : newId()
+          const destName = dest ? dest.name : typedName
+
+          const nextLocs: Loc[] = rawLocs.map((l) => {
+            if (l.id === from.id) {
+              const qty = movesAll ? 0 : round(l.qty - moveAmount)
+              return { ...l, qty, thbSpent: movesAll ? 0 : parseFloat((l.thbSpent - costMoved).toFixed(2)) }
+            }
+            if (dest && l.id === dest.id) {
+              return { ...l, qty: round(l.qty + received), thbSpent: parseFloat((l.thbSpent + costMoved).toFixed(2)) }
+            }
+            return l
+          })
+          if (destCreated) nextLocs.push({ id: destId, name: destName, qty: received, thbSpent: costMoved })
+
+          const toBtc = (l: Loc) => ({ id: l.id, name: l.name, satoshi: l.qty, thbSpent: l.thbSpent, ...(l.isLocked ? { isLocked: true } : {}) })
+          const toGold = (l: Loc) => ({ id: l.id, name: l.name, grams: l.qty, thbSpent: l.thbSpent, ...(l.isLocked ? { isLocked: true } : {}) })
+
+          // Holding totals: the fee shrinks the coins, the money put in stays → average cost rises slightly
+          const prevUnits = holding.units ?? holding.totalUnits ?? 0
+          const feeUnits = isBtc ? feeAmount / 100_000_000 : feeAmount
+          const newUnits = Math.max(0, prevUnits - feeUnits)
+          const totalThb = holding.totalThbInvested ?? 0
+          const newAvg = newUnits > 0 ? totalThb / newUnits : holding.avgCost
+
+          const afterHolding: Holding = {
+            ...holding,
+            units: newUnits,
+            totalUnits: newUnits,
+            avgCost: newAvg,
+            avgCostThb: newAvg,
+            ...(isBtc ? { btcLocations: nextLocs.map(toBtc) } : { goldLocations: nextLocs.map(toGold) }),
+          }
+
+          const unitLabel = isBtc ? 'sats' : 'g'
+          const fmtQty = (n: number) => (isBtc ? n.toLocaleString() : n.toFixed(4))
+          const note = `Moved ${fmtQty(moveAmount)} ${unitLabel} from ${from.name} to ${destName}${
+            feeAmount > 0 ? ` · network fee ${fmtQty(feeAmount)} ${unitLabel}` : ''
+          }`
+
+          const logEntry: HoldingLog = {
+            id: newId(),
+            timestamp: timestamp ?? new Date().toISOString(),
+            action: 'transfer',
+            holdingName: holding.name,
+            ticker: holding.ticker,
+            assetClass: holding.assetClass,
+            note,
+            holdingId: holding.id,
+            previousHoldingState: JSON.parse(JSON.stringify(holding)),
+            afterHoldingState: afterHolding,
+            transfer: {
+              fromLocationId: from.id,
+              fromName: from.name,
+              toLocationId: destId,
+              toName: destName,
+              destCreated,
+              unit: isBtc ? 'sats' : 'grams',
+              amount: moveAmount,
+              fee: feeAmount,
+              received,
+              costMoved,
+            },
+          }
+
+          return {
+            ...prev,
+            holdings: prev.holdings.map((h) => (h.id === holding.id ? afterHolding : h)),
+            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
+          }
+        }),
       toggleLocationLock: (holdingId, locationId, isBtc) =>
         updateData((prev) => ({
           ...prev,
@@ -1626,6 +1743,44 @@ export function DataProvider({ children }: { children: ReactNode }) {
                   avgCostThb: newAvgCost,
                   ...(updatedGoldLocs ? { goldLocations: updatedGoldLocs } : {}),
                   ...(updatedBtcLocs ? { btcLocations: updatedBtcLocs } : {}),
+                }
+              }
+            } else if (log.action === 'transfer') {
+              // Revert a location transfer: coins and their cost go back to the source location
+              const t = log.transfer
+              if (t && hIndex >= 0) {
+                const current = updatedHoldings[hIndex]
+                const adjust = <T extends { id: string; thbSpent: number }>(locs: T[], key: 'satoshi' | 'grams'): T[] =>
+                  locs
+                    .map((l) => {
+                      const qty = l as unknown as Record<string, number>
+                      if (l.id === t.fromLocationId) {
+                        return { ...l, [key]: qty[key] + t.amount, thbSpent: parseFloat((l.thbSpent + t.costMoved).toFixed(2)) }
+                      }
+                      if (l.id === t.toLocationId) {
+                        return {
+                          ...l,
+                          [key]: Math.max(0, qty[key] - t.received),
+                          thbSpent: Math.max(0, parseFloat((l.thbSpent - t.costMoved).toFixed(2))),
+                        }
+                      }
+                      return l
+                    })
+                    // A location that only existed because of this transfer goes away with it
+                    .filter((l) => !(t.destCreated && l.id === t.toLocationId && (l as unknown as Record<string, number>)[key] <= 0))
+
+                const feeUnits = t.unit === 'sats' ? t.fee / 100_000_000 : t.fee
+                const newUnits = (current.units ?? current.totalUnits ?? 0) + feeUnits
+                const totalThb = current.totalThbInvested ?? 0
+                const newAvg = newUnits > 0 ? totalThb / newUnits : current.avgCost
+                updatedHoldings[hIndex] = {
+                  ...current,
+                  units: newUnits,
+                  totalUnits: newUnits,
+                  avgCost: newAvg,
+                  avgCostThb: newAvg,
+                  ...(current.btcLocations && t.unit === 'sats' ? { btcLocations: adjust(current.btcLocations, 'satoshi') } : {}),
+                  ...(current.goldLocations && t.unit === 'grams' ? { goldLocations: adjust(current.goldLocations, 'grams') } : {}),
                 }
               }
             } else if (log.action === 'add') {

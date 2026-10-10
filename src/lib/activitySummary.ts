@@ -545,6 +545,8 @@ export function availablePeriods(logs: HoldingLog[]): AvailablePeriods {
  * profit, so they are kept out of the P/L numbers.
  */
 export function isInvestmentLog(log: HoldingLog): boolean {
+  // Moving coins between your own locations is not a trade
+  if (log.action === 'transfer') return false
   if (log.assetClass === 'cash' || log.ticker === 'CASH' || log.holdingName === 'Cash Accounts') return false
   if (log.ticker === 'FIXED' || log.holdingName.startsWith('Fixed Cost:')) return false
   return true

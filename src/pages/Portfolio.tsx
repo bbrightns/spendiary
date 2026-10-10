@@ -14,6 +14,7 @@ import { PnLPill, PnLText } from '../components/ui/PnL'
 import { HoldingForm } from '../components/forms/HoldingForm'
 import { BuyMoreForm } from '../components/forms/BuyMoreForm'
 import { SellHoldingModal } from '../components/forms/SellHoldingModal'
+import { MoveLocationModal } from '../components/forms/MoveLocationModal'
 import { ConfirmDividendModal } from '../components/forms/ConfirmDividendModal'
 import { Modal } from '../components/ui/Modal'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
@@ -147,6 +148,7 @@ export function Portfolio() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Holding | null>(null)
   const [buyOpen, setBuyOpen] = useState(false)
+  const [moveTarget, setMoveTarget] = useState<{ holding: Holding; locId: string } | null>(null)
   const [buying, setBuying] = useState<Holding | null>(null)
   const [sellOpen, setSellOpen] = useState(false)
   const [selling, setSelling] = useState<Holding | null>(null)
@@ -1641,6 +1643,34 @@ export function Portfolio() {
                 </button>
               )}
 
+              {isLocLocked ? (
+                <div
+                  title="This location is locked. Unlock it first to move coins out."
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-4 text-center text-base leading-none text-ink-muted/40">⇄</span>
+                    <span>Move to another location</span>
+                  </div>
+                  <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <LockClosedIcon className="h-3 w-3" /> Locked
+                  </span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const t = pocketMenu
+                    closePocketMenu()
+                    setMoveTarget({ holding: t.holding, locId: t.locId })
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-sky-600 dark:text-sky-400 hover:bg-sky-500/10 transition-colors cursor-pointer text-left"
+                >
+                  <span className="w-4 text-center text-base leading-none">⇄</span>
+                  <span>Move to another location</span>
+                </button>
+              )}
+
               {loc && (
                 isLocLocked ? (
                   <div
@@ -1729,6 +1759,12 @@ export function Portfolio() {
           setLockedLocationId(null)
         }}
         onSwitchToBuy={switchToBuy}
+      />
+      <MoveLocationModal
+        open={moveTarget !== null}
+        holding={moveTarget?.holding ?? null}
+        fromLocationId={moveTarget?.locId ?? null}
+        onClose={() => setMoveTarget(null)}
       />
       <ConfirmDividendModal
         open={dividendOpen}

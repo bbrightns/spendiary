@@ -47,6 +47,15 @@ function getLogActionMeta(log: HoldingLog): ActionMeta {
     }
   }
 
+  if (log.action === 'transfer') {
+    return {
+      label: 'Transfer',
+      style: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20',
+      icon: '⇄',
+      isPriceUpdate: false,
+    }
+  }
+
   if (log.action === 'dividend') {
     return {
       label: 'Dividend',
@@ -358,6 +367,7 @@ const ACTION_FILTERS = [
   { key: 'buy', label: 'Buy / Add' },
   { key: 'sell', label: 'Sold' },
   { key: 'dividend', label: 'Dividend' },
+  { key: 'transfer', label: 'Transfer' },
   { key: 'edit', label: 'Edited' },
 ] as const
 
@@ -401,7 +411,7 @@ export function HoldingLogs() {
   }
 
   const [assetFilter, setAssetFilter] = useState<AssetClass | 'all'>('all')
-  const [actionFilter, setActionFilter] = useState<'all' | 'buy' | 'sell' | 'dividend' | 'edit'>('all')
+  const [actionFilter, setActionFilter] = useState<'all' | 'buy' | 'sell' | 'dividend' | 'transfer' | 'edit'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [datePreset, setDatePreset] = useState<'all' | 'month' | '30d' | 'year' | 'custom'>('all')
   const [dateFrom, setDateFrom] = useState('')
@@ -594,6 +604,31 @@ export function HoldingLogs() {
 
   // Helper to render before -> after comparison details
   const renderStateComparison = (log: typeof filtered[number]) => {
+    // ── Transfer: where the coins went, and what (if anything) was lost on the way ──
+    if (log.action === 'transfer' && log.transfer) {
+      const t = log.transfer
+      const fmtQty = (n: number) => (t.unit === 'sats' ? `${n.toLocaleString()} sats` : `${n.toFixed(4)} g`)
+      return (
+        <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-3 rounded-xl border border-line/60 bg-surface-muted/50 p-3.5 sm:grid-cols-3">
+          <div className="min-w-0">
+            <div className="text-xs font-semibold text-ink-muted">⇄ Moved</div>
+            <div className="mt-1 text-base font-bold tnum text-ink">{fmtQty(t.amount)}</div>
+            <div className="mt-0.5 truncate text-xs text-ink-faint">{t.fromName} → {t.toName}</div>
+          </div>
+          <div className="min-w-0">
+            <div className="text-xs font-semibold text-ink-muted">📥 Arrived</div>
+            <div className="mt-1 text-base font-bold tnum text-ink">{fmtQty(t.received)}</div>
+            <div className="mt-0.5 truncate text-xs text-ink-faint">{t.destCreated ? 'New location' : 'Existing location'}</div>
+          </div>
+          <div className="min-w-0">
+            <div className="text-xs font-semibold text-ink-muted">🪙 Network fee</div>
+            <div className="mt-1 text-base font-bold tnum text-ink">{t.fee > 0 ? fmtQty(t.fee) : 'None'}</div>
+            <div className="mt-0.5 truncate text-xs text-ink-faint">Cost carried over: {thb(t.costMoved)}</div>
+          </div>
+        </div>
+      )
+    }
+
     // ── Dividend Action: Unified 3-Column Summary Strip ──
     if (log.action === 'dividend') {
       const netDiv = log.netDividend ?? (log.note.match(/(?:dividend|ปันผล)\s*฿([0-9,.]+)/i) ? parseFloat(log.note.match(/(?:dividend|ปันผล)\s*฿([0-9,.]+)/i)![1].replace(/,/g, '')) : null)
