@@ -137,10 +137,10 @@ export function Portfolio() {
         document.body.removeChild(textarea)
       }
       setCopied(true)
-      showToast('คัดลอกข้อมูลพอร์ตในรูปแบบ Markdown สำเร็จแล้ว', 'success')
+      showToast('Portfolio copied as Markdown', 'success')
       setTimeout(() => setCopied(false), 2500)
     } catch {
-      showToast('ไม่สามารถคัดลอก Markdown ได้', 'error')
+      showToast('Could not copy Markdown', 'error')
     }
   }
 
@@ -245,7 +245,7 @@ export function Portfolio() {
   const openAdd = () => { setEditing(null); setFormOpen(true) }
   const openEdit = (h: Holding) => {
     if (h.isLocked) {
-      showToast(`สินทรัพย์ "${h.name}" ล็อคอยู่ใน Safe-Haven (ปลดล็อคก่อนหากต้องการแก้ไข)`, 'warn')
+      showToast(`"${h.name}" is locked. Unlock it first to edit.`, 'warn')
       return
     }
     setEditing(h)
@@ -254,13 +254,13 @@ export function Portfolio() {
   const [lockedLocationId, setLockedLocationId] = useState<string | null>(null)
   const openBuy = (h: Holding, locationId?: string) => {
     if (h.isLocked) {
-      showToast(`สินทรัพย์ "${h.name}" ล็อคอยู่ใน Safe-Haven (ปลดล็อคก่อนหากต้องการทำรายการ)`, 'warn')
+      showToast(`"${h.name}" is locked. Unlock it first to make changes.`, 'warn')
       return
     }
     if (locationId) {
       const loc = (h.btcLocations ?? []).find((l) => l.id === locationId) ?? (h.goldLocations ?? []).find((l) => l.id === locationId)
       if (loc?.isLocked) {
-        showToast(`กระเป๋า "${loc.name}" อยู่ในสถานะล็อค (Lock) (ปลดล็อคก่อนหากต้องการซื้อเข้า)`, 'warn')
+        showToast(`"${loc.name}" is locked. Unlock it first to buy into it.`, 'warn')
         return
       }
     }
@@ -272,13 +272,13 @@ export function Portfolio() {
   }
   const openSell = (h: Holding, locationId?: string) => {
     if (h.isLocked) {
-      showToast(`สินทรัพย์ "${h.name}" ล็อคอยู่ใน Safe-Haven (ปลดล็อคก่อนหากต้องการขาย)`, 'warn')
+      showToast(`"${h.name}" is locked. Unlock it first to sell.`, 'warn')
       return
     }
     if (locationId) {
       const loc = (h.btcLocations ?? []).find((l) => l.id === locationId) ?? (h.goldLocations ?? []).find((l) => l.id === locationId)
       if (loc?.isLocked) {
-        showToast(`กระเป๋า "${loc.name}" อยู่ในสถานะล็อค (Lock) (ปลดล็อคก่อนหากต้องการขาย)`, 'warn')
+        showToast(`"${loc.name}" is locked. Unlock it first to sell from it.`, 'warn')
         return
       }
     }
@@ -292,7 +292,7 @@ export function Portfolio() {
   const [dividendHolding, setDividendHolding] = useState<Holding | null>(null)
   const openDividend = (h: Holding) => {
     if (h.isLocked) {
-      showToast(`สินทรัพย์ "${h.name}" ล็อคอยู่ใน Safe-Haven (ปลดล็อคก่อนหากต้องการบันทึกปันผล)`, 'warn')
+      showToast(`"${h.name}" is locked. Unlock it first to record a dividend.`, 'warn')
       return
     }
     setDividendHolding(h)
@@ -318,7 +318,7 @@ export function Portfolio() {
   }
   function openLocEdit(holdingId: string, loc: BtcLocation | import('../lib/types').GoldLocation) {
     if (loc.isLocked) {
-      showToast(`กระเป๋า "${loc.name}" อยู่ในสถานะล็อค (Lock) (ปลดล็อคก่อนหากต้องการแก้ไข)`, 'warn')
+      showToast(`"${loc.name}" is locked. Unlock it first to edit.`, 'warn')
       return
     }
     setLocEditHoldingId(holdingId)
@@ -509,8 +509,8 @@ export function Portfolio() {
         const bahtGold = h.units / GRAMS_PER_BAHT_GOLD
         const avgCostPerBaht = (h.units > 0 ? h.costBasis / h.units : h.avgCost) * GRAMS_PER_BAHT_GOLD
         const pricePerBaht = h.price * GRAMS_PER_BAHT_GOLD
-        nativeDetails = `${bahtGold.toFixed(4)} บาททอง | Avg: ฿${Math.round(avgCostPerBaht).toLocaleString()}/บาท | Price: ฿${Math.round(pricePerBaht).toLocaleString()}/บาท`
-        locationsStr = (h.goldLocations ?? []).map((loc) => `${loc.name}: ${(loc.grams / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาททอง (${loc.grams}g, ฿${loc.thbSpent.toLocaleString()})`).join('; ')
+        nativeDetails = `${bahtGold.toFixed(4)} gold baht | Avg: ฿${Math.round(avgCostPerBaht).toLocaleString()}/gold baht | Price: ฿${Math.round(pricePerBaht).toLocaleString()}/gold baht`
+        locationsStr = (h.goldLocations ?? []).map((loc) => `${loc.name}: ${(loc.grams / GRAMS_PER_BAHT_GOLD).toFixed(4)} gold baht (${loc.grams}g, ฿${loc.thbSpent.toLocaleString()})`).join('; ')
       } else if (isFund) {
         nativeDetails = `Avg NAV: ฿${h.avgCost.toFixed(4)} | Current NAV: ฿${h.price.toFixed(4)}`
       } else if (isRealEstate) {
@@ -581,9 +581,9 @@ export function Portfolio() {
     const unitsLabel = isBtc
       ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats · avg ${money(btcAvgCostUsd, 'USD')}/BTC`
       : isGold
-      ? `${h.units.toFixed(4)} g (${goldBaht.toFixed(4)} บาท) · avg ${thb(goldAvgCostPerBaht)}/บาท`
+      ? `${h.units.toFixed(4)} g (${goldBaht.toFixed(4)} gold baht) · avg ${thb(goldAvgCostPerBaht)}/gold baht`
       : isRealEstate
-      ? `${h.units} ${h.units > 1 ? 'units' : 'หลัง/ห้อง'} · ต้นทุน ฿${h.costBasis.toLocaleString()}`
+      ? `${h.units} ${h.units > 1 ? 'units' : 'unit'} · cost ฿${h.costBasis.toLocaleString()}`
       : `${h.units.toLocaleString()} ${unitLabel(h.assetClass)} · ${ASSET_META[h.assetClass]?.label ?? h.assetClass}`
 
     const staleIndicator = isPriceStale(h.updatedAt) && (
@@ -671,7 +671,7 @@ export function Portfolio() {
                 </p>
                 {h.isLocked && (
                   <span
-                    title="Safe-Haven Locked (ล็อคป้องกันการขายหรือลบ)"
+                    title="Locked (protected from selling or deleting)"
                     className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 text-xs font-semibold tracking-tight shrink-0"
                   >
                     <LockClosedIcon className="h-3 w-3" />
@@ -723,7 +723,7 @@ export function Portfolio() {
                 }
               }}
               aria-label={`Actions for ${h.name}`}
-              title="Actions / เมนูจัดการ"
+              title="Actions"
               className={`relative grid h-8 w-8 place-items-center rounded-full transition-all cursor-pointer ${
                 activeMenuHoldingId === h.id
                   ? 'bg-ink text-white dark:bg-[#4f46e5] shadow-xs'
@@ -748,10 +748,10 @@ export function Portfolio() {
                   type="button"
                   onClick={() => openBuy(h)}
                   className="inline-flex items-center gap-1 rounded-md bg-brand-soft px-2 py-1 text-xs font-semibold text-brand transition-colors hover:bg-brand hover:text-white cursor-pointer active:scale-95"
-                  title="ซื้อเพิ่ม / เพิ่มกระเป๋าใหม่"
+                  title="Buy more / add a new location"
                 >
                   <PlusIcon className="h-3 w-3" strokeWidth={2.5} />
-                  เพิ่มกระเป๋า
+                  Add location
                 </button>
                 <IconButton
                   icon={<PencilIcon className="h-3.5 w-3.5" />}
@@ -772,7 +772,7 @@ export function Portfolio() {
                     className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong py-2.5 text-sm font-semibold text-brand transition-colors hover:bg-brand-soft cursor-pointer active:scale-[0.99]"
                   >
                     <PlusIcon className="h-4 w-4" strokeWidth={2.4} />
-                    เพิ่มกระเป๋าแรก (Buy)
+                    Add first location (Buy)
                   </button>
                 )
                 : (
@@ -788,7 +788,7 @@ export function Portfolio() {
                                 <p className="truncate text-sm font-semibold text-ink">{loc.name}</p>
                                 {loc.isLocked && (
                                   <span
-                                    title="กระเป๋าล็อคอยู่ (Lock - ป้องกันการขาย)"
+                                    title="Location is locked (protected from selling)"
                                     className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 shrink-0"
                                   >
                                     <LockClosedIcon className="h-2.5 w-2.5" />
@@ -827,7 +827,7 @@ export function Portfolio() {
                     className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong py-2.5 text-sm font-semibold text-brand transition-colors hover:bg-brand-soft cursor-pointer active:scale-[0.99]"
                   >
                     <PlusIcon className="h-4 w-4" strokeWidth={2.4} />
-                    เพิ่มกระเป๋าแรก (Buy)
+                    Add first location (Buy)
                   </button>
                 )
                 : (
@@ -843,7 +843,7 @@ export function Portfolio() {
                                 <p className="truncate text-sm font-semibold text-ink">{loc.name}</p>
                                 {loc.isLocked && (
                                   <span
-                                    title="กระเป๋าล็อคอยู่ (Lock - ป้องกันการขาย)"
+                                    title="Location is locked (protected from selling)"
                                     className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 shrink-0"
                                   >
                                     <LockClosedIcon className="h-2.5 w-2.5" />
@@ -862,7 +862,7 @@ export function Portfolio() {
                               })()}
                             </div>
                             <p className="tnum text-xs text-ink-muted">
-                              {loc.grams.toFixed(4)} g ({locBaht.toFixed(4)} บาททอง) · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBaht)}/บาททอง
+                              {loc.grams.toFixed(4)} g ({locBaht.toFixed(4)} gold baht) · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBaht)}/gold baht
                             </p>
                           </div>
                           {pocketMenuButton(loc.id, loc.name)}
@@ -954,7 +954,7 @@ export function Portfolio() {
             {/* Gold Badge */}
             {effectiveGoldPerBaht !== null && (
               <div
-                title="คำนวณราคาทองคำแท่ง 96.5% ต่อบาททอง"
+                title="Gold bar price (96.5%) per gold baht"
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface border border-line/70 text-ink shadow-2xs"
               >
                 <span className="text-xs">🪙</span>
@@ -962,7 +962,7 @@ export function Portfolio() {
                 <span className="tnum text-xs font-bold text-amber-600 dark:text-amber-400 tracking-tight">
                   ฿{effectiveGoldPerBaht.toLocaleString()}
                 </span>
-                <span className="hidden sm:inline text-xs text-ink-muted">/บาททอง</span>
+                <span className="hidden sm:inline text-xs text-ink-muted">/gold baht</span>
               </div>
             )}
           </div>
@@ -1024,7 +1024,7 @@ export function Portfolio() {
                   { value: 'class', label: 'By Class' },
                   { value: 'group', label: 'By Group / Tag' },
                 ]}
-                ariaLabel="เลือกมุมมอง Asset Allocation"
+                ariaLabel="Choose allocation view"
               />
             </div>
 
@@ -1169,7 +1169,7 @@ export function Portfolio() {
                         { value: 'list', label: 'All Holdings' },
                         { value: 'group', label: 'Grouped View' },
                       ]}
-                      ariaLabel="เลือกรูปแบบการแสดงรายการสินทรัพย์"
+                      ariaLabel="Choose how to list assets"
                     />
                     <AddButton onClick={openAdd} label="Add holding" />
                   </div>
@@ -1265,7 +1265,7 @@ export function Portfolio() {
                         { value: 'pct', label: '%' },
                         { value: 'thb', label: '฿' },
                       ]}
-                      ariaLabel="สลับการแสดงกำไร/ขาดทุน: % หรือ ฿"
+                      ariaLabel="Switch profit/loss display: % or ฿"
                     />
                   </div>
                 </div>
@@ -1385,8 +1385,8 @@ export function Portfolio() {
                 toggleHoldingLock(target.id)
                 showToast(
                   target.isLocked
-                    ? `ปลดล็อค "${target.name}" ออกจาก Safe-Haven แล้ว`
-                    : `ล็อค "${target.name}" เข้า Safe-Haven เรียบร้อย (ป้องกันการขาย/ลบ)`,
+                    ? `"${target.name}" unlocked`
+                    : `"${target.name}" locked (protected from selling or deleting)`,
                   'info'
                 )
               }}
@@ -1395,12 +1395,12 @@ export function Portfolio() {
               {activeMenuHolding.isLocked ? (
                 <>
                   <LockOpenIcon className="h-4 w-4 text-amber-500 shrink-0" strokeWidth={2} />
-                  <span>ปลดล็อค (Unlock)</span>
+                  <span>Unlock</span>
                 </>
               ) : (
                 <>
                   <LockClosedIcon className="h-4 w-4 text-amber-500 shrink-0" strokeWidth={2} />
-                  <span>ล็อคเข้า Safe-Haven</span>
+                  <span>Lock (protect from selling)</span>
                 </>
               )}
             </button>
@@ -1408,15 +1408,15 @@ export function Portfolio() {
 
             {activeMenuHolding.isLocked ? (
               <div
-                title="สินทรัพย์นี้ล็อคอยู่ใน Safe-Haven (ปลดล็อคก่อนหากต้องการทำรายการ)"
+                title="This asset is locked. Unlock it first to make changes."
                 className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
               >
                 <div className="flex items-center gap-2.5">
                   <PlusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
-                  <span>ซื้อเพิ่ม (Buy)</span>
+                  <span>Buy more</span>
                 </div>
                 <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                  <LockClosedIcon className="h-3 w-3" /> ล็อคอยู่
+                  <LockClosedIcon className="h-3 w-3" /> Locked
                 </span>
               </div>
             ) : (
@@ -1431,21 +1431,21 @@ export function Portfolio() {
                 className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
               >
                 <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
-                <span>ซื้อเพิ่ม (Buy)</span>
+                <span>Buy more</span>
               </button>
             )}
 
             {activeMenuHolding.isLocked ? (
               <div
-                title="สินทรัพย์นี้ล็อคอยู่ใน Safe-Haven (ปลดล็อคก่อนหากต้องการขาย)"
+                title="This asset is locked. Unlock it first to sell."
                 className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
               >
                 <div className="flex items-center gap-2.5">
                   <MinusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
-                  <span>ขายออก (Sell)</span>
+                  <span>Sell</span>
                 </div>
                 <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                  <LockClosedIcon className="h-3 w-3" /> ล็อคอยู่
+                  <LockClosedIcon className="h-3 w-3" /> Locked
                 </span>
               </div>
             ) : (
@@ -1460,22 +1460,22 @@ export function Portfolio() {
                 className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
               >
                 <MinusIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.4} />
-                <span>ขายออก (Sell)</span>
+                <span>Sell</span>
               </button>
             )}
 
             {(activeMenuHolding.assetClass === 'fund' || activeMenuHolding.assetClass === 'stock') && activeMenuHolding.paysDividend && (
               activeMenuHolding.isLocked ? (
                 <div
-                  title="สินทรัพย์นี้ล็อคอยู่ใน Safe-Haven (ปลดล็อคก่อนหากต้องการบันทึกปันผล)"
+                  title="This asset is locked. Unlock it first to record a dividend."
                   className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
                 >
                   <div className="flex items-center gap-2.5">
                     <DividendIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.2} />
-                    <span>รับปันผล (Dividend)</span>
+                    <span>Record dividend</span>
                   </div>
                   <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <LockClosedIcon className="h-3 w-3" /> ล็อคอยู่
+                    <LockClosedIcon className="h-3 w-3" /> Locked
                   </span>
                 </div>
               ) : (
@@ -1490,22 +1490,22 @@ export function Portfolio() {
                   className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer text-left"
                 >
                   <DividendIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={2.2} />
-                  <span>รับปันผล (Dividend)</span>
+                  <span>Record dividend</span>
                 </button>
               )
             )}
             <div className="my-1 border-t border-line/60" />
             {activeMenuHolding.isLocked ? (
               <div
-                title="สินทรัพย์นี้ล็อคอยู่ใน Safe-Haven (ปลดล็อคก่อนหากต้องการแก้ไข)"
+                title="This asset is locked. Unlock it first to edit."
                 className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
               >
                 <div className="flex items-center gap-2.5">
                   <PencilIcon className="h-3.5 w-3.5 text-ink-muted/40 shrink-0" />
-                  <span>แก้ไข (Edit)</span>
+                  <span>Edit</span>
                 </div>
                 <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                  <LockClosedIcon className="h-3 w-3" /> ล็อคอยู่
+                  <LockClosedIcon className="h-3 w-3" /> Locked
                 </span>
               </div>
             ) : (
@@ -1520,7 +1520,7 @@ export function Portfolio() {
                 className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer text-left"
               >
                 <PencilIcon className="h-3.5 w-3.5 shrink-0" />
-                <span>แก้ไข (Edit)</span>
+                <span>Edit</span>
               </button>
             )}
           </div>
@@ -1564,8 +1564,8 @@ export function Portfolio() {
                   toggleLocationLock(t.holding.id, t.locId, t.isBtc)
                   showToast(
                     isLocLocked
-                      ? `ปลดล็อคกระเป๋า "${t.locName}" แล้ว`
-                      : `ล็อคกระเป๋า (Lock) "${t.locName}" เรียบร้อย (ป้องกันการขาย/ลบ)`,
+                      ? `"${t.locName}" unlocked`
+                      : `"${t.locName}" locked (protected from selling or deleting)`,
                     'info'
                   )
                 }}
@@ -1574,12 +1574,12 @@ export function Portfolio() {
                 {isLocLocked ? (
                   <>
                     <LockOpenIcon className="h-4 w-4 text-amber-500 shrink-0" strokeWidth={2} />
-                    <span>ปลดล็อคกระเป๋า (Unlock)</span>
+                    <span>Unlock location</span>
                   </>
                 ) : (
                   <>
                     <LockClosedIcon className="h-4 w-4 text-amber-500 shrink-0" strokeWidth={2} />
-                    <span>ล็อคกระเป๋า (Lock)</span>
+                    <span>Lock location</span>
                   </>
                 )}
               </button>
@@ -1587,15 +1587,15 @@ export function Portfolio() {
 
               {isLocLocked ? (
                 <div
-                  title="กระเป๋านี้อยู่ในสถานะล็อค (Lock) (ปลดล็อคก่อนหากต้องการทำรายการ)"
+                  title="This location is locked. Unlock it first to make changes."
                   className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
                 >
                   <div className="flex items-center gap-2.5">
                     <PlusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
-                    <span>ซื้อเข้ากระเป๋านี้ (Buy)</span>
+                    <span>Buy into this location</span>
                   </div>
                   <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <LockClosedIcon className="h-3 w-3" /> ล็อคอยู่
+                    <LockClosedIcon className="h-3 w-3" /> Locked
                   </span>
                 </div>
               ) : (
@@ -1609,21 +1609,21 @@ export function Portfolio() {
                   className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
                 >
                   <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
-                  <span>ซื้อเข้ากระเป๋านี้ (Buy)</span>
+                  <span>Buy into this location</span>
                 </button>
               )}
 
               {isLocLocked ? (
                 <div
-                  title="กระเป๋านี้อยู่ในสถานะล็อค (Lock) (ปลดล็อคก่อนหากต้องการขาย)"
+                  title="This location is locked. Unlock it first to sell."
                   className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
                 >
                   <div className="flex items-center gap-2.5">
                     <MinusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
-                    <span>ขายจากกระเป๋านี้ (Sell)</span>
+                    <span>Sell from this location</span>
                   </div>
                   <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <LockClosedIcon className="h-3 w-3" /> ล็อคอยู่
+                    <LockClosedIcon className="h-3 w-3" /> Locked
                   </span>
                 </div>
               ) : (
@@ -1637,22 +1637,22 @@ export function Portfolio() {
                   className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
                 >
                   <MinusIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.4} />
-                  <span>ขายจากกระเป๋านี้ (Sell)</span>
+                  <span>Sell from this location</span>
                 </button>
               )}
 
               {loc && (
                 isLocLocked ? (
                   <div
-                    title="กระเป๋านี้อยู่ในสถานะล็อค (Lock) (ปลดล็อคก่อนหากต้องการแก้ไข)"
+                    title="This location is locked. Unlock it first to edit."
                     className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
                   >
                     <div className="flex items-center gap-2.5">
                       <PencilIcon className="h-3.5 w-3.5 text-ink-muted/40 shrink-0" />
-                      <span>แก้ไขกระเป๋า (Edit)</span>
+                      <span>Edit location</span>
                     </div>
                     <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                      <LockClosedIcon className="h-3 w-3" /> ล็อคอยู่
+                      <LockClosedIcon className="h-3 w-3" /> Locked
                     </span>
                   </div>
                 ) : (
@@ -1666,7 +1666,7 @@ export function Portfolio() {
                     className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer text-left"
                   >
                     <PencilIcon className="h-3.5 w-3.5 shrink-0" />
-                    <span>แก้ไขกระเป๋า (Edit)</span>
+                    <span>Edit location</span>
                   </button>
                 )
               )}
@@ -1675,15 +1675,15 @@ export function Portfolio() {
 
               {isLocLocked ? (
                 <div
-                  title="ไม่สามารถลบกระเป๋าที่ล็อคไว้ได้ (ปลดล็อคก่อน)"
+                  title="A locked location can't be removed. Unlock it first."
                   className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
                 >
                   <div className="flex items-center gap-2.5">
                     <TrashIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.2} />
-                    <span>ลบกระเป๋า (Remove)</span>
+                    <span>Remove location</span>
                   </div>
                   <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <LockClosedIcon className="h-3 w-3" /> ล็อคอยู่
+                    <LockClosedIcon className="h-3 w-3" /> Locked
                   </span>
                 </div>
               ) : (
@@ -1698,7 +1698,7 @@ export function Portfolio() {
                   className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
                 >
                   <TrashIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.2} />
-                  <span>ลบกระเป๋า (Remove)</span>
+                  <span>Remove location</span>
                 </button>
               )}
             </div>
@@ -1759,14 +1759,14 @@ export function Portfolio() {
           />
           {locEditing && !('satoshi' in locEditing) && (
             <div className="space-y-1">
-              <label className="text-sm font-medium text-ink-soft">Unit / หน่วย</label>
+              <label className="text-sm font-medium text-ink-soft">Unit</label>
               <SegmentedControl
                 size="sm"
                 value={locGoldUnit}
                 onChange={setLocGoldUnit}
                 options={[
-                  { value: 'grams', label: 'กรัม (Grams)' },
-                  { value: 'baht', label: 'บาททองคำ (15.244g)' },
+                  { value: 'grams', label: 'Grams' },
+                  { value: 'baht', label: 'Gold baht (15.244 g)' },
                 ]}
               />
             </div>
@@ -1784,7 +1784,7 @@ export function Portfolio() {
               />
             ) : locGoldUnit === 'grams' ? (
               <NumberField
-                label="Grams (กรัม)"
+                label="Grams"
                 value={locGrams}
                 onChange={(val) => {
                   setLocGrams(val)
@@ -1800,7 +1800,7 @@ export function Portfolio() {
               />
             ) : (
               <NumberField
-                label="Weight in บาททองคำ (ทองคำแท่ง)"
+                label="Weight in gold baht"
                 value={locGoldBaht}
                 onChange={(val) => {
                   setLocGoldBaht(val)
@@ -1841,11 +1841,11 @@ export function Portfolio() {
           {locEditing && !('satoshi' in locEditing) && Number(locGrams) > 0 && Number(locThbSpent) > 0 && (
             <div className="rounded-xl border border-line bg-surface-muted px-3.5 py-2.5 text-xs space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-ink-muted">Weight in บาททองคำ</span>
-                <span className="font-semibold text-ink tnum">{(Number(locGrams) / GRAMS_PER_BAHT_GOLD).toFixed(4)} บาท</span>
+                <span className="text-ink-muted">Weight in gold baht</span>
+                <span className="font-semibold text-ink tnum">{(Number(locGrams) / GRAMS_PER_BAHT_GOLD).toFixed(4)} gold baht</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-ink-muted">Avg cost / บาททองคำ</span>
+                <span className="text-ink-muted">Avg cost / gold baht</span>
                 <span className="font-semibold text-brand tnum">
                   {thb((Number(locThbSpent) / Number(locGrams)) * GRAMS_PER_BAHT_GOLD)}
                 </span>
@@ -1864,9 +1864,9 @@ export function Portfolio() {
             <div className="flex-1 text-xs">
               <span className="font-semibold text-ink flex items-center gap-1.5">
                 <LockClosedIcon className="h-3.5 w-3.5 text-amber-500" />
-                ล็อคกระเป๋านี้ (Lock)
+                Lock this location
               </span>
-              <p className="text-ink-muted mt-0.5">ป้องกันการขายออกหรือลบกระเป๋านี้โดยไม่ได้ตั้งใจ</p>
+              <p className="text-ink-muted mt-0.5">Protects it from being sold or removed by accident.</p>
             </div>
           </label>
         </div>
