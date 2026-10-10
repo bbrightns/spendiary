@@ -10,7 +10,7 @@ Single user: Praween. A self-directed investor who manages his own portfolio, DC
 
 ## Product Purpose
 
-Spendiary is a private, single-user financial cockpit for tracking an investment portfolio (mutual funds, US stocks, Bitcoin), DCA plans, and recurring bank transfer schedules — denominated in Thai Baht. It is not a budgeting app. It is not gamified. Success means Praween can open it and immediately understand where his money stands, what's happening this month, and whether anything needs attention.
+Spendiary is a private, single-user financial cockpit for tracking an investment portfolio (mutual funds, US stocks, Bitcoin), DCA plans, and recurring bank transfer schedules — denominated in Thai Baht, plus a Spend side for day-to-day income, spending, cards and budgets. It is not gamified. Success means Praween can open it and immediately understand where his money stands, what's happening this month, and whether anything needs attention.
 
 ## Brand Personality
 
@@ -24,6 +24,9 @@ References: Apple (restraint, typographic precision), Linear (density without cl
 
 - **Robinhood / crypto trading apps**: flashy charts, dopamine green/red excitement, confetti on gains, infinite scroll of market data. Spendiary tracks, it does not trade. No excitement mechanics.
 - Avoid anything that feels like it's celebrating volatility or nudging behavior.
+- Exception, Spend side only: friendly touches are welcome in small doses, such as pastel category
+  colors and a short spending insight with one emoji ("฿1,240 less than last month 👏"). Keep it
+  to one line, never on investment performance, and never confetti or streaks.
 
 ## Design Principles
 

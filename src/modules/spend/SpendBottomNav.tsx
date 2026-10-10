@@ -1,9 +1,8 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { isNavPathActive, type NavSubItem } from '../../components/layout/nav'
-import { PlusIcon, PortfolioIcon } from '../../components/icons'
-import { spendOverviewItem, spendTxnsItem, spendAccountsItem } from './nav'
+import { PlusIcon } from '../../components/icons'
+import { spendAccountsItem, spendAnalysisItem, spendOverviewItem, spendTxnsItem } from './nav'
 import { openQuickAdd } from './QuickAddSheet'
-import { lastPathFor } from './ModeSwitcher'
 import { useSpend } from './useSpend'
 
 const tabClass =
@@ -31,17 +30,16 @@ function Tab({ item, pathname, badge = 0, badgeLabel = 'to review' }: { item: Na
   )
 }
 
-/** Mobile bottom bar while in Spend: Home · History · [+] · Accounts · Invest */
+/** Mobile bottom bar while in Spend: Home · Accounts · [+] · History · Analysis (Invest switch lives in the header) */
 export function SpendBottomNav() {
   const { pathname } = useLocation()
-  const navigate = useNavigate()
   const { reminders, dueRecurring } = useSpend()
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-surface/85 backdrop-blur-xl safe-bottom">
       <div className="flex items-stretch justify-around px-2">
         <Tab item={spendOverviewItem} pathname={pathname} badge={dueRecurring.length} />
-        <Tab item={spendTxnsItem} pathname={pathname} />
+        <Tab item={spendAccountsItem} pathname={pathname} badge={reminders.length} badgeLabel={reminders.length === 1 ? 'bill due' : 'bills due'} />
         <div className="flex flex-1 items-start justify-center">
           <button
             type="button"
@@ -52,18 +50,8 @@ export function SpendBottomNav() {
             <PlusIcon className="h-6 w-6" strokeWidth={2.4} />
           </button>
         </div>
-        <Tab item={spendAccountsItem} pathname={pathname} badge={reminders.length} badgeLabel={reminders.length === 1 ? 'bill due' : 'bills due'} />
-        <button
-          type="button"
-          onClick={() => navigate(lastPathFor(false))}
-          aria-label="Switch to Invest"
-          className={`${tabClass} text-ink-muted cursor-pointer`}
-        >
-          <span className="flex h-9 w-12 items-center justify-center rounded-full">
-            <PortfolioIcon className="h-5 w-5" strokeWidth={1.6} />
-          </span>
-          Invest
-        </button>
+        <Tab item={spendTxnsItem} pathname={pathname} />
+        <Tab item={spendAnalysisItem} pathname={pathname} />
       </div>
     </nav>
   )

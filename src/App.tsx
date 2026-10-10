@@ -22,6 +22,7 @@ const CashLiquidity = lazy(() => import('./pages/CashLiquidity').then(m => ({ de
 const SpendOverview = lazy(() => import('./modules/spend/pages/SpendOverview').then(m => ({ default: m.SpendOverview })))
 const SpendTransactions = lazy(() => import('./modules/spend/pages/SpendTransactions').then(m => ({ default: m.SpendTransactions })))
 const SpendRecurringPage = lazy(() => import('./modules/spend/pages/SpendRecurring').then(m => ({ default: m.SpendRecurringPage })))
+const SpendAnalysis = lazy(() => import('./modules/spend/pages/SpendAnalysis').then(m => ({ default: m.SpendAnalysis })))
 const SpendSettings = lazy(() => import('./modules/spend/pages/SpendSettings').then(m => ({ default: m.SpendSettings })))
 const SpendAccounts = lazy(() => import('./modules/spend/pages/SpendAccounts').then(m => ({ default: m.SpendAccounts })))
 import { PageSkeleton } from './components/ui/PageSkeleton'
@@ -271,6 +272,7 @@ function AppContent() {
           <Route path="/spend/txns" element={<SpendTransactions />} />
           <Route path="/spend/accounts" element={<SpendAccounts />} />
           <Route path="/spend/settings" element={<SpendSettings />} />
+          <Route path="/spend/analysis" element={<SpendAnalysis />} />
           <Route path="/spend/recurring" element={<SpendRecurringPage />} />
           <Route path="/spend/wallets" element={<Navigate to="/spend/accounts" replace />} />
           <Route path="*" element={<Dashboard />} />

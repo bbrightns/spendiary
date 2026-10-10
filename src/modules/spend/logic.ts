@@ -390,6 +390,39 @@ export function fixedCostRecurring(list: SpendRecurring[]): SpendRecurring[] {
   return list.filter((r) => r.type === 'expense' && r.fixedCost !== false && !r.paused)
 }
 
+// ── Today's allowance ────────────────────────────────────────────────────────
+
+export type DayStatus = 'ok' | 'careful' | 'over'
+
+export interface DayAllowance {
+  /** What today may spend, fixed at the start of the day */
+  allowance: number
+  spentToday: number
+  leftToday: number
+  daysLeft: number
+  status: DayStatus
+}
+
+/**
+ * Locked each morning: (budget − spent before today) ÷ days left including today.
+ * Spending during the day only lowers "left today"; the allowance itself doesn't move.
+ */
+export function dayAllowance(budget: number, period: Period, txns: SpendTransaction[], today = localDateStr()): DayAllowance {
+  let before = 0
+  let spentToday = 0
+  for (const t of txns) {
+    if (t.type !== 'expense' || !inPeriod(period, t.date)) continue
+    if (t.date < today) before += t.amount
+    else if (t.date === today) spentToday += t.amount
+  }
+  const daysLeft = Math.max(1, daysLeftIn(period, today))
+  const allowance = Math.max(0, (budget - before) / daysLeft)
+  const status: DayStatus = spentToday > allowance ? 'over' : spentToday > allowance * 0.8 ? 'careful' : 'ok'
+  return { allowance, spentToday, leftToday: allowance - spentToday, daysLeft, status }
+}
+
+export const shiftDate = (date: string, n: number) => addDays(date, n)
+
 // ── Category budgets ─────────────────────────────────────────────────────────
 
 export type BudgetState = 'ok' | 'near' | 'over'

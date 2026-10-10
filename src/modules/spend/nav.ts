@@ -1,5 +1,5 @@
 import type { NavSection, NavSubItem } from '../../components/layout/nav'
-import { DashboardIcon, SettingsIcon, WalletIcon } from '../../components/icons'
+import { DashboardIcon, PieChartIcon, SettingsIcon, WalletIcon } from '../../components/icons'
 import { ListBulletIcon, RepeatIcon } from './categories'
 
 export const SPEND_ROOT = '/spend'
@@ -10,9 +10,9 @@ export function isSpendPath(pathname: string): boolean {
 
 export const spendOverviewItem: NavSubItem = {
   to: SPEND_ROOT,
-  label: 'Overview',
+  label: 'Home',
   short: 'Home',
-  description: 'This month: income, spending and what is left',
+  description: "Today's allowance, bills due and today's spending",
   icon: DashboardIcon,
   exact: true,
 }
@@ -33,6 +33,14 @@ export const spendAccountsItem: NavSubItem = {
   icon: WalletIcon,
 }
 
+export const spendAnalysisItem: NavSubItem = {
+  to: `${SPEND_ROOT}/analysis`,
+  label: 'Analysis',
+  short: 'Analysis',
+  description: 'Income, spending and trends by week, month or year',
+  icon: PieChartIcon,
+}
+
 export const spendRecurringItem: NavSubItem = {
   to: `${SPEND_ROOT}/recurring`,
   label: 'Recurring',
@@ -50,6 +58,6 @@ export const spendSettingsItem: NavSubItem = {
 }
 
 export const spendNavSections: NavSection[] = [
-  { title: 'Spend', items: [spendOverviewItem, spendTxnsItem] },
+  { title: 'Spend', items: [spendOverviewItem, spendTxnsItem, spendAnalysisItem] },
   { title: 'Money', items: [spendAccountsItem, spendRecurringItem, spendSettingsItem] },
 ]
