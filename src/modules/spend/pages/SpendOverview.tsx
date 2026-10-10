@@ -97,115 +97,120 @@ export function SpendOverview() {
 
       <BillReminders />
 
-      {/* ── Today's allowance ── */}
-      <Card className="animate-rise relative text-center">
-        {budget > 0 ? (
-          <>
-            <Gauge pct={allowance.allowance > 0 ? allowance.spentToday / allowance.allowance : 1} strokeClass={st.stroke} />
-            <div className="-mt-12">
-              <p className={`font-display text-4xl font-extrabold tracking-tight tnum ${allowance.leftToday < 0 ? 'text-loss' : 'text-ink'}`}>
-                {allowance.leftToday < 0 ? '−' : ''}
-                {thb(Math.abs(allowance.leftToday))}
-              </p>
-              <p className="mt-0.5 text-sm text-ink-muted tnum">
-                {allowance.leftToday < 0 ? 'over' : 'left'} today of {thb(allowance.allowance)}
-              </p>
-            </div>
-            <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${st.chip}`}>
-              <span className="h-1.5 w-1.5 rounded-full bg-current" />
-              {st.label}
-            </span>
-            <button
-              type="button"
-              onClick={() => setBudgetOpen(true)}
-              className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-surface-muted px-2.5 py-1 text-xs font-semibold text-ink-soft hover:text-ink cursor-pointer"
-              aria-label="Edit monthly budget"
-            >
-              <PencilIcon className="h-3 w-3" />
-              {thb(budget)}
-            </button>
-          </>
-        ) : (
-          <div className="py-2">
-            <p className="text-sm text-ink-muted">Spent today</p>
-            <p className="font-display text-4xl font-extrabold tracking-tight tnum text-ink">{thb(allowance.spentToday)}</p>
-            <p className="mt-2 text-sm text-ink-muted">Set a monthly budget to see what you can spend each day.</p>
-            <Button variant="secondary" size="sm" className="mt-3" onClick={() => setBudgetOpen(true)}>
-              Set budget
-            </Button>
-          </div>
-        )}
-      </Card>
-
-      {/* ── Month at a glance ── */}
-      {budget > 0 && (
-        <Link to="/spend/analysis" className="block">
-          <Card className="py-3.5 hover:shadow-[var(--shadow-lift)] transition-shadow">
-            <div className="flex justify-between text-sm">
-              <span className="text-ink-muted">This month</span>
-              <span className="font-bold text-ink tnum">
-                {thb(spentPeriod)} <span className="font-semibold text-ink-muted">/ {thb(budget)}</span>
-              </span>
-            </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-muted">
-              <div
-                className={`h-full rounded-full ${spentPeriod > budget ? 'bg-loss' : spentPeriod > budget * 0.85 ? 'bg-warn' : 'bg-brand'}`}
-                style={{ width: `${Math.min(100, (spentPeriod / budget) * 100)}%` }}
-              />
-            </div>
-            <p className="mt-1.5 text-xs text-ink-muted tnum">
-              {allowance.daysLeft} {allowance.daysLeft === 1 ? 'day' : 'days'} {settings.cycle?.mode === 'payday' ? 'to payday' : 'left this month'} · See analysis →
-            </p>
+      {/* Two columns on wide screens: today's numbers left, the day list right */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-start">
+        <div className="space-y-5">
+          {/* ── Today's allowance ── */}
+          <Card className="animate-rise relative text-center">
+            {budget > 0 ? (
+              <>
+                <Gauge pct={allowance.allowance > 0 ? allowance.spentToday / allowance.allowance : 1} strokeClass={st.stroke} />
+                <div className="-mt-12">
+                  <p className={`font-display text-4xl font-extrabold tracking-tight tnum ${allowance.leftToday < 0 ? 'text-loss' : 'text-ink'}`}>
+                    {allowance.leftToday < 0 ? '−' : ''}
+                    {thb(Math.abs(allowance.leftToday))}
+                  </p>
+                  <p className="mt-0.5 text-sm text-ink-muted tnum">
+                    {allowance.leftToday < 0 ? 'over' : 'left'} today of {thb(allowance.allowance)}
+                  </p>
+                </div>
+                <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${st.chip}`}>
+                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                  {st.label}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setBudgetOpen(true)}
+                  className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-surface-muted px-2.5 py-1 text-xs font-semibold text-ink-soft hover:text-ink cursor-pointer"
+                  aria-label="Edit monthly budget"
+                >
+                  <PencilIcon className="h-3 w-3" />
+                  {thb(budget)}
+                </button>
+              </>
+            ) : (
+              <div className="py-2">
+                <p className="text-sm text-ink-muted">Spent today</p>
+                <p className="font-display text-4xl font-extrabold tracking-tight tnum text-ink">{thb(allowance.spentToday)}</p>
+                <p className="mt-2 text-sm text-ink-muted">Set a monthly budget to see what you can spend each day.</p>
+                <Button variant="secondary" size="sm" className="mt-3" onClick={() => setBudgetOpen(true)}>
+                  Set budget
+                </Button>
+              </div>
+            )}
           </Card>
-        </Link>
-      )}
 
-      <RecurringDue />
+          {/* ── Month at a glance ── */}
+          {budget > 0 && (
+            <Link to="/spend/analysis" className="block">
+              <Card className="py-3.5 hover:shadow-[var(--shadow-lift)] transition-shadow">
+                <div className="flex justify-between text-sm">
+                  <span className="text-ink-muted">This month</span>
+                  <span className="font-bold text-ink tnum">
+                    {thb(spentPeriod)} <span className="font-semibold text-ink-muted">/ {thb(budget)}</span>
+                  </span>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-muted">
+                  <div
+                    className={`h-full rounded-full ${spentPeriod > budget ? 'bg-loss' : spentPeriod > budget * 0.85 ? 'bg-warn' : 'bg-brand'}`}
+                    style={{ width: `${Math.min(100, (spentPeriod / budget) * 100)}%` }}
+                  />
+                </div>
+                <p className="mt-1.5 text-xs text-ink-muted tnum">
+                  {allowance.daysLeft} {allowance.daysLeft === 1 ? 'day' : 'days'} {settings.cycle?.mode === 'payday' ? 'to payday' : 'left this month'} · See analysis →
+                </p>
+              </Card>
+            </Link>
+          )}
 
-      {/* ── Day strip + that day's list ── */}
-      <Card>
-        <div className="grid grid-cols-7 gap-1.5" role="tablist" aria-label="Pick a day">
-          {days.map((d) => {
-            const on = d.date === day
-            const dt = parse(d.date)
-            return (
-              <button
-                key={d.date}
-                type="button"
-                role="tab"
-                aria-selected={on}
-                onClick={() => setDay(d.date)}
-                className={`flex flex-col items-center rounded-xl border py-1.5 transition-colors cursor-pointer ${
-                  on ? 'border-ink bg-ink text-white dark:border-[#4f46e5] dark:bg-[#4f46e5]' : 'border-line text-ink-muted hover:bg-surface-muted/60'
-                }`}
-              >
-                <span className="text-[11px] font-semibold">{dt.toLocaleDateString('en-GB', { weekday: 'short' })}</span>
-                <span className={`text-base font-bold tnum ${on ? '' : 'text-ink'}`}>{dt.getDate()}</span>
-                <span className={`h-1 w-1 rounded-full ${d.spent > 0 ? (on ? 'bg-white' : 'bg-brand') : 'bg-transparent'}`} />
-              </button>
-            )
-          })}
+          <RecurringDue />
         </div>
 
-        <div className="mt-4 flex items-center justify-between">
-          <h2 className="font-display text-lg font-extrabold text-ink">{day === today ? 'Today' : parse(day).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}</h2>
-          <span className="text-sm font-bold text-ink tnum">−{thb(days.find((d) => d.date === day)?.spent ?? 0)}</span>
-        </div>
-        {dayTxns.length === 0 ? (
-          <EmptyState
-            icon={<WalletIcon className="h-7 w-7" />}
-            title={day === today ? 'Nothing logged today' : 'Nothing logged this day'}
-            description="Tap + to record what you spend or earn."
-            action={day === today ? <AddButton onClick={() => openQuickAdd()} label="Add transaction" /> : undefined}
-          />
-        ) : (
-          <div className="mt-1 divide-y divide-line">
-            {dayTxns.map((t) => (
-              <TxnRow key={t.id} txn={t} methods={methods} />
-            ))}
+        {/* ── Day strip + that day's list ── */}
+        <Card>
+          <div className="grid grid-cols-7 gap-1.5" role="tablist" aria-label="Pick a day">
+            {days.map((d) => {
+              const on = d.date === day
+              const dt = parse(d.date)
+              return (
+                <button
+                  key={d.date}
+                  type="button"
+                  role="tab"
+                  aria-selected={on}
+                  onClick={() => setDay(d.date)}
+                  className={`flex flex-col items-center rounded-xl border py-1.5 transition-colors cursor-pointer ${
+                    on ? 'border-ink bg-ink text-white dark:border-[#4f46e5] dark:bg-[#4f46e5]' : 'border-line text-ink-muted hover:bg-surface-muted/60'
+                  }`}
+                >
+                  <span className="text-[11px] font-semibold">{dt.toLocaleDateString('en-GB', { weekday: 'short' })}</span>
+                  <span className={`text-base font-bold tnum ${on ? '' : 'text-ink'}`}>{dt.getDate()}</span>
+                  <span className={`h-1 w-1 rounded-full ${d.spent > 0 ? (on ? 'bg-white' : 'bg-brand') : 'bg-transparent'}`} />
+                </button>
+              )
+            })}
           </div>
-        )}
-      </Card>
+
+          <div className="mt-4 flex items-center justify-between">
+            <h2 className="font-display text-lg font-extrabold text-ink">{day === today ? 'Today' : parse(day).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}</h2>
+            <span className="text-sm font-bold text-ink tnum">−{thb(days.find((d) => d.date === day)?.spent ?? 0)}</span>
+          </div>
+          {dayTxns.length === 0 ? (
+            <EmptyState
+              icon={<WalletIcon className="h-7 w-7" />}
+              title={day === today ? 'Nothing logged today' : 'Nothing logged this day'}
+              description="Tap + to record what you spend or earn."
+              action={day === today ? <AddButton onClick={() => openQuickAdd()} label="Add transaction" /> : undefined}
+            />
+          ) : (
+            <div className="mt-1 divide-y divide-line">
+              {dayTxns.map((t) => (
+                <TxnRow key={t.id} txn={t} methods={methods} />
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
 
       <BudgetModal
         open={budgetOpen}

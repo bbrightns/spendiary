@@ -101,7 +101,13 @@ function Bars({ data, unit }: { data: Bucket[]; unit: string }) {
             >
               <span
                 className={`block w-full rounded-md transition-[height] duration-500 ${
-                  b.future ? 'bg-surface-muted/50' : isTop ? 'bg-orange-400 dark:bg-orange-400/80' : hover === b.key ? 'bg-brand/60' : 'bg-line-strong'
+                  b.future
+                    ? 'bg-surface-muted/50'
+                    : isTop
+                      ? 'bg-orange-400 dark:bg-orange-400/80'
+                      : hover === b.key
+                        ? 'bg-brand/60'
+                        : 'bg-slate-300 dark:bg-slate-500'
                 }`}
                 style={{ height: `${b.future ? 4 : Math.max(3, (b.spent / max) * 100)}%` }}
               />
