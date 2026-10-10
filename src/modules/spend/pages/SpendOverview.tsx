@@ -14,6 +14,7 @@ import { MonthStepper } from '../MonthStepper'
 import { openQuickAdd } from '../QuickAddSheet'
 import { TxnRow } from '../TxnRow'
 import { useSpend } from '../useSpend'
+import { TONES } from '../tones'
 
 export function SpendOverview() {
   const { transactions, wallets, settings, setMonthlyBudget } = useSpend()
@@ -143,11 +144,16 @@ export function SpendOverview() {
                   const cat = getCategory(categoryId)
                   const share = totals.expense > 0 ? (amount / totals.expense) * 100 : 0
                   const Icon = cat?.icon
+                  const tone = cat?.tone ?? 'slate'
                   return (
                     <li key={categoryId}>
                       <div className="flex items-center justify-between gap-3 text-sm">
                         <span className="flex min-w-0 items-center gap-2 font-semibold text-ink">
-                          {Icon && <Icon className="h-4 w-4 shrink-0 text-ink-soft" />}
+                          {Icon && (
+                            <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${TONES[tone].chip}`}>
+                              <Icon className="h-4 w-4" />
+                            </span>
+                          )}
                           <span className="truncate">{cat?.label ?? 'Other'}</span>
                         </span>
                         <span className="shrink-0 tnum font-bold text-ink">
@@ -156,7 +162,7 @@ export function SpendOverview() {
                         </span>
                       </div>
                       <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-muted">
-                        <div className="h-full rounded-full bg-ink-soft/70" style={{ width: `${share}%` }} />
+                        <div className={`h-full rounded-full ${TONES[tone].bar}`} style={{ width: `${share}%` }} />
                       </div>
                     </li>
                   )

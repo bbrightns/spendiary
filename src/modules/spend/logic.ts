@@ -92,6 +92,19 @@ export function sortTxns(txns: SpendTransaction[]): SpendTransaction[] {
   return [...txns].sort((a, b) => (a.date === b.date ? b.createdAt.localeCompare(a.createdAt) : b.date.localeCompare(a.date)))
 }
 
+/** Tags by when they were last typed (created or edited), most recent first. */
+export function recentTags(txns: SpendTransaction[], limit = 3): string[] {
+  const seen: string[] = []
+  const byRecency = [...txns].sort((a, b) => (b.updatedAt ?? b.createdAt).localeCompare(a.updatedAt ?? a.createdAt))
+  for (const t of byRecency) {
+    for (const tag of t.tags ?? []) {
+      if (!seen.includes(tag)) seen.push(tag)
+      if (seen.length === limit) return seen
+    }
+  }
+  return seen
+}
+
 /** Most-used tags across all transactions, most frequent first. */
 export function topTags(txns: SpendTransaction[], limit = 8): string[] {
   const count = new Map<string, number>()

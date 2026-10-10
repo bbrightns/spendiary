@@ -20,7 +20,7 @@ export const spendOverviewItem: NavSubItem = {
 export const spendTxnsItem: NavSubItem = {
   to: `${SPEND_ROOT}/txns`,
   label: 'Transactions',
-  short: 'Txns',
+  short: 'History',
   description: 'Every income, expense and transfer, searchable by #tag',
   icon: ListBulletIcon,
 }

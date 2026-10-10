@@ -2,6 +2,7 @@ import type { CashAccount, SpendTransaction } from '../../lib/types'
 import { thb } from '../../lib/format'
 import { TransferIcon, getCategory } from './categories'
 import { openQuickAdd } from './QuickAddSheet'
+import { TONES } from './tones'
 
 interface Props {
   txn: SpendTransaction
@@ -37,7 +38,11 @@ export function TxnRow({ txn, wallets, onTagClick }: Props) {
         className="flex min-w-0 flex-1 items-center gap-3 text-left cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         aria-label={`Edit ${title}, ${sign}${thb(txn.amount)}`}
       >
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-surface-muted text-ink-soft">
+        <span
+          className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
+            txn.type === 'transfer' ? TONES.sky.chip : TONES[cat?.tone ?? 'slate'].chip
+          }`}
+        >
           <Icon className="h-[18px] w-[18px]" />
         </span>
         <span className="min-w-0 flex-1">

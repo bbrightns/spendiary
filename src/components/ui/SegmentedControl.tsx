@@ -141,9 +141,11 @@ export function SegmentedControl<T extends string>({
         fullWidth ? 'w-full' : 'inline-flex'
       }`
 
+  // Text colors (incl. variants like `dark:text-…`) go on the label, everything else on the glider
+  const isTextClass = (c: string) => /(^|:)text-/.test(c)
   const activeOption = options.find((opt) => opt.value === value)
   const gliderBgClass = activeOption?.activeClassName
-    ? activeOption.activeClassName.split(' ').filter((c) => !c.startsWith('text-')).join(' ')
+    ? activeOption.activeClassName.split(' ').filter((c) => !isTextClass(c)).join(' ')
     : 'bg-surface shadow-xs'
 
   return (
@@ -175,7 +177,7 @@ export function SegmentedControl<T extends string>({
         const showFallbackBg = !gliderStyle.ready && isSelected
         const textColorClass = isSelected
           ? (opt.activeClassName
-              ? (opt.activeClassName.split(' ').find((c) => c.startsWith('text-')) ?? 'text-ink font-bold')
+              ? (opt.activeClassName.split(' ').filter(isTextClass).join(' ') || 'text-ink font-bold')
               : 'text-ink font-bold')
           : (opt.inactiveClassName ?? 'text-ink-muted hover:text-ink font-semibold')
 

@@ -1,5 +1,6 @@
 import type { ComponentType, SVGProps } from 'react'
 import type { SpendTxnType } from '../../lib/types'
+import type { Tone } from './tones'
 import {
   CarIcon,
   CoinsIcon,
@@ -94,28 +95,29 @@ export interface SpendCategory {
   label: string
   type: Exclude<SpendTxnType, 'transfer'>
   icon: ComponentType<IconProps>
+  tone: Tone
   /** Extra search words (Thai included) so "อาหาร" finds Food */
   keywords: string[]
 }
 
 export const SPEND_CATEGORIES: SpendCategory[] = [
-  { id: 'food', label: 'Food', type: 'expense', icon: FoodIcon, keywords: ['อาหาร', 'กิน', 'meal'] },
-  { id: 'drinks', label: 'Drinks', type: 'expense', icon: CoffeeIcon, keywords: ['กาแฟ', 'ชา', 'ชานม', 'coffee'] },
-  { id: 'transport', label: 'Transport', type: 'expense', icon: CarIcon, keywords: ['เดินทาง', 'รถ', 'น้ำมัน', 'bts', 'grab'] },
-  { id: 'shopping', label: 'Shopping', type: 'expense', icon: ShoppingBagIcon, keywords: ['ช้อปปิ้ง', 'ของใช้'] },
-  { id: 'bills', label: 'Bills', type: 'expense', icon: ReceiptPercentIcon, keywords: ['บิล', 'ค่าน้ำ', 'ค่าไฟ', 'เน็ต', 'โทรศัพท์'] },
-  { id: 'housing', label: 'Housing', type: 'expense', icon: HomeIcon, keywords: ['ที่พัก', 'ค่าเช่า', 'บ้าน', 'คอนโด'] },
-  { id: 'health', label: 'Health', type: 'expense', icon: HeartPulseIcon, keywords: ['สุขภาพ', 'ยา', 'หมอ', 'ฟิตเนส'] },
-  { id: 'fun', label: 'Fun', type: 'expense', icon: SparkleIcon, keywords: ['บันเทิง', 'หนัง', 'เที่ยว', 'เกม'] },
-  { id: 'family', label: 'Family', type: 'expense', icon: GiftIcon, keywords: ['ครอบครัว', 'ของขวัญ', 'พ่อแม่'] },
-  { id: 'other', label: 'Other', type: 'expense', icon: DotsHorizontalIcon, keywords: ['อื่นๆ'] },
+  { id: 'food', label: 'Food', type: 'expense', tone: 'orange', icon: FoodIcon, keywords: ['อาหาร', 'กิน', 'meal'] },
+  { id: 'drinks', label: 'Drinks', type: 'expense', tone: 'amber', icon: CoffeeIcon, keywords: ['กาแฟ', 'ชา', 'ชานม', 'coffee'] },
+  { id: 'transport', label: 'Transport', type: 'expense', tone: 'sky', icon: CarIcon, keywords: ['เดินทาง', 'รถ', 'น้ำมัน', 'bts', 'grab'] },
+  { id: 'shopping', label: 'Shopping', type: 'expense', tone: 'pink', icon: ShoppingBagIcon, keywords: ['ช้อปปิ้ง', 'ของใช้'] },
+  { id: 'bills', label: 'Bills', type: 'expense', tone: 'violet', icon: ReceiptPercentIcon, keywords: ['บิล', 'ค่าน้ำ', 'ค่าไฟ', 'เน็ต', 'โทรศัพท์'] },
+  { id: 'housing', label: 'Housing', type: 'expense', tone: 'teal', icon: HomeIcon, keywords: ['ที่พัก', 'ค่าเช่า', 'บ้าน', 'คอนโด'] },
+  { id: 'health', label: 'Health', type: 'expense', tone: 'rose', icon: HeartPulseIcon, keywords: ['สุขภาพ', 'ยา', 'หมอ', 'ฟิตเนส'] },
+  { id: 'fun', label: 'Fun', type: 'expense', tone: 'indigo', icon: SparkleIcon, keywords: ['บันเทิง', 'หนัง', 'เที่ยว', 'เกม'] },
+  { id: 'family', label: 'Family', type: 'expense', tone: 'lime', icon: GiftIcon, keywords: ['ครอบครัว', 'ของขวัญ', 'พ่อแม่'] },
+  { id: 'other', label: 'Other', type: 'expense', tone: 'slate', icon: DotsHorizontalIcon, keywords: ['อื่นๆ'] },
 
-  { id: 'salary', label: 'Salary', type: 'income', icon: WalletIcon, keywords: ['เงินเดือน'] },
-  { id: 'bonus', label: 'Bonus', type: 'income', icon: SparklesIcon, keywords: ['โบนัส'] },
-  { id: 'side', label: 'Side income', type: 'income', icon: CoinsIcon, keywords: ['รายได้เสริม', 'ฟรีแลนซ์'] },
-  { id: 'interest', label: 'Interest', type: 'income', icon: ArrowUpRightIcon, keywords: ['ดอกเบี้ย'] },
-  { id: 'gift_in', label: 'Gift received', type: 'income', icon: GiftIcon, keywords: ['ได้รับ', 'อั่งเปา'] },
-  { id: 'other_in', label: 'Other', type: 'income', icon: DotsHorizontalIcon, keywords: ['อื่นๆ'] },
+  { id: 'salary', label: 'Salary', type: 'income', tone: 'emerald', icon: WalletIcon, keywords: ['เงินเดือน'] },
+  { id: 'bonus', label: 'Bonus', type: 'income', tone: 'yellow', icon: SparklesIcon, keywords: ['โบนัส'] },
+  { id: 'side', label: 'Side income', type: 'income', tone: 'teal', icon: CoinsIcon, keywords: ['รายได้เสริม', 'ฟรีแลนซ์'] },
+  { id: 'interest', label: 'Interest', type: 'income', tone: 'cyan', icon: ArrowUpRightIcon, keywords: ['ดอกเบี้ย'] },
+  { id: 'gift_in', label: 'Gift received', type: 'income', tone: 'pink', icon: GiftIcon, keywords: ['ได้รับ', 'อั่งเปา'] },
+  { id: 'other_in', label: 'Other', type: 'income', tone: 'slate', icon: DotsHorizontalIcon, keywords: ['อื่นๆ'] },
 ]
 
 const byId = new Map(SPEND_CATEGORIES.map((c) => [c.id, c]))

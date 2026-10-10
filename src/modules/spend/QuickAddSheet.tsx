@@ -8,7 +8,8 @@ import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb } from '../../lib/format'
 import type { SpendTxnType } from '../../lib/types'
 import { categoriesFor, getCategory } from './categories'
-import { topTags } from './logic'
+import { recentTags, topTags } from './logic'
+import { TONES, TYPE_ACTIVE } from './tones'
 import { useSpend } from './useSpend'
 
 const OPEN_EVENT = 'spendiary:open-quick-add'
@@ -25,10 +26,16 @@ export function openQuickAdd(detail: OpenDetail = {}) {
 }
 
 const TYPE_OPTIONS = [
-  { value: 'expense' as const, label: 'Expense' },
-  { value: 'income' as const, label: 'Income' },
-  { value: 'transfer' as const, label: 'Transfer' },
+  { value: 'expense' as const, label: 'Expense', activeClassName: TYPE_ACTIVE.expense },
+  { value: 'income' as const, label: 'Income', activeClassName: TYPE_ACTIVE.income },
+  { value: 'transfer' as const, label: 'Transfer', activeClassName: TYPE_ACTIVE.transfer },
 ]
+
+const AMOUNT_COLOR: Record<SpendTxnType, string> = {
+  expense: 'text-ink',
+  income: 'text-emerald-600 dark:text-emerald-300',
+  transfer: 'text-sky-600 dark:text-sky-300',
+}
 
 const NO_WALLET = ''
 
@@ -93,7 +100,9 @@ export function QuickAddSheet() {
     return () => window.clearTimeout(t)
   }, [open])
 
-  const tags = useMemo(() => topTags(transactions), [transactions])
+  const recent = useMemo(() => recentTags(transactions, 3), [transactions])
+  const frequent = useMemo(() => topTags(transactions, 8).filter((t) => !recent.includes(t)).slice(0, 5), [transactions, recent])
+  const noteTokens = note.toLowerCase().split(/\s+/)
   const value = Number(amount.replace(/,/g, ''))
   const amountValid = Number.isFinite(value) && value > 0
   const transferValid = type !== 'transfer' || (accountId !== NO_WALLET && toAccountId !== NO_WALLET && accountId !== toAccountId)
@@ -106,7 +115,7 @@ export function QuickAddSheet() {
 
   const appendTag = (tag: string) => {
     const token = `#${tag}`
-    if (note.toLowerCase().split(/\s+/).includes(token)) return
+    if (noteTokens.includes(token)) return
     setNote((n) => (n.trim() ? `${n.trimEnd()} ${token}` : token))
   }
 
@@ -168,9 +177,7 @@ export function QuickAddSheet() {
               placeholder="0"
               value={amount}
               onChange={(e) => setAmount(e.target.value.replace(/[^\d.,]/g, ''))}
-              className={`w-full max-w-[14ch] bg-transparent text-center font-display text-5xl font-extrabold tracking-tight tnum outline-none placeholder:text-ink-faint/50 ${
-                type === 'income' ? 'text-gain' : 'text-ink'
-              }`}
+              className={`w-full max-w-[14ch] bg-transparent text-center font-display text-5xl font-extrabold tracking-tight tnum outline-none placeholder:text-ink-faint/50 ${AMOUNT_COLOR[type]}`}
               style={{ width: `${Math.max(2, amount.length + 1)}ch` }}
             />
           </div>
@@ -189,13 +196,13 @@ export function QuickAddSheet() {
                     type="button"
                     aria-pressed={active}
                     onClick={() => setCategoryId(c.id)}
-                    className={`flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 text-xs font-semibold transition-colors cursor-pointer ${
-                      active
-                        ? 'border-brand/50 bg-brand-soft text-brand-ink'
-                        : 'border-line bg-surface-muted/50 text-ink-soft hover:bg-surface-muted'
+                    className={`flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 text-xs transition-all cursor-pointer active:scale-95 ${
+                      active ? `${TONES[c.tone].active} font-bold` : 'border-line bg-surface font-semibold text-ink-soft hover:bg-surface-muted/60'
                     }`}
                   >
-                    <c.icon className="h-5 w-5" strokeWidth={active ? 2 : 1.6} />
+                    <span className={`grid h-8 w-8 place-items-center rounded-xl transition-colors ${active ? 'bg-white/70 dark:bg-white/10' : TONES[c.tone].chip}`}>
+                      <c.icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.1 : 1.7} />
+                    </span>
                     <span className="w-full truncate text-center leading-tight">{c.label}</span>
                   </button>
                 )
@@ -241,9 +248,28 @@ export function QuickAddSheet() {
               className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15"
             />
           </label>
-          {tags.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {tags.map((tag) => (
+          {recent.length + frequent.length > 0 && (
+            <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+              {recent.length > 0 && <span className="mr-0.5 text-xs font-semibold text-ink-muted">Recent</span>}
+              {recent.map((tag) => {
+                const added = noteTokens.includes(`#${tag}`)
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => appendTag(tag)}
+                    aria-pressed={added}
+                    className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95 ${
+                      added
+                        ? 'bg-violet-200 text-violet-800 dark:bg-violet-400/30 dark:text-violet-100'
+                        : 'bg-violet-100 text-violet-700 hover:bg-violet-200 dark:bg-violet-400/15 dark:text-violet-200'
+                    }`}
+                  >
+                    #{tag}
+                  </button>
+                )
+              })}
+              {frequent.map((tag) => (
                 <button
                   key={tag}
                   type="button"
