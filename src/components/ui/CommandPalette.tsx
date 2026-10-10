@@ -154,7 +154,7 @@ export function CommandPalette() {
       {
         id: 'action-new-holding',
         title: 'Record New Holding',
-        subtitle: 'บันทึกสินทรัพย์ / หุ้น / กองทุน / คริปโตใหม่',
+        subtitle: 'Add a stock, fund, crypto or gold holding',
         badge: 'Action',
         keywords: ['add', 'holding', 'buy', 'stock', 'fund', 'crypto', 'gold', 'เพิ่ม', 'ซื้อ', 'หุ้น', 'สินทรัพย์', 'ทอง'],
         category: 'Actions',
@@ -167,7 +167,7 @@ export function CommandPalette() {
       {
         id: 'action-new-debt',
         title: 'Record Debt / Liability',
-        subtitle: 'บันทึกหนี้สิน / ผ่อนชำระ / สินเชื่อ',
+        subtitle: 'Add a debt, installment or loan',
         badge: 'Action',
         keywords: ['add', 'debt', 'loan', 'liability', 'installment', 'บัตรเครดิต', 'ผ่อน', 'หนี้', 'กู้', 'เพิ่มหนี้'],
         category: 'Actions',
@@ -180,7 +180,7 @@ export function CommandPalette() {
       {
         id: 'action-new-dca',
         title: 'Create DCA Plan',
-        subtitle: 'ตั้งเป้าหมายการลงทุนแบบถัวเฉลี่ยรายเดือน',
+        subtitle: 'Set up a recurring monthly buy',
         badge: 'Action',
         keywords: ['dca', 'plan', 'recurring', 'monthly', 'แผน', 'ออม', 'ซื้อถัว'],
         category: 'Actions',
@@ -193,7 +193,7 @@ export function CommandPalette() {
       {
         id: 'action-new-account',
         title: 'Add Cash Account',
-        subtitle: 'เพิ่มบัญชีเงินฝากธนาคาร / กระเป๋าเงินสด',
+        subtitle: 'Add a bank account or cash wallet',
         badge: 'Action',
         keywords: ['bank', 'cash', 'account', 'saving', 'ธนาคาร', 'เงินสด', 'บัญชี', 'เงินฝาก'],
         category: 'Actions',
@@ -208,7 +208,7 @@ export function CommandPalette() {
       {
         id: 'nav-dashboard',
         title: 'Go to Dashboard',
-        subtitle: 'ภาพรวมความมั่งคั่งและสินทรัพย์สุทธิ',
+        subtitle: 'Your net worth at a glance',
         badge: 'G D',
         keywords: ['dashboard', 'home', 'net worth', 'หน้าแรก', 'แดชบอร์ด', 'ภาพรวม'],
         category: 'Navigation',
@@ -221,7 +221,7 @@ export function CommandPalette() {
       {
         id: 'nav-portfolio',
         title: 'Go to Portfolio',
-        subtitle: 'พอร์ตสินทรัพย์และการถือครองทั้งหมด',
+        subtitle: 'All your holdings',
         badge: 'G P',
         keywords: ['portfolio', 'holdings', 'stocks', 'funds', 'พอร์ต', 'หุ้น', 'สินทรัพย์'],
         category: 'Navigation',
@@ -234,7 +234,7 @@ export function CommandPalette() {
       {
         id: 'nav-rebalance',
         title: 'Go to Rebalance Hub',
-        subtitle: 'วิเคราะห์และปรับสมดุลสัดส่วนพอร์ต',
+        subtitle: 'Check and adjust how your portfolio is split',
         badge: 'G R',
         keywords: ['rebalance', 'allocation', 'target', 'drift', 'ปรับพอร์ต', 'สมดุล'],
         category: 'Navigation',
@@ -247,7 +247,7 @@ export function CommandPalette() {
       {
         id: 'nav-dca',
         title: 'Go to DCA Planner',
-        subtitle: 'วางแผนและบันทึกการซื้อประจำงวด',
+        subtitle: 'Plan and confirm your recurring buys',
         badge: 'G A',
         keywords: ['dca', 'planner', 'recurring', 'งวด', 'ออมหุ้น'],
         category: 'Navigation',
@@ -260,7 +260,7 @@ export function CommandPalette() {
       {
         id: 'nav-dividends',
         title: 'Go to Dividends',
-        subtitle: 'ปันผลรับและประมาณการกระแสเงินสด',
+        subtitle: 'Dividends received and expected',
         badge: 'G V',
         keywords: ['dividend', 'passive income', 'yield', 'ปันผล', 'เงินปันผล'],
         category: 'Navigation',
@@ -273,7 +273,7 @@ export function CommandPalette() {
       {
         id: 'nav-debts',
         title: 'Go to Debts & Liabilities',
-        subtitle: 'ภาระหนี้สินและการผ่อนชำระ',
+        subtitle: 'Your debts and installments',
         badge: 'G B',
         keywords: ['debt', 'liabilities', 'loan', 'หนี้', 'ผ่อน', 'ดอกเบี้ย'],
         category: 'Navigation',
@@ -286,7 +286,7 @@ export function CommandPalette() {
       {
         id: 'nav-cash',
         title: 'Go to Cash & Liquidity',
-        subtitle: 'เงินสด สภาพคล่อง และดอกเบี้ยเงินฝาก',
+        subtitle: 'Cash, savings and interest',
         badge: 'G C',
         keywords: ['cash', 'liquidity', 'emergency', 'เงินสด', 'บัญชี', 'สภาพคล่อง'],
         category: 'Navigation',
@@ -299,7 +299,7 @@ export function CommandPalette() {
       {
         id: 'nav-retirement',
         title: 'Go to Retirement (FIRE)',
-        subtitle: 'จำลองอิสรภาพทางการเงินและการเกษียณ',
+        subtitle: 'Plan for retirement and financial freedom',
         badge: 'G F',
         keywords: ['retirement', 'fire', 'financial freedom', 'เกษียณ', 'อิสรภาพ'],
         category: 'Navigation',
@@ -312,7 +312,7 @@ export function CommandPalette() {
       {
         id: 'nav-logs',
         title: 'Go to Activity Logs',
-        subtitle: 'ประวัติธุรกรรม ซื้อ ขาย ปันผล และภาษี',
+        subtitle: 'History of buys, sales, dividends and tax',
         badge: 'G L',
         keywords: ['logs', 'history', 'activity', 'transactions', 'ประวัติ', 'บันทึก'],
         category: 'Navigation',
@@ -325,7 +325,7 @@ export function CommandPalette() {
       {
         id: 'nav-summary',
         title: 'Go to P/L Summary',
-        subtitle: 'สรุปกำไร/ขาดทุนตามเดือน ปี หรือช่วงเวลาที่เลือก',
+        subtitle: 'Profit and loss by month, year or period',
         badge: 'G P',
         keywords: ['summary', 'profit', 'loss', 'pnl', 'dividends', 'สรุป', 'กำไร', 'ขาดทุน', 'ปันผล'],
         category: 'Navigation',
@@ -338,7 +338,7 @@ export function CommandPalette() {
       {
         id: 'nav-settings',
         title: 'Go to Settings',
-        subtitle: 'ตั้งค่าระบบ สำรองข้อมูล และโปรไฟล์',
+        subtitle: 'Settings, backup and profile',
         badge: 'G S',
         keywords: ['settings', 'preferences', 'backup', 'ตั้งค่า', 'สำรอง'],
         category: 'Navigation',
@@ -353,7 +353,7 @@ export function CommandPalette() {
       {
         id: 'sys-theme-toggle',
         title: `Switch Theme to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`,
-        subtitle: `สลับธีมเป็นโหมด ${theme === 'dark' ? 'สว่าง (Light)' : 'มืด (Dark)'}`,
+        subtitle: `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`,
         badge: 'Theme',
         keywords: ['theme', 'dark', 'light', 'mode', 'color', 'สว่าง', 'มืด', 'ธีม'],
         category: 'System',
@@ -368,7 +368,7 @@ export function CommandPalette() {
       {
         id: 'sys-export-backup',
         title: 'Export Backup Data (JSON)',
-        subtitle: 'ดาวน์โหลดไฟล์สำรองข้อมูลการเงินทั้งหมด',
+        subtitle: 'Download a backup of all your data',
         badge: 'Backup',
         keywords: ['export', 'backup', 'download', 'json', 'ส่งออก', 'สำรองข้อมูล'],
         category: 'System',
@@ -382,7 +382,7 @@ export function CommandPalette() {
       {
         id: 'sys-shortcuts',
         title: 'View Keyboard Shortcuts',
-        subtitle: 'ดูคีย์ลัดสำหรับควบคุม Spendiary ทั้งหมด',
+        subtitle: 'See every keyboard shortcut',
         badge: '?',
         keywords: ['shortcut', 'shortcuts', 'keyboard', 'hotkey', 'คีย์ลัด', 'ปุ่ม'],
         category: 'System',
@@ -477,12 +477,12 @@ export function CommandPalette() {
   // ── Shortcuts Guide View ──
   if (showShortcuts) {
     const shortcutsList = [
-      { key: '⌘ / Ctrl + K', desc: 'Open Command Palette (เปิดกล่องคำสั่งด่วน)' },
-      { key: '/', desc: 'Quick Search from anywhere (ค้นหาด่วน)' },
-      { key: '?', desc: 'Open Keyboard Shortcuts Guide (ดูคีย์ลัดทั้งหมด)' },
-      { key: 'Esc', desc: 'Close dialog / dismiss popup (ปิดหน้าต่าง)' },
-      { key: '↑ / ↓', desc: 'Navigate commands (เลื่อนแถบเลือกคำสั่ง)' },
-      { key: 'Enter', desc: 'Execute selected command (สั่งการทำงาน)' },
+      { key: '⌘ / Ctrl + K', desc: 'Open the command palette' },
+      { key: '/', desc: 'Quick search from anywhere' },
+      { key: '?', desc: 'Show keyboard shortcuts' },
+      { key: 'Esc', desc: 'Close dialog or popup' },
+      { key: '↑ / ↓', desc: 'Move through commands' },
+      { key: 'Enter', desc: 'Run the selected command' },
     ]
 
     return (
@@ -503,7 +503,7 @@ export function CommandPalette() {
               </div>
               <div>
                 <h3 className="font-display text-lg font-bold text-ink">Keyboard Shortcuts</h3>
-                <p className="text-xs text-ink-muted">ควบคุม Spendiary ได้อย่างรวดเร็วผ่านคีย์บอร์ด</p>
+                <p className="text-xs text-ink-muted">Get around Spendiary quickly with your keyboard</p>
               </div>
             </div>
             <button
@@ -595,7 +595,7 @@ export function CommandPalette() {
             <div className="py-12 text-center">
               <CommandIcon className="h-8 w-8 mx-auto text-ink-faint mb-2 opacity-50" />
               <p className="text-sm font-semibold text-ink">No matching commands or assets</p>
-              <p className="text-xs text-ink-muted mt-1">ลองพิมพ์ชื่อหุ้น, กองทุน, หรือคำสั่งเช่น &quot;DCA&quot;, &quot;หนี้&quot;</p>
+              <p className="text-xs text-ink-muted mt-1">Try a stock or fund name, or a command like &quot;DCA&quot; or &quot;debt&quot;</p>
             </div>
           ) : (
             filteredItems.map((item, idx) => {
