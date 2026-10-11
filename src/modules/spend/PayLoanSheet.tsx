@@ -21,11 +21,14 @@ export function openPayLoan(liabilityId: string) {
  * transaction it logged (if any) is removed so the wallet gets the money back too.
  */
 export function useUndoLoanPayment() {
-  const { undoLiabilityPayment } = useData()
+  const { data, undoLiabilityPayment } = useData()
   const { transactions, removeTransaction } = useSpend()
   return (liabilityId: string) => {
-    const latest = transactions.find((t) => t.liabilityId === liabilityId) // newest first
-    if (latest) removeTransaction(latest.id)
+    // Only the transaction from that payment's day: one paid outside the app logged nothing,
+    // and an older month's payment must stay
+    const paidOn = (data.liabilities ?? []).find((l) => l.id === liabilityId)?.lastPaidDate
+    const logged = paidOn ? transactions.find((t) => t.liabilityId === liabilityId && t.date === paidOn) : undefined
+    if (logged) removeTransaction(logged.id)
     undoLiabilityPayment(liabilityId)
   }
 }
