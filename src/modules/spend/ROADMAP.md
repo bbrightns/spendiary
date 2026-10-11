@@ -18,6 +18,8 @@
   - Optional: partial payment / minimum payment, mark as paid.
 - **Phase 5 (done)** — budget per category (spent vs limit on Overview, warns at 85%, red when over);
   recurring bills / income that wait for a one-tap Log or Skip (or open pre-filled to adjust the amount).
+- **Checked in the real UI (2026-10-11):** DCA Confirm Buy (units, invested, Spend "Invested" row) and
+  Activity Logs Undo (holding, log, Spend row and the plan all roll back).
 - **Phase 6 (done)** — Invest-side links: dividends → income and DCA buys → "invested" (read-only,
   derived from Invest); Spend cards in net worth (per-card opt-out); Dashboard cash-flow card;
   delta-based undo for cash-account logs.
@@ -43,4 +45,3 @@
   change behaviour.
 17. Move Spend data to its own Supabase table once it grows (single payload today);
     a foundational change — the trigger for v2.0.0.
-18. Test the DCA confirm and Activity Logs undo flows through the real UI (logic tested only).
