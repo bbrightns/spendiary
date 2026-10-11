@@ -411,6 +411,10 @@ export interface PayCycle {
   mode: 'calendar' | 'payday'
   rule?: PayDayRule
   weekend?: WeekendShift
+  /** Also move payday off Thai public holidays (fixed-date ones, with substitution days) */
+  holidays?: boolean
+  /** Extra days off to move payday off (YYYY-MM-DD), e.g. Buddhist holidays or special days */
+  extraHolidays?: string[]
 }
 
 export interface SpendCard {
@@ -429,6 +433,8 @@ export interface SpendCard {
   dueDay: number
   /** Leave out of net worth / total debts (e.g. it's already tracked in Debts) */
   excludeFromNetWorth?: boolean
+  /** Minimum payment as a % of the amount due (Thai cards: 8%); default 8 */
+  minPaymentPercent?: number
 }
 
 export interface SpendiaryData {

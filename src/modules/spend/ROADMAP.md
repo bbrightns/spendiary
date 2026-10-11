@@ -34,9 +34,10 @@
 10. Savings goals.
 12. Monthly report: category trends, 6-month income vs. expense line.
 13. USD wallets (currently THB only).
-14. Thai public holidays when shifting payday (weekends only for now).
 15. Receipt scanning (needs a server-side function for the vision API key).
-16. Card bills: minimum payment / mark as paid.
+
+- Thai holidays: only fixed-date ones are built in; Buddhist holidays (lunar) are added by the user as
+  "Other days off". A yearly built-in list could come later.
 
 ### Tech and data
 - Lint warnings left on purpose: ~40 `react-hooks/exhaustive-deps` / fast-refresh warnings in older
@@ -45,4 +46,3 @@
 17. Move Spend data to its own Supabase table once it grows (single payload today);
     a foundational change — the trigger for v2.0.0.
 18. Test the DCA confirm and Activity Logs undo flows through the real UI (logic tested only).
-19. Dashboard "Total Outstanding" now includes Spend cards: label it or list cards in the Debts card.

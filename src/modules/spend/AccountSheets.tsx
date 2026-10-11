@@ -85,7 +85,7 @@ interface CardSheetProps {
 export function CardSheet({ open, card, onClose }: CardSheetProps) {
   const { upsertCard, removeCard } = useSpend()
   const { showToast } = useToast()
-  const [form, setForm] = useState({ name: '', last4: '', limit: '', owed: '', statementDay: '25', dueDay: '10', color: CARD_COLORS[0] })
+  const [form, setForm] = useState({ name: '', last4: '', limit: '', owed: '', statementDay: '25', dueDay: '10', minPct: '8', color: CARD_COLORS[0] })
   const [inNetWorth, setInNetWorth] = useState(true)
   const [lastOpen, setLastOpen] = useState(false)
   if (open !== lastOpen) {
@@ -101,16 +101,18 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
               owed: String(card.balance),
               statementDay: String(card.statementDay),
               dueDay: String(card.dueDay),
+              minPct: String(card.minPaymentPercent ?? 8),
               color: card.color ?? CARD_COLORS[0],
             }
-          : { name: '', last4: '', limit: '', owed: '0', statementDay: '25', dueDay: '10', color: CARD_COLORS[(Math.random() * CARD_COLORS.length) | 0] },
+          : { name: '', last4: '', limit: '', owed: '0', statementDay: '25', dueDay: '10', minPct: '8', color: CARD_COLORS[(Math.random() * CARD_COLORS.length) | 0] },
       )
   }
 
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }))
   const dayOk = (v: string) => Number.isInteger(Number(v)) && Number(v) >= 1 && Number(v) <= 31
+  const pctOk = num(form.minPct) > 0 && num(form.minPct) <= 100
   const canSave =
-    form.name.trim() !== '' && num(form.limit) > 0 && Number.isFinite(num(form.owed || '0')) && dayOk(form.statementDay) && dayOk(form.dueDay)
+    form.name.trim() !== '' && num(form.limit) > 0 && Number.isFinite(num(form.owed || '0')) && dayOk(form.statementDay) && dayOk(form.dueDay) && pctOk
 
   const save = () => {
     upsertCard({
@@ -123,6 +125,7 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
       statementDay: Number(form.statementDay),
       excludeFromNetWorth: inNetWorth ? undefined : true,
       dueDay: Number(form.dueDay),
+      minPaymentPercent: num(form.minPct) === 8 ? undefined : num(form.minPct),
     })
     showToast(card ? 'Card updated' : 'Card added')
     onClose()
@@ -184,6 +187,13 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
           </Field>
         </div>
         {(!dayOk(form.statementDay) || !dayOk(form.dueDay)) && <p className="text-xs font-semibold text-loss">Days go from 1 to 31.</p>}
+
+        <Field label="Minimum payment" hint="% of the bill · ขั้นต่ำ">
+          <div className="relative">
+            <input className={`${inputClass} pr-9`} inputMode="decimal" value={form.minPct} onChange={(e) => set('minPct')(digits(e.target.value))} />
+            <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-ink-muted">%</span>
+          </div>
+        </Field>
 
         <div>
           <p className="mb-2 text-sm font-semibold text-ink-soft">Color</p>

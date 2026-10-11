@@ -12,6 +12,7 @@ import { useSpend } from '../useSpend'
 import { categoriesFor } from '../categories'
 import { TONES } from '../tones'
 import { CategoryManager } from '../CategorySheet'
+import { SwitchVisual } from '../AccountSheets'
 
 const fmtDay = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number)
@@ -33,7 +34,15 @@ function Section({ id, title, description, children }: { id?: string; title: str
   )
 }
 
-type Draft = { mode: PayCycle['mode']; ruleKind: 'day' | 'fromEnd'; day: string; daysBefore: string; weekend: WeekendShift }
+type Draft = {
+  mode: PayCycle['mode']
+  ruleKind: 'day' | 'fromEnd'
+  day: string
+  daysBefore: string
+  weekend: WeekendShift
+  holidays: boolean
+  extraHolidays: string[]
+}
 
 function toDraft(c?: PayCycle): Draft {
   return {
@@ -42,19 +51,26 @@ function toDraft(c?: PayCycle): Draft {
     day: c?.rule?.kind === 'day' ? String(c.rule.day) : '25',
     daysBefore: c?.rule?.kind === 'fromEnd' ? String(c.rule.daysBefore) : '1',
     weekend: c?.weekend ?? 'before',
+    holidays: !!c?.holidays,
+    extraHolidays: c?.extraHolidays ?? [],
   }
 }
 
 function fromDraft(d: Draft): PayCycle | null {
   if (d.mode === 'calendar') return { mode: 'calendar' }
+  // Only stored when used, so older settings compare equal
+  const days = {
+    ...(d.holidays ? { holidays: true } : {}),
+    ...(d.extraHolidays.length ? { extraHolidays: [...d.extraHolidays].sort() } : {}),
+  }
   if (d.ruleKind === 'day') {
     const day = Number(d.day)
     if (!Number.isInteger(day) || day < 1 || day > 31) return null
-    return { mode: 'payday', rule: { kind: 'day', day }, weekend: d.weekend }
+    return { mode: 'payday', rule: { kind: 'day', day }, weekend: d.weekend, ...days }
   }
   const n = Number(d.daysBefore)
   if (!Number.isInteger(n) || n < 0 || n > 27) return null
-  return { mode: 'payday', rule: { kind: 'fromEnd', daysBefore: n }, weekend: d.weekend }
+  return { mode: 'payday', rule: { kind: 'fromEnd', daysBefore: n }, weekend: d.weekend, ...days }
 }
 
 export function SpendSettings() {
@@ -174,18 +190,62 @@ export function SpendSettings() {
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-ink-soft">If it falls on a Saturday or Sunday</p>
+              <p className="text-sm font-semibold text-ink-soft">If it falls on a weekend{draft.holidays || draft.extraHolidays.length ? ' or day off' : ''}</p>
               <SegmentedControl
                 ariaLabel="Weekend rule"
                 value={draft.weekend}
                 onChange={(v) => set('weekend', v)}
                 options={[
-                  { value: 'before', label: 'Fri before', title: 'Move to the Friday before' },
-                  { value: 'after', label: 'Mon after', title: 'Move to the Monday after' },
+                  { value: 'before', label: 'Day before', title: 'Move to the working day before' },
+                  { value: 'after', label: 'Day after', title: 'Move to the working day after' },
                   { value: 'keep', label: 'Keep date', title: 'Keep the date even on a weekend' },
                 ]}
               />
             </div>
+
+            {draft.weekend !== 'keep' && (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={draft.holidays}
+                  onClick={() => setDraft((d) => ({ ...d, holidays: !d.holidays }))}
+                  className="flex w-full items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 text-left cursor-pointer hover:bg-surface-muted/50"
+                >
+                  <span>
+                    <span className="block text-sm font-bold text-ink">Skip Thai public holidays</span>
+                    <span className="block text-xs text-ink-muted">Fixed-date ones and their substitution days. Add Buddhist holidays below.</span>
+                  </span>
+                  <SwitchVisual on={draft.holidays} />
+                </button>
+                <div>
+                  <p className="mb-1.5 text-sm font-semibold text-ink-soft">Other days off</p>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {draft.extraHolidays.map((h) => (
+                      <button
+                        key={h}
+                        type="button"
+                        onClick={() => setDraft((d) => ({ ...d, extraHolidays: d.extraHolidays.filter((x) => x !== h) }))}
+                        aria-label={`Remove ${fmtDay(h)}`}
+                        className="inline-flex items-center gap-1 rounded-full bg-surface-muted px-2.5 py-1 text-xs font-semibold text-ink-soft hover:text-ink cursor-pointer"
+                      >
+                        {fmtDay(h)} <span aria-hidden="true">×</span>
+                      </button>
+                    ))}
+                    <input
+                      type="date"
+                      aria-label="Add a day off"
+                      value=""
+                      onChange={(e) => {
+                        const v = e.target.value
+                        if (v) setDraft((d) => (d.extraHolidays.includes(v) ? d : { ...d, extraHolidays: [...d.extraHolidays, v] }))
+                      }}
+                      className="h-9 rounded-xl border border-line-strong bg-surface px-2.5 text-sm text-ink outline-none focus:border-brand"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

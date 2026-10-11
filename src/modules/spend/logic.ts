@@ -111,6 +111,13 @@ export function cardCycle(card: Pick<SpendCard, 'statementDay' | 'dueDay'>, toda
 // ── Card bills ───────────────────────────────────────────────────────────────
 
 export const DEFAULT_BILL_REMINDER_DAYS = 5
+export const DEFAULT_MIN_PAYMENT_PERCENT = 8
+
+/** Smallest payment that avoids a late fee: a % of what's due, never more than what's due. */
+export function minimumPayment(amountDue: number, percent = DEFAULT_MIN_PAYMENT_PERCENT): number {
+  if (amountDue <= 0) return 0
+  return Math.min(amountDue, Math.ceil(amountDue * percent) / 100)
+}
 
 export type BillStatus = 'overdue' | 'due' | 'upcoming' | 'clear'
 
@@ -198,6 +205,36 @@ const addDays = (s: string, n: number) => {
 
 export const isCalendar = (cycle?: PayCycle) => !cycle || cycle.mode === 'calendar' || !cycle.rule
 
+// Thai public holidays on fixed dates (month-day). Buddhist holidays follow the lunar
+// calendar and move every year, so those are added by the user as extra days off.
+const TH_FIXED_HOLIDAYS = ['01-01', '04-06', '04-13', '04-14', '04-15', '05-01', '05-04', '06-03', '07-28', '08-12', '10-13', '10-23', '12-05', '12-10', '12-31']
+const holidayCache = new Map<number, Set<string>>()
+
+const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6
+
+/** A year's fixed-date Thai public holidays, plus a substitution day for each one on a weekend. */
+export function thaiHolidays(year: number): Set<string> {
+  const cached = holidayCache.get(year)
+  if (cached) return cached
+  const days = new Set(TH_FIXED_HOLIDAYS.map((md) => `${year}-${md}`))
+  for (const day of [...days].sort()) {
+    const d = parse(day)
+    if (!isWeekend(d)) continue
+    // The next working day that isn't already a holiday
+    do d.setDate(d.getDate() + 1)
+    while (isWeekend(d) || days.has(localDateStr(d)))
+    days.add(localDateStr(d))
+  }
+  holidayCache.set(year, days)
+  return days
+}
+
+/** On a Thai public holiday (a substitution day may spill into January). */
+export const isThaiHoliday = (date: string) => {
+  const y = Number(date.slice(0, 4))
+  return thaiHolidays(y).has(date) || thaiHolidays(y - 1).has(date)
+}
+
 /** Payday for a month (`month` is 0-based and may overflow, like the Date constructor). */
 export function paydayIn(year: number, month: number, cycle: PayCycle): Date {
   const lastDay = new Date(year, month + 1, 0).getDate()
@@ -210,7 +247,13 @@ export function paydayIn(year: number, month: number, cycle: PayCycle): Date {
   const shift = cycle.weekend ?? 'before'
   if (shift !== 'keep') {
     const step = shift === 'before' ? -1 : 1
-    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + step)
+    const extra = new Set(cycle.extraHolidays ?? [])
+    const off = (x: Date) => {
+      if (isWeekend(x)) return true
+      const s = localDateStr(x)
+      return extra.has(s) || (!!cycle.holidays && isThaiHoliday(s))
+    }
+    while (off(d)) d.setDate(d.getDate() + step)
   }
   return d
 }

@@ -90,6 +90,9 @@ export function Dashboard() {
   )
   const cash = useMemo(() => totalCash(data, usdThb), [data.cashAccounts, usdThb])
   const debts = useMemo(() => totalLiabilities(data), [data.liabilities, data.spendCards])
+  // Spend credit cards counted in the total (those not already tracked in Debts)
+  const countedCards = useMemo(() => (data.spendCards ?? []).filter((c) => !c.excludeFromNetWorth && c.balance > 0), [data.spendCards])
+  const cardsOwed = countedCards.reduce((s, c) => s + c.balance, 0)
   const monthlyDebt = useMemo(() => totalMonthlyDebtPayment(data), [data.liabilities])
   const grossAssets = portfolio.value + cash
   const debtRatio = grossAssets > 0 ? (debts / grossAssets) * 100 : (debts > 0 ? 100 : 0)
@@ -782,12 +785,22 @@ export function Dashboard() {
                   </div>
                   <div className="flex items-center justify-end gap-1.5 min-w-0 h-6">
                     <span className="text-xs font-bold text-ink-muted bg-surface px-2 py-0.5 rounded-md border border-line/60">
-                      {(data.liabilities?.length ?? 0) === 0
+                      {(data.liabilities?.length ?? 0) === 0 && countedCards.length === 0
                         ? 'Debt Free'
-                        : `${data.liabilities?.length} ${(data.liabilities?.length ?? 0) === 1 ? 'Debt' : 'Debts'}`}
+                        : [
+                            (data.liabilities?.length ?? 0) > 0 && `${data.liabilities?.length} ${data.liabilities?.length === 1 ? 'Debt' : 'Debts'}`,
+                            countedCards.length > 0 && `${countedCards.length} ${countedCards.length === 1 ? 'Card' : 'Cards'}`,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
                     </span>
                   </div>
                 </div>
+                {cardsOwed > 0 && (
+                  <Link to="/spend/accounts" className="mt-2 block truncate text-xs text-ink-muted hover:text-ink">
+                    Includes <b className="font-semibold text-ink tnum">{thb(cardsOwed)}</b> on Spend credit cards →
+                  </Link>
+                )}
               </div>
 
               {/* Debt distribution bar & items */}

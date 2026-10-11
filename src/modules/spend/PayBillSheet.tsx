@@ -4,7 +4,8 @@ import { Button } from '../../components/ui/Button'
 import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb } from '../../lib/format'
 import { getCategory } from './categories'
-import { PayMethodPicker } from './PayMethodPicker'
+import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
+import { DEFAULT_MIN_PAYMENT_PERCENT, TAG_RE, minimumPayment } from './logic'
 import { useSpend } from './useSpend'
 import { TONES } from './tones'
 
@@ -35,7 +36,7 @@ export function PayBillSheet() {
   const { bills, methods, settings, addTransaction } = useSpend()
   const { showToast } = useToast()
   const [cardId, setCardId] = useState<string | null>(null)
-  const [mode, setMode] = useState<'full' | 'custom'>('full')
+  const [mode, setMode] = useState<'full' | 'min' | 'custom'>('full')
   const [custom, setCustom] = useState('')
   const [fromId, setFromId] = useState('')
   const [showAll, setShowAll] = useState(false)
@@ -62,20 +63,23 @@ export function PayBillSheet() {
   const bill = bills.find((b) => b.card.id === cardId)
   const close = () => setCardId(null)
   const customNum = Number(custom.replace(/,/g, ''))
-  const amount = mode === 'full' ? bill?.amountDue ?? 0 : customNum
-  const canPay = !!bill && Number.isFinite(amount) && amount > 0 && fromId !== ''
+  const minimum = bill ? minimumPayment(bill.amountDue, bill.card.minPaymentPercent) : 0
+  const amount = mode === 'full' ? bill?.amountDue ?? 0 : mode === 'min' ? minimum : customNum
+  // No wallet = paid outside the app: only the card's balance goes down
+  const outside = fromId === NOT_TRACKED
+  const canPay = !!bill && Number.isFinite(amount) && amount > 0
 
   const pay = () => {
     if (!bill || !canPay) return
     addTransaction({
       type: 'transfer',
       amount: Math.round(amount * 100) / 100,
-      accountId: fromId,
+      accountId: outside ? undefined : fromId,
       toAccountId: bill.card.id,
       date: localDateStr(),
       note: `Pay ${bill.card.name} bill`,
     })
-    showToast(`Paid ${thb(amount, true)} to ${bill.card.name}`)
+    showToast(outside ? `Marked ${thb(amount, true)} as paid on ${bill.card.name}` : `Paid ${thb(amount, true)} to ${bill.card.name}`)
     close()
   }
 
@@ -93,7 +97,8 @@ export function PayBillSheet() {
       footer={
         bill && bill.amountDue > 0 ? (
           <Button data-modal-submit className="w-full" disabled={!canPay} onClick={pay}>
-            Pay {thb(amount > 0 ? amount : 0, true)}
+            {outside ? 'Mark' : 'Pay'} {thb(amount > 0 ? amount : 0, true)}
+            {outside ? ' as paid' : ''}
           </Button>
         ) : (
           <Button variant="secondary" className="w-full" onClick={close}>
@@ -154,7 +159,7 @@ export function PayBillSheet() {
                         {Icon && <Icon className="h-4 w-4" />}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-ink">{t.note?.replace(/#\S+/g, '').trim() || cat?.label}</span>
+                        <span className="block truncate text-sm font-semibold text-ink">{t.note?.replace(TAG_RE, '').replace(/\s+/g, ' ').trim() || cat?.label}</span>
                         <span className="block text-xs text-ink-muted">{short(t.date)}</span>
                       </span>
                       <span className={`shrink-0 text-sm font-bold tnum ${t.type === 'income' ? 'text-gain' : 'text-ink'}`}>
@@ -188,8 +193,19 @@ export function PayBillSheet() {
                     <span className="block text-xs font-semibold text-ink-muted">Full amount</span>
                     <span className="block text-sm font-bold text-ink tnum">{thb(bill.amountDue, true)}</span>
                   </button>
+                  {minimum < bill.amountDue && (
+                    <button
+                      type="button"
+                      aria-pressed={mode === 'min'}
+                      onClick={() => setMode('min')}
+                      className={`rounded-2xl border px-3 py-2.5 text-left cursor-pointer ${mode === 'min' ? 'border-brand/50 bg-brand-soft ring-2 ring-brand/15' : 'border-line hover:bg-surface-muted/60'}`}
+                    >
+                      <span className="block text-xs font-semibold text-ink-muted">Minimum ({bill.card.minPaymentPercent ?? DEFAULT_MIN_PAYMENT_PERCENT}%)</span>
+                      <span className="block text-sm font-bold text-ink tnum">{thb(minimum, true)}</span>
+                    </button>
+                  )}
                   <label
-                    className={`rounded-2xl border px-3 py-2.5 cursor-text ${mode === 'custom' ? 'border-brand/50 bg-brand-soft ring-2 ring-brand/15' : 'border-line hover:bg-surface-muted/60'}`}
+                    className={`col-span-2 rounded-2xl border px-3 py-2.5 cursor-text ${mode === 'custom' ? 'border-brand/50 bg-brand-soft ring-2 ring-brand/15' : 'border-line hover:bg-surface-muted/60'}`}
                   >
                     <span className="block text-xs font-semibold text-ink-muted">Other amount</span>
                     <span className="flex items-center text-sm font-bold text-ink">
@@ -211,11 +227,15 @@ export function PayBillSheet() {
                 </div>
               </div>
 
+              {mode === 'min' && (
+                <p className="-mt-2 text-xs text-ink-muted">Interest is charged on what's left after the due date.</p>
+              )}
               <PayMethodPicker
                 label="From wallet"
                 methods={wallets}
                 value={fromId}
                 onChange={setFromId}
+                allowNone
                 favoriteIds={settings.favoriteAccountIds ?? []}
                 defaultId={settings.defaultAccountId}
               />

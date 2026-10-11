@@ -3,6 +3,9 @@ import type { CashAccount, PayCycle, SpendCard, SpendRecurring, SpendTransaction
 import {
   accountTotals,
   averageMonthlySpend,
+  isThaiHoliday,
+  thaiHolidays,
+  minimumPayment,
   applyToBalances,
   cardBill,
   cardCycle,
@@ -161,5 +164,31 @@ describe('averageMonthlySpend', () => {
   it('caps at 6 months', () => {
     const txns = Array.from({ length: 10 }, (_, i) => spendIn(`2025-${String(12 - i).padStart(2, '0')}-05`, 100))
     expect(averageMonthlySpend(txns, undefined, '2026-01-15')?.months).toBe(6)
+  })
+})
+
+describe('minimumPayment', () => {
+  it('is a share of the bill, rounded up to the satang, capped at the bill', () => {
+    expect(minimumPayment(5630)).toBe(450.4)
+    expect(minimumPayment(1000, 10)).toBe(100)
+    expect(minimumPayment(0)).toBe(0)
+    expect(minimumPayment(50, 100)).toBe(50)
+  })
+})
+
+describe('Thai holidays', () => {
+  it('adds substitution days for weekend holidays', () => {
+    // 13–15 Apr 2024 were Sat–Mon → substitutes Tue 16
+    const h = thaiHolidays(2024)
+    expect(h.has('2024-04-16')).toBe(true)
+    expect(isThaiHoliday('2026-10-23')).toBe(true)
+    expect(isThaiHoliday('2026-10-22')).toBe(false)
+  })
+  it('moves payday off holidays and extra days off', () => {
+    const base: PayCycle = { mode: 'payday', rule: { kind: 'day', day: 23 }, weekend: 'before' }
+    // Fri 23 Oct 2026 is Chulalongkorn Day
+    expect(paydayIn(2026, 9, base).getDate()).toBe(23)
+    expect(paydayIn(2026, 9, { ...base, holidays: true }).getDate()).toBe(22)
+    expect(paydayIn(2026, 9, { ...base, extraHolidays: ['2026-10-23', '2026-10-22'] }).getDate()).toBe(21)
   })
 })
