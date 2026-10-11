@@ -4,7 +4,7 @@ import { thb, thbSigned } from '../../lib/format'
 import type { SpendCard, SpendTransaction } from '../../lib/types'
 import { StarIcon } from './AccountSheets'
 import { FALLBACK_CARD_COLOR, cardFace, inkOn } from './cardColor'
-import { installmentHold } from './loans'
+import { availableCredit } from './credit'
 import { useData } from '../../store/DataContext'
 import { cardCycle, upcomingDue } from './logic'
 import { dueText, openPayBill } from './PayBillSheet'
@@ -70,8 +70,10 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
   const color = active.color ?? FALLBACK_CARD_COLOR
   const ink = inkOn(color)
   // Installment plans on this card block their whole remaining amount from the limit
-  const held = installmentHold(loans, active.id)
-  const used = active.creditLimit > 0 ? Math.min(100, Math.max(0, ((active.balance + held) / active.creditLimit) * 100)) : 0
+  // The limit it draws on: shared with its other cards, less installment holds
+  const credit = availableCredit(active, cards, loans)
+  const held = credit.held
+  const used = credit.limit > 0 ? Math.min(100, Math.max(0, (credit.used / credit.limit) * 100)) : 0
   const fav = favoriteIds.includes(active.id)
 
   return (
@@ -151,9 +153,15 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
               <p className="font-display text-2xl font-extrabold tracking-tight tnum text-ink">{thbSigned(active.balance, true)}</p>
             </div>
             <p className="text-right text-xs text-ink-muted tnum">
-              {thb(Math.max(0, active.creditLimit - active.balance - held), true)} left
+              {thb(credit.left, true)} left
               <br />
-              of {thb(active.creditLimit, true)}
+              of {thb(credit.limit, true)}
+              {credit.sharedWith.length > 0 && (
+                <>
+                  <br />
+                  shared with {credit.sharedWith.join(', ')}
+                </>
+              )}
               {held > 0 && (
                 <>
                   <br />

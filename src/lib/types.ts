@@ -467,6 +467,8 @@ export interface SpendCard {
   excludeFromNetWorth?: boolean
   /** Minimum payment as a % of the amount due (Thai cards: 8%); default 8 */
   minPaymentPercent?: number
+  /** Shares this card's limit (id of the main card); its own creditLimit is kept for if it's ever unlinked */
+  sharedLimitWith?: string
 }
 
 export interface SpendiaryData {

@@ -70,7 +70,7 @@ export function PayMethodPicker({ label, methods, value, onChange, favoriteIds, 
                 <span className="block text-[11px] font-medium text-ink-muted tnum">
                   {m.id === defaultId && <span className="font-bold text-brand-ink">Default · </span>}
                   {m.kind === 'card'
-                    ? `${thb(Math.max(0, (m.creditLimit ?? 0) - m.balance - (m.held ?? 0)), true)} left`
+                    ? `${thb(m.available ?? Math.max(0, (m.creditLimit ?? 0) - m.balance), true)} left`
                     : thb(m.balance, true)}
                 </span>
               </span>

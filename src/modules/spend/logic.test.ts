@@ -4,6 +4,7 @@ import { homeOrder, isDefaultOrder, moveCard } from './homeLayout'
 import type { CashAccount, Liability, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
 import { firstInstallmentDue, installmentAmount, installmentHold, isLoanDone, loanPaymentAmount, loanProgress, paymentIsSpending } from './loans'
 import { isLiabilityActionableThisMonth, isLiabilityFirstDueNextMonth } from '../../lib/calc'
+import { availableCredit, limitOwner, totalAvailable } from './credit'
 import {
   accountTotals,
   applyOrder,
@@ -414,5 +415,32 @@ describe('card installment, paid by hand', () => {
     expect(isLiabilityActionableThisMonth(l, new Date(2026, 9, 28))).toBe(false)
     expect(isLiabilityActionableThisMonth(l, new Date(2026, 10, 3))).toBe(true)
     expect(isLiabilityActionableThisMonth(l, new Date(2026, 10, 15))).toBe(true)
+  })
+})
+
+describe('shared credit limits', () => {
+  const c = (p: Partial<SpendCard> & { id: string }): SpendCard => ({ name: p.id, creditLimit: 0, balance: 0, statementDay: 25, dueDay: 10, ...p })
+  const smart = c({ id: 'smart', name: 'ttb So Smart', creditLimit: 122_000, balance: 735 })
+  const disney = c({ id: 'disney', name: 'ttb Disney', creditLimit: 122_000, balance: 120, sharedLimitWith: 'smart' })
+  const ktc = c({ id: 'ktc', creditLimit: 120_000, balance: 5969 })
+  const cards = [smart, disney, ktc]
+
+  it('counts every card on the limit, from either card', () => {
+    expect(availableCredit(disney, cards, []).left).toBe(121_145)
+    expect(availableCredit(smart, cards, []).left).toBe(121_145)
+    expect(availableCredit(disney, cards, []).sharedWith).toEqual(['ttb So Smart'])
+    expect(availableCredit(ktc, cards, []).left).toBe(114_031)
+  })
+  it('takes installment holds on any card in the group off the shared limit', () => {
+    const plan: Liability = { id: 'p', name: 'TV', category: 'installment', balance: 20_000, payFromId: 'disney' }
+    expect(availableCredit(smart, cards, [plan]).left).toBe(101_145)
+  })
+  it('counts a shared limit once in the total', () => {
+    expect(totalAvailable(cards, [])).toEqual({ limit: 242_000, left: 121_145 + 114_031 })
+  })
+  it('falls back to its own limit when the main card is gone or shares one itself', () => {
+    expect(limitOwner(disney, [disney, ktc]).id).toBe('disney')
+    const chained = c({ id: 'x', sharedLimitWith: 'disney', creditLimit: 5000 })
+    expect(limitOwner(chained, [...cards, chained]).id).toBe('x')
   })
 })
