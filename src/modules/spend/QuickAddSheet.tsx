@@ -24,6 +24,8 @@ interface OpenDetail {
   prefill?: SpendTxnInput
   /** A new entry with some fields filled in (the rest use the usual defaults), e.g. from the command palette */
   draft?: Partial<Pick<SpendTxnInput, 'type' | 'amount' | 'note' | 'categoryId'>>
+  /** A line under the title explaining why the sheet opened (new entries only) */
+  hint?: string
   /** Saving marks this recurring occurrence as done */
   recurring?: { id: string; date: string; name: string }
 }
@@ -84,6 +86,7 @@ export function QuickAddSheet() {
   const [note, setNote] = useState('')
   const [alreadyIn, setAlreadyIn] = useState(false)
   const [newCategory, setNewCategory] = useState(false)
+  const [hint, setHint] = useState<string | undefined>()
   const amountRef = useRef<HTMLInputElement>(null)
 
   // Latest values for the event listener without re-subscribing on every keystroke
@@ -98,6 +101,7 @@ export function QuickAddSheet() {
       // Editing fills from the saved transaction; a recurring occurrence fills from its template
       const source = existing ?? detail.prefill
       setFromRecurring(existing ? null : detail.recurring ?? null)
+      setHint(existing ? undefined : detail.hint)
 
       if (source) {
         setEditId(existing?.id ?? null)
@@ -206,7 +210,7 @@ export function QuickAddSheet() {
         open={open}
         onClose={() => setOpen(false)}
         title={editId ? 'Edit transaction' : fromRecurring ? fromRecurring.name : 'Quick add'}
-        description={fromRecurring ? `Mark as ${type === 'income' ? 'received' : 'paid'}. Adjust the amount if this one was different.` : undefined}
+        description={fromRecurring ? `Mark as ${type === 'income' ? 'received' : 'paid'}. Adjust the amount if this one was different.` : hint}
         size="md"
         footer={<FormActions editing={!!editId} canSave={canSave} onSave={save} onDelete={remove} />}
       >

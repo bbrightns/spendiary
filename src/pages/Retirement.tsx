@@ -7,7 +7,9 @@ import { NumberField, TextField } from '../components/ui/Field'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { dcaPerMonth, portfolioSummary, totalCash } from '../lib/calc'
-import { thbCompact } from '../lib/format'
+import { thb, thbCompact } from '../lib/format'
+import { averageMonthlySpend } from '../modules/spend/logic'
+import { useSpend } from '../modules/spend/useSpend'
 
 
 const C_INVEST  = 'var(--color-crypto)'
@@ -262,6 +264,9 @@ export function Retirement() {
   } = usePageGuide('retirement')
   const { data, setRetirement, syncStatus, usdThb } = useData()
   const saved = data.retirement
+  // What you really spend, from Spend: a starting point for spending after retirement
+  const { transactions: spendTxns, settings: spendSettings } = useSpend()
+  const realSpend = useMemo(() => averageMonthlySpend(spendTxns, spendSettings.cycle), [spendTxns, spendSettings.cycle])
 
   const [isInitialized, setIsInitialized] = useState(false)
 
@@ -494,6 +499,18 @@ export function Retirement() {
                 onChange={setMonthlySpend}
                 placeholder="50,000"
               />
+              {realSpend && Math.round(realSpend.average / 100) * 100 !== monthlySpend && (
+                <button
+                  type="button"
+                  onClick={() => setMonthlySpend(Math.round(realSpend.average / 100) * 100)}
+                  className="-mt-2 flex w-full items-center justify-between gap-3 rounded-xl bg-brand-soft px-3 py-2 text-left text-xs text-brand-ink transition-colors hover:bg-brand-soft/70 cursor-pointer"
+                >
+                  <span>
+                    You spend about <b className="tnum">{thb(realSpend.average)}</b> a month (last {realSpend.months} months in Spend)
+                  </span>
+                  <span className="shrink-0 font-bold">Use</span>
+                </button>
+              )}
               <div>
                 <span className="text-sm font-semibold text-ink-soft block mb-1.5">
                   How you will use your savings

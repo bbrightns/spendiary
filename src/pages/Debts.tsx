@@ -13,6 +13,7 @@ import { useToast } from '../store/ToastContext'
 import type { DebtCategory, HoldingLog, Liability } from '../lib/types'
 import { DEBT_CATEGORIES, getLiabilityDueStatus } from '../lib/calc'
 import { thb } from '../lib/format'
+import { openQuickAdd } from '../modules/spend/QuickAddSheet'
 import {
   CarIcon,
   CheckIcon,
@@ -195,7 +196,23 @@ export function Debts() {
   }
 
   const handlePay = (l: Liability) => {
+    // Same amount the payment takes off the balance
+    const remaining = Math.max(1, (l.totalInstallments ?? 1) - (l.paidInstallments ?? 0))
+    const amount = (l.monthlyPayment ?? 0) > 0 ? l.monthlyPayment! : Math.round(l.balance / remaining)
+    const n = (l.paidInstallments ?? 0) + 1
     payLiabilityInstallment(l.id)
+    // Offer to log it as spending, so the wallet it came from goes down too
+    if (amount > 0) {
+      openQuickAdd({
+        hint: 'Log this payment in Spend and pick the wallet it came from, or close to skip.',
+        draft: {
+          type: 'expense',
+          amount,
+          categoryId: 'bills',
+          note: `${l.name} payment${l.isInstallment && l.totalInstallments ? ` ${n}/${l.totalInstallments}` : ''}`,
+        },
+      })
+    }
     showToast(`Marked "${l.name}" as paid this month`, 'success', {
       label: 'Undo',
       onClick: () => undoLiabilityPayment(l.id),

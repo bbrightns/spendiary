@@ -474,3 +474,30 @@ export function accountTotals(txns: SpendTransaction[], id: string): AccountTota
   out.net = out.income - out.spent
   return out
 }
+
+// ── Spending average ─────────────────────────────────────────────────────────
+
+/**
+ * Average spending per spending month over the last complete months (up to `maxMonths`),
+ * skipping months before anything was logged. Undefined with fewer than `minMonths`.
+ */
+export function averageMonthlySpend(
+  txns: SpendTransaction[],
+  cycle?: PayCycle,
+  today = localDateStr(),
+  maxMonths = 6,
+  minMonths = 3,
+): { average: number; months: number } | undefined {
+  const expenses = txns.filter((t) => t.type === 'expense')
+  if (expenses.length === 0) return undefined
+  const first = expenses.reduce((m, t) => (t.date < m ? t.date : m), expenses[0].date)
+  const totals: number[] = []
+  let p = shiftPeriod(periodFor(today, cycle), -1, cycle)
+  for (let i = 0; i < maxMonths && p.end >= first; i++) {
+    const period = p
+    totals.push(expenses.filter((t) => inPeriod(period, t.date)).reduce((s, t) => s + t.amount, 0))
+    p = shiftPeriod(p, -1, cycle)
+  }
+  if (totals.length < minMonths) return undefined
+  return { average: totals.reduce((s, x) => s + x, 0) / totals.length, months: totals.length }
+}

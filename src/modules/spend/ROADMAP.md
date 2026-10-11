@@ -29,13 +29,6 @@
 
 ## Remaining tasks
 
-### Invest-side links
-4. Debts / installments → Spend expense when an installment is paid.
-5. DCA Planner: show Spend's real "left this month" next to the salary card.
-6. Retirement: suggest `monthlySpend` from the 3–6 month average of real spending.
-7. Cash page: per-wallet "see transactions" link → `/spend/txns?q=<wallet>`.
-8. DCA salary (`monthlyIncome`) read from Spend's recurring salary.
-
 ### Spend features
 9. Bulk import of past transactions (bank / card statement CSV or AI).
 10. Savings goals.

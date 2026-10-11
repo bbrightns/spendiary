@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { CashAccount, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
 import {
   accountTotals,
+  averageMonthlySpend,
   applyToBalances,
   cardBill,
   cardCycle,
@@ -144,5 +145,21 @@ describe('accountTotals', () => {
       'w1',
     )
     expect(t).toMatchObject({ spent: 100, income: 300, net: 200, transferOut: 50, transferIn: 20, count: 4, since: '2026-09-01' })
+  })
+})
+
+describe('averageMonthlySpend', () => {
+  const spendIn = (date: string, amount: number) => txn({ date, amount })
+  it('averages complete months since tracking began', () => {
+    const txns = [spendIn('2026-06-10', 300), spendIn('2026-07-05', 600), spendIn('2026-08-01', 900), spendIn('2026-09-15', 1200), spendIn('2026-10-02', 5000)]
+    // Oct is the current month (not complete); Jun–Sep count
+    expect(averageMonthlySpend(txns, undefined, '2026-10-11')).toEqual({ average: 750, months: 4 })
+  })
+  it('needs at least 3 months', () => {
+    expect(averageMonthlySpend([spendIn('2026-09-01', 100)], undefined, '2026-10-11')).toBeUndefined()
+  })
+  it('caps at 6 months', () => {
+    const txns = Array.from({ length: 10 }, (_, i) => spendIn(`2025-${String(12 - i).padStart(2, '0')}-05`, 100))
+    expect(averageMonthlySpend(txns, undefined, '2026-01-15')?.months).toBe(6)
   })
 })

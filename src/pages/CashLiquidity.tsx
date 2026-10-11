@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, Fragment } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -19,6 +19,7 @@ import {
   totalCash,
 } from '../lib/calc'
 import { thb } from '../lib/format'
+import { ListBulletIcon } from '../modules/spend/categories'
 import {
   PencilIcon,
   PlusIcon,
@@ -54,6 +55,8 @@ function formatWithCommas(value: string | number): string {
 export function CashLiquidity() {
   const { data, setCashAccounts, usdThb } = useData()
   const { showToast } = useToast()
+  const navigate = useNavigate()
+  const openSpendTxns = (name: string) => navigate(`/spend/txns?q=${encodeURIComponent(name.toLowerCase())}`)
 
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<CashAccountCategory | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -550,6 +553,17 @@ export function CashLiquidity() {
 
                     {/* Action buttons */}
                     <div className="flex items-center gap-0.5 ml-1">
+                      {(a.currency ?? 'THB') === 'THB' && (
+                        <button
+                          type="button"
+                          onClick={() => openSpendTxns(a.name)}
+                          className="p-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
+                          title="See transactions in Spend"
+                          aria-label={`See ${a.name} transactions`}
+                        >
+                          <ListBulletIcon className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => {
@@ -732,6 +746,17 @@ export function CashLiquidity() {
                       {/* 5. Actions (edit / delete / expand) */}
                       <td className="py-2 px-3 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
+                          {(a.currency ?? 'THB') === 'THB' && (
+                            <button
+                              type="button"
+                              onClick={() => openSpendTxns(a.name)}
+                              className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted hover:bg-surface hover:text-ink transition-colors cursor-pointer"
+                              title="See transactions in Spend"
+                              aria-label={`See ${a.name} transactions`}
+                            >
+                              <ListBulletIcon className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => {

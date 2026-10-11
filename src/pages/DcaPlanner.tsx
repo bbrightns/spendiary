@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
@@ -14,7 +14,8 @@ import { usePageGuide } from '../hooks/usePageGuide'
 import { useLivePrices } from '../hooks/useLivePrices'
 import { CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, PencilIcon, PlusIcon } from '../components/icons'
 import { AssetLogo } from '../components/ui/AssetLogo'
-import { fixedCostRecurring, perMonth } from '../modules/spend/logic'
+import { fixedCostRecurring, inPeriod, perMonth, periodFor, periodLabel, totalsFor } from '../modules/spend/logic'
+import { useSpend } from '../modules/spend/useSpend'
 import {
   ASSET_META, dcaThisMonth, getHoldingDpsForMonth, isBuyDayOverdue, isBuyDayToday, isConfirmedForPeriod, isDividendReceivedThisMonth, isSkippedForPeriod,
   nextBuyDate, shouldConfirmBuy, sortDcaPlans,
@@ -348,7 +349,20 @@ export function DcaPlanner() {
   const fixedItems = fixedCostRecurring(data.spendRecurring ?? []).sort((a, b) => perMonth(b) - perMonth(a))
   const fixedTotal = fixedItems.reduce((s, x) => s + perMonth(x), 0)
   const dcaMonth   = dcaThisMonth(data.dcaPlans)
-  const salary = data.monthlyIncome
+  // Salary comes from Spend's recurring income in the Salary category when there is one;
+  // the number typed here is the fallback
+  const spend = useSpend()
+  const navigate = useNavigate()
+  const recurringSalary = spend.recurring
+    .filter((r) => r.type === 'income' && r.categoryId === 'salary' && !r.paused)
+    .reduce((s, r) => s + perMonth(r), 0)
+  const salaryFromSpend = recurringSalary > 0
+  const salary = salaryFromSpend ? recurringSalary : data.monthlyIncome
+
+  // This spending month from Spend: what actually came in and went out
+  const spendPeriod = periodFor(localDateStr(), spend.settings.cycle)
+  const spendMonthTxns = spend.transactions.filter((t) => inPeriod(spendPeriod, t.date))
+  const spendMonth = totalsFor(spendMonthTxns)
 
   // Effective plans considering in-progress draft adjustments
   const rawPlans = sortDcaPlans(data.dcaPlans)
@@ -427,6 +441,10 @@ export function DcaPlanner() {
 
   // ── Salary handlers ──
   function openSalaryEdit() {
+    if (salaryFromSpend) {
+      navigate('/spend/recurring')
+      return
+    }
     setSalaryDraft(salary > 0 ? String(salary) : '')
     setEditingSalary(true)
     setTimeout(() => salaryRef.current?.select(), 0)
@@ -519,7 +537,7 @@ export function DcaPlanner() {
                   onDraftChange={setSalaryDraft}
                   onCommit={commitSalary}
                   onCancel={() => setEditingSalary(false)}
-                  hint={salary <= 0 ? 'Tap to set your salary' : undefined}
+                  hint={salaryFromSpend ? 'From your recurring Salary in Spend' : salary <= 0 ? 'Tap to set your salary' : undefined}
                 />
                 {salary > 0 && fixedTotal + savingsTotal > salary && (
                   <div className="@min-[19rem]:text-right">
@@ -538,6 +556,24 @@ export function DcaPlanner() {
               </div>
 
               {salary > 0 && <BudgetBar salary={salary} fixed={fixedTotal} savings={savingsTotal} />}
+              {spendMonthTxns.length > 0 && (
+                <Link
+                  to="/spend/analysis"
+                  className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-surface-muted/60 px-3 py-2.5 transition-colors hover:bg-surface-muted"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-xs text-ink-muted">Spend · {periodLabel(spendPeriod, spend.settings.cycle)}</span>
+                    <span className={`block font-display text-base font-extrabold tnum ${spendMonth.net < 0 ? 'text-loss' : 'text-ink'}`}>
+                      {spendMonth.net < 0 ? '−' : ''}
+                      {thb(Math.abs(spendMonth.net))} left
+                    </span>
+                    <span className="block truncate text-xs text-ink-muted tnum">
+                      In <span className="text-gain">{thb(spendMonth.income)}</span> · out {thb(spendMonth.expense)}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-sm font-semibold text-brand-ink">Details →</span>
+                </Link>
+              )}
               {salary <= 0 && (
                 <button onClick={openSalaryEdit} className="mt-4 text-sm font-semibold text-brand hover:underline cursor-pointer">
                   + Add monthly salary to see breakdown
