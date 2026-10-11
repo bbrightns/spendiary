@@ -9,10 +9,9 @@ import { DEBT_CATEGORIES, getLiabilityDueStatus, isLiabilityActionableThisMonth 
 import { thb } from '../../../lib/format'
 import type { Liability } from '../../../lib/types'
 import { useData } from '../../../store/DataContext'
-import { useToast } from '../../../store/ToastContext'
 import { DebtCategoryIcon } from '../DebtCategoryIcon'
-import { isLoanDone, loanPaymentAmount, loanProgress } from '../loans'
-import { openQuickAdd } from '../QuickAddSheet'
+import { isLoanDone, loanProgress } from '../loans'
+import { openPayLoan } from '../PayLoanSheet'
 
 const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'}`
 
@@ -37,8 +36,7 @@ function shortStatus(l: Liability): { text: string; tone: string } {
 
 /** Loans and installments, with this month's payments one tap away. */
 export function SpendLoansPage() {
-  const { data, payLiabilityInstallment, undoLiabilityPayment } = useData()
-  const { showToast } = useToast()
+  const { data } = useData()
   const [sheet, setSheet] = useState<{ open: boolean; id: string | null }>({ open: false, id: null })
   const [showDone, setShowDone] = useState(false)
 
@@ -49,25 +47,6 @@ export function SpendLoansPage() {
   const perMonth = active.reduce((s, l) => s + (Number(l.monthlyPayment) || 0), 0)
   // The last installment plan to finish sets the debt-free month
   const monthsLeft = Math.max(0, ...active.filter((l) => l.isInstallment && l.totalInstallments).map((l) => l.totalInstallments! - (l.paidInstallments ?? 0)))
-
-  const pay = (l: Liability) => {
-    const amount = loanPaymentAmount(l)
-    const n = (l.paidInstallments ?? 0) + 1
-    payLiabilityInstallment(l.id)
-    // Offer to log it, so the wallet it came from goes down too
-    if (amount > 0) {
-      openQuickAdd({
-        hint: 'Log this payment and pick the wallet it came from, or close to skip.',
-        draft: {
-          type: 'expense',
-          amount,
-          categoryId: 'bills',
-          note: `${l.name} payment${l.isInstallment && l.totalInstallments ? ` ${n}/${l.totalInstallments}` : ''}`,
-        },
-      })
-    }
-    showToast(`Marked "${l.name}" as paid this month`, 'success', { label: 'Undo', onClick: () => undoLiabilityPayment(l.id) })
-  }
 
   const row = (l: Liability) => {
     const status = shortStatus(l)
@@ -108,7 +87,7 @@ export function SpendLoansPage() {
         {canPay && (
           <button
             type="button"
-            onClick={() => pay(l)}
+            onClick={() => openPayLoan(l.id)}
             className="shrink-0 rounded-full bg-brand px-3.5 py-2 text-xs font-bold text-white shadow-xs transition-transform cursor-pointer active:scale-95"
           >
             Pay
@@ -123,7 +102,7 @@ export function SpendLoansPage() {
       <PageHeader
         eyebrow="Spend"
         title="Loans & installments"
-        subtitle="What you owe and pay back each month. Mark a payment paid and log it from the wallet you paid with."
+        subtitle="What you owe and pay back each month. Pay takes it from a wallet and updates the loan in one go."
         action={all.length > 0 ? <AddButton onClick={() => setSheet({ open: true, id: null })} label="Add" /> : undefined}
       />
 

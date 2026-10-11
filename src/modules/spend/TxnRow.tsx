@@ -26,7 +26,8 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
   const meta = isDca
     ? ['Invested', from && `from ${from}`].filter(Boolean).join(' · ')
     : txn.type === 'transfer'
-      ? `${from ?? '—'} → ${walletName(txn.toAccountId) ?? '—'}${txn.alreadyInBalance ? ' · already in balance' : ''}`
+      ? // A loan payment goes to the loan, not to another wallet
+        `${from ?? '—'} → ${txn.liabilityId && !txn.toAccountId ? 'loan payment' : walletName(txn.toAccountId) ?? '—'}${txn.alreadyInBalance ? ' · already in balance' : ''}`
       : [cat?.label, from, txn.alreadyInBalance && 'already in balance'].filter(Boolean).join(' · ')
 
   const sign = txn.type === 'income' ? '+' : txn.type === 'expense' ? '−' : ''

@@ -1,5 +1,14 @@
 import type { Liability } from '../../lib/types'
 
+/**
+ * Whether a payment counts as spending by default: buying on installment (a 0% phone plan) is,
+ * paying back a loan (mortgage, car, personal) only moves money. Goes by category, since the
+ * installment flag is also used to count a car loan's terms.
+ */
+export function paymentIsSpending(l: Liability): boolean {
+  return l.category === 'installment'
+}
+
 /** Nothing left to pay: no balance, or every installment paid. */
 export function isLoanDone(l: Liability): boolean {
   if (l.balance <= 0) return true

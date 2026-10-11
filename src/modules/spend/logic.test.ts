@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { categoriesFor, guessCategory, syncCategories } from './categories'
 import { homeOrder, isDefaultOrder, moveCard } from './homeLayout'
-import type { CashAccount, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
+import type { CashAccount, Liability, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
+import { isLoanDone, loanPaymentAmount, loanProgress, paymentIsSpending } from './loans'
 import {
   accountTotals,
   applyOrder,
@@ -333,5 +334,28 @@ describe('saved order', () => {
     expect(moveId(['a', 'b', 'c'], 'c', -1)).toEqual(['a', 'c', 'b'])
     expect(moveId(['a', 'b', 'c'], 'a', -1)).toEqual(['a', 'b', 'c'])
     expect(moveId(['a', 'b', 'c'], 'x', 1)).toEqual(['a', 'b', 'c'])
+  })
+})
+
+describe('loans', () => {
+  const loan = (p: Partial<Liability>): Liability => ({ id: 'l', name: 'L', category: 'personal_loan', balance: 10_000, ...p })
+
+  it('pays the monthly amount, else the balance spread over what is left', () => {
+    expect(loanPaymentAmount(loan({ monthlyPayment: 3990 }))).toBe(3990)
+    expect(loanPaymentAmount(loan({ balance: 9000, totalInstallments: 10, paidInstallments: 7 }))).toBe(3000)
+  })
+  it('counts only installment purchases as spending, whatever the installment flag says', () => {
+    expect(paymentIsSpending(loan({ category: 'installment' }))).toBe(true)
+    expect(paymentIsSpending(loan({ category: 'auto_loan', isInstallment: true, totalInstallments: 60 }))).toBe(false)
+  })
+  it('is done when nothing is owed or every installment is paid', () => {
+    expect(isLoanDone(loan({ balance: 0 }))).toBe(true)
+    expect(isLoanDone(loan({ isInstallment: true, totalInstallments: 10, paidInstallments: 10 }))).toBe(true)
+    expect(isLoanDone(loan({}))).toBe(false)
+  })
+  it('measures progress by installments, else by how much of the original is gone', () => {
+    expect(loanProgress(loan({ isInstallment: true, totalInstallments: 10, paidInstallments: 4 }))).toBeCloseTo(0.4)
+    expect(loanProgress(loan({ balance: 7500, originalBalance: 10_000 }))).toBeCloseTo(0.25)
+    expect(loanProgress(loan({}))).toBe(0)
   })
 })

@@ -294,6 +294,8 @@ export interface Liability {
   paidInstallments?: number
   /** ISO date string YYYY-MM-DD of the most recent payment confirmed */
   lastPaidDate?: string
+  /** What that payment took off the balance, so Undo puts back exactly the same */
+  lastPaidAmount?: number
   /** Original total cost/balance of the installment purchase (used for progress tracking) */
   originalBalance?: number
 }
@@ -329,6 +331,8 @@ export interface SpendTransaction {
    * dividends received and DCA buys. Their cash moves are already applied there.
    */
   source?: 'dividend' | 'dca'
+  /** A loan / installment payment: the liability it paid toward */
+  liabilityId?: string
 }
 
 export interface SpendSettings {

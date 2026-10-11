@@ -13,9 +13,8 @@ import { useToast } from '../store/ToastContext'
 import type { DebtCategory, HoldingLog, Liability } from '../lib/types'
 import { DEBT_CATEGORIES, getLiabilityDueStatus } from '../lib/calc'
 import { thb } from '../lib/format'
-import { openQuickAdd } from '../modules/spend/QuickAddSheet'
+import { openPayLoan, useUndoLoanPayment } from '../modules/spend/PayLoanSheet'
 import { DebtCategoryIcon } from '../modules/spend/DebtCategoryIcon'
-import { loanPaymentAmount } from '../modules/spend/loans'
 import {
   CheckIcon,
   ChevronDownIcon,
@@ -63,7 +62,8 @@ function getEstimatedPayoffDate(dueDay: number | undefined, remainingTerms: numb
 }
 
 export function Debts() {
-  const { data, payLiabilityInstallment, undoLiabilityPayment, removeLiability } = useData()
+  const { data, removeLiability } = useData()
+  const undoLoanPayment = useUndoLoanPayment()
   const { showToast } = useToast()
 
   const [statusTab, setStatusTab] = useState<'active' | 'completed' | 'all'>('active')
@@ -174,31 +174,10 @@ export function Debts() {
     })
   }
 
-  const handlePay = (l: Liability) => {
-    // Same amount the payment takes off the balance
-    const amount = loanPaymentAmount(l)
-    const n = (l.paidInstallments ?? 0) + 1
-    payLiabilityInstallment(l.id)
-    // Offer to log it as spending, so the wallet it came from goes down too
-    if (amount > 0) {
-      openQuickAdd({
-        hint: 'Log this payment in Spend and pick the wallet it came from, or close to skip.',
-        draft: {
-          type: 'expense',
-          amount,
-          categoryId: 'bills',
-          note: `${l.name} payment${l.isInstallment && l.totalInstallments ? ` ${n}/${l.totalInstallments}` : ''}`,
-        },
-      })
-    }
-    showToast(`Marked "${l.name}" as paid this month`, 'success', {
-      label: 'Undo',
-      onClick: () => undoLiabilityPayment(l.id),
-    })
-  }
+  const handlePay = (l: Liability) => openPayLoan(l.id)
 
   const handleUndo = (l: Liability) => {
-    undoLiabilityPayment(l.id)
+    undoLoanPayment(l.id)
     showToast(`Payment for "${l.name}" undone`, 'info')
   }
 

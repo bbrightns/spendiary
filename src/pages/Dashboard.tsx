@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useData } from '../store/DataContext'
-import { useToast } from '../store/ToastContext'
+import { openPayLoan, useUndoLoanPayment } from '../modules/spend/PayLoanSheet'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -54,8 +54,8 @@ const CASH_COLORS = [
 ]
 
 export function Dashboard() {
-  const { data, recordNetWorthSnapshot, usdThb, payLiabilityInstallment, undoLiabilityPayment } = useData()
-  const { showToast } = useToast()
+  const { data, recordNetWorthSnapshot, usdThb } = useData()
+  const undoLoanPayment = useUndoLoanPayment()
   const navigate = useNavigate()
   const [liabilitiesOpen, setLiabilitiesOpen] = useState(false)
   const [selectedLiabilityId, setSelectedLiabilityId] = useState<string | null>(null)
@@ -906,7 +906,7 @@ export function Dashboard() {
                                        type="button"
                                        onClick={(e) => {
                                          e.stopPropagation()
-                                         undoLiabilityPayment(l.id)
+                                         undoLoanPayment(l.id)
                                        }}
                                        aria-label={`Undo payment for ${l.name}`}
                                        className="relative inline-flex items-center px-2 py-1 min-h-[36px] sm:min-h-0 sm:py-0.5 after:absolute after:-inset-2 after:content-[''] font-semibold text-ink-faint hover:text-rose-600 hover:underline cursor-pointer"
@@ -920,11 +920,7 @@ export function Dashboard() {
                                       type="button"
                                       onClick={(e) => {
                                         e.stopPropagation()
-                                        payLiabilityInstallment(l.id)
-                                        showToast(`Recorded payment for "${l.name}"`, 'success', {
-                                          label: 'Undo',
-                                          onClick: () => undoLiabilityPayment(l.id),
-                                        })
+                                        openPayLoan(l.id)
                                       }}
                                       aria-label={`Pay installment for ${l.name}`}
                                       className="relative inline-flex items-center gap-1.5 rounded-lg bg-ink text-white hover:bg-ink-hover dark:bg-brand dark:hover:bg-brand-ink px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[36px] sm:min-h-0 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer after:absolute after:-inset-1 after:content-[''] sm:after:hidden"

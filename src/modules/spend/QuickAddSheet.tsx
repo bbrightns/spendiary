@@ -87,6 +87,8 @@ export function QuickAddSheet() {
   const [alreadyIn, setAlreadyIn] = useState(false)
   const [newCategory, setNewCategory] = useState(false)
   const [hint, setHint] = useState<string | undefined>()
+  // Editing a loan payment: its transfer goes to the loan, so there's no "to" wallet to pick
+  const [loanPayment, setLoanPayment] = useState(false)
   const amountRef = useRef<HTMLInputElement>(null)
 
   // Latest values for the event listener without re-subscribing on every keystroke
@@ -101,6 +103,7 @@ export function QuickAddSheet() {
       // Editing fills from the saved transaction; a recurring occurrence fills from its template
       const source = existing ?? detail.prefill
       setFromRecurring(existing ? null : detail.recurring ?? null)
+      setLoanPayment(!!existing?.liabilityId)
       setHint(existing ? undefined : detail.hint)
 
       if (source) {
@@ -150,7 +153,8 @@ export function QuickAddSheet() {
   const previewTitle = noteTitle(note) || (type === 'transfer' ? 'Transfer' : getCategory(categoryId)?.label ?? 'Other')
   const value = Number(amount.replace(/,/g, ''))
   const amountValid = Number.isFinite(value) && value > 0
-  const transferValid = type !== 'transfer' || (accountId !== NO_WALLET && toAccountId !== NO_WALLET && accountId !== toAccountId)
+  const transferValid =
+    type !== 'transfer' || (loanPayment ? accountId !== NO_WALLET : accountId !== NO_WALLET && toAccountId !== NO_WALLET && accountId !== toAccountId)
   const canSave = amountValid && transferValid
   // A past date may already be in the balance the wallet / card shows today
   const backdated = date < localDateStr()
@@ -283,13 +287,17 @@ export function QuickAddSheet() {
           {type === 'transfer' ? (
             <>
               <PayMethodPicker {...pickerProps} label="From" value={accountId} onChange={setAccountId} />
-              <PayMethodPicker
-                {...pickerProps}
-                label="To (a card here pays its bill)"
-                value={toAccountId}
-                onChange={setToAccountId}
-                excludeId={accountId}
-              />
+              {loanPayment ? (
+                <p className="-mt-2 text-xs text-ink-muted">Paid toward a loan. Change the loan itself in Loans & installments.</p>
+              ) : (
+                <PayMethodPicker
+                  {...pickerProps}
+                  label="To (a card here pays its bill)"
+                  value={toAccountId}
+                  onChange={setToAccountId}
+                  excludeId={accountId}
+                />
+              )}
             </>
           ) : (
             <PayMethodPicker
