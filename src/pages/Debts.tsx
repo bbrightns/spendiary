@@ -14,7 +14,8 @@ import type { DebtCategory, HoldingLog, Liability } from '../lib/types'
 import { DEBT_CATEGORIES, getLiabilityDueStatus } from '../lib/calc'
 import { thb } from '../lib/format'
 import { openQuickAdd } from '../modules/spend/QuickAddSheet'
-import { DebtCategoryIcon, loanPaymentAmount } from '../modules/spend/loans'
+import { DebtCategoryIcon } from '../modules/spend/DebtCategoryIcon'
+import { loanPaymentAmount } from '../modules/spend/loans'
 import {
   CheckIcon,
   ChevronDownIcon,

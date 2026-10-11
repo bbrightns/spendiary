@@ -10,7 +10,8 @@ import { thb } from '../../../lib/format'
 import type { Liability } from '../../../lib/types'
 import { useData } from '../../../store/DataContext'
 import { useToast } from '../../../store/ToastContext'
-import { DebtCategoryIcon, isLoanDone, loanPaymentAmount, loanProgress } from '../loans'
+import { DebtCategoryIcon } from '../DebtCategoryIcon'
+import { isLoanDone, loanPaymentAmount, loanProgress } from '../loans'
 import { openQuickAdd } from '../QuickAddSheet'
 
 const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'}`
