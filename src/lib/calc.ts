@@ -643,14 +643,14 @@ export const CASH_CATEGORIES: Record<
 > = {
   spending: {
     label: 'Spending & Deployable',
-    labelTh: 'Spending & everyday',
+    labelTh: 'Everyday',
     color: '#10b981',
     icon: '🟢',
     desc: 'Cash you are free to use: spending, emergencies, or money waiting to be invested',
   },
   locked: {
     label: 'Committed / Locked',
-    labelTh: 'Long-term savings',
+    labelTh: 'Savings',
     color: '#8b5cf6',
     icon: '🔒',
     desc: 'Savings you should leave alone, such as savings co-ops, provident fund (PVD) and fixed deposits',
