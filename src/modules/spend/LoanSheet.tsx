@@ -46,6 +46,31 @@ function Field({ label, hint, children }: { label: string; hint?: ReactNode; chi
   )
 }
 
+/** "3 of 10" payments, as two small number inputs in one field. */
+function PaymentsInput({ paid, total, onPaid, onTotal }: { paid: string; total: string; onPaid: (v: string) => void; onTotal: (v: string) => void }) {
+  return (
+    <div className="flex h-11 items-center gap-2 rounded-xl border border-line-strong bg-surface px-3.5 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
+      <input
+        inputMode="numeric"
+        value={paid}
+        onChange={(e) => onPaid(e.target.value.replace(/\D/g, ''))}
+        placeholder="0"
+        aria-label="Payments made so far"
+        className="w-full min-w-0 bg-transparent text-base text-ink outline-none tnum placeholder:text-ink-faint"
+      />
+      <span className="shrink-0 text-sm text-ink-muted">of</span>
+      <input
+        inputMode="numeric"
+        value={total}
+        onChange={(e) => onTotal(e.target.value.replace(/\D/g, ''))}
+        placeholder="—"
+        aria-label="Total payments"
+        className="w-full min-w-0 bg-transparent text-right text-base font-semibold text-ink outline-none tnum placeholder:text-ink-faint"
+      />
+    </div>
+  )
+}
+
 const blank = {
   kind: 'installment' as Kind,
   category: 'installment' as DebtCategory,
@@ -105,7 +130,7 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
             }
           : blank,
       )
-      setMore(!!l && !!(l.lender || l.interestRate || l.note))
+      setMore(!!l && !!(l.lender || l.interestRate || l.note || (l.category !== 'installment' && l.totalInstallments)))
     }
   }
 
@@ -113,23 +138,29 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
   const installment = form.kind === 'installment'
   const owed = num(form.owed)
   const left = Math.max(1, num(form.total) - num(form.paid))
-  // What a payment comes to when no monthly amount is set
-  const suggested = installment && owed > 0 && num(form.total) > 0 ? Math.round(owed / left) : 0
+  // What a payment comes to when no monthly amount is set: the balance over the payments left
+  const suggested = owed > 0 && num(form.total) > 0 ? Math.round(owed / left) : 0
   const canSave = form.name.trim() !== '' && owed > 0
 
   const changeKind = (k: Kind) =>
-    setForm((f) => ({
-      ...f,
-      kind: k,
-      category: k === 'installment' ? 'installment' : f.category === 'installment' ? 'mortgage' : f.category,
-      total: k === 'installment' && !f.total ? '10' : f.total,
-    }))
+    setForm((f) => {
+      const keepTerms = !!existing?.totalInstallments
+      return {
+        ...f,
+        kind: k,
+        category: k === 'installment' ? 'installment' : f.category === 'installment' ? 'mortgage' : f.category,
+        // Installments usually come in 10; a loan has no payment count unless it already had one
+        total: k === 'installment' ? f.total || '10' : keepTerms ? f.total : '',
+        paid: k === 'installment' ? f.paid || '0' : keepTerms ? f.paid : '',
+      }
+    })
 
   const save = () => {
     if (!canSave) return
     const today = localDateStr()
     const due = form.dueDay ? Math.min(31, Math.max(1, Math.round(num(form.dueDay)))) : undefined
-    const total = installment && num(form.total) > 0 ? Math.round(num(form.total)) : undefined
+    // A payment count can sit on any debt (a car loan's 60 terms), not only installments
+    const total = num(form.total) > 0 ? Math.round(num(form.total)) : undefined
     const loan: Liability = {
       // Keep what this form doesn't show (payment history, last paid date…) so editing never resets it
       ...existing,
@@ -139,7 +170,7 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
       balance: owed,
       monthlyPayment: num(form.monthly) > 0 ? num(form.monthly) : suggested > 0 ? suggested : undefined,
       dueDay: due,
-      isInstallment: installment ? true : undefined,
+      isInstallment: installment || total ? true : undefined,
       totalInstallments: total,
       paidInstallments: total ? Math.min(total, Math.max(0, Math.round(num(form.paid)))) : undefined,
       payFromId: form.payFromId || undefined,
@@ -229,23 +260,7 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
         <div className="grid grid-cols-2 gap-3">
           {installment ? (
             <Field label="Payments made">
-              <div className="flex h-11 items-center gap-2 rounded-xl border border-line-strong bg-surface px-3.5 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
-                <input
-                  inputMode="numeric"
-                  value={form.paid}
-                  onChange={(e) => set('paid')(e.target.value.replace(/\D/g, ''))}
-                  aria-label="Payments made so far"
-                  className="w-full min-w-0 bg-transparent text-base text-ink outline-none tnum"
-                />
-                <span className="shrink-0 text-sm text-ink-muted">of</span>
-                <input
-                  inputMode="numeric"
-                  value={form.total}
-                  onChange={(e) => set('total')(e.target.value.replace(/\D/g, ''))}
-                  aria-label="Total payments"
-                  className="w-full min-w-0 bg-transparent text-right text-base font-semibold text-ink outline-none tnum"
-                />
-              </div>
+              <PaymentsInput paid={form.paid} total={form.total} onPaid={set('paid')} onTotal={set('total')} />
             </Field>
           ) : (
             <Field label="Interest" hint="optional">
@@ -294,7 +309,7 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
           >
             <span>
               <span className="block text-sm font-bold text-ink">More details</span>
-              <span className="block text-xs text-ink-muted">{installment ? 'Lender, interest, price, note' : 'Lender, original amount, note'}</span>
+              <span className="block text-xs text-ink-muted">{installment ? 'Lender, interest, price, note' : 'Lender, amount borrowed, payments, note'}</span>
             </span>
             <ChevronDownIcon className={`h-4 w-4 shrink-0 text-ink-muted transition-transform ${more ? 'rotate-180' : ''}`} strokeWidth={2} />
           </button>
@@ -314,6 +329,11 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
                   </Field>
                 )}
               </div>
+              {!installment && (
+                <Field label="Payments made" hint="optional, e.g. 14 of 60">
+                  <PaymentsInput paid={form.paid} total={form.total} onPaid={set('paid')} onTotal={set('total')} />
+                </Field>
+              )}
               {installment && (
                 <Field label="Full price">
                   <input inputMode="decimal" value={form.original} onChange={(e) => set('original')(digits(e.target.value))} placeholder={form.owed || '0'} className={inputClass} />
