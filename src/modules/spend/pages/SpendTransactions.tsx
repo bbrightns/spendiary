@@ -14,7 +14,6 @@ import { ListBulletIcon, categoriesFor, getCategory } from '../categories'
 import { inPeriod, periodFor } from '../logic'
 import { MonthStepper } from '../MonthStepper'
 import { openQuickAdd } from '../QuickAddSheet'
-import { openImport } from '../ImportSheet'
 import { TxnRow } from '../TxnRow'
 import { useSpend } from '../useSpend'
 import { TONES } from '../tones'
@@ -140,14 +139,9 @@ export function SpendTransactions() {
           )
         }
         action={
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={openImport}>
-              Import
-            </Button>
-            {/* Phones use the + in the bottom bar */}
-            <div className="hidden lg:block">
-              <AddButton onClick={() => openQuickAdd()} label="Add" />
-            </div>
+          // Phones use the + in the bottom bar
+          <div className="hidden lg:block">
+            <AddButton onClick={() => openQuickAdd()} label="Add" />
           </div>
         }
       />

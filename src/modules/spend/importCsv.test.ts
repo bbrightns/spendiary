@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { guessColumns, looksLikeHeader, parseAmount, parseCsv, parseDate, toImportRows } from './importCsv'
+import { toCsv } from './exportCsv'
 
 describe('parseCsv', () => {
   it('handles quotes, commas inside fields and CRLF', () => {
@@ -61,5 +62,25 @@ describe('columns and rows', () => {
 describe('BOM', () => {
   it('drops a leading byte-order mark', () => {
     expect(parseCsv(String.fromCharCode(0xfeff) + 'Date,Amount\n2026-10-01,5')[0][0]).toBe('Date')
+  })
+})
+
+describe('export round trip', () => {
+  it('writes CSV the importer reads back', () => {
+    const base = { createdAt: '2026-10-01T00:00:00Z' }
+    const csv = toCsv(
+      [
+        { ...base, id: '2', type: 'income', amount: 50000, date: '2026-10-02', note: 'เงินเดือน', categoryId: 'salary', accountId: 'w' },
+        { ...base, id: '1', type: 'expense', amount: 65.5, date: '2026-10-01', note: 'Tea, "large" #nosetea', tags: ['nosetea'], categoryId: 'drinks', accountId: 'w' },
+      ],
+      { category: (id) => id ?? '', account: (id) => (id === 'w' ? 'SCB Easy' : '') },
+    )
+    const [header, ...rows] = parseCsv(csv)
+    expect(header[0]).toBe('Date')
+    const map = guessColumns(header)!
+    expect(toImportRows(rows, map).rows).toEqual([
+      { date: '2026-10-01', type: 'expense', amount: 65.5, description: 'Tea, "large" #nosetea' },
+      { date: '2026-10-02', type: 'income', amount: 50000, description: 'เงินเดือน' },
+    ])
   })
 })

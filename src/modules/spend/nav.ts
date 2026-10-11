@@ -59,5 +59,5 @@ export const spendSettingsItem: NavSubItem = {
 
 export const spendNavSections: NavSection[] = [
   { title: 'Spend', items: [spendOverviewItem, spendTxnsItem, spendAnalysisItem] },
-  { title: 'Money', items: [spendAccountsItem, spendRecurringItem, spendSettingsItem] },
+  { title: 'Money', items: [spendAccountsItem, spendRecurringItem] },
 ]

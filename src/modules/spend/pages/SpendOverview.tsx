@@ -5,7 +5,7 @@ import { AddButton } from '../../../components/ui/AddButton'
 import { Button } from '../../../components/ui/Button'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import { Modal } from '../../../components/ui/Modal'
-import { PencilIcon, SettingsIcon, WalletIcon } from '../../../components/icons'
+import { PencilIcon, WalletIcon } from '../../../components/icons'
 import { localDateStr, thb } from '../../../lib/format'
 import { dayAllowance, inPeriod, periodFor, shiftDate, type DayStatus } from '../logic'
 import { BillReminders } from '../BillReminders'
@@ -85,13 +85,6 @@ export function SpendOverview() {
           <div className="hidden lg:block">
             <AddButton onClick={() => openQuickAdd()} label="Add" />
           </div>
-          <Link
-            to="/spend/settings"
-            aria-label="Spend settings"
-            className="grid h-10 w-10 place-items-center rounded-full border border-line bg-surface text-ink-muted shadow-xs hover:text-ink"
-          >
-            <SettingsIcon className="h-[18px] w-[18px]" />
-          </Link>
         </div>
       </header>
 

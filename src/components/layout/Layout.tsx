@@ -64,10 +64,11 @@ export function Layout({ children }: { children: ReactNode }) {
           >
             <SearchIcon className="h-[18.5px] w-[18.5px]" />
           </button>
+          {/* One settings button: Spend's settings while in Spend, the app's otherwise */}
           <NavLink
-            to="/settings"
-            aria-label="Settings"
-            title="Settings"
+            to={isSpend ? '/spend/settings' : '/settings'}
+            aria-label={isSpend ? 'Spend settings' : 'Settings'}
+            title={isSpend ? 'Spend settings' : 'Settings'}
             className={({ isActive }) =>
               `grid h-9 w-9 place-items-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
                 isActive ? 'bg-brand-soft text-brand-ink' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'

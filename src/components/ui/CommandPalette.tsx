@@ -365,6 +365,7 @@ export function CommandPalette() {
           ['category-budgets', 'Budget per category', 'Limits per category', ['budget', 'category', 'limit', 'งบหมวด']],
           ['bill-reminders', 'Card bill reminders', 'Days before a card bill is due', ['reminder', 'card', 'bill', 'due', 'แจ้งเตือน']],
           ['quick-add', 'Default payment method', 'Picked for you in Quick add', ['default', 'payment', 'quick add', 'wallet', 'ค่าเริ่มต้น']],
+          ['data', 'Import / export CSV', 'Statements in, a spreadsheet out', ['import', 'export', 'csv', 'excel', 'download', 'นำเข้า', 'ส่งออก']],
         ] as const
       ).map(([hash, title, subtitle, keywords]) => ({
         id: `set-spend-${hash}`,

@@ -19,6 +19,8 @@ export function Sidebar() {
   const { setTheme } = useTheme()
   const isTestMode = user?.id === 'test-user-local'
   const isSpend = isSpendPath(pathname)
+  // One settings link: Spend's settings while in Spend, the app's otherwise
+  const settingsTo = isSpend ? '/spend/settings' : settingsItem.to || '/settings'
 
   // Calculate live badge counts
   const dcaAlertCount = data.dcaPlans.filter((p) => shouldConfirmBuy(p)).length
@@ -157,17 +159,17 @@ export function Sidebar() {
       <div className="flex flex-col gap-2 pt-4 border-t border-line">
         {/* Settings link */}
         <Link
-          to={settingsItem.to || '/settings'}
+          to={settingsTo}
           className={[
             'flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
-            pathname.startsWith(settingsItem.to || '/settings')
+            pathname.startsWith(settingsTo)
               ? 'text-brand-ink bg-brand-soft/70 shadow-xs font-bold'
               : 'text-ink-muted hover:bg-surface-muted hover:text-ink',
           ].join(' ')}
         >
           <div className="flex items-center gap-3">
             <settingsItem.icon className="h-4.5 w-4.5" strokeWidth={1.7} />
-            <span>{settingsItem.label}</span>
+            <span>{isSpend ? 'Spend settings' : settingsItem.label}</span>
           </div>
         </Link>
 

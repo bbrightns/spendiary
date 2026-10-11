@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { PageHeader } from '../../../components/layout/PageHeader'
 import { Card } from '../../../components/ui/Card'
 import { Button } from '../../../components/ui/Button'
@@ -9,7 +9,9 @@ import { localDateStr, thb } from '../../../lib/format'
 import type { PayCycle, WeekendShift } from '../../../lib/types'
 import { DEFAULT_BILL_REMINDER_DAYS, isCalendar, periodFor, periodLabel, upcomingPaydays } from '../logic'
 import { useSpend } from '../useSpend'
-import { categoriesFor } from '../categories'
+import { categoriesFor, getCategory } from '../categories'
+import { openImport } from '../ImportSheet'
+import { downloadCsv, toCsv } from '../exportCsv'
 import { TONES } from '../tones'
 import { CategoryManager } from '../CategorySheet'
 import { SwitchVisual } from '../AccountSheets'
@@ -74,7 +76,16 @@ function fromDraft(d: Draft): PayCycle | null {
 }
 
 export function SpendSettings() {
-  const { settings, methods, updateSettings } = useSpend()
+  const { settings, methods, transactions, updateSettings } = useSpend()
+  // Export Spend's own records; dividends and DCA buys belong to the Invest side's backup
+  const ownTxns = transactions.filter((t) => !t.source)
+  const exportAll = () => {
+    const accountName = (id?: string) => methods.find((m) => m.id === id)?.name ?? ''
+    downloadCsv(toCsv(ownTxns, { category: (id) => getCategory(id)?.label ?? '', account: accountName }))
+    showToast(`Exported ${ownTxns.length} transactions`)
+  }
+  const dataButton =
+    'rounded-2xl border border-line px-4 py-3 text-left transition-colors cursor-pointer hover:bg-surface-muted/60 disabled:cursor-default disabled:opacity-50'
   const { showToast } = useToast()
   const [draft, setDraft] = useState<Draft>(() => toDraft(settings.cycle))
   const [budget, setBudget] = useState(settings.monthlyBudget ? String(settings.monthlyBudget) : '')
@@ -379,6 +390,21 @@ export function SpendSettings() {
         </select>
       </Section>
 
+      <Section id="data" title="Data" description="Bring past transactions in from a bank or card statement, or take all of them out as a spreadsheet.">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <button type="button" onClick={openImport} className={dataButton}>
+            <span className="block text-sm font-bold text-ink">Import CSV</span>
+            <span className="block text-xs text-ink-muted">A .csv file or pasted text; you check it before saving</span>
+          </button>
+          <button type="button" onClick={exportAll} disabled={ownTxns.length === 0} className={dataButton}>
+            <span className="block text-sm font-bold text-ink">Export CSV</span>
+            <span className="block text-xs text-ink-muted tnum">
+              {ownTxns.length ? `All ${ownTxns.length} transactions · opens in Excel or Sheets` : 'Nothing logged yet'}
+            </span>
+          </button>
+        </div>
+      </Section>
+
       <Section id="quick-add" title="Quick add" description="The payment method picked for you when you add an expense. Star more on the Accounts page.">
         <select
           aria-label="Default payment method"
@@ -397,6 +423,13 @@ export function SpendSettings() {
           ))}
         </select>
       </Section>
+
+      <Link to="/settings" className="flex items-center justify-between rounded-2xl border border-line px-4 py-3 text-sm font-semibold text-ink hover:bg-surface-muted/60">
+        <span>
+          App settings <span className="font-normal text-ink-muted">· backup, profile, sync, theme</span>
+        </span>
+        <span aria-hidden="true">→</span>
+      </Link>
     </div>
   )
 }
