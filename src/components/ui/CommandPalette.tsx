@@ -298,7 +298,7 @@ export function CommandPalette() {
         keywords: ['add', 'debt', 'loan', 'liability', 'installment', 'บัตรเครดิต', 'ผ่อน', 'หนี้', 'กู้', 'เพิ่มหนี้'],
         group: 'Actions',
         icon: ic(DebtIcon, 'text-rose-500'),
-        run: go('/debts?action=new'),
+        run: go('/spend/loans?action=new'),
       },
       {
         id: 'action-new-dca',
@@ -336,7 +336,6 @@ export function CommandPalette() {
           ['nav-rebalance', 'Rebalance Hub', 'Check and adjust how your portfolio is split', '/rebalance', ['rebalance', 'allocation', 'target', 'drift', 'ปรับพอร์ต', 'สมดุล'], SparkleIcon, false, 'G R'],
           ['nav-dca', 'DCA Planner', 'Plan and confirm your recurring buys', '/dca', ['dca', 'planner', 'recurring', 'งวด', 'ออมหุ้น'], DcaIcon, false, 'G A'],
           ['nav-dividends', 'Dividends', 'Dividends received and expected', '/dividends', ['dividend', 'passive income', 'yield', 'ปันผล', 'เงินปันผล'], ReceiptPercentIcon, false, 'G V'],
-          ['nav-debts', 'Debts & Liabilities', 'Your debts and installments', '/debts', ['debt', 'liabilities', 'loan', 'หนี้', 'ผ่อน', 'ดอกเบี้ย'], DebtIcon, false, 'G B'],
           ['nav-cash', 'Cash & Liquidity', 'Cash, savings and interest', '/cash', ['cash', 'liquidity', 'emergency', 'เงินสด', 'บัญชี', 'สภาพคล่อง'], WalletIcon, false, 'G C'],
           ['nav-retirement', 'Retirement (FIRE)', 'Plan for retirement and financial freedom', '/retirement', ['retirement', 'fire', 'financial freedom', 'เกษียณ', 'อิสรภาพ'], SparkleIcon, false, 'G F'],
           ['nav-logs', 'Activity Logs', 'History of buys, sales, dividends and tax', '/logs', ['logs', 'history', 'activity', 'ประวัติ', 'บันทึก'], ClockIcon, false, 'G L'],
@@ -544,7 +543,7 @@ export function CommandPalette() {
         keywords: ['debt', 'loan', 'installment', 'หนี้', 'ผ่อน'],
         group: 'Debts',
         icon: ic(DebtIcon, 'text-rose-500'),
-        run: go('/debts'),
+        run: go('/spend/loans'),
       })
     }
 

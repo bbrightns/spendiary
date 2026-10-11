@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { mobileNavItems, moreSheetItems, isNavPathActive } from './nav'
 import { useData } from '../../store/DataContext'
-import { isDividendReceivedThisMonth, isLiabilityActionableThisMonth, shouldConfirmBuy } from '../../lib/calc'
+import { isDividendReceivedThisMonth, shouldConfirmBuy } from '../../lib/calc'
 import { Modal } from '../ui/Modal'
 import { NavSheetList } from './NavSheetList'
 
@@ -22,8 +22,7 @@ export function BottomNav() {
       (h.dividendMonths ?? []).includes(currentMonth) &&
       !isDividendReceivedThisMonth(h.id, data.dividendRecords),
   ).length
-  const debtAlertCount = (data.liabilities ?? []).filter((l) => isLiabilityActionableThisMonth(l)).length
-  const moreAlertCount = dividendAlertCount + debtAlertCount
+  const moreAlertCount = dividendAlertCount
 
   // Close sheet on route change
   useEffect(() => {
@@ -130,13 +129,13 @@ export function BottomNav() {
         open={isMoreSheetOpen}
         onClose={() => setIsMoreSheetOpen(false)}
         title="More"
-        description="Dividends, debts, cash, planning tools & reports"
+        description="Dividends, cash, planning tools & reports"
       >
         <NavSheetList
           items={moreSheetItems}
           activePath={pathname}
           badgeFor={(to) =>
-            to === '/dividends' ? dividendAlertCount : to === '/debts' ? debtAlertCount : 0
+            to === '/dividends' ? dividendAlertCount : 0
           }
           onSelect={(to) => {
             setIsMoreSheetOpen(false)

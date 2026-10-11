@@ -221,7 +221,7 @@ export function Dashboard() {
             <div id="guide-dashboard-debt-alert">
               <button
                 type="button"
-                onClick={() => navigate('/debts')}
+                onClick={() => navigate('/spend/loans')}
                 aria-label={`View ${debtActions.length} debts due for payment`}
                 className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer shadow-xs ${
                   hasOverdueDebts
@@ -731,7 +731,7 @@ export function Dashboard() {
                 </div>
 
                 <Link
-                  to="/debts"
+                  to="/spend/loans"
                   aria-label="Open Debts & Installments Hub"
                   className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand hover:underline cursor-pointer"
                 >
@@ -966,7 +966,7 @@ export function Dashboard() {
                 <div className="py-6 text-center">
                   <p className="text-xs text-ink-muted">No debts recorded or completely debt-free.</p>
                   <Link
-                    to="/debts"
+                    to="/spend/loans"
                     className="inline-block mt-2 text-xs font-semibold text-brand hover:underline cursor-pointer"
                   >
                     + Open Debts Hub to manage liabilities

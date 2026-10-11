@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { ScrollToTop } from './components/ScrollToTop'
 import { DataProvider, useData } from './store/DataContext'
 import { ToastProvider } from './store/ToastContext'
@@ -17,7 +17,6 @@ const HoldingLogs = lazy(() => import('./pages/HoldingLogs').then(m => ({ defaul
 const ActivitySummary = lazy(() => import('./pages/ActivitySummary').then(m => ({ default: m.ActivitySummary })))
 const Rebalance = lazy(() => import('./pages/Rebalance').then(m => ({ default: m.Rebalance })))
 const Dividends = lazy(() => import('./pages/Dividends').then(m => ({ default: m.Dividends })))
-const Debts = lazy(() => import('./pages/Debts').then(m => ({ default: m.Debts })))
 const CashLiquidity = lazy(() => import('./pages/CashLiquidity').then(m => ({ default: m.CashLiquidity })))
 const SpendOverview = lazy(() => import('./modules/spend/pages/SpendOverview').then(m => ({ default: m.SpendOverview })))
 const SpendTransactions = lazy(() => import('./modules/spend/pages/SpendTransactions').then(m => ({ default: m.SpendTransactions })))
@@ -33,6 +32,12 @@ function PageLoadingFallback() {
 }
 
 // 💡 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
+/** Old Debts links (bookmarks, ?action=new) land on Spend's loans page with their query intact. */
+function LoansRedirect() {
+  const { search } = useLocation()
+  return <Navigate to={`/spend/loans${search}`} replace />
+}
+
 function AppContent() {
   const { user, loginWithGoogle, loginAsTestMode, authError, dataReady } = useData()
 
@@ -259,12 +264,13 @@ function AppContent() {
           <Route path="/rebalance" element={<Rebalance />} />
           <Route path="/dca" element={<DcaPlanner />} />
           <Route path="/dividends" element={<Dividends />} />
-          <Route path="/debts" element={<Debts />} />
+          {/* Debts moved to Spend → Loans & installments */}
+          <Route path="/debts" element={<LoansRedirect />} />
           <Route path="/cash" element={<CashLiquidity />} />
           <Route path="/cashflow/cash" element={<CashLiquidity />} />
           <Route path="/cashflow/dca" element={<DcaPlanner />} />
           <Route path="/cashflow/dividends" element={<Dividends />} />
-          <Route path="/cashflow/debts" element={<Debts />} />
+          <Route path="/cashflow/debts" element={<LoansRedirect />} />
           <Route path="/retirement" element={<Retirement />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/logs" element={<HoldingLogs />} />

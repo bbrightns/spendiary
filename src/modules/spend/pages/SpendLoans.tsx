@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { PageHeader } from '../../../components/layout/PageHeader'
 import { Card } from '../../../components/ui/Card'
 import { AddButton } from '../../../components/ui/AddButton'
@@ -39,6 +40,13 @@ export function SpendLoansPage() {
   const { data } = useData()
   const [sheet, setSheet] = useState<{ open: boolean; id: string | null }>({ open: false, id: null })
   const [showDone, setShowDone] = useState(false)
+  // ?action=new (search "Record debt", old Debts links) opens the add sheet straight away
+  const [params, setParams] = useSearchParams()
+  useEffect(() => {
+    if (params.get('action') !== 'new') return
+    setSheet({ open: true, id: null })
+    setParams({}, { replace: true })
+  }, [params, setParams])
 
   const all = useMemo(() => data.liabilities ?? [], [data.liabilities])
   const active = all.filter((l) => !isLoanDone(l))
