@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { guessCategory } from './categories'
+import { homeOrder, isDefaultOrder, moveCard } from './homeLayout'
 import type { CashAccount, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
 import {
   accountTotals,
@@ -246,5 +247,18 @@ describe('overpaying a card', () => {
     expect(cardBill(paid.spendCards[0], [], 5, '2026-10-26')).toMatchObject({ amountDue: 0, status: 'clear' })
     const charged = applyToBalances(paid, txn({ accountId: 'card', amount: 650 }), 1)
     expect(charged.spendCards[0].balance).toBe(250)
+  })
+})
+
+describe('home card order', () => {
+  it('cleans up a saved order and adds missing cards', () => {
+    expect(homeOrder(['days', 'bogus', 'days', 'allowance'])).toEqual(['days', 'allowance', 'month', 'recurring'])
+    expect(homeOrder(undefined)).toEqual(['allowance', 'month', 'recurring', 'days'])
+  })
+  it('moves a card and stops at the ends', () => {
+    const o = homeOrder()
+    expect(moveCard(o, 'days', -1)).toEqual(['allowance', 'month', 'days', 'recurring'])
+    expect(moveCard(o, 'allowance', -1)).toBe(o)
+    expect(isDefaultOrder(o)).toBe(true)
   })
 })

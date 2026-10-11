@@ -346,6 +346,8 @@ export interface SpendSettings {
   categoryBudgets?: Record<string, number>
   /** Set once the old Invest-side fixed cost list has been copied into Spend recurring */
   fixedCostsImported?: boolean
+  /** Order of the cards on Spend's Home, by card id; unknown or missing ids fall back to the default order */
+  homeOrder?: string[]
   /** Categories the user added (expense or income) */
   customCategories?: SpendCustomCategory[]
   /** Changes to built-in categories, by id */
