@@ -17,8 +17,9 @@ import { LoanSheet } from '../LoanSheet'
 const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'}`
 
 /** Short status for a row: the Invest side's labels are written for a wide table. */
-function shortStatus(l: Liability): { text: string; tone: string } {
+function shortStatus(l: Liability, cardName?: string): { text: string; tone: string } {
   if (isLoanDone(l)) return { text: 'Paid off', tone: 'text-gain' }
+  if (l.autoBillToCard) return { text: `Billed to ${cardName ?? 'card'} each statement`, tone: 'text-ink-muted' }
   const s = getLiabilityDueStatus(l)
   const day = l.dueDay ? ordinal(l.dueDay) : ''
   switch (s.status) {
@@ -57,7 +58,7 @@ export function SpendLoansPage() {
   const monthsLeft = Math.max(0, ...active.filter((l) => l.isInstallment && l.totalInstallments).map((l) => l.totalInstallments! - (l.paidInstallments ?? 0)))
 
   const row = (l: Liability) => {
-    const status = shortStatus(l)
+    const status = shortStatus(l, data.spendCards?.find((c) => c.id === l.payFromId)?.name)
     const progress = loanProgress(l)
     const canPay = isLiabilityActionableThisMonth(l)
     const steps = l.isInstallment && l.totalInstallments ? `${l.paidInstallments ?? 0}/${l.totalInstallments}` : null

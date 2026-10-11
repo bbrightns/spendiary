@@ -998,6 +998,8 @@ export function isLiabilityFirstDueNextMonth(l: Liability, now: Date = new Date(
 /** Check whether a liability has a pending action/payment required in the current month */
 export function isLiabilityActionableThisMonth(l: Liability, now: Date = new Date()): boolean {
   if (l.balance <= 0) return false
+  // Billed to a card automatically: nothing to do here, it's paid with the card bill
+  if (l.autoBillToCard) return false
   const hasPayment = (l.monthlyPayment && l.monthlyPayment > 0) || l.isInstallment || l.category === 'installment'
   if (!hasPayment) return false
   if (l.isInstallment && l.totalInstallments && (l.paidInstallments ?? 0) >= l.totalInstallments) return false

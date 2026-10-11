@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { categoriesFor, guessCategory, syncCategories } from './categories'
 import { homeOrder, isDefaultOrder, moveCard } from './homeLayout'
 import type { CashAccount, Liability, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
-import { firstInstallmentDue, installmentAmount, installmentHold, isLoanDone, loanPaymentAmount, loanProgress, paymentIsSpending } from './loans'
+import { firstDueForRunning, firstInstallmentDue, installmentAmount, installmentBillDates, installmentHold, isLoanDone, loanPaymentAmount, loanProgress, paymentIsSpending } from './loans'
 import { isLiabilityFirstDueNextMonth } from '../../lib/calc'
 import {
   accountTotals,
@@ -400,5 +400,23 @@ describe('card installments', () => {
     const l = loan({ category: 'personal_loan', dueDay: 5, firstPaymentMonth: 'next', createdAt: '2026-10-11' })
     expect(isLiabilityFirstDueNextMonth(l, new Date(2026, 9, 20))).toBe(true)
     expect(isLiabilityFirstDueNextMonth(l, new Date(2026, 10, 3))).toBe(false)
+  })
+})
+
+describe('installments billed to a card', () => {
+  const card = { statementDay: 25, dueDay: 10 }
+  it('bills on each statement day up to today, starting before the first due date', () => {
+    // First due 10 Sep → billed on the 25 Aug statement, then 25 Sep; 25 Oct hasn't come yet
+    expect(installmentBillDates(card, '2026-09-10', 10, '2026-10-11')).toEqual(['2026-08-25', '2026-09-25'])
+    // Never more than the number of payments
+    expect(installmentBillDates(card, '2026-09-10', 1, '2026-12-31')).toEqual(['2026-08-25'])
+    // Due day after the statement day: same month
+    expect(installmentBillDates({ statementDay: 5, dueDay: 25 }, '2026-10-25', 3, '2026-12-31')).toEqual(['2026-10-05', '2026-11-05', '2026-12-05'])
+  })
+  it('lines a running plan up so its next payment lands on the next statement', () => {
+    // 4 paid; next statement 25 Oct (due 10 Nov) carries payment 5 → first due was 10 Jul
+    const first = firstDueForRunning(card, 4, '2026-10-11')
+    expect(first).toBe('2026-07-10')
+    expect(installmentBillDates(card, first, 10, '2026-10-25').slice(4)).toEqual(['2026-10-25'])
   })
 })

@@ -10,6 +10,7 @@ import type { DebtCategory, Liability } from '../../lib/types'
 import { DebtCategoryIcon } from './DebtCategoryIcon'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { useSpend } from './useSpend'
+import { firstDueForRunning, firstInstallmentDue } from './loans'
 
 type Kind = 'installment' | 'loan'
 
@@ -97,7 +98,7 @@ interface Props {
 /** Add or edit a loan or installment plan: the few things that matter up front, the rest folded away. */
 export function LoanSheet({ open, loanId, onClose }: Props) {
   const { data, setLiabilities, removeLiability } = useData()
-  const { methods, settings } = useSpend()
+  const { methods, cards, settings } = useSpend()
   const { showToast } = useToast()
   const [form, setForm] = useState(blank)
   const [more, setMore] = useState(false)
@@ -161,6 +162,8 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
     const due = form.dueDay ? Math.min(31, Math.max(1, Math.round(num(form.dueDay)))) : undefined
     // A payment count can sit on any debt (a car loan's 60 terms), not only installments
     const total = num(form.total) > 0 ? Math.round(num(form.total)) : undefined
+    const billCard = installment ? cards.find((c) => c.id === form.payFromId) : undefined
+    const paidNow = total ? Math.min(total, Math.max(0, Math.round(num(form.paid)))) : 0
     const loan: Liability = {
       // Keep what this form doesn't show (payment history, last paid date…) so editing never resets it
       ...existing,
@@ -174,6 +177,11 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
       totalInstallments: total,
       paidInstallments: total ? Math.min(total, Math.max(0, Math.round(num(form.paid)))) : undefined,
       payFromId: form.payFromId || undefined,
+      // An installment on a card is billed to it each statement; a loan or a wallet stays a manual Pay
+      autoBillToCard: billCard ? true : undefined,
+      // When a card bills it, the first due date says which statements carry which payment:
+      // a new plan starts on the next statement, a running one picks up after the payments made
+      firstDueDate: existing?.firstDueDate ?? (billCard ? (existing ? firstDueForRunning(billCard, paidNow, today) : firstInstallmentDue(billCard, today)) : undefined),
       lender: form.lender.trim() || undefined,
       interestRate: num(form.rate) > 0 ? num(form.rate) : undefined,
       originalBalance: num(form.original) > 0 ? num(form.original) : existing?.originalBalance ?? owed,
@@ -297,7 +305,11 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
           allowNone
         />
         <p className="-mt-3 text-xs text-ink-muted">
-          {installment ? 'Pay starts from this one. Pick the card if the installment is billed to it.' : 'Pay starts from this one.'}
+          {installment && methods.find((m) => m.id === form.payFromId)?.kind === 'card'
+            ? 'Each payment goes on this card by itself on its statement day.'
+            : installment
+              ? 'Pay starts from this one. Pick the card if the installment is billed to it.'
+              : 'Pay starts from this one.'}
         </p>
 
         <div className="rounded-2xl border border-line">
