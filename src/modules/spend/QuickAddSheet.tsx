@@ -12,6 +12,7 @@ import { TONES, TYPE_ACTIVE } from './tones'
 import { useSpend, type PayMethod, type SpendTxnInput } from './useSpend'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { SwitchVisual } from './AccountSheets'
+import { CategorySheet } from './CategorySheet'
 
 const OPEN_EVENT = 'spendiary:open-quick-add'
 
@@ -80,6 +81,7 @@ export function QuickAddSheet() {
   const [date, setDate] = useState(localDateStr())
   const [note, setNote] = useState('')
   const [alreadyIn, setAlreadyIn] = useState(false)
+  const [newCategory, setNewCategory] = useState(false)
   const amountRef = useRef<HTMLInputElement>(null)
 
   // Latest values for the event listener without re-subscribing on every keystroke
@@ -196,154 +198,170 @@ export function QuickAddSheet() {
   }
 
   return (
-    <Modal
-      open={open}
-      onClose={() => setOpen(false)}
-      title={editId ? 'Edit transaction' : fromRecurring ? fromRecurring.name : 'Quick add'}
-      description={fromRecurring ? `Mark as ${type === 'income' ? 'received' : 'paid'}. Adjust the amount if this one was different.` : undefined}
-      size="md"
-      footer={<FormActions editing={!!editId} canSave={canSave} onSave={save} onDelete={remove} />}
-    >
-      <div className="space-y-5">
-        <SegmentedControl options={TYPE_OPTIONS} value={type} onChange={changeType} ariaLabel="Transaction type" />
+    <>
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title={editId ? 'Edit transaction' : fromRecurring ? fromRecurring.name : 'Quick add'}
+        description={fromRecurring ? `Mark as ${type === 'income' ? 'received' : 'paid'}. Adjust the amount if this one was different.` : undefined}
+        size="md"
+        footer={<FormActions editing={!!editId} canSave={canSave} onSave={save} onDelete={remove} />}
+      >
+        <div className="space-y-5">
+          <SegmentedControl options={TYPE_OPTIONS} value={type} onChange={changeType} ariaLabel="Transaction type" />
 
-        {/* Amount */}
-        <label className="block text-center">
-          <span className="sr-only">Amount in baht</span>
-          <div className="flex items-baseline justify-center gap-1.5">
-            <span className={`font-display text-3xl font-extrabold ${amount ? 'text-ink-muted' : 'text-ink-faint'}`}>฿</span>
-            <input
-              ref={amountRef}
-              inputMode="decimal"
-              autoComplete="off"
-              placeholder="0"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value.replace(/[^\d.,]/g, ''))}
-              className={`w-full max-w-[14ch] bg-transparent text-center font-display text-5xl font-extrabold tracking-tight tnum outline-none placeholder:text-ink-faint/50 ${AMOUNT_COLOR[type]}`}
-              style={{ width: `${Math.max(2, amount.length + 1)}ch` }}
-            />
-          </div>
-        </label>
-
-        {/* Category */}
-        {type !== 'transfer' && (
-          <div>
-            <p className="mb-2 text-sm font-semibold text-ink-soft">Category</p>
-            <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-              {categoriesFor(type).map((c) => {
-                const active = c.id === categoryId
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => setCategoryId(c.id)}
-                    className={`flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 text-xs transition-all cursor-pointer active:scale-95 ${
-                      active ? `${TONES[c.tone].active} font-bold` : 'border-line bg-surface font-semibold text-ink-soft hover:bg-surface-muted/60'
-                    }`}
-                  >
-                    <span className={`grid h-8 w-8 place-items-center rounded-xl transition-colors ${active ? 'bg-white/70 dark:bg-white/10' : TONES[c.tone].chip}`}>
-                      <c.icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.1 : 1.7} />
-                    </span>
-                    <span className="w-full truncate text-center leading-tight">{c.label}</span>
-                  </button>
-                )
-              })}
+          {/* Amount */}
+          <label className="block text-center">
+            <span className="sr-only">Amount in baht</span>
+            <div className="flex items-baseline justify-center gap-1.5">
+              <span className={`font-display text-3xl font-extrabold ${amount ? 'text-ink-muted' : 'text-ink-faint'}`}>฿</span>
+              <input
+                ref={amountRef}
+                inputMode="decimal"
+                autoComplete="off"
+                placeholder="0"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value.replace(/[^\d.,]/g, ''))}
+                className={`w-full max-w-[14ch] bg-transparent text-center font-display text-5xl font-extrabold tracking-tight tnum outline-none placeholder:text-ink-faint/50 ${AMOUNT_COLOR[type]}`}
+                style={{ width: `${Math.max(2, amount.length + 1)}ch` }}
+              />
             </div>
-          </div>
-        )}
+          </label>
 
-        {/* Pay with / into */}
-        {type === 'transfer' ? (
-          <>
-            <PayMethodPicker {...pickerProps} label="From" value={accountId} onChange={setAccountId} />
+          {/* Category */}
+          {type !== 'transfer' && (
+            <div>
+              <p className="mb-2 text-sm font-semibold text-ink-soft">Category</p>
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                {categoriesFor(type, categoryId).map((c) => {
+                  const active = c.id === categoryId
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setCategoryId(c.id)}
+                      className={`flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 text-xs transition-all cursor-pointer active:scale-95 ${
+                        active ? `${TONES[c.tone].active} font-bold` : 'border-line bg-surface font-semibold text-ink-soft hover:bg-surface-muted/60'
+                      }`}
+                    >
+                      <span className={`grid h-8 w-8 place-items-center rounded-xl transition-colors ${active ? 'bg-white/70 dark:bg-white/10' : TONES[c.tone].chip}`}>
+                        <c.icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.1 : 1.7} />
+                      </span>
+                      <span className="w-full truncate text-center leading-tight">{c.label}</span>
+                    </button>
+                  )
+                })}
+                <button
+                  type="button"
+                  onClick={() => setNewCategory(true)}
+                  className="flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-line-strong px-1 py-2 text-xs font-semibold text-ink-muted transition-all cursor-pointer hover:bg-surface-muted/60 hover:text-ink active:scale-95"
+                >
+                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-surface-muted text-lg leading-none">+</span>
+                  <span>New</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Pay with / into */}
+          {type === 'transfer' ? (
+            <>
+              <PayMethodPicker {...pickerProps} label="From" value={accountId} onChange={setAccountId} />
+              <PayMethodPicker
+                {...pickerProps}
+                label="To (a card here pays its bill)"
+                value={toAccountId}
+                onChange={setToAccountId}
+                excludeId={accountId}
+              />
+            </>
+          ) : (
             <PayMethodPicker
               {...pickerProps}
-              label="To (a card here pays its bill)"
-              value={toAccountId}
-              onChange={setToAccountId}
-              excludeId={accountId}
+              label={type === 'income' ? 'Into' : 'Pay with'}
+              value={accountId}
+              onChange={setAccountId}
+              allowNone
             />
-          </>
-        ) : (
-          <PayMethodPicker
-            {...pickerProps}
-            label={type === 'income' ? 'Into' : 'Pay with'}
-            value={accountId}
-            onChange={setAccountId}
-            allowNone
-          />
-        )}
+          )}
 
-        <TransactionDateField value={date} onChange={setDate} />
+          <TransactionDateField value={date} onChange={setDate} />
 
-        {backdated && touchesBalance && (
-          <button
-            type="button"
-            role="switch"
-            aria-checked={alreadyIn}
-            onClick={() => setAlreadyIn((v) => !v)}
-            className="-mt-2 flex w-full items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 text-left cursor-pointer hover:bg-surface-muted/50"
-          >
-            <span>
-              <span className="block text-sm font-bold text-ink">Already in my balance</span>
-              <span className="block text-xs text-ink-muted">
-                {alreadyIn ? 'Recorded for history only; balances stay as they are' : 'Turn on if the balance shown today already includes this'}
+          {backdated && touchesBalance && (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={alreadyIn}
+              onClick={() => setAlreadyIn((v) => !v)}
+              className="-mt-2 flex w-full items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 text-left cursor-pointer hover:bg-surface-muted/50"
+            >
+              <span>
+                <span className="block text-sm font-bold text-ink">Already in my balance</span>
+                <span className="block text-xs text-ink-muted">
+                  {alreadyIn ? 'Recorded for history only; balances stay as they are' : 'Turn on if the balance shown today already includes this'}
+                </span>
               </span>
-            </span>
-            <SwitchVisual on={alreadyIn} />
-          </button>
-        )}
+              <SwitchVisual on={alreadyIn} />
+            </button>
+          )}
 
-        {/* Note + hashtags */}
-        <div>
-          <label className="block">
-            <div className="mb-1.5 flex items-center justify-between gap-3">
-              <span className="text-sm font-semibold text-ink-soft">Note</span>
-              <span className="text-xs text-ink-muted">Add #tags to find it later</span>
-            </div>
-            <input
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Brown sugar milk tea #nosetea"
-              className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15"
-            />
-          </label>
-          {recent.length + frequent.length > 0 && (
-            <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-              {recent.length > 0 && <span className="mr-0.5 text-xs font-semibold text-ink-muted">Recent</span>}
-              {recent.map((tag) => {
-                const added = noteTokens.includes(`#${tag}`)
-                return (
+          {/* Note + hashtags */}
+          <div>
+            <label className="block">
+              <div className="mb-1.5 flex items-center justify-between gap-3">
+                <span className="text-sm font-semibold text-ink-soft">Note</span>
+                <span className="text-xs text-ink-muted">Add #tags to find it later</span>
+              </div>
+              <input
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Brown sugar milk tea #nosetea"
+                className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15"
+              />
+            </label>
+            {recent.length + frequent.length > 0 && (
+              <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                {recent.length > 0 && <span className="mr-0.5 text-xs font-semibold text-ink-muted">Recent</span>}
+                {recent.map((tag) => {
+                  const added = noteTokens.includes(`#${tag}`)
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => appendTag(tag)}
+                      aria-pressed={added}
+                      className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95 ${
+                        added
+                          ? 'bg-violet-200 text-violet-800 dark:bg-violet-400/30 dark:text-violet-100'
+                          : 'bg-violet-100 text-violet-700 hover:bg-violet-200 dark:bg-violet-400/15 dark:text-violet-200'
+                      }`}
+                    >
+                      #{tag}
+                    </button>
+                  )
+                })}
+                {frequent.map((tag) => (
                   <button
                     key={tag}
                     type="button"
                     onClick={() => appendTag(tag)}
-                    aria-pressed={added}
-                    className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95 ${
-                      added
-                        ? 'bg-violet-200 text-violet-800 dark:bg-violet-400/30 dark:text-violet-100'
-                        : 'bg-violet-100 text-violet-700 hover:bg-violet-200 dark:bg-violet-400/15 dark:text-violet-200'
-                    }`}
+                    className="rounded-full bg-surface-muted px-2.5 py-1 text-xs font-semibold text-ink-soft hover:text-ink cursor-pointer"
                   >
                     #{tag}
                   </button>
-                )
-              })}
-              {frequent.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => appendTag(tag)}
-                  className="rounded-full bg-surface-muted px-2.5 py-1 text-xs font-semibold text-ink-soft hover:text-ink cursor-pointer"
-                >
-                  #{tag}
-                </button>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </Modal>
+      </Modal>
+      <CategorySheet
+        open={newCategory}
+        type={type === 'income' ? 'income' : 'expense'}
+        onClose={() => setNewCategory(false)}
+        onSaved={setCategoryId}
+      />
+    </>
   )
 }

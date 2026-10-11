@@ -50,7 +50,6 @@
 ### Spend features
 9. Bulk import of past transactions (bank / card statement CSV or AI).
 10. Savings goals.
-11. Custom categories (add, rename, color).
 12. Monthly report: category trends, 6-month income vs. expense line.
 13. USD wallets (currently THB only).
 14. Thai public holidays when shifting payday (weekends only for now).
@@ -65,8 +64,3 @@
     a foundational change — the trigger for v2.0.0.
 18. Test the DCA confirm and Activity Logs undo flows through the real UI (logic tested only).
 19. Dashboard "Total Outstanding" now includes Spend cards: label it or list cards in the Debts card.
-
-### Requests
-21. **Categories for both expense and income** — add a new category manually from the category
-    picker (for either type), and let the user pick its logo (icon) when creating or editing it.
-    Overlaps with item 11 (custom categories); build them together.

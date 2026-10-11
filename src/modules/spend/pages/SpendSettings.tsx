@@ -11,6 +11,7 @@ import { DEFAULT_BILL_REMINDER_DAYS, isCalendar, periodFor, periodLabel, upcomin
 import { useSpend } from '../useSpend'
 import { categoriesFor } from '../categories'
 import { TONES } from '../tones'
+import { CategoryManager } from '../CategorySheet'
 
 const fmtDay = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number)
@@ -250,6 +251,12 @@ export function SpendSettings() {
           </Button>
         </div>
       </Section>
+
+      <div id="categories" className="scroll-mt-24">
+        <Section title="Categories" description="Add your own, or change a name, icon or color. Hidden ones stay on past transactions.">
+          <CategoryManager />
+        </Section>
+      </div>
 
       <div id="category-budgets" className="scroll-mt-24">
         <Section title="Budget per category" description="Optional limits per spending month. Leave a category empty for no limit.">

@@ -16,6 +16,9 @@ interface ModalProps {
   enterToSubmit?: boolean
 }
 
+/** Open modals, innermost last: only the top one answers keys, and the page scrolls again once all close. */
+const openStack: string[] = []
+
 const SIZE_CLASSES = {
   sm: 'sm:max-w-[400px]',
   md: 'sm:max-w-[460px]',
@@ -59,6 +62,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
     }
 
     const onKey = (e: KeyboardEvent) => {
+      if (openStack[openStack.length - 1] !== titleId) return
       if (e.key === 'Escape') {
         onCloseRef.current()
         return
@@ -106,13 +110,15 @@ export function Modal({ open, onClose, title, description, children, footer, siz
       }
     }
 
+    openStack.push(titleId)
     document.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
     window.requestAnimationFrame(focusFirstElement)
 
     return () => {
       document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = ''
+      openStack.splice(openStack.indexOf(titleId), 1)
+      if (openStack.length === 0) document.body.style.overflow = ''
       previouslyFocused?.focus()
     }
   }, [open])

@@ -346,7 +346,24 @@ export interface SpendSettings {
   categoryBudgets?: Record<string, number>
   /** Set once the old Invest-side fixed cost list has been copied into Spend recurring */
   fixedCostsImported?: boolean
+  /** Categories the user added (expense or income) */
+  customCategories?: SpendCustomCategory[]
+  /** Changes to built-in categories, by id */
+  categoryEdits?: Record<string, SpendCategoryEdit>
 }
+
+/** A user-made Spend category. `tone` and `icon` are keys from the Spend module's palettes. */
+export interface SpendCustomCategory {
+  id: string
+  label: string
+  type: 'expense' | 'income'
+  tone: string
+  icon: string
+  /** Kept for old transactions but no longer offered in pickers */
+  hidden?: boolean
+}
+
+export type SpendCategoryEdit = Partial<Pick<SpendCustomCategory, 'label' | 'tone' | 'icon' | 'hidden'>>
 
 export type RecurringFrequency = 'weekly' | 'monthly' | 'yearly'
 

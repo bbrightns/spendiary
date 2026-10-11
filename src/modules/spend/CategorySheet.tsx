@@ -1,0 +1,217 @@
+import { useState } from 'react'
+import { Modal } from '../../components/ui/Modal'
+import { SegmentedControl } from '../../components/ui/SegmentedControl'
+import { FormActions } from '../../components/forms/FormActions'
+import { useToast } from '../../store/ToastContext'
+import { CATEGORY_ICONS, CATEGORY_TONES, SPEND_CATEGORIES, manageableCategories, type SpendCategory } from './categories'
+import { SwitchVisual } from './AccountSheets'
+import { TONES, TYPE_ACTIVE, type Tone } from './tones'
+import { useSpend } from './useSpend'
+
+type CatType = 'expense' | 'income'
+
+interface Props {
+  open: boolean
+  /** Category to edit; omit to add one */
+  category?: SpendCategory
+  /** Type for a new category */
+  type?: CatType
+  onClose: () => void
+  /** Called with the id after saving (e.g. to select the new category) */
+  onSaved?: (id: string) => void
+}
+
+const TYPE_OPTIONS = [
+  { value: 'expense' as const, label: 'Expense', activeClassName: TYPE_ACTIVE.expense },
+  { value: 'income' as const, label: 'Income', activeClassName: TYPE_ACTIVE.income },
+]
+
+/** Add or edit a category: name, icon and color, for expense or income. */
+export function CategorySheet({ open, category, type = 'expense', onClose, onSaved }: Props) {
+  const { upsertCategory, resetCategory, removeCategory } = useSpend()
+  const { showToast } = useToast()
+  const [form, setForm] = useState({ type: type as CatType, label: '', icon: 'tag', tone: 'violet' as Tone, hidden: false })
+  const [lastOpen, setLastOpen] = useState(false)
+  if (open !== lastOpen) {
+    setLastOpen(open)
+    if (open)
+      setForm(
+        category
+          ? { type: category.type, label: category.label, icon: category.iconKey, tone: category.tone, hidden: !!category.hidden }
+          : { type, label: '', icon: 'tag', tone: CATEGORY_TONES[(Math.random() * CATEGORY_TONES.length) | 0], hidden: false },
+      )
+  }
+
+  const shipped = category && !category.custom ? SPEND_CATEGORIES.find((c) => c.id === category.id) : undefined
+  const changed = shipped && (shipped.label !== category?.label || shipped.iconKey !== category?.iconKey || shipped.tone !== category?.tone || !!category?.hidden)
+  const canSave = form.label.trim() !== ''
+  const Icon = CATEGORY_ICONS[form.icon] ?? CATEGORY_ICONS.tag
+
+  const save = () => {
+    if (!canSave) return
+    const id = upsertCategory({ id: category?.id, type: form.type, label: form.label.trim(), icon: form.icon, tone: form.tone, hidden: form.hidden })
+    showToast(category ? 'Category updated' : `Added ${form.label.trim()}`)
+    onSaved?.(id)
+    onClose()
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={category ? 'Edit category' : 'New category'}
+      size="md"
+      footer={
+        <FormActions
+          editing={!!category}
+          canSave={canSave}
+          onSave={save}
+          onDelete={
+            category?.custom
+              ? () => {
+                  const result = removeCategory(category.id)
+                  showToast(result === 'hidden' ? 'Hidden — still used by past transactions' : 'Category removed', 'info')
+                  onClose()
+                }
+              : undefined
+          }
+        />
+      }
+    >
+      <div className="space-y-5">
+        <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface-muted/40 px-4 py-3">
+          <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${TONES[form.tone].chip}`}>
+            <Icon className="h-5 w-5" />
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-base font-bold text-ink">{form.label.trim() || 'Category name'}</span>
+            <span className="block text-xs text-ink-muted">{form.type === 'income' ? 'Income' : 'Expense'}</span>
+          </span>
+        </div>
+
+        {!category && <SegmentedControl options={TYPE_OPTIONS} value={form.type} onChange={(t) => setForm((f) => ({ ...f, type: t }))} ariaLabel="Category type" />}
+
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-semibold text-ink-soft">Name</span>
+          <input
+            value={form.label}
+            onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
+            maxLength={24}
+            placeholder={form.type === 'income' ? 'Freelance' : 'Pets'}
+            className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15"
+          />
+        </label>
+
+        <div>
+          <p className="mb-2 text-sm font-semibold text-ink-soft">Icon</p>
+          <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
+            {Object.entries(CATEGORY_ICONS).map(([key, I]) => {
+              const on = form.icon === key
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  aria-label={`Icon ${key}`}
+                  aria-pressed={on}
+                  onClick={() => setForm((f) => ({ ...f, icon: key }))}
+                  className={`grid aspect-square place-items-center rounded-xl border transition-all cursor-pointer active:scale-95 ${
+                    on ? `${TONES[form.tone].active}` : 'border-line bg-surface text-ink-soft hover:bg-surface-muted/60'
+                  }`}
+                >
+                  <I className="h-5 w-5" />
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-2 text-sm font-semibold text-ink-soft">Color</p>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORY_TONES.map((t) => (
+              <button
+                key={t}
+                type="button"
+                aria-label={`Color ${t}`}
+                aria-pressed={form.tone === t}
+                onClick={() => setForm((f) => ({ ...f, tone: t }))}
+                className={`h-8 w-8 rounded-full transition-transform cursor-pointer ${TONES[t].bar} ${
+                  form.tone === t ? 'scale-110 ring-2 ring-brand ring-offset-2 ring-offset-surface' : ''
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {category && (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={form.hidden}
+            onClick={() => setForm((f) => ({ ...f, hidden: !f.hidden }))}
+            className="flex w-full items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 text-left cursor-pointer hover:bg-surface-muted/50"
+          >
+            <span>
+              <span className="block text-sm font-bold text-ink">Hide from Quick add</span>
+              <span className="block text-xs text-ink-muted">Past transactions keep this category</span>
+            </span>
+            <SwitchVisual on={form.hidden} />
+          </button>
+        )}
+
+        {changed && (
+          <button
+            type="button"
+            onClick={() => {
+              resetCategory(category!.id)
+              showToast(`Reset to ${shipped!.label}`, 'info')
+              onClose()
+            }}
+            className="text-sm font-semibold text-brand hover:underline cursor-pointer"
+          >
+            Reset to default ({shipped!.label})
+          </button>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
+/** Every expense or income category, tap to edit, plus one to add; for the settings page. */
+export function CategoryManager() {
+  // Subscribing re-renders this list when categories change in settings
+  useSpend()
+  const [type, setType] = useState<CatType>('expense')
+  const [sheet, setSheet] = useState<{ open: boolean; category?: SpendCategory }>({ open: false })
+  return (
+    <div className="space-y-4">
+      <SegmentedControl options={TYPE_OPTIONS} value={type} onChange={setType} ariaLabel="Category type" />
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {manageableCategories(type).map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => setSheet({ open: true, category: c })}
+            className={`flex min-w-0 items-center gap-2.5 rounded-xl border border-line px-3 py-2.5 text-left transition-colors cursor-pointer hover:bg-surface-muted/60 ${c.hidden ? 'opacity-60' : ''}`}
+          >
+            <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${TONES[c.tone].chip}`}>
+              <c.icon className="h-4 w-4" />
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold text-ink">{c.label}</span>
+              {c.hidden && <span className="block text-[11px] text-ink-muted">Hidden</span>}
+            </span>
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => setSheet({ open: true })}
+          className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong px-3 py-2.5 text-sm font-semibold text-ink-muted transition-colors cursor-pointer hover:bg-surface-muted/60 hover:text-ink"
+        >
+          <span className="text-lg leading-none">+</span> Add category
+        </button>
+      </div>
+      <CategorySheet open={sheet.open} category={sheet.category} type={type} onClose={() => setSheet({ open: false })} />
+    </div>
+  )
+}

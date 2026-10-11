@@ -7,6 +7,7 @@ import { seedData } from '../lib/seed'
 import { detectBankPreset, findMatchingHolding, inferCashCategory } from '../lib/calc'
 import { THAI_STOCKS, THAI_DRS, US_STOCKS } from '../lib/securities'
 import { importFixedCosts } from '../modules/spend/migrate'
+import { syncCategories } from '../modules/spend/categories'
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
 
@@ -507,6 +508,8 @@ function upsert<T extends { id: string }>(list: T[], item: Omit<T, 'id'> & { id?
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [data, setDataState] = useState<SpendiaryData>(emptyData)
+  // Spend category lookups are plain functions; keep their user-made list in step with the data
+  syncCategories(data.spendSettings)
   const [usdThb, setUsdThb] = useState<number | null>(null)
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle')
   const [dataReady, setDataReady] = useState(false)

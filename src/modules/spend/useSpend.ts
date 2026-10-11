@@ -1,10 +1,14 @@
 import { useMemo } from 'react'
 import { useData } from '../../store/DataContext'
-import type { SpendCard, SpendRecurring, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
+import type { SpendCard, SpendCustomCategory, SpendRecurring, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
+import { SPEND_CATEGORIES } from './categories'
 import { investTransactions } from './invest'
 import { DEFAULT_BILL_REMINDER_DAYS, applyToBalances, cardBill, dueRecurring, parseTags, sortTxns, spendWallets } from './logic'
 
 export type SpendTxnInput = Omit<SpendTransaction, 'id' | 'createdAt' | 'updatedAt' | 'tags'>
+
+/** A category as edited in the category sheet; omit `id` to add one. */
+export type CategoryInput = Omit<SpendCustomCategory, 'id'> & { id?: string }
 
 /** A wallet or a credit card, as one pickable "pay with" option. */
 export interface PayMethod {
@@ -169,6 +173,58 @@ export function useSpend() {
     setData((prev) => ({ ...prev, spendSettings: { ...prev.spendSettings, ...patch } }))
   }
 
+  /**
+   * Add or change a category. Built-ins keep their id and store only the user's edits;
+   * new ones become custom categories. Returns the category id.
+   */
+  function upsertCategory(input: CategoryInput): string {
+    const id = input.id ?? `cat-${newId()}`
+    const isBuiltIn = SPEND_CATEGORIES.some((c) => c.id === id)
+    setData((prev) => {
+      const st = prev.spendSettings ?? {}
+      if (isBuiltIn) {
+        const edit = { label: input.label, tone: input.tone, icon: input.icon, hidden: input.hidden || undefined }
+        return { ...prev, spendSettings: { ...st, categoryEdits: { ...st.categoryEdits, [id]: edit } } }
+      }
+      const list = st.customCategories ?? []
+      const next = { id, type: input.type, label: input.label, tone: input.tone, icon: input.icon, hidden: input.hidden || undefined }
+      return {
+        ...prev,
+        spendSettings: {
+          ...st,
+          customCategories: list.some((c) => c.id === id) ? list.map((c) => (c.id === id ? next : c)) : [...list, next],
+        },
+      }
+    })
+    return id
+  }
+
+  /** Back to the shipped name, icon and color. */
+  function resetCategory(id: string) {
+    setData((prev) => {
+      const rest = { ...prev.spendSettings?.categoryEdits }
+      delete rest[id]
+      return { ...prev, spendSettings: { ...prev.spendSettings, categoryEdits: rest } }
+    })
+  }
+
+  /**
+   * Remove a custom category. One still used by a transaction or recurring item is
+   * hidden instead, so history keeps its name.
+   */
+  function removeCategory(id: string): 'removed' | 'hidden' {
+    const used = (data.spendTransactions ?? []).some((t) => t.categoryId === id) || (data.spendRecurring ?? []).some((r) => r.categoryId === id)
+    setData((prev) => {
+      const st = prev.spendSettings ?? {}
+      const list = st.customCategories ?? []
+      if (used) return { ...prev, spendSettings: { ...st, customCategories: list.map((c) => (c.id === id ? { ...c, hidden: true } : c)) } }
+      const budgets = { ...st.categoryBudgets }
+      delete budgets[id]
+      return { ...prev, spendSettings: { ...st, customCategories: list.filter((c) => c.id !== id), categoryBudgets: budgets } }
+    })
+    return used ? 'hidden' : 'removed'
+  }
+
   function toggleFavorite(id: string) {
     setData((prev) => {
       const favs = prev.spendSettings?.favoriteAccountIds ?? []
@@ -199,6 +255,9 @@ export function useSpend() {
     upsertCard,
     removeCard,
     toggleFavorite,
+    upsertCategory,
+    resetCategory,
+    removeCategory,
     updateSettings,
     setDefaultAccount: (id: string | undefined) => updateSettings({ defaultAccountId: id }),
     setMonthlyBudget: (amount: number | undefined) => updateSettings({ monthlyBudget: amount }),
