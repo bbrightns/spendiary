@@ -1,6 +1,7 @@
 import type { ComponentType, SVGProps } from 'react'
 import type { SpendSettings, SpendTxnType } from '../../lib/types'
 import { TONES, type Tone } from './tones'
+import { queryTerms, scoreItem } from '../../lib/paletteSearch'
 import {
   CarIcon,
   CoinsIcon,
@@ -298,9 +299,9 @@ export interface SpendCategory {
 type BuiltIn = Omit<SpendCategory, 'icon'>
 
 const BUILT_IN: BuiltIn[] = [
-  { id: 'food', label: 'Food', type: 'expense', tone: 'orange', iconKey: 'food', keywords: ['อาหาร', 'กิน', 'meal'] },
-  { id: 'drinks', label: 'Drinks', type: 'expense', tone: 'amber', iconKey: 'coffee', keywords: ['กาแฟ', 'ชา', 'ชานม', 'coffee'] },
-  { id: 'transport', label: 'Transport', type: 'expense', tone: 'sky', iconKey: 'car', keywords: ['เดินทาง', 'รถ', 'น้ำมัน', 'bts', 'grab'] },
+  { id: 'food', label: 'Food', type: 'expense', tone: 'orange', iconKey: 'food', keywords: ['อาหาร', 'กิน', 'ข้าว', 'meal', 'lunch', 'dinner', 'breakfast', 'restaurant'] },
+  { id: 'drinks', label: 'Drinks', type: 'expense', tone: 'amber', iconKey: 'coffee', keywords: ['กาแฟ', 'ชา', 'ชานม', 'coffee', 'tea', 'cafe'] },
+  { id: 'transport', label: 'Transport', type: 'expense', tone: 'sky', iconKey: 'car', keywords: ['เดินทาง', 'รถ', 'น้ำมัน', 'bts', 'mrt', 'grab', 'bolt', 'taxi', 'fuel'] },
   { id: 'shopping', label: 'Shopping', type: 'expense', tone: 'pink', iconKey: 'bag', keywords: ['ช้อปปิ้ง', 'ของใช้'] },
   { id: 'bills', label: 'Bills', type: 'expense', tone: 'violet', iconKey: 'receipt', keywords: ['บิล', 'ค่าน้ำ', 'ค่าไฟ', 'เน็ต', 'โทรศัพท์'] },
   { id: 'housing', label: 'Housing', type: 'expense', tone: 'teal', iconKey: 'home', keywords: ['ที่พัก', 'ค่าเช่า', 'บ้าน', 'คอนโด'] },
@@ -309,7 +310,7 @@ const BUILT_IN: BuiltIn[] = [
   { id: 'family', label: 'Family', type: 'expense', tone: 'lime', iconKey: 'gift', keywords: ['ครอบครัว', 'ของขวัญ', 'พ่อแม่'] },
   { id: 'other', label: 'Other', type: 'expense', tone: 'slate', iconKey: 'dots', keywords: ['อื่นๆ'] },
 
-  { id: 'salary', label: 'Salary', type: 'income', tone: 'emerald', iconKey: 'wallet', keywords: ['เงินเดือน'] },
+  { id: 'salary', label: 'Salary', type: 'income', tone: 'emerald', iconKey: 'wallet', keywords: ['เงินเดือน', 'salary', 'payroll'] },
   { id: 'bonus', label: 'Bonus', type: 'income', tone: 'yellow', iconKey: 'sparkles', keywords: ['โบนัส'] },
   { id: 'side', label: 'Side income', type: 'income', tone: 'teal', iconKey: 'coins', keywords: ['รายได้เสริม', 'ฟรีแลนซ์'] },
   { id: 'interest', label: 'Interest', type: 'income', tone: 'cyan', iconKey: 'growth', keywords: ['ดอกเบี้ย'] },
@@ -374,4 +375,23 @@ export function categoriesFor(type: SpendTxnType, keep?: string): SpendCategory[
 /** Every category the user can manage, hidden ones included. */
 export function manageableCategories(type: 'expense' | 'income'): SpendCategory[] {
   return live.filter((c) => c.type === type && !c.system)
+}
+
+/** The category a note most likely belongs to, by name or keyword (Thai or English). */
+export function guessCategory(note: string, type: 'expense' | 'income'): SpendCategory | undefined {
+  const terms = queryTerms(note).filter((t) => !t.startsWith('#'))
+  const text = note.toLowerCase()
+  let best: { c: SpendCategory; s: number } | undefined
+  for (const c of manageableCategories(type)) {
+    if (c.hidden) continue
+    for (const t of terms) {
+      const s = scoreItem([t], { title: c.label, keywords: c.keywords })
+      if (s >= 0.75 && (!best || s > best.s)) best = { c, s }
+    }
+    // Thai is written without spaces, so a keyword can sit inside a longer word (ค่ากาแฟ → กาแฟ)
+    for (const k of c.keywords) {
+      if (/\p{Script=Thai}/u.test(k) && k.length >= 2 && text.includes(k) && (!best || 0.8 > best.s)) best = { c, s: 0.8 }
+    }
+  }
+  return best?.c
 }

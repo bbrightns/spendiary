@@ -30,9 +30,9 @@
 ## Remaining tasks
 
 ### Spend features
-9. Bulk import of past transactions (bank / card statement CSV or AI).
 13. USD wallets (currently THB only).
-15. Receipt scanning (needs a server-side function for the vision API key).
+15. Receipt scanning and AI reading of PDF / photo statements (CSV import is done) — both need a
+    server-side function for the vision API key.
 
 - Thai holidays: only fixed-date ones are built in; Buddhist holidays (lunar) are added by the user as
   "Other days off". A yearly built-in list could come later.

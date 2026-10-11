@@ -91,6 +91,18 @@ export function useSpend() {
     return txn
   }
 
+  /** Log many at once (e.g. a statement import) in one update. */
+  function addTransactions(inputs: SpendTxnInput[]): number {
+    const now = new Date().toISOString()
+    const txns: SpendTransaction[] = inputs.map((input) => ({ ...input, id: newId(), tags: parseTags(input.note), createdAt: now }))
+    setData((prev) => ({
+      ...prev,
+      ...txns.reduce((b, t) => applyToBalances(b, t, 1), balancesOf(prev)),
+      spendTransactions: [...(prev.spendTransactions ?? []), ...txns],
+    }))
+    return txns.length
+  }
+
   /** Log a recurring occurrence as-is (its usual amount, on its date). */
   function confirmRecurring(rec: SpendRecurring, date: string) {
     return addTransaction(recurringInput(rec, date), { id: rec.id, date })
@@ -266,6 +278,7 @@ export function useSpend() {
     upsertRecurring,
     removeRecurring,
     addTransaction,
+    addTransactions,
     updateTransaction,
     removeTransaction,
     upsertCard,

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { guessCategory } from './categories'
 import type { CashAccount, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
 import {
   accountTotals,
@@ -205,5 +206,14 @@ describe('goalProgress', () => {
     expect(p.monthsLeft).toBe(6)
     expect(p.perMonth).toBe(2000)
     expect(goalProgress({ ...goal, deadline: '2025-12-01' }, [], '2026-01-10').overdue).toBe(true)
+  })
+})
+
+describe('guessCategory', () => {
+  it('finds Thai keywords inside longer words and English keywords', () => {
+    expect(guessCategory('ค่ากาแฟ Starbucks', 'expense')?.id).toBe('drinks')
+    expect(guessCategory('Grab ride', 'expense')?.id).toBe('transport')
+    expect(guessCategory('Team lunch', 'expense')?.id).toBe('food')
+    expect(guessCategory('random thing', 'expense')).toBeUndefined()
   })
 })

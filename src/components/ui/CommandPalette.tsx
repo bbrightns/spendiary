@@ -37,7 +37,8 @@ import {
 } from '../icons'
 import { openQuickAdd } from '../../modules/spend/QuickAddSheet'
 import { openPayBill } from '../../modules/spend/PayBillSheet'
-import { ListBulletIcon, RepeatIcon, TransferIcon, getCategory, manageableCategories, type SpendCategory } from '../../modules/spend/categories'
+import { openImport } from '../../modules/spend/ImportSheet'
+import { ListBulletIcon, RepeatIcon, TransferIcon, getCategory, guessCategory, manageableCategories } from '../../modules/spend/categories'
 import { TAG_RE, frequencyLabel, goalProgress } from '../../modules/spend/logic'
 import { isSpendPath } from '../../modules/spend/nav'
 import { TONES } from '../../modules/spend/tones'
@@ -136,20 +137,6 @@ const plainNote = (note?: string) => (note ?? '').replace(TAG_RE, '').replace(/\
 const shortDate = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number)
   return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })
-}
-
-/** The category a quick-add note most likely belongs to, by name or keyword. */
-function guessCategory(note: string, type: 'expense' | 'income'): SpendCategory | undefined {
-  const terms = queryTerms(note).filter((t) => !t.startsWith('#'))
-  let best: { c: SpendCategory; s: number } | undefined
-  for (const c of manageableCategories(type)) {
-    if (c.hidden) continue
-    for (const t of terms) {
-      const s = scoreItem([t], { title: c.label, keywords: c.keywords })
-      if (s >= 0.75 && (!best || s > best.s)) best = { c, s }
-    }
-  }
-  return best?.c
 }
 
 export function CommandPalette() {
@@ -283,6 +270,17 @@ export function CommandPalette() {
         spend: true,
         icon: ic(TransferIcon, 'text-sky-500'),
         run: () => openQuickAdd({ type: 'transfer' }),
+      },
+      {
+        id: 'action-spend-import',
+        title: 'Import Bank Statement (CSV)',
+        subtitle: 'Bring past transactions in from a bank or card CSV',
+        badge: 'Action',
+        keywords: ['import', 'csv', 'statement', 'bank', 'upload', 'นำเข้า', 'สเตทเมนต์', 'ไฟล์'],
+        group: 'Actions',
+        spend: true,
+        icon: ic(DownloadIcon, 'text-brand'),
+        run: () => openImport(),
       },
       {
         id: 'action-new-holding',
