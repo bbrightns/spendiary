@@ -27,7 +27,10 @@ const TYPE_FILTERS: { value: TypeFilter; label: string }[] = [
   { value: 'transfer', label: 'Transfers' },
 ]
 
-/** Search terms starting with # must match a tag; anything else matches note, category or wallet. */
+/**
+ * Search terms starting with # match a tag (or the note text, for non-tags like `#7-11`);
+ * anything else matches note, category or wallet.
+ */
 function matches(t: SpendTransaction, terms: string[], walletName: (id?: string) => string): boolean {
   if (terms.length === 0) return true
   const cat = getCategory(t.categoryId)
@@ -35,7 +38,9 @@ function matches(t: SpendTransaction, terms: string[], walletName: (id?: string)
     .join(' ')
     .toLowerCase()
   return terms.every((term) =>
-    term.startsWith('#') ? (t.tags ?? []).some((tag) => tag.startsWith(term.slice(1))) : haystack.includes(term),
+    term.startsWith('#')
+      ? (t.tags ?? []).some((tag) => tag.startsWith(term.slice(1))) || (t.note ?? '').toLowerCase().includes(term)
+      : haystack.includes(term),
   )
 }
 

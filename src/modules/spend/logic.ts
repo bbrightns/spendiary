@@ -1,8 +1,12 @@
 import type { CashAccount, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
 import { localDateStr } from '../../lib/format'
 
-/** Letters, digits and combining marks so Thai tags like #ร้านโปรด stay whole. */
-const TAG_RE = /#([\p{L}\p{N}\p{M}_]+)/gu
+/**
+ * A tag is # + letters, digits, combining marks or _ (so Thai tags like #ร้านโปรด stay whole),
+ * starting a word and ending at a space, the end, or punctuation. Anything glued on, like the
+ * hyphen in a store name `#7-11`, means it isn't a tag and stays plain note text.
+ */
+export const TAG_RE = /(?<=^|\s)#([\p{L}\p{N}\p{M}_]+)(?=$|[\s.,!?;:)\]])/gu
 
 /** Unique lowercase hashtags in a note, without the leading #. */
 export function parseTags(note?: string): string[] {

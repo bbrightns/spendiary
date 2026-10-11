@@ -3,6 +3,7 @@ import type { SpendTransaction } from '../../lib/types'
 import { PortfolioIcon } from '../../components/icons'
 import { thb } from '../../lib/format'
 import { TransferIcon, getCategory } from './categories'
+import { TAG_RE } from './logic'
 import { openQuickAdd } from './QuickAddSheet'
 import { TONES } from './tones'
 
@@ -16,7 +17,11 @@ interface Props {
 
 /** Note text without its hashtags — the tags render as chips instead. */
 function plainNote(note?: string): string {
-  return (note ?? '').replace(/#[\p{L}\p{N}\p{M}_]+/gu, '').replace(/\s+/g, ' ').trim()
+  return (note ?? '')
+    .replace(TAG_RE, '')
+    .replace(/\s+/g, ' ')
+    .replace(/ ([.,!?;:])/g, '$1')
+    .trim()
 }
 
 export function TxnRow({ txn, methods, onTagClick }: Props) {

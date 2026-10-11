@@ -45,7 +45,9 @@ export function useSpend() {
   const { data, setData, usdThb } = useData()
   // Stored Spend rows + read-only rows from Invest (dividends, DCA buys)
   const fromInvest = useMemo(() => investTransactions(data, usdThb), [data, usdThb])
-  const transactions = useMemo(() => sortTxns([...(data.spendTransactions ?? []), ...fromInvest]), [data.spendTransactions, fromInvest])
+  // Tags are re-read from the note so rows saved under older tag rules (e.g. `#7-11` → "7") follow the current ones
+  const stored = useMemo(() => (data.spendTransactions ?? []).map((t) => ({ ...t, tags: parseTags(t.note) })), [data.spendTransactions])
+  const transactions = useMemo(() => sortTxns([...stored, ...fromInvest]), [stored, fromInvest])
   const wallets = useMemo(() => spendWallets(data.cashAccounts ?? []), [data.cashAccounts])
   const cards = useMemo(() => data.spendCards ?? [], [data.spendCards])
   const settings: SpendSettings = useMemo(() => data.spendSettings ?? {}, [data.spendSettings])
