@@ -436,3 +436,40 @@ export function budgetState(spent: number, budget: number): BudgetState {
   if (spent >= budget * 0.85) return 'near'
   return 'ok'
 }
+
+// ── Account history ──────────────────────────────────────────────────────────
+
+export interface AccountTotals {
+  /** Expenses paid with the account */
+  spent: number
+  /** Income into the account (refunds, for a card) */
+  income: number
+  /** Transfers into / out of the account */
+  transferIn: number
+  transferOut: number
+  /** income − spent; transfers only move money between your own accounts */
+  net: number
+  count: number
+  /** Oldest transaction date, if any */
+  since?: string
+}
+
+/** Everything ever logged against one wallet or card. */
+export function accountTotals(txns: SpendTransaction[], id: string): AccountTotals {
+  const out: AccountTotals = { spent: 0, income: 0, transferIn: 0, transferOut: 0, net: 0, count: 0 }
+  for (const t of txns) {
+    const from = t.accountId === id
+    const to = t.type === 'transfer' && t.toAccountId === id
+    if (!from && !to) continue
+    out.count += 1
+    if (!out.since || t.date < out.since) out.since = t.date
+    if (t.type === 'expense') out.spent += t.amount
+    else if (t.type === 'income') out.income += t.amount
+    else {
+      if (from) out.transferOut += t.amount
+      if (to) out.transferIn += t.amount
+    }
+  }
+  out.net = out.income - out.spent
+  return out
+}

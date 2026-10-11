@@ -75,7 +75,7 @@ export function PayBillSheet() {
       date: localDateStr(),
       note: `Pay ${bill.card.name} bill`,
     })
-    showToast(`Paid ${thb(amount)} to ${bill.card.name}`)
+    showToast(`Paid ${thb(amount, true)} to ${bill.card.name}`)
     close()
   }
 
@@ -93,7 +93,7 @@ export function PayBillSheet() {
       footer={
         bill && bill.amountDue > 0 ? (
           <Button data-modal-submit className="w-full" disabled={!canPay} onClick={pay}>
-            Pay {thb(amount > 0 ? amount : 0)}
+            Pay {thb(amount > 0 ? amount : 0, true)}
           </Button>
         ) : (
           <Button variant="secondary" className="w-full" onClick={close}>
@@ -107,7 +107,7 @@ export function PayBillSheet() {
           {/* Amount due */}
           <div className="text-center">
             <p className="text-xs font-medium text-ink-muted">{bill.amountDue > 0 ? 'Amount due' : 'Nothing due'}</p>
-            <p className="font-display text-5xl font-extrabold tracking-tight tnum text-ink">{thb(bill.amountDue)}</p>
+            <p className="font-display text-5xl font-extrabold tracking-tight tnum text-ink">{thb(bill.amountDue, true)}</p>
             {bill.amountDue > 0 && <p className={`mt-1 text-sm font-semibold ${statusClass}`}>{dueText(bill.daysToDue)}</p>}
           </div>
 
@@ -117,26 +117,26 @@ export function PayBillSheet() {
               <span className="text-ink-muted">
                 Statement {bill.items.length > 0 && `(${bill.items.length} ${bill.items.length === 1 ? 'item' : 'items'})`}
               </span>
-              <span className="font-semibold text-ink tnum">{thb(bill.statementTotal)}</span>
+              <span className="font-semibold text-ink tnum">{thb(bill.statementTotal, true)}</span>
             </div>
             {Math.abs(bill.other) >= 1 && (
               <div className="flex justify-between gap-3 py-0.5">
                 <span className="text-ink-muted">{bill.other > 0 ? 'Carried over / not logged' : 'Adjustments'}</span>
                 <span className="font-semibold text-ink tnum">
                   {bill.other < 0 ? '−' : ''}
-                  {thb(Math.abs(bill.other))}
+                  {thb(Math.abs(bill.other), true)}
                 </span>
               </div>
             )}
             {bill.paidSoFar > 0 && (
               <div className="flex justify-between gap-3 py-0.5">
                 <span className="text-ink-muted">Paid since statement</span>
-                <span className="font-semibold text-gain tnum">−{thb(bill.paidSoFar)}</span>
+                <span className="font-semibold text-gain tnum">−{thb(bill.paidSoFar, true)}</span>
               </div>
             )}
             <div className="mt-1.5 flex justify-between gap-3 border-t border-line pt-1.5">
               <span className="font-bold text-ink">Left to pay</span>
-              <span className="font-bold text-ink tnum">{thb(bill.amountDue)}</span>
+              <span className="font-bold text-ink tnum">{thb(bill.amountDue, true)}</span>
             </div>
           </div>
 
@@ -159,7 +159,7 @@ export function PayBillSheet() {
                       </span>
                       <span className={`shrink-0 text-sm font-bold tnum ${t.type === 'income' ? 'text-gain' : 'text-ink'}`}>
                         {t.type === 'income' ? '−' : ''}
-                        {thb(t.amount)}
+                        {thb(t.amount, true)}
                       </span>
                     </li>
                   )
@@ -186,7 +186,7 @@ export function PayBillSheet() {
                     className={`rounded-2xl border px-3 py-2.5 text-left cursor-pointer ${mode === 'full' ? 'border-brand/50 bg-brand-soft ring-2 ring-brand/15' : 'border-line hover:bg-surface-muted/60'}`}
                   >
                     <span className="block text-xs font-semibold text-ink-muted">Full amount</span>
-                    <span className="block text-sm font-bold text-ink tnum">{thb(bill.amountDue)}</span>
+                    <span className="block text-sm font-bold text-ink tnum">{thb(bill.amountDue, true)}</span>
                   </button>
                   <label
                     className={`rounded-2xl border px-3 py-2.5 cursor-text ${mode === 'custom' ? 'border-brand/50 bg-brand-soft ring-2 ring-brand/15' : 'border-line hover:bg-surface-muted/60'}`}

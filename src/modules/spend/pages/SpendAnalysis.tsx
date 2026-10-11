@@ -6,7 +6,7 @@ import { SegmentedControl } from '../../../components/ui/SegmentedControl'
 import { localDateStr, thb, thbCompact } from '../../../lib/format'
 import type { SpendTransaction } from '../../../lib/types'
 import { getCategory } from '../categories'
-import { budgetState, inPeriod, periodFor, shiftDate, shiftPeriod, totalsFor, type Period } from '../logic'
+import { TAG_RE, budgetState, inPeriod, periodFor, shiftDate, shiftPeriod, totalsFor, type Period } from '../logic'
 import { MonthStepper } from '../MonthStepper'
 import { TONES } from '../tones'
 import { useSpend } from '../useSpend'
@@ -19,11 +19,24 @@ const parse = (s: string) => {
 }
 const daysBetween = (a: string, b: string) => Math.round((parse(b).getTime() - parse(a).getTime()) / 86_400_000)
 
-/** Monday-to-Sunday week containing `date` */
+/** Sunday-to-Saturday week containing `date` */
 function weekOf(date: string): Period {
-  const offset = (parse(date).getDay() + 6) % 7
-  const start = shiftDate(date, -offset)
+  const start = shiftDate(date, -parse(date).getDay())
   return { start, end: shiftDate(start, 6) }
+}
+
+const shortDay = (s: string, year = false) =>
+  parse(s).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', ...(year ? { year: 'numeric' } : {}) })
+
+function rangeLabel(range: Range, p: Period): string | undefined {
+  if (range === 'week') return `${shortDay(p.start)} – ${shortDay(p.end, true)}`
+  if (range === 'year') {
+    const s = parse(p.start)
+    const e = parse(p.end)
+    const mon = (d: Date) => d.toLocaleDateString('en-GB', { month: 'short' })
+    return `${mon(s)} ${s.getFullYear()} – ${mon(e)} ${e.getFullYear()}`
+  }
+  return undefined
 }
 
 /** The 12 calendar months ending with the month of `date` */
@@ -50,14 +63,14 @@ function buckets(range: Range, p: Period, txns: SpendTransaction[], today: strin
     return Array.from({ length: 12 }, (_, i) => {
       const d = new Date(s.getFullYear(), s.getMonth() + i, 1)
       const key = localDateStr(d).slice(0, 7)
-      return { key, label: d.toLocaleDateString('en-GB', { month: 'narrow' }), spent: spentOn.get(key) ?? 0, future: key > today.slice(0, 7) }
+      return { key, label: String(d.getMonth() + 1), spent: spentOn.get(key) ?? 0, future: key > today.slice(0, 7) }
     })
   }
   const n = daysBetween(p.start, p.end) + 1
   return Array.from({ length: n }, (_, i) => {
     const key = shiftDate(p.start, i)
     const d = parse(key)
-    const label = range === 'week' ? d.toLocaleDateString('en-GB', { weekday: 'narrow' }) : i % 5 === 0 ? String(d.getDate()) : ''
+    const label = range === 'week' ? d.toLocaleDateString('en-GB', { weekday: 'short' }) : i % 5 === 0 ? String(d.getDate()) : ''
     return { key, label, spent: spentOn.get(key) ?? 0, future: key > today }
   })
 }
@@ -185,7 +198,17 @@ export function SpendAnalysis() {
             { value: 'year', label: 'Year' },
           ]}
         />
-        {range === 'month' && <MonthStepper value={period} cycle={settings.cycle} onChange={(p) => setAnchor(p.start)} />}
+        {range === 'month' ? (
+          <MonthStepper value={period} cycle={settings.cycle} onChange={(p) => setAnchor(p.start)} />
+        ) : (
+          <MonthStepper
+            value={period}
+            label={rangeLabel(range, period)}
+            // Anchor on the period's end so the year view keeps ending on the chosen month
+            step={(p, delta) => (range === 'week' ? weekOf(shiftDate(p.start, 7 * delta)) : yearOf(localDateStr(new Date(parse(p.end).getFullYear() + delta, parse(p.end).getMonth(), 1))))}
+            onChange={(p) => setAnchor(p.end > today ? today : p.end)}
+          />
+        )}
       </div>
 
       {/* ── Totals ── */}
@@ -238,7 +261,7 @@ export function SpendAnalysis() {
         <Card className="p-3 sm:p-4" padded={false}>
           <p className="text-xs text-ink-muted">Biggest expense</p>
           <p className="mt-1 font-display text-lg font-extrabold tnum text-ink">{biggest ? thbCompact(biggest.amount) : '—'}</p>
-          {biggest && <p className="truncate text-xs text-ink-muted">{biggest.note?.replace(/#\S+/g, '').trim() || getCategory(biggest.categoryId)?.label}</p>}
+          {biggest && <p className="truncate text-xs text-ink-muted">{biggest.note?.replace(TAG_RE, '').replace(/\s+/g, ' ').trim() || getCategory(biggest.categoryId)?.label}</p>}
         </Card>
         <Card className="p-3 sm:p-4" padded={false}>
           <p className="text-xs text-ink-muted">Saved of income</p>

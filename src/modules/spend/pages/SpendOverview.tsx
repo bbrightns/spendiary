@@ -193,7 +193,7 @@ export function SpendOverview() {
 
           <div className="mt-4 flex items-center justify-between">
             <h2 className="font-display text-lg font-extrabold text-ink">{day === today ? 'Today' : parse(day).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}</h2>
-            <span className="text-sm font-bold text-ink tnum">−{thb(days.find((d) => d.date === day)?.spent ?? 0)}</span>
+            <span className="text-sm font-bold text-ink tnum">−{thb(days.find((d) => d.date === day)?.spent ?? 0, true)}</span>
           </div>
           {dayTxns.length === 0 ? (
             <EmptyState

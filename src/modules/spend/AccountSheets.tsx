@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Modal } from '../../components/ui/Modal'
 import { Button } from '../../components/ui/Button'
@@ -6,6 +6,7 @@ import { FormActions } from '../../components/forms/FormActions'
 import { useToast } from '../../store/ToastContext'
 import { thb } from '../../lib/format'
 import type { SpendCard } from '../../lib/types'
+import { accountTotals } from './logic'
 import { useSpend, type PayMethod } from './useSpend'
 
 export const CARD_COLORS = ['#0f172a', '#4f46e5', '#0ea5e9', '#16a34a', '#e11d48', '#f59e0b', '#7c3aed', '#db2777']
@@ -148,6 +149,7 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
       }
     >
       <div className="space-y-4">
+        {card && <AccountHistory id={card.id} name={card.name} card />}
         <div className="grid grid-cols-[minmax(0,1fr)_6.5rem] gap-3">
           <Field label="Card name">
             <input className={inputClass} value={form.name} onChange={(e) => set('name')(e.target.value)} placeholder="KBank Platinum" />
@@ -225,18 +227,65 @@ export function WalletSheet({ wallet, onClose }: { wallet?: PayMethod; onClose: 
   return (
     <Modal open={!!wallet} onClose={onClose} title={wallet?.name ?? 'Wallet'} description={wallet ? `Balance ${thb(wallet.balance)}` : undefined} size="sm">
       {wallet && (
-        <div className="space-y-4">
+        <div className="space-y-5">
+          <AccountHistory id={wallet.id} name={wallet.name} />
           <QuickAddPrefs id={wallet.id} />
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="secondary" size="sm" onClick={() => navigate(`/spend/txns?q=${encodeURIComponent(wallet.name.toLowerCase())}`)}>
-              Transactions
-            </Button>
-            <Button variant="secondary" size="sm" onClick={() => navigate('/cash')}>
-              Manage in Cash
-            </Button>
-          </div>
+          <Button variant="secondary" size="sm" className="w-full" onClick={() => navigate('/cash')}>
+            Manage in Cash
+          </Button>
         </div>
       )}
     </Modal>
+  )
+}
+
+/** All-time totals for one wallet or card, with a jump to its transactions. */
+function AccountHistory({ id, name, card }: { id: string; name: string; card?: boolean }) {
+  const { transactions } = useSpend()
+  const navigate = useNavigate()
+  const t = useMemo(() => accountTotals(transactions, id), [transactions, id])
+  const since = t.since
+    ? new Date(`${t.since}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    : undefined
+  const tile = 'min-w-0 rounded-xl bg-surface-muted/70 px-2.5 py-2'
+  return (
+    <div>
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <p className="text-sm font-semibold text-ink-soft">All history</p>
+        <p className="text-xs text-ink-muted tnum">
+          {t.count === 0 ? 'Nothing logged yet' : `${t.count} ${t.count === 1 ? 'transaction' : 'transactions'}${since ? ` since ${since}` : ''}`}
+        </p>
+      </div>
+      <div className="grid grid-cols-3 gap-2 text-xs">
+        <div className={tile}>
+          <p className="text-ink-muted">Spent</p>
+          <p className="truncate font-bold text-ink tnum">{thb(t.spent, true)}</p>
+        </div>
+        <div className={tile}>
+          <p className="text-ink-muted">{card ? 'Refunds' : 'Income'}</p>
+          <p className="truncate font-bold text-gain tnum">{thb(t.income, true)}</p>
+        </div>
+        <div className={tile}>
+          <p className="text-ink-muted">Net</p>
+          <p className={`truncate font-bold tnum ${t.net < 0 ? 'text-loss' : 'text-ink'}`}>
+            {t.net < 0 ? '−' : t.net > 0 ? '+' : ''}
+            {thb(Math.abs(t.net), true)}
+          </p>
+        </div>
+      </div>
+      {t.transferIn + t.transferOut > 0 && (
+        <p className="mt-2 text-xs text-ink-muted tnum">
+          {card ? 'Bill payments' : 'Transfers'}
+          {t.transferIn > 0 && <span className="text-gain"> +{thb(t.transferIn, true)}</span>}
+          {t.transferIn > 0 && t.transferOut > 0 && ' ·'}
+          {t.transferOut > 0 && <> −{thb(t.transferOut, true)}</>}
+        </p>
+      )}
+      {t.count > 0 && (
+        <Button variant="secondary" size="sm" className="mt-3 w-full" onClick={() => navigate(`/spend/txns?q=${encodeURIComponent(name.toLowerCase())}`)}>
+          See transactions
+        </Button>
+      )}
+    </div>
   )
 }

@@ -173,12 +173,12 @@ export function SpendTransactions() {
           </span>
           {spent > 0 && (
             <span>
-              Spent <b className="font-bold text-ink">{thb(spent)}</b>
+              Spent <b className="font-bold text-ink">{thb(spent, true)}</b>
             </span>
           )}
           {earned > 0 && (
             <span>
-              Earned <b className="font-bold text-gain">{thb(earned)}</b>
+              Earned <b className="font-bold text-gain">{thb(earned, true)}</b>
             </span>
           )}
         </div>
@@ -203,7 +203,7 @@ export function SpendTransactions() {
                   <span>{searching ? `${dayLabel(date)} ${date.slice(0, 4)}` : dayLabel(date)}</span>
                   <span className="tnum">
                     {dayNet > 0 ? '+' : dayNet < 0 ? '−' : ''}
-                    {thb(Math.abs(dayNet))}
+                    {thb(Math.abs(dayNet), true)}
                   </span>
                 </div>
                 <div className="divide-y divide-line">

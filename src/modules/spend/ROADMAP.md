@@ -70,16 +70,6 @@
 19. Dashboard "Total Outstanding" now includes Spend cards: label it or list cards in the Debts card.
 
 ### Requests
-20. **Hashtags in the note: stop `#7-11` from becoming a tag** — in Edit transaction (and Quick Add),
-    a store name like "Seven-Eleven" typed as `#7-11` is read as a hashtag. Only treat `#` + word
-    characters as a tag, and let a store name with digits/hyphens be written without being split.
 21. **Categories for both expense and income** — add a new category manually from the category
     picker (for either type), and let the user pick its logo (icon) when creating or editing it.
     Overlaps with item 11 (custom categories); build them together.
-22. **Wallet / card totals** — when a wallet or card is selected (e.g. TTB Visa), show the sum of
-    all its history (spend, income, net), not only the current balance.
-23. **Analysis: week and year views**
-    - Week view starts on Sunday, same as the main page.
-    - Year view labels months as 1–12 instead of single letters J–D.
-24. **Show 2 decimals in transactions** — amounts in transaction lists show 2 decimal places,
-    including for cash wallets and credit cards.

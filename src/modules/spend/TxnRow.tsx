@@ -49,7 +49,7 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
         type="button"
         onClick={() => (sourcePage ? navigate(sourcePage) : openQuickAdd({ editId: txn.id }))}
         className="flex min-w-0 flex-1 items-center gap-3 text-left cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-        aria-label={sourcePage ? `${title}, ${sign}${thb(txn.amount)}, open in Invest` : `Edit ${title}, ${sign}${thb(txn.amount)}`}
+        aria-label={sourcePage ? `${title}, ${sign}${thb(txn.amount, true)}, open in Invest` : `Edit ${title}, ${sign}${thb(txn.amount, true)}`}
       >
         <span
           className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
@@ -69,7 +69,7 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
         </span>
         <span className={`shrink-0 text-sm font-bold tnum ${amountClass}`}>
           {sign}
-          {thb(txn.amount)}
+          {thb(txn.amount, true)}
         </span>
       </button>
       {(txn.tags?.length ?? 0) > 0 && onTagClick && (
