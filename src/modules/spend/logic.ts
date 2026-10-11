@@ -54,6 +54,28 @@ export function suggestTags(txns: SpendTransaction[], note: string, query: strin
     .slice(0, limit)
 }
 
+/**
+ * Items in the user's saved order: listed ids first (unknown ones skipped), then everything
+ * not listed yet — e.g. a card added since — in its original order.
+ */
+export function applyOrder<T extends { id: string }>(items: T[], order?: string[]): T[] {
+  if (!order?.length) return items
+  const rank = new Map<string, number>()
+  for (const id of order) if (!rank.has(id)) rank.set(id, rank.size)
+  const listed = items.filter((x) => rank.has(x.id)).sort((a, b) => rank.get(a.id)! - rank.get(b.id)!)
+  return [...listed, ...items.filter((x) => !rank.has(x.id))]
+}
+
+/** Move one id up (-1) or down (+1) in a list; unchanged at the ends or if it isn't there. */
+export function moveId(ids: string[], id: string, delta: -1 | 1): string[] {
+  const i = ids.indexOf(id)
+  const j = i + delta
+  if (i < 0 || j < 0 || j >= ids.length) return ids
+  const next = [...ids]
+  ;[next[i], next[j]] = [next[j], next[i]]
+  return next
+}
+
 /** Wallets the Spend module works with (amounts are THB only for now). */
 export function spendWallets(accounts: CashAccount[]): CashAccount[] {
   return accounts.filter((a) => (a.currency ?? 'THB') === 'THB')

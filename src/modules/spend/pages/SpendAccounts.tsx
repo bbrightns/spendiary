@@ -10,19 +10,21 @@ import { localDateStr, thb, thbCompact, thbSigned } from '../../../lib/format'
 import type { SpendCard } from '../../../lib/types'
 import { CardSheet, StarIcon, WalletSheet } from '../AccountSheets'
 import { GoalsSection } from '../Goals'
-import { inPeriod, isCalendar, periodFor } from '../logic'
+import { inPeriod, isCalendar, moveId, periodFor } from '../logic'
 import { CardStack } from '../CardStack'
 import { MethodIcon } from '../PayMethodPicker'
+import { ArrangeButton, ReorderSheet } from '../ReorderSheet'
 import { useSpend, type PayMethod } from '../useSpend'
 
 /** 1234 → 1.2K, for the tiny in / out line on a wallet tile. */
 const compact = (v: number) => thbCompact(v).replace(/^฿\s/, '')
 
 export function SpendAccounts() {
-  const { transactions, methods, cards, settings, bills, toggleFavorite } = useSpend()
+  const { transactions, methods, cards, settings, bills, toggleFavorite, updateSettings } = useSpend()
   const navigate = useNavigate()
   const [cardSheet, setCardSheet] = useState<{ open: boolean; card?: SpendCard }>({ open: false })
   const [walletSheet, setWalletSheet] = useState<PayMethod | undefined>()
+  const [arrange, setArrange] = useState<'cards' | 'wallets' | null>(null)
   const period = useMemo(() => periodFor(localDateStr(), settings.cycle), [settings.cycle])
   const periodName = isCalendar(settings.cycle) ? 'This month' : 'This pay cycle'
   const favs = settings.favoriteAccountIds ?? []
@@ -78,7 +80,12 @@ export function SpendAccounts() {
       <section className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <h2 className="font-display text-lg font-extrabold text-ink">Credit cards</h2>
-          {cards.length > 0 && <AddButton onClick={() => setCardSheet({ open: true })} label="Add card" />}
+          {cards.length > 0 && (
+            <div className="flex items-center gap-2">
+              {cards.length > 1 && <ArrangeButton label="Arrange credit cards" onClick={() => setArrange('cards')} />}
+              <AddButton onClick={() => setCardSheet({ open: true })} label="Add card" />
+            </div>
+          )}
         </div>
         {cards.length === 0 ? (
           <Card>
@@ -106,9 +113,12 @@ export function SpendAccounts() {
       <section className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <h2 className="font-display text-lg font-extrabold text-ink">Wallets</h2>
-          <button type="button" onClick={() => navigate('/cash')} className="text-sm font-semibold text-brand hover:underline cursor-pointer">
-            Manage in Cash
-          </button>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={() => navigate('/cash')} className="text-sm font-semibold text-brand hover:underline cursor-pointer">
+              Manage in Cash
+            </button>
+            {wallets.length > 1 && <ArrangeButton label="Arrange wallets" onClick={() => setArrange('wallets')} />}
+          </div>
         </div>
         {wallets.length === 0 ? (
           <Card>
@@ -207,6 +217,38 @@ export function SpendAccounts() {
 
       <GoalsSection />
 
+      <ReorderSheet
+        open={arrange === 'cards'}
+        onClose={() => setArrange(null)}
+        title="Arrange credit cards"
+        description="Sets the order of the card stack and the cards in Quick add."
+        items={cards.map((c) => ({
+          id: c.id,
+          label: c.last4 ? `${c.name} •• ${c.last4}` : c.name,
+          leading: <span className="h-6 w-9 shrink-0 rounded-md shadow-xs" style={{ background: c.color ?? '#0f172a' }} />,
+        }))}
+        onMove={(id, delta) => updateSettings({ cardOrder: moveId(cards.map((c) => c.id), id, delta) })}
+        canReset={!!settings.cardOrder}
+        onReset={() => updateSettings({ cardOrder: undefined })}
+      />
+      <ReorderSheet
+        open={arrange === 'wallets'}
+        onClose={() => setArrange(null)}
+        title="Arrange wallets"
+        description="Sets the order of the wallet tiles and the wallets in Quick add."
+        items={wallets.map((w) => ({
+          id: w.id,
+          label: w.name,
+          leading: (
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-surface-muted" style={w.color ? { background: `${w.color}22` } : undefined}>
+              <MethodIcon method={w} className="h-4 w-4" />
+            </span>
+          ),
+        }))}
+        onMove={(id, delta) => updateSettings({ walletOrder: moveId(wallets.map((w) => w.id), id, delta) })}
+        canReset={!!settings.walletOrder}
+        onReset={() => updateSettings({ walletOrder: undefined })}
+      />
       <CardSheet open={cardSheet.open} card={cardSheet.card ? cards.find((c) => c.id === cardSheet.card!.id) : undefined} onClose={() => setCardSheet({ open: false })} />
       <WalletSheet wallet={walletSheet} onClose={() => setWalletSheet(undefined)} />
     </div>

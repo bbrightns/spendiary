@@ -348,6 +348,10 @@ export interface SpendSettings {
   fixedCostsImported?: boolean
   /** Order of the cards on Spend's Home, by card id; unknown or missing ids fall back to the default order */
   homeOrder?: string[]
+  /** Order of credit cards on Accounts and in pickers, by card id; cards not listed follow in their saved order */
+  cardOrder?: string[]
+  /** Order of wallets on Accounts and in pickers, by account id; wallets not listed follow in their saved order */
+  walletOrder?: string[]
   /** Categories the user added (expense or income) */
   customCategories?: SpendCustomCategory[]
   /** Changes to built-in categories, by id */

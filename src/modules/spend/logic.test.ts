@@ -4,6 +4,8 @@ import { homeOrder, isDefaultOrder, moveCard } from './homeLayout'
 import type { CashAccount, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
 import {
   accountTotals,
+  applyOrder,
+  moveId,
   activeTagQuery,
   noteTitle,
   suggestTags,
@@ -314,5 +316,22 @@ describe('category order', () => {
     expect(ex.slice(-2)).toEqual(['Pets', 'Other'])
     const inc = categoriesFor('income').map((c) => c.label)
     expect(inc.slice(-2)).toEqual(['Tips', 'Other'])
+  })
+})
+
+describe('saved order', () => {
+  const items = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+  const ids = (xs: { id: string }[]) => xs.map((x) => x.id)
+
+  it('keeps the original order without a saved one', () => {
+    expect(ids(applyOrder(items, undefined))).toEqual(['a', 'b', 'c'])
+  })
+  it('puts saved ids first and new items after, skipping unknown ids', () => {
+    expect(ids(applyOrder(items, ['c', 'gone', 'a']))).toEqual(['c', 'a', 'b'])
+  })
+  it('moves an id one step and stops at the ends', () => {
+    expect(moveId(['a', 'b', 'c'], 'c', -1)).toEqual(['a', 'c', 'b'])
+    expect(moveId(['a', 'b', 'c'], 'a', -1)).toEqual(['a', 'b', 'c'])
+    expect(moveId(['a', 'b', 'c'], 'x', 1)).toEqual(['a', 'b', 'c'])
   })
 })
