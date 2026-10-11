@@ -298,6 +298,8 @@ export interface Liability {
   lastPaidAmount?: number
   /** Wallet or card it's usually paid from (Spend); preselected when paying */
   payFromId?: string
+  /** YYYY-MM-DD of the first payment, when it's known exactly (e.g. a card installment bills on the next statement) */
+  firstDueDate?: string
   /** Original total cost/balance of the installment purchase (used for progress tracking) */
   originalBalance?: number
 }

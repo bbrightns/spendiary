@@ -34,6 +34,8 @@ export function SpendAccounts() {
   // An overpaid card is below zero and shows as a negative amount owed
   const owed = cards.reduce((s, c) => s + c.balance, 0)
   const limit = cards.reduce((s, c) => s + c.creditLimit, 0)
+  // Installment plans block their remaining amount from the card limits
+  const held = methods.reduce((s, m) => s + (m.held ?? 0), 0)
 
   // This month's in / out per wallet (transfers count on both sides)
   const flows = useMemo(() => {
@@ -72,7 +74,7 @@ export function SpendAccounts() {
         <Card className="p-3 sm:p-5 animate-rise" padded={false}>
           <p className="text-xs font-medium text-ink-muted">Owed on cards</p>
           <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate text-ink">{thbSigned(owed, true)}</p>
-          {limit > 0 && <p className="mt-0.5 text-xs text-ink-muted tnum">{thb(limit - owed, true)} available</p>}
+          {limit > 0 && <p className="mt-0.5 text-xs text-ink-muted tnum">{thb(limit - owed - held, true)} available</p>}
         </Card>
       </div>
 

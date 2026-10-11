@@ -4,6 +4,8 @@ import { thb, thbSigned } from '../../lib/format'
 import type { SpendCard, SpendTransaction } from '../../lib/types'
 import { StarIcon } from './AccountSheets'
 import { FALLBACK_CARD_COLOR, cardFace, inkOn } from './cardColor'
+import { installmentHold } from './loans'
+import { useData } from '../../store/DataContext'
 import { cardCycle, upcomingDue } from './logic'
 import { dueText, openPayBill } from './PayBillSheet'
 import type { useSpend } from './useSpend'
@@ -30,6 +32,7 @@ function shortDate(iso: string): string {
  * out above it. Tapping a tab brings that card forward. Keeps 10 cards to roughly one screen.
  */
 export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, onToggleFavorite, onEdit }: Props) {
+  const loans = useData().data.liabilities ?? []
   const info = useMemo(
     () =>
       new Map(
@@ -66,7 +69,9 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
   const a = info.get(active.id)!
   const color = active.color ?? FALLBACK_CARD_COLOR
   const ink = inkOn(color)
-  const used = active.creditLimit > 0 ? Math.min(100, Math.max(0, (active.balance / active.creditLimit) * 100)) : 0
+  // Installment plans on this card block their whole remaining amount from the limit
+  const held = installmentHold(loans, active.id)
+  const used = active.creditLimit > 0 ? Math.min(100, Math.max(0, ((active.balance + held) / active.creditLimit) * 100)) : 0
   const fav = favoriteIds.includes(active.id)
 
   return (
@@ -146,9 +151,15 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
               <p className="font-display text-2xl font-extrabold tracking-tight tnum text-ink">{thbSigned(active.balance, true)}</p>
             </div>
             <p className="text-right text-xs text-ink-muted tnum">
-              {thb(Math.max(0, active.creditLimit - active.balance), true)} left
+              {thb(Math.max(0, active.creditLimit - active.balance - held), true)} left
               <br />
               of {thb(active.creditLimit, true)}
+              {held > 0 && (
+                <>
+                  <br />
+                  {thb(held, true)} in installments
+                </>
+              )}
             </p>
           </div>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-muted">

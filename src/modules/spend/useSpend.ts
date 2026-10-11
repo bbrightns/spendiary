@@ -4,6 +4,7 @@ import type { SpendCard, SpendCustomCategory, SpendGoal, SpendRecurring, SpendSe
 import { SPEND_CATEGORIES } from './categories'
 import { investTransactions } from './invest'
 import { DEFAULT_BILL_REMINDER_DAYS, applyOrder, applyToBalances, cardBill, dueRecurring, parseTags, sortTxns, spendWallets } from './logic'
+import { installmentHold } from './loans'
 
 export type SpendTxnInput = Omit<SpendTransaction, 'id' | 'createdAt' | 'updatedAt' | 'tags'>
 
@@ -20,6 +21,8 @@ export interface PayMethod {
   balance: number
   /** Card only */
   creditLimit?: number
+  /** Card only: installment plans still holding part of the limit */
+  held?: number
   locked?: boolean
 }
 
@@ -59,10 +62,18 @@ export function useSpend() {
 
   const methods = useMemo<PayMethod[]>(
     () => [
-      ...cards.map((c) => ({ id: c.id, kind: 'card' as const, name: c.name, color: c.color, balance: c.balance, creditLimit: c.creditLimit })),
+      ...cards.map((c) => ({
+        id: c.id,
+        kind: 'card' as const,
+        name: c.name,
+        color: c.color,
+        balance: c.balance,
+        creditLimit: c.creditLimit,
+        held: installmentHold(data.liabilities ?? [], c.id),
+      })),
       ...wallets.map((w) => ({ id: w.id, kind: 'cash' as const, name: w.name, color: w.color, balance: w.balance, locked: w.category === 'locked' })),
     ],
-    [cards, wallets],
+    [cards, wallets, data.liabilities],
   )
 
   const bills = useMemo(
