@@ -5,8 +5,8 @@ import { Card } from '../../../components/ui/Card'
 import { AddButton } from '../../../components/ui/AddButton'
 import { Button } from '../../../components/ui/Button'
 import { EmptyState } from '../../../components/ui/EmptyState'
-import { ChevronRightIcon, CreditCardIcon } from '../../../components/icons'
-import { localDateStr, thb, thbSigned } from '../../../lib/format'
+import { CreditCardIcon, LockClosedIcon } from '../../../components/icons'
+import { localDateStr, thb, thbCompact, thbSigned } from '../../../lib/format'
 import type { SpendCard } from '../../../lib/types'
 import { CardSheet, StarIcon, WalletSheet } from '../AccountSheets'
 import { GoalsSection } from '../Goals'
@@ -14,6 +14,9 @@ import { inPeriod, isCalendar, periodFor } from '../logic'
 import { CardStack } from '../CardStack'
 import { MethodIcon } from '../PayMethodPicker'
 import { useSpend, type PayMethod } from '../useSpend'
+
+/** 1234 → 1.2K, for the tiny in / out line on a wallet tile. */
+const compact = (v: number) => thbCompact(v).replace(/^฿\s/, '')
 
 export function SpendAccounts() {
   const { transactions, methods, cards, settings, bills, toggleFavorite } = useSpend()
@@ -50,29 +53,6 @@ export function SpendAccounts() {
     }
     return map
   }, [transactions, period])
-
-  const star = (id: string, name: string) => {
-    const on = favs.includes(id)
-    return (
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation()
-          toggleFavorite(id)
-        }}
-        aria-pressed={on}
-        aria-label={on ? `Unfavorite ${name}` : `Favorite ${name}`}
-        className={`grid h-9 w-9 shrink-0 place-items-center rounded-full transition-colors cursor-pointer hover:bg-surface-muted ${on ? 'text-amber-500' : 'text-ink-faint'}`}
-      >
-        <StarIcon filled={on} />
-      </button>
-    )
-  }
-
-  const defaultBadge = (id: string) =>
-    settings.defaultAccountId === id && (
-      <span className="ml-1.5 rounded-full bg-brand-soft px-1.5 py-0.5 text-[11px] font-bold text-brand-ink">Default</span>
-    )
 
   return (
     <div className="space-y-6">
@@ -140,48 +120,89 @@ export function SpendAccounts() {
             />
           </Card>
         ) : (
-          <Card padded={false} className="divide-y divide-line">
+          // Bento: three square tiles a row, the same width as the card stack above
+          <div className="mx-auto grid w-full max-w-[360px] grid-cols-3 gap-2">
             {wallets.map((w) => {
               const f = flows.get(w.id)
+              const on = favs.includes(w.id)
+              const isDefault = settings.defaultAccountId === w.id
               return (
                 <div
                   key={w.id}
                   role="button"
                   tabIndex={0}
                   onClick={() => setWalletSheet(w)}
-                  onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setWalletSheet(w)}
-                  className="flex w-full items-center gap-2 px-3 py-3 text-left hover:bg-surface-muted/50 cursor-pointer sm:px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
+                  onKeyDown={(e) => {
+                    if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return
+                    e.preventDefault()
+                    setWalletSheet(w)
+                  }}
+                  aria-label={`${w.name}${isDefault ? ', default' : ''}${w.locked ? ', locked savings' : ''}, ${thb(w.balance, true)}`}
+                  title={`${w.name} · ${thb(w.balance, true)}`}
+                  className={`relative flex aspect-square min-w-0 flex-col rounded-2xl border bg-surface p-2.5 text-left shadow-[var(--shadow-soft)] transition-all cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                    isDefault ? 'border-brand/60 ring-1 ring-brand/30' : 'border-line'
+                  }`}
                 >
-                  {star(w.id, w.name)}
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-surface-muted">
-                    <MethodIcon method={w} className="h-5 w-5" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex min-w-0 items-center">
-                      <span className="truncate text-sm font-semibold text-ink">{w.name}</span>
-                      {defaultBadge(w.id)}
+                  <div className="flex items-start justify-between">
+                    <span
+                      className="relative grid h-8 w-8 place-items-center rounded-xl bg-surface-muted"
+                      style={w.color ? { background: `${w.color}22` } : undefined}
+                    >
+                      <MethodIcon method={w} className="h-4 w-4" />
+                      {w.locked && (
+                        <span className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-surface text-ink-muted ring-1 ring-line">
+                          <LockClosedIcon className="h-2.5 w-2.5" />
+                        </span>
+                      )}
                     </span>
-                    {/* Wraps rather than truncates so both amounts stay readable on phones */}
-                    <span className="block text-xs text-ink-muted tnum">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleFavorite(w.id)
+                      }}
+                      aria-pressed={on}
+                      aria-label={on ? `Unfavorite ${w.name}` : `Favorite ${w.name}`}
+                      className={`-mr-1.5 -mt-1.5 grid h-8 w-8 place-items-center rounded-full transition-colors cursor-pointer hover:bg-surface-muted ${on ? 'text-amber-500' : 'text-ink-faint'}`}
+                    >
+                      <StarIcon filled={on} className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="mt-auto min-w-0">
+                    {/* Two lines, so names like "KBank Payroll (main)" stay readable */}
+                    <p className="line-clamp-2 break-words text-[11px] font-semibold leading-tight text-ink-soft">
+                      {isDefault && <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-brand align-middle" aria-hidden />}
+                      {w.name}
+                    </p>
+                    {/* Whole baht fits a third of a phone; millions go compact */}
+                    <p className="truncate font-display text-[15px] font-extrabold tracking-tight tnum text-ink">
+                      {Math.abs(w.balance) >= 1_000_000 ? thbCompact(w.balance) : thb(w.balance)}
+                    </p>
+                    <p className="truncate text-[10px] leading-tight text-ink-muted tnum">
                       {f ? (
                         <>
-                          <span className="hidden sm:inline">{periodName} </span>
-                          <span className="text-gain">+{thb(f.in, true)}</span> · −{thb(f.out, true)}
+                          <span className="text-gain">+{compact(f.in)}</span> · −{compact(f.out)}
                         </>
                       ) : (
-                        `No activity ${periodName.toLowerCase()}`
+                        'No activity'
                       )}
-                      {w.locked ? ' · Locked savings' : ''}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-sm font-bold text-ink tnum">{thb(w.balance, true)}</span>
-                  <ChevronRightIcon className="h-4 w-4 shrink-0 text-ink-muted/50" strokeWidth={2} />
+                    </p>
+                  </div>
                 </div>
               )
             })}
-          </Card>
+            <button
+              type="button"
+              onClick={() => navigate('/cash?action=new')}
+              className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-line-strong text-xs font-semibold text-ink-muted transition-colors cursor-pointer hover:bg-surface-muted/60 hover:text-ink"
+            >
+              <span className="grid h-8 w-8 place-items-center rounded-xl bg-surface-muted text-lg leading-none">+</span>
+              Add wallet
+            </button>
+          </div>
         )}
-        <p className="px-1 text-xs text-ink-muted">USD accounts stay on the Invest side for now.</p>
+        <p className="px-1 text-center text-xs text-ink-muted">In / out is {periodName.toLowerCase()}. USD accounts stay on the Invest side for now.</p>
       </section>
 
       <GoalsSection />
