@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { guessCategory } from './categories'
+import { categoriesFor, guessCategory, syncCategories } from './categories'
 import { homeOrder, isDefaultOrder, moveCard } from './homeLayout'
 import type { CashAccount, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
 import {
@@ -298,5 +298,21 @@ describe('tag suggestions', () => {
   })
   it('does not suggest what is already fully typed', () => {
     expect(suggestTags(history, '#gym', 'gym')).toEqual([])
+  })
+})
+
+describe('category order', () => {
+  it('keeps Other last, with the user\'s own categories before it', () => {
+    syncCategories({
+      customCategories: [
+        { id: 'c1', label: 'Pets', type: 'expense', icon: 'tag', tone: 'rose' },
+        { id: 'c2', label: 'Tips', type: 'income', icon: 'tag', tone: 'teal' },
+      ],
+      categoryEdits: {},
+    })
+    const ex = categoriesFor('expense').map((c) => c.label)
+    expect(ex.slice(-2)).toEqual(['Pets', 'Other'])
+    const inc = categoriesFor('income').map((c) => c.label)
+    expect(inc.slice(-2)).toEqual(['Tips', 'Other'])
   })
 })
