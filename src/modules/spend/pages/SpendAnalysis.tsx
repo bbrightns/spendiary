@@ -10,6 +10,7 @@ import { TAG_RE, budgetState, inPeriod, periodFor, shiftDate, shiftPeriod, total
 import { MonthStepper } from '../MonthStepper'
 import { TONES } from '../tones'
 import { useSpend } from '../useSpend'
+import { TrendsCard } from '../TrendsCard'
 
 type Range = 'week' | 'month' | 'year'
 
@@ -244,6 +245,8 @@ export function SpendAnalysis() {
         <h2 className="mb-3 font-display text-lg font-extrabold text-ink">Spent per {range === 'year' ? 'month' : 'day'}</h2>
         <Bars data={data} unit={range === 'year' ? 'month' : 'day'} />
       </Card>
+
+      {range === 'month' && <TrendsCard end={period} txns={transactions} cycle={settings.cycle} />}
 
       {/* ── Quick stats ── */}
       <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
