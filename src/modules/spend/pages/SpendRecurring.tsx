@@ -49,7 +49,7 @@ export function SpendRecurringPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Spend"
-        title="Recurring"
+        title="Bills & recurring"
         subtitle="Bills and income that repeat. Each one waits for you to mark it paid (or received) or skip it."
         action={recurring.length > 0 ? <AddButton onClick={() => setSheet({ open: true })} label="Add" /> : undefined}
       />

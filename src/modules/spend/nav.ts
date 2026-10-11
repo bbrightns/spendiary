@@ -43,8 +43,8 @@ export const spendAnalysisItem: NavSubItem = {
 
 export const spendRecurringItem: NavSubItem = {
   to: `${SPEND_ROOT}/recurring`,
-  label: 'Recurring',
-  short: 'Recurring',
+  label: 'Bills & recurring',
+  short: 'Bills',
   description: 'Bills and income that repeat, waiting for a one-tap log',
   icon: RepeatIcon,
 }
@@ -56,6 +56,9 @@ export const spendSettingsItem: NavSubItem = {
   description: 'Pay cycle, monthly budget and Quick add defaults',
   icon: SettingsIcon,
 }
+
+/** Spend's mobile "More" sheet: pages used less often than the four tabs. */
+export const spendMoreItems: NavSubItem[] = [spendRecurringItem, spendAnalysisItem, spendSettingsItem]
 
 export const spendNavSections: NavSection[] = [
   { title: 'Spend', items: [spendOverviewItem, spendTxnsItem, spendAnalysisItem] },
