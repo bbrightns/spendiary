@@ -475,117 +475,70 @@ export function CashLiquidity() {
               const annualEarned = rateNum > 0 && eligibleThb > 0 ? eligibleThb * (rateNum / 100) : 0
 
               return (
-                <div
+                // The whole row opens the edit sheet; delete and Spend history live there, so phones get the full width
+                <button
                   key={a.id}
-                  className="py-2.5 px-0.5 flex items-center justify-between gap-2 transition-colors hover:bg-surface-muted/20"
+                  type="button"
+                  onClick={() => {
+                    setAccountToEdit(a)
+                    setIsEditModalOpen(true)
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-0.5 py-2.5 text-left transition-colors cursor-pointer hover:bg-surface-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
-                  {/* Left: Logo + Name + Category / Rate Tag */}
-                  <div
-                    className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
-                    onClick={() => {
-                      setAccountToEdit(a)
-                      setIsEditModalOpen(true)
-                    }}
-                  >
-                    {preset ? (
-                      <div
-                        className="h-8.5 w-8.5 rounded-lg text-xs font-black shrink-0 flex items-center justify-center select-none shadow-xs"
-                        style={{ background: preset.bg, color: preset.color, border: `1px solid ${preset.color}35` }}
-                      >
-                        {preset.shortName}
+                  {preset ? (
+                    <div
+                      className="h-8.5 w-8.5 rounded-lg text-xs font-black shrink-0 flex items-center justify-center select-none shadow-xs"
+                      style={{ background: preset.bg, color: preset.color, border: `1px solid ${preset.color}35` }}
+                    >
+                      {preset.shortName}
+                    </div>
+                  ) : (
+                    <div className="h-8.5 w-8.5 rounded-lg bg-surface-muted border border-line/50 text-ink-muted text-xs font-bold shrink-0 flex items-center justify-center">
+                      <WalletIcon className="h-4 w-4 opacity-60" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="font-display font-bold text-sm text-ink truncate">
+                        {a.name || 'Untitled'}
+                      </span>
+                      {a.currency === 'USD' && (
+                        <span className="text-xs font-bold px-1 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 font-mono shrink-0">
+                          USD
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 mt-0.5 text-xs text-ink-muted truncate">
+                      <span className="truncate">{catMeta?.icon} {catMeta?.labelTh}</span>
+                      {rateNum > 0 && (
+                        <>
+                          <span className="opacity-40">·</span>
+                          <span className="font-semibold text-emerald-600 dark:text-emerald-400 font-mono shrink-0">
+                            {rateNum}%
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <div className="font-display font-black text-sm text-ink tnum">
+                      {a.currency === 'USD' ? `$${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : thb(a.balance, true)}
+                    </div>
+                    {annualEarned > 0 ? (
+                      <div className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 tnum">
+                        +{thb(annualEarned)}/yr
+                      </div>
+                    ) : a.currency === 'USD' && a.balance > 0 ? (
+                      <div className="text-[11px] text-ink-muted tnum">
+                        ≈ {thb(a.balance * rate)}
                       </div>
                     ) : (
-                      <div className="h-8.5 w-8.5 rounded-lg bg-surface-muted border border-line/50 text-ink-muted text-xs font-bold shrink-0 flex items-center justify-center">
-                        <WalletIcon className="h-4 w-4 opacity-60" />
+                      <div className="text-xs text-ink-muted/40">
+                        -
                       </div>
                     )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="font-display font-bold text-sm text-ink truncate">
-                          {a.name || 'Untitled'}
-                        </span>
-                        {a.currency === 'USD' && (
-                          <span className="text-xs font-bold px-1 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 font-mono shrink-0">
-                            USD
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 mt-0.5 text-xs text-ink-muted truncate">
-                        <span className="truncate">{catMeta?.icon} {catMeta?.labelTh}</span>
-                        {rateNum > 0 && (
-                          <>
-                            <span className="opacity-40">·</span>
-                            <span className="font-semibold text-emerald-600 dark:text-emerald-400 font-mono shrink-0">
-                              {rateNum}%
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
                   </div>
-
-                  {/* Right: Balance + Annual Interest + Action Buttons */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <div
-                      className="text-right cursor-pointer"
-                      onClick={() => {
-                        setAccountToEdit(a)
-                        setIsEditModalOpen(true)
-                      }}
-                    >
-                      <div className="font-display font-black text-sm text-ink tnum">
-                        {a.currency === 'USD' ? `$${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : thb(a.balance)}
-                      </div>
-                      {annualEarned > 0 ? (
-                        <div className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                          +{thb(annualEarned)}/year
-                        </div>
-                      ) : a.currency === 'USD' && a.balance > 0 ? (
-                        <div className="text-xs font-mono text-ink-muted">
-                          ≈ {thb(a.balance * rate)}
-                        </div>
-                      ) : (
-                        <div className="text-xs text-ink-muted/40">
-                          -
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-0.5 ml-1">
-                      {(a.currency ?? 'THB') === 'THB' && (
-                        <button
-                          type="button"
-                          onClick={() => openSpendTxns(a.name)}
-                          className="p-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
-                          title="See transactions in Spend"
-                          aria-label={`See ${a.name} transactions`}
-                        >
-                          <ListBulletIcon className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAccountToEdit(a)
-                          setIsEditModalOpen(true)
-                        }}
-                        className="p-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
-                        title="Edit account"
-                      >
-                        <PencilIcon className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setAccountToDelete(a)}
-                        className="p-1.5 rounded-lg text-ink-muted hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                        title="Delete account"
-                      >
-                        <TrashIcon className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                </button>
               )
             })}
           </div>
@@ -649,7 +602,7 @@ export function CashLiquidity() {
                 </th>
 
                 {/* Column 5: Actions */}
-                <th className="py-2.5 px-3 text-right w-24">
+                <th className="py-2.5 px-3 text-right w-px whitespace-nowrap">
                   <span>Actions</span>
                 </th>
               </tr>
@@ -673,8 +626,8 @@ export function CashLiquidity() {
                         isExpanded ? 'bg-surface-muted/60' : 'hover:bg-surface-muted/40'
                       }`}
                     >
-                      {/* 1. Account */}
-                      <td className="py-2 px-3">
+                      {/* 1. Account — long names truncate (full name on hover) so the table fits without scrolling */}
+                      <td className="py-2 px-3 max-w-[18rem]" title={a.name}>
                         <div className="flex items-center gap-2.5 min-w-0">
                           {preset ? (
                             <div
@@ -711,7 +664,7 @@ export function CashLiquidity() {
                       </td>
 
                       {/* 3. Interest */}
-                      <td className="py-2 px-3 whitespace-nowrap">
+                      <td className="py-2 px-3">
                         {rateNum > 0 ? (
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400 text-xs">
@@ -738,15 +691,15 @@ export function CashLiquidity() {
                       <td className="py-2 px-3 text-right whitespace-nowrap">
                         <div className="font-display font-bold text-sm text-ink tnum">
                           {a.currency === 'USD'
-                            ? `$${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
-                            : thb(a.balance)}
+                            ? `$${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            : thb(a.balance, true)}
                         </div>
                       </td>
 
                       {/* 5. Actions (edit / delete / expand) */}
                       <td className="py-2 px-3 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
-                          {(a.currency ?? 'THB') === 'THB' && (
+                          {(a.currency ?? 'THB') === 'THB' ? (
                             <button
                               type="button"
                               onClick={() => openSpendTxns(a.name)}
@@ -756,6 +709,8 @@ export function CashLiquidity() {
                             >
                               <ListBulletIcon className="h-3.5 w-3.5" />
                             </button>
+                          ) : (
+                            <span className="h-8 w-8 shrink-0" aria-hidden />
                           )}
                           <button
                             type="button"
@@ -859,6 +814,20 @@ export function CashLiquidity() {
             setAccountToEdit(null)
           }}
           onSave={handleSaveModalAccount}
+          onDelete={
+            accounts.some((x) => x.id === accountToEdit.id)
+              ? () => {
+                  setIsEditModalOpen(false)
+                  setAccountToDelete(accountToEdit)
+                  setAccountToEdit(null)
+                }
+              : undefined
+          }
+          onShowTxns={
+            accounts.some((x) => x.id === accountToEdit.id) && (accountToEdit.currency ?? 'THB') === 'THB'
+              ? () => openSpendTxns(accountToEdit.name)
+              : undefined
+          }
         />
       )}
 
@@ -884,9 +853,13 @@ interface EditAccountModalProps {
   initialAccount: CashAccount
   onClose: () => void
   onSave: (acc: CashAccount) => void
+  /** Existing accounts only: ask to delete it */
+  onDelete?: () => void
+  /** THB accounts only: open its transactions in Spend */
+  onShowTxns?: () => void
 }
 
-function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccountModalProps) {
+function EditAccountModal({ open, initialAccount, onClose, onSave, onDelete, onShowTxns }: EditAccountModalProps) {
   const [name, setName] = useState(initialAccount.name)
   const [balance, setBalance] = useState(initialAccount.balance ? String(initialAccount.balance) : '')
   const [currency, setCurrency] = useState<'THB' | 'USD'>(initialAccount.currency ?? 'THB')
@@ -934,6 +907,16 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
       size="md"
       footer={
         <div className="flex items-center justify-end gap-2 w-full">
+          {onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="mr-auto inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-loss transition-colors cursor-pointer hover:bg-loss-soft"
+            >
+              <TrashIcon className="h-4 w-4" />
+              Delete
+            </button>
+          )}
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
@@ -944,6 +927,17 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
       }
     >
       <form id="account-edit-form" onSubmit={handleSubmit} className="space-y-4 pt-1">
+        {onShowTxns && (
+          <button
+            type="button"
+            onClick={onShowTxns}
+            className="flex w-full items-center gap-2.5 rounded-xl border border-line px-3 py-2.5 text-left text-sm font-semibold text-ink transition-colors cursor-pointer hover:bg-surface-muted/60"
+          >
+            <ListBulletIcon className="h-4 w-4 text-ink-muted" />
+            <span className="flex-1">See transactions in Spend</span>
+            <span className="text-ink-muted" aria-hidden>→</span>
+          </button>
+        )}
         {/* Name */}
         <div>
           <label className="block text-xs font-bold text-ink mb-1">
