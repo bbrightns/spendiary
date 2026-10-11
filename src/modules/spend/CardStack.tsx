@@ -69,7 +69,6 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
   const a = info.get(active.id)!
   const color = active.color ?? FALLBACK_CARD_COLOR
   const ink = inkOn(color)
-  // Installment plans on this card block their whole remaining amount from the limit
   // The limit it draws on: shared with its other cards, less installment holds
   const credit = availableCredit(active, cards, loans)
   const held = credit.held
