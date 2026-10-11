@@ -300,10 +300,6 @@ export interface Liability {
   payFromId?: string
   /** YYYY-MM-DD of the first payment, when it's known exactly (e.g. a card installment bills on the next statement) */
   firstDueDate?: string
-  /** Card installment: each payment is billed to the card (payFromId) on its statement day, with no Pay needed */
-  autoBillToCard?: boolean
-  /** Spend category the billed payments are logged under (e.g. Shopping for a phone) */
-  spendCategoryId?: string
   /** Original total cost/balance of the installment purchase (used for progress tracking) */
   originalBalance?: number
 }

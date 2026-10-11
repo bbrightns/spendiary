@@ -893,8 +893,6 @@ export function Dashboard() {
                                   <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
                                     🎉 Paid Off
                                   </span>
-                                ) : l.autoBillToCard ? (
-                                  <span className="text-xs font-semibold text-ink-muted">Billed to card</span>
                                 ) : dueInfo.status === 'paid' ? (
                                   <div className="flex items-center gap-1.5 text-xs">
                                     <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">

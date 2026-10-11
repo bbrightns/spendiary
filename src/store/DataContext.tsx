@@ -270,7 +270,7 @@ interface DataContextValue {
   removeLiability: (id: string) => void
   setLiabilities: (liabilities: Liability[]) => void
   /** Mark one payment made; `amount` defaults to the monthly payment (or the balance spread over what's left) */
-  payLiabilityInstallment: (id: string, amount?: number, date?: string) => void
+  payLiabilityInstallment: (id: string, amount?: number) => void
   undoLiabilityPayment: (id: string) => void
   /** Live USD/THB rate — set by useLivePrices, used by forms to convert USD inputs */
   usdThb: number | null
@@ -1090,7 +1090,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setLiabilities: (liabilities) =>
         updateData((prev) => ({ ...prev, liabilities })),
 
-      payLiabilityInstallment: (id, amount, date) =>
+      payLiabilityInstallment: (id, amount) =>
         updateData((prev) => {
           const item = (prev.liabilities ?? []).find((x) => x.id === id)
           if (!item) return prev
@@ -1108,7 +1108,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
           const newBalance = Math.max(0, item.balance - paymentAmount)
           // Local date: toISOString() is UTC, which in Thailand is still yesterday before 7am
-          const todayStr = date ?? localDateStr()
+          const todayStr = localDateStr()
 
           const updatedItems = (prev.liabilities ?? []).map((x) =>
             x.id === id

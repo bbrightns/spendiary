@@ -36,24 +36,14 @@ export function loanProgress(l: Liability): number {
  * When a card installment's first payment is due: the purchase lands on the next statement
  * (closing on the statement day, on or after the purchase) and is paid on the due day after it.
  */
-const dayIn = (year: number, month: number, day: number) => new Date(year, month, Math.min(day, new Date(year, month + 1, 0).getDate()))
-
 export function firstInstallmentDue(card: Pick<SpendCard, 'statementDay' | 'dueDay'>, purchaseDate: string): string {
   const [y, m, d] = purchaseDate.split('-').map(Number)
+  const at = (year: number, month: number, day: number) => new Date(year, month, Math.min(day, new Date(year, month + 1, 0).getDate()))
   const closeMonth = d <= card.statementDay ? m - 1 : m
-  const close = dayIn(y, closeMonth, card.statementDay)
+  const close = at(y, closeMonth, card.statementDay)
   // A due day after the statement day falls in the same month; otherwise the month after
-  const due = dayIn(close.getFullYear(), close.getMonth() + (card.dueDay > card.statementDay ? 0 : 1), card.dueDay)
+  const due = at(close.getFullYear(), close.getMonth() + (card.dueDay > card.statementDay ? 0 : 1), card.dueDay)
   return localDateStr(due)
-}
-
-/**
- * For an installment that's already running (some payments made) and now billed to a card: the
- * first due date that puts the next payment on the card's next statement.
- */
-export function firstDueForRunning(card: Pick<SpendCard, 'statementDay' | 'dueDay'>, paidSoFar: number, today = localDateStr()): string {
-  const [y, m] = firstInstallmentDue(card, today).split('-').map(Number)
-  return localDateStr(dayIn(y, m - 1 - paidSoFar, card.dueDay))
 }
 
 /** One installment, rounded down to the satang; the last payment picks up the remainder. */
@@ -67,27 +57,4 @@ export function installmentHold(loans: Liability[], cardId: string): number {
   return loans
     .filter((l) => l.payFromId === cardId && l.category === 'installment' && !isLoanDone(l))
     .reduce((s, l) => s + Math.max(0, l.balance), 0)
-}
-
-/**
- * Statement days a card installment is billed on, up to `today`: one a month, starting with the
- * statement just before its first due date, `total` at most. These are the days the bank puts
- * each payment on the card.
- */
-export function installmentBillDates(
-  card: Pick<SpendCard, 'statementDay' | 'dueDay'>,
-  firstDueDate: string,
-  total: number,
-  today = localDateStr(),
-): string[] {
-  const [y, m] = firstDueDate.split('-').map(Number)
-  // The statement before the first due day: same month when the due day comes after the statement day
-  const firstMonth = m - 1 - (card.dueDay > card.statementDay ? 0 : 1)
-  const out: string[] = []
-  for (let k = 0; k < total; k++) {
-    const date = localDateStr(dayIn(y, firstMonth + k, card.statementDay))
-    if (date > today) break
-    out.push(date)
-  }
-  return out
 }

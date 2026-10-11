@@ -13,7 +13,6 @@ import { QuickAddSheet } from '../../modules/spend/QuickAddSheet'
 import { ImportSheet } from '../../modules/spend/ImportSheet'
 import { PayBillSheet } from '../../modules/spend/PayBillSheet'
 import { PayLoanSheet } from '../../modules/spend/PayLoanSheet'
-import { InstallmentAutoBill } from '../../modules/spend/InstallmentAutoBill'
 import { SpendBottomNav } from '../../modules/spend/SpendBottomNav'
 import { isSpendPath } from '../../modules/spend/nav'
 
@@ -102,7 +101,6 @@ export function Layout({ children }: { children: ReactNode }) {
       <ImportSheet />
       <PayBillSheet />
       <PayLoanSheet />
-      <InstallmentAutoBill />
     </div>
   )
 }

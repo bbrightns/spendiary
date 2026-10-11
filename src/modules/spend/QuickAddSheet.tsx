@@ -223,9 +223,6 @@ export function QuickAddSheet() {
         dueDay: card.dueDay,
         firstDueDate: firstDue,
         payFromId: card.id,
-        // The bank bills each payment to the card on its statement day
-        autoBillToCard: true,
-        spendCategoryId: categoryId,
         lender: card.name,
         note: note.trim() || undefined,
         createdAt: today,
@@ -404,8 +401,8 @@ export function QuickAddSheet() {
                     ))}
                   </div>
                   <p className="text-xs leading-relaxed text-ink-muted">
-                    Nothing is spent today. Each month's payment goes on {card!.name} by itself on the statement day, first due{' '}
-                    <span className="font-semibold text-ink-soft">{shortDue(firstDue)}</span>. Track it in Loans &amp; installments.
+                    First payment due <span className="font-semibold text-ink-soft">{shortDue(firstDue)}</span>. Each one counts as spending
+                    when you pay it. Nothing is spent today. It's added to Loans &amp; installments.
                   </p>
                 </div>
               )}
