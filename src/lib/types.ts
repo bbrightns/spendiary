@@ -296,6 +296,8 @@ export interface Liability {
   lastPaidDate?: string
   /** What that payment took off the balance, so Undo puts back exactly the same */
   lastPaidAmount?: number
+  /** Wallet or card it's usually paid from (Spend); preselected when paying */
+  payFromId?: string
   /** Original total cost/balance of the installment purchase (used for progress tracking) */
   originalBalance?: number
 }

@@ -4,7 +4,6 @@ import { PageHeader } from '../../../components/layout/PageHeader'
 import { Card } from '../../../components/ui/Card'
 import { AddButton } from '../../../components/ui/AddButton'
 import { EmptyState } from '../../../components/ui/EmptyState'
-import { LiabilitiesModal } from '../../../components/forms/LiabilitiesModal'
 import { ChevronDownIcon, DebtIcon } from '../../../components/icons'
 import { DEBT_CATEGORIES, getLiabilityDueStatus, isLiabilityActionableThisMonth } from '../../../lib/calc'
 import { thb } from '../../../lib/format'
@@ -13,6 +12,7 @@ import { useData } from '../../../store/DataContext'
 import { DebtCategoryIcon } from '../DebtCategoryIcon'
 import { isLoanDone, loanProgress } from '../loans'
 import { openPayLoan } from '../PayLoanSheet'
+import { LoanSheet } from '../LoanSheet'
 
 const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'}`
 
@@ -169,7 +169,7 @@ export function SpendLoansPage() {
         </>
       )}
 
-      <LiabilitiesModal open={sheet.open} initialLiabilityId={sheet.id} onClose={() => setSheet({ open: false, id: null })} />
+      <LoanSheet open={sheet.open} loanId={sheet.id} onClose={() => setSheet({ open: false, id: null })} />
     </div>
   )
 }
