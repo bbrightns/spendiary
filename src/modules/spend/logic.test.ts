@@ -3,7 +3,7 @@ import { categoriesFor, guessCategory, syncCategories } from './categories'
 import { homeOrder, isDefaultOrder, moveCard } from './homeLayout'
 import type { CashAccount, Liability, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
 import { firstInstallmentDue, installmentAmount, installmentHold, isLoanDone, loanPaymentAmount, loanProgress, paymentIsSpending } from './loans'
-import { isLiabilityActionableThisMonth, isLiabilityFirstDueNextMonth } from '../../lib/calc'
+import { isLiabilityActionableThisMonth, isLiabilityFirstDueNextMonth, isLiabilityPaidThisMonth } from '../../lib/calc'
 import { availableCredit, limitOwner, totalAvailable } from './credit'
 import {
   accountTotals,
@@ -442,5 +442,28 @@ describe('shared credit limits', () => {
     expect(limitOwner(disney, [disney, ktc]).id).toBe('disney')
     const chained = c({ id: 'x', sharedLimitWith: 'disney', creditLimit: 5000 })
     expect(limitOwner(chained, [...cards, chained]).id).toBe('x')
+  })
+})
+
+describe('paying a debt ahead of its due date', () => {
+  const base: Liability = { id: 'i', name: 'iPhone', category: 'installment', balance: 52_110, monthlyPayment: 5790, isInstallment: true, totalInstallments: 10, dueDay: 1 }
+
+  it('counts a payment made shortly before the due date for that due date', () => {
+    const l = { ...base, paidInstallments: 1, lastPaidDate: '2026-09-25', createdAt: '2026-08-10' }
+    expect(isLiabilityPaidThisMonth(l, new Date(2026, 9, 12))).toBe(true)
+    expect(isLiabilityActionableThisMonth(l, new Date(2026, 9, 12))).toBe(false)
+    // …but not for the month after
+    expect(isLiabilityActionableThisMonth(l, new Date(2026, 10, 3))).toBe(true)
+  })
+  it("counts any payment since it was added when this month has the first payment", () => {
+    // Added 20 Sep (after the 1st) → first due 1 Oct; paid the same day, 11 days early wouldn't matter
+    const l = { ...base, paidInstallments: 1, lastPaidDate: '2026-09-02', createdAt: '2026-09-01', firstPaymentMonth: 'next' as const }
+    expect(isLiabilityPaidThisMonth(l, new Date(2026, 9, 12))).toBe(true)
+  })
+  it("doesn't count a late payment for last month as this month's", () => {
+    // Due the 1st, last month's paid late on 5 Sep → 1 Oct is still owed
+    const l = { ...base, paidInstallments: 3, lastPaidDate: '2026-09-05', createdAt: '2026-05-01' }
+    expect(isLiabilityPaidThisMonth(l, new Date(2026, 9, 12))).toBe(false)
+    expect(isLiabilityActionableThisMonth(l, new Date(2026, 9, 12))).toBe(true)
   })
 })

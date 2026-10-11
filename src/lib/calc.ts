@@ -936,13 +936,44 @@ export const THAI_MONTHS_SHORT = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ]
 
-/** Check if a liability has already been marked as paid in the current month */
+/** A payment this many days (or fewer) before a due date counts for it, even from the month before. */
+export const EARLY_PAYMENT_DAYS = 15
+
+/**
+ * Whether this month's payment is already made: paid this month, or paid ahead of this month's
+ * due date (e.g. the installment due on the 1st, paid on 25 Sep). A payment from last month counts
+ * when it came at most EARLY_PAYMENT_DAYS before the due date, or any time after the debt was
+ * added when this month holds its first payment (nothing was due last month for it to cover).
+ */
 export function isLiabilityPaidThisMonth(l: Liability, now: Date = new Date()): boolean {
   if (!l.lastPaidDate) return false
   const year = now.getFullYear()
   const month = String(now.getMonth() + 1).padStart(2, '0')
   const currentYearMonth = `${year}-${month}`
-  return l.lastPaidDate.startsWith(currentYearMonth)
+  if (l.lastPaidDate.startsWith(currentYearMonth)) return true
+  if (!l.dueDay) return false
+
+  const toDate = (iso: string) => {
+    const [y, m, d] = iso.slice(0, 10).split('-').map(Number)
+    return new Date(y, m - 1, d)
+  }
+  const due = new Date(year, now.getMonth(), Math.min(l.dueDay, new Date(year, now.getMonth() + 1, 0).getDate()))
+  const paid = toDate(l.lastPaidDate)
+  const daysEarly = Math.round((due.getTime() - paid.getTime()) / 86_400_000)
+  if (daysEarly <= 0) return false
+  if (daysEarly <= EARLY_PAYMENT_DAYS) return true
+
+  // First payment falls this month: anything paid since the debt was added was for it
+  const firstDueHere =
+    (l.firstDueDate && l.firstDueDate.startsWith(currentYearMonth)) ||
+    (!!l.createdAt &&
+      (() => {
+        const created = toDate(l.createdAt)
+        const lastMonth = new Date(year, now.getMonth() - 1, 1)
+        const createdLastMonth = created.getFullYear() === lastMonth.getFullYear() && created.getMonth() === lastMonth.getMonth()
+        return createdLastMonth && (l.firstPaymentMonth === 'next' || created.getDate() >= l.dueDay)
+      })())
+  return !!firstDueHere && (!l.createdAt || paid >= toDate(l.createdAt))
 }
 
 /** Check whether a liability's next active payment is scheduled for the following month */

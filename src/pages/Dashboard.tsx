@@ -126,7 +126,8 @@ export function Dashboard() {
     [data.dcaPlans],
   )
 
-  // Non-daily DCA buys landing within the next 7 days (the badges above only cover items already due)
+  // Non-daily DCA buys coming soon (the badges above only cover items already due). A weekly plan's
+  // next buy is always within 7 days, so it only shows in the last 2 days, not right after a buy.
   const upcomingDca = useMemo(() => {
     const now = new Date()
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
@@ -137,7 +138,7 @@ export function Dashboard() {
         const days = Math.round((new Date(next.getFullYear(), next.getMonth(), next.getDate()).getTime() - startOfToday) / 86_400_000)
         return { plan: p, days }
       })
-      .filter((x) => x.days >= 0 && x.days <= 7)
+      .filter((x) => x.days >= 0 && x.days <= ((x.plan.frequency ?? 'monthly') === 'weekly' ? 2 : 7))
       .sort((a, b) => a.days - b.days)
   }, [data.dcaPlans])
 
@@ -263,7 +264,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* ── Coming up: DCA buys in the next 7 days ── */}
+      {/* ── Coming up: DCA buys in the next few days ── */}
       {upcomingDca.length > 0 && (
         <button
           type="button"
