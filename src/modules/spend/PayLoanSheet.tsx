@@ -59,9 +59,11 @@ export function PayLoanSheet() {
       const wallets = ms.filter((m) => m.kind === 'cash')
       const def = wallets.find((w) => w.id === st.defaultAccountId)?.id
       const fav = wallets.find((w) => (st.favoriteAccountIds ?? []).includes(w.id))?.id
-      setFromId(def ?? fav ?? wallets.find((w) => !w.locked)?.id ?? NOT_TRACKED)
+      // The loan's usual account first; an installment billed to a card is a card expense
+      const usual = ms.find((m) => m.id === loan.payFromId)
+      setFromId(usual?.id ?? def ?? fav ?? wallets.find((w) => !w.locked)?.id ?? NOT_TRACKED)
       setAmount(String(loanPaymentAmount(loan)))
-      setSpending(paymentIsSpending(loan))
+      setSpending(usual?.kind === 'card' || paymentIsSpending(loan))
       setLoanId(loan.id)
     }
     window.addEventListener(OPEN_EVENT, onOpen)

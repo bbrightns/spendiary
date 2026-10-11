@@ -9,7 +9,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { DonutChart } from '../components/charts/DonutChart'
 import { InteractiveNetWorthChart } from '../components/charts/InteractiveNetWorthChart'
 import { PnLPill, PnLText } from '../components/ui/PnL'
-import { LiabilitiesModal } from '../components/forms/LiabilitiesModal'
+import { LoanSheet } from '../modules/spend/LoanSheet'
 import { SpendSnapshotCard } from '../modules/spend/SpendSnapshotCard'
 import { AiImportModal } from '../components/forms/AiImportModal'
 import { GuideTour } from '../components/guide/GuideTour'
@@ -314,10 +314,7 @@ export function Dashboard() {
                 {debts > 0 && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setSelectedLiabilityId(null)
-                      setLiabilitiesOpen(true)
-                    }}
+                    onClick={() => navigate('/spend/loans')}
                     className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted dark:bg-white/12 px-3 py-1 text-xs font-semibold text-ink-soft dark:text-white/90 shadow-xs border border-line dark:border-white/10 transition-colors hover:bg-line/70 dark:hover:bg-white/20 hover:text-ink dark:hover:text-white cursor-pointer whitespace-nowrap"
                     aria-label="Manage liabilities"
                   >
@@ -995,13 +992,13 @@ export function Dashboard() {
         </Card>
       </div>
 
-      <LiabilitiesModal
+      <LoanSheet
         open={liabilitiesOpen}
         onClose={() => {
           setLiabilitiesOpen(false)
           setSelectedLiabilityId(null)
         }}
-        initialLiabilityId={selectedLiabilityId}
+        loanId={selectedLiabilityId}
       />
 
       <AiImportModal
