@@ -21,9 +21,9 @@ const fmtDay = (iso: string) => {
 const inputClass =
   'h-11 w-20 rounded-xl border border-line-strong bg-surface px-3 text-center text-base font-bold text-ink outline-none tnum focus:border-brand focus:ring-2 focus:ring-brand/15'
 
-function Section({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+function Section({ id, title, description, children }: { id?: string; title: string; description: string; children: ReactNode }) {
   return (
-    <Card className="space-y-4">
+    <Card id={id} className="space-y-4 scroll-mt-24">
       <div>
         <h2 className="font-display text-lg font-extrabold text-ink">{title}</h2>
         <p className="mt-0.5 text-sm text-ink-muted">{description}</p>
@@ -96,7 +96,7 @@ export function SpendSettings() {
     <div className="space-y-6">
       <PageHeader eyebrow="Spend" title="Settings" subtitle="How your spending month is counted, your budget, and how Quick add fills in." />
 
-      <Section title="Spending month" description="Count from the 1st, or from payday to the day before the next payday.">
+      <Section id="spending-month" title="Spending month" description="Count from the 1st, or from payday to the day before the next payday.">
         <SegmentedControl
           ariaLabel="Month mode"
           value={draft.mode}
@@ -226,7 +226,7 @@ export function SpendSettings() {
         </div>
       </Section>
 
-      <Section title="Monthly budget" description="What you plan to spend each month, excluding investing and transfers.">
+      <Section id="monthly-budget" title="Monthly budget" description="What you plan to spend each month, excluding investing and transfers.">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex h-11 flex-1 items-center rounded-xl border border-line-strong bg-surface px-3.5 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
             <span className="mr-2 text-ink-muted">฿</span>
@@ -301,7 +301,7 @@ export function SpendSettings() {
         </Section>
       </div>
 
-      <Section title="Card bill reminders" description="When to start reminding you on Overview and the Accounts tab, before a card bill is due.">
+      <Section id="bill-reminders" title="Card bill reminders" description="When to start reminding you on Overview and the Accounts tab, before a card bill is due.">
         <select
           aria-label="Remind before due date"
           value={settings.billReminderDays ?? DEFAULT_BILL_REMINDER_DAYS}
@@ -319,7 +319,7 @@ export function SpendSettings() {
         </select>
       </Section>
 
-      <Section title="Quick add" description="The payment method picked for you when you add an expense. Star more on the Accounts page.">
+      <Section id="quick-add" title="Quick add" description="The payment method picked for you when you add an expense. Star more on the Accounts page.">
         <select
           aria-label="Default payment method"
           value={settings.defaultAccountId ?? ''}

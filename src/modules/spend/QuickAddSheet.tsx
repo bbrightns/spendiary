@@ -22,6 +22,8 @@ interface OpenDetail {
   editId?: string
   /** Start a new entry from these values (e.g. a recurring bill) */
   prefill?: SpendTxnInput
+  /** A new entry with some fields filled in (the rest use the usual defaults), e.g. from the command palette */
+  draft?: Partial<Pick<SpendTxnInput, 'type' | 'amount' | 'note' | 'categoryId'>>
   /** Saving marks this recurring occurrence as done */
   recurring?: { id: string; date: string; name: string }
 }
@@ -108,16 +110,17 @@ export function QuickAddSheet() {
         setNote(source.note ?? '')
         setAlreadyIn(!!existing?.alreadyInBalance)
       } else {
-        const t = detail.type ?? 'expense'
+        const draft = detail.draft ?? {}
+        const t = draft.type ?? detail.type ?? 'expense'
         const d = pickDefaults(t, txns, ms, st)
         setEditId(null)
         setType(t)
-        setAmount('')
-        setCategoryId(categoriesFor(t)[0]?.id ?? '')
+        setAmount(draft.amount ? String(draft.amount) : '')
+        setCategoryId(draft.categoryId ?? categoriesFor(t)[0]?.id ?? '')
         setAccountId(d.from)
         setToAccountId(d.to)
         setDate(localDateStr())
-        setNote('')
+        setNote(draft.note ?? '')
         setAlreadyIn(false)
       }
       setOpen(true)

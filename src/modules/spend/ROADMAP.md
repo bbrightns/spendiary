@@ -29,17 +29,6 @@
 
 ## Remaining tasks
 
-### Next up
-3. **Smarter, wider search (Command Palette, Cmd+K)**
-   - Cover everything: Spend transactions (note, #tag, amount like `65` or `>1000`),
-     categories, wallets and cards, recurring bills, holdings, DCA plans, debts, settings
-     sections, and every page.
-   - Context aware: in Spend mode, Spend actions and results come first.
-   - Smarter matching: fuzzy / typo-tolerant, Thai and English keywords, ranking by recent
-     and frequent use, recent searches when empty.
-   - Actions with arguments: "65 ชานม #nosetea" → Quick Add pre-filled; "pay ktc" → Pay bill;
-     "budget food" → category budget; results grouped with counts.
-
 ### Invest-side links
 4. Debts / installments → Spend expense when an installment is paid.
 5. DCA Planner: show Spend's real "left this month" next to the salary card.
