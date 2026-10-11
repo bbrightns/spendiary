@@ -1,5 +1,8 @@
 import React, { type ReactNode } from 'react'
+import { useLocation } from 'react-router-dom'
 import { HelpCircleIcon } from '../icons'
+import { isSpendPath } from '../../modules/spend/nav'
+import { SPEND_ACCENT_TEXT } from '../../modules/spend/tones'
 
 interface PageHeaderProps {
   eyebrow?: string
@@ -11,11 +14,13 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ eyebrow, title, subtitle, action, onStartGuide, className = '' }: PageHeaderProps) {
+  // The eyebrow takes the color of its side, like the Invest/Spend switch
+  const accent = isSpendPath(useLocation().pathname) ? SPEND_ACCENT_TEXT : 'text-brand dark:text-brand-ink'
   return (
     <header className={`mb-6 flex flex-wrap items-end justify-between gap-4 ${className}`}>
       <div>
         {eyebrow && (
-          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.08em] text-brand">
+          <p className={`mb-1 text-xs font-semibold uppercase tracking-[0.08em] ${accent}`}>
             {eyebrow}
           </p>
         )}

@@ -100,3 +100,6 @@ export const TYPE_ACTIVE = {
   income: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/20 dark:text-emerald-200',
   transfer: 'bg-sky-100 text-sky-700 dark:bg-sky-400/20 dark:text-sky-200',
 } as const
+
+/** Spend's accent for small text (page eyebrows), matching the green of the Invest/Spend switch */
+export const SPEND_ACCENT_TEXT = 'text-emerald-700 dark:text-emerald-400'

@@ -13,6 +13,7 @@ import { RecurringDue } from '../RecurringDue'
 import { openQuickAdd } from '../QuickAddSheet'
 import { TxnRow } from '../TxnRow'
 import { useSpend } from '../useSpend'
+import { SPEND_ACCENT_TEXT } from '../tones'
 
 const STATUS: Record<DayStatus, { label: string; stroke: string; chip: string }> = {
   ok: { label: 'On track', stroke: 'stroke-emerald-500', chip: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300' },
@@ -75,7 +76,7 @@ export function SpendOverview() {
     <div className="space-y-5">
       <header className="flex items-end justify-between gap-3">
         <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.08em] text-brand">Spend</p>
+          <p className={`mb-1 text-xs font-semibold uppercase tracking-[0.08em] ${SPEND_ACCENT_TEXT}`}>Spend</p>
           <h1 className="font-display text-3xl font-extrabold leading-none tracking-tight text-ink">Today</h1>
           <p className="mt-1.5 text-sm text-ink-muted">
             {parse(today).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
