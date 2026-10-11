@@ -39,7 +39,7 @@ import { openQuickAdd } from '../../modules/spend/QuickAddSheet'
 import { openPayBill } from '../../modules/spend/PayBillSheet'
 import { openImport } from '../../modules/spend/ImportSheet'
 import { ListBulletIcon, RepeatIcon, TransferIcon, getCategory, guessCategory, manageableCategories } from '../../modules/spend/categories'
-import { TAG_RE, frequencyLabel, goalProgress } from '../../modules/spend/logic'
+import { frequencyLabel, goalProgress, noteTitle } from '../../modules/spend/logic'
 import { isSpendPath } from '../../modules/spend/nav'
 import { TONES } from '../../modules/spend/tones'
 import { useSpend } from '../../modules/spend/useSpend'
@@ -131,8 +131,6 @@ function writeJson(key: string, value: unknown) {
 const ic = (Icon: (p: { className?: string; strokeWidth?: number }) => ReactNode, cls = 'text-ink-muted') => (
   <Icon className={`h-4 w-4 ${cls}`} strokeWidth={2} />
 )
-
-const plainNote = (note?: string) => (note ?? '').replace(TAG_RE, '').replace(/\s+/g, ' ').trim()
 
 const shortDate = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number)
@@ -300,7 +298,7 @@ export function CommandPalette() {
         keywords: ['add', 'debt', 'loan', 'liability', 'installment', 'บัตรเครดิต', 'ผ่อน', 'หนี้', 'กู้', 'เพิ่มหนี้'],
         group: 'Actions',
         icon: ic(DebtIcon, 'text-rose-500'),
-        run: go('/debts?action=new'),
+        run: go('/spend/loans?action=new'),
       },
       {
         id: 'action-new-dca',
@@ -330,14 +328,14 @@ export function CommandPalette() {
           ['nav-spend-txns', 'Transactions', 'Every income, expense and transfer', '/spend/txns', ['history', 'transactions', 'search', 'ประวัติ', 'รายการ'], ListBulletIcon, true, undefined],
           ['nav-spend-accounts', 'Accounts', 'Wallets and credit cards you pay with', '/spend/accounts', ['wallets', 'cards', 'credit', 'บัตร', 'กระเป๋า'], CreditCardIcon, true, undefined],
           ['nav-spend-analysis', 'Analysis', 'Spending by week, month or year', '/spend/analysis', ['analysis', 'report', 'chart', 'trend', 'วิเคราะห์', 'สรุป'], PieChartIcon, true, undefined],
-          ['nav-spend-recurring', 'Recurring', 'Bills and income that repeat', '/spend/recurring', ['recurring', 'bills', 'subscription', 'fixed', 'ค่าใช้จ่ายประจำ', 'บิล'], RepeatIcon, true, undefined],
+          ['nav-spend-recurring', 'Bills & recurring', 'Bills and income that repeat', '/spend/recurring', ['recurring', 'bills', 'subscription', 'fixed', 'ค่าใช้จ่ายประจำ', 'บิล'], RepeatIcon, true, undefined],
+          ['nav-spend-loans', 'Loans & installments', 'What you owe and pay back each month', '/spend/loans', ['loans', 'installments', 'debt', 'pay', 'หนี้', 'ผ่อน', 'งวด'], DebtIcon, true, undefined],
           ['nav-spend-settings', 'Spend Settings', 'Spending month, budget and categories', '/spend/settings', ['settings', 'budget', 'payday', 'categories', 'ตั้งค่า'], SettingsIcon, true, undefined],
           ['nav-dashboard', 'Dashboard', 'Your net worth at a glance', '/', ['dashboard', 'home', 'net worth', 'หน้าแรก', 'แดชบอร์ด', 'ภาพรวม'], DashboardIcon, false, 'G D'],
           ['nav-portfolio', 'Portfolio', 'All your holdings', '/portfolio', ['portfolio', 'holdings', 'stocks', 'funds', 'พอร์ต', 'หุ้น', 'สินทรัพย์'], PortfolioIcon, false, 'G P'],
           ['nav-rebalance', 'Rebalance Hub', 'Check and adjust how your portfolio is split', '/rebalance', ['rebalance', 'allocation', 'target', 'drift', 'ปรับพอร์ต', 'สมดุล'], SparkleIcon, false, 'G R'],
           ['nav-dca', 'DCA Planner', 'Plan and confirm your recurring buys', '/dca', ['dca', 'planner', 'recurring', 'งวด', 'ออมหุ้น'], DcaIcon, false, 'G A'],
           ['nav-dividends', 'Dividends', 'Dividends received and expected', '/dividends', ['dividend', 'passive income', 'yield', 'ปันผล', 'เงินปันผล'], ReceiptPercentIcon, false, 'G V'],
-          ['nav-debts', 'Debts & Liabilities', 'Your debts and installments', '/debts', ['debt', 'liabilities', 'loan', 'หนี้', 'ผ่อน', 'ดอกเบี้ย'], DebtIcon, false, 'G B'],
           ['nav-cash', 'Cash & Liquidity', 'Cash, savings and interest', '/cash', ['cash', 'liquidity', 'emergency', 'เงินสด', 'บัญชี', 'สภาพคล่อง'], WalletIcon, false, 'G C'],
           ['nav-retirement', 'Retirement (FIRE)', 'Plan for retirement and financial freedom', '/retirement', ['retirement', 'fire', 'financial freedom', 'เกษียณ', 'อิสรภาพ'], SparkleIcon, false, 'G F'],
           ['nav-logs', 'Activity Logs', 'History of buys, sales, dividends and tax', '/logs', ['logs', 'history', 'activity', 'ประวัติ', 'บันทึก'], ClockIcon, false, 'G L'],
@@ -545,7 +543,7 @@ export function CommandPalette() {
         keywords: ['debt', 'loan', 'installment', 'หนี้', 'ผ่อน'],
         group: 'Debts',
         icon: ic(DebtIcon, 'text-rose-500'),
-        run: go('/debts'),
+        run: go('/spend/loans'),
       })
     }
 
@@ -672,7 +670,7 @@ export function CommandPalette() {
     for (const t of spend.transactions) {
       if (!filters.every((f) => amountMatches(f, t.amount))) continue
       const cat = getCategory(t.categoryId)
-      const title = plainNote(t.note) || (t.type === 'transfer' ? 'Transfer' : cat?.label ?? 'Other')
+      const title = noteTitle(t.note) || (t.type === 'transfer' ? 'Transfer' : cat?.label ?? 'Other')
       const s = textTerms.length
         ? scoreItem(textTerms, {
             title,

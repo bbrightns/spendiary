@@ -4,7 +4,7 @@ import { Card } from '../../components/ui/Card'
 import { CheckIcon } from '../../components/icons'
 import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb } from '../../lib/format'
-import { getCategory } from './categories'
+import { RepeatIcon, getCategory } from './categories'
 import { nextOccurrence } from './logic'
 import { openQuickAdd } from './QuickAddSheet'
 import { TONES } from './tones'
@@ -41,7 +41,28 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
     [recurring, today],
   )
 
-  if (recurring.length === 0) return null
+  if (recurring.length === 0) {
+    // On the Bills page its own empty state takes over; on Home, keep a way in so new users find it
+    if (!showManage) return null
+    return (
+      <Card>
+        <h2 className="font-display text-lg font-extrabold text-ink">Bills and recurring</h2>
+        <Link
+          to="/spend/recurring?new=1"
+          className="mt-3 flex items-center gap-3 rounded-2xl border border-dashed border-line-strong p-3 transition-colors hover:bg-surface-muted/60"
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-surface-muted text-ink-muted">
+            <RepeatIcon className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-bold text-ink">Set up bills that repeat</span>
+            <span className="block text-xs text-ink-muted">Rent, phone, subscriptions, salary. Log each one with one tap when it's due.</span>
+          </span>
+          <span className="shrink-0 text-sm font-semibold text-brand">Add →</span>
+        </Link>
+      </Card>
+    )
+  }
 
   return (
     <Card>

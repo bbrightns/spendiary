@@ -20,6 +20,7 @@ import {
 } from '../lib/calc'
 import { thb } from '../lib/format'
 import { ListBulletIcon } from '../modules/spend/categories'
+import { SwitchVisual } from '../modules/spend/AccountSheets'
 import {
   PencilIcon,
   PlusIcon,
@@ -475,117 +476,70 @@ export function CashLiquidity() {
               const annualEarned = rateNum > 0 && eligibleThb > 0 ? eligibleThb * (rateNum / 100) : 0
 
               return (
-                <div
+                // The whole row opens the edit sheet; delete and Spend history live there, so phones get the full width
+                <button
                   key={a.id}
-                  className="py-2.5 px-0.5 flex items-center justify-between gap-2 transition-colors hover:bg-surface-muted/20"
+                  type="button"
+                  onClick={() => {
+                    setAccountToEdit(a)
+                    setIsEditModalOpen(true)
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-0.5 py-2.5 text-left transition-colors cursor-pointer hover:bg-surface-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
-                  {/* Left: Logo + Name + Category / Rate Tag */}
-                  <div
-                    className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
-                    onClick={() => {
-                      setAccountToEdit(a)
-                      setIsEditModalOpen(true)
-                    }}
-                  >
-                    {preset ? (
-                      <div
-                        className="h-8.5 w-8.5 rounded-lg text-xs font-black shrink-0 flex items-center justify-center select-none shadow-xs"
-                        style={{ background: preset.bg, color: preset.color, border: `1px solid ${preset.color}35` }}
-                      >
-                        {preset.shortName}
+                  {preset ? (
+                    <div
+                      className="h-8.5 w-8.5 rounded-lg text-xs font-black shrink-0 flex items-center justify-center select-none shadow-xs"
+                      style={{ background: preset.bg, color: preset.color, border: `1px solid ${preset.color}35` }}
+                    >
+                      {preset.shortName}
+                    </div>
+                  ) : (
+                    <div className="h-8.5 w-8.5 rounded-lg bg-surface-muted border border-line/50 text-ink-muted text-xs font-bold shrink-0 flex items-center justify-center">
+                      <WalletIcon className="h-4 w-4 opacity-60" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="font-display font-bold text-sm text-ink truncate">
+                        {a.name || 'Untitled'}
+                      </span>
+                      {a.currency === 'USD' && (
+                        <span className="text-xs font-bold px-1 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 font-mono shrink-0">
+                          USD
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 mt-0.5 text-xs text-ink-muted truncate">
+                      <span className="truncate">{catMeta?.icon} {catMeta?.labelTh}</span>
+                      {rateNum > 0 && (
+                        <>
+                          <span className="opacity-40">·</span>
+                          <span className="font-semibold text-emerald-600 dark:text-emerald-400 font-mono shrink-0">
+                            {rateNum}%
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <div className="font-display font-black text-sm text-ink tnum">
+                      {a.currency === 'USD' ? `$${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : thb(a.balance, true)}
+                    </div>
+                    {annualEarned > 0 ? (
+                      <div className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 tnum">
+                        +{thb(annualEarned)}/yr
+                      </div>
+                    ) : a.currency === 'USD' && a.balance > 0 ? (
+                      <div className="text-[11px] text-ink-muted tnum">
+                        ≈ {thb(a.balance * rate)}
                       </div>
                     ) : (
-                      <div className="h-8.5 w-8.5 rounded-lg bg-surface-muted border border-line/50 text-ink-muted text-xs font-bold shrink-0 flex items-center justify-center">
-                        <WalletIcon className="h-4 w-4 opacity-60" />
+                      <div className="text-xs text-ink-muted/40">
+                        -
                       </div>
                     )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="font-display font-bold text-sm text-ink truncate">
-                          {a.name || 'Untitled'}
-                        </span>
-                        {a.currency === 'USD' && (
-                          <span className="text-xs font-bold px-1 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 font-mono shrink-0">
-                            USD
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 mt-0.5 text-xs text-ink-muted truncate">
-                        <span className="truncate">{catMeta?.icon} {catMeta?.labelTh}</span>
-                        {rateNum > 0 && (
-                          <>
-                            <span className="opacity-40">·</span>
-                            <span className="font-semibold text-emerald-600 dark:text-emerald-400 font-mono shrink-0">
-                              {rateNum}%
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
                   </div>
-
-                  {/* Right: Balance + Annual Interest + Action Buttons */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <div
-                      className="text-right cursor-pointer"
-                      onClick={() => {
-                        setAccountToEdit(a)
-                        setIsEditModalOpen(true)
-                      }}
-                    >
-                      <div className="font-display font-black text-sm text-ink tnum">
-                        {a.currency === 'USD' ? `$${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : thb(a.balance)}
-                      </div>
-                      {annualEarned > 0 ? (
-                        <div className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                          +{thb(annualEarned)}/year
-                        </div>
-                      ) : a.currency === 'USD' && a.balance > 0 ? (
-                        <div className="text-xs font-mono text-ink-muted">
-                          ≈ {thb(a.balance * rate)}
-                        </div>
-                      ) : (
-                        <div className="text-xs text-ink-muted/40">
-                          -
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-0.5 ml-1">
-                      {(a.currency ?? 'THB') === 'THB' && (
-                        <button
-                          type="button"
-                          onClick={() => openSpendTxns(a.name)}
-                          className="p-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
-                          title="See transactions in Spend"
-                          aria-label={`See ${a.name} transactions`}
-                        >
-                          <ListBulletIcon className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAccountToEdit(a)
-                          setIsEditModalOpen(true)
-                        }}
-                        className="p-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
-                        title="Edit account"
-                      >
-                        <PencilIcon className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setAccountToDelete(a)}
-                        className="p-1.5 rounded-lg text-ink-muted hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                        title="Delete account"
-                      >
-                        <TrashIcon className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                </button>
               )
             })}
           </div>
@@ -649,7 +603,7 @@ export function CashLiquidity() {
                 </th>
 
                 {/* Column 5: Actions */}
-                <th className="py-2.5 px-3 text-right w-24">
+                <th className="py-2.5 px-3 text-right w-px whitespace-nowrap">
                   <span>Actions</span>
                 </th>
               </tr>
@@ -673,8 +627,8 @@ export function CashLiquidity() {
                         isExpanded ? 'bg-surface-muted/60' : 'hover:bg-surface-muted/40'
                       }`}
                     >
-                      {/* 1. Account */}
-                      <td className="py-2 px-3">
+                      {/* 1. Account — long names truncate (full name on hover) so the table fits without scrolling */}
+                      <td className="py-2 px-3 max-w-[18rem]" title={a.name}>
                         <div className="flex items-center gap-2.5 min-w-0">
                           {preset ? (
                             <div
@@ -711,7 +665,7 @@ export function CashLiquidity() {
                       </td>
 
                       {/* 3. Interest */}
-                      <td className="py-2 px-3 whitespace-nowrap">
+                      <td className="py-2 px-3">
                         {rateNum > 0 ? (
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400 text-xs">
@@ -738,15 +692,15 @@ export function CashLiquidity() {
                       <td className="py-2 px-3 text-right whitespace-nowrap">
                         <div className="font-display font-bold text-sm text-ink tnum">
                           {a.currency === 'USD'
-                            ? `$${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
-                            : thb(a.balance)}
+                            ? `$${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            : thb(a.balance, true)}
                         </div>
                       </td>
 
                       {/* 5. Actions (edit / delete / expand) */}
                       <td className="py-2 px-3 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
-                          {(a.currency ?? 'THB') === 'THB' && (
+                          {(a.currency ?? 'THB') === 'THB' ? (
                             <button
                               type="button"
                               onClick={() => openSpendTxns(a.name)}
@@ -756,6 +710,8 @@ export function CashLiquidity() {
                             >
                               <ListBulletIcon className="h-3.5 w-3.5" />
                             </button>
+                          ) : (
+                            <span className="h-8 w-8 shrink-0" aria-hidden />
                           )}
                           <button
                             type="button"
@@ -859,6 +815,20 @@ export function CashLiquidity() {
             setAccountToEdit(null)
           }}
           onSave={handleSaveModalAccount}
+          onDelete={
+            accounts.some((x) => x.id === accountToEdit.id)
+              ? () => {
+                  setIsEditModalOpen(false)
+                  setAccountToDelete(accountToEdit)
+                  setAccountToEdit(null)
+                }
+              : undefined
+          }
+          onShowTxns={
+            accounts.some((x) => x.id === accountToEdit.id) && (accountToEdit.currency ?? 'THB') === 'THB'
+              ? () => openSpendTxns(accountToEdit.name)
+              : undefined
+          }
         />
       )}
 
@@ -884,9 +854,16 @@ interface EditAccountModalProps {
   initialAccount: CashAccount
   onClose: () => void
   onSave: (acc: CashAccount) => void
+  /** Existing accounts only: ask to delete it */
+  onDelete?: () => void
+  /** THB accounts only: open its transactions in Spend */
+  onShowTxns?: () => void
 }
 
-function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccountModalProps) {
+const labelCls = 'mb-1.5 block text-xs font-bold text-ink-soft'
+const fieldCls = 'h-11 w-full rounded-xl border border-line bg-surface-muted/40 text-base font-semibold text-ink outline-none transition-colors focus:border-brand focus:bg-surface'
+
+function EditAccountModal({ open, initialAccount, onClose, onSave, onDelete, onShowTxns }: EditAccountModalProps) {
   const [name, setName] = useState(initialAccount.name)
   const [balance, setBalance] = useState(initialAccount.balance ? String(initialAccount.balance) : '')
   const [currency, setCurrency] = useState<'THB' | 'USD'>(initialAccount.currency ?? 'THB')
@@ -901,6 +878,15 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
       ? initialAccount.payoutMonths
       : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
   )
+  // Most accounts pay nothing, so the interest fields stay folded away until switched on
+  const [earnsInterest, setEarnsInterest] = useState(Boolean(initialAccount.interestRate))
+
+  const num = (v: string) => Number(v.replace(/[^0-9.]/g, '')) || 0
+  const yearlyInterest = (() => {
+    const cap = num(maxEligibleBalance)
+    const eligible = cap > 0 ? Math.min(num(balance), cap) : num(balance)
+    return (eligible * num(interestRate)) / 100
+  })()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -919,10 +905,11 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
       balance: balNum,
       currency,
       category,
-      interestRate: rateNum && rateNum > 0 ? rateNum : undefined,
-      maxEligibleBalance: capNum && capNum > 0 ? capNum : undefined,
-      payoutSchedule,
-      payoutMonths: payoutMonths && payoutMonths.length > 0 ? payoutMonths : undefined,
+      // Switched off = no interest at all, whatever was typed before
+      interestRate: earnsInterest && rateNum && rateNum > 0 ? rateNum : undefined,
+      maxEligibleBalance: earnsInterest && capNum && capNum > 0 ? capNum : undefined,
+      payoutSchedule: earnsInterest ? payoutSchedule : undefined,
+      payoutMonths: earnsInterest && payoutMonths.length > 0 ? payoutMonths : undefined,
     })
   }
 
@@ -930,29 +917,48 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
     <Modal
       open={open}
       onClose={onClose}
-      title={initialAccount.name ? 'Edit cash account' : 'Add cash account'}
+      title={initialAccount.name ? 'Edit account' : 'Add account'}
       size="md"
       footer={
         <div className="flex items-center justify-end gap-2 w-full">
+          {onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="mr-auto inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-loss transition-colors cursor-pointer hover:bg-loss-soft"
+            >
+              <TrashIcon className="h-4 w-4" />
+              Delete
+            </button>
+          )}
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button type="submit" form="account-edit-form">
-            Save account
+            Save
           </Button>
         </div>
       }
     >
       <form id="account-edit-form" onSubmit={handleSubmit} className="space-y-4 pt-1">
+        {onShowTxns && (
+          <button
+            type="button"
+            onClick={onShowTxns}
+            className="flex w-full items-center gap-2.5 rounded-xl border border-line px-3 py-2.5 text-left text-sm font-semibold text-ink transition-colors cursor-pointer hover:bg-surface-muted/60"
+          >
+            <ListBulletIcon className="h-4 w-4 text-ink-muted" />
+            <span className="flex-1">See transactions in Spend</span>
+            <span className="text-ink-muted" aria-hidden>→</span>
+          </button>
+        )}
         {/* Name */}
-        <div>
-          <label className="block text-xs font-bold text-ink mb-1">
-            Account name / bank <span className="text-rose-500">*</span>
-          </label>
+        <label className="block">
+          <span className={labelCls}>Name</span>
           <input
             type="text"
             required
-            placeholder="e.g. Kept, Dime, KBank, Savings co-op"
+            placeholder="KBank, Kept, Savings co-op…"
             value={name}
             onChange={(e) => {
               setName(e.target.value)
@@ -960,183 +966,186 @@ function EditAccountModal({ open, initialAccount, onClose, onSave }: EditAccount
                 setCategory(inferCashCategory(e.target.value))
               }
             }}
-            className="h-10 w-full rounded-xl border border-line bg-surface-muted/40 px-3 text-sm font-medium text-ink outline-none focus:border-brand focus:bg-surface"
+            className={`${fieldCls} px-3.5`}
           />
-        </div>
+        </label>
 
-        {/* Balance & Currency */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-bold text-ink mb-1">
-              Current balance
-            </label>
+        {/* Balance, with the currency as a toggle inside the field */}
+        <div>
+          <label htmlFor="account-balance" className={labelCls}>
+            Balance
+          </label>
+          <div className={`${fieldCls} flex items-center focus-within:border-brand focus-within:bg-surface focus-within:ring-2 focus-within:ring-brand/15`}>
+            <span className="pl-3.5 text-base font-bold text-ink-muted">{currency === 'USD' ? '$' : '฿'}</span>
             <input
+              id="account-balance"
               type="text"
               inputMode="decimal"
               placeholder="0.00"
               value={formatWithCommas(balance)}
               onChange={(e) => setBalance(e.target.value)}
-              className="h-10 w-full rounded-xl border border-line bg-surface-muted/40 px-3 text-sm font-bold tnum text-ink outline-none focus:border-brand focus:bg-surface"
+              className="min-w-0 flex-1 bg-transparent px-2 text-base font-bold tnum text-ink outline-none"
             />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-ink mb-1">
-              Currency
-            </label>
-            <div className="grid grid-cols-2 gap-1.5 h-10">
-              <button
-                type="button"
-                onClick={() => setCurrency('THB')}
-                className={`rounded-xl font-bold text-xs transition-colors cursor-pointer border ${
-                  currency === 'THB'
-                    ? 'bg-ink text-surface border-ink'
-                    : 'bg-surface text-ink-muted border-line'
-                }`}
-              >
-                THB (฿)
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrency('USD')}
-                className={`rounded-xl font-bold text-xs transition-colors cursor-pointer border ${
-                  currency === 'USD'
-                    ? 'bg-ink text-surface border-ink'
-                    : 'bg-surface text-ink-muted border-line'
-                }`}
-              >
-                USD ($)
-              </button>
+            <div className="mr-1 flex shrink-0 rounded-lg bg-surface-muted p-0.5" role="group" aria-label="Currency">
+              {(['THB', 'USD'] as const).map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  aria-pressed={currency === c}
+                  onClick={() => setCurrency(c)}
+                  className={`h-8 rounded-md px-2.5 text-xs font-bold transition-colors cursor-pointer ${
+                    currency === c ? 'bg-surface text-ink shadow-xs' : 'text-ink-muted hover:text-ink'
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Category */}
+        {/* Type */}
         <div>
-          <label className="block text-xs font-bold text-ink mb-1.5">
-            Category / purpose
-          </label>
+          <span className={labelCls}>Type</span>
           <div className="grid grid-cols-2 gap-2">
             {(['spending', 'locked'] as CashAccountCategory[]).map((catKey) => {
               const meta = CASH_CATEGORIES[catKey]
-              const isCatActive = category === catKey
+              const active = category === catKey
               return (
                 <button
                   key={catKey}
                   type="button"
+                  aria-pressed={active}
                   onClick={() => setCategory(catKey)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all text-left cursor-pointer border ${
-                    isCatActive
-                      ? 'bg-brand text-white border-brand shadow-xs font-semibold'
-                      : 'bg-surface text-ink-muted border-line/60 hover:text-ink hover:border-line'
+                  className={`rounded-xl border px-3 py-2.5 text-left transition-colors cursor-pointer ${
+                    active ? 'border-brand bg-brand-soft' : 'border-line hover:bg-surface-muted/60'
                   }`}
                 >
-                  <span>{meta.icon}</span>
-                  <span className="truncate">{meta.labelTh}</span>
+                  <span className={`block text-sm font-bold ${active ? 'text-brand-ink' : 'text-ink'}`}>
+                    {meta.icon} {meta.labelTh}
+                  </span>
+                  <span className="mt-0.5 block text-xs leading-snug text-ink-muted">
+                    {catKey === 'spending' ? 'Free to spend or invest' : 'Co-op, PVD, fixed deposits'}
+                  </span>
                 </button>
               )
             })}
           </div>
         </div>
 
-        {/* Yield Booster (Interest Rate + Cap) */}
-        <div className="p-3 rounded-xl bg-surface-muted/40 border border-line/60 space-y-3">
-          <span className="text-xs font-bold text-ink block">
-            Interest
-          </span>
+        {/* Interest: off by default, details only when switched on */}
+        <div className={`rounded-2xl border transition-colors ${earnsInterest ? 'border-line bg-surface-muted/30' : 'border-line'}`}>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={earnsInterest}
+            onClick={() => setEarnsInterest((v) => !v)}
+            className="flex w-full items-center justify-between gap-3 px-3.5 py-3 text-left cursor-pointer"
+          >
+            <span>
+              <span className="block text-sm font-bold text-ink">Earns interest</span>
+              <span className="block text-xs text-ink-muted tnum">
+                {earnsInterest
+                  ? yearlyInterest > 0
+                    ? `≈ ${currency === 'USD' ? '$' : '฿'}${yearlyInterest.toLocaleString('en-US', { maximumFractionDigits: 0 })} a year`
+                    : 'Enter the rate below'
+                  : 'Off'}
+              </span>
+            </span>
+            <SwitchVisual on={earnsInterest} />
+          </button>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-ink-muted mb-1">
-                Interest rate per year (%)
-              </label>
-              <input
-                type="text"
-                inputMode="decimal"
-                placeholder="e.g. 1.50, 2.22, 5.50"
-                value={interestRate}
-                onChange={(e) => setInterestRate(e.target.value)}
-                className="h-9 w-full rounded-lg border border-line bg-surface px-2.5 text-sm font-bold tnum text-ink outline-none focus:border-brand"
-              />
-            </div>
+          {earnsInterest && (
+            <div className="space-y-3 border-t border-line px-3.5 pb-3.5 pt-3">
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block">
+                  <span className={labelCls}>Rate</span>
+                  <div className={`${fieldCls} flex items-center focus-within:border-brand focus-within:bg-surface`}>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="2.22"
+                      value={interestRate}
+                      onChange={(e) => setInterestRate(e.target.value)}
+                      className="min-w-0 flex-1 bg-transparent pl-3.5 text-base font-bold tnum text-ink outline-none"
+                    />
+                    <span className="pr-3 text-xs font-semibold text-ink-muted">% / yr</span>
+                  </div>
+                </label>
+                <label className="block">
+                  <span className={labelCls}>
+                    Up to <span className="font-normal text-ink-muted">(optional)</span>
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="No cap"
+                    value={formatWithCommas(maxEligibleBalance)}
+                    onChange={(e) => setMaxEligibleBalance(e.target.value)}
+                    title="Interest is only paid on up to this amount"
+                    className={`${fieldCls} px-3.5`}
+                  />
+                </label>
+              </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-ink-muted mb-1" title="Interest is only paid on up to this amount">
-                Max balance earning interest
-              </label>
-              <input
-                type="text"
-                inputMode="decimal"
-                placeholder="No limit"
-                value={formatWithCommas(maxEligibleBalance)}
-                onChange={(e) => setMaxEligibleBalance(e.target.value)}
-                className="h-9 w-full rounded-lg border border-line bg-surface px-2.5 text-sm font-bold tnum text-ink outline-none focus:border-brand"
-              />
-            </div>
-          </div>
-
-          {/* Payout Schedule */}
-          <div>
-            <label className="block text-xs font-semibold text-ink-muted mb-1.5">
-              How often interest is paid
-            </label>
-            <div className="grid grid-cols-4 gap-1.5 text-xs">
-              {[
-                { key: 'monthly', label: 'Monthly' },
-                { key: 'semi_annual', label: 'Twice a year' },
-                { key: 'annual', label: 'Once a year' },
-                { key: 'custom', label: 'Custom' },
-              ].map((sch) => (
-                <button
-                  key={sch.key}
-                  type="button"
-                  onClick={() => {
-                    setPayoutSchedule(sch.key as CashPayoutSchedule)
-                    if (sch.key === 'monthly') setPayoutMonths([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
-                    if (sch.key === 'semi_annual') setPayoutMonths([6, 12])
-                    if (sch.key === 'annual') setPayoutMonths([2])
-                  }}
-                  className={`py-1.5 rounded-lg border text-center font-semibold transition-all cursor-pointer ${
-                    payoutSchedule === sch.key
-                      ? 'bg-ink text-surface border-ink'
-                      : 'bg-surface text-ink-muted border-line/60'
-                  }`}
-                >
-                  {sch.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Custom Months Picker */}
-          {payoutSchedule === 'custom' && (
-            <div className="space-y-1.5 pt-1">
-              <span className="text-xs text-ink-muted block">Tap the months interest is paid:</span>
-              <div className="grid grid-cols-6 gap-1 text-xs">
-                {THAI_MONTHS_SHORT.map((mName, idx) => {
-                  const mNum = idx + 1
-                  const isSelected = payoutMonths.includes(mNum)
-                  return (
+              <div>
+                <span className={labelCls}>Paid</span>
+                <div className="grid grid-cols-4 gap-1 rounded-xl bg-surface-muted p-1 text-xs">
+                  {[
+                    { key: 'monthly', label: 'Monthly' },
+                    { key: 'semi_annual', label: '2× a year' },
+                    { key: 'annual', label: 'Yearly' },
+                    { key: 'custom', label: 'Custom' },
+                  ].map((sch) => (
                     <button
-                      key={mNum}
+                      key={sch.key}
                       type="button"
+                      aria-pressed={payoutSchedule === sch.key}
                       onClick={() => {
-                        const next = isSelected
-                          ? payoutMonths.filter((m) => m !== mNum)
-                          : [...payoutMonths, mNum].sort((a, b) => a - b)
-                        setPayoutMonths(next)
+                        setPayoutSchedule(sch.key as CashPayoutSchedule)
+                        if (sch.key === 'monthly') setPayoutMonths([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+                        if (sch.key === 'semi_annual') setPayoutMonths([6, 12])
+                        if (sch.key === 'annual') setPayoutMonths([2])
                       }}
-                      className={`py-1 rounded-lg font-bold transition-all cursor-pointer border ${
-                        isSelected
-                          ? 'bg-emerald-500 text-white border-emerald-500 shadow-2xs'
-                          : 'bg-surface text-ink-muted border-line'
+                      className={`h-8 rounded-lg font-semibold transition-colors cursor-pointer ${
+                        payoutSchedule === sch.key ? 'bg-surface text-ink shadow-xs' : 'text-ink-muted hover:text-ink'
                       }`}
                     >
-                      {mName}
+                      {sch.label}
                     </button>
-                  )
-                })}
+                  ))}
+                </div>
               </div>
+
+              {payoutSchedule === 'custom' && (
+                <div className="space-y-1.5">
+                  <span className="block text-xs text-ink-muted">Tap the months it's paid</span>
+                  <div className="grid grid-cols-6 gap-1 text-xs">
+                    {THAI_MONTHS_SHORT.map((mName, idx) => {
+                      const mNum = idx + 1
+                      const isSelected = payoutMonths.includes(mNum)
+                      return (
+                        <button
+                          key={mNum}
+                          type="button"
+                          aria-pressed={isSelected}
+                          onClick={() => {
+                            const next = isSelected
+                              ? payoutMonths.filter((m) => m !== mNum)
+                              : [...payoutMonths, mNum].sort((x, y) => x - y)
+                            setPayoutMonths(next)
+                          }}
+                          className={`h-8 rounded-lg font-bold transition-colors cursor-pointer border ${
+                            isSelected ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-surface text-ink-muted border-line'
+                          }`}
+                        >
+                          {mName}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

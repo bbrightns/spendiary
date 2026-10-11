@@ -5,7 +5,7 @@ import { AddButton } from '../../../components/ui/AddButton'
 import { Button } from '../../../components/ui/Button'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import { Modal } from '../../../components/ui/Modal'
-import { ChevronDownIcon, PencilIcon, WalletIcon } from '../../../components/icons'
+import { PencilIcon, WalletIcon } from '../../../components/icons'
 import { localDateStr, thb } from '../../../lib/format'
 import { dayAllowance, inPeriod, periodFor, shiftDate, type DayStatus } from '../logic'
 import { BillReminders } from '../BillReminders'
@@ -15,6 +15,7 @@ import { TxnRow } from '../TxnRow'
 import { useSpend } from '../useSpend'
 import { SPEND_ACCENT_TEXT } from '../tones'
 import { HOME_CARDS, homeOrder, isDefaultOrder, moveCard, type HomeCardId } from '../homeLayout'
+import { ArrangeButton, ReorderSheet } from '../ReorderSheet'
 
 const STATUS: Record<DayStatus, { label: string; stroke: string; chip: string }> = {
   ok: { label: 'On track', stroke: 'stroke-emerald-500', chip: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300' },
@@ -209,15 +210,7 @@ export function SpendOverview() {
           <div className="hidden lg:block">
             <AddButton onClick={() => openQuickAdd()} label="Add" />
           </div>
-          <button
-            type="button"
-            onClick={() => setArrangeOpen(true)}
-            aria-label="Arrange cards"
-            title="Arrange cards"
-            className="grid h-10 w-10 place-items-center rounded-full border border-line bg-surface text-ink-muted shadow-xs hover:text-ink cursor-pointer"
-          >
-            <ArrangeIcon className="h-[18px] w-[18px]" />
-          </button>
+          <ArrangeButton label="Arrange cards" onClick={() => setArrangeOpen(true)} />
         </div>
       </header>
 
@@ -293,54 +286,18 @@ function BudgetModal({ open, initial, onClose, onSave }: { open: boolean; initia
   )
 }
 
-/** Two stacked bars with arrows: the "arrange cards" button. */
-function ArrangeIcon(p: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className={p.className}>
-      <rect x="3" y="4" width="12" height="6" rx="1.5" />
-      <rect x="3" y="14" width="12" height="6" rx="1.5" />
-      <path d="M19 4v16M16.5 6.5 19 4l2.5 2.5M16.5 17.5 19 20l2.5-2.5" />
-    </svg>
-  )
-}
-
-/** Reorder Home's cards with up / down buttons; each move is saved right away. */
+/** Reorder Home's cards; each move is saved right away. */
 function ArrangeSheet({ open, order, onChange, onClose }: { open: boolean; order: HomeCardId[]; onChange: (next: HomeCardId[]) => void; onClose: () => void }) {
-  const label = (id: HomeCardId) => HOME_CARDS.find((c) => c.id === id)?.label ?? id
-  const btn =
-    'grid h-10 w-10 place-items-center rounded-xl border border-line text-ink-soft transition-colors cursor-pointer hover:bg-surface-muted hover:text-ink disabled:cursor-default disabled:opacity-30'
   return (
-    <Modal
+    <ReorderSheet
       open={open}
       onClose={onClose}
       title="Arrange cards"
       description="Choose what comes first on Home. Card bill reminders always stay on top."
-      size="sm"
-      footer={
-        <div className="flex w-full items-center justify-between gap-3">
-          <Button variant="secondary" size="sm" disabled={isDefaultOrder(order)} onClick={() => onChange(homeOrder())}>
-            Reset
-          </Button>
-          <Button data-modal-submit size="sm" onClick={onClose}>
-            Done
-          </Button>
-        </div>
-      }
-    >
-      <ol className="space-y-2">
-        {order.map((id, i) => (
-          <li key={id} className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-3 py-2">
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-surface-muted text-xs font-bold text-ink-muted tnum">{i + 1}</span>
-            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{label(id)}</span>
-            <button type="button" className={btn} disabled={i === 0} onClick={() => onChange(moveCard(order, id, -1))} aria-label={`Move ${label(id)} up`}>
-              <ChevronDownIcon className="h-4 w-4 rotate-180" strokeWidth={2} />
-            </button>
-            <button type="button" className={btn} disabled={i === order.length - 1} onClick={() => onChange(moveCard(order, id, 1))} aria-label={`Move ${label(id)} down`}>
-              <ChevronDownIcon className="h-4 w-4" strokeWidth={2} />
-            </button>
-          </li>
-        ))}
-      </ol>
-    </Modal>
+      items={order.map((id) => ({ id, label: HOME_CARDS.find((c) => c.id === id)?.label ?? id }))}
+      onMove={(id, delta) => onChange(moveCard(order, id as HomeCardId, delta))}
+      canReset={!isDefaultOrder(order)}
+      onReset={() => onChange(homeOrder())}
+    />
   )
 }

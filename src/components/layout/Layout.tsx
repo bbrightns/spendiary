@@ -12,6 +12,7 @@ import { ModeSwitcher } from '../../modules/spend/ModeSwitcher'
 import { QuickAddSheet } from '../../modules/spend/QuickAddSheet'
 import { ImportSheet } from '../../modules/spend/ImportSheet'
 import { PayBillSheet } from '../../modules/spend/PayBillSheet'
+import { PayLoanSheet } from '../../modules/spend/PayLoanSheet'
 import { SpendBottomNav } from '../../modules/spend/SpendBottomNav'
 import { isSpendPath } from '../../modules/spend/nav'
 
@@ -99,6 +100,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <QuickAddSheet />
       <ImportSheet />
       <PayBillSheet />
+      <PayLoanSheet />
     </div>
   )
 }

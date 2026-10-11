@@ -3,7 +3,7 @@ import type { SpendTransaction } from '../../lib/types'
 import { PortfolioIcon } from '../../components/icons'
 import { thb } from '../../lib/format'
 import { TransferIcon, getCategory } from './categories'
-import { TAG_RE } from './logic'
+import { noteTitle } from './logic'
 import { openQuickAdd } from './QuickAddSheet'
 import { TONES } from './tones'
 
@@ -15,15 +15,6 @@ interface Props {
   onTagClick?: (tag: string) => void
 }
 
-/** Note text without its hashtags — the tags render as chips instead. */
-function plainNote(note?: string): string {
-  return (note ?? '')
-    .replace(TAG_RE, '')
-    .replace(/\s+/g, ' ')
-    .replace(/ ([.,!?;:])/g, '$1')
-    .trim()
-}
-
 export function TxnRow({ txn, methods, onTagClick }: Props) {
   const navigate = useNavigate()
   const cat = getCategory(txn.categoryId)
@@ -31,11 +22,12 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
   const Icon = isDca ? PortfolioIcon : txn.type === 'transfer' ? TransferIcon : cat?.icon ?? TransferIcon
   const walletName = (id?: string) => methods.find((m) => m.id === id)?.name
   const from = walletName(txn.accountId)
-  const title = plainNote(txn.note) || (txn.type === 'transfer' ? 'Transfer' : cat?.label ?? 'Other')
+  const title = noteTitle(txn.note) || (txn.type === 'transfer' ? 'Transfer' : cat?.label ?? 'Other')
   const meta = isDca
     ? ['Invested', from && `from ${from}`].filter(Boolean).join(' · ')
     : txn.type === 'transfer'
-      ? `${from ?? '—'} → ${walletName(txn.toAccountId) ?? '—'}${txn.alreadyInBalance ? ' · already in balance' : ''}`
+      ? // A loan payment goes to the loan, not to another wallet
+        `${from ?? '—'} → ${txn.liabilityId && !txn.toAccountId ? 'loan payment' : walletName(txn.toAccountId) ?? '—'}${txn.alreadyInBalance ? ' · already in balance' : ''}`
       : [cat?.label, from, txn.alreadyInBalance && 'already in balance'].filter(Boolean).join(' · ')
 
   const sign = txn.type === 'income' ? '+' : txn.type === 'expense' ? '−' : ''
@@ -44,11 +36,11 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
   const sourcePage = txn.source === 'dividend' ? '/dividends' : isDca ? '/dca' : null
 
   return (
-    <div className="group flex items-center gap-3 py-3">
+    <div className="group py-3">
       <button
         type="button"
         onClick={() => (sourcePage ? navigate(sourcePage) : openQuickAdd({ editId: txn.id }))}
-        className="flex min-w-0 flex-1 items-center gap-3 text-left cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className="flex w-full min-w-0 items-center gap-3 text-left cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         aria-label={sourcePage ? `${title}, ${sign}${thb(txn.amount, true)}, open in Invest` : `Edit ${title}, ${sign}${thb(txn.amount, true)}`}
       >
         <span
@@ -60,30 +52,31 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold text-ink">{title}</span>
-          <span className="block truncate text-xs text-ink-muted">
-            {meta}
-            {(txn.tags?.length ?? 0) > 0 && (
-              <span className={`text-brand-ink ${onTagClick ? 'sm:hidden' : ''}`}> · {txn.tags!.map((t) => `#${t}`).join(' ')}</span>
-            )}
-          </span>
+          <span className="block truncate text-xs text-ink-muted">{meta}</span>
         </span>
         <span className={`shrink-0 text-sm font-bold tnum ${amountClass}`}>
           {sign}
           {thb(txn.amount, true)}
         </span>
       </button>
-      {(txn.tags?.length ?? 0) > 0 && onTagClick && (
-        <div className="hidden shrink-0 gap-1 sm:flex">
-          {txn.tags!.slice(0, 2).map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => onTagClick(tag)}
-              className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-ink cursor-pointer"
-            >
-              #{tag}
-            </button>
-          ))}
+      {(txn.tags?.length ?? 0) > 0 && (
+        <div className="mt-1.5 flex flex-wrap gap-1 pl-[52px]">
+          {txn.tags!.map((tag) =>
+            onTagClick ? (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => onTagClick(tag)}
+                className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-ink cursor-pointer"
+              >
+                #{tag}
+              </button>
+            ) : (
+              <span key={tag} className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-ink">
+                #{tag}
+              </span>
+            ),
+          )}
         </div>
       )}
     </div>

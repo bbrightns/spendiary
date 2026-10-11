@@ -5,7 +5,7 @@ import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb, thbSigned } from '../../lib/format'
 import { getCategory } from './categories'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
-import { DEFAULT_MIN_PAYMENT_PERCENT, TAG_RE, cardCycle, minimumPayment } from './logic'
+import { DEFAULT_MIN_PAYMENT_PERCENT, cardCycle, minimumPayment, noteTitle } from './logic'
 import { useSpend } from './useSpend'
 import { TONES } from './tones'
 
@@ -190,7 +190,7 @@ export function PayBillSheet() {
                         {Icon && <Icon className="h-4 w-4" />}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-ink">{t.note?.replace(TAG_RE, '').replace(/\s+/g, ' ').trim() || cat?.label}</span>
+                        <span className="block truncate text-sm font-semibold text-ink">{noteTitle(t.note) || cat?.label}</span>
                         <span className="block text-xs text-ink-muted">{short(t.date)}</span>
                       </span>
                       <span className={`shrink-0 text-sm font-bold tnum ${t.type === 'income' ? 'text-gain' : 'text-ink'}`}>

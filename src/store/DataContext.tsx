@@ -269,7 +269,8 @@ interface DataContextValue {
   upsertLiability: (item: Omit<Liability, 'id'> & { id?: string }) => void
   removeLiability: (id: string) => void
   setLiabilities: (liabilities: Liability[]) => void
-  payLiabilityInstallment: (id: string) => void
+  /** Mark one payment made; `amount` defaults to the monthly payment (or the balance spread over what's left) */
+  payLiabilityInstallment: (id: string, amount?: number) => void
   undoLiabilityPayment: (id: string) => void
   /** Live USD/THB rate — set by useLivePrices, used by forms to convert USD inputs */
   usdThb: number | null
@@ -601,11 +602,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    // Supabase hands back a fresh user object on every token refresh (e.g. when you come back to
+    // the tab). Keep the current one when it's the same person: a new object would re-run the
+    // load below, swap the pages for a loading screen and close any form being filled in.
+    const signIn = (next: User) => setUser((prev) => (prev?.id === next.id ? prev : next))
+
     if (supabase?.auth?.getSession) {
       supabase.auth.getSession().then(({ data: { session } }) => {
         console.log('Initial Supabase session:', session?.user?.email ?? 'No user')
         if (session?.user) {
-          setUser(session.user)
+          signIn(session.user)
         }
       })
     }
@@ -614,7 +620,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         console.log('Supabase onAuthStateChange:', event, session?.user?.email ?? 'No user')
         if (session?.user) {
-          setUser(session.user)
+          signIn(session.user)
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
         }
@@ -1084,7 +1090,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setLiabilities: (liabilities) =>
         updateData((prev) => ({ ...prev, liabilities })),
 
-      payLiabilityInstallment: (id) =>
+      payLiabilityInstallment: (id, amount) =>
         updateData((prev) => {
           const item = (prev.liabilities ?? []).find((x) => x.id === id)
           if (!item) return prev
@@ -1094,14 +1100,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
           const nextPaid = currentPaid + 1
           
           // Determine installment payment amount
-          let paymentAmount = item.monthlyPayment ?? 0
+          let paymentAmount = amount && amount > 0 ? amount : item.monthlyPayment ?? 0
           if (paymentAmount <= 0) {
             const remainingInst = Math.max(1, (totalInst ?? 1) - currentPaid)
             paymentAmount = Math.round(item.balance / remainingInst)
           }
 
           const newBalance = Math.max(0, item.balance - paymentAmount)
-          const todayStr = new Date().toISOString().slice(0, 10)
+          // Local date: toISOString() is UTC, which in Thailand is still yesterday before 7am
+          const todayStr = localDateStr()
 
           const updatedItems = (prev.liabilities ?? []).map((x) =>
             x.id === id
@@ -1110,6 +1117,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
                   balance: newBalance,
                   paidInstallments: nextPaid,
                   lastPaidDate: todayStr,
+                  // What actually came off (the balance can't go below 0)
+                  lastPaidAmount: item.balance - newBalance,
                   updatedAt: todayStr,
                 }
               : x,
@@ -1138,12 +1147,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
           if (!item || (item.paidInstallments ?? 0) <= 0) return prev
 
           const prevPaid = Math.max(0, (item.paidInstallments ?? 1) - 1)
-          const paymentAmount = item.monthlyPayment ?? 0
+          // Put back what the payment took off; older records without it fall back to the monthly amount
+          const paymentAmount = item.lastPaidAmount ?? item.monthlyPayment ?? 0
           const restoredBalance = item.originalBalance
             ? Math.min(item.originalBalance, item.balance + paymentAmount)
             : item.balance + paymentAmount
 
-          const todayStr = new Date().toISOString().slice(0, 10)
+          const todayStr = localDateStr()
 
           const updatedItems = (prev.liabilities ?? []).map((x) =>
             x.id === id
@@ -1152,6 +1162,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                   balance: restoredBalance,
                   paidInstallments: prevPaid,
                   lastPaidDate: undefined,
+                  lastPaidAmount: undefined,
                   updatedAt: todayStr,
                 }
               : x,

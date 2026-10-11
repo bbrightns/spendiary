@@ -1,5 +1,5 @@
 import type { NavSection, NavSubItem } from '../../components/layout/nav'
-import { DashboardIcon, PieChartIcon, SettingsIcon, WalletIcon } from '../../components/icons'
+import { DashboardIcon, DebtIcon, PieChartIcon, SettingsIcon, WalletIcon } from '../../components/icons'
 import { ListBulletIcon, RepeatIcon } from './categories'
 
 export const SPEND_ROOT = '/spend'
@@ -43,10 +43,18 @@ export const spendAnalysisItem: NavSubItem = {
 
 export const spendRecurringItem: NavSubItem = {
   to: `${SPEND_ROOT}/recurring`,
-  label: 'Recurring',
-  short: 'Recurring',
+  label: 'Bills & recurring',
+  short: 'Bills',
   description: 'Bills and income that repeat, waiting for a one-tap log',
   icon: RepeatIcon,
+}
+
+export const spendLoansItem: NavSubItem = {
+  to: `${SPEND_ROOT}/loans`,
+  label: 'Loans & installments',
+  short: 'Loans',
+  description: 'What you owe and pay back each month',
+  icon: DebtIcon,
 }
 
 export const spendSettingsItem: NavSubItem = {
@@ -57,7 +65,10 @@ export const spendSettingsItem: NavSubItem = {
   icon: SettingsIcon,
 }
 
+/** Spend's mobile "More" sheet: pages used less often than the four tabs. */
+export const spendMoreItems: NavSubItem[] = [spendRecurringItem, spendLoansItem, spendAnalysisItem, spendSettingsItem]
+
 export const spendNavSections: NavSection[] = [
   { title: 'Spend', items: [spendOverviewItem, spendTxnsItem, spendAnalysisItem] },
-  { title: 'Money', items: [spendAccountsItem, spendRecurringItem] },
+  { title: 'Money', items: [spendAccountsItem, spendRecurringItem, spendLoansItem] },
 ]

@@ -3,7 +3,7 @@ import { useData } from '../../store/DataContext'
 import type { SpendCard, SpendCustomCategory, SpendGoal, SpendRecurring, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
 import { SPEND_CATEGORIES } from './categories'
 import { investTransactions } from './invest'
-import { DEFAULT_BILL_REMINDER_DAYS, applyToBalances, cardBill, dueRecurring, parseTags, sortTxns, spendWallets } from './logic'
+import { DEFAULT_BILL_REMINDER_DAYS, applyOrder, applyToBalances, cardBill, dueRecurring, parseTags, sortTxns, spendWallets } from './logic'
 
 export type SpendTxnInput = Omit<SpendTransaction, 'id' | 'createdAt' | 'updatedAt' | 'tags'>
 
@@ -52,9 +52,10 @@ export function useSpend() {
   // Tags are re-read from the note so rows saved under older tag rules (e.g. `#7-11` → "7") follow the current ones
   const stored = useMemo(() => (data.spendTransactions ?? []).map((t) => ({ ...t, tags: parseTags(t.note) })), [data.spendTransactions])
   const transactions = useMemo(() => sortTxns([...stored, ...fromInvest]), [stored, fromInvest])
-  const wallets = useMemo(() => spendWallets(data.cashAccounts ?? []), [data.cashAccounts])
-  const cards = useMemo(() => data.spendCards ?? [], [data.spendCards])
   const settings: SpendSettings = useMemo(() => data.spendSettings ?? {}, [data.spendSettings])
+  // In the order the user arranged on Accounts; pickers follow it too
+  const wallets = useMemo(() => applyOrder(spendWallets(data.cashAccounts ?? []), settings.walletOrder), [data.cashAccounts, settings.walletOrder])
+  const cards = useMemo(() => applyOrder(data.spendCards ?? [], settings.cardOrder), [data.spendCards, settings.cardOrder])
 
   const methods = useMemo<PayMethod[]>(
     () => [

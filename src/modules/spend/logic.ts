@@ -16,6 +16,66 @@ export function parseTags(note?: string): string[] {
   return [...found]
 }
 
+/** Note text without its hashtags, spacing and punctuation tidied. */
+export function plainNote(note?: string): string {
+  return (note ?? '')
+    .replace(TAG_RE, '')
+    .replace(/\s+/g, ' ')
+    .replace(/ ([.,!?;:])/g, '$1')
+    .trim()
+}
+
+/**
+ * The name a transaction goes by: the note without its tags, or — when the note is only
+ * hashtags — the first tag, so `#nosetea` is never shown as just the category. '' if no note.
+ */
+export function noteTitle(note?: string): string {
+  const plain = plainNote(note)
+  if (plain) return plain
+  const first = (note ?? '').matchAll(TAG_RE).next().value
+  return first ? first[1] : ''
+}
+
+/** The half-typed `#tag` at the very end of a note (without the #), or null if the user isn't typing one. */
+export function activeTagQuery(note: string): string | null {
+  const m = /(?:^|\s)#([\p{L}\p{N}\p{M}_]*)$/u.exec(note)
+  return m ? m[1] : null
+}
+
+/**
+ * Previously used tags that start with what's typed after `#`, most-used first.
+ * Tags already in the note, and an exact match of the query itself, are left out.
+ */
+export function suggestTags(txns: SpendTransaction[], note: string, query: string, limit = 6): string[] {
+  const q = query.toLowerCase()
+  const used = new Set(parseTags(note))
+  return topTags(txns, Number.MAX_SAFE_INTEGER)
+    .filter((tag) => tag.startsWith(q) && tag !== q && !used.has(tag))
+    .slice(0, limit)
+}
+
+/**
+ * Items in the user's saved order: listed ids first (unknown ones skipped), then everything
+ * not listed yet — e.g. a card added since — in its original order.
+ */
+export function applyOrder<T extends { id: string }>(items: T[], order?: string[]): T[] {
+  if (!order?.length) return items
+  const rank = new Map<string, number>()
+  for (const id of order) if (!rank.has(id)) rank.set(id, rank.size)
+  const listed = items.filter((x) => rank.has(x.id)).sort((a, b) => rank.get(a.id)! - rank.get(b.id)!)
+  return [...listed, ...items.filter((x) => !rank.has(x.id))]
+}
+
+/** Move one id up (-1) or down (+1) in a list; unchanged at the ends or if it isn't there. */
+export function moveId(ids: string[], id: string, delta: -1 | 1): string[] {
+  const i = ids.indexOf(id)
+  const j = i + delta
+  if (i < 0 || j < 0 || j >= ids.length) return ids
+  const next = [...ids]
+  ;[next[i], next[j]] = [next[j], next[i]]
+  return next
+}
+
 /** Wallets the Spend module works with (amounts are THB only for now). */
 export function spendWallets(accounts: CashAccount[]): CashAccount[] {
   return accounts.filter((a) => (a.currency ?? 'THB') === 'THB')

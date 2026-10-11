@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { guessCategory } from './categories'
+import { categoriesFor, guessCategory, syncCategories } from './categories'
 import { homeOrder, isDefaultOrder, moveCard } from './homeLayout'
-import type { CashAccount, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
+import type { CashAccount, Liability, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
+import { isLoanDone, loanPaymentAmount, loanProgress, paymentIsSpending } from './loans'
 import {
   accountTotals,
+  applyOrder,
+  moveId,
+  activeTagQuery,
+  noteTitle,
+  suggestTags,
   averageMonthlySpend,
   goalProgress,
   isThaiHoliday,
@@ -260,5 +266,96 @@ describe('home card order', () => {
     expect(moveCard(o, 'days', -1)).toEqual(['allowance', 'month', 'days', 'recurring'])
     expect(moveCard(o, 'allowance', -1)).toBe(o)
     expect(isDefaultOrder(o)).toBe(true)
+  })
+})
+
+describe('noteTitle', () => {
+  it('drops tags from a normal note', () => {
+    expect(noteTitle('Milk tea #nosetea')).toBe('Milk tea')
+  })
+  it('uses the first tag when the note is only tags', () => {
+    expect(noteTitle('#NoseTea #office')).toBe('NoseTea')
+  })
+  it('is empty without a note', () => {
+    expect(noteTitle(undefined)).toBe('')
+    expect(noteTitle('   ')).toBe('')
+  })
+})
+
+describe('tag suggestions', () => {
+  const t = (tags: string[]) => txn({ tags })
+  const history = [t(['nosetea', 'office']), t(['nosetea']), t(['noodle']), t(['gym'])]
+
+  it('finds the half-typed tag at the end only', () => {
+    expect(activeTagQuery('Lunch #no')).toBe('no')
+    expect(activeTagQuery('Lunch #')).toBe('')
+    expect(activeTagQuery('Lunch #no ')).toBeNull()
+    expect(activeTagQuery('Lunch')).toBeNull()
+    expect(activeTagQuery('a#b')).toBeNull()
+  })
+  it('suggests used tags by prefix, most used first', () => {
+    expect(suggestTags(history, 'Lunch #no', 'no')).toEqual(['nosetea', 'noodle'])
+  })
+  it('lists everything for a bare #, skipping tags already in the note', () => {
+    expect(suggestTags(history, '#gym #', '')).toEqual(['nosetea', 'office', 'noodle'])
+  })
+  it('does not suggest what is already fully typed', () => {
+    expect(suggestTags(history, '#gym', 'gym')).toEqual([])
+  })
+})
+
+describe('category order', () => {
+  it('keeps Other last, with the user\'s own categories before it', () => {
+    syncCategories({
+      customCategories: [
+        { id: 'c1', label: 'Pets', type: 'expense', icon: 'tag', tone: 'rose' },
+        { id: 'c2', label: 'Tips', type: 'income', icon: 'tag', tone: 'teal' },
+      ],
+      categoryEdits: {},
+    })
+    const ex = categoriesFor('expense').map((c) => c.label)
+    expect(ex.slice(-2)).toEqual(['Pets', 'Other'])
+    const inc = categoriesFor('income').map((c) => c.label)
+    expect(inc.slice(-2)).toEqual(['Tips', 'Other'])
+  })
+})
+
+describe('saved order', () => {
+  const items = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+  const ids = (xs: { id: string }[]) => xs.map((x) => x.id)
+
+  it('keeps the original order without a saved one', () => {
+    expect(ids(applyOrder(items, undefined))).toEqual(['a', 'b', 'c'])
+  })
+  it('puts saved ids first and new items after, skipping unknown ids', () => {
+    expect(ids(applyOrder(items, ['c', 'gone', 'a']))).toEqual(['c', 'a', 'b'])
+  })
+  it('moves an id one step and stops at the ends', () => {
+    expect(moveId(['a', 'b', 'c'], 'c', -1)).toEqual(['a', 'c', 'b'])
+    expect(moveId(['a', 'b', 'c'], 'a', -1)).toEqual(['a', 'b', 'c'])
+    expect(moveId(['a', 'b', 'c'], 'x', 1)).toEqual(['a', 'b', 'c'])
+  })
+})
+
+describe('loans', () => {
+  const loan = (p: Partial<Liability>): Liability => ({ id: 'l', name: 'L', category: 'personal_loan', balance: 10_000, ...p })
+
+  it('pays the monthly amount, else the balance spread over what is left', () => {
+    expect(loanPaymentAmount(loan({ monthlyPayment: 3990 }))).toBe(3990)
+    expect(loanPaymentAmount(loan({ balance: 9000, totalInstallments: 10, paidInstallments: 7 }))).toBe(3000)
+  })
+  it('counts only installment purchases as spending, whatever the installment flag says', () => {
+    expect(paymentIsSpending(loan({ category: 'installment' }))).toBe(true)
+    expect(paymentIsSpending(loan({ category: 'auto_loan', isInstallment: true, totalInstallments: 60 }))).toBe(false)
+  })
+  it('is done when nothing is owed or every installment is paid', () => {
+    expect(isLoanDone(loan({ balance: 0 }))).toBe(true)
+    expect(isLoanDone(loan({ isInstallment: true, totalInstallments: 10, paidInstallments: 10 }))).toBe(true)
+    expect(isLoanDone(loan({}))).toBe(false)
+  })
+  it('measures progress by installments, else by how much of the original is gone', () => {
+    expect(loanProgress(loan({ isInstallment: true, totalInstallments: 10, paidInstallments: 4 }))).toBeCloseTo(0.4)
+    expect(loanProgress(loan({ balance: 7500, originalBalance: 10_000 }))).toBeCloseTo(0.25)
+    expect(loanProgress(loan({}))).toBe(0)
   })
 })

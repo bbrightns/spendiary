@@ -6,7 +6,7 @@ import { SegmentedControl } from '../../../components/ui/SegmentedControl'
 import { localDateStr, thb, thbCompact } from '../../../lib/format'
 import type { SpendTransaction } from '../../../lib/types'
 import { getCategory } from '../categories'
-import { TAG_RE, budgetState, inPeriod, periodFor, shiftDate, shiftPeriod, totalsFor, type Period } from '../logic'
+import { budgetState, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, totalsFor, type Period } from '../logic'
 import { MonthStepper } from '../MonthStepper'
 import { TONES } from '../tones'
 import { useSpend } from '../useSpend'
@@ -264,7 +264,7 @@ export function SpendAnalysis() {
         <Card className="p-3 sm:p-4" padded={false}>
           <p className="text-xs text-ink-muted">Biggest expense</p>
           <p className="mt-1 font-display text-lg font-extrabold tnum text-ink">{biggest ? thbCompact(biggest.amount) : '—'}</p>
-          {biggest && <p className="truncate text-xs text-ink-muted">{biggest.note?.replace(TAG_RE, '').replace(/\s+/g, ' ').trim() || getCategory(biggest.categoryId)?.label}</p>}
+          {biggest && <p className="truncate text-xs text-ink-muted">{noteTitle(biggest.note) || getCategory(biggest.categoryId)?.label}</p>}
         </Card>
         <Card className="p-3 sm:p-4" padded={false}>
           <p className="text-xs text-ink-muted">Saved of income</p>

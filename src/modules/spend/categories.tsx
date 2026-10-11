@@ -319,6 +319,9 @@ const BUILT_IN: BuiltIn[] = [
   { id: 'dividend', label: 'Dividends', type: 'income', tone: 'indigo', iconKey: 'dividend', keywords: ['ปันผล', 'dividend'], system: true },
 ]
 
+/** The built-in "Other" categories, kept at the end of their lists. */
+const CATCH_ALL = new Set(['other', 'other_in'])
+
 const toneOf = (t: string | undefined, fallback: Tone): Tone => (t && t in TONES ? (t as Tone) : fallback)
 const withIcon = (c: BuiltIn): SpendCategory => ({ ...c, icon: CATEGORY_ICONS[c.iconKey] ?? DotsHorizontalIcon })
 
@@ -359,7 +362,9 @@ export function syncCategories(settings?: Pick<SpendSettings, 'customCategories'
       custom: true,
     }),
   )
-  live = [...builtIns, ...mine]
+  // "Other" is the catch-all, so it always stays last — the user's own categories slot in before it
+  const all = [...builtIns, ...mine]
+  live = [...all.filter((c) => !CATCH_ALL.has(c.id)), ...all.filter((c) => CATCH_ALL.has(c.id))]
   byId = new Map(live.map((c) => [c.id, c]))
 }
 

@@ -294,6 +294,8 @@ export interface Liability {
   paidInstallments?: number
   /** ISO date string YYYY-MM-DD of the most recent payment confirmed */
   lastPaidDate?: string
+  /** What that payment took off the balance, so Undo puts back exactly the same */
+  lastPaidAmount?: number
   /** Original total cost/balance of the installment purchase (used for progress tracking) */
   originalBalance?: number
 }
@@ -329,6 +331,8 @@ export interface SpendTransaction {
    * dividends received and DCA buys. Their cash moves are already applied there.
    */
   source?: 'dividend' | 'dca'
+  /** A loan / installment payment: the liability it paid toward */
+  liabilityId?: string
 }
 
 export interface SpendSettings {
@@ -348,6 +352,10 @@ export interface SpendSettings {
   fixedCostsImported?: boolean
   /** Order of the cards on Spend's Home, by card id; unknown or missing ids fall back to the default order */
   homeOrder?: string[]
+  /** Order of credit cards on Accounts and in pickers, by card id; cards not listed follow in their saved order */
+  cardOrder?: string[]
+  /** Order of wallets on Accounts and in pickers, by account id; wallets not listed follow in their saved order */
+  walletOrder?: string[]
   /** Categories the user added (expense or income) */
   customCategories?: SpendCustomCategory[]
   /** Changes to built-in categories, by id */

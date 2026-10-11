@@ -2,7 +2,6 @@ import type { ComponentType, SVGProps } from 'react'
 import {
   DashboardIcon,
   DcaIcon,
-  DebtIcon,
   PortfolioIcon,
   RetirementIcon,
   SettingsIcon,
@@ -72,13 +71,6 @@ export const cashflowSubItems: NavSubItem[] = [
     description: 'Passive income tracker, payouts & withholding tax',
     icon: DividendIcon,
   },
-  {
-    to: '/debts',
-    label: 'Debts & Installments',
-    short: 'Debts',
-    description: 'Track loans, BNPL, 0% installments & payoff schedule',
-    icon: DebtIcon,
-  },
 ]
 
 export const strategySubItems: NavSubItem[] = [
@@ -140,7 +132,7 @@ const summaryItem: NavSubItem = {
 /** Desktop sidebar: flat, grouped by intent (frequent actions first, mirrors the mobile bottom nav). */
 export const desktopNavSections: NavSection[] = [
   { title: 'Overview', items: [dashboardItem, portfolioItem] },
-  { title: 'Plan', items: [cashflowSubItems[1], cashflowSubItems[2], cashflowSubItems[0], cashflowSubItems[3]] },
+  { title: 'Plan', items: [cashflowSubItems[1], cashflowSubItems[2], cashflowSubItems[0]] },
   { title: 'Analyze', items: strategySubItems },
   { title: 'Records', items: [logsItem, summaryItem] },
 ]
@@ -168,12 +160,12 @@ export const mobileNavItems: MobileNavItem[] = [
  * Bottom-sheet contents behind the mobile "More" tab: everything that is not
  * worth a top-level slot but must stay reachable (each keeps its own badge).
  */
-const [cashItem, , dividendItem, debtItem] = cashflowSubItems
+// Loans & installments live in Spend now (/spend/loans)
+const [cashItem, , dividendItem] = cashflowSubItems
 const [rebalanceItem, retirementItem] = strategySubItems
 
 export const moreSheetItems: NavSubItem[] = [
   dividendItem,
-  debtItem,
   cashItem,
   rebalanceItem,
   retirementItem,
