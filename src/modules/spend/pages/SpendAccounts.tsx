@@ -10,15 +10,10 @@ import { localDateStr, thb, thbSigned } from '../../../lib/format'
 import type { SpendCard } from '../../../lib/types'
 import { CardSheet, StarIcon, WalletSheet } from '../AccountSheets'
 import { GoalsSection } from '../Goals'
-import { cardCycle, inPeriod, isCalendar, periodFor, upcomingDue } from '../logic'
+import { inPeriod, isCalendar, periodFor } from '../logic'
+import { CardStack } from '../CardStack'
 import { MethodIcon } from '../PayMethodPicker'
-import { dueText, openPayBill } from '../PayBillSheet'
 import { useSpend, type PayMethod } from '../useSpend'
-
-function shortDate(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-}
 
 export function SpendAccounts() {
   const { transactions, methods, cards, settings, bills, toggleFavorite } = useSpend()
@@ -55,12 +50,6 @@ export function SpendAccounts() {
     }
     return map
   }, [transactions, period])
-
-  /** Charges minus refunds on a card since its last statement. */
-  const cycleSpend = (card: SpendCard, since: string) =>
-    transactions
-      .filter((t) => t.accountId === card.id && t.date > since)
-      .reduce((s, t) => s + (t.type === 'expense' ? t.amount : t.type === 'income' ? -t.amount : 0), 0)
 
   const star = (id: string, name: string) => {
     const on = favs.includes(id)
@@ -121,114 +110,15 @@ export function SpendAccounts() {
             />
           </Card>
         ) : (
-          <div className="grid gap-3 lg:grid-cols-2">
-            {cards.map((c) => {
-              const cyc = cardCycle(c)
-              const used = c.creditLimit > 0 ? Math.min(100, Math.max(0, (c.balance / c.creditLimit) * 100)) : 0
-              const spentCycle = cycleSpend(c, cyc.lastStatement)
-              const bill = bills.find((b) => b.card.id === c.id)
-              // An open statement wins; otherwise show the next one forming
-              const open = bill && bill.amountDue > 0 ? bill : undefined
-              const next = upcomingDue(cyc, c.balance, spentCycle)
-              const due = open ? { date: open.dueDate, days: open.daysToDue, amount: open.amountDue } : next
-              const tone = open?.status === 'overdue' ? 'loss' : open?.status === 'due' ? 'warn' : undefined
-              return (
-                <Card
-                  key={c.id}
-                  padded={false}
-                  className="overflow-hidden cursor-pointer transition-shadow hover:shadow-[var(--shadow-lift)]"
-                  onClick={() => setCardSheet({ open: true, card: c })}
-                >
-                  <div className="h-1.5" style={{ background: c.color ?? '#0f172a' }} />
-                  <div className="p-4 sm:p-5">
-                    <div className="flex items-start gap-3">
-                      <span className="grid h-10 w-14 shrink-0 place-items-center rounded-lg text-white" style={{ background: c.color ?? '#0f172a' }}>
-                        <CreditCardIcon className="h-5 w-5" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold text-ink">
-                          {c.name}
-                          {defaultBadge(c.id)}
-                        </p>
-                        <p className="text-xs text-ink-muted tnum">{c.last4 ? `•••• ${c.last4}` : 'Credit card'}</p>
-                      </div>
-                      {star(c.id, c.name)}
-                    </div>
-
-                    <div className="mt-4 flex items-end justify-between gap-3">
-                      <div>
-                        <p className="text-xs text-ink-muted">Owed</p>
-                        <p className="font-display text-2xl font-extrabold tracking-tight tnum text-ink">{thbSigned(c.balance, true)}</p>
-                      </div>
-                      <p className="text-right text-xs text-ink-muted tnum">
-                        {thb(Math.max(0, c.creditLimit - c.balance), true)} left
-                        <br />
-                        of {thb(c.creditLimit, true)}
-                      </p>
-                    </div>
-                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-muted">
-                      <div
-                        className={`h-full rounded-full ${used > 80 ? 'bg-loss' : used > 50 ? 'bg-warn' : 'bg-brand'}`}
-                        style={{ width: `${used}%` }}
-                      />
-                    </div>
-
-                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                      <div className="rounded-xl bg-surface-muted/70 px-2.5 py-2">
-                        <p className="text-ink-muted">This cycle</p>
-                        <p className="font-bold text-ink tnum">{thb(spentCycle, true)}</p>
-                      </div>
-                      <div className="rounded-xl bg-surface-muted/70 px-2.5 py-2">
-                        <p className="text-ink-muted">Statement</p>
-                        <p className="font-bold text-ink">{shortDate(cyc.nextStatement)}</p>
-                      </div>
-                      <div
-                        className={`rounded-xl px-2.5 py-2 ${tone === 'loss' ? 'bg-loss-soft' : tone === 'warn' ? 'bg-warn-soft' : 'bg-surface-muted/70'}`}
-                      >
-                        <p className={tone === 'loss' ? 'text-loss' : tone === 'warn' ? 'text-warn' : 'text-ink-muted'}>
-                          {tone === 'loss' ? 'Overdue' : `Due ${shortDate(due.date)}`}
-                        </p>
-                        <p className={`font-bold tnum ${tone === 'loss' ? 'text-loss' : tone === 'warn' ? 'text-warn' : 'text-ink'}`}>
-                          {thb(due.amount, true)}
-                        </p>
-                      </div>
-                    </div>
-
-                    {open && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          openPayBill(c.id)
-                        }}
-                        className="mt-3 flex w-full items-center justify-between rounded-xl border border-line px-3 py-2.5 text-sm font-semibold text-ink hover:bg-surface-muted/60 cursor-pointer"
-                      >
-                        <span>
-                          Pay bill <span className="text-ink-muted">· {dueText(open.daysToDue)}</span>
-                        </span>
-                        <span className="font-bold tnum">{thb(open.amountDue, true)} →</span>
-                      </button>
-                    )}
-                    {!open && c.balance > 0 && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          openPayBill(c.id)
-                        }}
-                        className="mt-3 flex w-full items-center justify-between gap-3 rounded-xl border border-line px-3 py-2.5 text-sm font-semibold text-ink hover:bg-surface-muted/60 cursor-pointer"
-                      >
-                        <span className="min-w-0 truncate">
-                          Pay early <span className="text-ink-muted">· closes {shortDate(cyc.nextStatement)}</span>
-                        </span>
-                        <span className="shrink-0 font-bold tnum">{thb(c.balance, true)} →</span>
-                      </button>
-                    )}
-                  </div>
-                </Card>
-              )
-            })}
-          </div>
+          <CardStack
+            cards={cards}
+            bills={bills}
+            transactions={transactions}
+            defaultId={settings.defaultAccountId}
+            favoriteIds={favs}
+            onToggleFavorite={toggleFavorite}
+            onEdit={(card) => setCardSheet({ open: true, card })}
+          />
         )}
       </section>
 
