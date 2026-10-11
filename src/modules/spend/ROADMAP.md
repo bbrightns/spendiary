@@ -30,8 +30,6 @@
 ## Remaining tasks
 
 ### Next up
-1. **Backdated entries: "Already in my balance" switch** — when Quick Add's date is in the
-   past, offer a switch that records the transaction without moving the wallet balance.
 2. **Lint check** — add ESLint (flat config: typescript-eslint, react-hooks, react-refresh)
    with an `npm run lint` script, fix existing violations, and add it to AGENTS.md's
    "Bug Check Before Push". Optional follow-up: Vitest unit tests for

@@ -45,6 +45,7 @@ export function applyToBalances(b: Balances, txn: SpendTransaction, sign: 1 | -1
 /** Net money in (+) / out (−) per account id for one transaction. */
 function moneyDeltas(txn: SpendTransaction): Map<string, number> {
   const deltas = new Map<string, number>()
+  if (txn.alreadyInBalance) return deltas
   const add = (id: string | undefined, v: number) => {
     if (!id) return
     deltas.set(id, (deltas.get(id) ?? 0) + v)

@@ -314,6 +314,11 @@ export interface SpendTransaction {
   /** YYYY-MM-DD, local timezone */
   date: string
   note?: string
+  /**
+   * Backdated entry already reflected in the wallet / card balance: recorded for history
+   * and totals, but never moves a balance (on add, edit or delete).
+   */
+  alreadyInBalance?: boolean
   /** Lowercase hashtags parsed from the note, without the leading # */
   tags?: string[]
   /** ISO timestamp */

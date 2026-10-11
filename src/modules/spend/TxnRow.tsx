@@ -35,8 +35,8 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
   const meta = isDca
     ? ['Invested', from && `from ${from}`].filter(Boolean).join(' · ')
     : txn.type === 'transfer'
-      ? `${from ?? '—'} → ${walletName(txn.toAccountId) ?? '—'}`
-      : [cat?.label, from].filter(Boolean).join(' · ')
+      ? `${from ?? '—'} → ${walletName(txn.toAccountId) ?? '—'}${txn.alreadyInBalance ? ' · already in balance' : ''}`
+      : [cat?.label, from, txn.alreadyInBalance && 'already in balance'].filter(Boolean).join(' · ')
 
   const sign = txn.type === 'income' ? '+' : txn.type === 'expense' ? '−' : ''
   const amountClass = txn.type === 'income' ? 'text-gain' : txn.type === 'transfer' ? 'text-ink-muted' : 'text-ink'

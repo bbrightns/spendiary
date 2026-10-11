@@ -11,6 +11,7 @@ import { recentTags, topTags } from './logic'
 import { TONES, TYPE_ACTIVE } from './tones'
 import { useSpend, type PayMethod, type SpendTxnInput } from './useSpend'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
+import { SwitchVisual } from './AccountSheets'
 
 const OPEN_EVENT = 'spendiary:open-quick-add'
 
@@ -78,6 +79,7 @@ export function QuickAddSheet() {
   const [toAccountId, setToAccountId] = useState(NO_WALLET)
   const [date, setDate] = useState(localDateStr())
   const [note, setNote] = useState('')
+  const [alreadyIn, setAlreadyIn] = useState(false)
   const amountRef = useRef<HTMLInputElement>(null)
 
   // Latest values for the event listener without re-subscribing on every keystroke
@@ -102,6 +104,7 @@ export function QuickAddSheet() {
         setToAccountId(source.toAccountId ?? NO_WALLET)
         setDate(source.date)
         setNote(source.note ?? '')
+        setAlreadyIn(!!existing?.alreadyInBalance)
       } else {
         const t = detail.type ?? 'expense'
         const d = pickDefaults(t, txns, ms, st)
@@ -113,6 +116,7 @@ export function QuickAddSheet() {
         setToAccountId(d.to)
         setDate(localDateStr())
         setNote('')
+        setAlreadyIn(false)
       }
       setOpen(true)
     }
@@ -134,6 +138,9 @@ export function QuickAddSheet() {
   const amountValid = Number.isFinite(value) && value > 0
   const transferValid = type !== 'transfer' || (accountId !== NO_WALLET && toAccountId !== NO_WALLET && accountId !== toAccountId)
   const canSave = amountValid && transferValid
+  // A past date may already be in the balance the wallet / card shows today
+  const backdated = date < localDateStr()
+  const touchesBalance = accountId !== NO_WALLET || (type === 'transfer' && toAccountId !== NO_WALLET)
 
   const changeType = (t: SpendTxnType) => {
     setType(t)
@@ -162,6 +169,7 @@ export function QuickAddSheet() {
       toAccountId: type === 'transfer' ? toAccountId || undefined : undefined,
       date,
       note: note.trim() || undefined,
+      alreadyInBalance: backdated && touchesBalance && alreadyIn ? true : undefined,
     }
     if (editId) {
       updateTransaction(editId, input)
@@ -268,6 +276,24 @@ export function QuickAddSheet() {
         )}
 
         <TransactionDateField value={date} onChange={setDate} />
+
+        {backdated && touchesBalance && (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={alreadyIn}
+            onClick={() => setAlreadyIn((v) => !v)}
+            className="-mt-2 flex w-full items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 text-left cursor-pointer hover:bg-surface-muted/50"
+          >
+            <span>
+              <span className="block text-sm font-bold text-ink">Already in my balance</span>
+              <span className="block text-xs text-ink-muted">
+                {alreadyIn ? 'Recorded for history only; balances stay as they are' : 'Turn on if the balance shown today already includes this'}
+              </span>
+            </span>
+            <SwitchVisual on={alreadyIn} />
+          </button>
+        )}
 
         {/* Note + hashtags */}
         <div>
