@@ -602,11 +602,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    // Supabase hands back a fresh user object on every token refresh (e.g. when you come back to
+    // the tab). Keep the current one when it's the same person: a new object would re-run the
+    // load below, swap the pages for a loading screen and close any form being filled in.
+    const signIn = (next: User) => setUser((prev) => (prev?.id === next.id ? prev : next))
+
     if (supabase?.auth?.getSession) {
       supabase.auth.getSession().then(({ data: { session } }) => {
         console.log('Initial Supabase session:', session?.user?.email ?? 'No user')
         if (session?.user) {
-          setUser(session.user)
+          signIn(session.user)
         }
       })
     }
@@ -615,7 +620,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         console.log('Supabase onAuthStateChange:', event, session?.user?.email ?? 'No user')
         if (session?.user) {
-          setUser(session.user)
+          signIn(session.user)
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
         }
