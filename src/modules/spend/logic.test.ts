@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { categoriesFor, guessCategory, syncCategories } from './categories'
 import { homeOrder, isDefaultOrder, moveCard } from './homeLayout'
 import type { CashAccount, Liability, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
-import { isLoanDone, loanPaymentAmount, loanProgress, paymentIsSpending } from './loans'
+import { firstInstallmentDue, installmentAmount, installmentHold, isLoanDone, loanPaymentAmount, loanProgress, paymentIsSpending } from './loans'
+import { isLiabilityActionableThisMonth, isLiabilityFirstDueNextMonth } from '../../lib/calc'
+import { availableCredit, limitOwner, totalAvailable } from './credit'
 import {
   accountTotals,
   applyOrder,
@@ -357,5 +359,88 @@ describe('loans', () => {
     expect(loanProgress(loan({ isInstallment: true, totalInstallments: 10, paidInstallments: 4 }))).toBeCloseTo(0.4)
     expect(loanProgress(loan({ balance: 7500, originalBalance: 10_000 }))).toBeCloseTo(0.25)
     expect(loanProgress(loan({}))).toBe(0)
+  })
+})
+
+describe('card installments', () => {
+  const card = { statementDay: 25, dueDay: 10 }
+  const loan = (p: Partial<Liability>): Liability => ({ id: 'l', name: 'L', category: 'installment', balance: 10_000, ...p })
+
+  it('bills the first payment on the next statement', () => {
+    // Bought before the 25th → on the 25 Oct statement → due 10 Nov
+    expect(firstInstallmentDue(card, '2026-10-11')).toBe('2026-11-10')
+    // On the statement day itself it still makes that statement
+    expect(firstInstallmentDue(card, '2026-10-25')).toBe('2026-11-10')
+    // After it → 25 Nov statement → due 10 Dec
+    expect(firstInstallmentDue(card, '2026-10-26')).toBe('2026-12-10')
+    // Due day after the statement day falls in the same month
+    expect(firstInstallmentDue({ statementDay: 5, dueDay: 25 }, '2026-10-11')).toBe('2026-11-25')
+    // Short months clamp (statement on the 31st)
+    expect(firstInstallmentDue({ statementDay: 31, dueDay: 15 }, '2026-02-10')).toBe('2026-03-15')
+  })
+  it('rounds each payment down and lets the last one clear the rest', () => {
+    expect(installmentAmount(10_000, 3)).toBe(3333.33)
+    expect(loanPaymentAmount(loan({ balance: 3333.34, monthlyPayment: 3333.33, totalInstallments: 3, paidInstallments: 2 }))).toBe(3333.34)
+    expect(loanPaymentAmount(loan({ balance: 6666.67, monthlyPayment: 3333.33, totalInstallments: 3, paidInstallments: 1 }))).toBe(3333.33)
+  })
+  it('holds what open installment plans still owe against the card', () => {
+    const loans = [
+      loan({ id: 'a', payFromId: 'ktc', balance: 18_000, totalInstallments: 10, paidInstallments: 1 }),
+      loan({ id: 'b', payFromId: 'ktc', balance: 0 }),
+      loan({ id: 'c', payFromId: 'uob', balance: 5000 }),
+      loan({ id: 'd', payFromId: 'ktc', category: 'auto_loan', balance: 400_000 }),
+    ]
+    expect(installmentHold(loans, 'ktc')).toBe(18_000)
+  })
+  it('waits for the first due date before asking for a payment', () => {
+    const l = loan({ dueDay: 10, firstDueDate: '2026-11-10', createdAt: '2026-10-11' })
+    expect(isLiabilityFirstDueNextMonth(l, new Date(2026, 9, 20))).toBe(true)
+    expect(isLiabilityFirstDueNextMonth(l, new Date(2026, 10, 3))).toBe(false)
+  })
+  it("'next month' only applies to the month the debt was added in", () => {
+    const l = loan({ category: 'personal_loan', dueDay: 5, firstPaymentMonth: 'next', createdAt: '2026-10-11' })
+    expect(isLiabilityFirstDueNextMonth(l, new Date(2026, 9, 20))).toBe(true)
+    expect(isLiabilityFirstDueNextMonth(l, new Date(2026, 10, 3))).toBe(false)
+  })
+})
+
+describe('card installment, paid by hand', () => {
+  it('asks for Pay from the month of its first due date', () => {
+    // Bought 11 Oct on a card closing the 25th, due the 10th → first due 10 Nov
+    const l: Liability = {
+      id: 'ipad', name: 'iPad', category: 'installment', balance: 20_000, monthlyPayment: 2000,
+      isInstallment: true, totalInstallments: 10, paidInstallments: 0, dueDay: 10,
+      firstDueDate: firstInstallmentDue({ statementDay: 25, dueDay: 10 }, '2026-10-11'), createdAt: '2026-10-11',
+    }
+    expect(isLiabilityActionableThisMonth(l, new Date(2026, 9, 28))).toBe(false)
+    expect(isLiabilityActionableThisMonth(l, new Date(2026, 10, 3))).toBe(true)
+    expect(isLiabilityActionableThisMonth(l, new Date(2026, 10, 15))).toBe(true)
+  })
+})
+
+describe('shared credit limits', () => {
+  const c = (p: Partial<SpendCard> & { id: string }): SpendCard => ({ name: p.id, creditLimit: 0, balance: 0, statementDay: 25, dueDay: 10, ...p })
+  const smart = c({ id: 'smart', name: 'ttb So Smart', creditLimit: 122_000, balance: 735 })
+  const disney = c({ id: 'disney', name: 'ttb Disney', creditLimit: 122_000, balance: 120, sharedLimitWith: 'smart' })
+  const ktc = c({ id: 'ktc', creditLimit: 120_000, balance: 5969 })
+  const cards = [smart, disney, ktc]
+
+  it('counts every card on the limit, from either card', () => {
+    expect(availableCredit(disney, cards, []).left).toBe(121_145)
+    expect(availableCredit(smart, cards, []).left).toBe(121_145)
+    expect(availableCredit(disney, cards, []).sharedWith).toEqual(['ttb So Smart'])
+    expect(availableCredit(ktc, cards, []).left).toBe(114_031)
+  })
+  it('takes installment holds on any card in the group off the shared limit', () => {
+    const plan: Liability = { id: 'p', name: 'TV', category: 'installment', balance: 20_000, payFromId: 'disney' }
+    expect(availableCredit(smart, cards, [plan]).left).toBe(101_145)
+  })
+  it('counts a shared limit once in the total', () => {
+    expect(totalAvailable(cards, [])).toEqual({ limit: 242_000, left: 121_145 + 114_031 })
+  })
+  it('falls back to its own limit when the main card is gone or shares one itself', () => {
+    expect(limitOwner(disney, [disney, ktc]).id).toBe('disney')
+    const chained = c({ id: 'x', sharedLimitWith: 'disney', creditLimit: 5000 })
+    expect(limitOwner(chained, [...cards, chained]).id).toBe('x')
   })
 })

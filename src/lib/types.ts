@@ -298,6 +298,8 @@ export interface Liability {
   lastPaidAmount?: number
   /** Wallet or card it's usually paid from (Spend); preselected when paying */
   payFromId?: string
+  /** YYYY-MM-DD of the first payment, when it's known exactly (e.g. a card installment bills on the next statement) */
+  firstDueDate?: string
   /** Original total cost/balance of the installment purchase (used for progress tracking) */
   originalBalance?: number
 }
@@ -465,6 +467,8 @@ export interface SpendCard {
   excludeFromNetWorth?: boolean
   /** Minimum payment as a % of the amount due (Thai cards: 8%); default 8 */
   minPaymentPercent?: number
+  /** Shares this card's limit (id of the main card); its own creditLimit is kept for if it's ever unlinked */
+  sharedLimitWith?: string
 }
 
 export interface SpendiaryData {

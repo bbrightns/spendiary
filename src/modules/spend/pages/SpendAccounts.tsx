@@ -12,6 +12,8 @@ import { CardSheet, StarIcon, WalletSheet } from '../AccountSheets'
 import { GoalsSection } from '../Goals'
 import { inPeriod, isCalendar, moveId, periodFor } from '../logic'
 import { CardStack } from '../CardStack'
+import { totalAvailable } from '../credit'
+import { useData } from '../../../store/DataContext'
 import { MethodIcon } from '../PayMethodPicker'
 import { ArrangeButton, ReorderSheet } from '../ReorderSheet'
 import { useSpend, type PayMethod } from '../useSpend'
@@ -22,6 +24,7 @@ const compact = (v: number) => thbCompact(v).replace(/^฿\s/, '')
 export function SpendAccounts() {
   const { transactions, methods, cards, settings, bills, toggleFavorite, updateSettings } = useSpend()
   const navigate = useNavigate()
+  const liabilities = useData().data.liabilities ?? []
   const [cardSheet, setCardSheet] = useState<{ open: boolean; card?: SpendCard }>({ open: false })
   const [walletSheet, setWalletSheet] = useState<PayMethod | undefined>()
   const [arrange, setArrange] = useState<'cards' | 'wallets' | null>(null)
@@ -33,7 +36,9 @@ export function SpendAccounts() {
   const cashTotal = wallets.reduce((s, w) => s + w.balance, 0)
   // An overpaid card is below zero and shows as a negative amount owed
   const owed = cards.reduce((s, c) => s + c.balance, 0)
-  const limit = cards.reduce((s, c) => s + c.creditLimit, 0)
+  // Each shared limit counted once, less installment holds
+  const credit = totalAvailable(cards, liabilities)
+  const limit = credit.limit
 
   // This month's in / out per wallet (transfers count on both sides)
   const flows = useMemo(() => {
@@ -72,7 +77,7 @@ export function SpendAccounts() {
         <Card className="p-3 sm:p-5 animate-rise" padded={false}>
           <p className="text-xs font-medium text-ink-muted">Owed on cards</p>
           <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate text-ink">{thbSigned(owed, true)}</p>
-          {limit > 0 && <p className="mt-0.5 text-xs text-ink-muted tnum">{thb(limit - owed, true)} available</p>}
+          {limit > 0 && <p className="mt-0.5 text-xs text-ink-muted tnum">{thb(credit.left, true)} available</p>}
         </Card>
       </div>
 

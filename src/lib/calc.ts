@@ -949,9 +949,21 @@ export function isLiabilityPaidThisMonth(l: Liability, now: Date = new Date()): 
 export function isLiabilityFirstDueNextMonth(l: Liability, now: Date = new Date()): boolean {
   if (!l.dueDay) return false
   const currentDay = now.getDate()
+  const sameMonth = (iso: string) => {
+    const [y, m] = iso.slice(0, 10).split('-').map(Number)
+    return y === now.getFullYear() && m === now.getMonth() + 1
+  }
 
-  // Explicit user preference
-  if (l.firstPaymentMonth === 'next') return true
+  // Exact first payment date: nothing is due before that month
+  if (l.firstDueDate) {
+    const [y, m] = l.firstDueDate.split('-').map(Number)
+    if (now < new Date(y, m - 1, 1)) return true
+    if (sameMonth(l.firstDueDate)) return false
+  }
+
+  // Explicit user preference, which only applies to the month the debt was added in
+  // (it used to stay true forever, so the debt never came due again)
+  if (l.firstPaymentMonth === 'next') return !l.createdAt || sameMonth(l.createdAt)
   if (l.firstPaymentMonth === 'current') return false
 
   // If today hasn't passed dueDay, this month's due date is still upcoming

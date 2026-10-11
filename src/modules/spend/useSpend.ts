@@ -4,6 +4,7 @@ import type { SpendCard, SpendCustomCategory, SpendGoal, SpendRecurring, SpendSe
 import { SPEND_CATEGORIES } from './categories'
 import { investTransactions } from './invest'
 import { DEFAULT_BILL_REMINDER_DAYS, applyOrder, applyToBalances, cardBill, dueRecurring, parseTags, sortTxns, spendWallets } from './logic'
+import { availableCredit } from './credit'
 
 export type SpendTxnInput = Omit<SpendTransaction, 'id' | 'createdAt' | 'updatedAt' | 'tags'>
 
@@ -20,6 +21,8 @@ export interface PayMethod {
   balance: number
   /** Card only */
   creditLimit?: number
+  /** Card only: credit left, counting cards sharing its limit and installment holds */
+  available?: number
   locked?: boolean
 }
 
@@ -59,10 +62,18 @@ export function useSpend() {
 
   const methods = useMemo<PayMethod[]>(
     () => [
-      ...cards.map((c) => ({ id: c.id, kind: 'card' as const, name: c.name, color: c.color, balance: c.balance, creditLimit: c.creditLimit })),
+      ...cards.map((c) => ({
+        id: c.id,
+        kind: 'card' as const,
+        name: c.name,
+        color: c.color,
+        balance: c.balance,
+        creditLimit: c.creditLimit,
+        available: availableCredit(c, cards, data.liabilities ?? []).left,
+      })),
       ...wallets.map((w) => ({ id: w.id, kind: 'cash' as const, name: w.name, color: w.color, balance: w.balance, locked: w.category === 'locked' })),
     ],
-    [cards, wallets],
+    [cards, wallets, data.liabilities],
   )
 
   const bills = useMemo(
@@ -174,7 +185,14 @@ export function useSpend() {
   function removeCard(id: string) {
     setData((prev) => ({
       ...prev,
-      spendCards: (prev.spendCards ?? []).filter((c) => c.id !== id),
+      // Cards that shared this one's limit get it as their own, so they aren't left without one
+      spendCards: (prev.spendCards ?? [])
+        .filter((c) => c.id !== id)
+        .map((c) => {
+          if (c.sharedLimitWith !== id) return c
+          const main = (prev.spendCards ?? []).find((m) => m.id === id)
+          return { ...c, sharedLimitWith: undefined, creditLimit: main?.creditLimit ?? c.creditLimit }
+        }),
       spendSettings: {
         ...prev.spendSettings,
         defaultAccountId: prev.spendSettings?.defaultAccountId === id ? undefined : prev.spendSettings?.defaultAccountId,

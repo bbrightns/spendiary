@@ -83,14 +83,17 @@ interface CardSheetProps {
 }
 
 export function CardSheet({ open, card, onClose }: CardSheetProps) {
-  const { upsertCard, removeCard } = useSpend()
+  const { cards, upsertCard, removeCard } = useSpend()
   const { showToast } = useToast()
   const [form, setForm] = useState({ name: '', last4: '', limit: '', owed: '', statementDay: '25', dueDay: '10', minPct: '8', color: CARD_COLORS[0] })
+  // Main card whose limit this one shares ('' = its own limit)
+  const [shareWith, setShareWith] = useState('')
   const [inNetWorth, setInNetWorth] = useState(true)
   const [lastOpen, setLastOpen] = useState(false)
   if (open !== lastOpen) {
     setLastOpen(open)
     if (open) setInNetWorth(!card?.excludeFromNetWorth)
+    if (open) setShareWith(card?.sharedLimitWith ?? '')
     if (open)
       setForm(
         card
@@ -111,8 +114,12 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }))
   const dayOk = (v: string) => Number.isInteger(Number(v)) && Number(v) >= 1 && Number(v) <= 31
   const pctOk = num(form.minPct) > 0 && num(form.minPct) <= 100
+  // Only main cards can be shared with, and a card others share can't share someone else's
+  const mains = cards.filter((c) => c.id !== card?.id && !c.sharedLimitWith)
+  const sharers = card ? cards.filter((c) => c.sharedLimitWith === card.id) : []
+  const main = mains.find((c) => c.id === shareWith)
   const canSave =
-    form.name.trim() !== '' && num(form.limit) > 0 && Number.isFinite(num(form.owed || '0')) && dayOk(form.statementDay) && dayOk(form.dueDay) && pctOk
+    form.name.trim() !== '' && (!!main || num(form.limit) > 0) && Number.isFinite(num(form.owed || '0')) && dayOk(form.statementDay) && dayOk(form.dueDay) && pctOk
 
   const save = () => {
     upsertCard({
@@ -120,7 +127,9 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
       name: form.name.trim(),
       last4: form.last4.trim() || undefined,
       color: form.color,
-      creditLimit: num(form.limit),
+      // A shared card keeps a limit of its own for if it's ever unlinked
+      creditLimit: num(form.limit) > 0 ? num(form.limit) : main?.creditLimit ?? 0,
+      sharedLimitWith: main?.id,
       balance: num(form.owed || '0'),
       statementDay: Number(form.statementDay),
       excludeFromNetWorth: inNetWorth ? undefined : true,
@@ -169,10 +178,35 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
           </Field>
         </div>
 
+        {sharers.length > 0 ? (
+          <p className="rounded-xl bg-surface-muted/70 px-3.5 py-2.5 text-xs text-ink-muted">
+            {sharers.map((c) => c.name).join(', ')} {sharers.length === 1 ? 'shares' : 'share'} this card's limit.
+          </p>
+        ) : (
+          mains.length > 0 && (
+            <Field label="Credit limit from" hint="วงเงินร่วม">
+              <select className={inputClass} value={shareWith} onChange={(e) => setShareWith(e.target.value)}>
+                <option value="">Its own limit</option>
+                {mains.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    Shared with {c.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )
+        )}
+
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Credit limit">
-            <input className={inputClass} inputMode="decimal" value={form.limit} onChange={(e) => set('limit')(digits(e.target.value))} placeholder="100,000" />
-          </Field>
+          {main ? (
+            <Field label="Credit limit" hint="shared">
+              <div className={`${inputClass} flex items-center truncate bg-surface-muted/60 text-ink-muted`}>{thb(main.creditLimit)}</div>
+            </Field>
+          ) : (
+            <Field label="Credit limit">
+              <input className={inputClass} inputMode="decimal" value={form.limit} onChange={(e) => set('limit')(digits(e.target.value))} placeholder="100,000" />
+            </Field>
+          )}
           <Field label="Owed now">
             <input className={inputClass} inputMode="decimal" value={form.owed} onChange={(e) => set('owed')(digits(e.target.value))} placeholder="0" />
           </Field>

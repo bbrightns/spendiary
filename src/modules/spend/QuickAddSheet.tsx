@@ -4,6 +4,7 @@ import { SegmentedControl } from '../../components/ui/SegmentedControl'
 import { FormActions } from '../../components/forms/FormActions'
 import { TransactionDateField } from '../../components/forms/TransactionDateField'
 import { useToast } from '../../store/ToastContext'
+import { useData } from '../../store/DataContext'
 import { localDateStr, thb } from '../../lib/format'
 import type { SpendSettings, SpendTransaction, SpendTxnType } from '../../lib/types'
 import { categoriesFor, getCategory } from './categories'
@@ -13,6 +14,7 @@ import { useSpend, type PayMethod, type SpendTxnInput } from './useSpend'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { SwitchVisual } from './AccountSheets'
 import { CategorySheet } from './CategorySheet'
+import { firstInstallmentDue, installmentAmount } from './loans'
 
 const OPEN_EVENT = 'spendiary:open-quick-add'
 
@@ -49,6 +51,12 @@ const AMOUNT_COLOR: Record<SpendTxnType, string> = {
 
 const NO_WALLET = NOT_TRACKED
 
+const shortDue = (iso: string) => {
+  if (!iso) return ''
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+}
+
 /** Preselected "from" / "to" for a new entry: the default method first, then habit. */
 function pickDefaults(type: SpendTxnType, txns: SpendTransaction[], methods: PayMethod[], settings: SpendSettings) {
   const valid = (id?: string) => (id && methods.some((m) => m.id === id) ? id : undefined)
@@ -71,7 +79,8 @@ function pickDefaults(type: SpendTxnType, txns: SpendTransaction[], methods: Pay
 }
 
 export function QuickAddSheet() {
-  const { transactions, methods, settings, addTransaction, updateTransaction, removeTransaction } = useSpend()
+  const { transactions, methods, cards, settings, addTransaction, updateTransaction, removeTransaction } = useSpend()
+  const { data, setLiabilities, removeLiability } = useData()
   const { showToast } = useToast()
 
   const [open, setOpen] = useState(false)
@@ -85,6 +94,9 @@ export function QuickAddSheet() {
   const [date, setDate] = useState(localDateStr())
   const [note, setNote] = useState('')
   const [alreadyIn, setAlreadyIn] = useState(false)
+  // Card purchase paid off in monthly installments (off unless picked)
+  const [split, setSplit] = useState(false)
+  const [months, setMonths] = useState(10)
   const [newCategory, setNewCategory] = useState(false)
   const [hint, setHint] = useState<string | undefined>()
   // Editing a loan payment: its transfer goes to the loan, so there's no "to" wallet to pick
@@ -116,6 +128,7 @@ export function QuickAddSheet() {
         setDate(source.date)
         setNote(source.note ?? '')
         setAlreadyIn(!!existing?.alreadyInBalance)
+        setSplit(false)
       } else {
         const draft = detail.draft ?? {}
         const t = draft.type ?? detail.type ?? 'expense'
@@ -129,6 +142,8 @@ export function QuickAddSheet() {
         setDate(localDateStr())
         setNote(draft.note ?? '')
         setAlreadyIn(false)
+        setSplit(false)
+        setMonths(10)
       }
       setOpen(true)
     }
@@ -156,6 +171,12 @@ export function QuickAddSheet() {
   const transferValid =
     type !== 'transfer' || (loanPayment ? accountId !== NO_WALLET : accountId !== NO_WALLET && toAccountId !== NO_WALLET && accountId !== toAccountId)
   const canSave = amountValid && transferValid
+  // Installments: a new card expense of ฿1,000 or more (not editing, not a recurring bill)
+  const card = cards.find((c) => c.id === accountId)
+  const canSplit = !editId && !fromRecurring && type === 'expense' && !!card && amountValid && value >= 1000
+  const splitting = canSplit && split
+  const perMonth = splitting ? installmentAmount(value, months) : 0
+  const firstDue = splitting && card ? firstInstallmentDue(card, date) : ''
   // A past date may already be in the balance the wallet / card shows today
   const backdated = date < localDateStr()
   const touchesBalance = accountId !== NO_WALLET || (type === 'transfer' && toAccountId !== NO_WALLET)
@@ -180,8 +201,44 @@ export function QuickAddSheet() {
   /** Finish the `#ta…` being typed with a tag used before. */
   const completeTag = (tag: string) => setNote((n) => n.replace(/#[\p{L}\p{N}\p{M}_]*$/u, `#${tag} `))
 
+  /** Bought on installment: nothing is spent today, so it becomes an installment plan paid each month from the card. */
+  const saveInstallment = () => {
+    if (!card) return
+    const total = Math.round(value * 100) / 100
+    const today = localDateStr()
+    const id = `lib-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+    const name = noteTitle(note) || getCategory(categoryId)?.label || 'Installment'
+    setLiabilities([
+      ...(data.liabilities ?? []),
+      {
+        id,
+        name,
+        category: 'installment',
+        balance: total,
+        originalBalance: total,
+        monthlyPayment: perMonth,
+        isInstallment: true,
+        totalInstallments: months,
+        paidInstallments: 0,
+        dueDay: card.dueDay,
+        firstDueDate: firstDue,
+        payFromId: card.id,
+        lender: card.name,
+        note: note.trim() || undefined,
+        createdAt: today,
+        updatedAt: today,
+      },
+    ])
+    showToast(`${thb(total)} split into ${months} × ${thb(perMonth, true)} on ${card.name}`, 'success', {
+      label: 'Undo',
+      onClick: () => removeLiability(id),
+    })
+    setOpen(false)
+  }
+
   const save = () => {
     if (!canSave) return
+    if (splitting) return saveInstallment()
     const input = {
       type,
       amount: Math.round(value * 100) / 100,
@@ -307,6 +364,49 @@ export function QuickAddSheet() {
               onChange={setAccountId}
               allowNone
             />
+          )}
+
+          {canSplit && (
+            <div className={`-mt-2 rounded-2xl border transition-colors ${split ? 'border-brand/40 bg-brand-soft/40' : 'border-line'}`}>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={split}
+                onClick={() => setSplit((v) => !v)}
+                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left cursor-pointer"
+              >
+                <span>
+                  <span className="block text-sm font-bold text-ink">Pay in installments</span>
+                  <span className="block text-xs text-ink-muted">
+                    {split ? `${thb(perMonth, true)} × ${months} months · 0%` : `Split this ${card!.name} purchase into monthly payments`}
+                  </span>
+                </span>
+                <SwitchVisual on={split} />
+              </button>
+              {split && (
+                <div className="space-y-2.5 border-t border-line/70 px-4 pb-3.5 pt-3">
+                  <div className="grid grid-cols-5 gap-1.5" role="group" aria-label="Number of months">
+                    {[3, 4, 6, 10, 12].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        aria-pressed={months === n}
+                        onClick={() => setMonths(n)}
+                        className={`h-9 rounded-xl border text-sm font-bold tnum transition-colors cursor-pointer ${
+                          months === n ? 'border-brand bg-brand text-white' : 'border-line bg-surface text-ink-soft hover:bg-surface-muted/60'
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs leading-relaxed text-ink-muted">
+                    First payment due <span className="font-semibold text-ink-soft">{shortDue(firstDue)}</span>. Each one counts as spending
+                    when you pay it. Nothing is spent today. It's added to Loans &amp; installments.
+                  </p>
+                </div>
+              )}
+            </div>
           )}
 
           <TransactionDateField value={date} onChange={setDate} />
