@@ -613,7 +613,12 @@ export function CommandPalette() {
         ranked.push({
           id: `do-pay-${c.id}`,
           title: `Pay ${c.name} bill`,
-          subtitle: bill && bill.amountDue > 0 ? `${thb(bill.amountDue, true)} due ${shortDate(bill.dueDate)}` : 'Nothing due right now',
+          subtitle:
+            bill && bill.amountDue > 0
+              ? `${thb(bill.amountDue, true)} due ${shortDate(bill.dueDate)}`
+              : c.balance > 0
+                ? `Nothing billed yet · ${thb(c.balance, true)} owed, pay early`
+                : 'Nothing owed',
           keywords: [],
           group: 'Do it',
           spend: true,

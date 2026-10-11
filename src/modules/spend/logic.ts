@@ -137,6 +137,8 @@ export interface CardBill {
   items: SpendTransaction[]
   /** Payments into the card since the statement closed */
   paidSoFar: number
+  /** Paid toward this statement before it closed (beyond what the previous bill needed) */
+  paidEarly: number
   /** Owed beyond the logged statement items (opening balance, interest, older carry-over) */
   other: number
   status: BillStatus
@@ -159,9 +161,12 @@ export function cardBill(card: SpendCard, txns: SpendTransaction[], reminderDays
   const items = onCard.filter((x) => x.date > prevStatement && x.date <= cyc.lastStatement).sort((a, b) => b.date.localeCompare(a.date))
   const statementTotal = items.reduce((s, x) => s + net(x), 0)
   const sinceStatement = onCard.filter((x) => x.date > cyc.lastStatement).reduce((s, x) => s + net(x), 0)
-  const paidSoFar = txns
-    .filter((x) => x.type === 'transfer' && x.toAccountId === card.id && x.date > cyc.lastStatement)
-    .reduce((s, x) => s + x.amount, 0)
+  const payments = txns.filter((x) => x.type === 'transfer' && x.toAccountId === card.id)
+  const paidSoFar = payments.filter((x) => x.date > cyc.lastStatement).reduce((s, x) => s + x.amount, 0)
+  // Payments during the statement window settle the previous bill first; the rest was paid early
+  const paidInWindow = payments.filter((x) => x.date > prevStatement && x.date <= cyc.lastStatement).reduce((s, x) => s + x.amount, 0)
+  const owedAtPrev = card.balance - statementTotal - sinceStatement + paidInWindow + paidSoFar
+  const paidEarly = Math.round(Math.max(0, paidInWindow - Math.max(0, owedAtPrev)) * 100) / 100
 
   const amountDue = Math.max(0, Math.round((card.balance - sinceStatement) * 100) / 100)
   const daysToDue = Math.round((parse(cyc.lastStatementDue).getTime() - t.getTime()) / 86_400_000)
@@ -177,7 +182,8 @@ export function cardBill(card: SpendCard, txns: SpendTransaction[], reminderDays
     statementTotal,
     items,
     paidSoFar,
-    other: Math.round((amountDue + paidSoFar - statementTotal) * 100) / 100,
+    paidEarly,
+    other: Math.round((amountDue + paidSoFar + paidEarly - statementTotal) * 100) / 100,
     status,
     remind: status === 'due' || status === 'overdue',
   }

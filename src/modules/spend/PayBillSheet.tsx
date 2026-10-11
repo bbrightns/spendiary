@@ -5,7 +5,7 @@ import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb } from '../../lib/format'
 import { getCategory } from './categories'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
-import { DEFAULT_MIN_PAYMENT_PERCENT, TAG_RE, minimumPayment } from './logic'
+import { DEFAULT_MIN_PAYMENT_PERCENT, TAG_RE, cardCycle, minimumPayment } from './logic'
 import { useSpend } from './useSpend'
 import { TONES } from './tones'
 
@@ -36,25 +36,28 @@ export function PayBillSheet() {
   const { bills, methods, settings, addTransaction } = useSpend()
   const { showToast } = useToast()
   const [cardId, setCardId] = useState<string | null>(null)
-  const [mode, setMode] = useState<'full' | 'min' | 'custom'>('full')
+  // full: the closed statement · all: everything owed now, this cycle included (paying early)
+  const [mode, setMode] = useState<'full' | 'all' | 'min' | 'custom'>('full')
   const [custom, setCustom] = useState('')
   const [fromId, setFromId] = useState('')
   const [showAll, setShowAll] = useState(false)
 
   const wallets = useMemo(() => methods.filter((m) => m.kind === 'cash'), [methods])
-  const stateRef = useRef({ wallets, settings })
-  stateRef.current = { wallets, settings }
+  const stateRef = useRef({ wallets, settings, bills })
+  stateRef.current = { wallets, settings, bills }
 
   useEffect(() => {
     function onOpen(e: Event) {
-      const { wallets: ws, settings: st } = stateRef.current
+      const { wallets: ws, settings: st, bills: bs } = stateRef.current
+      const id = (e as CustomEvent<string>).detail
       const def = ws.find((w) => w.id === st.defaultAccountId)?.id
       const fav = ws.find((w) => (st.favoriteAccountIds ?? []).includes(w.id))?.id
       setFromId(def ?? fav ?? ws.find((w) => !w.locked)?.id ?? ws[0]?.id ?? '')
-      setMode('full')
+      // Nothing billed yet → start on paying off what's owed so far
+      setMode((bs.find((b) => b.card.id === id)?.amountDue ?? 0) > 0 ? 'full' : 'all')
       setCustom('')
       setShowAll(false)
-      setCardId((e as CustomEvent<string>).detail)
+      setCardId(id)
     }
     window.addEventListener(OPEN_EVENT, onOpen)
     return () => window.removeEventListener(OPEN_EVENT, onOpen)
@@ -64,7 +67,11 @@ export function PayBillSheet() {
   const close = () => setCardId(null)
   const customNum = Number(custom.replace(/,/g, ''))
   const minimum = bill ? minimumPayment(bill.amountDue, bill.card.minPaymentPercent) : 0
-  const amount = mode === 'full' ? bill?.amountDue ?? 0 : mode === 'min' ? minimum : customNum
+  const owed = bill ? Math.max(0, Math.round(bill.card.balance * 100) / 100) : 0
+  const due = bill?.amountDue ?? 0
+  // The cycle still open: from the day after the last statement up to the next statement day
+  const next = bill ? cardCycle(bill.card).nextStatement : ''
+  const amount = mode === 'full' ? due : mode === 'all' ? owed : mode === 'min' ? minimum : customNum
   // No wallet = paid outside the app: only the card's balance goes down
   const outside = fromId === NOT_TRACKED
   const canPay = !!bill && Number.isFinite(amount) && amount > 0
@@ -77,7 +84,7 @@ export function PayBillSheet() {
       accountId: outside ? undefined : fromId,
       toAccountId: bill.card.id,
       date: localDateStr(),
-      note: `Pay ${bill.card.name} bill`,
+      note: `Pay ${bill.card.name} ${due > 0 ? 'bill' : 'card'}`,
     })
     showToast(outside ? `Marked ${thb(amount, true)} as paid on ${bill.card.name}` : `Paid ${thb(amount, true)} to ${bill.card.name}`)
     close()
@@ -92,10 +99,16 @@ export function PayBillSheet() {
       open={!!bill}
       onClose={close}
       title={bill ? `Pay ${bill.card.name}` : 'Pay bill'}
-      description={bill ? `Statement ${short(nextDay(bill.from))} – ${short(bill.to)} · due ${short(bill.dueDate)}` : undefined}
+      description={
+        bill
+          ? due > 0
+            ? `Statement ${short(nextDay(bill.from))} – ${short(bill.to)} · due ${short(bill.dueDate)}`
+            : `This cycle ${short(nextDay(bill.to))} – ${short(next)} · closes ${short(next)}`
+          : undefined
+      }
       size="md"
       footer={
-        bill && bill.amountDue > 0 ? (
+        bill && owed > 0 ? (
           <Button data-modal-submit className="w-full" disabled={!canPay} onClick={pay}>
             {outside ? 'Mark' : 'Pay'} {thb(amount > 0 ? amount : 0, true)}
             {outside ? ' as paid' : ''}
@@ -111,42 +124,60 @@ export function PayBillSheet() {
         <div className="space-y-5">
           {/* Amount due */}
           <div className="text-center">
-            <p className="text-xs font-medium text-ink-muted">{bill.amountDue > 0 ? 'Amount due' : 'Nothing due'}</p>
-            <p className="font-display text-5xl font-extrabold tracking-tight tnum text-ink">{thb(bill.amountDue, true)}</p>
-            {bill.amountDue > 0 && <p className={`mt-1 text-sm font-semibold ${statusClass}`}>{dueText(bill.daysToDue)}</p>}
+            <p className="text-xs font-medium text-ink-muted">{due > 0 ? 'Amount due' : owed > 0 ? 'Owed so far' : 'Nothing owed'}</p>
+            <p className="font-display text-5xl font-extrabold tracking-tight tnum text-ink">{thb(due > 0 ? due : owed, true)}</p>
+            {due > 0 ? (
+              <p className={`mt-1 text-sm font-semibold ${statusClass}`}>{dueText(bill.daysToDue)}</p>
+            ) : (
+              owed > 0 && <p className="mt-1 text-sm text-ink-muted">Nothing billed yet · you can pay early</p>
+            )}
           </div>
 
           {/* How it adds up */}
-          <div className="rounded-2xl bg-surface-muted/70 p-4 text-sm">
-            <div className="flex justify-between gap-3 py-0.5">
-              <span className="text-ink-muted">
-                Statement {bill.items.length > 0 && `(${bill.items.length} ${bill.items.length === 1 ? 'item' : 'items'})`}
-              </span>
-              <span className="font-semibold text-ink tnum">{thb(bill.statementTotal, true)}</span>
-            </div>
-            {Math.abs(bill.other) >= 1 && (
+          {due > 0 && (
+            <div className="rounded-2xl bg-surface-muted/70 p-4 text-sm">
               <div className="flex justify-between gap-3 py-0.5">
-                <span className="text-ink-muted">{bill.other > 0 ? 'Carried over / not logged' : 'Adjustments'}</span>
-                <span className="font-semibold text-ink tnum">
-                  {bill.other < 0 ? '−' : ''}
-                  {thb(Math.abs(bill.other), true)}
+                <span className="text-ink-muted">
+                  Statement {bill.items.length > 0 && `(${bill.items.length} ${bill.items.length === 1 ? 'item' : 'items'})`}
                 </span>
+                <span className="font-semibold text-ink tnum">{thb(bill.statementTotal, true)}</span>
               </div>
-            )}
-            {bill.paidSoFar > 0 && (
-              <div className="flex justify-between gap-3 py-0.5">
-                <span className="text-ink-muted">Paid since statement</span>
-                <span className="font-semibold text-gain tnum">−{thb(bill.paidSoFar, true)}</span>
+              {Math.abs(bill.other) >= 1 && (
+                <div className="flex justify-between gap-3 py-0.5">
+                  <span className="text-ink-muted">{bill.other > 0 ? 'Carried over / not logged' : 'Adjustments'}</span>
+                  <span className="font-semibold text-ink tnum">
+                    {bill.other < 0 ? '−' : ''}
+                    {thb(Math.abs(bill.other), true)}
+                  </span>
+                </div>
+              )}
+              {bill.paidEarly > 0 && (
+                <div className="flex justify-between gap-3 py-0.5">
+                  <span className="text-ink-muted">Paid before statement</span>
+                  <span className="font-semibold text-gain tnum">−{thb(bill.paidEarly, true)}</span>
+                </div>
+              )}
+              {bill.paidSoFar > 0 && (
+                <div className="flex justify-between gap-3 py-0.5">
+                  <span className="text-ink-muted">Paid since statement</span>
+                  <span className="font-semibold text-gain tnum">−{thb(bill.paidSoFar, true)}</span>
+                </div>
+              )}
+              <div className="mt-1.5 flex justify-between gap-3 border-t border-line pt-1.5">
+                <span className="font-bold text-ink">Left to pay</span>
+                <span className="font-bold text-ink tnum">{thb(bill.amountDue, true)}</span>
               </div>
-            )}
-            <div className="mt-1.5 flex justify-between gap-3 border-t border-line pt-1.5">
-              <span className="font-bold text-ink">Left to pay</span>
-              <span className="font-bold text-ink tnum">{thb(bill.amountDue, true)}</span>
+              {owed > due + 0.005 && (
+                <div className="flex justify-between gap-3 py-0.5 text-ink-muted">
+                  <span>Spent since, on the next bill</span>
+                  <span className="tnum">{thb(owed - due, true)}</span>
+                </div>
+              )}
             </div>
-          </div>
+          )}
 
           {/* Statement items */}
-          {bill.items.length > 0 && (
+          {due > 0 && bill.items.length > 0 && (
             <div>
               <p className="mb-1 text-sm font-semibold text-ink-soft">On this statement</p>
               <ul className="divide-y divide-line">
@@ -178,22 +209,35 @@ export function PayBillSheet() {
             </div>
           )}
 
-          {bill.amountDue > 0 && (
+          {owed > 0 && (
             <>
               {/* How much */}
               <div>
                 <p className="mb-2 text-sm font-semibold text-ink-soft">Pay</p>
                 <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    aria-pressed={mode === 'full'}
-                    onClick={() => setMode('full')}
-                    className={`rounded-2xl border px-3 py-2.5 text-left cursor-pointer ${mode === 'full' ? 'border-brand/50 bg-brand-soft ring-2 ring-brand/15' : 'border-line hover:bg-surface-muted/60'}`}
-                  >
-                    <span className="block text-xs font-semibold text-ink-muted">Full amount</span>
-                    <span className="block text-sm font-bold text-ink tnum">{thb(bill.amountDue, true)}</span>
-                  </button>
-                  {minimum < bill.amountDue && (
+                  {due > 0 && (
+                    <button
+                      type="button"
+                      aria-pressed={mode === 'full'}
+                      onClick={() => setMode('full')}
+                      className={`rounded-2xl border px-3 py-2.5 text-left cursor-pointer ${mode === 'full' ? 'border-brand/50 bg-brand-soft ring-2 ring-brand/15' : 'border-line hover:bg-surface-muted/60'}`}
+                    >
+                      <span className="block text-xs font-semibold text-ink-muted">This bill</span>
+                      <span className="block text-sm font-bold text-ink tnum">{thb(due, true)}</span>
+                    </button>
+                  )}
+                  {owed > due + 0.005 && (
+                    <button
+                      type="button"
+                      aria-pressed={mode === 'all'}
+                      onClick={() => setMode('all')}
+                      className={`rounded-2xl border px-3 py-2.5 text-left cursor-pointer ${mode === 'all' ? 'border-brand/50 bg-brand-soft ring-2 ring-brand/15' : 'border-line hover:bg-surface-muted/60'}`}
+                    >
+                      <span className="block text-xs font-semibold text-ink-muted">{due > 0 ? 'Everything owed' : 'All owed so far'}</span>
+                      <span className="block text-sm font-bold text-ink tnum">{thb(owed, true)}</span>
+                    </button>
+                  )}
+                  {due > 0 && minimum < due && (
                     <button
                       type="button"
                       aria-pressed={mode === 'min'}

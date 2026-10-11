@@ -217,3 +217,23 @@ describe('guessCategory', () => {
     expect(guessCategory('random thing', 'expense')).toBeUndefined()
   })
 })
+
+describe('cardBill early payments', () => {
+  // Statement closes on the 25th (inclusive); today is after it
+  const transfer = (date: string, amount: number) => txn({ type: 'transfer', toAccountId: 'card', accountId: 'w', date, amount })
+  it('counts a payment made before the statement closed as paid early', () => {
+    const txns = [txn({ accountId: 'card', amount: 5969, date: '2026-10-05' }), transfer('2026-10-20', 2000)]
+    const bill = cardBill(card({ balance: 3969 }), txns, 5, '2026-10-26')
+    expect(bill).toMatchObject({ statementTotal: 5969, paidEarly: 2000, amountDue: 3969, other: 0 })
+  })
+  it('a payment in the window settles the previous bill first', () => {
+    // Owed 1,000 from September, paid on 8 Oct; 500 charged this cycle
+    const txns = [txn({ accountId: 'card', amount: 500, date: '2026-10-05' }), transfer('2026-10-08', 1000)]
+    const bill = cardBill(card({ balance: 500 }), txns, 5, '2026-10-26')
+    expect(bill).toMatchObject({ paidEarly: 0, amountDue: 500, other: 0 })
+  })
+  it('charges on the statement day belong to that statement', () => {
+    const bill = cardBill(card({ balance: 300 }), [txn({ accountId: 'card', amount: 300, date: '2026-10-25' })], 5, '2026-10-26')
+    expect(bill).toMatchObject({ to: '2026-10-25', statementTotal: 300, amountDue: 300 })
+  })
+})

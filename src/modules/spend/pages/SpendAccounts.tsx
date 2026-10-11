@@ -208,6 +208,21 @@ export function SpendAccounts() {
                         <span className="font-bold tnum">{thb(open.amountDue, true)} →</span>
                       </button>
                     )}
+                    {!open && c.balance > 0 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          openPayBill(c.id)
+                        }}
+                        className="mt-3 flex w-full items-center justify-between gap-3 rounded-xl border border-line px-3 py-2.5 text-sm font-semibold text-ink hover:bg-surface-muted/60 cursor-pointer"
+                      >
+                        <span className="min-w-0 truncate">
+                          Pay early <span className="text-ink-muted">· closes {shortDate(cyc.nextStatement)}</span>
+                        </span>
+                        <span className="shrink-0 font-bold tnum">{thb(c.balance, true)} →</span>
+                      </button>
+                    )}
                   </div>
                 </Card>
               )
