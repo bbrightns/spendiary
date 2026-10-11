@@ -38,7 +38,7 @@
 
 ## Bug Check Before Push
 1. **Review all unpushed changes**: Inspect the full diff of every unpushed commit (`git diff origin/main..HEAD`) and look for logic errors, broken edge cases, missing null/undefined handling, and stale state or data-migration issues in `localStorage`.
-2. **Run the checks**: Run `npm run build` and fix any TypeScript errors. Run lint and tests if the project defines them.
+2. **Run the checks**: Run `npm run build` and fix any TypeScript errors, `npm run lint` and fix every error (warnings are reported but don't block), and `npm test` (Vitest unit tests for pure logic such as `src/modules/spend/logic.ts`), which must pass.
 3. **Verify affected features**: Exercise every feature touched by the unpushed commits in the dev server or browser preview, and check the browser console for runtime errors and warnings.
 4. **Fix before pushing**: Any bug found MUST be fixed and committed before running `git push`. If a bug is out of scope, report it to the user and ask whether to fix it first.
 5. **Report the result**: State in the response what was checked and the outcome. If a check could not be run, say so explicitly.

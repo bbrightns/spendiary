@@ -582,7 +582,7 @@ export function resolveProceeds(log: HoldingLog): number | null {
  * amount is what actually landed in the account (net) and the tax is withheld.
  */
 export function resolveDividend(log: HoldingLog): { gross: number; tax: number; net: number } {
-  let gross = log.grossDividend
+  const gross = log.grossDividend
   let tax = log.withholdingTax
   let net = log.netDividend
 

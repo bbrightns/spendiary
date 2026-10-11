@@ -30,10 +30,6 @@
 ## Remaining tasks
 
 ### Next up
-2. **Lint check** — add ESLint (flat config: typescript-eslint, react-hooks, react-refresh)
-   with an `npm run lint` script, fix existing violations, and add it to AGENTS.md's
-   "Bug Check Before Push". Optional follow-up: Vitest unit tests for
-   `modules/spend/logic.ts` (periods, card cycles, recurring, balances), which are pure functions.
 3. **Smarter, wider search (Command Palette, Cmd+K)**
    - Cover everything: Spend transactions (note, #tag, amount like `65` or `>1000`),
      categories, wallets and cards, recurring bills, holdings, DCA plans, debts, settings
@@ -62,6 +58,9 @@
 16. Card bills: minimum payment / mark as paid.
 
 ### Tech and data
+- Lint warnings left on purpose: ~40 `react-hooks/exhaustive-deps` / fast-refresh warnings in older
+  Invest pages and DataContext. Fix them one file at a time with a UI check, since dependency changes can
+  change behaviour.
 17. Move Spend data to its own Supabase table once it grows (single payload today);
     a foundational change — the trigger for v2.0.0.
 18. Test the DCA confirm and Activity Logs undo flows through the real UI (logic tested only).

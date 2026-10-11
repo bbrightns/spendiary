@@ -585,7 +585,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
             }
             try {
               localStorage.setItem(storageKey, JSON.stringify(sessionObj))
-            } catch {}
+            } catch {
+              // ignore: storage or JSON unavailable
+            }
 
             setUser(restoredUser)
             window.history.replaceState(null, '', window.location.pathname)
@@ -633,9 +635,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const targetUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${redirectUri}`
       console.log('Navigating directly to Supabase Google OAuth URL:', targetUrl)
       window.location.href = targetUrl
-    } catch (err: any) {
+    } catch (err) {
       console.error('Sign in exception:', err)
-      setAuthError(`Sign-in failed: ${err?.message || 'could not reach Supabase'}`)
+      setAuthError(`Sign-in failed: ${(err instanceof Error && err.message) || 'could not reach Supabase'}`)
     }
   }
 
@@ -694,6 +696,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       } else {
         // Cloud Supabase user: delete row from user_data table
         try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the client has no generated table types
           const { error } = await (supabase.from('user_data') as any)
             .delete()
             .eq('id', currentUser.id)
@@ -730,7 +733,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     try {
       window.history.replaceState(null, '', '/')
-    } catch {}
+    } catch {
+      // ignore: storage or JSON unavailable
+    }
   }
 
   const fetchRemoteData = async (userId: string) => {
@@ -796,7 +801,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const parsed = JSON.parse(raw)
             if (parsed.access_token) token = parsed.access_token
           }
-        } catch {}
+        } catch {
+          // ignore: storage or JSON unavailable
+        }
 
         try {
           const restRes = await fetch(`${supabaseUrl}/rest/v1/user_data?id=eq.${encodeURIComponent(userId)}&select=payload`, {

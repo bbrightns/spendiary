@@ -72,6 +72,7 @@ interface NumberFieldProps {
   hint?: string
   error?: string
   value: number | string | ''
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- callers pass both string and number setters
   onChange: (v: any) => void
   onBlur?: () => void
   onFocus?: () => void
