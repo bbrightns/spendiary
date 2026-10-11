@@ -31,13 +31,13 @@ function PageLoadingFallback() {
   return <PageSkeleton />
 }
 
-// 💡 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
 /** Old Debts links (bookmarks, ?action=new) land on Spend's loans page with their query intact. */
 function LoansRedirect() {
   const { search } = useLocation()
   return <Navigate to={`/spend/loans${search}`} replace />
 }
 
+// 💡 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
 function AppContent() {
   const { user, loginWithGoogle, loginAsTestMode, authError, dataReady } = useData()
 
