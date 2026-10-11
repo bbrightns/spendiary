@@ -94,12 +94,12 @@ export function SpendAccounts() {
       <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
         <Card className="p-3 sm:p-5 animate-rise" padded={false}>
           <p className="text-xs font-medium text-ink-muted">In wallets</p>
-          <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate text-ink">{thb(cashTotal)}</p>
+          <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate text-ink">{thb(cashTotal, true)}</p>
         </Card>
         <Card className="p-3 sm:p-5 animate-rise" padded={false}>
           <p className="text-xs font-medium text-ink-muted">Owed on cards</p>
-          <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate text-ink">{thb(owed)}</p>
-          {limit > 0 && <p className="mt-0.5 text-xs text-ink-muted tnum">{thb(limit - owed)} available</p>}
+          <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate text-ink">{thb(owed, true)}</p>
+          {limit > 0 && <p className="mt-0.5 text-xs text-ink-muted tnum">{thb(limit - owed, true)} available</p>}
         </Card>
       </div>
 
@@ -156,12 +156,12 @@ export function SpendAccounts() {
                     <div className="mt-4 flex items-end justify-between gap-3">
                       <div>
                         <p className="text-xs text-ink-muted">Owed</p>
-                        <p className="font-display text-2xl font-extrabold tracking-tight tnum text-ink">{thb(c.balance)}</p>
+                        <p className="font-display text-2xl font-extrabold tracking-tight tnum text-ink">{thb(c.balance, true)}</p>
                       </div>
                       <p className="text-right text-xs text-ink-muted tnum">
-                        {thb(Math.max(0, c.creditLimit - c.balance))} left
+                        {thb(Math.max(0, c.creditLimit - c.balance), true)} left
                         <br />
-                        of {thb(c.creditLimit)}
+                        of {thb(c.creditLimit, true)}
                       </p>
                     </div>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-muted">
@@ -174,7 +174,7 @@ export function SpendAccounts() {
                     <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
                       <div className="rounded-xl bg-surface-muted/70 px-2.5 py-2">
                         <p className="text-ink-muted">This cycle</p>
-                        <p className="font-bold text-ink tnum">{thb(spentCycle)}</p>
+                        <p className="font-bold text-ink tnum">{thb(spentCycle, true)}</p>
                       </div>
                       <div className="rounded-xl bg-surface-muted/70 px-2.5 py-2">
                         <p className="text-ink-muted">Statement</p>
@@ -187,7 +187,7 @@ export function SpendAccounts() {
                           {tone === 'loss' ? 'Overdue' : `Due ${shortDate(due.date)}`}
                         </p>
                         <p className={`font-bold tnum ${tone === 'loss' ? 'text-loss' : tone === 'warn' ? 'text-warn' : 'text-ink'}`}>
-                          {thb(due.amount)}
+                          {thb(due.amount, true)}
                         </p>
                       </div>
                     </div>
@@ -204,7 +204,7 @@ export function SpendAccounts() {
                         <span>
                           Pay bill <span className="text-ink-muted">· {dueText(open.daysToDue)}</span>
                         </span>
-                        <span className="font-bold tnum">{thb(open.amountDue)} →</span>
+                        <span className="font-bold tnum">{thb(open.amountDue, true)} →</span>
                       </button>
                     )}
                   </div>
@@ -254,10 +254,12 @@ export function SpendAccounts() {
                       <span className="truncate text-sm font-semibold text-ink">{w.name}</span>
                       {defaultBadge(w.id)}
                     </span>
-                    <span className="block truncate text-xs text-ink-muted tnum">
+                    {/* Wraps rather than truncates so both amounts stay readable on phones */}
+                    <span className="block text-xs text-ink-muted tnum">
                       {f ? (
                         <>
-                          {periodName} <span className="text-gain">+{thb(f.in)}</span> · −{thb(f.out)}
+                          <span className="hidden sm:inline">{periodName} </span>
+                          <span className="text-gain">+{thb(f.in, true)}</span> · −{thb(f.out, true)}
                         </>
                       ) : (
                         `No activity ${periodName.toLowerCase()}`
@@ -265,7 +267,7 @@ export function SpendAccounts() {
                       {w.locked ? ' · Locked savings' : ''}
                     </span>
                   </span>
-                  <span className="shrink-0 text-sm font-bold text-ink tnum">{thb(w.balance)}</span>
+                  <span className="shrink-0 text-sm font-bold text-ink tnum">{thb(w.balance, true)}</span>
                   <ChevronRightIcon className="h-4 w-4 shrink-0 text-ink-muted/50" strokeWidth={2} />
                 </div>
               )

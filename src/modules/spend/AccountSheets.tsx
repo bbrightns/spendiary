@@ -225,7 +225,7 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
 export function WalletSheet({ wallet, onClose }: { wallet?: PayMethod; onClose: () => void }) {
   const navigate = useNavigate()
   return (
-    <Modal open={!!wallet} onClose={onClose} title={wallet?.name ?? 'Wallet'} description={wallet ? `Balance ${thb(wallet.balance)}` : undefined} size="sm">
+    <Modal open={!!wallet} onClose={onClose} title={wallet?.name ?? 'Wallet'} description={wallet ? `Balance ${thb(wallet.balance, true)}` : undefined} size="sm">
       {wallet && (
         <div className="space-y-5">
           <AccountHistory id={wallet.id} name={wallet.name} />
