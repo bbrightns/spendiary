@@ -19,6 +19,11 @@ export function thb(value: number, decimals = false): string {
   return `฿${NBSP}${n}`
 }
 
+/** Like thb, with a leading minus sign for negatives: −฿1,031.00 */
+export function thbSigned(value: number, decimals = false): string {
+  return `${value < 0 ? '−' : ''}${thb(Math.abs(value), decimals)}`
+}
+
 export function money(value: number, currency: 'THB' | 'USD' = 'THB', decimals = false): string {
   const symbol = currency === 'USD' ? '$' : '฿'
   const n = decimals ? baht2.format(value) : baht.format(Math.round(value))

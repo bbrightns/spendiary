@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useData } from '../../store/DataContext'
 import { useTheme } from '../../hooks/useTheme'
 import { useToast } from '../../store/ToastContext'
-import { thb } from '../../lib/format'
+import { thb, thbSigned } from '../../lib/format'
 import {
   amountMatches,
   parseAmountFilter,
@@ -443,7 +443,7 @@ export function CommandPalette() {
         id: `acct-${m.id}`,
         title: m.name,
         subtitle: card
-          ? `Credit card · ${m.balance < 0 ? `${thb(-m.balance, true)} credit` : `${thb(m.balance, true)} owed`}`
+          ? `Credit card · ${thbSigned(m.balance, true)} owed`
           : `Wallet · ${thb(m.balance, true)}`,
         keywords: card ? ['card', 'credit', 'บัตร'] : ['wallet', 'account', 'bank', 'กระเป๋า', 'บัญชี'],
         group: 'Accounts',

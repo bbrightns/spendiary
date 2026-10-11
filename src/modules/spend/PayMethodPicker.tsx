@@ -1,6 +1,6 @@
 import { useId } from 'react'
 import { ChevronDownIcon, CreditCardIcon, WalletIcon } from '../../components/icons'
-import { thb } from '../../lib/format'
+import { thb, thbSigned } from '../../lib/format'
 import type { PayMethod } from './useSpend'
 
 export const NOT_TRACKED = ''
@@ -104,7 +104,7 @@ export function PayMethodPicker({ label, methods, value, onChange, favoriteIds, 
             <optgroup label="Wallets">
               {usable.filter((m) => m.kind === 'cash').map((m) => (
                 <option key={m.id} value={m.id}>
-                  {`${m.name} · ${m.kind === 'card' ? (m.balance < 0 ? `${thb(-m.balance, true)} credit` : `${thb(m.balance, true)} owed`) : thb(m.balance, true)}`}
+                  {`${m.name} · ${m.kind === 'card' ? `${thbSigned(m.balance, true)} owed` : thb(m.balance, true)}`}
                 </option>
               ))}
             </optgroup>

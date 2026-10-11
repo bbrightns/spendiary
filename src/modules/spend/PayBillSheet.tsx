@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Modal } from '../../components/ui/Modal'
 import { Button } from '../../components/ui/Button'
 import { useToast } from '../../store/ToastContext'
-import { localDateStr, thb } from '../../lib/format'
+import { localDateStr, thb, thbSigned } from '../../lib/format'
 import { getCategory } from './categories'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { DEFAULT_MIN_PAYMENT_PERCENT, TAG_RE, cardCycle, minimumPayment } from './logic'
@@ -273,7 +273,7 @@ export function PayBillSheet() {
 
               {amount > owed + 0.005 && (
                 <p className="-mt-2 text-xs text-ink-muted">
-                  {thb(amount - owed, true)} more than you owe — it stays on the card as credit for your next charges.
+                  {thb(amount - owed, true)} more than you owe — the card goes to {thbSigned(owed - amount, true)} and your next charges use it up first.
                 </p>
               )}
               {mode === 'min' && (
