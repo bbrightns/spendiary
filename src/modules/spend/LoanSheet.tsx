@@ -10,6 +10,7 @@ import type { DebtCategory, Liability } from '../../lib/types'
 import { DebtCategoryIcon } from './DebtCategoryIcon'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { useSpend } from './useSpend'
+import { firstInstallmentDue } from './loans'
 
 type Kind = 'installment' | 'loan'
 
@@ -97,7 +98,7 @@ interface Props {
 /** Add or edit a loan or installment plan: the few things that matter up front, the rest folded away. */
 export function LoanSheet({ open, loanId, onClose }: Props) {
   const { data, setLiabilities, removeLiability } = useData()
-  const { methods, settings } = useSpend()
+  const { methods, cards, settings } = useSpend()
   const { showToast } = useToast()
   const [form, setForm] = useState(blank)
   const [more, setMore] = useState(false)
@@ -158,7 +159,9 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
   const save = () => {
     if (!canSave) return
     const today = localDateStr()
-    const due = form.dueDay ? Math.min(31, Math.max(1, Math.round(num(form.dueDay)))) : undefined
+    const billCard = installment ? cards.find((c) => c.id === form.payFromId) : undefined
+    // No due day typed for an installment on a card: it's due when the card bill is
+    const due = form.dueDay ? Math.min(31, Math.max(1, Math.round(num(form.dueDay)))) : billCard?.dueDay
     // A payment count can sit on any debt (a car loan's 60 terms), not only installments
     const total = num(form.total) > 0 ? Math.round(num(form.total)) : undefined
     const loan: Liability = {
@@ -174,6 +177,10 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
       totalInstallments: total,
       paidInstallments: total ? Math.min(total, Math.max(0, Math.round(num(form.paid)))) : undefined,
       payFromId: form.payFromId || undefined,
+      // A new installment on a card is first due after the card's next statement, like one from Quick add
+      firstDueDate:
+        existing?.firstDueDate ??
+        (billCard && !existing ? firstInstallmentDue(billCard, today) : undefined),
       lender: form.lender.trim() || undefined,
       interestRate: num(form.rate) > 0 ? num(form.rate) : undefined,
       originalBalance: num(form.original) > 0 ? num(form.original) : existing?.originalBalance ?? owed,

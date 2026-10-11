@@ -3,7 +3,7 @@ import { categoriesFor, guessCategory, syncCategories } from './categories'
 import { homeOrder, isDefaultOrder, moveCard } from './homeLayout'
 import type { CashAccount, Liability, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
 import { firstInstallmentDue, installmentAmount, installmentHold, isLoanDone, loanPaymentAmount, loanProgress, paymentIsSpending } from './loans'
-import { isLiabilityFirstDueNextMonth } from '../../lib/calc'
+import { isLiabilityActionableThisMonth, isLiabilityFirstDueNextMonth } from '../../lib/calc'
 import {
   accountTotals,
   applyOrder,
@@ -400,5 +400,19 @@ describe('card installments', () => {
     const l = loan({ category: 'personal_loan', dueDay: 5, firstPaymentMonth: 'next', createdAt: '2026-10-11' })
     expect(isLiabilityFirstDueNextMonth(l, new Date(2026, 9, 20))).toBe(true)
     expect(isLiabilityFirstDueNextMonth(l, new Date(2026, 10, 3))).toBe(false)
+  })
+})
+
+describe('card installment, paid by hand', () => {
+  it('asks for Pay from the month of its first due date', () => {
+    // Bought 11 Oct on a card closing the 25th, due the 10th → first due 10 Nov
+    const l: Liability = {
+      id: 'ipad', name: 'iPad', category: 'installment', balance: 20_000, monthlyPayment: 2000,
+      isInstallment: true, totalInstallments: 10, paidInstallments: 0, dueDay: 10,
+      firstDueDate: firstInstallmentDue({ statementDay: 25, dueDay: 10 }, '2026-10-11'), createdAt: '2026-10-11',
+    }
+    expect(isLiabilityActionableThisMonth(l, new Date(2026, 9, 28))).toBe(false)
+    expect(isLiabilityActionableThisMonth(l, new Date(2026, 10, 3))).toBe(true)
+    expect(isLiabilityActionableThisMonth(l, new Date(2026, 10, 15))).toBe(true)
   })
 })
