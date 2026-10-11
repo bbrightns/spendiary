@@ -4,7 +4,9 @@ import { isNavPathActive, isSubItemActive, type NavSubItem } from '../../compone
 import { NavSheetList } from '../../components/layout/NavSheetList'
 import { Modal } from '../../components/ui/Modal'
 import { DotsHorizontalIcon, PlusIcon } from '../../components/icons'
-import { spendAccountsItem, spendMoreItems, spendOverviewItem, spendRecurringItem, spendTxnsItem } from './nav'
+import { isLiabilityActionableThisMonth } from '../../lib/calc'
+import { useData } from '../../store/DataContext'
+import { spendAccountsItem, spendLoansItem, spendMoreItems, spendOverviewItem, spendRecurringItem, spendTxnsItem } from './nav'
 import { openQuickAdd } from './QuickAddSheet'
 import { useSpend } from './useSpend'
 
@@ -39,6 +41,7 @@ export function SpendBottomNav() {
   const navigate = useNavigate()
   const { reminders, dueRecurring } = useSpend()
   const [moreOpen, setMoreOpen] = useState(false)
+  const loansDue = (useData().data.liabilities ?? []).filter((l) => isLiabilityActionableThisMonth(l)).length
   // "More" lights up while on any page inside it
   const moreActive = spendMoreItems.some((item) => isSubItemActive(item, pathname))
 
@@ -77,12 +80,12 @@ export function SpendBottomNav() {
         </div>
       </nav>
 
-      <Modal open={moreOpen} onClose={() => setMoreOpen(false)} title="More" description="Bills, analysis and settings">
+      <Modal open={moreOpen} onClose={() => setMoreOpen(false)} title="More" description="Bills, loans, analysis and settings">
         <NavSheetList
           items={spendMoreItems}
           activePath={pathname}
           // Due bills already badge the Home tab (where they're logged); the sheet row repeats it so the page is easy to find
-          badgeFor={(to) => (to === spendRecurringItem.to ? dueRecurring.length : 0)}
+          badgeFor={(to) => (to === spendRecurringItem.to ? dueRecurring.length : to === spendLoansItem.to ? loansDue : 0)}
           onSelect={(to) => {
             setMoreOpen(false)
             navigate(to)

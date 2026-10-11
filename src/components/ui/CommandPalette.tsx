@@ -329,6 +329,7 @@ export function CommandPalette() {
           ['nav-spend-accounts', 'Accounts', 'Wallets and credit cards you pay with', '/spend/accounts', ['wallets', 'cards', 'credit', 'บัตร', 'กระเป๋า'], CreditCardIcon, true, undefined],
           ['nav-spend-analysis', 'Analysis', 'Spending by week, month or year', '/spend/analysis', ['analysis', 'report', 'chart', 'trend', 'วิเคราะห์', 'สรุป'], PieChartIcon, true, undefined],
           ['nav-spend-recurring', 'Bills & recurring', 'Bills and income that repeat', '/spend/recurring', ['recurring', 'bills', 'subscription', 'fixed', 'ค่าใช้จ่ายประจำ', 'บิล'], RepeatIcon, true, undefined],
+          ['nav-spend-loans', 'Loans & installments', 'What you owe and pay back each month', '/spend/loans', ['loans', 'installments', 'debt', 'pay', 'หนี้', 'ผ่อน', 'งวด'], DebtIcon, true, undefined],
           ['nav-spend-settings', 'Spend Settings', 'Spending month, budget and categories', '/spend/settings', ['settings', 'budget', 'payday', 'categories', 'ตั้งค่า'], SettingsIcon, true, undefined],
           ['nav-dashboard', 'Dashboard', 'Your net worth at a glance', '/', ['dashboard', 'home', 'net worth', 'หน้าแรก', 'แดชบอร์ด', 'ภาพรวม'], DashboardIcon, false, 'G D'],
           ['nav-portfolio', 'Portfolio', 'All your holdings', '/portfolio', ['portfolio', 'holdings', 'stocks', 'funds', 'พอร์ต', 'หุ้น', 'สินทรัพย์'], PortfolioIcon, false, 'G P'],

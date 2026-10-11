@@ -14,38 +14,16 @@ import type { DebtCategory, HoldingLog, Liability } from '../lib/types'
 import { DEBT_CATEGORIES, getLiabilityDueStatus } from '../lib/calc'
 import { thb } from '../lib/format'
 import { openQuickAdd } from '../modules/spend/QuickAddSheet'
+import { DebtCategoryIcon, loanPaymentAmount } from '../modules/spend/loans'
 import {
-  CarIcon,
   CheckIcon,
   ChevronDownIcon,
   ClockIcon,
-  CreditCardIcon,
-  DebtIcon,
-  HomeIcon,
   PencilIcon,
   PlusIcon,
-  ReceiptPercentIcon,
   ShoppingBagIcon,
   TrashIcon,
 } from '../components/icons'
-
-function CategoryIcon({ category, className = 'h-4 w-4' }: { category: DebtCategory; className?: string }) {
-  switch (category) {
-    case 'installment':
-      return <ShoppingBagIcon className={className} />
-    case 'credit_card':
-      return <CreditCardIcon className={className} />
-    case 'mortgage':
-      return <HomeIcon className={className} />
-    case 'auto_loan':
-      return <CarIcon className={className} />
-    case 'personal_loan':
-    case 'student_loan':
-      return <ReceiptPercentIcon className={className} />
-    default:
-      return <DebtIcon className={className} />
-  }
-}
 
 const MONTHS_SHORT = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -197,8 +175,7 @@ export function Debts() {
 
   const handlePay = (l: Liability) => {
     // Same amount the payment takes off the balance
-    const remaining = Math.max(1, (l.totalInstallments ?? 1) - (l.paidInstallments ?? 0))
-    const amount = (l.monthlyPayment ?? 0) > 0 ? l.monthlyPayment! : Math.round(l.balance / remaining)
+    const amount = loanPaymentAmount(l)
     const n = (l.paidInstallments ?? 0) + 1
     payLiabilityInstallment(l.id)
     // Offer to log it as spending, so the wallet it came from goes down too
@@ -402,7 +379,7 @@ export function Debts() {
                     aria-label={`Filter debts by category ${meta.label}`}
                   >
                     <span className="flex items-center gap-1.5">
-                      <CategoryIcon category={catKey} className="h-3.5 w-3.5 shrink-0" />
+                      <DebtCategoryIcon category={catKey} className="h-3.5 w-3.5 shrink-0" />
                       <span>{meta.label}</span>
                     </span>
                   </FilterChip>
@@ -477,7 +454,7 @@ export function Debts() {
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <div className={`grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-xl shrink-0 ${meta.bgClass} ${meta.textClass}`}>
-                            <CategoryIcon category={l.category} className="h-4 w-4 sm:h-5 sm:w-5" />
+                            <DebtCategoryIcon category={l.category} className="h-4 w-4 sm:h-5 sm:w-5" />
                           </div>
 
                           <div className="min-w-0">
