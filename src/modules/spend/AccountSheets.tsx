@@ -7,9 +7,9 @@ import { useToast } from '../../store/ToastContext'
 import { thb } from '../../lib/format'
 import type { SpendCard } from '../../lib/types'
 import { accountTotals } from './logic'
+import { CARD_COLORS, CARD_PALETTE, cardFace, inkOn } from './cardColor'
 import { useSpend, type PayMethod } from './useSpend'
 
-export const CARD_COLORS = ['#0f172a', '#4f46e5', '#0ea5e9', '#16a34a', '#e11d48', '#f59e0b', '#7c3aed', '#db2777']
 
 export function StarIcon({ filled, className = 'h-4 w-4' }: { filled?: boolean; className?: string }) {
   return (
@@ -197,18 +197,57 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
 
         <div>
           <p className="mb-2 text-sm font-semibold text-ink-soft">Color</p>
-          <div className="flex flex-wrap gap-2">
-            {CARD_COLORS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                aria-label={`Color ${c}`}
-                aria-pressed={form.color === c}
-                onClick={() => set('color')(c)}
-                className={`h-8 w-8 rounded-full transition-transform cursor-pointer ${form.color === c ? 'scale-110 ring-2 ring-brand ring-offset-2 ring-offset-surface' : ''}`}
-                style={{ background: c }}
-              />
+          {/* Live preview: the card face as it shows in the stack */}
+          <div
+            className={`mb-3 flex h-14 items-center gap-3 rounded-xl px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] ${inkOn(form.color).text}`}
+            style={{ background: cardFace(form.color) }}
+          >
+            <span className="min-w-0 flex-1 truncate text-sm font-bold">{form.name.trim() || 'Card name'}</span>
+            <span className={`shrink-0 text-xs tnum ${inkOn(form.color).soft}`}>•••• {form.last4 || '0000'}</span>
+          </div>
+          <div className="space-y-2.5">
+            {CARD_PALETTE.map((group) => (
+              <div key={group.name} role="group" aria-label={group.name} className="grid w-fit grid-cols-8 gap-2">
+                {group.colors.map((c) => (
+                  <button
+                    key={c.hex}
+                    type="button"
+                    title={c.name}
+                    aria-label={c.name}
+                    aria-pressed={form.color === c.hex}
+                    onClick={() => set('color')(c.hex)}
+                    className={`h-8 w-8 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/20 transition-transform cursor-pointer ${
+                      form.color === c.hex ? 'scale-110 ring-2 ring-brand ring-offset-2 ring-offset-surface' : 'hover:scale-105'
+                    }`}
+                    style={{ background: c.hex }}
+                  />
+                ))}
+              </div>
             ))}
+            {/* Any other color: the browser's own picker, shown as a rainbow swatch (or the picked color) */}
+            <label
+              title="Custom color"
+              className={`relative flex h-8 w-fit items-center gap-2 rounded-full pr-3 text-xs font-semibold text-ink-soft cursor-pointer ${
+                CARD_COLORS.includes(form.color) ? '' : 'text-brand-ink'
+              }`}
+            >
+              <span
+                className={`h-8 w-8 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/20 ${CARD_COLORS.includes(form.color) ? '' : 'scale-110 ring-2 ring-brand ring-offset-2 ring-offset-surface'}`}
+                style={{
+                  background: CARD_COLORS.includes(form.color)
+                    ? 'conic-gradient(#ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #8b5cf6, #ec4899, #ef4444)'
+                    : form.color,
+                }}
+              />
+              {CARD_COLORS.includes(form.color) ? 'Custom' : form.color.toUpperCase()}
+              <input
+                type="color"
+                value={form.color}
+                onChange={(e) => set('color')(e.target.value)}
+                aria-label="Custom color"
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              />
+            </label>
           </div>
         </div>
 

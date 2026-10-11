@@ -3,6 +3,7 @@ import { CreditCardIcon } from '../../components/icons'
 import { thb, thbSigned } from '../../lib/format'
 import type { SpendCard, SpendTransaction } from '../../lib/types'
 import { StarIcon } from './AccountSheets'
+import { FALLBACK_CARD_COLOR, cardFace, inkOn } from './cardColor'
 import { cardCycle, upcomingDue } from './logic'
 import { dueText, openPayBill } from './PayBillSheet'
 import type { useSpend } from './useSpend'
@@ -17,28 +18,6 @@ interface Props {
   favoriteIds: string[]
   onToggleFavorite: (id: string) => void
   onEdit: (card: SpendCard) => void
-}
-
-const FALLBACK_COLOR = '#0f172a'
-
-/** The card's color with a soft sheen, so it reads as a physical card (and a dark one still shows on a dark page). */
-const face = (hex: string) => `linear-gradient(160deg, rgba(255,255,255,0.18), rgba(255,255,255,0) 55%), ${hex}`
-
-/** WCAG relative luminance of a #rrggbb color. */
-function luminance(hex: string): number {
-  const n = parseInt(hex.replace('#', '').padEnd(6, '0').slice(0, 6), 16)
-  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
-    const s = v / 255
-    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
-  })
-  return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2]
-}
-
-/** White or near-black text, whichever reads better on the card's color. */
-function inkOn(hex: string): { light: boolean; text: string; soft: string } {
-  const l = luminance(hex)
-  const light = 1.05 / (l + 0.05) >= (l + 0.05) / 0.059
-  return light ? { light, text: 'text-white', soft: 'text-white/70' } : { light, text: 'text-slate-900', soft: 'text-slate-900/65' }
 }
 
 function shortDate(iso: string): string {
@@ -85,7 +64,7 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
   if (!active) return null
 
   const a = info.get(active.id)!
-  const color = active.color ?? FALLBACK_COLOR
+  const color = active.color ?? FALLBACK_CARD_COLOR
   const ink = inkOn(color)
   const used = active.creditLimit > 0 ? Math.min(100, Math.max(0, (active.balance / active.creditLimit) * 100)) : 0
   const fav = favoriteIds.includes(active.id)
@@ -94,7 +73,7 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
     <div className="relative mx-auto w-full max-w-[360px]">
       {behind.map((c, i) => {
         const t = info.get(c.id)!
-        const bg = c.color ?? FALLBACK_COLOR
+        const bg = c.color ?? FALLBACK_CARD_COLOR
         const k = inkOn(bg)
         return (
           <button
@@ -102,7 +81,7 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
             type="button"
             onClick={() => setPicked(c.id)}
             aria-label={`Show ${c.name}, owed ${thbSigned(c.balance, true)}${t.open ? `, ${dueText(t.open.daysToDue)}` : ''}`}
-            style={{ background: face(bg), zIndex: i }}
+            style={{ background: cardFace(bg), zIndex: i }}
             // Taller than it shows: the next layer covers the bottom, so only ~44px peeks out
             className={`relative -mb-4 flex h-[60px] w-full items-start gap-3 rounded-t-[var(--radius-card)] px-4 pt-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_-8px_20px_-10px_rgba(0,0,0,0.45)] transition-transform duration-200 cursor-pointer hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:px-5 ${k.text}`}
           >
@@ -135,7 +114,7 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
         style={{ zIndex: behind.length }}
         className="relative overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.45),var(--shadow-soft)] cursor-pointer transition-shadow hover:shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.45),var(--shadow-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand animate-rise"
       >
-        <div className={`flex items-center gap-3 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] sm:px-5 ${ink.text}`} style={{ background: face(color) }}>
+        <div className={`flex items-center gap-3 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] sm:px-5 ${ink.text}`} style={{ background: cardFace(color) }}>
           <CreditCardIcon className="h-5 w-5 shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="flex min-w-0 items-center text-sm font-bold">
