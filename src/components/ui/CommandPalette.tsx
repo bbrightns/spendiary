@@ -39,7 +39,7 @@ import { openQuickAdd } from '../../modules/spend/QuickAddSheet'
 import { openPayBill } from '../../modules/spend/PayBillSheet'
 import { openImport } from '../../modules/spend/ImportSheet'
 import { ListBulletIcon, RepeatIcon, TransferIcon, getCategory, guessCategory, manageableCategories } from '../../modules/spend/categories'
-import { TAG_RE, frequencyLabel, goalProgress } from '../../modules/spend/logic'
+import { frequencyLabel, goalProgress, noteTitle } from '../../modules/spend/logic'
 import { isSpendPath } from '../../modules/spend/nav'
 import { TONES } from '../../modules/spend/tones'
 import { useSpend } from '../../modules/spend/useSpend'
@@ -131,8 +131,6 @@ function writeJson(key: string, value: unknown) {
 const ic = (Icon: (p: { className?: string; strokeWidth?: number }) => ReactNode, cls = 'text-ink-muted') => (
   <Icon className={`h-4 w-4 ${cls}`} strokeWidth={2} />
 )
-
-const plainNote = (note?: string) => (note ?? '').replace(TAG_RE, '').replace(/\s+/g, ' ').trim()
 
 const shortDate = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number)
@@ -672,7 +670,7 @@ export function CommandPalette() {
     for (const t of spend.transactions) {
       if (!filters.every((f) => amountMatches(f, t.amount))) continue
       const cat = getCategory(t.categoryId)
-      const title = plainNote(t.note) || (t.type === 'transfer' ? 'Transfer' : cat?.label ?? 'Other')
+      const title = noteTitle(t.note) || (t.type === 'transfer' ? 'Transfer' : cat?.label ?? 'Other')
       const s = textTerms.length
         ? scoreItem(textTerms, {
             title,

@@ -7,7 +7,7 @@ import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb } from '../../lib/format'
 import type { SpendSettings, SpendTransaction, SpendTxnType } from '../../lib/types'
 import { categoriesFor, getCategory } from './categories'
-import { recentTags, topTags } from './logic'
+import { activeTagQuery, noteTitle, parseTags, recentTags, suggestTags, topTags } from './logic'
 import { TONES, TYPE_ACTIVE } from './tones'
 import { useSpend, type PayMethod, type SpendTxnInput } from './useSpend'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
@@ -143,6 +143,11 @@ export function QuickAddSheet() {
   const recent = useMemo(() => recentTags(transactions, 3), [transactions])
   const frequent = useMemo(() => topTags(transactions, 8).filter((t) => !recent.includes(t)).slice(0, 5), [transactions, recent])
   const noteTokens = note.toLowerCase().split(/\s+/)
+  // While typing `#ta…`, offer tags used before that start with it
+  const tagQuery = activeTagQuery(note)
+  const suggestions = useMemo(() => (tagQuery === null ? [] : suggestTags(transactions, note, tagQuery)), [transactions, note, tagQuery])
+  const previewTags = parseTags(note)
+  const previewTitle = noteTitle(note) || (type === 'transfer' ? 'Transfer' : getCategory(categoryId)?.label ?? 'Other')
   const value = Number(amount.replace(/,/g, ''))
   const amountValid = Number.isFinite(value) && value > 0
   const transferValid = type !== 'transfer' || (accountId !== NO_WALLET && toAccountId !== NO_WALLET && accountId !== toAccountId)
@@ -167,6 +172,9 @@ export function QuickAddSheet() {
     if (noteTokens.includes(token)) return
     setNote((n) => (n.trim() ? `${n.trimEnd()} ${token}` : token))
   }
+
+  /** Finish the `#ta…` being typed with a tag used before. */
+  const completeTag = (tag: string) => setNote((n) => n.replace(/#[\p{L}\p{N}\p{M}_]*$/u, `#${tag} `))
 
   const save = () => {
     if (!canSave) return
@@ -318,15 +326,45 @@ export function QuickAddSheet() {
             <label className="block">
               <div className="mb-1.5 flex items-center justify-between gap-3">
                 <span className="text-sm font-semibold text-ink-soft">Note</span>
-                <span className="text-xs text-ink-muted">Add #tags to find it later</span>
+                <span className="text-xs text-ink-muted">Name first, then #tags to find it later</span>
               </div>
               <input
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Brown sugar milk tea #nosetea"
+                autoComplete="off"
                 className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15"
               />
             </label>
+            {suggestions.length > 0 && (
+              <div className="mt-2.5 flex flex-wrap items-center gap-1.5" role="listbox" aria-label="Tag suggestions">
+                {suggestions.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    role="option"
+                    aria-selected={false}
+                    // keep focus in the note field so typing can continue
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => completeTag(tag)}
+                    className="rounded-full bg-violet-100 px-3 py-1.5 text-xs font-bold text-violet-700 transition-all cursor-pointer hover:bg-violet-200 active:scale-95 dark:bg-violet-400/15 dark:text-violet-200"
+                  >
+                    #{tag}
+                  </button>
+                ))}
+              </div>
+            )}
+            {note.trim() && (
+              <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-surface-muted/60 px-3 py-2 text-xs">
+                <span className="font-semibold text-ink-muted">Shows as</span>
+                <span className="min-w-0 truncate font-bold text-ink">{previewTitle}</span>
+                {previewTags.map((tag) => (
+                  <span key={tag} className="rounded-full bg-brand-soft px-2 py-0.5 font-semibold text-brand-ink">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
             {recent.length + frequent.length > 0 && (
               <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                 {recent.length > 0 && <span className="mr-0.5 text-xs font-semibold text-ink-muted">Recent</span>}

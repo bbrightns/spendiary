@@ -4,6 +4,9 @@ import { homeOrder, isDefaultOrder, moveCard } from './homeLayout'
 import type { CashAccount, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
 import {
   accountTotals,
+  activeTagQuery,
+  noteTitle,
+  suggestTags,
   averageMonthlySpend,
   goalProgress,
   isThaiHoliday,
@@ -260,5 +263,40 @@ describe('home card order', () => {
     expect(moveCard(o, 'days', -1)).toEqual(['allowance', 'month', 'days', 'recurring'])
     expect(moveCard(o, 'allowance', -1)).toBe(o)
     expect(isDefaultOrder(o)).toBe(true)
+  })
+})
+
+describe('noteTitle', () => {
+  it('drops tags from a normal note', () => {
+    expect(noteTitle('Milk tea #nosetea')).toBe('Milk tea')
+  })
+  it('uses the first tag when the note is only tags', () => {
+    expect(noteTitle('#NoseTea #office')).toBe('NoseTea')
+  })
+  it('is empty without a note', () => {
+    expect(noteTitle(undefined)).toBe('')
+    expect(noteTitle('   ')).toBe('')
+  })
+})
+
+describe('tag suggestions', () => {
+  const t = (tags: string[]) => txn({ tags })
+  const history = [t(['nosetea', 'office']), t(['nosetea']), t(['noodle']), t(['gym'])]
+
+  it('finds the half-typed tag at the end only', () => {
+    expect(activeTagQuery('Lunch #no')).toBe('no')
+    expect(activeTagQuery('Lunch #')).toBe('')
+    expect(activeTagQuery('Lunch #no ')).toBeNull()
+    expect(activeTagQuery('Lunch')).toBeNull()
+    expect(activeTagQuery('a#b')).toBeNull()
+  })
+  it('suggests used tags by prefix, most used first', () => {
+    expect(suggestTags(history, 'Lunch #no', 'no')).toEqual(['nosetea', 'noodle'])
+  })
+  it('lists everything for a bare #, skipping tags already in the note', () => {
+    expect(suggestTags(history, '#gym #', '')).toEqual(['nosetea', 'office', 'noodle'])
+  })
+  it('does not suggest what is already fully typed', () => {
+    expect(suggestTags(history, '#gym', 'gym')).toEqual([])
   })
 })
