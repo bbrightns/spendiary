@@ -91,7 +91,7 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
   const fav = favoriteIds.includes(active.id)
 
   return (
-    <div className="relative lg:max-w-2xl">
+    <div className="relative mx-auto w-full max-w-[360px]">
       {behind.map((c, i) => {
         const t = info.get(c.id)!
         const bg = c.color ?? FALLBACK_COLOR
@@ -213,7 +213,7 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
       </div>
 
       {behind.length > 0 && (
-        <p className="mt-2 px-1 text-xs text-ink-muted">
+        <p className="mt-2 px-1 text-center text-xs text-ink-muted">
           {cards.length} cards · tap a card above to bring it forward
         </p>
       )}
