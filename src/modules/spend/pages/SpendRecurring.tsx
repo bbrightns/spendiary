@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { PageHeader } from '../../../components/layout/PageHeader'
 import { Card } from '../../../components/ui/Card'
 import { AddButton } from '../../../components/ui/AddButton'
@@ -33,6 +34,13 @@ export function SpendRecurringPage() {
   const { recurring, methods } = useSpend()
   const debts = useData().data.liabilities ?? []
   const [sheet, setSheet] = useState<{ open: boolean; rec?: SpendRecurring }>({ open: false })
+  // ?new=1 (from Home's "Set up bills that repeat") opens the add sheet straight away
+  const [params, setParams] = useSearchParams()
+  useEffect(() => {
+    if (params.get('new') !== '1') return
+    setSheet({ open: true })
+    setParams({}, { replace: true })
+  }, [params, setParams])
   const today = localDateStr()
   const active = recurring.filter((r) => !r.paused)
   const out = active.filter((r) => r.type === 'expense').reduce((s, r) => s + perMonth(r), 0)
