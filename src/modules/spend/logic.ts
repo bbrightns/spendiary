@@ -1,4 +1,4 @@
-import type { CashAccount, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
+import type { CashAccount, PayCycle, SpendCard, SpendGoal, SpendRecurring, SpendTransaction } from '../../lib/types'
 import { localDateStr } from '../../lib/format'
 
 /**
@@ -543,4 +543,35 @@ export function averageMonthlySpend(
   }
   if (totals.length < minMonths) return undefined
   return { average: totals.reduce((s, x) => s + x, 0) / totals.length, months: totals.length }
+}
+
+// ── Savings goals ────────────────────────────────────────────────────────────
+
+export interface GoalProgress {
+  saved: number
+  left: number
+  /** 0–100 */
+  pct: number
+  done: boolean
+  /** Whole months from today to the deadline (at least 1 while it's ahead) */
+  monthsLeft?: number
+  /** What to put aside each month to make the deadline */
+  perMonth?: number
+  overdue: boolean
+}
+
+/** How far along a goal is: a linked wallet's balance, else the amount typed in. */
+export function goalProgress(goal: SpendGoal, wallets: Pick<CashAccount, 'id' | 'balance'>[], today = localDateStr()): GoalProgress {
+  const linked = goal.walletId ? wallets.find((w) => w.id === goal.walletId) : undefined
+  const saved = Math.max(0, linked ? linked.balance : goal.saved ?? 0)
+  const left = Math.max(0, goal.target - saved)
+  const done = left <= 0
+  const pct = goal.target > 0 ? Math.min(100, (saved / goal.target) * 100) : 0
+  if (!goal.deadline || done) return { saved, left, pct, done, overdue: false }
+  const overdue = goal.deadline < today
+  if (overdue) return { saved, left, pct, done, overdue }
+  const t = parse(today)
+  const d = parse(goal.deadline)
+  const monthsLeft = Math.max(1, (d.getFullYear() - t.getFullYear()) * 12 + d.getMonth() - t.getMonth())
+  return { saved, left, pct, done, overdue, monthsLeft, perMonth: left / monthsLeft }
 }

@@ -3,6 +3,7 @@ import type { CashAccount, PayCycle, SpendCard, SpendRecurring, SpendTransaction
 import {
   accountTotals,
   averageMonthlySpend,
+  goalProgress,
   isThaiHoliday,
   thaiHolidays,
   minimumPayment,
@@ -190,5 +191,19 @@ describe('Thai holidays', () => {
     expect(paydayIn(2026, 9, base).getDate()).toBe(23)
     expect(paydayIn(2026, 9, { ...base, holidays: true }).getDate()).toBe(22)
     expect(paydayIn(2026, 9, { ...base, extraHolidays: ['2026-10-23', '2026-10-22'] }).getDate()).toBe(21)
+  })
+})
+
+describe('goalProgress', () => {
+  const goal = { id: 'g', name: 'Trip', target: 12000, createdAt: '' }
+  it('uses the typed amount, or the linked wallet', () => {
+    expect(goalProgress({ ...goal, saved: 3000 }, [], '2026-01-10')).toMatchObject({ saved: 3000, left: 9000, pct: 25, done: false })
+    expect(goalProgress({ ...goal, walletId: 'w', saved: 1 }, [{ id: 'w', balance: 12500 }], '2026-01-10')).toMatchObject({ saved: 12500, left: 0, pct: 100, done: true })
+  })
+  it('works out the monthly amount to a deadline', () => {
+    const p = goalProgress({ ...goal, saved: 0, deadline: '2026-07-01' }, [], '2026-01-10')
+    expect(p.monthsLeft).toBe(6)
+    expect(p.perMonth).toBe(2000)
+    expect(goalProgress({ ...goal, deadline: '2025-12-01' }, [], '2026-01-10').overdue).toBe(true)
   })
 })

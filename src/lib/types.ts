@@ -363,6 +363,24 @@ export interface SpendCustomCategory {
   hidden?: boolean
 }
 
+/** Something to save up for. Progress follows a linked wallet's balance, or a typed amount. */
+export interface SpendGoal {
+  id: string
+  name: string
+  /** THB */
+  target: number
+  /** Cash wallet whose balance counts as saved */
+  walletId?: string
+  /** Saved so far, when no wallet is linked */
+  saved?: number
+  /** YYYY-MM-DD */
+  deadline?: string
+  /** Key from the Spend category icon set */
+  icon?: string
+  tone?: string
+  createdAt: string
+}
+
 export type SpendCategoryEdit = Partial<Pick<SpendCustomCategory, 'label' | 'tone' | 'icon' | 'hidden'>>
 
 export type RecurringFrequency = 'weekly' | 'monthly' | 'yearly'
@@ -476,6 +494,8 @@ export interface SpendiaryData {
   spendCards?: SpendCard[]
   /** Spend module: repeating bills and income */
   spendRecurring?: SpendRecurring[]
+  /** Spend module: savings goals */
+  spendGoals?: SpendGoal[]
   /** Timestamp in ms when this data was last modified locally */
   lastUpdatedAt?: number
 }

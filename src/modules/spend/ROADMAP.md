@@ -31,7 +31,6 @@
 
 ### Spend features
 9. Bulk import of past transactions (bank / card statement CSV or AI).
-10. Savings goals.
 13. USD wallets (currently THB only).
 15. Receipt scanning (needs a server-side function for the vision API key).
 

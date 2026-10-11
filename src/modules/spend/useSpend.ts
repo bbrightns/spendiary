@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useData } from '../../store/DataContext'
-import type { SpendCard, SpendCustomCategory, SpendRecurring, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
+import type { SpendCard, SpendCustomCategory, SpendGoal, SpendRecurring, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
 import { SPEND_CATEGORIES } from './categories'
 import { investTransactions } from './invest'
 import { DEFAULT_BILL_REMINDER_DAYS, applyToBalances, cardBill, dueRecurring, parseTags, sortTxns, spendWallets } from './logic'
@@ -72,6 +72,7 @@ export function useSpend() {
   const reminders = useMemo(() => bills.filter((b) => b.remind).sort((a, b) => a.daysToDue - b.daysToDue), [bills])
 
   const recurring = useMemo(() => data.spendRecurring ?? [], [data.spendRecurring])
+  const goals = useMemo(() => data.spendGoals ?? [], [data.spendGoals])
   /** Recurring occurrences waiting to be confirmed or skipped */
   const dueRecurringList = useMemo(() => dueRecurring(recurring), [recurring])
 
@@ -225,6 +226,21 @@ export function useSpend() {
     return used ? 'hidden' : 'removed'
   }
 
+  function upsertGoal(goal: Omit<SpendGoal, 'id' | 'createdAt'> & { id?: string }): string {
+    const id = goal.id ?? newId()
+    setData((prev) => {
+      const list = prev.spendGoals ?? []
+      const old = list.find((g) => g.id === id)
+      const next: SpendGoal = { ...old, ...goal, id, createdAt: old?.createdAt ?? new Date().toISOString() }
+      return { ...prev, spendGoals: old ? list.map((g) => (g.id === id ? next : g)) : [...list, next] }
+    })
+    return id
+  }
+
+  function removeGoal(id: string) {
+    setData((prev) => ({ ...prev, spendGoals: (prev.spendGoals ?? []).filter((g) => g.id !== id) }))
+  }
+
   function toggleFavorite(id: string) {
     setData((prev) => {
       const favs = prev.spendSettings?.favoriteAccountIds ?? []
@@ -255,6 +271,9 @@ export function useSpend() {
     upsertCard,
     removeCard,
     toggleFavorite,
+    goals,
+    upsertGoal,
+    removeGoal,
     upsertCategory,
     resetCategory,
     removeCategory,

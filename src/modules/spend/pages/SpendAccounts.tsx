@@ -9,6 +9,7 @@ import { ChevronRightIcon, CreditCardIcon } from '../../../components/icons'
 import { localDateStr, thb } from '../../../lib/format'
 import type { SpendCard } from '../../../lib/types'
 import { CardSheet, StarIcon, WalletSheet } from '../AccountSheets'
+import { GoalsSection } from '../Goals'
 import { cardCycle, inPeriod, isCalendar, periodFor, upcomingDue } from '../logic'
 import { MethodIcon } from '../PayMethodPicker'
 import { dueText, openPayBill } from '../PayBillSheet'
@@ -276,6 +277,8 @@ export function SpendAccounts() {
         )}
         <p className="px-1 text-xs text-ink-muted">USD accounts stay on the Invest side for now.</p>
       </section>
+
+      <GoalsSection />
 
       <CardSheet open={cardSheet.open} card={cardSheet.card ? cards.find((c) => c.id === cardSheet.card!.id) : undefined} onClose={() => setCardSheet({ open: false })} />
       <WalletSheet wallet={walletSheet} onClose={() => setWalletSheet(undefined)} />

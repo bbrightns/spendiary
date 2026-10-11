@@ -38,7 +38,7 @@ import {
 import { openQuickAdd } from '../../modules/spend/QuickAddSheet'
 import { openPayBill } from '../../modules/spend/PayBillSheet'
 import { ListBulletIcon, RepeatIcon, TransferIcon, getCategory, manageableCategories, type SpendCategory } from '../../modules/spend/categories'
-import { TAG_RE, frequencyLabel } from '../../modules/spend/logic'
+import { TAG_RE, frequencyLabel, goalProgress } from '../../modules/spend/logic'
 import { isSpendPath } from '../../modules/spend/nav'
 import { TONES } from '../../modules/spend/tones'
 import { useSpend } from '../../modules/spend/useSpend'
@@ -492,6 +492,21 @@ export function CommandPalette() {
       })
     }
 
+    // ── Savings goals ──
+    for (const g of spend.goals) {
+      const p = goalProgress(g, spend.wallets)
+      list.push({
+        id: `goal-${g.id}`,
+        title: g.name,
+        subtitle: `Savings goal · ${Math.round(p.pct)}% · ${thb(p.saved)} of ${thb(g.target)}`,
+        keywords: ['goal', 'saving', 'save', 'เป้าหมาย', 'ออมเงิน'],
+        group: 'Accounts',
+        spend: true,
+        icon: ic(SparkleIcon, 'text-emerald-500'),
+        run: go('/spend/accounts'),
+      })
+    }
+
     // ── Holdings ──
     for (const h of data.holdings ?? []) {
       const valThb = (h.units ?? 0) * (h.price ?? 0)
@@ -536,7 +551,7 @@ export function CommandPalette() {
     return list
     // Category edits live in settings; the lookups read them, so list them to rebuild on change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spend.methods, spend.recurring, spend.settings.customCategories, spend.settings.categoryEdits, data.holdings, data.dcaPlans, data.liabilities, theme, setTheme, showToast, exportData, go])
+  }, [spend.methods, spend.recurring, spend.goals, spend.wallets, spend.settings.customCategories, spend.settings.categoryEdits, data.holdings, data.dcaPlans, data.liabilities, theme, setTheme, showToast, exportData, go])
 
   // ── Rank everything against the query ──
   const results = useMemo<Ranked[]>(() => {
