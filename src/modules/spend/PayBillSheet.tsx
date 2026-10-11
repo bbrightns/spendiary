@@ -271,6 +271,11 @@ export function PayBillSheet() {
                 </div>
               </div>
 
+              {amount > owed + 0.005 && (
+                <p className="-mt-2 text-xs text-ink-muted">
+                  {thb(amount - owed, true)} more than you owe — it stays on the card as credit for your next charges.
+                </p>
+              )}
               {mode === 'min' && (
                 <p className="-mt-2 text-xs text-ink-muted">Interest is charged on what's left after the due date.</p>
               )}

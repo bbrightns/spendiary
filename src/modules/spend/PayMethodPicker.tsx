@@ -103,7 +103,9 @@ export function PayMethodPicker({ label, methods, value, onChange, favoriteIds, 
             )}
             <optgroup label="Wallets">
               {usable.filter((m) => m.kind === 'cash').map((m) => (
-                <option key={m.id} value={m.id}>{`${m.name} · ${thb(m.balance, true)}`}</option>
+                <option key={m.id} value={m.id}>
+                  {`${m.name} · ${m.kind === 'card' ? (m.balance < 0 ? `${thb(-m.balance, true)} credit` : `${thb(m.balance, true)} owed`) : thb(m.balance, true)}`}
+                </option>
               ))}
             </optgroup>
           </select>

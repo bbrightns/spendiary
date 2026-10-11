@@ -442,7 +442,9 @@ export function CommandPalette() {
       list.push({
         id: `acct-${m.id}`,
         title: m.name,
-        subtitle: card ? `Credit card · ${thb(m.balance, true)} owed` : `Wallet · ${thb(m.balance, true)}`,
+        subtitle: card
+          ? `Credit card · ${m.balance < 0 ? `${thb(-m.balance, true)} credit` : `${thb(m.balance, true)} owed`}`
+          : `Wallet · ${thb(m.balance, true)}`,
         keywords: card ? ['card', 'credit', 'บัตร'] : ['wallet', 'account', 'bank', 'กระเป๋า', 'บัญชี'],
         group: 'Accounts',
         spend: true,

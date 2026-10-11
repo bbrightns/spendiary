@@ -237,3 +237,14 @@ describe('cardBill early payments', () => {
     expect(bill).toMatchObject({ to: '2026-10-25', statementTotal: 300, amountDue: 300 })
   })
 })
+
+describe('overpaying a card', () => {
+  it('leaves credit that the next charges use up first', () => {
+    const b = { cashAccounts: [wallet('w', 10000)], spendCards: [card({ balance: 600 })] }
+    const paid = applyToBalances(b, txn({ type: 'transfer', accountId: 'w', toAccountId: 'card', amount: 1000 }), 1)
+    expect(paid.spendCards[0].balance).toBe(-400)
+    expect(cardBill(paid.spendCards[0], [], 5, '2026-10-26')).toMatchObject({ amountDue: 0, status: 'clear' })
+    const charged = applyToBalances(paid, txn({ accountId: 'card', amount: 650 }), 1)
+    expect(charged.spendCards[0].balance).toBe(250)
+  })
+})

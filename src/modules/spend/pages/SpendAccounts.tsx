@@ -31,7 +31,9 @@ export function SpendAccounts() {
 
   const wallets = methods.filter((m) => m.kind === 'cash')
   const cashTotal = wallets.reduce((s, w) => s + w.balance, 0)
-  const owed = cards.reduce((s, c) => s + c.balance, 0)
+  // Overpaying leaves a card below zero: that's credit, kept apart from what's owed
+  const owed = cards.reduce((s, c) => s + Math.max(0, c.balance), 0)
+  const credit = cards.reduce((s, c) => s + Math.max(0, -c.balance), 0)
   const limit = cards.reduce((s, c) => s + c.creditLimit, 0)
 
   // This month's in / out per wallet (transfers count on both sides)
@@ -100,7 +102,8 @@ export function SpendAccounts() {
         <Card className="p-3 sm:p-5 animate-rise" padded={false}>
           <p className="text-xs font-medium text-ink-muted">Owed on cards</p>
           <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate text-ink">{thb(owed, true)}</p>
-          {limit > 0 && <p className="mt-0.5 text-xs text-ink-muted tnum">{thb(limit - owed, true)} available</p>}
+          {limit > 0 && <p className="mt-0.5 text-xs text-ink-muted tnum">{thb(limit - owed + credit, true)} available</p>}
+          {credit > 0 && <p className="text-xs font-semibold text-gain tnum">{thb(credit, true)} credit</p>}
         </Card>
       </div>
 
@@ -123,7 +126,7 @@ export function SpendAccounts() {
           <div className="grid gap-3 lg:grid-cols-2">
             {cards.map((c) => {
               const cyc = cardCycle(c)
-              const used = c.creditLimit > 0 ? Math.min(100, (c.balance / c.creditLimit) * 100) : 0
+              const used = c.creditLimit > 0 ? Math.min(100, Math.max(0, (c.balance / c.creditLimit) * 100)) : 0
               const spentCycle = cycleSpend(c, cyc.lastStatement)
               const bill = bills.find((b) => b.card.id === c.id)
               // An open statement wins; otherwise show the next one forming
@@ -156,8 +159,10 @@ export function SpendAccounts() {
 
                     <div className="mt-4 flex items-end justify-between gap-3">
                       <div>
-                        <p className="text-xs text-ink-muted">Owed</p>
-                        <p className="font-display text-2xl font-extrabold tracking-tight tnum text-ink">{thb(c.balance, true)}</p>
+                        <p className="text-xs text-ink-muted">{c.balance < 0 ? 'Credit on card' : 'Owed'}</p>
+                        <p className={`font-display text-2xl font-extrabold tracking-tight tnum ${c.balance < 0 ? 'text-gain' : 'text-ink'}`}>
+                          {thb(Math.abs(c.balance), true)}
+                        </p>
                       </div>
                       <p className="text-right text-xs text-ink-muted tnum">
                         {thb(Math.max(0, c.creditLimit - c.balance), true)} left
