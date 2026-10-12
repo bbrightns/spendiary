@@ -39,6 +39,7 @@ export function SpendAccounts() {
   // Each shared limit counted once, less installment holds
   const credit = totalAvailable(cards, liabilities)
   const limit = credit.limit
+  const usedPct = limit > 0 ? Math.min(100, Math.max(0, ((limit - credit.left) / limit) * 100)) : 0
 
   // This month's in / out per wallet (transfers count on both sides)
   const flows = useMemo(() => {
@@ -69,18 +70,46 @@ export function SpendAccounts() {
         subtitle="Wallets and credit cards you pay with. Star the ones you use most."
       />
 
-      {/* Same order and columns as the sections below: cards, then wallets */}
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-[360px_minmax(0,1fr)] md:gap-6 xl:gap-8">
-        <Card className="p-3 sm:p-5 animate-rise" padded={false}>
-          <p className="text-xs font-medium text-ink-muted">Owed on cards</p>
-          <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate text-ink">{thbSigned(owed, true)}</p>
-          {limit > 0 && <p className="mt-0.5 text-xs text-ink-muted tnum">{thb(credit.left, true)} available</p>}
-        </Card>
-        <Card className="p-3 sm:p-5 animate-rise" padded={false}>
-          <p className="text-xs font-medium text-ink-muted">In wallets</p>
-          <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate text-ink">{thb(cashTotal, true)}</p>
-        </Card>
-      </div>
+      {/* ── Summary: what's in wallets, what the cards owe, and how much of the limit is used ── */}
+      <Card className="p-4 sm:p-6 animate-rise" padded={false}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-ink-muted">In wallets</p>
+            <p className="mt-1 font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ink tnum truncate">{thb(cashTotal, true)}</p>
+            <p className="mt-1 text-xs text-ink-muted tnum">
+              {cards.length > 0 ? `${thbSigned(cashTotal - owed, true)} after paying every card` : `${wallets.length} wallet${wallets.length === 1 ? '' : 's'}`}
+            </p>
+          </div>
+          {cards.length > 0 && (
+            <div className="sm:text-right">
+              <p className="text-sm font-medium text-ink-muted">Owed on cards</p>
+              <p className="mt-1 font-display text-xl sm:text-2xl font-extrabold text-ink tnum">{thbSigned(owed, true)}</p>
+              <p className="mt-0.5 text-xs text-ink-muted tnum">
+                {cards.length} card{cards.length === 1 ? '' : 's'}
+                {limit > 0 && ` · ${thb(limit, true)} limit`}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Credit used vs. still available (installment holds count as used) */}
+        {limit > 0 && (
+          <>
+            <div className="mt-5 flex h-2.5 w-full gap-1 overflow-hidden rounded-full bg-surface-muted" aria-hidden>
+              {usedPct > 0 && <div className="rounded-full bg-brand" style={{ width: `${usedPct}%` }} />}
+            </div>
+            <p className="mt-2 flex justify-between gap-3 text-xs text-ink-muted tnum">
+              <span>
+                <span className="font-semibold text-ink-soft">{usedPct.toFixed(0)}%</span> of limit used
+                {credit.limit - credit.left > owed + 0.005 && ' (incl. installments)'}
+              </span>
+              <span>
+                <span className="font-semibold text-ink-soft">{thb(Math.max(0, credit.left), true)}</span> available
+              </span>
+            </p>
+          </>
+        )}
+      </Card>
 
       {/* md+: card stack on the left, wallets fill the rest */}
       <div className="space-y-6 md:grid md:grid-cols-[360px_minmax(0,1fr)] md:items-start md:gap-6 md:space-y-0 xl:gap-8">
