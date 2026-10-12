@@ -9,6 +9,7 @@ import type { SpendCard } from '../../lib/types'
 import { accountTotals } from './logic'
 import { CARD_COLORS, CARD_PALETTE, cardFace, inkOn } from './cardColor'
 import { useSpend, type PayMethod } from './useSpend'
+import { openQuickAdd } from './QuickAddSheet'
 
 
 export function StarIcon({ filled, className = 'h-4 w-4' }: { filled?: boolean; className?: string }) {
@@ -324,6 +325,28 @@ export function WalletSheet({ wallet, onClose }: { wallet?: PayMethod; onClose: 
     <Modal open={!!wallet} onClose={onClose} title={wallet?.name ?? 'Wallet'} description={wallet ? `Balance ${thb(wallet.balance, true)}` : undefined} size="sm">
       {wallet && (
         <div className="space-y-5">
+          {/* Log straight from this wallet; the sheet closes and Quick add opens with it picked */}
+          <div className="grid grid-cols-3 gap-2">
+            {(
+              [
+                { type: 'expense', label: 'Spend' },
+                { type: 'income', label: 'Income' },
+                { type: 'transfer', label: 'Transfer' },
+              ] as const
+            ).map((a) => (
+              <Button
+                key={a.type}
+                variant={a.type === 'transfer' ? 'primary' : 'secondary'}
+                size="sm"
+                onClick={() => {
+                  onClose()
+                  openQuickAdd({ draft: { type: a.type, accountId: wallet.id } })
+                }}
+              >
+                {a.label}
+              </Button>
+            ))}
+          </div>
           <AccountHistory id={wallet.id} name={wallet.name} />
           <QuickAddPrefs id={wallet.id} />
           <Button variant="secondary" size="sm" className="w-full" onClick={() => navigate('/cash')}>
