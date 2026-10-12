@@ -75,6 +75,13 @@ const inputClass =
 const digits = (v: string) => v.replace(/[^\d.,]/g, '')
 const num = (v: string) => Number(v.replace(/,/g, ''))
 
+const RAINBOW = 'conic-gradient(#ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #8b5cf6, #ec4899, #ef4444)'
+/** "1d4ed8" or "14d" (no #) → "#1d4ed8"; anything else → undefined */
+function parseHex(v: string): string | undefined {
+  if (/^[0-9a-f]{6}$/i.test(v)) return `#${v.toLowerCase()}`
+  if (/^[0-9a-f]{3}$/i.test(v)) return `#${[...v.toLowerCase()].map((c) => c + c).join('')}`
+}
+
 interface CardSheetProps {
   open: boolean
   /** Card to edit; omit to add a new one */
@@ -89,9 +96,13 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
   // Main card whose limit this one shares ('' = its own limit)
   const [shareWith, setShareWith] = useState('')
   const [inNetWorth, setInNetWorth] = useState(true)
+  // What's typed in the hex field while editing (null = show the current color)
+  const [hexDraft, setHexDraft] = useState<string | null>(null)
+  const customColor = !CARD_COLORS.includes(form.color)
   const [lastOpen, setLastOpen] = useState(false)
   if (open !== lastOpen) {
     setLastOpen(open)
+    if (open) setHexDraft(null)
     if (open) setInNetWorth(!card?.excludeFromNetWorth)
     if (open) setShareWith(card?.sharedLimitWith ?? '')
     if (open)
@@ -258,30 +269,32 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
                 ))}
               </div>
             ))}
-            {/* Any other color: the browser's own picker, shown as a rainbow swatch (or the picked color) */}
-            <label
-              title="Custom color"
-              className={`relative flex h-8 w-fit items-center gap-2 rounded-full pr-3 text-xs font-semibold text-ink-soft cursor-pointer ${
-                CARD_COLORS.includes(form.color) ? '' : 'text-brand-ink'
-              }`}
-            >
+            {/* Any other color: type a hex code; it applies once it's a full #RGB or #RRGGBB */}
+            <div className="flex items-center gap-2.5">
               <span
-                className={`h-8 w-8 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/20 ${CARD_COLORS.includes(form.color) ? '' : 'scale-110 ring-2 ring-brand ring-offset-2 ring-offset-surface'}`}
-                style={{
-                  background: CARD_COLORS.includes(form.color)
-                    ? 'conic-gradient(#ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #8b5cf6, #ec4899, #ef4444)'
-                    : form.color,
-                }}
+                aria-hidden
+                className={`h-8 w-8 shrink-0 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/20 ${customColor ? 'scale-110 ring-2 ring-brand ring-offset-2 ring-offset-surface' : ''}`}
+                style={{ background: customColor ? form.color : RAINBOW }}
               />
-              {CARD_COLORS.includes(form.color) ? 'Custom' : form.color.toUpperCase()}
-              <input
-                type="color"
-                value={form.color}
-                onChange={(e) => set('color')(e.target.value)}
-                aria-label="Custom color"
-                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-              />
-            </label>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ink-muted">#</span>
+                <input
+                  value={hexDraft ?? (customColor ? form.color.slice(1).toUpperCase() : '')}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/[^0-9a-f]/gi, '').slice(0, 6)
+                    setHexDraft(v)
+                    const hex = parseHex(v)
+                    if (hex) set('color')(hex)
+                  }}
+                  onBlur={() => setHexDraft(null)}
+                  placeholder="Custom hex"
+                  aria-label="Custom color, hex code"
+                  autoComplete="off"
+                  spellCheck={false}
+                  className="h-9 w-36 rounded-xl border border-line-strong bg-surface pl-7 pr-3 font-mono text-base uppercase text-ink outline-none transition-colors placeholder:font-sans placeholder:normal-case placeholder:text-sm placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
