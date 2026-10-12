@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { DcaPlan, Holding } from '../../lib/types'
 import {
@@ -8,16 +8,13 @@ import {
   isBuyDayToday,
   isDividendReceivedThisMonth,
   isLiabilityActionableThisMonth,
-  nextBuyDate,
   shouldConfirmBuy,
 } from '../../lib/calc'
-import { thb, thbCompact } from '../../lib/format'
+import { thb } from '../../lib/format'
 import { useData } from '../../store/DataContext'
 import { DcaIcon, ReceiptPercentIcon } from '../icons'
 
 const FREQ: Record<string, string> = { daily: 'daily', weekly: 'weekly', biweekly: 'every 2 weeks', monthly: 'monthly', quarterly: 'quarterly' }
-const dayLabel = (d: Date) => d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
-const inDays = (n: number) => (n === 0 ? 'today' : n === 1 ? 'tomorrow' : `in ${n} days`)
 
 /** "Buy US Tech Leaders" + its ticker when the name doesn't already say it */
 function planTitle(p: DcaPlan) {
@@ -40,21 +37,56 @@ interface Props {
   onLogDividend: (holding: Holding, dps: number) => void
 }
 
+/** One DCA buy to confirm: the whole card is the button. */
+function DcaCard({ plan, now, into, onConfirm }: { plan: DcaPlan; now: Date; into?: string; onConfirm: () => void }) {
+  const today = isBuyDayToday(plan, now)
+  const t = planTitle(plan)
+  return (
+    <button
+      type="button"
+      onClick={onConfirm}
+      className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors cursor-pointer animate-rise ${
+        today ? 'border-brand/30 bg-brand-soft/70 hover:bg-brand-soft' : 'border-warn/30 bg-warn-soft hover:bg-warn-soft/70'
+      }`}
+    >
+      <AssetBadge assetClass={plan.assetClass}>
+        <DcaIcon className="h-4 w-4" />
+      </AssetBadge>
+      <span className="min-w-0 flex-1">
+        <span className="flex min-w-0 items-center gap-1.5 text-sm font-bold text-ink">
+          <span className="truncate">
+            {t.verb} {t.name}
+          </span>
+          {/* Phones keep the room for the name; the ticker shows from sm up */}
+          {t.ticker && <span className="hidden shrink-0 rounded-md bg-surface/70 px-1.5 py-0.5 text-[11px] font-bold text-ink-soft sm:inline">{t.ticker}</span>}
+        </span>
+        <span className={`block truncate text-xs font-semibold tnum ${today ? 'text-brand-ink' : 'text-warn'}`}>
+          {thb(plan.monthlyAmount)} {FREQ[plan.frequency ?? 'monthly']} · {today ? 'due today' : 'late'}
+          {into && ` · into ${into}`}
+        </span>
+      </span>
+      <span className="shrink-0 rounded-full bg-ink px-3.5 py-1.5 text-xs font-bold text-white dark:bg-[#4f46e5]">Confirm</span>
+    </button>
+  )
+}
+
 /**
- * Invest's "Today" stack, in the same style as Spend's bill cards: DCA buys to confirm and
- * dividends to log (each with its own button), a quiet line for loans (paid from Spend), and
- * the next few DCA buys with what, how much and when.
+ * Invest's "Today" stack, in the same style as Spend's bill cards: DCA buys to confirm (one card,
+ * or a single summary card that opens into a list when there are several), dividends to log, and
+ * a quiet line for loans (paid from Spend). Upcoming buys live on the DCA page.
  */
 export function InvestReminders({ onConfirmDca, onLogDividend }: Props) {
   const { data } = useData()
+  const [dcaOpen, setDcaOpen] = useState(false)
   const now = new Date()
   const month = now.getMonth() + 1
   const monthName = now.toLocaleDateString('en-GB', { month: 'long' })
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
   const account = (id?: string) => data.cashAccounts.find((a) => a.id === id)?.name
 
   // Late first, then due today
   const dcaDue = data.dcaPlans.filter((p) => shouldConfirmBuy(p, now)).sort((a, b) => Number(isBuyDayToday(a, now)) - Number(isBuyDayToday(b, now)))
+  const dcaLate = dcaDue.filter((p) => !isBuyDayToday(p, now)).length
+  const dcaTotal = dcaDue.reduce((sum, p) => sum + p.monthlyAmount, 0)
   const dividends = (data.holdings ?? []).filter(
     (h) => h.paysDividend && (h.dividendMonths ?? []).includes(month) && !isDividendReceivedThisMonth(h.id, data.dividendRecords),
   )
@@ -62,54 +94,65 @@ export function InvestReminders({ onConfirmDca, onLogDividend }: Props) {
   const loansDue = loans.length
   // The old red "Overdue debts" chip is gone, so the quiet line still calls out anything late
   const loansOverdue = loans.filter((l) => getLiabilityDueStatus(l).status === 'overdue').length
-  // Non-daily buys in the next week (weekly plans only in their last 2 days, so it isn't always full)
-  const upcoming = data.dcaPlans
-    .filter((p) => (p.frequency ?? 'monthly') !== 'daily' && !shouldConfirmBuy(p, now))
-    .map((p) => {
-      const next = nextBuyDate(p, now)
-      const days = Math.round((new Date(next.getFullYear(), next.getMonth(), next.getDate()).getTime() - startOfToday) / 86_400_000)
-      return { plan: p, next, days }
-    })
-    .filter((x) => x.days >= 0 && x.days <= ((x.plan.frequency ?? 'monthly') === 'weekly' ? 2 : 7))
-    .sort((a, b) => a.days - b.days)
-
-  if (dcaDue.length + dividends.length + loansDue + upcoming.length === 0) return null
+  if (dcaDue.length + dividends.length + loansDue === 0) return null
 
   return (
     <div id="guide-dashboard-dca" className="space-y-2" role="region" aria-label="To do today">
-      {dcaDue.map((p) => {
-        const today = isBuyDayToday(p, now)
-        const t = planTitle(p)
-        const into = p.assetClass === 'cash' ? account(p.cashAccountId) : undefined
-        return (
+      {dcaDue.length === 1 && (
+        <DcaCard plan={dcaDue[0]} now={now} into={dcaDue[0].assetClass === 'cash' ? account(dcaDue[0].cashAccountId) : undefined} onConfirm={() => onConfirmDca(dcaDue[0])} />
+      )}
+
+      {/* Several buys: one summary card so they don't push the rest of Home down */}
+      {dcaDue.length > 1 && (
+        <div className={`overflow-hidden rounded-2xl border animate-rise ${dcaLate > 0 ? 'border-warn/30 bg-warn-soft' : 'border-brand/30 bg-brand-soft/70'}`}>
           <button
-            key={p.id}
             type="button"
-            onClick={() => onConfirmDca(p)}
-            className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors cursor-pointer animate-rise ${
-              today ? 'border-brand/30 bg-brand-soft/70 hover:bg-brand-soft' : 'border-warn/30 bg-warn-soft hover:bg-warn-soft/70'
-            }`}
+            onClick={() => setDcaOpen((o) => !o)}
+            aria-expanded={dcaOpen}
+            className="flex w-full items-center gap-3 px-4 py-3 text-left cursor-pointer"
           >
-            <AssetBadge assetClass={p.assetClass}>
+            <span className="grid h-9 w-12 shrink-0 place-items-center rounded-lg bg-brand text-white">
               <DcaIcon className="h-4 w-4" />
-            </AssetBadge>
+            </span>
             <span className="min-w-0 flex-1">
-              <span className="flex min-w-0 items-center gap-1.5 text-sm font-bold text-ink">
-                <span className="truncate">
-                  {t.verb} {t.name}
-                </span>
-                {/* Phones keep the room for the name; the ticker shows from sm up */}
-                {t.ticker && <span className="hidden shrink-0 rounded-md bg-surface/70 px-1.5 py-0.5 text-[11px] font-bold text-ink-soft sm:inline">{t.ticker}</span>}
-              </span>
-              <span className={`block truncate text-xs font-semibold tnum ${today ? 'text-brand-ink' : 'text-warn'}`}>
-                {thb(p.monthlyAmount)} {FREQ[p.frequency ?? 'monthly']} · {today ? 'due today' : 'late'}
-                {into && ` · into ${into}`}
+              <span className="block truncate text-sm font-bold text-ink">{dcaDue.length} DCA buys to confirm</span>
+              <span className="block truncate text-xs font-semibold tnum text-brand-ink">
+                {thb(dcaTotal)} total
+                {dcaLate > 0 && <span className="text-warn"> · {dcaLate} late</span>}
               </span>
             </span>
-            <span className="shrink-0 rounded-full bg-ink px-3.5 py-1.5 text-xs font-bold text-white dark:bg-[#4f46e5]">Confirm</span>
+            <span className="shrink-0 rounded-full bg-ink px-3.5 py-1.5 text-xs font-bold text-white dark:bg-[#4f46e5]">{dcaOpen ? 'Hide' : 'Review'}</span>
           </button>
-        )
-      })}
+          {dcaOpen && (
+            <ul className="divide-y divide-line/60 border-t border-line/60 bg-surface/60">
+              {dcaDue.map((p) => {
+                const t = planTitle(p)
+                const late = !isBuyDayToday(p, now)
+                return (
+                  <li key={p.id} className="flex items-center gap-3 px-4 py-2.5">
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: ASSET_META[p.assetClass]?.color }} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-ink">
+                        {t.verb} {t.name}
+                      </span>
+                      <span className={`block truncate text-xs font-semibold tnum ${late ? 'text-warn' : 'text-ink-muted'}`}>
+                        {thb(p.monthlyAmount)} {FREQ[p.frequency ?? 'monthly']} · {late ? 'late' : 'due today'}
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onConfirmDca(p)}
+                      className="shrink-0 rounded-full bg-ink px-3.5 py-1.5 text-xs font-bold text-white cursor-pointer dark:bg-[#4f46e5]"
+                    >
+                      Confirm
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </div>
+      )}
 
       {dividends.map((h) => {
         const dps = getHoldingDpsForMonth(h, month)
@@ -150,36 +193,6 @@ export function InvestReminders({ onConfirmDca, onLogDividend }: Props) {
           </span>
           <span aria-hidden="true">→</span>
         </Link>
-      )}
-
-      {upcoming.length > 0 && (
-        <div className="rounded-2xl border border-line bg-surface/80 px-4 py-3">
-          <p className="mb-1.5 text-xs font-bold uppercase tracking-wider text-ink-muted">Next DCA buys</p>
-          <ul className="divide-y divide-line/60">
-            {upcoming.slice(0, 3).map(({ plan, next, days }) => {
-              const t = planTitle(plan)
-              return (
-                <li key={plan.id} className="flex items-center gap-3 py-1.5 text-sm">
-                  <span className="w-24 shrink-0 tnum">
-                    <span className="block text-xs font-semibold text-ink-soft">{dayLabel(next)}</span>
-                    <span className={`block text-[11px] font-semibold ${days <= 1 ? 'text-warn' : 'text-ink-muted'}`}>{inDays(days)}</span>
-                  </span>
-                  <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: ASSET_META[plan.assetClass]?.color }} />
-                    <span className="truncate font-semibold text-ink">{t.name}</span>
-                    {t.ticker && <span className="shrink-0 text-xs text-ink-muted">{t.ticker}</span>}
-                  </span>
-                  <span className="shrink-0 font-semibold tnum text-ink">{thbCompact(plan.monthlyAmount)}</span>
-                </li>
-              )
-            })}
-          </ul>
-          {upcoming.length > 3 && (
-            <Link to="/dca" className="mt-1 inline-block text-xs font-semibold text-brand hover:underline">
-              +{upcoming.length - 3} more in DCA →
-            </Link>
-          )}
-        </div>
       )}
     </div>
   )
