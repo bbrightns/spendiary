@@ -23,9 +23,9 @@ import { useSpend } from './useSpend'
 type Tone = 'loss' | 'warn' | 'brand' | 'gain'
 
 const TONE: Record<Tone, { card: string; text: string }> = {
-  // Dark mode uses soft pastels: pink-red for late or overdue, pale yellow for due soon
-  loss: { card: 'border-loss/30 bg-loss-soft dark:border-rose-300/25 dark:bg-rose-300/[0.07]', text: 'text-loss dark:text-rose-300' },
-  warn: { card: 'border-warn/30 bg-warn-soft dark:border-amber-200/20 dark:bg-amber-200/[0.06]', text: 'text-warn dark:text-amber-200' },
+  // Pastels with enough body to read: pink-red for late or overdue, yellow for due soon
+  loss: { card: 'border-rose-300 bg-rose-100 dark:border-rose-300/45 dark:bg-rose-300/[0.16]', text: 'text-rose-700 dark:text-rose-300' },
+  warn: { card: 'border-amber-300 bg-amber-100 dark:border-amber-200/40 dark:bg-amber-200/[0.13]', text: 'text-amber-700 dark:text-amber-200' },
   brand: { card: 'border-brand/30 bg-brand-soft/70', text: 'text-brand-ink' },
   gain: { card: 'border-gain/30 bg-gain-soft', text: 'text-gain' },
 }
