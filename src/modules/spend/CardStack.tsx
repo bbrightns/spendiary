@@ -37,7 +37,7 @@ function FavoriteToggle({ on, name, light, onToggle, className = '' }: { on: boo
       }}
       aria-pressed={on}
       aria-label={on ? `Unfavorite ${name}` : `Favorite ${name}`}
-      className={`-ml-2 grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current ${light ? 'hover:bg-white/15' : 'hover:bg-slate-900/10'} ${on ? 'text-amber-300' : 'opacity-70 hover:opacity-100'} ${className}`}
+      className={`-mx-2 grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current ${light ? 'hover:bg-white/15' : 'hover:bg-slate-900/10'} ${on ? 'text-amber-300' : 'opacity-70 hover:opacity-100'} ${className}`}
     >
       <StarIcon filled={on} />
     </button>
