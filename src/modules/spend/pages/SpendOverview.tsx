@@ -6,7 +6,8 @@ import { Button } from '../../../components/ui/Button'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import { Modal } from '../../../components/ui/Modal'
 import { PencilIcon, WalletIcon } from '../../../components/icons'
-import { localDateStr, thb } from '../../../lib/format'
+import { getRandomGreeting, localDateStr, thb } from '../../../lib/format'
+import { useData } from '../../../store/DataContext'
 import { dayAllowance, inPeriod, periodFor, shiftDate, type DayStatus } from '../logic'
 import { RecurringDue } from '../RecurringDue'
 import { openQuickAdd } from '../QuickAddSheet'
@@ -54,6 +55,9 @@ export function SpendOverview() {
   const [day, setDay] = useState(today)
   const [budgetOpen, setBudgetOpen] = useState(false)
   const [arrangeOpen, setArrangeOpen] = useState(false)
+  const userName = useData().data.userName
+  // Time-aware greeting, picked once per visit
+  const greeting = useMemo(() => getRandomGreeting(), [])
 
   const budget = settings.monthlyBudget ?? 0
   const allowance = useMemo(() => dayAllowance(budget, period, transactions, today), [budget, period, transactions, today])
@@ -80,6 +84,7 @@ export function SpendOverview() {
     <>
       {/* ── Today's allowance ── */}
       <Card className="animate-rise relative text-center">
+        <h2 className="absolute left-5 top-4 font-display text-lg font-extrabold text-ink">Today</h2>
         {budget > 0 ? (
           <>
             <Gauge pct={allowance.allowance > 0 ? allowance.spentToday / allowance.allowance : 1} strokeClass={st.stroke} />
@@ -107,7 +112,7 @@ export function SpendOverview() {
             </button>
           </>
         ) : (
-          <div className="py-2">
+          <div className="pb-2 pt-8">
             <p className="text-sm text-ink-muted">Spent today</p>
             <p className="font-display text-4xl font-extrabold tracking-tight tnum text-ink">{thb(allowance.spentToday)}</p>
             <p className="mt-2 text-sm text-ink-muted">Set a monthly budget to see what you can spend each day.</p>
@@ -199,12 +204,14 @@ export function SpendOverview() {
   return (
     <div className="space-y-5">
       <header className="flex items-end justify-between gap-3">
-        <div>
-          <p className={`mb-1 text-xs font-semibold uppercase tracking-[0.08em] ${SPEND_ACCENT_TEXT}`}>Spend</p>
-          <h1 className="font-display text-3xl font-extrabold leading-none tracking-tight text-ink">Today</h1>
-          <p className="mt-1.5 text-sm text-ink-muted">
+        <div className="min-w-0">
+          <p className={`mb-1 text-xs font-semibold uppercase tracking-[0.08em] ${SPEND_ACCENT_TEXT}`}>
             {parse(today).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
+          <h1 className="font-display text-2xl sm:text-3xl font-extrabold leading-tight tracking-tight text-ink [text-wrap:balance]">
+            {`${greeting}${userName ? `, ${userName}` : ''}`}
+          </h1>
+          <p className="mt-1.5 text-sm text-ink-muted">Here's where your money stands today.</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="hidden lg:block">

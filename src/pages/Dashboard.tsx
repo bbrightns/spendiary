@@ -19,7 +19,6 @@ import {
   ArrowUpRightIcon,
   CheckIcon,
   DebtIcon,
-  HelpCircleIcon,
   PortfolioIcon,
   SparkleIcon,
   WalletIcon,
@@ -37,7 +36,7 @@ import {
   totalLiabilities,
   totalMonthlyDebtPayment,
 } from '../lib/calc'
-import { getRandomGreeting, moneyCompact, thb, thbCompact } from '../lib/format'
+import { moneyCompact, thb, thbCompact } from '../lib/format'
 
 // Distinct colors for cash account segments — cycles if >8 accounts
 const CASH_COLORS = [
@@ -104,15 +103,6 @@ export function Dashboard() {
     [cash, cashInterest],
   )
 
-  const today = new Date().toLocaleDateString('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  })
-
-  // Randomized time-aware greeting
-  const greeting = useMemo(() => getRandomGreeting(), [])
-
   // Record today's net worth snapshot whenever nw updates
   useEffect(() => {
     if (nw > 0) recordNetWorthSnapshot(nw)
@@ -148,34 +138,8 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header Row with Greetings & Quick Action Badges */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between mb-4">
-        <div>
-          {today && (
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-brand">
-              {today}
-            </p>
-          )}
-          <div className="flex items-center gap-2.5">
-            <h1 className="font-display text-2xl sm:text-3xl font-extrabold leading-none tracking-tight text-ink [text-wrap:balance]">
-              {`${greeting}${data.userName ? `, ${data.userName}` : ''}`}
-            </h1>
-            <button
-              type="button"
-              onClick={startTour}
-              title="Page Guide"
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold text-brand bg-brand/10 hover:bg-brand/20 dark:bg-brand/20 dark:text-brand-ink dark:border-brand/40 active:scale-95 transition-all border border-brand/20 cursor-pointer shadow-xs"
-            >
-              <HelpCircleIcon className="w-3.5 h-3.5" />
-              <span>Guide</span>
-            </button>
-          </div>
-          <p className="mt-1.5 text-sm text-ink-muted">
-            Here's where your wealth and cash flow stand.
-          </p>
-        </div>
-
-      </div>
+      {/* The greeting lives on Spend Home, where the app opens */}
+      <PageHeader eyebrow="Invest" title="Overview" subtitle="Your wealth at a glance." onStartGuide={startTour} className="mb-4" />
 
       {/* ── Today: DCA buys, dividends, bills and loans are all handled on Spend Home ── */}
       <TodayLink id="guide-dashboard-dca" />
