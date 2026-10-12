@@ -23,8 +23,9 @@ import { useSpend } from './useSpend'
 type Tone = 'loss' | 'warn' | 'brand' | 'gain'
 
 const TONE: Record<Tone, { card: string; text: string }> = {
-  loss: { card: 'border-loss/30 bg-loss-soft', text: 'text-loss' },
-  warn: { card: 'border-warn/30 bg-warn-soft', text: 'text-warn' },
+  // Dark mode uses soft pastels: pink-red for late or overdue, pale yellow for due soon
+  loss: { card: 'border-loss/30 bg-loss-soft dark:border-rose-300/25 dark:bg-rose-300/[0.07]', text: 'text-loss dark:text-rose-300' },
+  warn: { card: 'border-warn/30 bg-warn-soft dark:border-amber-200/20 dark:bg-amber-200/[0.06]', text: 'text-warn dark:text-amber-200' },
   brand: { card: 'border-brand/30 bg-brand-soft/70', text: 'text-brand-ink' },
   gain: { card: 'border-gain/30 bg-gain-soft', text: 'text-gain' },
 }
@@ -146,7 +147,8 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
         id: p.id,
         ...planTitle(p),
         detail: `${thb(p.monthlyAmount)} ${FREQ[p.frequency ?? 'monthly']} · ${today ? 'due today' : 'late'}${into ? ` · into ${into}` : ''}`,
-        tone: today ? 'brand' : 'warn',
+        // A late buy reads like an overdue bill
+        tone: today ? 'brand' : 'loss',
         amount: p.monthlyAmount,
         color: ASSET_META[p.assetClass]?.color,
         action: 'Confirm',
@@ -172,7 +174,7 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
 
   const total = (items: Item[]) => thb(items.reduce((s, i) => s + i.amount, 0))
   const lateText = (items: Item[], word: string) => {
-    const n = items.filter((i) => i.tone === 'loss' || (word === 'late' && i.tone === 'warn')).length
+    const n = items.filter((i) => i.tone === 'loss').length
     return n > 0 ? ` · ${n} ${word}` : ''
   }
 
@@ -185,7 +187,7 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
       summary: (items) => {
         const next = Math.min(...items.map((i) => i.days ?? Infinity).filter((d) => d >= 0))
         const overdue = lateText(items, 'overdue')
-        return `${total(items)} total${overdue || (Number.isFinite(next) ? ` · next ${dueText(next).replace('due ', '')}` : '')}`
+        return `${total(items)}${overdue || (Number.isFinite(next) ? ` · next ${dueText(next).replace('due ', '')}` : '')}`
       },
       items: payments,
     },
@@ -194,7 +196,7 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
       icon: <DcaIcon className="h-4 w-4" />,
       badge: 'bg-brand text-white',
       title: (n) => `${count(n, 'DCA buy')} to confirm`,
-      summary: (items) => `${total(items)} total${lateText(items, 'late')}`,
+      summary: (items) => `${total(items)}${lateText(items, 'late')}`,
       items: dca,
     },
     {
