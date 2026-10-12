@@ -613,7 +613,7 @@ export function Settings() {
                 </div>
               </div>
 
-              {/* Author Details & Release Highlights (Always Visible) */}
+              {/* Why I built it */}
               <div className="pt-4 mt-4 border-t border-line/60 space-y-3">
                 <div className="rounded-2xl bg-surface-muted/60 p-4 border border-line/50">
                   <div className="flex items-center gap-3.5 mb-3">
@@ -657,40 +657,6 @@ export function Settings() {
                   </div>
                 </div>
 
-                {/* Release Notes & Issue Report */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <div className="p-3.5 rounded-xl border border-line/60 bg-surface">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                      <h3 className="text-xs font-bold text-ink">Release Highlights</h3>
-                    </div>
-                    <p className="text-xs text-ink-muted leading-relaxed">
-                      v{__APP_VERSION__} (build <span className="font-mono">{__COMMIT_HASH__}</span>) · High-yield savings max principal cap, DCA smart rebalancing, and complete dark mode optimization.
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl border border-line/60 bg-surface flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="w-2 h-2 rounded-full bg-amber-500" />
-                        <h3 className="text-xs font-bold text-ink">Feedback & Issues</h3>
-                      </div>
-                      <p className="text-xs text-ink-muted leading-relaxed">
-                        Encountered a bug or have a suggestion? Feel free to open an issue on GitHub or drop a message via Facebook.
-                      </p>
-                    </div>
-                    <div className="mt-2.5 pt-2 border-t border-line/50 flex items-center gap-2">
-                      <a
-                        href="https://github.com/bbrightns/spendiary/issues"
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="text-xs font-semibold text-brand hover:underline"
-                      >
-                        Report on GitHub →
-                      </a>
-                    </div>
-                  </div>
-                </div>
               </div>
             </Card>
         </SettingsGroup>
