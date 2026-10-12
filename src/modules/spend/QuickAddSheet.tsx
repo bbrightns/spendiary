@@ -199,7 +199,7 @@ export function QuickAddSheet() {
   }
 
   /** Finish the `#ta…` being typed with a tag used before. */
-  const completeTag = (tag: string) => setNote((n) => n.replace(/#[\p{L}\p{N}\p{M}_]*$/u, `#${tag} `))
+  const completeTag = (tag: string) => setNote((n) => n.replace(/#[^\s#]*$/u, `#${tag} `))
 
   /** Bought on installment: nothing is spent today, so it becomes an installment plan paid each month from the card. */
   const saveInstallment = () => {
