@@ -2,11 +2,11 @@ import type { CashAccount, PayCycle, SpendCard, SpendGoal, SpendRecurring, Spend
 import { localDateStr } from '../../lib/format'
 
 /**
- * A tag is # + letters, digits, combining marks or _ (so Thai tags like #ร้านโปรด stay whole),
- * starting a word and ending at a space, the end, or punctuation. Anything glued on, like the
- * hyphen in a store name `#7-11`, means it isn't a tag and stays plain note text.
+ * A tag is # then everything up to the next space, starting a word: `#7-11`, `#ป.ประสงค์` and
+ * `#ร้านโปรด` stay whole. Punctuation at the very end (`#gym.` `#office,`) is the sentence's, not
+ * the tag's. Glued to a word before it (`a#b`) it isn't a tag.
  */
-export const TAG_RE = /(?<=^|\s)#([\p{L}\p{N}\p{M}_]+)(?=$|[\s.,!?;:)\]])/gu
+export const TAG_RE = /(?<=^|\s)#([^\s#]*[^\s#.,!?;:)\]'"])(?=$|[\s.,!?;:)\]'"])/gu
 
 /** Unique lowercase hashtags in a note, without the leading #. */
 export function parseTags(note?: string): string[] {
@@ -38,7 +38,7 @@ export function noteTitle(note?: string): string {
 
 /** The half-typed `#tag` at the very end of a note (without the #), or null if the user isn't typing one. */
 export function activeTagQuery(note: string): string | null {
-  const m = /(?:^|\s)#([\p{L}\p{N}\p{M}_]*)$/u.exec(note)
+  const m = /(?:^|\s)#([^\s#]*)$/u.exec(note)
   return m ? m[1] : null
 }
 

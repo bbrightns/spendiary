@@ -56,9 +56,13 @@ describe('parseTags', () => {
   it('keeps Thai tags whole', () => {
     expect(parseTags('ชา #ร้านโปรด')).toEqual(['ร้านโปรด'])
   })
-  it('ignores store names glued to other characters', () => {
-    expect(parseTags('Snacks #7-11')).toEqual([])
+  it('keeps hyphens and dots inside a tag', () => {
+    expect(parseTags('Snacks #7-11')).toEqual(['7-11'])
+    expect(parseTags('ข้าว #ป.ประสงค์ อร่อย')).toEqual(['ป.ประสงค์'])
+  })
+  it('ignores a # glued to a word before it', () => {
     expect(parseTags('a#b')).toEqual([])
+    expect(parseTags('x #a#b')).toEqual([])
   })
   it('allows trailing punctuation', () => {
     expect(parseTags('Lunch #office, then #gym.')).toEqual(['office', 'gym'])
@@ -274,6 +278,8 @@ describe('home card order', () => {
 describe('noteTitle', () => {
   it('drops tags from a normal note', () => {
     expect(noteTitle('Milk tea #nosetea')).toBe('Milk tea')
+    expect(noteTitle('Snacks #7-11, cold')).toBe('Snacks, cold')
+    expect(noteTitle('#ป.ประสงค์')).toBe('ป.ประสงค์')
   })
   it('uses the first tag when the note is only tags', () => {
     expect(noteTitle('#NoseTea #office')).toBe('NoseTea')
@@ -290,6 +296,7 @@ describe('tag suggestions', () => {
 
   it('finds the half-typed tag at the end only', () => {
     expect(activeTagQuery('Lunch #no')).toBe('no')
+    expect(activeTagQuery('Snacks #7-1')).toBe('7-1')
     expect(activeTagQuery('Lunch #')).toBe('')
     expect(activeTagQuery('Lunch #no ')).toBeNull()
     expect(activeTagQuery('Lunch')).toBeNull()

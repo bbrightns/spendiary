@@ -169,6 +169,8 @@ export function SpendAnalysis() {
   const biggest = inRange.filter((t) => t.type === 'expense').sort((a, b) => b.amount - a.amount)[0]
   const topCat = totals.byCategory[0]
   const savingsRate = totals.income > 0 ? (totals.net / totals.income) * 100 : null
+  const spentPct = totals.income > 0 ? Math.max(0, (totals.expense / totals.income) * 100) : 0
+  const over = totals.income > 0 && totals.net < 0
   // DCA buys from Invest: not spending, but worth seeing next to what you kept
   const invested = inRange.filter((t) => t.source === 'dca').reduce((s, t) => s + t.amount, 0)
   const tagTotals = useMemo(() => {
@@ -212,34 +214,57 @@ export function SpendAnalysis() {
         )}
       </div>
 
-      {/* ── Totals ── */}
-      <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
-        {[
-          { label: 'Income', value: totals.income, cls: totals.income > 0 ? 'text-gain' : 'text-ink' },
-          { label: 'Spent', value: totals.expense, cls: 'text-ink' },
-          { label: 'Left', value: totals.net, cls: totals.net < 0 ? 'text-loss' : 'text-ink' },
-        ].map((s) => (
-          <Card key={s.label} className="p-3 sm:p-5 animate-rise" padded={false}>
-            <p className="text-xs font-medium text-ink-muted">{s.label}</p>
-            <p className={`mt-1 font-display text-base sm:text-2xl font-extrabold tnum truncate ${s.cls}`}>
-              {s.label === 'Left' && s.value < 0 ? '−' : ''}
-              {thb(Math.abs(s.value))}
-            </p>
-          </Card>
-        ))}
-      </div>
+      {/* ── Summary: what went out, against what came in, and how this compares to last time ── */}
+      <Card className="p-4 sm:p-6 animate-rise" padded={false}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-ink-muted">{isCurrent ? `Spent this ${rangeName}` : `Spent that ${rangeName}`}</p>
+            <p className="mt-1 font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ink tnum truncate">{thb(totals.expense)}</p>
+            {compare !== null && (
+              <p className={`mt-1 text-xs font-semibold tnum ${compare <= 0 ? 'text-gain' : 'text-orange-600 dark:text-orange-300'}`}>
+                {compare <= 0 ? `${thb(-compare)} less` : `${thb(compare)} more`}
+                <span className="font-normal text-ink-muted"> than last {rangeName} at this point</span>
+              </p>
+            )}
+          </div>
+          <div className="sm:text-right">
+            <p className="text-sm font-medium text-ink-muted">Income</p>
+            <p className="mt-1 font-display text-xl sm:text-2xl font-extrabold text-ink tnum">{thb(totals.income)}</p>
+            {totals.income === 0 && <p className="mt-0.5 text-xs text-ink-muted">None logged this {rangeName}</p>}
+          </div>
+        </div>
 
-      {compare !== null && (
-        <p
-          className={`rounded-2xl px-4 py-3 text-sm font-semibold ${
-            compare <= 0 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300' : 'bg-orange-50 text-orange-700 dark:bg-orange-400/10 dark:text-orange-300'
-          }`}
-        >
-          {compare <= 0
-            ? `${thb(-compare)} less than last ${rangeName} at this point 👏`
-            : `${thb(compare)} more than last ${rangeName} at this point`}
-        </p>
-      )}
+        {/* Where the income went: spent vs. kept; past 100% the whole bar turns red */}
+        {totals.income > 0 && (
+          <>
+            <div className="mt-5 flex h-2.5 w-full gap-1 overflow-hidden rounded-full bg-surface-muted" aria-hidden>
+              {spentPct > 0 && <div className={`rounded-full ${over ? 'bg-loss' : 'bg-orange-400'}`} style={{ width: `${Math.min(100, spentPct)}%` }} />}
+              {!over && totals.net > 0 && <div className="rounded-full bg-emerald-500" style={{ width: `${100 - spentPct}%` }} />}
+            </div>
+            <div className="mt-2 flex items-start justify-between gap-3">
+              <p className="min-w-0">
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${over ? 'bg-loss' : 'bg-orange-400'}`} />
+                  Spent
+                </span>
+                <span className="mt-1 block text-base sm:text-lg font-display font-extrabold text-ink tnum">
+                  {Math.round(spentPct)}% <span className="text-xs font-semibold text-ink-muted">of income</span>
+                </span>
+              </p>
+              <p className="min-w-0 text-right">
+                <span className="flex items-center justify-end gap-1.5 text-xs font-semibold text-ink-soft">
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${over ? 'bg-loss' : 'bg-emerald-500'}`} />
+                  {over ? 'Over by' : 'Kept'}
+                </span>
+                <span className={`mt-1 block truncate font-display text-base sm:text-lg font-extrabold tnum ${over ? 'text-loss' : 'text-ink'}`}>
+                  {thb(Math.abs(totals.net))}
+                  {invested > 0 && <span className="text-xs font-semibold text-ink-muted"> · {thb(invested)} invested</span>}
+                </span>
+              </p>
+            </div>
+          </>
+        )}
+      </Card>
 
       <Card>
         <h2 className="mb-3 font-display text-lg font-extrabold text-ink">Spent per {range === 'year' ? 'month' : 'day'}</h2>

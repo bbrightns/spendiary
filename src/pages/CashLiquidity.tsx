@@ -3,24 +3,22 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
-import { Modal } from '../components/ui/Modal'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
-import type { CashAccount, CashAccountCategory, CashPayoutSchedule } from '../lib/types'
+import type { CashAccount, CashAccountCategory } from '../lib/types'
 import {
   CASH_CATEGORIES,
   calculateMonthlyCashInterest,
   detectBankPreset,
   getCashCategory,
-  inferCashCategory,
   netWorth,
   sortCashAccounts,
   totalCash,
 } from '../lib/calc'
 import { thb } from '../lib/format'
 import { ListBulletIcon } from '../modules/spend/categories'
-import { SwitchVisual } from '../modules/spend/AccountSheets'
+import { EditAccountModal } from '../components/forms/EditCashAccountModal'
 import {
   PencilIcon,
   PlusIcon,
@@ -30,27 +28,21 @@ import {
   WalletIcon,
 } from '../components/icons'
 
-const THAI_MONTHS_SHORT = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-]
-
 function tempId(): string {
   return `cash-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
 
-function formatWithCommas(value: string | number): string {
-  const s = String(value)
-  const clean = s.replace(/[^0-9.]/g, '')
-  const parts = clean.split('.')
-  if (parts.length > 2) {
-    return parts[0] + '.' + parts.slice(1).join('')
-  }
-  const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-  if (parts.length > 1) {
-    return `${integerPart}.${parts[1].slice(0, 2)}`
-  }
-  return integerPart
+/** The wallet icon Spend uses, tinted with the account's color (or its bank's); neutral when there's none */
+function AccountIcon({ color, bank, className }: { color?: string; bank?: string; className: string }) {
+  return (
+    <div
+      title={bank ? `Bank: ${bank}` : undefined}
+      className={`${className} rounded-lg shrink-0 flex items-center justify-center ${color ? 'shadow-xs' : 'bg-surface-muted border border-line/50 text-ink-muted'}`}
+      style={color ? { color, background: `color-mix(in srgb, ${color} 15%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 21%, transparent)` } : undefined}
+    >
+      <WalletIcon className={`h-4 w-4 ${color ? '' : 'opacity-60'}`} />
+    </div>
+  )
 }
 
 export function CashLiquidity() {
@@ -116,10 +108,11 @@ export function CashLiquidity() {
   const totalAnnualYield = interestSummary.totalAnnual
   const effectiveApy = totalCashThb > 0 ? (totalAnnualYield / totalCashThb) * 100 : 0
 
-  const deployableAmount = categoryBreakdown.spending
-  const deployablePct = totalCashThb > 0 ? (deployableAmount / totalCashThb) * 100 : 0
-  const lockedAmount = categoryBreakdown.locked
-  const lockedPct = totalCashThb > 0 ? (lockedAmount / totalCashThb) * 100 : 0
+  const pctOfCash = (v: number) => (totalCashThb > 0 ? (v / totalCashThb) * 100 : 0)
+  const split = [
+    { key: 'spending' as const, label: 'Everyday', hint: 'free to use', bar: 'bg-emerald-500', amount: categoryBreakdown.spending, pct: pctOfCash(categoryBreakdown.spending) },
+    { key: 'locked' as const, label: 'Savings', hint: 'leave alone', bar: 'bg-amber-500', amount: categoryBreakdown.locked, pct: pctOfCash(categoryBreakdown.locked) },
+  ]
 
   // Filtering and Sorting
   const filteredAccounts = useMemo(() => {
@@ -209,7 +202,6 @@ export function CashLiquidity() {
     showToast(`Deleted account "${accountToDelete.name}"`, 'info')
   }
 
-
   return (
     <div className="space-y-6 pb-12">
       {/* ── Page Header ── */}
@@ -231,140 +223,60 @@ export function CashLiquidity() {
         }
       />
 
-      {/* ── Top KPI Grid (2x2 on Mobile, 4x1 on Desktop) ── */}
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
-        {/* Card 1: Total Cash */}
-        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
-          <div>
-            <p className="text-xs font-medium text-ink-muted">Total Liquid Cash</p>
-            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-ink tnum truncate">
-              {thb(totalCashThb)}
+      {/* ── Summary: one total, how it splits (each half filters the list), and what it earns ── */}
+      <Card className="p-4 sm:p-6 animate-rise" padded={false}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-ink-muted">Total cash</p>
+            <p className="mt-1 font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ink tnum truncate">{thb(totalCashThb)}</p>
+            <p className="mt-1 text-xs text-ink-muted tnum">
+              {currentNetWorth > 0 ? `${((totalCashThb / currentNetWorth) * 100).toFixed(0)}% of net worth` : 'Part of your net worth'}
+              {usdOnlyTotal > 0 && ` · includes $${usdOnlyTotal.toLocaleString()}`}
             </p>
           </div>
-          <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            {currentNetWorth > 0 ? ((totalCashThb / currentNetWorth) * 100).toFixed(1) : 0}% of Net Worth
-            {usdOnlyTotal > 0 ? ` · $${usdOnlyTotal.toLocaleString()} USD` : ''}
-          </p>
-        </Card>
-
-        {/* Card 2: Annual Yield & APY */}
-        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
-          <div>
-            <p className="text-xs font-medium text-ink-muted">Est. Annual Yield</p>
-            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tnum truncate">
-              {thb(totalAnnualYield)}
-            </p>
+          <div className="sm:text-right">
+            <p className="text-sm font-medium text-ink-muted">Interest a year</p>
+            {totalAnnualYield > 0 ? (
+              <>
+                <p className="mt-1 font-display text-xl sm:text-2xl font-extrabold text-ink tnum">{thb(totalAnnualYield)}</p>
+                <p className="mt-0.5 text-xs text-ink-muted tnum">
+                  ≈ {thb(totalAnnualYield / 12)}/month · {effectiveApy.toFixed(2)}% average
+                </p>
+              </>
+            ) : (
+              <p className="mt-1 text-sm text-ink-muted">Add rates to your accounts to see it</p>
+            )}
           </div>
-          <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            about {thb(totalAnnualYield / 12)}/month · APY {effectiveApy.toFixed(2)}%
-          </p>
-        </Card>
-
-        {/* Card 3: Deployable Cash */}
-        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
-          <div>
-            <p className="text-xs font-medium text-ink-muted">Deployable Cash</p>
-            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tnum truncate">
-              {thb(deployableAmount)}
-            </p>
-          </div>
-          <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            {deployablePct.toFixed(1)}% of your cash · money you are free to spend or invest
-          </p>
-        </Card>
-
-        {/* Card 4: Committed / Locked Cash */}
-        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
-          <div>
-            <p className="text-xs font-medium text-ink-muted">Committed / Locked</p>
-            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-amber-500 tnum truncate">
-              {thb(lockedAmount)}
-            </p>
-          </div>
-          <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            {lockedPct.toFixed(1)}% of your cash · savings you should leave alone
-          </p>
-        </Card>
-      </div>
-
-      {/* ── 2-Tier Liquidity Allocation Section ── */}
-      <Card className="p-4 sm:p-5 border-line/60 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
-              <span>📊 How your cash is split</span>
-            </h3>
-            <p className="text-xs text-ink-muted">
-              Money you can use now vs. long-term savings you should not touch
-            </p>
-          </div>
-          <span className="text-xs font-semibold text-ink-muted">
-            Total cash {thb(totalCashThb)}
-          </span>
         </div>
 
-        {/* Multi-tier Progress Bar */}
-        <div className="h-3.5 w-full rounded-full bg-surface-muted overflow-hidden flex shadow-inner">
-          {(['spending', 'locked'] as CashAccountCategory[]).map((catKey) => {
-            const amount = categoryBreakdown[catKey]
-            const pct = totalCashThb > 0 ? (amount / totalCashThb) * 100 : 0
-            if (pct <= 0) return null
-
-            const colors: Record<CashAccountCategory, string> = {
-              spending: 'bg-emerald-500',
-              locked: 'bg-amber-500',
-            }
-
-            return (
-              <div
-                key={catKey}
-                style={{ width: `${pct}%` }}
-                className={`${colors[catKey]} transition-all duration-300 hover:brightness-110 cursor-pointer`}
-                title={`${CASH_CATEGORIES[catKey].labelTh}: ${thb(amount)} (${pct.toFixed(1)}%)`}
-              />
-            )
-          })}
+        {/* Split bar */}
+        <div className="mt-5 flex h-2.5 w-full gap-1 overflow-hidden rounded-full bg-surface-muted" aria-hidden>
+          {split.map((g) => g.pct > 0 && <div key={g.key} className={`${g.bar} rounded-full`} style={{ width: `${g.pct}%` }} />)}
         </div>
 
-        {/* 2 Category Badges / Breakdown Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          {(['spending', 'locked'] as CashAccountCategory[]).map((catKey) => {
-            const meta = CASH_CATEGORIES[catKey]
-            const amount = categoryBreakdown[catKey]
-            const pct = totalCashThb > 0 ? (amount / totalCashThb) * 100 : 0
-            const isSelected = activeCategoryFilter === catKey
-
-            const badgeBorderColors: Record<CashAccountCategory, string> = {
-              spending: 'border-emerald-500/30 hover:border-emerald-500/60',
-              locked: 'border-amber-500/30 hover:border-amber-500/60',
-            }
-
+        {/* Legend; tap a side to show only those accounts below */}
+        <div className="-mx-3 mt-2 grid grid-cols-2 gap-2">
+          {split.map((g) => {
+            const on = activeCategoryFilter === g.key
             return (
               <button
-                key={catKey}
+                key={g.key}
                 type="button"
-                onClick={() => setActiveCategoryFilter(isSelected ? 'all' : catKey)}
-                className={`p-2.5 sm:p-3 rounded-xl border text-left transition-all cursor-pointer min-w-0 overflow-hidden flex flex-col justify-between ${badgeBorderColors[catKey]} ${
-                  isSelected ? 'ring-2 ring-brand bg-brand-soft/20' : 'bg-surface-muted/40 hover:bg-surface-muted/80'
-                }`}
+                onClick={() => setActiveCategoryFilter(on ? 'all' : g.key)}
+                aria-pressed={on}
+                title={on ? 'Show all accounts' : `Show only ${g.label.toLowerCase()} accounts`}
+                className={`min-w-0 rounded-xl px-3 py-2.5 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                  on ? 'bg-surface-muted ring-1 ring-line-strong' : 'hover:bg-surface-muted/60'
+                } ${g.key === 'locked' ? 'sm:text-right' : ''}`}
               >
-                <div className="flex items-center gap-1.5 min-w-0 w-full">
-                  <span className="shrink-0 text-sm">{meta.icon}</span>
-                  <span className="text-xs font-semibold text-ink-muted truncate" title={meta.labelTh}>
-                    {meta.labelTh}
-                  </span>
-                  <span className="text-xs text-ink-muted opacity-60 ml-auto">
-                    {catKey === 'spending' ? 'Free to use' : 'Leave alone'}
-                  </span>
-                </div>
-                <div className="mt-2 flex items-baseline justify-between gap-1 w-full min-w-0">
-                  <span className="font-display font-black text-sm sm:text-base text-ink tnum truncate">
-                    {thb(amount)}
-                  </span>
-                  <span className="font-mono text-xs font-bold text-ink-muted shrink-0">
-                    {pct.toFixed(1)}%
-                  </span>
-                </div>
+                <span className={`flex flex-wrap items-center gap-x-1.5 text-xs font-semibold text-ink-soft ${g.key === 'locked' ? 'sm:justify-end' : ''}`}>
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${g.bar}`} />
+                  {g.label}
+                  <span className="font-normal text-ink-muted">· {g.hint}</span>
+                </span>
+                <span className="mt-1 block truncate font-display text-base sm:text-lg font-extrabold text-ink tnum">
+                  {thb(g.amount)} <span className="text-xs font-semibold text-ink-muted">{g.pct.toFixed(0)}%</span>
+                </span>
               </button>
             )
           })}
@@ -486,18 +398,7 @@ export function CashLiquidity() {
                   }}
                   className="flex w-full items-center gap-2.5 rounded-lg px-0.5 py-2.5 text-left transition-colors cursor-pointer hover:bg-surface-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
-                  {preset ? (
-                    <div
-                      className="h-8.5 w-8.5 rounded-lg text-xs font-black shrink-0 flex items-center justify-center select-none shadow-xs"
-                      style={{ background: preset.bg, color: preset.color, border: `1px solid ${preset.color}35` }}
-                    >
-                      {preset.shortName}
-                    </div>
-                  ) : (
-                    <div className="h-8.5 w-8.5 rounded-lg bg-surface-muted border border-line/50 text-ink-muted text-xs font-bold shrink-0 flex items-center justify-center">
-                      <WalletIcon className="h-4 w-4 opacity-60" />
-                    </div>
-                  )}
+                  <AccountIcon color={a.color ?? preset?.color} bank={preset?.name} className="h-8.5 w-8.5" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="font-display font-bold text-sm text-ink truncate">
@@ -630,19 +531,7 @@ export function CashLiquidity() {
                       {/* 1. Account — long names truncate (full name on hover) so the table fits without scrolling */}
                       <td className="py-2 px-3 max-w-[18rem]" title={a.name}>
                         <div className="flex items-center gap-2.5 min-w-0">
-                          {preset ? (
-                            <div
-                              className="h-8 w-8 rounded-lg text-xs font-black shrink-0 flex items-center justify-center select-none shadow-xs"
-                              style={{ background: preset.bg, color: preset.color, border: `1px solid ${preset.color}35` }}
-                              title={`Bank: ${preset.name}`}
-                            >
-                              {preset.shortName}
-                            </div>
-                          ) : (
-                            <div className="h-8 w-8 rounded-lg bg-surface-muted border border-line/50 text-ink-muted text-xs font-bold shrink-0 flex items-center justify-center">
-                              <WalletIcon className="h-4 w-4 opacity-60" />
-                            </div>
-                          )}
+                          <AccountIcon color={a.color ?? preset?.color} bank={preset?.name} className="h-8 w-8" />
                           <div className="min-w-0">
                             <span className="font-display font-bold text-sm text-ink block truncate group-hover:text-brand transition-colors">
                               {a.name || 'Untitled Account'}
@@ -845,311 +734,5 @@ export function CashLiquidity() {
         />
       )}
     </div>
-  )
-}
-
-// ── Edit / Add Account Modal Component ──
-interface EditAccountModalProps {
-  open: boolean
-  initialAccount: CashAccount
-  onClose: () => void
-  onSave: (acc: CashAccount) => void
-  /** Existing accounts only: ask to delete it */
-  onDelete?: () => void
-  /** THB accounts only: open its transactions in Spend */
-  onShowTxns?: () => void
-}
-
-const labelCls = 'mb-1.5 block text-xs font-bold text-ink-soft'
-const fieldCls = 'h-11 w-full rounded-xl border border-line bg-surface-muted/40 text-base font-semibold text-ink outline-none transition-colors focus:border-brand focus:bg-surface'
-
-function EditAccountModal({ open, initialAccount, onClose, onSave, onDelete, onShowTxns }: EditAccountModalProps) {
-  const [name, setName] = useState(initialAccount.name)
-  const [balance, setBalance] = useState(initialAccount.balance ? String(initialAccount.balance) : '')
-  const [currency, setCurrency] = useState<'THB' | 'USD'>(initialAccount.currency ?? 'THB')
-  const [category, setCategory] = useState<CashAccountCategory>(initialAccount.category ? getCashCategory(initialAccount) : 'spending')
-  const [interestRate, setInterestRate] = useState(initialAccount.interestRate ? String(initialAccount.interestRate) : '')
-  const [maxEligibleBalance, setMaxEligibleBalance] = useState(
-    initialAccount.maxEligibleBalance ? String(initialAccount.maxEligibleBalance) : ''
-  )
-  const [payoutSchedule, setPayoutSchedule] = useState<CashPayoutSchedule>(initialAccount.payoutSchedule ?? 'monthly')
-  const [payoutMonths, setPayoutMonths] = useState<number[]>(
-    initialAccount.payoutMonths && initialAccount.payoutMonths.length > 0
-      ? initialAccount.payoutMonths
-      : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-  )
-  // Most accounts pay nothing, so the interest fields stay folded away until switched on
-  const [earnsInterest, setEarnsInterest] = useState(Boolean(initialAccount.interestRate))
-
-  const num = (v: string) => Number(v.replace(/[^0-9.]/g, '')) || 0
-  const yearlyInterest = (() => {
-    const cap = num(maxEligibleBalance)
-    const eligible = cap > 0 ? Math.min(num(balance), cap) : num(balance)
-    return (eligible * num(interestRate)) / 100
-  })()
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!name.trim()) return
-
-    const cleanBal = balance.replace(/[^0-9.]/g, '')
-    const balNum = cleanBal === '' ? 0 : Number(cleanBal)
-    const rateClean = interestRate.replace(/[^0-9.]/g, '')
-    const rateNum = rateClean !== '' ? Number(rateClean) : undefined
-    const capClean = maxEligibleBalance.replace(/[^0-9.]/g, '')
-    const capNum = capClean !== '' ? Number(capClean) : undefined
-
-    onSave({
-      id: initialAccount.id,
-      name: name.trim(),
-      balance: balNum,
-      currency,
-      category,
-      // Switched off = no interest at all, whatever was typed before
-      interestRate: earnsInterest && rateNum && rateNum > 0 ? rateNum : undefined,
-      maxEligibleBalance: earnsInterest && capNum && capNum > 0 ? capNum : undefined,
-      payoutSchedule: earnsInterest ? payoutSchedule : undefined,
-      payoutMonths: earnsInterest && payoutMonths.length > 0 ? payoutMonths : undefined,
-    })
-  }
-
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={initialAccount.name ? 'Edit account' : 'Add account'}
-      size="md"
-      footer={
-        <div className="flex items-center justify-end gap-2 w-full">
-          {onDelete && (
-            <button
-              type="button"
-              onClick={onDelete}
-              className="mr-auto inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-loss transition-colors cursor-pointer hover:bg-loss-soft"
-            >
-              <TrashIcon className="h-4 w-4" />
-              Delete
-            </button>
-          )}
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" form="account-edit-form">
-            Save
-          </Button>
-        </div>
-      }
-    >
-      <form id="account-edit-form" onSubmit={handleSubmit} className="space-y-4 pt-1">
-        {onShowTxns && (
-          <button
-            type="button"
-            onClick={onShowTxns}
-            className="flex w-full items-center gap-2.5 rounded-xl border border-line px-3 py-2.5 text-left text-sm font-semibold text-ink transition-colors cursor-pointer hover:bg-surface-muted/60"
-          >
-            <ListBulletIcon className="h-4 w-4 text-ink-muted" />
-            <span className="flex-1">See transactions in Spend</span>
-            <span className="text-ink-muted" aria-hidden>→</span>
-          </button>
-        )}
-        {/* Name */}
-        <label className="block">
-          <span className={labelCls}>Name</span>
-          <input
-            type="text"
-            required
-            placeholder="KBank, Kept, Savings co-op…"
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value)
-              if (category === 'spending') {
-                setCategory(inferCashCategory(e.target.value))
-              }
-            }}
-            className={`${fieldCls} px-3.5`}
-          />
-        </label>
-
-        {/* Balance, with the currency as a toggle inside the field */}
-        <div>
-          <label htmlFor="account-balance" className={labelCls}>
-            Balance
-          </label>
-          <div className={`${fieldCls} flex items-center focus-within:border-brand focus-within:bg-surface focus-within:ring-2 focus-within:ring-brand/15`}>
-            <span className="pl-3.5 text-base font-bold text-ink-muted">{currency === 'USD' ? '$' : '฿'}</span>
-            <input
-              id="account-balance"
-              type="text"
-              inputMode="decimal"
-              placeholder="0.00"
-              value={formatWithCommas(balance)}
-              onChange={(e) => setBalance(e.target.value)}
-              className="min-w-0 flex-1 bg-transparent px-2 text-base font-bold tnum text-ink outline-none"
-            />
-            <div className="mr-1 flex shrink-0 rounded-lg bg-surface-muted p-0.5" role="group" aria-label="Currency">
-              {(['THB', 'USD'] as const).map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  aria-pressed={currency === c}
-                  onClick={() => setCurrency(c)}
-                  className={`h-8 rounded-md px-2.5 text-xs font-bold transition-colors cursor-pointer ${
-                    currency === c ? 'bg-surface text-ink shadow-xs' : 'text-ink-muted hover:text-ink'
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Type */}
-        <div>
-          <span className={labelCls}>Type</span>
-          <div className="grid grid-cols-2 gap-2">
-            {(['spending', 'locked'] as CashAccountCategory[]).map((catKey) => {
-              const meta = CASH_CATEGORIES[catKey]
-              const active = category === catKey
-              return (
-                <button
-                  key={catKey}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setCategory(catKey)}
-                  className={`rounded-xl border px-3 py-2.5 text-left transition-colors cursor-pointer ${
-                    active ? 'border-brand bg-brand-soft' : 'border-line hover:bg-surface-muted/60'
-                  }`}
-                >
-                  <span className={`block text-sm font-bold ${active ? 'text-brand-ink' : 'text-ink'}`}>
-                    {meta.icon} {meta.labelTh}
-                  </span>
-                  <span className="mt-0.5 block text-xs leading-snug text-ink-muted">
-                    {catKey === 'spending' ? 'Free to spend or invest' : 'Co-op, PVD, fixed deposits'}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Interest: off by default, details only when switched on */}
-        <div className={`rounded-2xl border transition-colors ${earnsInterest ? 'border-line bg-surface-muted/30' : 'border-line'}`}>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={earnsInterest}
-            onClick={() => setEarnsInterest((v) => !v)}
-            className="flex w-full items-center justify-between gap-3 px-3.5 py-3 text-left cursor-pointer"
-          >
-            <span>
-              <span className="block text-sm font-bold text-ink">Earns interest</span>
-              <span className="block text-xs text-ink-muted tnum">
-                {earnsInterest
-                  ? yearlyInterest > 0
-                    ? `≈ ${currency === 'USD' ? '$' : '฿'}${yearlyInterest.toLocaleString('en-US', { maximumFractionDigits: 0 })} a year`
-                    : 'Enter the rate below'
-                  : 'Off'}
-              </span>
-            </span>
-            <SwitchVisual on={earnsInterest} />
-          </button>
-
-          {earnsInterest && (
-            <div className="space-y-3 border-t border-line px-3.5 pb-3.5 pt-3">
-              <div className="grid grid-cols-2 gap-3">
-                <label className="block">
-                  <span className={labelCls}>Rate</span>
-                  <div className={`${fieldCls} flex items-center focus-within:border-brand focus-within:bg-surface`}>
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="2.22"
-                      value={interestRate}
-                      onChange={(e) => setInterestRate(e.target.value)}
-                      className="min-w-0 flex-1 bg-transparent pl-3.5 text-base font-bold tnum text-ink outline-none"
-                    />
-                    <span className="pr-3 text-xs font-semibold text-ink-muted">% / yr</span>
-                  </div>
-                </label>
-                <label className="block">
-                  <span className={labelCls}>
-                    Up to <span className="font-normal text-ink-muted">(optional)</span>
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="No cap"
-                    value={formatWithCommas(maxEligibleBalance)}
-                    onChange={(e) => setMaxEligibleBalance(e.target.value)}
-                    title="Interest is only paid on up to this amount"
-                    className={`${fieldCls} px-3.5`}
-                  />
-                </label>
-              </div>
-
-              <div>
-                <span className={labelCls}>Paid</span>
-                <div className="grid grid-cols-4 gap-1 rounded-xl bg-surface-muted p-1 text-xs">
-                  {[
-                    { key: 'monthly', label: 'Monthly' },
-                    { key: 'semi_annual', label: '2× a year' },
-                    { key: 'annual', label: 'Yearly' },
-                    { key: 'custom', label: 'Custom' },
-                  ].map((sch) => (
-                    <button
-                      key={sch.key}
-                      type="button"
-                      aria-pressed={payoutSchedule === sch.key}
-                      onClick={() => {
-                        setPayoutSchedule(sch.key as CashPayoutSchedule)
-                        if (sch.key === 'monthly') setPayoutMonths([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
-                        if (sch.key === 'semi_annual') setPayoutMonths([6, 12])
-                        if (sch.key === 'annual') setPayoutMonths([2])
-                      }}
-                      className={`h-8 rounded-lg font-semibold transition-colors cursor-pointer ${
-                        payoutSchedule === sch.key ? 'bg-surface text-ink shadow-xs' : 'text-ink-muted hover:text-ink'
-                      }`}
-                    >
-                      {sch.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {payoutSchedule === 'custom' && (
-                <div className="space-y-1.5">
-                  <span className="block text-xs text-ink-muted">Tap the months it's paid</span>
-                  <div className="grid grid-cols-6 gap-1 text-xs">
-                    {THAI_MONTHS_SHORT.map((mName, idx) => {
-                      const mNum = idx + 1
-                      const isSelected = payoutMonths.includes(mNum)
-                      return (
-                        <button
-                          key={mNum}
-                          type="button"
-                          aria-pressed={isSelected}
-                          onClick={() => {
-                            const next = isSelected
-                              ? payoutMonths.filter((m) => m !== mNum)
-                              : [...payoutMonths, mNum].sort((x, y) => x - y)
-                            setPayoutMonths(next)
-                          }}
-                          className={`h-8 rounded-lg font-bold transition-colors cursor-pointer border ${
-                            isSelected ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-surface text-ink-muted border-line'
-                          }`}
-                        >
-                          {mName}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </form>
-    </Modal>
   )
 }

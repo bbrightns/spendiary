@@ -25,7 +25,7 @@ interface OpenDetail {
   /** Start a new entry from these values (e.g. a recurring bill) */
   prefill?: SpendTxnInput
   /** A new entry with some fields filled in (the rest use the usual defaults), e.g. from the command palette */
-  draft?: Partial<Pick<SpendTxnInput, 'type' | 'amount' | 'note' | 'categoryId'>>
+  draft?: Partial<Pick<SpendTxnInput, 'type' | 'amount' | 'note' | 'categoryId' | 'accountId'>>
   /** A line under the title explaining why the sheet opened (new entries only) */
   hint?: string
   /** Saving marks this recurring occurrence as done */
@@ -137,8 +137,11 @@ export function QuickAddSheet() {
         setType(t)
         setAmount(draft.amount ? String(draft.amount) : '')
         setCategoryId(draft.categoryId ?? categoriesFor(t)[0]?.id ?? '')
-        setAccountId(d.from)
-        setToAccountId(d.to)
+        // Started from a wallet: it's the "from" side; a transfer then goes to another wallet first
+        const from = draft.accountId && ms.some((m) => m.id === draft.accountId) ? draft.accountId : d.from
+        const otherCash = ms.filter((m) => m.kind === 'cash' && m.id !== from).sort((a, b) => Number(!!a.locked) - Number(!!b.locked))[0]?.id
+        setAccountId(from)
+        setToAccountId(t === 'transfer' && draft.accountId ? otherCash ?? (d.to !== from ? d.to : NO_WALLET) : d.to === from ? NO_WALLET : d.to)
         setDate(localDateStr())
         setNote(draft.note ?? '')
         setAlreadyIn(false)
@@ -199,7 +202,7 @@ export function QuickAddSheet() {
   }
 
   /** Finish the `#ta…` being typed with a tag used before. */
-  const completeTag = (tag: string) => setNote((n) => n.replace(/#[\p{L}\p{N}\p{M}_]*$/u, `#${tag} `))
+  const completeTag = (tag: string) => setNote((n) => n.replace(/#[^\s#]*$/u, `#${tag} `))
 
   /** Bought on installment: nothing is spent today, so it becomes an installment plan paid each month from the card. */
   const saveInstallment = () => {
