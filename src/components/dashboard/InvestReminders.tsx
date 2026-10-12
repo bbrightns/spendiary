@@ -135,14 +135,14 @@ export function InvestReminders({ onConfirmDca, onLogDividend }: Props) {
         )
       })}
 
-      {/* Loans are paid from Spend; one quiet line so they aren't missed from here */}
+      {/* Loans are paid from Spend; one quiet line so they aren't missed from here (the count is orange because it's due) */}
       {loansDue > 0 && (
         <Link
           to="/spend/loans"
           className="flex items-center justify-between gap-3 rounded-2xl border border-line px-4 py-2.5 text-sm text-ink-muted transition-colors hover:bg-surface-muted/60"
         >
           <span>
-            <span className="font-semibold text-ink-soft">
+            <span className="font-semibold text-warn">
               {loansDue} loan {loansDue === 1 ? 'payment' : 'payments'}
             </span>{' '}
             due this month · paid from Spend
