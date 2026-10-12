@@ -12,10 +12,7 @@ import { PnLPill, PnLText } from '../components/ui/PnL'
 import { LoanSheet } from '../modules/spend/LoanSheet'
 import { SpendSnapshotCard } from '../modules/spend/SpendSnapshotCard'
 import { AiImportModal } from '../components/forms/AiImportModal'
-import type { DcaPlan, Holding } from '../lib/types'
-import { ConfirmDcaBuyForm } from '../components/forms/ConfirmDcaBuyForm'
-import { ConfirmDividendModal } from '../components/forms/ConfirmDividendModal'
-import { InvestReminders } from '../components/dashboard/InvestReminders'
+import { TodayLink } from '../modules/spend/TodayStack'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import {
@@ -61,8 +58,6 @@ export function Dashboard() {
   const [liabilitiesOpen, setLiabilitiesOpen] = useState(false)
   const [selectedLiabilityId, setSelectedLiabilityId] = useState<string | null>(null)
   const [aiImportOpen, setAiImportOpen] = useState(false)
-  const [confirmingPlan, setConfirmingPlan] = useState<DcaPlan | null>(null)
-  const [dividendFor, setDividendFor] = useState<{ holding: Holding; dps: number } | null>(null)
   const {
     steps,
     isRunning,
@@ -182,11 +177,8 @@ export function Dashboard() {
 
       </div>
 
-      {/* ── Today: DCA buys to confirm, dividends to log, loans due (in Spend), next buys ── */}
-      <InvestReminders
-        onConfirmDca={(plan) => setConfirmingPlan(plan)}
-        onLogDividend={(holding, dps) => setDividendFor({ holding, dps })}
-      />
+      {/* ── Today: DCA buys, dividends, bills and loans are all handled on Spend Home ── */}
+      <TodayLink id="guide-dashboard-dca" />
 
       {/* ── ROW 1: Net Worth Master Hero (Full Width Bento) ── */}
       <div id="guide-dashboard-networth">
@@ -902,13 +894,6 @@ export function Dashboard() {
         loanId={selectedLiabilityId}
       />
 
-      <ConfirmDcaBuyForm open={!!confirmingPlan} plan={confirmingPlan} onClose={() => setConfirmingPlan(null)} />
-      <ConfirmDividendModal
-        open={!!dividendFor}
-        holding={dividendFor?.holding}
-        initialDps={dividendFor?.dps}
-        onClose={() => setDividendFor(null)}
-      />
 
       <GuideTour
         isOpen={isRunning}

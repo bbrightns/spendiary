@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { LAST_INVEST_KEY, LAST_SIDE_KEY, LAST_SPEND_KEY, isSettings, lastPathFor, useSpendSide, write } from './side'
 
-/** Invest ↔ Spend switch. Each side remembers the last page you were on. */
+/** Spend ↔ Invest switch (Spend first: it's where the app opens). Each side remembers the last page you were on. */
 export function ModeSwitcher({ size = 'md', className = '' }: { size?: 'sm' | 'md'; className?: string }) {
   const { pathname, search } = useLocation()
   const navigate = useNavigate()
@@ -21,9 +21,8 @@ export function ModeSwitcher({ size = 'md', className = '' }: { size?: 'sm' | 'm
   }
 
   const btn = size === 'sm' ? 'h-7 px-2.5 text-xs' : 'h-8 flex-1 px-3 text-sm'
-  // Each side has its own color: Invest the brand blue, Spend green
+  // Each side has its own color: Spend green, Invest the brand blue
   const options = [
-    { label: 'Invest', active: !spend, onClick: () => go(false), on: 'bg-brand text-white', idle: 'hover:text-brand-ink' },
     {
       label: 'Spend',
       active: spend,
@@ -31,12 +30,13 @@ export function ModeSwitcher({ size = 'md', className = '' }: { size?: 'sm' | 'm
       on: 'bg-emerald-700 text-white',
       idle: 'hover:text-emerald-700 dark:hover:text-emerald-300',
     },
+    { label: 'Invest', active: !spend, onClick: () => go(false), on: 'bg-brand text-white', idle: 'hover:text-brand-ink' },
   ]
 
   return (
     <div
       role="radiogroup"
-      aria-label="Switch between Invest and Spend"
+      aria-label="Switch between Spend and Invest"
       className={`inline-flex items-center gap-0.5 rounded-full border border-line-strong/40 bg-surface-muted p-0.5 ${className}`}
     >
       {options.map((o) => (

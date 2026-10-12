@@ -63,7 +63,8 @@ export function Sidebar() {
       <div className="flex flex-col gap-6">
         {/* Brand Header */}
         <div className="flex items-center justify-between px-2 pt-1">
-          <Link to="/" className="flex items-center gap-2 group">
+          {/* The logo goes to Spend Home, where the app opens */}
+          <Link to={spendOverviewItem.to} className="flex items-center gap-2 group">
             <img
               src="/logo.png"
               alt="Spendiary Logo"

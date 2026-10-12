@@ -33,7 +33,7 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         badge: 'Time to invest',
         title: 'Today',
         description:
-          'DCA buys that are due (or late) and dividends to log show up here, each with its own button, plus the next few buys coming up. Tap "Confirm" to add a purchase to your portfolio.',
+          'When DCA buys, dividends, card bills or loans need you, this line says how many. Tap it to handle them all on Spend Home.',
         position: 'bottom',
       },
       {

@@ -42,6 +42,18 @@ function SpendSettingsRedirect() {
   return <Navigate to={`/settings${hash || '#spend'}`} replace />
 }
 
+// The app opens on Spend Home (used every day); after that, "/" is Invest Home as usual
+let opened = false
+function MarkOpened() {
+  useEffect(() => {
+    opened = true
+  }, [])
+  return null
+}
+function InvestHome() {
+  return opened ? <Dashboard /> : <Navigate to="/spend" replace />
+}
+
 // 💡 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
 function AppContent() {
   const { user, loginWithGoogle, loginAsTestMode, authError, dataReady } = useData()
@@ -263,8 +275,9 @@ function AppContent() {
         <PageLoadingFallback />
       ) : (
       <Suspense fallback={<PageLoadingFallback />}>
+        <MarkOpened />
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<InvestHome />} />
           <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/rebalance" element={<Rebalance />} />
           <Route path="/dca" element={<DcaPlanner />} />
