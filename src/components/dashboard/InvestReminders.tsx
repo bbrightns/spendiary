@@ -4,6 +4,7 @@ import type { DcaPlan, Holding } from '../../lib/types'
 import {
   ASSET_META,
   getHoldingDpsForMonth,
+  getLiabilityDueStatus,
   isBuyDayToday,
   isDividendReceivedThisMonth,
   isLiabilityActionableThisMonth,
@@ -57,7 +58,10 @@ export function InvestReminders({ onConfirmDca, onLogDividend }: Props) {
   const dividends = (data.holdings ?? []).filter(
     (h) => h.paysDividend && (h.dividendMonths ?? []).includes(month) && !isDividendReceivedThisMonth(h.id, data.dividendRecords),
   )
-  const loansDue = (data.liabilities ?? []).filter((l) => isLiabilityActionableThisMonth(l)).length
+  const loans = (data.liabilities ?? []).filter((l) => isLiabilityActionableThisMonth(l))
+  const loansDue = loans.length
+  // The old red "Overdue debts" chip is gone, so the quiet line still calls out anything late
+  const loansOverdue = loans.filter((l) => getLiabilityDueStatus(l).status === 'overdue').length
   // Non-daily buys in the next week (weekly plans only in their last 2 days, so it isn't always full)
   const upcoming = data.dcaPlans
     .filter((p) => (p.frequency ?? 'monthly') !== 'daily' && !shouldConfirmBuy(p, now))
@@ -142,6 +146,7 @@ export function InvestReminders({ onConfirmDca, onLogDividend }: Props) {
               {loansDue} loan {loansDue === 1 ? 'payment' : 'payments'}
             </span>{' '}
             due this month · paid from Spend
+            {loansOverdue > 0 && <span className="font-semibold text-loss"> · {loansOverdue} overdue</span>}
           </span>
           <span aria-hidden="true">→</span>
         </Link>
