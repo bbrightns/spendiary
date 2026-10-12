@@ -10,6 +10,8 @@ import { Footer } from './components/layout/Footer'
 import { Dashboard } from './pages/Dashboard'
 import { Portfolio } from './pages/Portfolio'
 import { DcaPlanner } from './pages/DcaPlanner'
+// Spend Home is where the app opens, so it loads with the app instead of lazily (no skeleton flash)
+import { SpendOverview } from './modules/spend/pages/SpendOverview'
 
 const Retirement = lazy(() => import('./pages/Retirement').then(m => ({ default: m.Retirement })))
 const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })))
@@ -18,7 +20,6 @@ const ActivitySummary = lazy(() => import('./pages/ActivitySummary').then(m => (
 const Rebalance = lazy(() => import('./pages/Rebalance').then(m => ({ default: m.Rebalance })))
 const Dividends = lazy(() => import('./pages/Dividends').then(m => ({ default: m.Dividends })))
 const CashLiquidity = lazy(() => import('./pages/CashLiquidity').then(m => ({ default: m.CashLiquidity })))
-const SpendOverview = lazy(() => import('./modules/spend/pages/SpendOverview').then(m => ({ default: m.SpendOverview })))
 const SpendTransactions = lazy(() => import('./modules/spend/pages/SpendTransactions').then(m => ({ default: m.SpendTransactions })))
 const SpendRecurringPage = lazy(() => import('./modules/spend/pages/SpendRecurring').then(m => ({ default: m.SpendRecurringPage })))
 const SpendLoansPage = lazy(() => import('./modules/spend/pages/SpendLoans').then(m => ({ default: m.SpendLoansPage })))
@@ -40,18 +41,6 @@ function LoansRedirect() {
 function SpendSettingsRedirect() {
   const { hash } = useLocation()
   return <Navigate to={`/settings${hash || '#spend'}`} replace />
-}
-
-// The app opens on Spend Home (used every day); after that, "/" is Invest Home as usual
-let opened = false
-function MarkOpened() {
-  useEffect(() => {
-    opened = true
-  }, [])
-  return null
-}
-function InvestHome() {
-  return opened ? <Dashboard /> : <Navigate to="/spend" replace />
 }
 
 // 💡 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
@@ -275,9 +264,10 @@ function AppContent() {
         <PageLoadingFallback />
       ) : (
       <Suspense fallback={<PageLoadingFallback />}>
-        <MarkOpened />
         <Routes>
-          <Route path="/" element={<InvestHome />} />
+          {/* The app opens on Spend Home (used every day); Invest Home lives at /invest */}
+          <Route path="/" element={<SpendOverview />} />
+          <Route path="/invest" element={<Dashboard />} />
           <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/rebalance" element={<Rebalance />} />
           <Route path="/dca" element={<DcaPlanner />} />
@@ -293,7 +283,8 @@ function AppContent() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/logs" element={<HoldingLogs />} />
           <Route path="/logs/summary" element={<ActivitySummary />} />
-          <Route path="/spend" element={<SpendOverview />} />
+          {/* Spend Home used to be /spend; old links and bookmarks still land */}
+          <Route path="/spend" element={<Navigate to="/" replace />} />
           <Route path="/spend/txns" element={<SpendTransactions />} />
           <Route path="/spend/accounts" element={<SpendAccounts />} />
           <Route path="/spend/settings" element={<SpendSettingsRedirect />} />
@@ -301,7 +292,7 @@ function AppContent() {
           <Route path="/spend/recurring" element={<SpendRecurringPage />} />
           <Route path="/spend/loans" element={<SpendLoansPage />} />
           <Route path="/spend/wallets" element={<Navigate to="/spend/accounts" replace />} />
-          <Route path="*" element={<Dashboard />} />
+          <Route path="*" element={<SpendOverview />} />
         </Routes>
       </Suspense>
       )}

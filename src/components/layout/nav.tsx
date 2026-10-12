@@ -95,8 +95,11 @@ export interface NavSection {
   items: NavSubItem[]
 }
 
+/** Invest Home; "/" is Spend Home, where the app opens */
+export const INVEST_HOME = '/invest'
+
 const dashboardItem: NavSubItem = {
-  to: '/',
+  to: INVEST_HOME,
   label: 'Dashboard',
   short: 'Home',
   description: 'Net worth, allocation & monthly overview',
@@ -149,7 +152,7 @@ export function isSubItemActive(sub: NavSubItem, pathname: string): boolean {
 }
 
 export const mobileNavItems: MobileNavItem[] = [
-  { id: 'home', to: '/', label: 'Dashboard', short: 'Home', icon: DashboardIcon },
+  { id: 'home', to: INVEST_HOME, label: 'Dashboard', short: 'Home', icon: DashboardIcon },
   { id: 'portfolio', to: '/portfolio', label: 'Portfolio', short: 'Port', icon: PortfolioIcon },
   { id: 'dca', to: '/dca', label: 'DCA Plans', short: 'DCA', icon: DcaIcon },
   { id: 'history', to: '/logs', label: 'Activity Logs', short: 'History', icon: ClockIcon, exact: true },

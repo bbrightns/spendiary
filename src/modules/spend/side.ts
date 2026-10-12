@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router-dom'
-import { SPEND_ROOT, isSpendPath } from './nav'
+import { SPEND_HOME, SPEND_ROOT, isSpendPath } from './nav'
+import { INVEST_HOME } from '../../components/layout/nav'
 
 export const LAST_INVEST_KEY = 'spendiary.last_invest_path'
 export const LAST_SPEND_KEY = 'spendiary.last_spend_path'
@@ -29,8 +30,11 @@ export function write(key: string, value: string) {
 export function lastPathFor(spend: boolean): string {
   const saved = read(spend ? LAST_SPEND_KEY : LAST_INVEST_KEY)
   // Ignore anything stale that no longer belongs to that side
-  const valid = !!saved && saved.startsWith('/') && isSpendPath(saved.split(/[?#]/)[0]) === spend
-  return valid ? saved! : spend ? SPEND_ROOT : '/'
+  // Spend Home moved from /spend to /, and Invest Home from / to /invest; old saved paths are
+  // remapped (/spend) or fail the side check (/ now belongs to Spend) and fall back to home
+  const path = saved === SPEND_ROOT ? SPEND_HOME : saved
+  const valid = !!path && path.startsWith('/') && isSpendPath(path.split(/[?#]/)[0]) === spend
+  return valid ? path! : spend ? SPEND_HOME : INVEST_HOME
 }
 
 /**

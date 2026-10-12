@@ -25,7 +25,7 @@ export function SpendSnapshotCard() {
 
   if (transactions.length === 0 && budget === 0) {
     return (
-      <Link to="/spend" className="block">
+      <Link to="/" className="block">
         <Card className="flex items-center justify-between gap-3 py-3.5 hover:shadow-[var(--shadow-lift)] transition-shadow">
           <span className="flex items-center gap-2.5 text-sm font-semibold text-ink">
             <WalletIcon className="h-5 w-5 text-brand" />
@@ -45,7 +45,7 @@ export function SpendSnapshotCard() {
   const barCls = overspent ? 'bg-loss' : spentPct > 0.85 ? 'bg-warn' : 'bg-brand'
 
   return (
-    <Link to="/spend" className="group block" aria-label="Open Spend">
+    <Link to="/" className="group block" aria-label="Open Spend">
       <Card className="@container hover:shadow-[var(--shadow-lift)] transition-shadow">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">

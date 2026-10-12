@@ -306,7 +306,7 @@ export function TodayLink({ id }: { id?: string }) {
   return (
     <Link
       id={id}
-      to="/spend"
+      to="/"
       className="flex items-center justify-between gap-3 rounded-2xl border border-line px-4 py-2.5 text-sm text-ink-muted transition-colors hover:bg-surface-muted/60"
     >
       <span>

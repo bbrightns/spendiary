@@ -2,14 +2,17 @@ import type { NavSection, NavSubItem } from '../../components/layout/nav'
 import { DashboardIcon, DebtIcon, PieChartIcon, SettingsIcon, WalletIcon } from '../../components/icons'
 import { ListBulletIcon, RepeatIcon } from './categories'
 
+/** Prefix of Spend's inner pages (/spend/txns, …) */
 export const SPEND_ROOT = '/spend'
+/** Spend Home is the app's home */
+export const SPEND_HOME = '/'
 
 export function isSpendPath(pathname: string): boolean {
-  return pathname === SPEND_ROOT || pathname.startsWith(`${SPEND_ROOT}/`)
+  return pathname === SPEND_HOME || pathname === SPEND_ROOT || pathname.startsWith(`${SPEND_ROOT}/`)
 }
 
 export const spendOverviewItem: NavSubItem = {
-  to: SPEND_ROOT,
+  to: SPEND_HOME,
   label: 'Home',
   short: 'Home',
   description: "Today's allowance, bills due and today's spending",
