@@ -26,20 +26,24 @@ function hasData(data: SpendiaryData): boolean {
     (data.dividendRecords?.length ?? 0) > 0
 }
 
+/** What a backup holds, for both sides: "Invest: 9 holdings, … · Spend: 32 transactions, … · Money: …" */
 function dataSummary(data: SpendiaryData): string {
-  const parts: string[] = []
-  if (data.holdings.length > 0)
-    parts.push(`${data.holdings.length} holding${data.holdings.length !== 1 ? 's' : ''}`)
-  if (data.cashAccounts.length > 0)
-    parts.push(`${data.cashAccounts.length} cash account${data.cashAccounts.length !== 1 ? 's' : ''}`)
-  if (data.dcaPlans.length > 0)
-    parts.push(`${data.dcaPlans.length} DCA plan${data.dcaPlans.length !== 1 ? 's' : ''}`)
-  if (data.transfers.length > 0)
-    parts.push(`${data.transfers.length} transfer${data.transfers.length !== 1 ? 's' : ''}`)
-  if ((data.holdingLogs?.length ?? 0) > 0)
-    parts.push(`${data.holdingLogs?.length} log${data.holdingLogs?.length !== 1 ? 's' : ''}`)
-  if (parts.length === 0) return 'no data'
-  return parts.join(', ')
+  const n = (count: number | undefined, word: string, plural = `${word}s`) => (count ? `${count} ${count === 1 ? word : plural}` : '')
+  const group = (label: string, items: string[]) => {
+    const kept = items.filter(Boolean)
+    return kept.length ? `${label}: ${kept.join(', ')}` : ''
+  }
+  const groups = [
+    group('Invest', [n(data.holdings.length, 'holding'), n(data.dcaPlans.length, 'DCA plan'), n(data.holdingLogs?.length, 'log'), n(data.dividendRecords?.length, 'dividend')]),
+    group('Spend', [
+      n(data.spendTransactions?.length, 'transaction'),
+      n(data.spendCards?.length, 'card'),
+      n(data.spendRecurring?.length, 'bill'),
+      n(data.spendGoals?.length, 'goal'),
+    ]),
+    group('Money', [n(data.cashAccounts.length, 'cash account'), n(data.liabilities?.length, 'loan'), n(data.transfers.length, 'transfer')]),
+  ].filter(Boolean)
+  return groups.length ? groups.join(' · ') : 'no data'
 }
 
 // ─── inline toast ─────────────────────────────────────────────────────────────
@@ -447,7 +451,7 @@ export function Settings() {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-ink">Export data</p>
                       <p className="mt-0.5 text-xs text-ink-muted">
-                        Download all holdings, cash accounts, transactions, logs, settings, and history as a JSON backup.
+                        Everything in Spendiary, Invest and Spend: holdings, logs, cash accounts, cards, spending, bills, loans, goals, settings and history, in one JSON file.
                       </p>
                       {exportToast.kind !== 'idle' && (
                         <p
