@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { CreditCardIcon } from '../../components/icons'
 import { thb, thbSigned } from '../../lib/format'
 import type { SpendCard, SpendTransaction } from '../../lib/types'
 import { StarIcon } from './AccountSheets'
@@ -25,6 +24,24 @@ interface Props {
 function shortDate(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number)
   return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+}
+
+/** The star in front of a card's name, on the front card and on every tab behind it, same column */
+function FavoriteToggle({ on, name, light, onToggle, className = '' }: { on: boolean; name: string; light: boolean; onToggle: () => void; className?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation()
+        onToggle()
+      }}
+      aria-pressed={on}
+      aria-label={on ? `Unfavorite ${name}` : `Favorite ${name}`}
+      className={`-ml-2 grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current ${light ? 'hover:bg-white/15' : 'hover:bg-slate-900/10'} ${on ? 'text-amber-300' : 'opacity-70 hover:opacity-100'} ${className}`}
+    >
+      <StarIcon filled={on} />
+    </button>
+  )
 }
 
 /**
@@ -82,20 +99,25 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
         const bg = c.color ?? FALLBACK_CARD_COLOR
         const k = inkOn(bg)
         return (
-          <button
+          <div
             key={c.id}
-            type="button"
+            role="button"
+            tabIndex={0}
             onClick={() => setPicked(c.id)}
-            aria-label={`Show ${c.name}${favoriteIds.includes(c.id) ? ', favorite' : ''}, owed ${thbSigned(c.balance, true)}${t.open ? `, ${dueText(t.open.daysToDue)}` : ''}`}
+            onKeyDown={(e) => {
+              if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return
+              e.preventDefault()
+              setPicked(c.id)
+            }}
+            aria-label={`Show ${c.name}, owed ${thbSigned(c.balance, true)}${t.open ? `, ${dueText(t.open.daysToDue)}` : ''}`}
             style={{ background: cardFace(bg), zIndex: i }}
             // Taller than it shows: the next layer covers the bottom, so only ~44px peeks out
             className={`relative -mb-4 flex h-[60px] w-full items-start gap-3 rounded-t-[var(--radius-card)] px-4 pt-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_-8px_20px_-10px_rgba(0,0,0,0.45)] transition-transform duration-200 cursor-pointer hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:px-5 ${k.text}`}
           >
+            <FavoriteToggle on={favoriteIds.includes(c.id)} name={c.name} light={k.light} onToggle={() => onToggleFavorite(c.id)} className="-my-1.5" />
             <span className="flex min-w-0 flex-1 items-baseline gap-2">
               <span className="truncate text-sm font-bold">{c.name}</span>
               {c.last4 && <span className={`shrink-0 text-xs tnum ${k.soft}`}>•• {c.last4}</span>}
-              {/* Marker only: the tab is itself a button, so toggling stays on the front card */}
-              {favoriteIds.includes(c.id) && <StarIcon filled className="h-3.5 w-3.5 shrink-0 self-center text-amber-300" />}
             </span>
             {t.tone && (
               <span className={`shrink-0 rounded-full bg-white px-2 py-0.5 text-[11px] font-bold ${t.tone === 'loss' ? 'text-rose-600' : 'text-amber-700'}`}>
@@ -103,7 +125,7 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
               </span>
             )}
             <span className="shrink-0 text-sm font-bold tnum">{thbSigned(c.balance, true)}</span>
-          </button>
+          </div>
         )
       })}
 
@@ -123,7 +145,7 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
         className="relative overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.45),var(--shadow-soft)] cursor-pointer transition-shadow hover:shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.45),var(--shadow-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand animate-rise"
       >
         <div className={`flex items-center gap-3 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] sm:px-5 ${ink.text}`} style={{ background: cardFace(color) }}>
-          <CreditCardIcon className="h-5 w-5 shrink-0" />
+          <FavoriteToggle on={fav} name={active.name} light={ink.light} onToggle={() => onToggleFavorite(active.id)} />
           <div className="min-w-0 flex-1">
             <p className="flex min-w-0 items-center text-sm font-bold">
               <span className="truncate">{active.name}</span>
@@ -133,18 +155,6 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
             </p>
             <p className={`text-xs tnum ${ink.soft}`}>{active.last4 ? `•••• ${active.last4}` : 'Credit card'}</p>
           </div>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              onToggleFavorite(active.id)
-            }}
-            aria-pressed={fav}
-            aria-label={fav ? `Unfavorite ${active.name}` : `Favorite ${active.name}`}
-            className={`grid h-9 w-9 shrink-0 place-items-center rounded-full transition-colors cursor-pointer ${ink.light ? 'hover:bg-white/15' : 'hover:bg-slate-900/10'} ${fav ? 'text-amber-300' : ''}`}
-          >
-            <StarIcon filled={fav} />
-          </button>
         </div>
 
         <div className="p-4 sm:p-5">
