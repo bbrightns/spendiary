@@ -62,6 +62,7 @@ describe('parseTags', () => {
   })
   it('ignores a # glued to a word before it', () => {
     expect(parseTags('a#b')).toEqual([])
+    expect(parseTags('x #a#b')).toEqual([])
   })
   it('allows trailing punctuation', () => {
     expect(parseTags('Lunch #office, then #gym.')).toEqual(['office', 'gym'])

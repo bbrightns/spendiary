@@ -6,7 +6,7 @@ import { localDateStr } from '../../lib/format'
  * `#ร้านโปรด` stay whole. Punctuation at the very end (`#gym.` `#office,`) is the sentence's, not
  * the tag's. Glued to a word before it (`a#b`) it isn't a tag.
  */
-export const TAG_RE = /(?<=^|\s)#([^\s#]*[^\s#.,!?;:)\]'"])/gu
+export const TAG_RE = /(?<=^|\s)#([^\s#]*[^\s#.,!?;:)\]'"])(?=$|[\s.,!?;:)\]'"])/gu
 
 /** Unique lowercase hashtags in a note, without the leading #. */
 export function parseTags(note?: string): string[] {
