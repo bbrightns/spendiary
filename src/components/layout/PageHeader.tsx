@@ -1,7 +1,7 @@
 import React, { type ReactNode } from 'react'
 import { HelpCircleIcon } from '../icons'
 import { useSpendSide } from '../../modules/spend/side'
-import { SPEND_ACCENT_TEXT } from '../../modules/spend/tones'
+import { INVEST_ACCENT_TEXT, SPEND_ACCENT_TEXT } from '../../modules/spend/tones'
 
 interface PageHeaderProps {
   eyebrow?: string
@@ -14,7 +14,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ eyebrow, title, subtitle, action, onStartGuide, className = '' }: PageHeaderProps) {
   // The eyebrow takes the color of its side, like the Invest/Spend switch
-  const accent = useSpendSide() ? SPEND_ACCENT_TEXT : 'text-brand dark:text-brand-ink'
+  const accent = useSpendSide() ? SPEND_ACCENT_TEXT : INVEST_ACCENT_TEXT
   return (
     <header className={`mb-6 flex flex-wrap items-end justify-between gap-4 ${className}`}>
       <div>

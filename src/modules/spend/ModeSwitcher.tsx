@@ -21,7 +21,7 @@ export function ModeSwitcher({ size = 'md', className = '' }: { size?: 'sm' | 'm
   }
 
   const btn = size === 'sm' ? 'h-7 px-2.5 text-xs' : 'h-8 flex-1 px-3 text-sm'
-  // Each side has its own color: Spend green, Invest the brand blue
+  // Each side has its own color: Spend green, Invest blue (not the brand, which is indigo in dark mode)
   const options = [
     {
       label: 'Spend',
@@ -30,7 +30,7 @@ export function ModeSwitcher({ size = 'md', className = '' }: { size?: 'sm' | 'm
       on: 'bg-emerald-700 text-white',
       idle: 'hover:text-emerald-700 dark:hover:text-emerald-300',
     },
-    { label: 'Invest', active: !spend, onClick: () => go(false), on: 'bg-brand text-white', idle: 'hover:text-brand-ink' },
+    { label: 'Invest', active: !spend, onClick: () => go(false), on: 'bg-invest text-white', idle: 'hover:text-invest-ink' },
   ]
 
   return (

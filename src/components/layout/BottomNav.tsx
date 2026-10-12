@@ -5,6 +5,9 @@ import { useData } from '../../store/DataContext'
 import { isDividendReceivedThisMonth, shouldConfirmBuy } from '../../lib/calc'
 import { Modal } from '../ui/Modal'
 import { NavSheetList } from './NavSheetList'
+import { SIDE_ACTIVE } from '../../modules/spend/tones'
+
+const ON = SIDE_ACTIVE.invest
 
 export function BottomNav() {
   const location = useLocation()
@@ -62,13 +65,13 @@ export function BottomNav() {
                   aria-haspopup="dialog"
                   className={[
                     'group relative flex flex-1 flex-col items-center gap-0.5 px-1 pb-1 pt-1.5 text-xs font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset cursor-pointer min-h-[48px]',
-                    isActive ? 'text-brand-ink' : 'text-ink-muted',
+                    isActive ? ON.text : 'text-ink-muted',
                   ].join(' ')}
                 >
                   <span
                     className={[
                       'relative flex h-8 w-12 items-center justify-center rounded-full transition-all duration-200',
-                      isActive ? 'bg-brand-soft' : 'bg-transparent',
+                      isActive ? ON.bg : 'bg-transparent',
                     ].join(' ')}
                   >
                     <item.icon className="h-5 w-5" strokeWidth={isActive ? 2 : 1.6} />
@@ -99,13 +102,13 @@ export function BottomNav() {
                 aria-current={isActive ? 'page' : undefined}
                 className={[
                   'group relative flex flex-1 flex-col items-center gap-0.5 px-1 pb-1 pt-1.5 text-xs font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset min-h-[48px]',
-                  isActive ? 'text-brand-ink' : 'text-ink-muted',
+                  isActive ? ON.text : 'text-ink-muted',
                 ].join(' ')}
               >
                 <span
                   className={[
                     'relative flex h-8 w-12 items-center justify-center rounded-full transition-all duration-200',
-                    isActive ? 'bg-brand-soft' : 'bg-transparent',
+                    isActive ? ON.bg : 'bg-transparent',
                   ].join(' ')}
                 >
                   <item.icon className="h-5 w-5" strokeWidth={isActive ? 2 : 1.6} />
