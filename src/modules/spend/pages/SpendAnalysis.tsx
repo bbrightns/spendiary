@@ -218,7 +218,7 @@ export function SpendAnalysis() {
       <Card className="p-4 sm:p-6 animate-rise" padded={false}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
-            <p className="text-sm font-medium text-ink-muted">Spent this {rangeName}</p>
+            <p className="text-sm font-medium text-ink-muted">{isCurrent ? `Spent this ${rangeName}` : `Spent that ${rangeName}`}</p>
             <p className="mt-1 font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ink tnum truncate">{thb(totals.expense)}</p>
             {compare !== null && (
               <p className={`mt-1 text-xs font-semibold tnum ${compare <= 0 ? 'text-gain' : 'text-orange-600 dark:text-orange-300'}`}>
