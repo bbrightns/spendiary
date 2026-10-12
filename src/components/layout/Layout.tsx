@@ -7,7 +7,6 @@ import { TestModeBanner } from './TestModeBanner'
 import { SettingsIcon, SearchIcon } from '../icons'
 import { CommandPalette, openCommandPalette } from '../ui/CommandPalette'
 import { useData } from '../../store/DataContext'
-import { useScrollVisibility } from '../../hooks/useScrollVisibility'
 import { ModeSwitcher } from '../../modules/spend/ModeSwitcher'
 import { QuickAddSheet } from '../../modules/spend/QuickAddSheet'
 import { ImportSheet } from '../../modules/spend/ImportSheet'
@@ -19,7 +18,6 @@ import { isSpendPath } from '../../modules/spend/nav'
 export function Layout({ children }: { children: ReactNode }) {
   const { user } = useData()
   const isTestMode = user?.id === 'test-user-local'
-  const isVisible = useScrollVisibility()
   const isSpend = isSpendPath(useLocation().pathname)
 
   return (
@@ -41,11 +39,9 @@ export function Layout({ children }: { children: ReactNode }) {
       {/* ── Desktop Sidebar (≥ lg) ── */}
       <Sidebar />
 
-      {/* ── Mobile Top Brand Bar (< lg) ── */}
+      {/* ── Mobile Top Brand Bar (< lg): always on screen while scrolling ── */}
       <div
-        className={`sticky ${isTestMode ? 'top-9' : 'top-0'} z-20 flex items-center gap-2 border-b border-line bg-surface/75 px-4 sm:px-5 py-3 backdrop-blur-xl transition-transform duration-300 ease-in-out lg:hidden ${
-          isVisible ? 'translate-y-0' : '-translate-y-full pointer-events-none'
-        }`}
+        className={`sticky ${isTestMode ? 'top-9' : 'top-0'} z-20 flex items-center gap-2 border-b border-line bg-surface/75 px-4 sm:px-5 py-3 backdrop-blur-xl lg:hidden`}
       >
         <img src="/logo.png" alt="Spendiary Logo" className="h-7 w-7 sm:h-8 sm:w-8 object-contain shrink-0" />
         {/* Wordmark steps aside on very narrow phones so the mode switch never crowds Search / Settings */}

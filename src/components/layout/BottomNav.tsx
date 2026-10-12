@@ -61,13 +61,13 @@ export function BottomNav() {
                   aria-expanded={isMoreSheetOpen}
                   aria-haspopup="dialog"
                   className={[
-                    'group relative flex flex-1 flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-xs font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset cursor-pointer min-h-[48px]',
+                    'group relative flex flex-1 flex-col items-center gap-0.5 px-1 pb-1 pt-1.5 text-xs font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset cursor-pointer min-h-[48px]',
                     isActive ? 'text-brand-ink' : 'text-ink-muted',
                   ].join(' ')}
                 >
                   <span
                     className={[
-                      'relative flex h-9 w-12 items-center justify-center rounded-full transition-all duration-200',
+                      'relative flex h-8 w-12 items-center justify-center rounded-full transition-all duration-200',
                       isActive ? 'bg-brand-soft' : 'bg-transparent',
                     ].join(' ')}
                   >
@@ -98,13 +98,13 @@ export function BottomNav() {
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
                 className={[
-                  'group relative flex flex-1 flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-xs font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset min-h-[48px]',
+                  'group relative flex flex-1 flex-col items-center gap-0.5 px-1 pb-1 pt-1.5 text-xs font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset min-h-[48px]',
                   isActive ? 'text-brand-ink' : 'text-ink-muted',
                 ].join(' ')}
               >
                 <span
                   className={[
-                    'relative flex h-9 w-12 items-center justify-center rounded-full transition-all duration-200',
+                    'relative flex h-8 w-12 items-center justify-center rounded-full transition-all duration-200',
                     isActive ? 'bg-brand-soft' : 'bg-transparent',
                   ].join(' ')}
                 >
