@@ -5,11 +5,13 @@ import { Button } from '../../components/ui/Button'
 import { FormActions } from '../../components/forms/FormActions'
 import { useToast } from '../../store/ToastContext'
 import { thb } from '../../lib/format'
-import type { SpendCard } from '../../lib/types'
+import type { CashAccount, SpendCard } from '../../lib/types'
 import { accountTotals } from './logic'
 import { CARD_COLORS, CARD_PALETTE, cardFace, inkOn } from './cardColor'
 import { useSpend, type PayMethod } from './useSpend'
 import { openQuickAdd } from './QuickAddSheet'
+import { EditAccountModal } from '../../components/forms/EditCashAccountModal'
+import { useData } from '../../store/DataContext'
 
 
 export function StarIcon({ filled, className = 'h-4 w-4' }: { filled?: boolean; className?: string }) {
@@ -320,41 +322,69 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
 }
 
 export function WalletSheet({ wallet, onClose }: { wallet?: PayMethod; onClose: () => void }) {
-  const navigate = useNavigate()
+  const { data, setCashAccounts } = useData()
+  const { showToast } = useToast()
+  // Editing happens here, in Spend, with the same form Cash & Liquidity uses
+  const [editing, setEditing] = useState<CashAccount | null>(null)
+  const account = wallet && (data.cashAccounts ?? []).find((a) => a.id === wallet.id)
   return (
-    <Modal open={!!wallet} onClose={onClose} title={wallet?.name ?? 'Wallet'} description={wallet ? `Balance ${thb(wallet.balance, true)}` : undefined} size="sm">
-      {wallet && (
-        <div className="space-y-5">
-          {/* Log straight from this wallet; the sheet closes and Quick add opens with it picked */}
-          <div className="grid grid-cols-3 gap-2">
-            {(
-              [
-                { type: 'expense', label: 'Spend' },
-                { type: 'income', label: 'Income' },
-                { type: 'transfer', label: 'Transfer' },
-              ] as const
-            ).map((a) => (
+    <>
+      <Modal open={!!wallet} onClose={onClose} title={wallet?.name ?? 'Wallet'} description={wallet ? `Balance ${thb(wallet.balance, true)}` : undefined} size="sm">
+        {wallet && (
+          <div className="space-y-5">
+            {/* Log straight from this wallet; the sheet closes and Quick add opens with it picked */}
+            <div className="grid grid-cols-3 gap-2">
+              {(
+                [
+                  { type: 'expense', label: 'Spend' },
+                  { type: 'income', label: 'Income' },
+                  { type: 'transfer', label: 'Transfer' },
+                ] as const
+              ).map((a) => (
+                <Button
+                  key={a.type}
+                  variant={a.type === 'transfer' ? 'primary' : 'secondary'}
+                  size="sm"
+                  onClick={() => {
+                    onClose()
+                    openQuickAdd({ draft: { type: a.type, accountId: wallet.id } })
+                  }}
+                >
+                  {a.label}
+                </Button>
+              ))}
+            </div>
+            <AccountHistory id={wallet.id} name={wallet.name} />
+            <QuickAddPrefs id={wallet.id} />
+            {account && (
               <Button
-                key={a.type}
-                variant={a.type === 'transfer' ? 'primary' : 'secondary'}
+                variant="secondary"
                 size="sm"
+                className="w-full"
                 onClick={() => {
                   onClose()
-                  openQuickAdd({ draft: { type: a.type, accountId: wallet.id } })
+                  setEditing(account)
                 }}
               >
-                {a.label}
+                Edit wallet
               </Button>
-            ))}
+            )}
           </div>
-          <AccountHistory id={wallet.id} name={wallet.name} />
-          <QuickAddPrefs id={wallet.id} />
-          <Button variant="secondary" size="sm" className="w-full" onClick={() => navigate('/cash')}>
-            Manage in Cash
-          </Button>
-        </div>
+        )}
+      </Modal>
+      {editing && (
+        <EditAccountModal
+          open
+          initialAccount={editing}
+          onClose={() => setEditing(null)}
+          onSave={(saved) => {
+            setCashAccounts((data.cashAccounts ?? []).map((a) => (a.id === saved.id ? saved : a)))
+            setEditing(null)
+            showToast(`Saved "${saved.name}"`, 'success')
+          }}
+        />
       )}
-    </Modal>
+    </>
   )
 }
 
