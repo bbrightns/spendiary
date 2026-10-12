@@ -11,7 +11,8 @@ import { Button } from '../components/ui/Button'
 import { TextField } from '../components/ui/Field'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import { DownloadIcon, TrashIcon, UploadIcon } from '../components/icons'
+import { DownloadIcon, SparkleIcon, TrashIcon, UploadIcon } from '../components/icons'
+import { AiImportModal } from '../components/forms/AiImportModal'
 import type { SpendiaryData } from '../lib/types'
 import { SpendDataSection, SpendSettingsSections } from '../modules/spend/pages/SpendSettings'
 
@@ -266,6 +267,7 @@ export function Settings() {
   const navigate = useNavigate()
   const tabsRef = useRef<HTMLDivElement>(null)
   const [activeGroup, setActiveGroup] = useState<GroupId>('general')
+  const [aiImportOpen, setAiImportOpen] = useState(false)
   // Under the mobile top bar (61px) and the test-mode banner (36px) when shown
   const stickyTop = user?.id === 'test-user-local' ? 'top-[97px] lg:top-9' : 'top-[61px] lg:top-0'
   const arrived = useRef(false)
@@ -390,7 +392,30 @@ export function Settings() {
           <SpendSettingsSections />
         </SettingsGroup>
 
-        <SettingsGroup id="backup" title="Data & backup" hint="Sync, backups and statements; reset at the bottom">
+        <SettingsGroup id="backup" title="Data & backup" hint="Bring data in, sync and back up; reset at the bottom">
+            {/* ── Import with AI (moved here from the Dashboard header) ── */}
+            <Card id="ai-import" className="animate-rise">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h2 className="flex items-center gap-2 font-display text-lg font-bold text-ink">
+                    <SparkleIcon className="h-4.5 w-4.5 text-brand" />
+                    Import with AI
+                  </h2>
+                  <p className="mt-1 text-sm text-ink-muted">
+                    Paste a screenshot or text from your broker or bank; AI turns it into holdings and cash accounts you check before saving.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAiImportOpen(true)}
+                  className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 cursor-pointer"
+                >
+                  <SparkleIcon className="h-4 w-4" />
+                  Import
+                </button>
+              </div>
+            </Card>
+
             {/* ── Supabase Cloud Sync ─────────────────────────────── */}
             <div id="guide-settings-sync">
               <Card className="animate-rise">
@@ -665,6 +690,8 @@ export function Settings() {
             </Card>
         </SettingsGroup>
       </div>
+
+      <AiImportModal open={aiImportOpen} onClose={() => setAiImportOpen(false)} />
 
       {/* ── Import confirmation modal ──────────────────────────── */}
       <Modal
