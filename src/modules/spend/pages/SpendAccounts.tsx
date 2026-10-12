@@ -169,7 +169,7 @@ export function SpendAccounts() {
           ) : (
             // Bento: three square tiles a row on phones (the card stack's width); wider screens fit
             // as many as the row holds, capped so the fixed-size text doesn't float in huge tiles
-            <div className="mx-auto grid w-full max-w-[360px] grid-cols-3 gap-2 sm:max-w-none sm:grid-cols-[repeat(auto-fill,minmax(112px,140px))] sm:justify-center md:justify-start">
+            <div className="mx-auto grid w-full max-w-[360px] grid-cols-3 gap-2 sm:max-w-none sm:grid-cols-[repeat(auto-fill,minmax(112px,140px))] sm:justify-center md:justify-start auto-rows-fr">
               {wallets.map((w) => {
                 const f = flows.get(w.id)
                 const on = favs.includes(w.id)
@@ -218,14 +218,21 @@ export function SpendAccounts() {
                     </div>
 
                     <div className="mt-auto min-w-0">
-                      {/* Two lines, so names like "KBank Payroll (main)" stay readable */}
-                      <p className="line-clamp-2 break-words text-[11px] font-semibold leading-tight text-ink-soft">
+                      {/* Always two lines tall, so a one-line name gives the same tile as a long one */}
+                      <p className="line-clamp-2 min-h-[2lh] break-words text-[11px] font-semibold leading-tight text-ink-soft">
                         {isDefault && <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-brand align-middle" aria-hidden />}
                         {w.name}
                       </p>
-                      {/* Whole baht fits a third of a phone; millions go compact */}
+                      {/* Satang in small type so it still fits a third of a phone; millions go compact */}
                       <p className="truncate font-display text-[15px] font-extrabold tracking-tight tnum text-ink">
-                        {Math.abs(w.balance) >= 1_000_000 ? thbCompact(w.balance) : thb(w.balance)}
+                        {Math.abs(w.balance) >= 1_000_000 ? (
+                          thbCompact(w.balance)
+                        ) : (
+                          <>
+                            {thbSigned(w.balance, true).slice(0, -3)}
+                            <span className="text-[11px] font-bold text-ink-muted">{thbSigned(w.balance, true).slice(-3)}</span>
+                          </>
+                        )}
                       </p>
                       <p className="truncate text-[10px] leading-tight text-ink-muted tnum">
                         {f ? (
