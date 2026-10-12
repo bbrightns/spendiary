@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useSyncExternalStore } from 'react'
 
 export type Theme = 'light' | 'dark' | 'system'
 
@@ -25,32 +25,43 @@ function applyTheme(theme: Theme) {
   if (meta) meta.setAttribute('content', dark ? '#0f1117' : '#fbfbfd')
 }
 
-export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>(getStoredTheme)
+// One theme for the whole app. Each component used to keep its own copy, so a copy left
+// behind (Sidebar, command palette) could flip the theme back when it acted or a page mounted.
+let current: Theme = getStoredTheme()
+const listeners = new Set<() => void>()
+const subscribe = (fn: () => void) => {
+  listeners.add(fn)
+  return () => listeners.delete(fn)
+}
+const snapshot = () => current
 
-  // Apply + persist whenever theme changes
+export function useTheme() {
+  const theme = useSyncExternalStore(subscribe, snapshot)
+
   useEffect(() => {
     applyTheme(theme)
-    try {
-      localStorage.setItem(STORAGE_KEY, theme)
-    } catch {
-      /* non-fatal */
-    }
   }, [theme])
 
   // Re-apply when the OS preference changes (relevant when theme === 'system')
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
     const handler = () => {
-      if (getStoredTheme() === 'system') applyTheme('system')
+      if (current === 'system') applyTheme('system')
     }
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
   }, [])
 
-  function setTheme(t: Theme) {
-    setThemeState(t)
-  }
+  const setTheme = useCallback((t: Theme) => {
+    current = t
+    try {
+      localStorage.setItem(STORAGE_KEY, t)
+    } catch {
+      /* non-fatal */
+    }
+    applyTheme(t)
+    listeners.forEach((fn) => fn())
+  }, [])
 
   return { theme, setTheme }
 }
