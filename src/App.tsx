@@ -292,7 +292,8 @@ function AppContent() {
           <Route path="/spend/recurring" element={<SpendRecurringPage />} />
           <Route path="/spend/loans" element={<SpendLoansPage />} />
           <Route path="/spend/wallets" element={<Navigate to="/spend/accounts" replace />} />
-          <Route path="*" element={<SpendOverview />} />
+          {/* Unknown paths go home, so the Spend/Invest switch matches the page */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
       )}
