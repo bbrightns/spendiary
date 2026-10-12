@@ -70,7 +70,7 @@ export function SpendAccounts() {
       />
 
       {/* Same order and columns as the sections below: cards, then wallets */}
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 xl:grid-cols-[360px_minmax(0,1fr)] xl:gap-8">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-[360px_minmax(0,1fr)] md:gap-6 xl:gap-8">
         <Card className="p-3 sm:p-5 animate-rise" padded={false}>
           <p className="text-xs font-medium text-ink-muted">Owed on cards</p>
           <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate text-ink">{thbSigned(owed, true)}</p>
@@ -82,8 +82,8 @@ export function SpendAccounts() {
         </Card>
       </div>
 
-      {/* Wide screens: card stack on the left, wallets fill the rest */}
-      <div className="space-y-6 xl:grid xl:grid-cols-[360px_minmax(0,1fr)] xl:items-start xl:gap-8 xl:space-y-0">
+      {/* md+: card stack on the left, wallets fill the rest */}
+      <div className="space-y-6 md:grid md:grid-cols-[360px_minmax(0,1fr)] md:items-start md:gap-6 md:space-y-0 xl:gap-8">
         {/* ── Credit cards ── */}
         <section className="space-y-3">
           <div className="flex items-center justify-between px-1">
@@ -140,7 +140,7 @@ export function SpendAccounts() {
           ) : (
             // Bento: three square tiles a row on phones (the card stack's width); wider screens fit
             // as many as the row holds, capped so the fixed-size text doesn't float in huge tiles
-            <div className="mx-auto grid w-full max-w-[360px] grid-cols-3 gap-2 sm:max-w-none sm:grid-cols-[repeat(auto-fill,minmax(112px,140px))] sm:justify-center xl:justify-start">
+            <div className="mx-auto grid w-full max-w-[360px] grid-cols-3 gap-2 sm:max-w-none sm:grid-cols-[repeat(auto-fill,minmax(112px,140px))] sm:justify-center md:justify-start">
               {wallets.map((w) => {
                 const f = flows.get(w.id)
                 const on = favs.includes(w.id)
@@ -221,7 +221,7 @@ export function SpendAccounts() {
               </button>
             </div>
           )}
-          <p className="px-1 text-center text-xs text-ink-muted xl:text-left">In / out is {periodName.toLowerCase()}. USD accounts stay on the Invest side for now.</p>
+          <p className="px-1 text-center text-xs text-ink-muted md:text-left">In / out is {periodName.toLowerCase()}. USD accounts stay on the Invest side for now.</p>
         </section>
       </div>
 
