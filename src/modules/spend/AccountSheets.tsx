@@ -4,9 +4,9 @@ import { Modal } from '../../components/ui/Modal'
 import { Button } from '../../components/ui/Button'
 import { FormActions } from '../../components/forms/FormActions'
 import { useToast } from '../../store/ToastContext'
-import { thb } from '../../lib/format'
+import { localDateStr, thb } from '../../lib/format'
 import type { CashAccount, SpendCard } from '../../lib/types'
-import { accountTotals } from './logic'
+import { accountTotals, cardCycle, unbilledOpening } from './logic'
 import { CARD_COLORS, CARD_PALETTE, cardFace, inkOn } from './cardColor'
 import { useSpend, type PayMethod } from './useSpend'
 import { openQuickAdd } from './QuickAddSheet'
@@ -76,6 +76,7 @@ const inputClass =
   'h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15 tnum'
 
 const digits = (v: string) => v.replace(/[^\d.,]/g, '')
+const shortDay = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 const num = (v: string) => Number(v.replace(/,/g, ''))
 
 const RAINBOW = 'conic-gradient(#ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #8b5cf6, #ec4899, #ef4444)'
@@ -95,7 +96,7 @@ interface CardSheetProps {
 export function CardSheet({ open, card, onClose }: CardSheetProps) {
   const { cards, upsertCard, removeCard } = useSpend()
   const { showToast } = useToast()
-  const [form, setForm] = useState({ name: '', last4: '', limit: '', owed: '', statementDay: '25', dueDay: '10', minPct: '8', color: CARD_COLORS[0] })
+  const [form, setForm] = useState({ name: '', last4: '', limit: '', owed: '', unbilled: '', statementDay: '25', dueDay: '10', minPct: '8', color: CARD_COLORS[0] })
   // Main card whose limit this one shares ('' = its own limit)
   const [shareWith, setShareWith] = useState('')
   const [inNetWorth, setInNetWorth] = useState(true)
@@ -116,12 +117,14 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
               last4: card.last4 ?? '',
               limit: String(card.creditLimit),
               owed: String(card.balance),
+              // Only while it's still this cycle's; once its statement closed it's just billed
+              unbilled: unbilledOpening(card, cardCycle(card).lastStatement) ? String(card.unbilled!.amount) : '',
               statementDay: String(card.statementDay),
               dueDay: String(card.dueDay),
               minPct: String(card.minPaymentPercent ?? 8),
               color: card.color ?? CARD_COLORS[0],
             }
-          : { name: '', last4: '', limit: '', owed: '0', statementDay: '25', dueDay: '10', minPct: '8', color: CARD_COLORS[(Math.random() * CARD_COLORS.length) | 0] },
+          : { name: '', last4: '', limit: '', owed: '0', unbilled: '', statementDay: '25', dueDay: '10', minPct: '8', color: CARD_COLORS[(Math.random() * CARD_COLORS.length) | 0] },
       )
   }
 
@@ -132,8 +135,20 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
   const mains = cards.filter((c) => c.id !== card?.id && !c.sharedLimitWith)
   const sharers = card ? cards.filter((c) => c.sharedLimitWith === card.id) : []
   const main = mains.find((c) => c.id === shareWith)
+  // Owed now = billed (on the last statement) + not billed yet (this cycle, due after the next one)
+  const owedNum = num(form.owed || '0')
+  // Hidden (and ignored) while nothing is owed, so a leftover value can't block saving
+  const unbilledNum = owedNum > 0 ? num(form.unbilled || '0') : 0
+  const unbilledOk = Number.isFinite(unbilledNum) && unbilledNum >= 0 && unbilledNum <= Math.max(0, owedNum)
+  const cyc = dayOk(form.statementDay) && dayOk(form.dueDay) ? cardCycle({ statementDay: Number(form.statementDay), dueDay: Number(form.dueDay) }) : null
   const canSave =
-    form.name.trim() !== '' && (!!main || num(form.limit) > 0) && Number.isFinite(num(form.owed || '0')) && dayOk(form.statementDay) && dayOk(form.dueDay) && pctOk
+    form.name.trim() !== '' &&
+    (!!main || num(form.limit) > 0) &&
+    Number.isFinite(owedNum) &&
+    unbilledOk &&
+    dayOk(form.statementDay) &&
+    dayOk(form.dueDay) &&
+    pctOk
 
   const save = () => {
     upsertCard({
@@ -144,7 +159,8 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
       // A shared card keeps a limit of its own for if it's ever unlinked
       creditLimit: num(form.limit) > 0 ? num(form.limit) : main?.creditLimit ?? 0,
       sharedLimitWith: main?.id,
-      balance: num(form.owed || '0'),
+      balance: owedNum,
+      unbilled: unbilledNum > 0 && cyc ? { amount: unbilledNum, statement: cyc.nextStatement } : undefined,
       statementDay: Number(form.statementDay),
       excludeFromNetWorth: inNetWorth ? undefined : true,
       dueDay: Number(form.dueDay),
@@ -225,6 +241,32 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
             <input className={inputClass} inputMode="decimal" value={form.owed} onChange={(e) => set('owed')(digits(e.target.value))} placeholder="0" />
           </Field>
         </div>
+
+        {/* Split what's owed: the billed part is due on the last statement; the rest waits for the next one */}
+        {owedNum > 0 && (
+          <div className="rounded-2xl border border-line bg-surface-muted/40 p-3">
+            <Field label="Not billed yet" hint="this cycle · ยังไม่ตัดรอบ">
+              <input className={inputClass} inputMode="decimal" value={form.unbilled} onChange={(e) => set('unbilled')(digits(e.target.value))} placeholder="0" />
+            </Field>
+            {!unbilledOk ? (
+              <p className="mt-2 text-xs font-semibold text-loss">Can't be more than what's owed ({thb(owedNum, true)}).</p>
+            ) : (
+              cyc && (
+                <ul className="mt-2 space-y-0.5 text-xs text-ink-muted tnum">
+                  <li>
+                    Billed <span className="font-semibold text-ink-soft">{thb(owedNum - unbilledNum, true)}</span> · on the {shortDay(cyc.lastStatement)} statement, due{' '}
+                    {shortDay(cyc.lastStatementDue)}
+                    {owedNum - unbilledNum > 0 && cyc.lastStatementDue < localDateStr() && <span className="font-semibold text-loss"> · already past, shows as overdue</span>}
+                  </li>
+                  <li>
+                    This cycle <span className="font-semibold text-ink-soft">{thb(unbilledNum, true)}</span> · on the {shortDay(cyc.nextStatement)} statement, due{' '}
+                    {shortDay(cyc.nextStatementDue)}
+                  </li>
+                </ul>
+              )
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Statement day" hint="วันตัดรอบ">

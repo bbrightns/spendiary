@@ -211,6 +211,11 @@ export interface CardBill {
  * owed now minus what's been charged since the statement closed. That keeps it right
  * even when the starting balance was typed in rather than logged.
  */
+/** The hand-entered "not billed yet" amount while it's still this cycle's; 0 once its statement has closed. */
+export function unbilledOpening(card: Pick<SpendCard, 'unbilled'>, lastStatement: string): number {
+  return card.unbilled && lastStatement < card.unbilled.statement ? card.unbilled.amount : 0
+}
+
 export function cardBill(card: SpendCard, txns: SpendTransaction[], reminderDays = DEFAULT_BILL_REMINDER_DAYS, today = localDateStr()): CardBill {
   const t = parse(today)
   const cyc = cardCycle(card, t)
@@ -220,7 +225,8 @@ export function cardBill(card: SpendCard, txns: SpendTransaction[], reminderDays
 
   const items = onCard.filter((x) => x.date > prevStatement && x.date <= cyc.lastStatement).sort((a, b) => b.date.localeCompare(a.date))
   const statementTotal = items.reduce((s, x) => s + net(x), 0)
-  const sinceStatement = onCard.filter((x) => x.date > cyc.lastStatement).reduce((s, x) => s + net(x), 0)
+  // Charges since the last statement, plus an opening amount typed in as not billed yet
+  const sinceStatement = onCard.filter((x) => x.date > cyc.lastStatement).reduce((s, x) => s + net(x), 0) + unbilledOpening(card, cyc.lastStatement)
   const payments = txns.filter((x) => x.type === 'transfer' && x.toAccountId === card.id)
   const paidSoFar = payments.filter((x) => x.date > cyc.lastStatement).reduce((s, x) => s + x.amount, 0)
   // Payments during the statement window settle the previous bill first; the rest was paid early
