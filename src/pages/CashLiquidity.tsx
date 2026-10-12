@@ -53,6 +53,19 @@ function formatWithCommas(value: string | number): string {
   return integerPart
 }
 
+/** The wallet icon Spend uses, tinted with the account's color (or its bank's); neutral when there's none */
+function AccountIcon({ color, bank, className }: { color?: string; bank?: string; className: string }) {
+  return (
+    <div
+      title={bank ? `Bank: ${bank}` : undefined}
+      className={`${className} rounded-lg shrink-0 flex items-center justify-center ${color ? 'shadow-xs' : 'bg-surface-muted border border-line/50 text-ink-muted'}`}
+      style={color ? { color, background: `color-mix(in srgb, ${color} 15%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 21%, transparent)` } : undefined}
+    >
+      <WalletIcon className={`h-4 w-4 ${color ? '' : 'opacity-60'}`} />
+    </div>
+  )
+}
+
 export function CashLiquidity() {
   const { data, setCashAccounts, usdThb } = useData()
   const { showToast } = useToast()
@@ -486,18 +499,7 @@ export function CashLiquidity() {
                   }}
                   className="flex w-full items-center gap-2.5 rounded-lg px-0.5 py-2.5 text-left transition-colors cursor-pointer hover:bg-surface-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
-                  {preset ? (
-                    <div
-                      className="h-8.5 w-8.5 rounded-lg text-xs font-black shrink-0 flex items-center justify-center select-none shadow-xs"
-                      style={{ background: preset.bg, color: preset.color, border: `1px solid ${preset.color}35` }}
-                    >
-                      {preset.shortName}
-                    </div>
-                  ) : (
-                    <div className="h-8.5 w-8.5 rounded-lg bg-surface-muted border border-line/50 text-ink-muted text-xs font-bold shrink-0 flex items-center justify-center">
-                      <WalletIcon className="h-4 w-4 opacity-60" />
-                    </div>
-                  )}
+                  <AccountIcon color={a.color ?? preset?.color} bank={preset?.name} className="h-8.5 w-8.5" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="font-display font-bold text-sm text-ink truncate">
@@ -630,19 +632,7 @@ export function CashLiquidity() {
                       {/* 1. Account — long names truncate (full name on hover) so the table fits without scrolling */}
                       <td className="py-2 px-3 max-w-[18rem]" title={a.name}>
                         <div className="flex items-center gap-2.5 min-w-0">
-                          {preset ? (
-                            <div
-                              className="h-8 w-8 rounded-lg text-xs font-black shrink-0 flex items-center justify-center select-none shadow-xs"
-                              style={{ background: preset.bg, color: preset.color, border: `1px solid ${preset.color}35` }}
-                              title={`Bank: ${preset.name}`}
-                            >
-                              {preset.shortName}
-                            </div>
-                          ) : (
-                            <div className="h-8 w-8 rounded-lg bg-surface-muted border border-line/50 text-ink-muted text-xs font-bold shrink-0 flex items-center justify-center">
-                              <WalletIcon className="h-4 w-4 opacity-60" />
-                            </div>
-                          )}
+                          <AccountIcon color={a.color ?? preset?.color} bank={preset?.name} className="h-8 w-8" />
                           <div className="min-w-0">
                             <span className="font-display font-bold text-sm text-ink block truncate group-hover:text-brand transition-colors">
                               {a.name || 'Untitled Account'}
