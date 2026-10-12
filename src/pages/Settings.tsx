@@ -277,7 +277,11 @@ export function Settings() {
     // First arrival jumps straight there; later hash changes (tabs, the gear) glide
     const smooth = arrived.current
     arrived.current = true
-    if (!id) return
+    if (!id) {
+      // Already here (e.g. on #backup) and the gear is tapped again: back to the top, General
+      if (smooth) window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
     const frame = requestAnimationFrame(() => scrollToId(id, smooth))
     return () => cancelAnimationFrame(frame)
   }, [hash])

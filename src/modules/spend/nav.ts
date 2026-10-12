@@ -57,9 +57,9 @@ export const spendLoansItem: NavSubItem = {
   icon: DebtIcon,
 }
 
-/** The one Settings page, opened on its Spend group */
+/** The one Settings page (opens at the top, like the gear) */
 export const spendSettingsItem: NavSubItem = {
-  to: '/settings#spend',
+  to: '/settings',
   label: 'Settings',
   short: 'Settings',
   description: 'Theme, spending month, budgets, backup and sync',

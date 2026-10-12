@@ -20,8 +20,8 @@ export function Sidebar() {
   const { setTheme } = useTheme()
   const isTestMode = user?.id === 'test-user-local'
   const isSpend = useSpendSide()
-  // One Settings page for both sides; from Spend it opens on the Spend group
-  const settingsTo = isSpend ? '/settings#spend' : '/settings'
+  // One Settings page for both sides; always opens at the top (General)
+  const settingsTo = '/settings'
 
   // Calculate live badge counts
   const dcaAlertCount = data.dcaPlans.filter((p) => shouldConfirmBuy(p)).length
