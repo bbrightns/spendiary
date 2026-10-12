@@ -16,7 +16,6 @@ import { TodayLink } from '../modules/spend/TodayStack'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import {
-  ArrowUpRightIcon,
   CheckIcon,
   DebtIcon,
   PortfolioIcon,
@@ -438,11 +437,10 @@ export function Dashboard() {
 
                 <Link
                   to="/cash"
-                  aria-label="Open Cash & Liquidity Hub"
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand hover:underline cursor-pointer"
+                  aria-label="Open Cash & Liquidity"
+                  className="text-xs font-semibold text-brand hover:underline"
                 >
-                  <span>Open Hub</span>
-                  <ArrowUpRightIcon className="h-3.5 w-3.5" />
+                  Cash →
                 </Link>
               </div>
 
@@ -586,11 +584,10 @@ export function Dashboard() {
 
                 <Link
                   to="/spend/loans"
-                  aria-label="Open Debts & Installments Hub"
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand hover:underline cursor-pointer"
+                  aria-label="Open Loans in Spend"
+                  className="text-xs font-semibold text-brand hover:underline"
                 >
-                  <span>Open Hub</span>
-                  <ArrowUpRightIcon className="h-3.5 w-3.5" />
+                  Loans →
                 </Link>
               </div>
 

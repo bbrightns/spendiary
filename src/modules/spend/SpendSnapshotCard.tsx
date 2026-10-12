@@ -56,7 +56,7 @@ export function SpendSnapshotCard() {
             <h2 className="shrink-0 font-display text-base font-bold text-ink">Spending</h2>
             <span className="truncate text-xs font-medium text-ink-muted">· {periodLabel(period, settings.cycle)}</span>
           </div>
-          <span className="shrink-0 text-xs font-semibold text-brand group-hover:underline">Open Spend →</span>
+          <span className="shrink-0 text-xs font-semibold text-brand group-hover:underline">Spend →</span>
         </div>
 
         <div className={`mt-4 grid gap-4 ${hasBudget ? '@min-[34rem]:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] @min-[34rem]:gap-6' : ''}`}>
