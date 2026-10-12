@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback, type ReactNode } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useData } from '../../store/DataContext'
 import { useTheme } from '../../hooks/useTheme'
 import { useToast } from '../../store/ToastContext'
@@ -40,7 +40,7 @@ import { openPayBill } from '../../modules/spend/PayBillSheet'
 import { openImport } from '../../modules/spend/ImportSheet'
 import { ListBulletIcon, RepeatIcon, TransferIcon, getCategory, guessCategory, manageableCategories } from '../../modules/spend/categories'
 import { frequencyLabel, goalProgress, noteTitle } from '../../modules/spend/logic'
-import { isSpendPath } from '../../modules/spend/nav'
+import { useSpendSide } from '../../modules/spend/side'
 import { TONES } from '../../modules/spend/tones'
 import { useSpend } from '../../modules/spend/useSpend'
 
@@ -146,7 +146,6 @@ export function CommandPalette() {
   const [recent, setRecent] = useState<string[]>([])
 
   const navigate = useNavigate()
-  const { pathname } = useLocation()
   const { data, exportData } = useData()
   const spend = useSpend()
   const { theme, setTheme } = useTheme()
@@ -154,7 +153,7 @@ export function CommandPalette() {
 
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
-  const inSpend = isSpendPath(pathname)
+  const inSpend = useSpendSide()
 
   const reset = useCallback(() => {
     setShowShortcuts(false)
@@ -330,7 +329,6 @@ export function CommandPalette() {
           ['nav-spend-analysis', 'Analysis', 'Spending by week, month or year', '/spend/analysis', ['analysis', 'report', 'chart', 'trend', 'วิเคราะห์', 'สรุป'], PieChartIcon, true, undefined],
           ['nav-spend-recurring', 'Bills & recurring', 'Bills and income that repeat', '/spend/recurring', ['recurring', 'bills', 'subscription', 'fixed', 'ค่าใช้จ่ายประจำ', 'บิล'], RepeatIcon, true, undefined],
           ['nav-spend-loans', 'Loans & installments', 'What you owe and pay back each month', '/spend/loans', ['loans', 'installments', 'debt', 'pay', 'หนี้', 'ผ่อน', 'งวด'], DebtIcon, true, undefined],
-          ['nav-spend-settings', 'Spend Settings', 'Spending month, budget and categories', '/spend/settings', ['settings', 'budget', 'payday', 'categories', 'ตั้งค่า'], SettingsIcon, true, undefined],
           ['nav-dashboard', 'Dashboard', 'Your net worth at a glance', '/', ['dashboard', 'home', 'net worth', 'หน้าแรก', 'แดชบอร์ด', 'ภาพรวม'], DashboardIcon, false, 'G D'],
           ['nav-portfolio', 'Portfolio', 'All your holdings', '/portfolio', ['portfolio', 'holdings', 'stocks', 'funds', 'พอร์ต', 'หุ้น', 'สินทรัพย์'], PortfolioIcon, false, 'G P'],
           ['nav-rebalance', 'Rebalance Hub', 'Check and adjust how your portfolio is split', '/rebalance', ['rebalance', 'allocation', 'target', 'drift', 'ปรับพอร์ต', 'สมดุล'], SparkleIcon, false, 'G R'],
@@ -340,7 +338,7 @@ export function CommandPalette() {
           ['nav-retirement', 'Retirement (FIRE)', 'Plan for retirement and financial freedom', '/retirement', ['retirement', 'fire', 'financial freedom', 'เกษียณ', 'อิสรภาพ'], SparkleIcon, false, 'G F'],
           ['nav-logs', 'Activity Logs', 'History of buys, sales, dividends and tax', '/logs', ['logs', 'history', 'activity', 'ประวัติ', 'บันทึก'], ClockIcon, false, 'G L'],
           ['nav-summary', 'P/L Summary', 'Profit and loss by month, year or period', '/logs/summary', ['summary', 'profit', 'loss', 'pnl', 'สรุป', 'กำไร', 'ขาดทุน'], PieChartIcon, false, undefined],
-          ['nav-settings', 'Settings', 'Settings, backup and profile', '/settings', ['settings', 'preferences', 'backup', 'profile', 'ตั้งค่า', 'สำรอง'], SettingsIcon, false, 'G S'],
+          ['nav-settings', 'Settings', 'Theme, spending month, budgets, backup and sync', '/settings', ['settings', 'preferences', 'theme', 'budget', 'payday', 'categories', 'backup', 'profile', 'ตั้งค่า', 'สำรอง'], SettingsIcon, false, 'G S'],
         ] as const
       ).map(([id, title, subtitle, to, keywords, Icon, isSpend, badge]) => ({
         id,
@@ -368,12 +366,12 @@ export function CommandPalette() {
       ).map(([hash, title, subtitle, keywords]) => ({
         id: `set-spend-${hash}`,
         title,
-        subtitle: `Spend settings · ${subtitle}`,
+        subtitle: `Settings · Spend · ${subtitle}`,
         keywords: [...keywords, 'settings', 'ตั้งค่า'],
         group: 'Settings' as const,
         spend: true,
         icon: ic(SettingsIcon),
-        run: go(`/spend/settings#${hash}`),
+        run: go(`/settings#${hash}`),
       })),
       {
         id: 'set-backup',
@@ -382,7 +380,7 @@ export function CommandPalette() {
         keywords: ['backup', 'import', 'export', 'restore', 'reset', 'สำรอง', 'นำเข้า'],
         group: 'Settings',
         icon: ic(SettingsIcon),
-        run: go('/settings'),
+        run: go('/settings#backup'),
       },
       {
         id: 'set-sync',
@@ -391,7 +389,7 @@ export function CommandPalette() {
         keywords: ['sync', 'cloud', 'profile', 'account', 'name', 'login', 'ซิงค์', 'โปรไฟล์'],
         group: 'Settings',
         icon: ic(SettingsIcon),
-        run: go('/settings'),
+        run: go('/settings#general'),
       },
 
       // ── System ──
@@ -643,7 +641,7 @@ export function CommandPalette() {
           spend: true,
           icon: <c.icon className="h-4 w-4" />,
           iconBox: `border-transparent ${TONES[c.tone].chip}`,
-          run: go('/spend/settings#category-budgets'),
+          run: go('/settings#category-budgets'),
           score: 2,
         })
       }

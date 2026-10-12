@@ -6,8 +6,9 @@ import { PlusIcon, SearchIcon } from '../icons'
 import { openCommandPalette } from '../ui/CommandPalette'
 import { Button } from '../ui/Button'
 import { ModeSwitcher } from '../../modules/spend/ModeSwitcher'
+import { useSpendSide } from '../../modules/spend/side'
 import { openQuickAdd } from '../../modules/spend/QuickAddSheet'
-import { isSpendPath, spendAccountsItem, spendNavSections, spendOverviewItem } from '../../modules/spend/nav'
+import { spendAccountsItem, spendNavSections, spendOverviewItem } from '../../modules/spend/nav'
 import { useSpend } from '../../modules/spend/useSpend'
 
 import { isDividendReceivedThisMonth, isLiabilityActionableThisMonth, shouldConfirmBuy } from '../../lib/calc'
@@ -18,9 +19,9 @@ export function Sidebar() {
   const { data, user } = useData()
   const { setTheme } = useTheme()
   const isTestMode = user?.id === 'test-user-local'
-  const isSpend = isSpendPath(pathname)
-  // One settings link: Spend's settings while in Spend, the app's otherwise
-  const settingsTo = isSpend ? '/spend/settings' : settingsItem.to || '/settings'
+  const isSpend = useSpendSide()
+  // One Settings page for both sides; from Spend it opens on the Spend group
+  const settingsTo = isSpend ? '/settings#spend' : '/settings'
 
   // Calculate live badge counts
   const dcaAlertCount = data.dcaPlans.filter((p) => shouldConfirmBuy(p)).length
@@ -162,14 +163,14 @@ export function Sidebar() {
           to={settingsTo}
           className={[
             'flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
-            pathname.startsWith(settingsTo)
+            pathname === '/settings'
               ? 'text-brand-ink bg-brand-soft/70 shadow-xs font-bold'
               : 'text-ink-muted hover:bg-surface-muted hover:text-ink',
           ].join(' ')}
         >
           <div className="flex items-center gap-3">
             <settingsItem.icon className="h-4.5 w-4.5" strokeWidth={1.7} />
-            <span>{isSpend ? 'Spend settings' : settingsItem.label}</span>
+            <span>{settingsItem.label}</span>
           </div>
         </Link>
 

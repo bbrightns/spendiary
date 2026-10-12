@@ -1,6 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import { PageHeader } from '../../../components/layout/PageHeader'
+import { useState, type ReactNode } from 'react'
 import { Card } from '../../../components/ui/Card'
 import { Button } from '../../../components/ui/Button'
 import { SegmentedControl } from '../../../components/ui/SegmentedControl'
@@ -75,17 +73,9 @@ function fromDraft(d: Draft): PayCycle | null {
   return { mode: 'payday', rule: { kind: 'fromEnd', daysBefore: n }, weekend: d.weekend, ...days }
 }
 
-export function SpendSettings() {
-  const { settings, methods, transactions, updateSettings } = useSpend()
-  // Export Spend's own records; dividends and DCA buys belong to the Invest side's backup
-  const ownTxns = transactions.filter((t) => !t.source)
-  const exportAll = () => {
-    const accountName = (id?: string) => methods.find((m) => m.id === id)?.name ?? ''
-    downloadCsv(toCsv(ownTxns, { category: (id) => getCategory(id)?.label ?? '', account: accountName }))
-    showToast(`Exported ${ownTxns.length} transactions`)
-  }
-  const dataButton =
-    'rounded-2xl border border-line px-4 py-3 text-left transition-colors cursor-pointer hover:bg-surface-muted/60 disabled:cursor-default disabled:opacity-50'
+/** Spend's settings, shown as the Spend group of the one Settings page. */
+export function SpendSettingsSections() {
+  const { settings, methods, updateSettings } = useSpend()
   const { showToast } = useToast()
   const [draft, setDraft] = useState<Draft>(() => toDraft(settings.cycle))
   const [budget, setBudget] = useState(settings.monthlyBudget ? String(settings.monthlyBudget) : '')
@@ -109,19 +99,12 @@ export function SpendSettings() {
   const catOverMonthly = !!settings.monthlyBudget && catTotal > settings.monthlyBudget
   const catChanged = JSON.stringify(catParsed) !== JSON.stringify(Object.fromEntries(Object.entries(settings.categoryBudgets ?? {}).filter(([, n]) => n > 0)))
 
-  // Arriving from "Set budgets" on Overview: jump to that section
-  const { hash } = useLocation()
-  useEffect(() => {
-    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [hash])
-
   const budgetNum = Number(budget.replace(/,/g, ''))
   const budgetValid = budget === '' || (Number.isFinite(budgetNum) && budgetNum >= 0)
   const budgetChanged = budgetValid && (budget === '' ? undefined : budgetNum) !== settings.monthlyBudget
 
   return (
-    <div className="space-y-6">
-      <PageHeader eyebrow="Spend" title="Settings" subtitle="How your spending month is counted, your budget, and how Quick add fills in." />
+    <>
 
       <Section id="spending-month" title="Spending month" description="Count from the 1st, or from payday to the day before the next payday.">
         <SegmentedControl
@@ -390,21 +373,6 @@ export function SpendSettings() {
         </select>
       </Section>
 
-      <Section id="data" title="Data" description="Bring past transactions in from a bank or card statement, or take all of them out as a spreadsheet.">
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <button type="button" onClick={openImport} className={dataButton}>
-            <span className="block text-sm font-bold text-ink">Import CSV</span>
-            <span className="block text-xs text-ink-muted">A .csv file or pasted text; you check it before saving</span>
-          </button>
-          <button type="button" onClick={exportAll} disabled={ownTxns.length === 0} className={dataButton}>
-            <span className="block text-sm font-bold text-ink">Export CSV</span>
-            <span className="block text-xs text-ink-muted tnum">
-              {ownTxns.length ? `All ${ownTxns.length} transactions · opens in Excel or Sheets` : 'Nothing logged yet'}
-            </span>
-          </button>
-        </div>
-      </Section>
-
       <Section id="quick-add" title="Quick add" description="The payment method picked for you when you add an expense. Star more on the Accounts page.">
         <select
           aria-label="Default payment method"
@@ -423,13 +391,37 @@ export function SpendSettings() {
           ))}
         </select>
       </Section>
+    </>
+  )
+}
 
-      <Link to="/settings" className="flex items-center justify-between rounded-2xl border border-line px-4 py-3 text-sm font-semibold text-ink hover:bg-surface-muted/60">
-        <span>
-          App settings <span className="font-normal text-ink-muted">· backup, profile, sync, theme</span>
-        </span>
-        <span aria-hidden="true">→</span>
-      </Link>
-    </div>
+/** Statement CSV in / spreadsheet out; lives with the backups in Settings → Data & backup. */
+export function SpendDataSection() {
+  const { methods, transactions } = useSpend()
+  const { showToast } = useToast()
+  // Export Spend's own records; dividends and DCA buys belong to the Invest side's backup
+  const ownTxns = transactions.filter((t) => !t.source)
+  const exportAll = () => {
+    const accountName = (id?: string) => methods.find((m) => m.id === id)?.name ?? ''
+    downloadCsv(toCsv(ownTxns, { category: (id) => getCategory(id)?.label ?? '', account: accountName }))
+    showToast(`Exported ${ownTxns.length} transactions`)
+  }
+  const dataButton =
+    'rounded-2xl border border-line px-4 py-3 text-left transition-colors cursor-pointer hover:bg-surface-muted/60 disabled:cursor-default disabled:opacity-50'
+  return (
+      <Section id="data" title="Spending statements (CSV)" description="Bring past transactions in from a bank or card statement, or take all of them out as a spreadsheet.">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <button type="button" onClick={openImport} className={dataButton}>
+            <span className="block text-sm font-bold text-ink">Import CSV</span>
+            <span className="block text-xs text-ink-muted">A .csv file or pasted text; you check it before saving</span>
+          </button>
+          <button type="button" onClick={exportAll} disabled={ownTxns.length === 0} className={dataButton}>
+            <span className="block text-sm font-bold text-ink">Export CSV</span>
+            <span className="block text-xs text-ink-muted tnum">
+              {ownTxns.length ? `All ${ownTxns.length} transactions · opens in Excel or Sheets` : 'Nothing logged yet'}
+            </span>
+          </button>
+        </div>
+      </Section>
   )
 }

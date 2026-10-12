@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { BottomNav } from './BottomNav'
 import { Sidebar } from './Sidebar'
 import { Footer } from './Footer'
@@ -8,17 +8,17 @@ import { SettingsIcon, SearchIcon } from '../icons'
 import { CommandPalette, openCommandPalette } from '../ui/CommandPalette'
 import { useData } from '../../store/DataContext'
 import { ModeSwitcher } from '../../modules/spend/ModeSwitcher'
+import { useSpendSide } from '../../modules/spend/side'
 import { QuickAddSheet } from '../../modules/spend/QuickAddSheet'
 import { ImportSheet } from '../../modules/spend/ImportSheet'
 import { PayBillSheet } from '../../modules/spend/PayBillSheet'
 import { PayLoanSheet } from '../../modules/spend/PayLoanSheet'
 import { SpendBottomNav } from '../../modules/spend/SpendBottomNav'
-import { isSpendPath } from '../../modules/spend/nav'
 
 export function Layout({ children }: { children: ReactNode }) {
   const { user } = useData()
   const isTestMode = user?.id === 'test-user-local'
-  const isSpend = isSpendPath(useLocation().pathname)
+  const isSpend = useSpendSide()
 
   return (
     <div className={`min-h-dvh bg-transparent lg:dark:bg-canvas relative flex flex-col ${isTestMode ? 'pt-9' : ''}`}>
@@ -61,11 +61,11 @@ export function Layout({ children }: { children: ReactNode }) {
           >
             <SearchIcon className="h-[18.5px] w-[18.5px]" />
           </button>
-          {/* One settings button: Spend's settings while in Spend, the app's otherwise */}
+          {/* One Settings page for both sides; from Spend it opens on the Spend group */}
           <NavLink
-            to={isSpend ? '/spend/settings' : '/settings'}
-            aria-label={isSpend ? 'Spend settings' : 'Settings'}
-            title={isSpend ? 'Spend settings' : 'Settings'}
+            to={isSpend ? '/settings#spend' : '/settings'}
+            aria-label="Settings"
+            title="Settings"
             className={({ isActive }) =>
               `grid h-9 w-9 place-items-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
                 isActive ? 'bg-brand-soft text-brand-ink' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'

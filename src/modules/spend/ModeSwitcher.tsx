@@ -1,56 +1,23 @@
 import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { SPEND_ROOT, isSpendPath } from './nav'
+import { LAST_INVEST_KEY, LAST_SIDE_KEY, LAST_SPEND_KEY, isSettings, lastPathFor, useSpendSide, write } from './side'
 
-const LAST_INVEST_KEY = 'spendiary.last_invest_path'
-const LAST_SPEND_KEY = 'spendiary.last_spend_path'
-const INVEST_SETTINGS = '/settings'
-const SPEND_SETTINGS = `${SPEND_ROOT}/settings`
-
-const isSettings = (path: string) => path === INVEST_SETTINGS || path === SPEND_SETTINGS
-
-function read(key: string): string | null {
-  try {
-    return localStorage.getItem(key)
-  } catch {
-    return null
-  }
-}
-
-function write(key: string, value: string) {
-  try {
-    localStorage.setItem(key, value)
-  } catch {
-    // storage unavailable — switching still works, it just lands on the section's home
-  }
-}
-
-/** Where switching into a side lands: the last page visited there (kept across visits), else its home. */
-export function lastPathFor(spend: boolean): string {
-  const saved = read(spend ? LAST_SPEND_KEY : LAST_INVEST_KEY)
-  // Ignore anything stale that no longer belongs to that side
-  const valid = !!saved && saved.startsWith('/') && isSpendPath(saved.split(/[?#]/)[0]) === spend
-  return valid ? saved! : spend ? SPEND_ROOT : '/'
-}
-
-/**
- * Invest ↔ Spend switch. Each side remembers the last page you were on; from a settings
- * page it goes to the other side's settings instead.
- */
+/** Invest ↔ Spend switch. Each side remembers the last page you were on. */
 export function ModeSwitcher({ size = 'md', className = '' }: { size?: 'sm' | 'md'; className?: string }) {
   const { pathname, search } = useLocation()
   const navigate = useNavigate()
-  const spend = isSpendPath(pathname)
+  const spend = useSpendSide()
 
   useEffect(() => {
-    // Settings pages aren't remembered, so coming back lands on a page you were using
+    // Settings isn't remembered, so coming back lands on a page you were using
     if (isSettings(pathname)) return
     write(spend ? LAST_SPEND_KEY : LAST_INVEST_KEY, pathname + search)
+    write(LAST_SIDE_KEY, spend ? 'spend' : 'invest')
   }, [pathname, search, spend])
 
   const go = (toSpend: boolean) => {
-    if (toSpend === spend) return
-    navigate(isSettings(pathname) ? (toSpend ? SPEND_SETTINGS : INVEST_SETTINGS) : lastPathFor(toSpend))
+    if (toSpend === spend && !isSettings(pathname)) return
+    navigate(lastPathFor(toSpend))
   }
 
   const btn = size === 'sm' ? 'h-7 px-2.5 text-xs' : 'h-8 flex-1 px-3 text-sm'
