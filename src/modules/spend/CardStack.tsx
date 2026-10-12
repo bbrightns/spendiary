@@ -86,7 +86,7 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
             key={c.id}
             type="button"
             onClick={() => setPicked(c.id)}
-            aria-label={`Show ${c.name}, owed ${thbSigned(c.balance, true)}${t.open ? `, ${dueText(t.open.daysToDue)}` : ''}`}
+            aria-label={`Show ${c.name}${favoriteIds.includes(c.id) ? ', favorite' : ''}, owed ${thbSigned(c.balance, true)}${t.open ? `, ${dueText(t.open.daysToDue)}` : ''}`}
             style={{ background: cardFace(bg), zIndex: i }}
             // Taller than it shows: the next layer covers the bottom, so only ~44px peeks out
             className={`relative -mb-4 flex h-[60px] w-full items-start gap-3 rounded-t-[var(--radius-card)] px-4 pt-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_-8px_20px_-10px_rgba(0,0,0,0.45)] transition-transform duration-200 cursor-pointer hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:px-5 ${k.text}`}
@@ -94,6 +94,8 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
             <span className="flex min-w-0 flex-1 items-baseline gap-2">
               <span className="truncate text-sm font-bold">{c.name}</span>
               {c.last4 && <span className={`shrink-0 text-xs tnum ${k.soft}`}>•• {c.last4}</span>}
+              {/* Marker only: the tab is itself a button, so toggling stays on the front card */}
+              {favoriteIds.includes(c.id) && <StarIcon filled className="h-3.5 w-3.5 shrink-0 self-center text-amber-300" />}
             </span>
             {t.tone && (
               <span className={`shrink-0 rounded-full bg-white px-2 py-0.5 text-[11px] font-bold ${t.tone === 'loss' ? 'text-rose-600' : 'text-amber-700'}`}>
