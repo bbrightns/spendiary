@@ -13,6 +13,7 @@ import {
   detectBankPreset,
   getCashCategory,
   netWorth,
+  newCashAccount,
   sortCashAccounts,
   totalCash,
 } from '../lib/calc'
@@ -27,10 +28,6 @@ import {
   TrashIcon,
   WalletIcon,
 } from '../components/icons'
-
-function tempId(): string {
-  return `cash-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-}
 
 /** The wallet icon Spend uses, tinted with the account's color (or its bank's); neutral when there's none */
 function AccountIcon({ color, bank, className }: { color?: string; bank?: string; className: string }) {
@@ -164,18 +161,7 @@ export function CashLiquidity() {
   }
 
   const handleOpenAddModal = () => {
-    const newAcc: CashAccount = {
-      id: tempId(),
-      name: '',
-      balance: 0,
-      currency: 'THB',
-      category: 'spending',
-      interestRate: undefined,
-      maxEligibleBalance: undefined,
-      payoutSchedule: 'monthly',
-      payoutMonths: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-    }
-    setAccountToEdit(newAcc)
+    setAccountToEdit(newCashAccount())
     setIsEditModalOpen(true)
   }
 

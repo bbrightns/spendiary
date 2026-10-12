@@ -7,7 +7,10 @@ import { Button } from '../../../components/ui/Button'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import { CreditCardIcon, LockClosedIcon } from '../../../components/icons'
 import { localDateStr, thb, thbCompact, thbSigned } from '../../../lib/format'
-import type { SpendCard } from '../../../lib/types'
+import type { CashAccount, SpendCard } from '../../../lib/types'
+import { newCashAccount, sortCashAccounts } from '../../../lib/calc'
+import { EditAccountModal } from '../../../components/forms/EditCashAccountModal'
+import { useToast } from '../../../store/ToastContext'
 import { CardSheet, StarIcon, WalletSheet } from '../AccountSheets'
 import { GoalsSection } from '../Goals'
 import { inPeriod, isCalendar, moveId, periodFor } from '../logic'
@@ -24,7 +27,11 @@ const compact = (v: number) => thbCompact(v).replace(/^฿\s/, '')
 export function SpendAccounts() {
   const { transactions, methods, cards, settings, bills, toggleFavorite, updateSettings } = useSpend()
   const navigate = useNavigate()
-  const liabilities = useData().data.liabilities ?? []
+  const { data, setCashAccounts, usdThb } = useData()
+  const liabilities = data.liabilities ?? []
+  const { showToast } = useToast()
+  // Adding a wallet happens here, with the same form Cash & Liquidity uses
+  const [newWallet, setNewWallet] = useState<CashAccount | null>(null)
   const [cardSheet, setCardSheet] = useState<{ open: boolean; card?: SpendCard }>({ open: false })
   const [walletSheet, setWalletSheet] = useState<PayMethod | undefined>()
   const [arrange, setArrange] = useState<'cards' | 'wallets' | null>(null)
@@ -162,14 +169,14 @@ export function SpendAccounts() {
               <EmptyState
                 icon={<MethodIcon method={{ kind: 'cash' }} className="h-7 w-7" />}
                 title="Add a wallet"
-                description="Create a THB cash account in Cash and Liquidity, then log spending against it here."
-                action={<Button onClick={() => navigate('/cash?action=new')}>Add cash account</Button>}
+                description="Add the bank accounts and cash you pay from, then log spending against them here."
+                action={<Button onClick={() => setNewWallet(newCashAccount())}>Add wallet</Button>}
               />
             </Card>
           ) : (
-            // Bento: three square tiles a row on phones (the card stack's width); wider screens fit
-            // as many as the row holds, capped so the fixed-size text doesn't float in huge tiles
-            <div className="mx-auto grid w-full max-w-[360px] grid-cols-3 gap-2 sm:max-w-none sm:grid-cols-[repeat(auto-fill,minmax(112px,140px))] sm:justify-center md:justify-start auto-rows-fr">
+            // Bento: three square tiles a row on phones; wider screens fit as many 120px+ tiles as
+            // the row holds and stretch them to fill it, so there's no empty strip at the sides
+            <div className="grid w-full grid-cols-3 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(120px,1fr))] sm:gap-3 auto-rows-fr">
               {wallets.map((w) => {
                 const f = flows.get(w.id)
                 const on = favs.includes(w.id)
@@ -187,7 +194,7 @@ export function SpendAccounts() {
                     }}
                     aria-label={`${w.name}${isDefault ? ', default' : ''}${w.locked ? ', locked savings' : ''}, ${thb(w.balance, true)}`}
                     title={`${w.name} · ${thb(w.balance, true)}`}
-                    className={`relative flex aspect-square min-w-0 flex-col rounded-2xl border bg-surface p-2.5 text-left shadow-[var(--shadow-soft)] transition-all cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                    className={`relative flex aspect-square min-w-0 flex-col rounded-2xl border bg-surface p-2 sm:p-2.5 text-left shadow-[var(--shadow-soft)] transition-all cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                       isDefault ? 'border-brand/60 ring-1 ring-brand/30' : 'border-line'
                     }`}
                   >
@@ -224,13 +231,13 @@ export function SpendAccounts() {
                         {w.name}
                       </p>
                       {/* Satang in small type so it still fits a third of a phone; millions go compact */}
-                      <p className="truncate font-display text-[15px] font-extrabold tracking-tight tnum text-ink">
+                      <p className="truncate font-display text-[14px] min-[380px]:text-[15px] font-extrabold tracking-tight tnum text-ink">
                         {Math.abs(w.balance) >= 1_000_000 ? (
                           thbCompact(w.balance)
                         ) : (
                           <>
                             {thbSigned(w.balance, true).slice(0, -3)}
-                            <span className="text-[11px] font-bold text-ink-muted">{thbSigned(w.balance, true).slice(-3)}</span>
+                            <span className="text-[10px] min-[380px]:text-[11px] font-bold text-ink-muted">{thbSigned(w.balance, true).slice(-3)}</span>
                           </>
                         )}
                       </p>
@@ -249,10 +256,11 @@ export function SpendAccounts() {
               })}
               <button
                 type="button"
-                onClick={() => navigate('/cash?action=new')}
-                className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-line-strong text-xs font-semibold text-ink-muted transition-colors cursor-pointer hover:bg-surface-muted/60 hover:text-ink"
+                onClick={() => setNewWallet(newCashAccount())}
+                // Brand-tinted so it reads as an action in both themes, not as an empty slot
+                className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-brand/40 bg-brand-soft/30 text-xs font-bold text-brand-ink transition-colors cursor-pointer hover:border-brand/70 hover:bg-brand-soft/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
-                <span className="grid h-8 w-8 place-items-center rounded-xl bg-surface-muted text-lg leading-none">+</span>
+                <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand text-lg font-bold leading-none text-white shadow-xs">+</span>
                 Add wallet
               </button>
             </div>
@@ -260,6 +268,19 @@ export function SpendAccounts() {
           <p className="px-1 text-center text-xs text-ink-muted md:text-left">In / out is {periodName.toLowerCase()}. USD accounts stay on the Invest side for now.</p>
         </section>
       </div>
+
+      {newWallet && (
+        <EditAccountModal
+          open
+          initialAccount={newWallet}
+          onClose={() => setNewWallet(null)}
+          onSave={(saved) => {
+            setCashAccounts(sortCashAccounts([...(data.cashAccounts ?? []), saved], usdThb && usdThb > 0 ? usdThb : 35))
+            setNewWallet(null)
+            showToast(`Added "${saved.name}"`, 'success')
+          }}
+        />
+      )}
 
       <GoalsSection />
 
