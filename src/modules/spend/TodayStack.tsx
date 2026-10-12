@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ConfirmDcaBuyForm } from '../../components/forms/ConfirmDcaBuyForm'
 import { ConfirmDividendModal } from '../../components/forms/ConfirmDividendModal'
-import { CreditCardIcon, DcaIcon, DebtIcon, ReceiptPercentIcon } from '../../components/icons'
+import { CreditCardIcon, DcaIcon, DebtIcon, ReceiptPercentIcon, WalletIcon } from '../../components/icons'
 import {
   ASSET_META,
   getHoldingDpsForMonth,
@@ -42,8 +42,14 @@ interface Item {
   tag?: string
   detail: string
   tone: Tone
+  /** For the folded card's total */
+  amount: number
+  /** Days until due (negative when overdue), for payments */
+  days?: number
   /** Badge colour for the single card, dot colour in a folded list */
   color?: string
+  /** Badge icon for the single card when it differs from the group's */
+  icon?: ReactNode
   action: string
   onAction: () => void
 }
@@ -82,12 +88,17 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
   const remindDays = settings.billReminderDays ?? DEFAULT_BILL_REMINDER_DAYS
   const account = (id?: string) => data.cashAccounts.find((a) => a.id === id)?.name
 
+  // Card bills (cards in Spend → Accounts) and loans (Loans, incl. cards tracked as a debt) are
+  // both just "pay this", so they share one group
   const bills: Item[] = reminders.map((b) => ({
-    id: b.card.id,
+    id: `bill-${b.card.id}`,
     title: `${b.card.name} bill`,
     detail: `${thb(b.amountDue)} ${dueText(b.daysToDue)}`,
     tone: b.status === 'overdue' ? 'loss' : 'warn',
+    amount: b.amountDue,
+    days: b.daysToDue,
     color: b.card.color ?? '#0f172a',
+    icon: <CreditCardIcon className="h-4 w-4" />,
     action: 'Pay',
     onAction: () => openPayBill(b.card.id),
   }))
@@ -106,8 +117,23 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
           : s.daysLeft !== undefined
             ? `due in ${count(s.daysLeft, 'day')}`
             : 'due this month'
-    return [{ id: l.id, title: l.name, detail: `${thb(l.monthlyPayment ?? l.balance)} ${when}`, tone: s.status === 'overdue' ? 'loss' : 'warn', action: 'Pay', onAction: () => openPayLoan(l.id) }]
+    const amount = l.monthlyPayment ?? l.balance
+    return [
+      {
+        id: `loan-${l.id}`,
+        title: l.name,
+        detail: `${thb(amount)} ${when}`,
+        tone: s.status === 'overdue' ? 'loss' : 'warn',
+        amount,
+        days: s.status === 'overdue' ? -1 : s.status === 'due_today' ? 0 : s.daysLeft,
+        icon: <DebtIcon className="h-4 w-4" />,
+        action: 'Pay',
+        onAction: () => openPayLoan(l.id),
+      },
+    ]
   })
+  // Overdue first, then soonest
+  const payments = [...bills, ...loans].sort((a, b) => (a.days ?? 99) - (b.days ?? 99))
 
   // Late first, then due today
   const dca: Item[] = data.dcaPlans
@@ -121,6 +147,7 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
         ...planTitle(p),
         detail: `${thb(p.monthlyAmount)} ${FREQ[p.frequency ?? 'monthly']} · ${today ? 'due today' : 'late'}${into ? ` · into ${into}` : ''}`,
         tone: today ? 'brand' : 'warn',
+        amount: p.monthlyAmount,
         color: ASSET_META[p.assetClass]?.color,
         action: 'Confirm',
         onAction: () => onConfirmDca(p),
@@ -136,19 +163,14 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
         title: `Dividend from ${h.name}`,
         detail: `Expected in ${monthName}${dps > 0 ? ` · ${dps} per share` : ''} · log it when it arrives`,
         tone: 'gain',
+        amount: 0,
         color: ASSET_META[h.assetClass as keyof typeof ASSET_META]?.color,
         action: 'Log',
         onAction: () => onLogDividend(h, dps),
       }
     })
 
-  const total = (items: Item[], key: (i: Item) => number) => thb(items.reduce((s, i) => s + key(i), 0))
-  const billAmount = (i: Item) => reminders.find((b) => b.card.id === i.id)?.amountDue ?? 0
-  const loanAmount = (i: Item) => {
-    const l = data.liabilities?.find((x) => x.id === i.id)
-    return l ? (l.monthlyPayment ?? l.balance) : 0
-  }
-  const dcaAmount = (i: Item) => data.dcaPlans.find((p) => p.id === i.id)?.monthlyAmount ?? 0
+  const total = (items: Item[]) => thb(items.reduce((s, i) => s + i.amount, 0))
   const lateText = (items: Item[], word: string) => {
     const n = items.filter((i) => i.tone === 'loss' || (word === 'late' && i.tone === 'warn')).length
     return n > 0 ? ` · ${n} ${word}` : ''
@@ -156,31 +178,23 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
 
   const groups: Group[] = [
     {
-      id: 'bills',
-      icon: <CreditCardIcon className="h-4 w-4" />,
+      id: 'pay',
+      icon: <WalletIcon className="h-4 w-4" />,
       badge: NEUTRAL_BADGE,
-      title: (n) => `${count(n, 'card bill')} to pay`,
+      title: (n) => `${count(n, 'payment')} due`,
       summary: (items) => {
-        const next = Math.min(...reminders.map((b) => b.daysToDue).filter((d) => d >= 0))
+        const next = Math.min(...items.map((i) => i.days ?? Infinity).filter((d) => d >= 0))
         const overdue = lateText(items, 'overdue')
-        return `${total(items, billAmount)} total${overdue || (Number.isFinite(next) ? ` · next ${dueText(next)}` : '')}`
+        return `${total(items)} total${overdue || (Number.isFinite(next) ? ` · next ${dueText(next).replace('due ', '')}` : '')}`
       },
-      items: bills,
-    },
-    {
-      id: 'loans',
-      icon: <DebtIcon className="h-4 w-4" />,
-      badge: NEUTRAL_BADGE,
-      title: (n) => `${count(n, 'loan payment')} due`,
-      summary: (items) => `${total(items, loanAmount)} total${lateText(items, 'overdue')}`,
-      items: loans,
+      items: payments,
     },
     {
       id: 'dca',
       icon: <DcaIcon className="h-4 w-4" />,
       badge: 'bg-brand text-white',
       title: (n) => `${count(n, 'DCA buy')} to confirm`,
-      summary: (items) => `${total(items, dcaAmount)} total${lateText(items, 'late')}`,
+      summary: (items) => `${total(items)} total${lateText(items, 'late')}`,
       items: dca,
     },
     {
@@ -208,7 +222,7 @@ function ItemCard({ item, icon, badge }: { item: Item; icon: ReactNode; badge: s
         className={`grid h-9 w-12 shrink-0 place-items-center rounded-lg ${item.color ? 'text-white' : badge}`}
         style={item.color ? { background: item.color } : undefined}
       >
-        {icon}
+        {item.icon ?? icon}
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex min-w-0 items-center gap-1.5 text-sm font-bold text-ink">
