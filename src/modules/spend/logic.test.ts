@@ -19,6 +19,7 @@ import {
   minimumPayment,
   applyToBalances,
   cardBill,
+  unbilledOpening,
   cardCycle,
   dayAllowance,
   dueRecurring,
@@ -121,6 +122,35 @@ describe('cardCycle and cardBill', () => {
     expect(bill.amountDue).toBe(1000)
     expect(bill.statementTotal).toBe(1000)
     expect(bill.status).toBe('due')
+  })
+})
+
+describe('opening amount not billed yet', () => {
+  // Statement day 25, due day 10. Added on 12 Oct: owes 1,000, none of it on a statement yet
+  const c = card({ balance: 1000, unbilled: { amount: 1000, statement: '2026-10-25' } })
+
+  it('is this cycle, not overdue, until its statement closes', () => {
+    const bill = cardBill(c, [], 5, '2026-10-12')
+    expect(bill.amountDue).toBe(0)
+    expect(bill.status).toBe('clear')
+    expect(unbilledOpening(c, '2026-09-25')).toBe(1000)
+  })
+  it('becomes that statement\'s bill once it closes', () => {
+    const bill = cardBill(c, [], 5, '2026-10-26')
+    expect(unbilledOpening(c, '2026-10-25')).toBe(0)
+    expect(bill.amountDue).toBe(1000)
+    expect(bill.dueDate).toBe('2026-11-10')
+  })
+  it('splits a mixed balance: the billed part is due now, the rest later', () => {
+    const mixed = card({ balance: 1500, unbilled: { amount: 1000, statement: '2026-10-25' } })
+    const bill = cardBill(mixed, [], 5, '2026-10-05')
+    expect(bill.amountDue).toBe(500)
+    expect(bill.dueDate).toBe('2026-10-10')
+  })
+  it('without it, the whole opening balance is billed (old behaviour)', () => {
+    const bill = cardBill(card({ balance: 1000 }), [], 5, '2026-10-12')
+    expect(bill.amountDue).toBe(1000)
+    expect(bill.status).toBe('overdue')
   })
 })
 

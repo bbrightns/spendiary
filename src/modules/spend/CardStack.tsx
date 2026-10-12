@@ -5,7 +5,7 @@ import { StarIcon } from './AccountSheets'
 import { FALLBACK_CARD_COLOR, cardFace, inkOn } from './cardColor'
 import { availableCredit } from './credit'
 import { useData } from '../../store/DataContext'
-import { cardCycle, upcomingDue } from './logic'
+import { cardCycle, unbilledOpening, upcomingDue } from './logic'
 import { dueText, openPayBill } from './PayBillSheet'
 import type { useSpend } from './useSpend'
 
@@ -55,10 +55,10 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
       new Map(
         cards.map((c) => {
           const cyc = cardCycle(c)
-          // Charges minus refunds since the last statement
+          // Charges minus refunds since the last statement, plus an opening amount not billed yet
           const spentCycle = transactions
             .filter((t) => t.accountId === c.id && t.date > cyc.lastStatement)
-            .reduce((s, t) => s + (t.type === 'expense' ? t.amount : t.type === 'income' ? -t.amount : 0), 0)
+            .reduce((s, t) => s + (t.type === 'expense' ? t.amount : t.type === 'income' ? -t.amount : 0), unbilledOpening(c, cyc.lastStatement))
           const bill = bills.find((b) => b.card.id === c.id)
           // An open statement wins; otherwise show the next one forming
           const open = bill && bill.amountDue > 0 ? bill : undefined

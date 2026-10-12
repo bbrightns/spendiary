@@ -61,9 +61,9 @@ export function Layout({ children }: { children: ReactNode }) {
           >
             <SearchIcon className="h-[18.5px] w-[18.5px]" />
           </button>
-          {/* One Settings page for both sides; from Spend it opens on the Spend group */}
+          {/* One Settings page for both sides; always opens at the top (General) */}
           <NavLink
-            to={isSpend ? '/settings#spend' : '/settings'}
+            to="/settings"
             aria-label="Settings"
             title="Settings"
             className={({ isActive }) =>

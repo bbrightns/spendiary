@@ -8,7 +8,7 @@ import { Button } from '../ui/Button'
 import { ModeSwitcher } from '../../modules/spend/ModeSwitcher'
 import { useSpendSide } from '../../modules/spend/side'
 import { openQuickAdd } from '../../modules/spend/QuickAddSheet'
-import { spendAccountsItem, spendNavSections, spendOverviewItem } from '../../modules/spend/nav'
+import { spendAccountsItem, spendLoansItem, spendNavSections, spendOverviewItem } from '../../modules/spend/nav'
 import { useSpend } from '../../modules/spend/useSpend'
 
 import { isDividendReceivedThisMonth, isLiabilityActionableThisMonth, shouldConfirmBuy } from '../../lib/calc'
@@ -20,8 +20,8 @@ export function Sidebar() {
   const { setTheme } = useTheme()
   const isTestMode = user?.id === 'test-user-local'
   const isSpend = useSpendSide()
-  // One Settings page for both sides; from Spend it opens on the Spend group
-  const settingsTo = isSpend ? '/settings#spend' : '/settings'
+  // One Settings page for both sides; always opens at the top (General)
+  const settingsTo = '/settings'
 
   // Calculate live badge counts
   const dcaAlertCount = data.dcaPlans.filter((p) => shouldConfirmBuy(p)).length
@@ -36,7 +36,8 @@ export function Sidebar() {
   const { reminders: billReminders, dueRecurring } = useSpend()
 
   const getBadgeCount = (path?: string) => {
-    if (path === '/') return debtAlertCount
+    // Loans are paid from Spend, so their due badge sits on Spend's Loans page
+    if (path === spendLoansItem.to) return debtAlertCount
     if (path === spendAccountsItem.to) return billReminders.length
     if (path === spendOverviewItem.to) return dueRecurring.length
     if (path === '/dca') return dcaAlertCount

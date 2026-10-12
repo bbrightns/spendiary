@@ -469,6 +469,12 @@ export interface SpendCard {
   minPaymentPercent?: number
   /** Shares this card's limit (id of the main card); its own creditLimit is kept for if it's ever unlinked */
   sharedLimitWith?: string
+  /**
+   * Part of the owed amount typed in by hand that isn't on a statement yet. It counts as this
+   * cycle's charges until the statement closing on `statement` (YYYY-MM-DD), then it's simply
+   * part of that bill. Never a transaction, so it isn't spending.
+   */
+  unbilled?: { amount: number; statement: string }
 }
 
 export interface SpendiaryData {

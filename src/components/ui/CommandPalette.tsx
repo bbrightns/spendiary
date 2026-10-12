@@ -359,7 +359,7 @@ export function CommandPalette() {
           ['monthly-budget', 'Monthly budget', 'What you plan to spend each month', ['budget', 'limit', 'งบ', 'งบประมาณ']],
           ['categories', 'Categories', 'Add, rename or change icons', ['category', 'categories', 'icon', 'หมวด', 'หมวดหมู่']],
           ['category-budgets', 'Budget per category', 'Limits per category', ['budget', 'category', 'limit', 'งบหมวด']],
-          ['bill-reminders', 'Card bill reminders', 'Days before a card bill is due', ['reminder', 'card', 'bill', 'due', 'แจ้งเตือน']],
+          ['bill-reminders', 'Bill reminders', 'Days before a card bill or loan is due', ['reminder', 'loan', 'card', 'bill', 'due', 'แจ้งเตือน']],
           ['quick-add', 'Default payment method', 'Picked for you in Quick add', ['default', 'payment', 'quick add', 'wallet', 'ค่าเริ่มต้น']],
           ['data', 'Import / export CSV', 'Statements in, a spreadsheet out', ['import', 'export', 'csv', 'excel', 'download', 'นำเข้า', 'ส่งออก']],
         ] as const
@@ -373,6 +373,15 @@ export function CommandPalette() {
         icon: ic(SettingsIcon),
         run: go(`/settings#${hash}`),
       })),
+      {
+        id: 'set-ai-import',
+        title: 'Import with AI',
+        subtitle: 'Settings · Holdings and cash from a screenshot or text',
+        keywords: ['import', 'ai', 'screenshot', 'portfolio', 'broker', 'scan', 'นำเข้า'],
+        group: 'Settings',
+        icon: ic(SettingsIcon),
+        run: go('/settings#ai-import'),
+      },
       {
         id: 'set-backup',
         title: 'Backup, import and reset',

@@ -355,7 +355,7 @@ export function SpendSettingsSections() {
         </Section>
       </div>
 
-      <Section id="bill-reminders" title="Card bill reminders" description="When to start reminding you on Overview and the Accounts tab, before a card bill is due.">
+      <Section id="bill-reminders" title="Bill reminders" description="How many days before a card bill or loan payment is due to remind you on Home (and Accounts for cards).">
         <select
           aria-label="Remind before due date"
           value={settings.billReminderDays ?? DEFAULT_BILL_REMINDER_DAYS}

@@ -12,6 +12,10 @@ import { PnLPill, PnLText } from '../components/ui/PnL'
 import { LoanSheet } from '../modules/spend/LoanSheet'
 import { SpendSnapshotCard } from '../modules/spend/SpendSnapshotCard'
 import { AiImportModal } from '../components/forms/AiImportModal'
+import type { DcaPlan, Holding } from '../lib/types'
+import { ConfirmDcaBuyForm } from '../components/forms/ConfirmDcaBuyForm'
+import { ConfirmDividendModal } from '../components/forms/ConfirmDividendModal'
+import { InvestReminders } from '../components/dashboard/InvestReminders'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import {
@@ -30,11 +34,8 @@ import {
   calculateAnnualCashInterest,
   detectBankPreset,
   getLiabilityDueStatus,
-  isLiabilityActionableThisMonth,
   netWorth,
   portfolioSummary,
-  shouldConfirmBuy,
-  nextBuyDate,
   totalCash,
   totalLiabilities,
   totalMonthlyDebtPayment,
@@ -60,6 +61,8 @@ export function Dashboard() {
   const [liabilitiesOpen, setLiabilitiesOpen] = useState(false)
   const [selectedLiabilityId, setSelectedLiabilityId] = useState<string | null>(null)
   const [aiImportOpen, setAiImportOpen] = useState(false)
+  const [confirmingPlan, setConfirmingPlan] = useState<DcaPlan | null>(null)
+  const [dividendFor, setDividendFor] = useState<{ holding: Holding; dps: number } | null>(null)
   const {
     steps,
     isRunning,
@@ -121,35 +124,6 @@ export function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nw])
 
-  const dcaActions = useMemo(
-    () => data.dcaPlans.filter((p) => shouldConfirmBuy(p)),
-    [data.dcaPlans],
-  )
-
-  // Non-daily DCA buys coming soon (the badges above only cover items already due). A weekly plan's
-  // next buy is always within 7 days, so it only shows in the last 2 days, not right after a buy.
-  const upcomingDca = useMemo(() => {
-    const now = new Date()
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
-    return data.dcaPlans
-      .filter((p) => (p.frequency ?? 'monthly') !== 'daily' && !shouldConfirmBuy(p, now))
-      .map((p) => {
-        const next = nextBuyDate(p, now)
-        const days = Math.round((new Date(next.getFullYear(), next.getMonth(), next.getDate()).getTime() - startOfToday) / 86_400_000)
-        return { plan: p, days }
-      })
-      .filter((x) => x.days >= 0 && x.days <= ((x.plan.frequency ?? 'monthly') === 'weekly' ? 2 : 7))
-      .sort((a, b) => a.days - b.days)
-  }, [data.dcaPlans])
-
-  const debtActions = useMemo(() => {
-    return (data.liabilities ?? []).filter((l) => isLiabilityActionableThisMonth(l))
-  }, [data.liabilities])
-
-  const hasOverdueDebts = useMemo(() => {
-    return debtActions.some((l) => getLiabilityDueStatus(l).status === 'overdue')
-  }, [debtActions])
-
   if (!hasAnything) {
     return (
       <>
@@ -206,87 +180,13 @@ export function Dashboard() {
           </p>
         </div>
 
-        {/* Global actionable badges & Quick Import (aligned top-right on wide screen, new line left-aligned on narrow) */}
-        <div className="flex flex-wrap items-center justify-start lg:justify-end gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => setAiImportOpen(true)}
-            title="Import Portfolio & Cash with AI"
-            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface hover:bg-surface-muted text-ink dark:border-white/10 px-3.5 py-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer shadow-xs"
-          >
-            <SparkleIcon className="h-3.5 w-3.5 text-brand" />
-            <span>Import (AI/JSON)</span>
-          </button>
-
-          {debtActions.length > 0 && (
-            <div id="guide-dashboard-debt-alert">
-              <button
-                type="button"
-                onClick={() => navigate('/spend/loans')}
-                aria-label={`View ${debtActions.length} debts due for payment`}
-                className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer shadow-xs ${
-                  hasOverdueDebts
-                    ? 'border-rose-500/30 bg-rose-500/15 text-rose-700 dark:text-rose-300 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600'
-                    : 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-600'
-                }`}
-              >
-                <span
-                  className={`flex h-4 w-4 items-center justify-center rounded-full text-xs font-bold text-white ${
-                    hasOverdueDebts ? 'bg-rose-500 animate-pulse' : 'bg-amber-500'
-                  }`}
-                >
-                  {debtActions.length}
-                </span>
-                <span>
-                  {hasOverdueDebts
-                    ? `${debtActions.length} Overdue ${debtActions.length === 1 ? 'Debt' : 'Debts'}`
-                    : `${debtActions.length} ${debtActions.length === 1 ? 'Debt' : 'Debts'} Due`}
-                </span>
-              </button>
-            </div>
-          )}
-
-          {dcaActions.length > 0 && (
-            <div id="guide-dashboard-dca">
-              <button
-                type="button"
-                onClick={() => navigate('/dca')}
-                aria-label={`View ${dcaActions.length} DCA ${dcaActions.length === 1 ? 'buy' : 'buys'} ready to confirm`}
-                className="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand-soft/70 px-3.5 py-1.5 text-xs font-medium text-brand-ink transition-all hover:bg-brand hover:text-white dark:hover:bg-brand active:scale-95 cursor-pointer shadow-xs"
-              >
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
-                  {dcaActions.length}
-                </span>
-                <span>{dcaActions.length} DCA Ready</span>
-              </button>
-            </div>
-          )}
-        </div>
       </div>
 
-      {/* ── Coming up: DCA buys in the next few days ── */}
-      {upcomingDca.length > 0 && (
-        <button
-          type="button"
-          onClick={() => navigate('/dca')}
-          aria-label="View upcoming DCA buys"
-          className="flex w-full items-center gap-3 rounded-2xl border border-line bg-surface/80 px-4 py-3 text-left shadow-xs transition-all hover:bg-surface-muted cursor-pointer"
-        >
-          <span className="shrink-0 text-xs font-bold uppercase tracking-wider text-ink-muted">Coming up</span>
-          <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-            {upcomingDca.slice(0, 4).map(({ plan, days }) => (
-              <span key={plan.id} className="flex min-w-0 items-center gap-1.5">
-                <span className="truncate font-semibold text-ink">{plan.name}</span>
-                <span className="tnum text-ink-muted">{thbCompact(plan.monthlyAmount)}</span>
-                <span className={`text-xs font-semibold ${days <= 1 ? 'text-amber-600 dark:text-amber-400' : 'text-brand'}`}>
-                  {days === 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`}
-                </span>
-              </span>
-            ))}
-            {upcomingDca.length > 4 && <span className="text-xs text-ink-muted">+{upcomingDca.length - 4} more</span>}
-          </span>
-        </button>
-      )}
+      {/* ── Today: DCA buys to confirm, dividends to log, loans due (in Spend), next buys ── */}
+      <InvestReminders
+        onConfirmDca={(plan) => setConfirmingPlan(plan)}
+        onLogDividend={(holding, dps) => setDividendFor({ holding, dps })}
+      />
 
       {/* ── ROW 1: Net Worth Master Hero (Full Width Bento) ── */}
       <div id="guide-dashboard-networth">
@@ -1002,9 +902,12 @@ export function Dashboard() {
         loanId={selectedLiabilityId}
       />
 
-      <AiImportModal
-        open={aiImportOpen}
-        onClose={() => setAiImportOpen(false)}
+      <ConfirmDcaBuyForm open={!!confirmingPlan} plan={confirmingPlan} onClose={() => setConfirmingPlan(null)} />
+      <ConfirmDividendModal
+        open={!!dividendFor}
+        holding={dividendFor?.holding}
+        initialDps={dividendFor?.dps}
+        onClose={() => setDividendFor(null)}
       />
 
       <GuideTour

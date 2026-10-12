@@ -31,9 +31,9 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
       {
         targetId: 'guide-dashboard-dca',
         badge: 'Time to invest',
-        title: 'DCA alerts',
+        title: 'Today',
         description:
-          'When one of your DCA plans comes due, it shows up here. Tap "Confirm buy" to add the purchase to your portfolio in a couple of taps.',
+          'DCA buys that are due (or late) and dividends to log show up here, each with its own button, plus the next few buys coming up. Tap "Confirm" to add a purchase to your portfolio.',
         position: 'bottom',
       },
       {

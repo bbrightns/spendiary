@@ -11,7 +11,8 @@ import { Button } from '../components/ui/Button'
 import { TextField } from '../components/ui/Field'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import { DownloadIcon, TrashIcon, UploadIcon } from '../components/icons'
+import { DownloadIcon, SparkleIcon, TrashIcon, UploadIcon } from '../components/icons'
+import { AiImportModal } from '../components/forms/AiImportModal'
 import type { SpendiaryData } from '../lib/types'
 import { SpendDataSection, SpendSettingsSections } from '../modules/spend/pages/SpendSettings'
 
@@ -26,20 +27,24 @@ function hasData(data: SpendiaryData): boolean {
     (data.dividendRecords?.length ?? 0) > 0
 }
 
+/** What a backup holds, for both sides: "Invest: 9 holdings, … · Spend: 32 transactions, … · Money: …" */
 function dataSummary(data: SpendiaryData): string {
-  const parts: string[] = []
-  if (data.holdings.length > 0)
-    parts.push(`${data.holdings.length} holding${data.holdings.length !== 1 ? 's' : ''}`)
-  if (data.cashAccounts.length > 0)
-    parts.push(`${data.cashAccounts.length} cash account${data.cashAccounts.length !== 1 ? 's' : ''}`)
-  if (data.dcaPlans.length > 0)
-    parts.push(`${data.dcaPlans.length} DCA plan${data.dcaPlans.length !== 1 ? 's' : ''}`)
-  if (data.transfers.length > 0)
-    parts.push(`${data.transfers.length} transfer${data.transfers.length !== 1 ? 's' : ''}`)
-  if ((data.holdingLogs?.length ?? 0) > 0)
-    parts.push(`${data.holdingLogs?.length} log${data.holdingLogs?.length !== 1 ? 's' : ''}`)
-  if (parts.length === 0) return 'no data'
-  return parts.join(', ')
+  const n = (count: number | undefined, word: string, plural = `${word}s`) => (count ? `${count} ${count === 1 ? word : plural}` : '')
+  const group = (label: string, items: string[]) => {
+    const kept = items.filter(Boolean)
+    return kept.length ? `${label}: ${kept.join(', ')}` : ''
+  }
+  const groups = [
+    group('Invest', [n(data.holdings.length, 'holding'), n(data.dcaPlans.length, 'DCA plan'), n(data.holdingLogs?.length, 'log'), n(data.dividendRecords?.length, 'dividend')]),
+    group('Spend', [
+      n(data.spendTransactions?.length, 'transaction'),
+      n(data.spendCards?.length, 'card'),
+      n(data.spendRecurring?.length, 'bill'),
+      n(data.spendGoals?.length, 'goal'),
+    ]),
+    group('Money', [n(data.cashAccounts.length, 'cash account'), n(data.liabilities?.length, 'loan'), n(data.transfers.length, 'transfer')]),
+  ].filter(Boolean)
+  return groups.length ? groups.join(' · ') : 'no data'
 }
 
 // ─── inline toast ─────────────────────────────────────────────────────────────
@@ -262,6 +267,7 @@ export function Settings() {
   const navigate = useNavigate()
   const tabsRef = useRef<HTMLDivElement>(null)
   const [activeGroup, setActiveGroup] = useState<GroupId>('general')
+  const [aiImportOpen, setAiImportOpen] = useState(false)
   // Under the mobile top bar (61px) and the test-mode banner (36px) when shown
   const stickyTop = user?.id === 'test-user-local' ? 'top-[97px] lg:top-9' : 'top-[61px] lg:top-0'
   const arrived = useRef(false)
@@ -277,7 +283,11 @@ export function Settings() {
     // First arrival jumps straight there; later hash changes (tabs, the gear) glide
     const smooth = arrived.current
     arrived.current = true
-    if (!id) return
+    if (!id) {
+      // Already here (e.g. on #backup) and the gear is tapped again: back to the top, General
+      if (smooth) window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
     const frame = requestAnimationFrame(() => scrollToId(id, smooth))
     return () => cancelAnimationFrame(frame)
   }, [hash])
@@ -382,7 +392,30 @@ export function Settings() {
           <SpendSettingsSections />
         </SettingsGroup>
 
-        <SettingsGroup id="backup" title="Data & backup" hint="Sync, backups and statements; reset at the bottom">
+        <SettingsGroup id="backup" title="Data & backup" hint="Bring data in, sync and back up; reset at the bottom">
+            {/* ── Import with AI (moved here from the Dashboard header) ── */}
+            <Card id="ai-import" className="animate-rise">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h2 className="flex items-center gap-2 font-display text-lg font-bold text-ink">
+                    <SparkleIcon className="h-4.5 w-4.5 text-brand" />
+                    Import with AI
+                  </h2>
+                  <p className="mt-1 text-sm text-ink-muted">
+                    Paste a screenshot or text from your broker or bank; AI turns it into holdings and cash accounts you check before saving.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAiImportOpen(true)}
+                  className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 cursor-pointer"
+                >
+                  <SparkleIcon className="h-4 w-4" />
+                  Import
+                </button>
+              </div>
+            </Card>
+
             {/* ── Supabase Cloud Sync ─────────────────────────────── */}
             <div id="guide-settings-sync">
               <Card className="animate-rise">
@@ -443,7 +476,7 @@ export function Settings() {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-ink">Export data</p>
                       <p className="mt-0.5 text-xs text-ink-muted">
-                        Download all holdings, cash accounts, transactions, logs, settings, and history as a JSON backup.
+                        Everything in Spendiary, Invest and Spend: holdings, logs, cash accounts, cards, spending, bills, loans, goals, settings and history, in one JSON file.
                       </p>
                       {exportToast.kind !== 'idle' && (
                         <p
@@ -609,7 +642,7 @@ export function Settings() {
                 </div>
               </div>
 
-              {/* Author Details & Release Highlights (Always Visible) */}
+              {/* Why I built it */}
               <div className="pt-4 mt-4 border-t border-line/60 space-y-3">
                 <div className="rounded-2xl bg-surface-muted/60 p-4 border border-line/50">
                   <div className="flex items-center gap-3.5 mb-3">
@@ -653,44 +686,12 @@ export function Settings() {
                   </div>
                 </div>
 
-                {/* Release Notes & Issue Report */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <div className="p-3.5 rounded-xl border border-line/60 bg-surface">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                      <h3 className="text-xs font-bold text-ink">Release Highlights</h3>
-                    </div>
-                    <p className="text-xs text-ink-muted leading-relaxed">
-                      v{__APP_VERSION__} (build <span className="font-mono">{__COMMIT_HASH__}</span>) · High-yield savings max principal cap, DCA smart rebalancing, and complete dark mode optimization.
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl border border-line/60 bg-surface flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="w-2 h-2 rounded-full bg-amber-500" />
-                        <h3 className="text-xs font-bold text-ink">Feedback & Issues</h3>
-                      </div>
-                      <p className="text-xs text-ink-muted leading-relaxed">
-                        Encountered a bug or have a suggestion? Feel free to open an issue on GitHub or drop a message via Facebook.
-                      </p>
-                    </div>
-                    <div className="mt-2.5 pt-2 border-t border-line/50 flex items-center gap-2">
-                      <a
-                        href="https://github.com/bbrightns/spendiary/issues"
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="text-xs font-semibold text-brand hover:underline"
-                      >
-                        Report on GitHub →
-                      </a>
-                    </div>
-                  </div>
-                </div>
               </div>
             </Card>
         </SettingsGroup>
       </div>
+
+      <AiImportModal open={aiImportOpen} onClose={() => setAiImportOpen(false)} />
 
       {/* ── Import confirmation modal ──────────────────────────── */}
       <Modal
