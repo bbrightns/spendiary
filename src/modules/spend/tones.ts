@@ -103,3 +103,12 @@ export const TYPE_ACTIVE = {
 
 /** Spend's accent for small text (page eyebrows), matching the green of the Invest/Spend switch */
 export const SPEND_ACCENT_TEXT = 'text-emerald-700 dark:text-emerald-400'
+
+/**
+ * The selected nav item takes its side's colour: Spend green, Invest the brand indigo (the
+ * same as the Spend/Invest switch), so it's always clear which side you're on.
+ */
+export const SIDE_ACTIVE = {
+  spend: { text: 'text-emerald-700 dark:text-emerald-300', bg: 'bg-emerald-100 dark:bg-emerald-400/15', line: 'border-emerald-600 dark:border-emerald-400' },
+  invest: { text: 'text-brand-ink', bg: 'bg-brand-soft', line: 'border-brand' },
+} as const

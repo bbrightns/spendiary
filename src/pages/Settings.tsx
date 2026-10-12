@@ -374,7 +374,7 @@ export function Settings() {
             <div id="guide-settings-profile">
               <Card className="animate-rise">
                 <h2 className="font-display text-lg font-bold text-ink mb-1">Profile</h2>
-                <p className="text-sm text-ink-muted mb-4">Used in the Dashboard greeting.</p>
+                <p className="text-sm text-ink-muted mb-4">Used in the greeting on Spend Home.</p>
                 <TextField
                   label="Your name"
                   value={nameDraft}

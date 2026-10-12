@@ -10,6 +10,7 @@ import { useSpendSide } from '../../modules/spend/side'
 import { openQuickAdd } from '../../modules/spend/QuickAddSheet'
 import { spendAccountsItem, spendLoansItem, spendNavSections, spendOverviewItem } from '../../modules/spend/nav'
 import { useSpend } from '../../modules/spend/useSpend'
+import { SIDE_ACTIVE } from '../../modules/spend/tones'
 
 import { isDividendReceivedThisMonth, isLiabilityActionableThisMonth, shouldConfirmBuy } from '../../lib/calc'
 
@@ -20,6 +21,7 @@ export function Sidebar() {
   const { setTheme } = useTheme()
   const isTestMode = user?.id === 'test-user-local'
   const isSpend = useSpendSide()
+  const side = SIDE_ACTIVE[isSpend ? 'spend' : 'invest']
   // One Settings page for both sides; always opens at the top (General)
   const settingsTo = '/settings'
 
@@ -133,13 +135,13 @@ export function Sidebar() {
                     className={[
                       'flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
                       isActive
-                        ? 'text-brand-ink bg-brand-soft/70 shadow-xs font-bold'
+                        ? `${side.text} ${side.bg} shadow-xs font-bold`
                         : 'text-ink hover:bg-surface-muted',
                     ].join(' ')}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <item.icon
-                        className={`h-4.5 w-4.5 shrink-0 ${isActive ? 'text-brand-ink' : 'text-ink-soft'}`}
+                        className={`h-4.5 w-4.5 shrink-0 ${isActive ? side.text : 'text-ink-soft'}`}
                         strokeWidth={isActive ? 2.2 : 1.7}
                       />
                       <span className="truncate">{item.label}</span>
@@ -166,7 +168,7 @@ export function Sidebar() {
           className={[
             'flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
             pathname === '/settings'
-              ? 'text-brand-ink bg-brand-soft/70 shadow-xs font-bold'
+              ? `${side.text} ${side.bg} shadow-xs font-bold`
               : 'text-ink-muted hover:bg-surface-muted hover:text-ink',
           ].join(' ')}
         >
