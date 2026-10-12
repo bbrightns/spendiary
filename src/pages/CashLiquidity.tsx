@@ -129,10 +129,11 @@ export function CashLiquidity() {
   const totalAnnualYield = interestSummary.totalAnnual
   const effectiveApy = totalCashThb > 0 ? (totalAnnualYield / totalCashThb) * 100 : 0
 
-  const deployableAmount = categoryBreakdown.spending
-  const deployablePct = totalCashThb > 0 ? (deployableAmount / totalCashThb) * 100 : 0
-  const lockedAmount = categoryBreakdown.locked
-  const lockedPct = totalCashThb > 0 ? (lockedAmount / totalCashThb) * 100 : 0
+  const pctOfCash = (v: number) => (totalCashThb > 0 ? (v / totalCashThb) * 100 : 0)
+  const split = [
+    { key: 'spending' as const, label: 'Everyday', hint: 'free to use', bar: 'bg-emerald-500', amount: categoryBreakdown.spending, pct: pctOfCash(categoryBreakdown.spending) },
+    { key: 'locked' as const, label: 'Savings', hint: 'leave alone', bar: 'bg-amber-500', amount: categoryBreakdown.locked, pct: pctOfCash(categoryBreakdown.locked) },
+  ]
 
   // Filtering and Sorting
   const filteredAccounts = useMemo(() => {
@@ -244,140 +245,60 @@ export function CashLiquidity() {
         }
       />
 
-      {/* ── Top KPI Grid (2x2 on Mobile, 4x1 on Desktop) ── */}
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
-        {/* Card 1: Total Cash */}
-        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
-          <div>
-            <p className="text-xs font-medium text-ink-muted">Total Liquid Cash</p>
-            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-ink tnum truncate">
-              {thb(totalCashThb)}
+      {/* ── Summary: one total, how it splits (each half filters the list), and what it earns ── */}
+      <Card className="p-4 sm:p-6 animate-rise" padded={false}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-ink-muted">Total cash</p>
+            <p className="mt-1 font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ink tnum truncate">{thb(totalCashThb)}</p>
+            <p className="mt-1 text-xs text-ink-muted tnum">
+              {currentNetWorth > 0 ? `${((totalCashThb / currentNetWorth) * 100).toFixed(0)}% of net worth` : 'Part of your net worth'}
+              {usdOnlyTotal > 0 && ` · includes $${usdOnlyTotal.toLocaleString()}`}
             </p>
           </div>
-          <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            {currentNetWorth > 0 ? ((totalCashThb / currentNetWorth) * 100).toFixed(1) : 0}% of Net Worth
-            {usdOnlyTotal > 0 ? ` · $${usdOnlyTotal.toLocaleString()} USD` : ''}
-          </p>
-        </Card>
-
-        {/* Card 2: Annual Yield & APY */}
-        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
-          <div>
-            <p className="text-xs font-medium text-ink-muted">Est. Annual Yield</p>
-            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tnum truncate">
-              {thb(totalAnnualYield)}
-            </p>
+          <div className="sm:text-right">
+            <p className="text-sm font-medium text-ink-muted">Interest a year</p>
+            {totalAnnualYield > 0 ? (
+              <>
+                <p className="mt-1 font-display text-xl sm:text-2xl font-extrabold text-ink tnum">{thb(totalAnnualYield)}</p>
+                <p className="mt-0.5 text-xs text-ink-muted tnum">
+                  ≈ {thb(totalAnnualYield / 12)}/month · {effectiveApy.toFixed(2)}% average
+                </p>
+              </>
+            ) : (
+              <p className="mt-1 text-sm text-ink-muted">Add rates to your accounts to see it</p>
+            )}
           </div>
-          <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            about {thb(totalAnnualYield / 12)}/month · APY {effectiveApy.toFixed(2)}%
-          </p>
-        </Card>
-
-        {/* Card 3: Deployable Cash */}
-        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
-          <div>
-            <p className="text-xs font-medium text-ink-muted">Deployable Cash</p>
-            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tnum truncate">
-              {thb(deployableAmount)}
-            </p>
-          </div>
-          <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            {deployablePct.toFixed(1)}% of your cash · money you are free to spend or invest
-          </p>
-        </Card>
-
-        {/* Card 4: Committed / Locked Cash */}
-        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
-          <div>
-            <p className="text-xs font-medium text-ink-muted">Committed / Locked</p>
-            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-amber-500 tnum truncate">
-              {thb(lockedAmount)}
-            </p>
-          </div>
-          <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            {lockedPct.toFixed(1)}% of your cash · savings you should leave alone
-          </p>
-        </Card>
-      </div>
-
-      {/* ── 2-Tier Liquidity Allocation Section ── */}
-      <Card className="p-4 sm:p-5 border-line/60 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
-              <span>📊 How your cash is split</span>
-            </h3>
-            <p className="text-xs text-ink-muted">
-              Money you can use now vs. long-term savings you should not touch
-            </p>
-          </div>
-          <span className="text-xs font-semibold text-ink-muted">
-            Total cash {thb(totalCashThb)}
-          </span>
         </div>
 
-        {/* Multi-tier Progress Bar */}
-        <div className="h-3.5 w-full rounded-full bg-surface-muted overflow-hidden flex shadow-inner">
-          {(['spending', 'locked'] as CashAccountCategory[]).map((catKey) => {
-            const amount = categoryBreakdown[catKey]
-            const pct = totalCashThb > 0 ? (amount / totalCashThb) * 100 : 0
-            if (pct <= 0) return null
-
-            const colors: Record<CashAccountCategory, string> = {
-              spending: 'bg-emerald-500',
-              locked: 'bg-amber-500',
-            }
-
-            return (
-              <div
-                key={catKey}
-                style={{ width: `${pct}%` }}
-                className={`${colors[catKey]} transition-all duration-300 hover:brightness-110 cursor-pointer`}
-                title={`${CASH_CATEGORIES[catKey].labelTh}: ${thb(amount)} (${pct.toFixed(1)}%)`}
-              />
-            )
-          })}
+        {/* Split bar */}
+        <div className="mt-5 flex h-2.5 w-full gap-1 overflow-hidden rounded-full bg-surface-muted" aria-hidden>
+          {split.map((g) => g.pct > 0 && <div key={g.key} className={`${g.bar} rounded-full`} style={{ width: `${g.pct}%` }} />)}
         </div>
 
-        {/* 2 Category Badges / Breakdown Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          {(['spending', 'locked'] as CashAccountCategory[]).map((catKey) => {
-            const meta = CASH_CATEGORIES[catKey]
-            const amount = categoryBreakdown[catKey]
-            const pct = totalCashThb > 0 ? (amount / totalCashThb) * 100 : 0
-            const isSelected = activeCategoryFilter === catKey
-
-            const badgeBorderColors: Record<CashAccountCategory, string> = {
-              spending: 'border-emerald-500/30 hover:border-emerald-500/60',
-              locked: 'border-amber-500/30 hover:border-amber-500/60',
-            }
-
+        {/* Legend; tap a side to show only those accounts below */}
+        <div className="-mx-3 mt-2 grid grid-cols-2 gap-2">
+          {split.map((g) => {
+            const on = activeCategoryFilter === g.key
             return (
               <button
-                key={catKey}
+                key={g.key}
                 type="button"
-                onClick={() => setActiveCategoryFilter(isSelected ? 'all' : catKey)}
-                className={`p-2.5 sm:p-3 rounded-xl border text-left transition-all cursor-pointer min-w-0 overflow-hidden flex flex-col justify-between ${badgeBorderColors[catKey]} ${
-                  isSelected ? 'ring-2 ring-brand bg-brand-soft/20' : 'bg-surface-muted/40 hover:bg-surface-muted/80'
-                }`}
+                onClick={() => setActiveCategoryFilter(on ? 'all' : g.key)}
+                aria-pressed={on}
+                title={on ? 'Show all accounts' : `Show only ${g.label.toLowerCase()} accounts`}
+                className={`min-w-0 rounded-xl px-3 py-2.5 text-left transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                  on ? 'bg-surface-muted ring-1 ring-line-strong' : 'hover:bg-surface-muted/60'
+                } ${g.key === 'locked' ? 'sm:text-right' : ''}`}
               >
-                <div className="flex items-center gap-1.5 min-w-0 w-full">
-                  <span className="shrink-0 text-sm">{meta.icon}</span>
-                  <span className="text-xs font-semibold text-ink-muted truncate" title={meta.labelTh}>
-                    {meta.labelTh}
-                  </span>
-                  <span className="text-xs text-ink-muted opacity-60 ml-auto">
-                    {catKey === 'spending' ? 'Free to use' : 'Leave alone'}
-                  </span>
-                </div>
-                <div className="mt-2 flex items-baseline justify-between gap-1 w-full min-w-0">
-                  <span className="font-display font-black text-sm sm:text-base text-ink tnum truncate">
-                    {thb(amount)}
-                  </span>
-                  <span className="font-mono text-xs font-bold text-ink-muted shrink-0">
-                    {pct.toFixed(1)}%
-                  </span>
-                </div>
+                <span className={`flex flex-wrap items-center gap-x-1.5 text-xs font-semibold text-ink-soft ${g.key === 'locked' ? 'sm:justify-end' : ''}`}>
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${g.bar}`} />
+                  {g.label}
+                  <span className="font-normal text-ink-muted">· {g.hint}</span>
+                </span>
+                <span className="mt-1 block truncate font-display text-base sm:text-lg font-extrabold text-ink tnum">
+                  {thb(g.amount)} <span className="text-xs font-semibold text-ink-muted">{g.pct.toFixed(0)}%</span>
+                </span>
               </button>
             )
           })}
