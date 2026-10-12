@@ -9,6 +9,7 @@ import { PencilIcon, WalletIcon } from '../../../components/icons'
 import { localDateStr, thb } from '../../../lib/format'
 import { dayAllowance, inPeriod, periodFor, shiftDate, type DayStatus } from '../logic'
 import { BillReminders } from '../BillReminders'
+import { LoanReminders } from '../LoanReminders'
 import { RecurringDue } from '../RecurringDue'
 import { openQuickAdd } from '../QuickAddSheet'
 import { TxnRow } from '../TxnRow'
@@ -215,6 +216,7 @@ export function SpendOverview() {
       </header>
 
       <BillReminders />
+      <LoanReminders />
 
       {/* Cards in your order; on wide screens they flow down two columns */}
       <div className="flex flex-col gap-5 lg:block lg:columns-2 lg:gap-5">
@@ -293,7 +295,7 @@ function ArrangeSheet({ open, order, onChange, onClose }: { open: boolean; order
       open={open}
       onClose={onClose}
       title="Arrange cards"
-      description="Choose what comes first on Home. Card bill reminders always stay on top."
+      description="Choose what comes first on Home. Card bill and loan reminders always stay on top."
       items={order.map((id) => ({ id, label: HOME_CARDS.find((c) => c.id === id)?.label ?? id }))}
       onMove={(id, delta) => onChange(moveCard(order, id as HomeCardId, delta))}
       canReset={!isDefaultOrder(order)}
