@@ -23,7 +23,6 @@ const SpendTransactions = lazy(() => import('./modules/spend/pages/SpendTransact
 const SpendRecurringPage = lazy(() => import('./modules/spend/pages/SpendRecurring').then(m => ({ default: m.SpendRecurringPage })))
 const SpendLoansPage = lazy(() => import('./modules/spend/pages/SpendLoans').then(m => ({ default: m.SpendLoansPage })))
 const SpendAnalysis = lazy(() => import('./modules/spend/pages/SpendAnalysis').then(m => ({ default: m.SpendAnalysis })))
-const SpendSettings = lazy(() => import('./modules/spend/pages/SpendSettings').then(m => ({ default: m.SpendSettings })))
 const SpendAccounts = lazy(() => import('./modules/spend/pages/SpendAccounts').then(m => ({ default: m.SpendAccounts })))
 import { PageSkeleton } from './components/ui/PageSkeleton'
 
@@ -35,6 +34,12 @@ function PageLoadingFallback() {
 function LoansRedirect() {
   const { search } = useLocation()
   return <Navigate to={`/spend/loans${search}`} replace />
+}
+
+/** Spend's settings joined the one Settings page; old links (and their #section) still land */
+function SpendSettingsRedirect() {
+  const { hash } = useLocation()
+  return <Navigate to={`/settings${hash || '#spend'}`} replace />
 }
 
 // 💡 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
@@ -278,7 +283,7 @@ function AppContent() {
           <Route path="/spend" element={<SpendOverview />} />
           <Route path="/spend/txns" element={<SpendTransactions />} />
           <Route path="/spend/accounts" element={<SpendAccounts />} />
-          <Route path="/spend/settings" element={<SpendSettings />} />
+          <Route path="/spend/settings" element={<SpendSettingsRedirect />} />
           <Route path="/spend/analysis" element={<SpendAnalysis />} />
           <Route path="/spend/recurring" element={<SpendRecurringPage />} />
           <Route path="/spend/loans" element={<SpendLoansPage />} />

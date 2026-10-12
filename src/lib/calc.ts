@@ -714,6 +714,21 @@ export function getCashCategory(account: { category?: string; name?: string }): 
   return 'spending'
 }
 
+/** A blank THB everyday account for the add form (Cash & Liquidity and Spend's wallets). */
+export function newCashAccount(): CashAccount {
+  return {
+    id: `cash-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    name: '',
+    balance: 0,
+    currency: 'THB',
+    category: 'spending',
+    interestRate: undefined,
+    maxEligibleBalance: undefined,
+    payoutSchedule: 'monthly',
+    payoutMonths: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  }
+}
+
 /**
  * Sorts cash accounts:
  * 1st priority: Bank Avatar / Institution Preset (A-Z by preset name; accounts with a detected bank preset come first)

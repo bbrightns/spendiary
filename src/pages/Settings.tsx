@@ -1,4 +1,5 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, type ReactNode, type RefObject } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { useTheme, type Theme } from '../hooks/useTheme'
 import { PageHeader } from '../components/layout/PageHeader'
@@ -12,6 +13,7 @@ import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { DownloadIcon, TrashIcon, UploadIcon } from '../components/icons'
 import type { SpendiaryData } from '../lib/types'
+import { SpendDataSection, SpendSettingsSections } from '../modules/spend/pages/SpendSettings'
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -49,6 +51,60 @@ type ToastState =
   | { kind: 'loading'; msg: string }
 
 // ─── component ────────────────────────────────────────────────────────────────
+
+const GROUPS = [
+  { id: 'general', label: 'General' },
+  { id: 'spend', label: 'Spend' },
+  { id: 'backup', label: 'Data & backup' },
+  { id: 'about', label: 'About' },
+] as const
+type GroupId = (typeof GROUPS)[number]['id']
+const isGroup = (id: string): id is GroupId => GROUPS.some((g) => g.id === id)
+
+/** Space the sticky header + tab bar take, so a jump lands just below them */
+function stickyOffset(bar: HTMLElement | null): number {
+  if (!bar) return 0
+  return (parseFloat(getComputedStyle(bar).top) || 0) + bar.offsetHeight + 12
+}
+
+function SettingsTabs({ active, onPick, stickyTop, barRef }: { active: GroupId; onPick: (id: GroupId) => void; stickyTop: string; barRef: RefObject<HTMLDivElement> }) {
+  return (
+    <div
+      ref={barRef}
+      className={`sticky ${stickyTop} z-10 -mx-5 border-b border-line/60 bg-canvas/85 px-5 py-2.5 backdrop-blur-xl sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10`}
+    >
+      <nav aria-label="Settings groups" className="no-scrollbar flex gap-1.5 overflow-x-auto">
+        {GROUPS.map((g) => (
+          <button
+            key={g.id}
+            type="button"
+            onClick={() => onPick(g.id)}
+            aria-current={active === g.id ? 'true' : undefined}
+            className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+              active === g.id ? 'bg-ink text-surface dark:bg-brand dark:text-white' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'
+            }`}
+          >
+            {g.label}
+          </button>
+        ))}
+      </nav>
+    </div>
+  )
+}
+
+function SettingsGroup({ id, title, hint, children }: { id: GroupId; title: string; hint?: string; children: ReactNode }) {
+  return (
+    <section id={id} data-settings-group aria-labelledby={`${id}-title`} className="flex flex-col gap-4">
+      <div className="px-1">
+        <h2 id={`${id}-title`} className="text-xs font-bold uppercase tracking-[0.08em] text-ink-muted">
+          {title}
+        </h2>
+        {hint && <p className="mt-0.5 text-sm text-ink-muted">{hint}</p>}
+      </div>
+      {children}
+    </section>
+  )
+}
 
 export function Settings() {
   const {
@@ -201,6 +257,51 @@ export function Settings() {
     }
   }
 
+  // ── Groups: sticky tabs, #hash jumps (e.g. /settings#category-budgets) and scroll-spy ──
+  const { hash } = useLocation()
+  const navigate = useNavigate()
+  const tabsRef = useRef<HTMLDivElement>(null)
+  const [activeGroup, setActiveGroup] = useState<GroupId>('general')
+  // Under the mobile top bar (61px) and the test-mode banner (36px) when shown
+  const stickyTop = user?.id === 'test-user-local' ? 'top-[97px] lg:top-9' : 'top-[61px] lg:top-0'
+  const arrived = useRef(false)
+
+  const scrollToId = (id: string, smooth: boolean) => {
+    const el = document.getElementById(id)
+    if (!el) return
+    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - stickyOffset(tabsRef.current), behavior: smooth ? 'smooth' : 'instant' })
+  }
+
+  useEffect(() => {
+    const id = hash.slice(1)
+    // First arrival jumps straight there; later hash changes (tabs, the gear) glide
+    const smooth = arrived.current
+    arrived.current = true
+    if (!id) return
+    const frame = requestAnimationFrame(() => scrollToId(id, smooth))
+    return () => cancelAnimationFrame(frame)
+  }, [hash])
+
+  const jumpTo = (id: GroupId) => {
+    setActiveGroup(id)
+    if (hash === `#${id}`) scrollToId(id, true)
+    else navigate(`#${id}`, { replace: true })
+  }
+
+  useEffect(() => {
+    const groups = [...document.querySelectorAll<HTMLElement>('[data-settings-group]')]
+    const io = new IntersectionObserver(
+      (entries) => {
+        const top = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]
+        if (top && isGroup(top.target.id)) setActiveGroup(top.target.id)
+      },
+      // The band just under the sticky tabs decides which group you're reading
+      { rootMargin: `-${Math.round(stickyOffset(tabsRef.current))}px 0px -60% 0px` },
+    )
+    groups.forEach((g) => io.observe(g))
+    return () => io.disconnect()
+  }, [])
+
   // ── Sync badge ─────────────────────────────────────────────────
   const syncBadge =
     syncStatus === 'syncing'
@@ -213,375 +314,382 @@ export function Settings() {
 
   return (
     <>
-      <PageHeader eyebrow="App" title="Settings" onStartGuide={startTour} />
-      <div className="flex flex-col gap-4">
-
-        {/* ── Supabase Cloud Sync ─────────────────────────────── */}
-        <div id="guide-settings-sync">
-          <Card className="animate-rise">
-            <div className="flex items-start justify-between gap-3 mb-1">
-              <h2 className="font-display text-lg font-bold text-ink">Cloud Sync (Supabase)</h2>
-              {syncBadge && (
-                <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${syncBadge.cls}`}>
-                  {syncBadge.text}
-                </span>
-              )}
+      <PageHeader eyebrow="App" title="Settings" subtitle="One place for both Invest and Spend." onStartGuide={startTour} />
+      <SettingsTabs active={activeGroup} onPick={jumpTo} stickyTop={stickyTop} barRef={tabsRef} />
+      <div className="mt-5 flex flex-col gap-10">
+        <SettingsGroup id="general" title="General" hint="How the app looks, and your name">
+            {/* ── Appearance ──────────────────────────────────────── */}
+            <Card className="animate-rise">
+              <h2 className="font-display text-lg font-bold text-ink mb-1">Appearance</h2>
+              <p className="text-sm text-ink-muted mb-4">
+                Choose how Spendiary looks on this device.
+              </p>
+              <SegmentedControl
+                value={theme}
+                onChange={setTheme}
+                options={[
+                  {
+                    value: 'light' as Theme,
+                    label: 'Light',
+                    icon: (
+                      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                        <circle cx="10" cy="10" r="3.5" />
+                        <path d="M10 2v1.5M10 16.5V18M2 10h1.5M16.5 10H18M4.1 4.1l1.1 1.1M14.8 14.8l1.1 1.1M15.9 4.1l-1.1 1.1M5.2 14.8l-1.1 1.1" />
+                      </svg>
+                    ),
+                  },
+                  {
+                    value: 'system' as Theme,
+                    label: 'System',
+                    icon: (
+                      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                        <rect x="2" y="3" width="16" height="11" rx="2" />
+                        <path d="M6 17h8M10 14v3" />
+                      </svg>
+                    ),
+                  },
+                  {
+                    value: 'dark' as Theme,
+                    label: 'Dark',
+                    icon: (
+                      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                        <path d="M17 11.5A7 7 0 1 1 8.5 3a5 5 0 0 0 8.5 8.5Z" />
+                      </svg>
+                    ),
+                  },
+                ]}
+              />
+            </Card>
+            {/* ── Profile ─────────────────────────────────────────── */}
+            <div id="guide-settings-profile">
+              <Card className="animate-rise">
+                <h2 className="font-display text-lg font-bold text-ink mb-1">Profile</h2>
+                <p className="text-sm text-ink-muted mb-4">Used in the Dashboard greeting.</p>
+                <TextField
+                  label="Your name"
+                  value={nameDraft}
+                  onChange={(v) => {
+                    setNameDraft(v)
+                    setUserName(v)
+                  }}
+                  placeholder="e.g. Praween"
+                />
+              </Card>
             </div>
-            <p className="text-sm text-ink-muted mb-4">
-              Your data is securely backed up and synchronized automatically.
-            </p>
+        </SettingsGroup>
 
-            <div className="flex flex-col gap-2 rounded-2xl bg-surface-muted p-4 text-sm mb-4">
-              <div className="flex justify-between">
-                <span className="text-ink-muted">Account</span>
-                <span className="font-semibold text-ink">{user?.email ?? 'Not signed in'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-ink-muted">Last synced</span>
-                <span className="font-semibold text-ink">
-                  {lastSyncedAt ? lastSyncedAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'Never'}
-                </span>
-              </div>
-            </div>
+        <SettingsGroup id="spend" title="Spend" hint="Spending month, budgets, categories and Quick add">
+          <SpendSettingsSections />
+        </SettingsGroup>
 
-            {user && (
-              <button
-                onClick={logout}
-                className="w-full py-2.5 px-4 rounded-xl border border-line bg-surface hover:bg-surface-muted text-sm font-semibold text-loss transition-colors duration-200 active:scale-[0.98]"
-              >
-                Sign out
-              </button>
-            )}
-          </Card>
-        </div>
-
-        {/* ── Profile ─────────────────────────────────────────── */}
-        <div id="guide-settings-profile">
-          <Card className="animate-rise">
-            <h2 className="font-display text-lg font-bold text-ink mb-1">Profile</h2>
-            <p className="text-sm text-ink-muted mb-4">Used in the Dashboard greeting.</p>
-            <TextField
-              label="Your name"
-              value={nameDraft}
-              onChange={(v) => {
-                setNameDraft(v)
-                setUserName(v)
-              }}
-              placeholder="e.g. Praween"
-            />
-          </Card>
-        </div>
-
-        {/* ── Appearance ──────────────────────────────────────── */}
-        <Card className="animate-rise">
-          <h2 className="font-display text-lg font-bold text-ink mb-1">Appearance</h2>
-          <p className="text-sm text-ink-muted mb-4">
-            Choose how Spendiary looks on this device.
-          </p>
-          <SegmentedControl
-            value={theme}
-            onChange={setTheme}
-            options={[
-              {
-                value: 'light' as Theme,
-                label: 'Light',
-                icon: (
-                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                    <circle cx="10" cy="10" r="3.5" />
-                    <path d="M10 2v1.5M10 16.5V18M2 10h1.5M16.5 10H18M4.1 4.1l1.1 1.1M14.8 14.8l1.1 1.1M15.9 4.1l-1.1 1.1M5.2 14.8l-1.1 1.1" />
-                  </svg>
-                ),
-              },
-              {
-                value: 'system' as Theme,
-                label: 'System',
-                icon: (
-                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                    <rect x="2" y="3" width="16" height="11" rx="2" />
-                    <path d="M6 17h8M10 14v3" />
-                  </svg>
-                ),
-              },
-              {
-                value: 'dark' as Theme,
-                label: 'Dark',
-                icon: (
-                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                    <path d="M17 11.5A7 7 0 1 1 8.5 3a5 5 0 0 0 8.5 8.5Z" />
-                  </svg>
-                ),
-              },
-            ]}
-          />
-        </Card>
-
-        {/* ── Data & Backup ───────────────────────────────────── */}
-        <div id="guide-settings-backup">
-          <Card className="animate-rise">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="font-display text-lg font-bold text-ink [text-wrap:balance]">
-                  Data &amp; Backup
-                </h2>
-                <p className="mt-1 text-sm text-ink-muted [text-wrap:pretty]">
-                  {dataSummary(data)} stored on this device.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-5 divide-y divide-line">
-
-              {/* Export row */}
-              <div className="flex items-start justify-between gap-4 py-4">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-ink">Export data</p>
-                  <p className="mt-0.5 text-xs text-ink-muted">
-                    Download all holdings, cash accounts, transactions, logs, settings, and history as a JSON backup.
-                  </p>
-                  {exportToast.kind !== 'idle' && (
-                    <p
-                      role="status"
-                      aria-live="polite"
-                      className={`mt-1.5 text-xs font-medium ${
-                        exportToast.kind === 'success' ? 'text-gain' : 'text-loss'
-                      }`}
-                    >
-                      {exportToast.msg}
-                    </p>
+        <SettingsGroup id="backup" title="Data & backup" hint="Sync, backups and statements; reset at the bottom">
+            {/* ── Supabase Cloud Sync ─────────────────────────────── */}
+            <div id="guide-settings-sync">
+              <Card className="animate-rise">
+                <div className="flex items-start justify-between gap-3 mb-1">
+                  <h2 className="font-display text-lg font-bold text-ink">Cloud Sync (Supabase)</h2>
+                  {syncBadge && (
+                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${syncBadge.cls}`}>
+                      {syncBadge.text}
+                    </span>
                   )}
                 </div>
+                <p className="text-sm text-ink-muted mb-4">
+                  Your data is securely backed up and synchronized automatically.
+                </p>
+
+                <div className="flex flex-col gap-2 rounded-2xl bg-surface-muted p-4 text-sm mb-4">
+                  <div className="flex justify-between">
+                    <span className="text-ink-muted">Account</span>
+                    <span className="font-semibold text-ink">{user?.email ?? 'Not signed in'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-ink-muted">Last synced</span>
+                    <span className="font-semibold text-ink">
+                      {lastSyncedAt ? lastSyncedAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'Never'}
+                    </span>
+                  </div>
+                </div>
+
+                {user && (
+                  <button
+                    onClick={logout}
+                    className="w-full py-2.5 px-4 rounded-xl border border-line bg-surface hover:bg-surface-muted text-sm font-semibold text-loss transition-colors duration-200 active:scale-[0.98]"
+                  >
+                    Sign out
+                  </button>
+                )}
+              </Card>
+            </div>
+          <SpendDataSection />
+            {/* ── Data & Backup ───────────────────────────────────── */}
+            <div id="guide-settings-backup">
+              <Card className="animate-rise">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h2 className="font-display text-lg font-bold text-ink [text-wrap:balance]">
+                      Full backup
+                    </h2>
+                    <p className="mt-1 text-sm text-ink-muted [text-wrap:pretty]">
+                      {dataSummary(data)} stored on this device.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 divide-y divide-line">
+
+                  {/* Export row */}
+                  <div className="flex items-start justify-between gap-4 py-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-ink">Export data</p>
+                      <p className="mt-0.5 text-xs text-ink-muted">
+                        Download all holdings, cash accounts, transactions, logs, settings, and history as a JSON backup.
+                      </p>
+                      {exportToast.kind !== 'idle' && (
+                        <p
+                          role="status"
+                          aria-live="polite"
+                          className={`mt-1.5 text-xs font-medium ${
+                            exportToast.kind === 'success' ? 'text-gain' : 'text-loss'
+                          }`}
+                        >
+                          {exportToast.msg}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      id="btn-export"
+                      onClick={handleExport}
+                      className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95"
+                    >
+                      <DownloadIcon className="h-4 w-4" />
+                      Export
+                    </button>
+                  </div>
+
+                  {/* Import row */}
+                  <div className="flex items-start justify-between gap-4 py-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-ink">Import data</p>
+                      <p className="mt-0.5 text-xs text-ink-muted">
+                        Restore from a Spendiary JSON backup. This will overwrite current data.
+                      </p>
+                      {importToast.kind !== 'idle' && (
+                        <p
+                          role="status"
+                          aria-live="polite"
+                          className={`mt-1.5 flex items-center gap-1.5 text-xs font-medium ${
+                            importToast.kind === 'success'
+                              ? 'text-gain'
+                              : importToast.kind === 'error'
+                              ? 'text-loss'
+                              : 'text-ink-muted'
+                          }`}
+                        >
+                          {importToast.kind === 'loading' && (
+                            <svg
+                              className="h-3.5 w-3.5 animate-spin"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                            >
+                              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" strokeLinecap="round" />
+                            </svg>
+                          )}
+                          {importToast.msg}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      id="btn-import"
+                      onClick={handleImportClick}
+                      disabled={importToast.kind === 'loading'}
+                      aria-label="Import data from JSON backup file"
+                      className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 disabled:pointer-events-none disabled:opacity-50"
+                    >
+                      <UploadIcon className="h-4 w-4" />
+                      Import
+                    </button>
+                    {/* Hidden file input */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".json,application/json"
+                      className="sr-only"
+                      aria-hidden="true"
+                      onChange={handleFileChange}
+                    />
+                  </div>
+
+                </div>
+              </Card>
+            </div>
+            {/* ── Danger zone ─────────────────────────────────────── */}
+            <Card className="animate-rise border-loss/20 bg-loss-soft/20">
+              <h2 className="font-display text-lg font-bold text-ink [text-wrap:balance]">
+                Danger zone
+              </h2>
+              <div className="mt-4 flex items-center justify-between rounded-xl border border-line bg-surface px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-ink">Back up first</p>
+                  <p className="mt-0.5 text-xs text-ink-muted">
+                    Download a full JSON copy of your data before resetting, so you can restore it later.
+                  </p>
+                </div>
                 <button
-                  id="btn-export"
+                  type="button"
                   onClick={handleExport}
-                  className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95"
+                  className="ml-4 inline-flex shrink-0 items-center gap-2 rounded-full border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted active:scale-95 cursor-pointer"
                 >
                   <DownloadIcon className="h-4 w-4" />
-                  Export
+                  Export backup
                 </button>
               </div>
-
-              {/* Import row */}
-              <div className="flex items-start justify-between gap-4 py-4">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-ink">Import data</p>
+              <div className="mt-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-ink">Reset all data</p>
                   <p className="mt-0.5 text-xs text-ink-muted">
-                    Restore from a Spendiary JSON backup. This will overwrite current data.
+                    Permanently clears all data of this user and brings you back to the login screen. Cannot be undone.
                   </p>
-                  {importToast.kind !== 'idle' && (
-                    <p
-                      role="status"
-                      aria-live="polite"
-                      className={`mt-1.5 flex items-center gap-1.5 text-xs font-medium ${
-                        importToast.kind === 'success'
-                          ? 'text-gain'
-                          : importToast.kind === 'error'
-                          ? 'text-loss'
-                          : 'text-ink-muted'
-                      }`}
-                    >
-                      {importToast.kind === 'loading' && (
-                        <svg
-                          className="h-3.5 w-3.5 animate-spin"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                        >
-                          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" strokeLinecap="round" />
-                        </svg>
-                      )}
-                      {importToast.msg}
-                    </p>
-                  )}
                 </div>
                 <button
-                  id="btn-import"
-                  onClick={handleImportClick}
-                  disabled={importToast.kind === 'loading'}
-                  aria-label="Import data from JSON backup file"
-                  className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 disabled:pointer-events-none disabled:opacity-50"
+                  id="btn-reset"
+                  onClick={() => setResetOpen(true)}
+                  disabled={isResetting}
+                  className="ml-4 inline-flex shrink-0 items-center gap-2 rounded-full bg-loss-soft px-4 py-2 text-sm font-semibold text-loss transition-colors hover:bg-loss hover:text-white active:scale-95 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  <UploadIcon className="h-4 w-4" />
-                  Import
+                  <TrashIcon className="h-4 w-4" />
+                  Reset
                 </button>
-                {/* Hidden file input */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".json,application/json"
-                  className="sr-only"
-                  aria-hidden="true"
-                  onChange={handleFileChange}
-                />
               </div>
+            </Card>
+        </SettingsGroup>
 
-            </div>
-          </Card>
-        </div>
-
-
-        {/* ── Danger zone ─────────────────────────────────────── */}
-        <Card className="animate-rise border-loss/20 bg-loss-soft/20">
-          <h2 className="font-display text-lg font-bold text-ink [text-wrap:balance]">
-            Danger zone
-          </h2>
-          <div className="mt-4 flex items-center justify-between rounded-xl border border-line bg-surface px-4 py-3">
-            <div>
-              <p className="text-sm font-semibold text-ink">Back up first</p>
-              <p className="mt-0.5 text-xs text-ink-muted">
-                Download a full JSON copy of your data before resetting, so you can restore it later.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleExport}
-              className="ml-4 inline-flex shrink-0 items-center gap-2 rounded-full border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted active:scale-95 cursor-pointer"
-            >
-              <DownloadIcon className="h-4 w-4" />
-              Export backup
-            </button>
-          </div>
-          <div className="mt-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-ink">Reset all data</p>
-              <p className="mt-0.5 text-xs text-ink-muted">
-                Permanently clears all data of this user and brings you back to the login screen. Cannot be undone.
-              </p>
-            </div>
-            <button
-              id="btn-reset"
-              onClick={() => setResetOpen(true)}
-              disabled={isResetting}
-              className="ml-4 inline-flex shrink-0 items-center gap-2 rounded-full bg-loss-soft px-4 py-2 text-sm font-semibold text-loss transition-colors hover:bg-loss hover:text-white active:scale-95 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
-            >
-              <TrashIcon className="h-4 w-4" />
-              Reset
-            </button>
-          </div>
-        </Card>
-
-        {/* ── About Spendiary ─────────────────────────────────── */}
-        <Card className="animate-rise overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-surface-muted/80 border border-line/60 flex items-center justify-center p-2.5 shadow-xs shrink-0">
-                <img src="/logo.png" alt="Spendiary Logo" className="w-full h-full object-contain" />
-              </div>
-              <div>
-                <h2 className="font-display text-lg font-bold text-ink">About Spendiary</h2>
-                <p className="text-xs text-ink-muted mt-0.5">
-                  Designed & Built by bbrightns
-                </p>
-              </div>
-            </div>
-
-            {/* Social / External Links */}
-            <div className="flex items-center gap-2">
-              <a
-                href="https://github.com/bbrightns"
-                target="_blank"
-                rel="noreferrer noopener"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line/80 bg-surface text-xs font-semibold text-ink-muted hover:text-ink hover:border-line hover:bg-surface-muted transition-all cursor-pointer shadow-2xs"
-              >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-                  <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
-                </svg>
-                <span>GitHub</span>
-              </a>
-              <a
-                href="https://www.facebook.com/bbrightns/"
-                target="_blank"
-                rel="noreferrer noopener"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line/80 bg-surface text-xs font-semibold text-ink-muted hover:text-ink hover:border-line hover:bg-surface-muted transition-all cursor-pointer shadow-2xs"
-              >
-                <svg className="w-3.5 h-3.5 text-[#1877F2]" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                </svg>
-                <span>Facebook</span>
-              </a>
-            </div>
-          </div>
-
-          {/* Author Details & Release Highlights (Always Visible) */}
-          <div className="pt-4 mt-4 border-t border-line/60 space-y-3">
-            <div className="rounded-2xl bg-surface-muted/60 p-4 border border-line/50">
-              <div className="flex items-center gap-3.5 mb-3">
-                <img
-                  src="/bbrightns.jpg"
-                  alt="Praween Piyaprapaphan (Bright)"
-                  className="w-12 h-12 rounded-full object-cover border-2 border-surface shadow-xs shrink-0"
-                />
-                <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-bold text-ink leading-tight">
-                    Praween Piyaprapaphan (Bright)
-                  </span>
-                  <span className="text-xs font-mono text-brand font-semibold leading-normal mt-0.5">
-                    Alias: bbrightns
-                  </span>
-                </div>
-              </div>
-              <p className="text-xs text-ink-muted leading-relaxed">
-                An Electrical Engineer who loves writing code and exploring computer & tech. Building handy tools to solve everyday challenges.
-              </p>
-            </div>
-
-            {/* The Story Behind Spendiary */}
-            <div className="rounded-2xl bg-surface-muted/40 p-4 border border-line/50">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-base">💡</span>
-                <h3 className="text-sm font-bold text-ink">Why I Built Spendiary</h3>
-              </div>
-              <div className="space-y-2 text-xs text-ink-muted leading-relaxed">
-                <p>
-                  This project started purely to solve my own personal headache: having savings and investments scattered across multiple banks and apps to the point where I lost track of where my money actually was! So I decided to build this web app to bring everything together into a clean, single cockpit:
-                </p>
-                <ul className="list-disc list-inside space-y-1 pl-1 text-xs text-ink-soft">
-                  <li><strong className="font-semibold text-ink">Real-time Market Prices:</strong> Live price feeds for US Stocks, Gold, and Bitcoin (Thai stocks not included yet).</li>
-                  <li><strong className="font-semibold text-ink">Comprehensive Retirement FIRE Planner:</strong> In-depth milestone modeling with inflation adjustments and dividend calculations.</li>
-                  <li><strong className="font-semibold text-ink">Privacy-First Architecture:</strong> Your financial data stays locally on your device with optional encrypted cloud backup.</li>
-                </ul>
-                <p className="text-xs text-ink-muted pt-1">
-                  It's 100% free to use. If your portfolio is scattered like mine, feel free to give it a spin! Any feedback or feature requests are always welcome.
-                </p>
-              </div>
-            </div>
-
-            {/* Release Notes & Issue Report */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <div className="p-3.5 rounded-xl border border-line/60 bg-surface">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <h3 className="text-xs font-bold text-ink">Release Highlights</h3>
-                </div>
-                <p className="text-xs text-ink-muted leading-relaxed">
-                  v{__APP_VERSION__} (build <span className="font-mono">{__COMMIT_HASH__}</span>) · High-yield savings max principal cap, DCA smart rebalancing, and complete dark mode optimization.
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-xl border border-line/60 bg-surface flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="w-2 h-2 rounded-full bg-amber-500" />
-                    <h3 className="text-xs font-bold text-ink">Feedback & Issues</h3>
+        <SettingsGroup id="about" title="About">
+            {/* ── About Spendiary ─────────────────────────────────── */}
+            <Card className="animate-rise overflow-hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-surface-muted/80 border border-line/60 flex items-center justify-center p-2.5 shadow-xs shrink-0">
+                    <img src="/logo.png" alt="Spendiary Logo" className="w-full h-full object-contain" />
                   </div>
-                  <p className="text-xs text-ink-muted leading-relaxed">
-                    Encountered a bug or have a suggestion? Feel free to open an issue on GitHub or drop a message via Facebook.
-                  </p>
+                  <div>
+                    <h2 className="font-display text-lg font-bold text-ink">About Spendiary</h2>
+                    <p className="text-xs text-ink-muted mt-0.5">
+                      Designed & Built by bbrightns
+                    </p>
+                  </div>
                 </div>
-                <div className="mt-2.5 pt-2 border-t border-line/50 flex items-center gap-2">
+
+                {/* Social / External Links */}
+                <div className="flex items-center gap-2">
                   <a
-                    href="https://github.com/bbrightns/spendiary/issues"
+                    href="https://github.com/bbrightns"
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="text-xs font-semibold text-brand hover:underline"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line/80 bg-surface text-xs font-semibold text-ink-muted hover:text-ink hover:border-line hover:bg-surface-muted transition-all cursor-pointer shadow-2xs"
                   >
-                    Report on GitHub →
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                      <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                    </svg>
+                    <span>GitHub</span>
+                  </a>
+                  <a
+                    href="https://www.facebook.com/bbrightns/"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line/80 bg-surface text-xs font-semibold text-ink-muted hover:text-ink hover:border-line hover:bg-surface-muted transition-all cursor-pointer shadow-2xs"
+                  >
+                    <svg className="w-3.5 h-3.5 text-[#1877F2]" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                    </svg>
+                    <span>Facebook</span>
                   </a>
                 </div>
               </div>
-            </div>
-          </div>
-        </Card>
+
+              {/* Author Details & Release Highlights (Always Visible) */}
+              <div className="pt-4 mt-4 border-t border-line/60 space-y-3">
+                <div className="rounded-2xl bg-surface-muted/60 p-4 border border-line/50">
+                  <div className="flex items-center gap-3.5 mb-3">
+                    <img
+                      src="/bbrightns.jpg"
+                      alt="Praween Piyaprapaphan (Bright)"
+                      className="w-12 h-12 rounded-full object-cover border-2 border-surface shadow-xs shrink-0"
+                    />
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-bold text-ink leading-tight">
+                        Praween Piyaprapaphan (Bright)
+                      </span>
+                      <span className="text-xs font-mono text-brand font-semibold leading-normal mt-0.5">
+                        Alias: bbrightns
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-ink-muted leading-relaxed">
+                    An Electrical Engineer who loves writing code and exploring computer & tech. Building handy tools to solve everyday challenges.
+                  </p>
+                </div>
+
+                {/* The Story Behind Spendiary */}
+                <div className="rounded-2xl bg-surface-muted/40 p-4 border border-line/50">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-base">💡</span>
+                    <h3 className="text-sm font-bold text-ink">Why I Built Spendiary</h3>
+                  </div>
+                  <div className="space-y-2 text-xs text-ink-muted leading-relaxed">
+                    <p>
+                      This project started purely to solve my own personal headache: having savings and investments scattered across multiple banks and apps to the point where I lost track of where my money actually was! So I decided to build this web app to bring everything together into a clean, single cockpit:
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 pl-1 text-xs text-ink-soft">
+                      <li><strong className="font-semibold text-ink">Real-time Market Prices:</strong> Live price feeds for US Stocks, Gold, and Bitcoin (Thai stocks not included yet).</li>
+                      <li><strong className="font-semibold text-ink">Comprehensive Retirement FIRE Planner:</strong> In-depth milestone modeling with inflation adjustments and dividend calculations.</li>
+                      <li><strong className="font-semibold text-ink">Privacy-First Architecture:</strong> Your financial data stays locally on your device with optional encrypted cloud backup.</li>
+                    </ul>
+                    <p className="text-xs text-ink-muted pt-1">
+                      It's 100% free to use. If your portfolio is scattered like mine, feel free to give it a spin! Any feedback or feature requests are always welcome.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Release Notes & Issue Report */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div className="p-3.5 rounded-xl border border-line/60 bg-surface">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      <h3 className="text-xs font-bold text-ink">Release Highlights</h3>
+                    </div>
+                    <p className="text-xs text-ink-muted leading-relaxed">
+                      v{__APP_VERSION__} (build <span className="font-mono">{__COMMIT_HASH__}</span>) · High-yield savings max principal cap, DCA smart rebalancing, and complete dark mode optimization.
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl border border-line/60 bg-surface flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="w-2 h-2 rounded-full bg-amber-500" />
+                        <h3 className="text-xs font-bold text-ink">Feedback & Issues</h3>
+                      </div>
+                      <p className="text-xs text-ink-muted leading-relaxed">
+                        Encountered a bug or have a suggestion? Feel free to open an issue on GitHub or drop a message via Facebook.
+                      </p>
+                    </div>
+                    <div className="mt-2.5 pt-2 border-t border-line/50 flex items-center gap-2">
+                      <a
+                        href="https://github.com/bbrightns/spendiary/issues"
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="text-xs font-semibold text-brand hover:underline"
+                      >
+                        Report on GitHub →
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+        </SettingsGroup>
       </div>
 
       {/* ── Import confirmation modal ──────────────────────────── */}
