@@ -23,6 +23,7 @@ import {
   SearchIcon,
   CommandIcon,
   KeyboardIcon,
+  HelpCircleIcon,
   DashboardIcon,
   PortfolioIcon,
   DcaIcon,
@@ -59,6 +60,7 @@ export function openShortcutsGuide() {
 }
 
 type Group =
+  | 'Search tips'
   | 'Recent searches'
   | 'Frequently used'
   | 'Do it'
@@ -79,6 +81,7 @@ type Group =
 /** Base order; with a query, groups are re-ordered by their best match. */
 const GROUP_ORDER: Group[] = [
   'Recent searches',
+  'Search tips',
   'Do it',
   'Frequently used',
   'Actions',
@@ -108,6 +111,20 @@ const LOG_VERBS: Record<HoldingLog['action'], { label: string; keywords: string[
   dividend: { label: 'Dividend', keywords: ['dividend', 'ปันผล'] },
 }
 const DIVIDEND_WORDS = ['dividend', 'dividends', 'ปันผล', 'เงินปันผล', 'payout']
+
+/** What the search bar understands; picking one types the example in. The first few show when it's empty. */
+const SEARCH_TIPS: { example: string; what: string }[] = [
+  { example: 'กาแฟ ตุลา', what: 'Words and a month: matching transactions, added up' },
+  { example: 'this month', what: 'Dates: today, เมื่อวาน, this / last week, this / last month, ตุลา, Oct 2025, ปีนี้' },
+  { example: '>500', what: 'Amounts: 65, >500, <=200, 100-500' },
+  { example: '65 coffee', what: 'Add a transaction: amount and note (+500 for money in)' },
+  { example: '#trip', what: 'A tag' },
+  { example: 'pay ktc', what: 'Pay a credit card bill' },
+  { example: 'budget food', what: "Set a category's monthly budget" },
+  { example: 'BTC', what: 'Invest: holdings, buys and sells, DCA plans' },
+  { example: 'ปันผล', what: 'Dividends you recorded' },
+]
+const TIPS_WHEN_EMPTY = 2
 
 interface CommandItem {
   id: string
@@ -595,7 +612,60 @@ export function CommandPalette() {
     const q = query.trim()
     const boost = (it: CommandItem) => usageBoost(usage[it.id]) + (inSpend && it.spend ? 0.2 : 0)
 
+    // Type an example in, so the person sees what it finds
+    const tipRow = (t: (typeof SEARCH_TIPS)[number], i: number): Ranked => ({
+      id: `tip-${i}`,
+      title: t.example,
+      subtitle: t.what,
+      keywords: [],
+      group: 'Search tips',
+      icon: ic(SearchIcon, 'text-brand'),
+      stay: true,
+      run: () => {
+        setQuery(t.example)
+        setSelectedIndex(0)
+      },
+      score: 1 - i / 100,
+    })
+
+    // "?" lists everything the search understands
+    if (q === '?') {
+      return {
+        results: [
+          ...SEARCH_TIPS.map(tipRow),
+          {
+            id: 'tip-shortcuts',
+            title: 'Keyboard shortcuts',
+            subtitle: `${IS_MAC ? '⌘K' : 'Alt + S'} opens search anywhere; / too`,
+            keywords: [],
+            group: 'Search tips',
+            icon: ic(KeyboardIcon),
+            stay: true,
+            run: () => setShowShortcuts(true),
+            score: 0,
+          },
+        ],
+      }
+    }
+
     if (!q) {
+      const tips: Ranked[] = [
+        ...SEARCH_TIPS.slice(0, TIPS_WHEN_EMPTY).map(tipRow),
+        {
+          id: 'tip-all',
+          title: 'All search tips',
+          subtitle: 'Or type ? in the search box',
+          keywords: [],
+          group: 'Search tips',
+          icon: ic(HelpCircleIcon),
+          stay: true,
+          run: () => {
+            setQuery('?')
+            setSelectedIndex(0)
+          },
+          score: 0,
+        },
+      ]
       const out: Ranked[] = recent.map((r, i) => ({
         id: `recent-${i}`,
         title: r,
@@ -623,7 +693,7 @@ export function CommandPalette() {
         .filter((it) => it.group === 'Pages' && !usedIds.has(it.id))
         .map((it) => ({ ...it, score: boost(it) }))
         .sort((a, b) => b.score - a.score)
-      return { results: [...out, ...used, ...actions, ...pages] }
+      return { results: [...out, ...tips, ...used, ...actions, ...pages] }
     }
 
     const ranked: Ranked[] = []
@@ -835,7 +905,7 @@ export function CommandPalette() {
     for (const g of groups) {
       const list = byGroup.get(g)!
       const sorted = [...list].sort((a, b) => b.score - a.score)
-      const limit = !searching && (g === 'Actions' || g === 'Pages') ? 8 : GROUP_LIMIT
+      const limit = g === 'Search tips' ? SEARCH_TIPS.length + 1 : !searching && (g === 'Actions' || g === 'Pages') ? 8 : GROUP_LIMIT
       const shown = sorted.filter((r) => r.id !== 'txn-all').slice(0, limit)
       const all = sorted.find((r) => r.id === 'txn-all')
       rows.push(...shown, ...(all ? [all] : []))
