@@ -168,11 +168,11 @@ export function ImportSheet() {
     const withSub = [...inputs, ...patches].filter((t) => t.subcategory && t.categoryId)
     const subs = new Set(withSub.map((t) => JSON.stringify([t.categoryId, t.subcategory])))
     for (const pair of subs) addSubcategory(...(JSON.parse(pair) as [string, string]))
-    const updated = patches.length ? patchTransactions(patches) : 0
+    if (patches.length) patchTransactions(patches)
     const n = inputs.length ? addTransactions(inputs) : 0
     const plural = (k: number) => (k === 1 ? 'transaction' : 'transactions')
     showToast(
-      updated ? `Updated ${patches.length} ${plural(patches.length)}${n ? `, imported ${n}` : ''}` : `Imported ${n} ${plural(n)}`,
+      patches.length ? `Updated ${patches.length} ${plural(patches.length)}${n ? `, imported ${n}` : ''}` : `Imported ${n} ${plural(n)}`,
     )
     setOpen(false)
   }
