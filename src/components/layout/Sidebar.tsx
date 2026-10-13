@@ -13,6 +13,7 @@ import { useSpend } from '../../modules/spend/useSpend'
 import { SIDE_ACTIVE } from '../../modules/spend/tones'
 
 import { isDividendReceivedThisMonth, isLiabilityActionableThisMonth, shouldConfirmBuy } from '../../lib/calc'
+import { SEARCH_SHORTCUT } from '../../lib/shortcut'
 
 export function Sidebar() {
   const location = useLocation()
@@ -109,7 +110,7 @@ export function Sidebar() {
             <span className="font-semibold text-ink-soft">Search / Actions...</span>
           </div>
           <kbd className="inline-flex items-center gap-0.5 rounded-md bg-surface border border-line px-1.5 py-0.5 font-mono text-xs text-ink-muted shadow-2xs">
-            <span>⌘</span>K
+            {SEARCH_SHORTCUT}
           </kbd>
         </button>
 

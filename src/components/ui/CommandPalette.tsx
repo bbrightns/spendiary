@@ -43,6 +43,7 @@ import { frequencyLabel, goalProgress, noteTitle } from '../../modules/spend/log
 import { useSpendSide } from '../../modules/spend/side'
 import { TONES } from '../../modules/spend/tones'
 import { useSpend } from '../../modules/spend/useSpend'
+import { IS_MAC, isSearchShortcut } from '../../lib/shortcut'
 
 export function openCommandPalette() {
   window.dispatchEvent(new CustomEvent('spendiary:open-command-palette'))
@@ -184,8 +185,8 @@ export function CommandPalette() {
           activeEl.tagName === 'SELECT' ||
           (activeEl as HTMLElement).isContentEditable)
 
-      // Cmd+K or Ctrl+K
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+      // ⌘K on a Mac, Alt + S on Windows
+      if (isSearchShortcut(e)) {
         e.preventDefault()
         if (!isOpen) reset()
         setIsOpen(!isOpen)
@@ -791,7 +792,7 @@ export function CommandPalette() {
   // ── Shortcuts Guide View ──
   if (showShortcuts) {
     const shortcutsList = [
-      { key: '⌘ / Ctrl + K', desc: 'Open the command palette' },
+      { key: IS_MAC ? '⌘ + K' : 'Alt + S', desc: 'Open the command palette' },
       { key: '/', desc: 'Quick search from anywhere' },
       { key: '?', desc: 'Show keyboard shortcuts' },
       { key: 'Esc', desc: 'Close dialog or popup' },

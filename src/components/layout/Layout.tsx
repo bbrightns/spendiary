@@ -7,6 +7,7 @@ import { TestModeBanner } from './TestModeBanner'
 import { SettingsIcon, SearchIcon } from '../icons'
 import { CommandPalette, openCommandPalette } from '../ui/CommandPalette'
 import { useData } from '../../store/DataContext'
+import { SEARCH_SHORTCUT } from '../../lib/shortcut'
 import { ModeSwitcher } from '../../modules/spend/ModeSwitcher'
 import { useSpendSide } from '../../modules/spend/side'
 import { SIDE_ACTIVE } from '../../modules/spend/tones'
@@ -59,7 +60,7 @@ export function Layout({ children }: { children: ReactNode }) {
             type="button"
             onClick={openCommandPalette}
             aria-label="Quick Search / Command Palette"
-            title="Search (Cmd+K)"
+            title={`Search (${SEARCH_SHORTCUT})`}
             className="grid h-9 w-9 place-items-center rounded-xl text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer"
           >
             <SearchIcon className="h-[18.5px] w-[18.5px]" />
