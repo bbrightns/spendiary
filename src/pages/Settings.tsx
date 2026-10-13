@@ -12,6 +12,7 @@ import { TextField } from '../components/ui/Field'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { DownloadIcon, SparkleIcon, TrashIcon, UploadIcon } from '../components/icons'
+import { DataAction, DataCard, DataRow } from '../components/ui/DataCard'
 import { AiImportModal } from '../components/forms/AiImportModal'
 import type { SpendiaryData } from '../lib/types'
 import { SpendDataSection, SpendSettingsSections } from '../modules/spend/pages/SpendSettings'
@@ -45,6 +46,13 @@ function dataSummary(data: SpendiaryData): string {
     group('Money', [n(data.cashAccounts.length, 'cash account'), n(data.liabilities?.length, 'loan'), n(data.transfers.length, 'transfer')]),
   ].filter(Boolean)
   return groups.length ? groups.join(' · ') : 'no data'
+}
+
+/** What the Invest side holds: "9 holdings, 6 DCA plans, 2 dividends" */
+function investSummary(data: SpendiaryData): string {
+  const n = (count: number | undefined, word: string) => (count ? `${count} ${count === 1 ? word : `${word}s`}` : '')
+  const parts = [n(data.holdings.length, 'holding'), n(data.dcaPlans.length, 'DCA plan'), n(data.dividendRecords?.length, 'dividend')].filter(Boolean)
+  return parts.length ? parts.join(', ') : 'Nothing added yet'
 }
 
 // ─── inline toast ─────────────────────────────────────────────────────────────
@@ -315,11 +323,11 @@ export function Settings() {
   // ── Sync badge ─────────────────────────────────────────────────
   const syncBadge =
     syncStatus === 'syncing'
-      ? { text: 'Syncing…', cls: 'bg-warn-soft text-warn' }
+      ? { text: 'Syncing…', cls: 'text-warn' }
       : syncStatus === 'synced'
-      ? { text: 'Synced', cls: 'bg-gain-soft text-gain' }
+      ? { text: 'Synced', cls: 'text-gain' }
       : syncStatus === 'error'
-      ? { text: 'Sync error', cls: 'bg-loss-soft text-loss' }
+      ? { text: 'Sync error', cls: 'text-loss' }
       : null
 
   return (
@@ -392,211 +400,101 @@ export function Settings() {
           <SpendSettingsSections />
         </SettingsGroup>
 
-        <SettingsGroup id="backup" title="Data & backup" hint="Bring data in, sync and back up; reset at the bottom">
-            {/* ── Import with AI (moved here from the Dashboard header) ── */}
-            <Card id="ai-import" className="animate-rise">
-              <div className="flex items-start justify-between gap-4">
+        <SettingsGroup id="backup" title="Data & backup" hint="Your account, then Spend, Invest and everything at once">
+            {/* ── Account: who's signed in, sync state, sign out ── */}
+            <Card id="guide-settings-sync" className="animate-rise" padded={false}>
+              <div className="flex items-center justify-between gap-3 px-5 py-3.5">
                 <div className="min-w-0">
-                  <h2 className="flex items-center gap-2 font-display text-lg font-bold text-ink">
-                    <SparkleIcon className="h-4.5 w-4.5 text-brand" />
-                    Import with AI
-                  </h2>
-                  <p className="mt-1 text-sm text-ink-muted">
-                    Paste a screenshot or text from your broker or bank; AI turns it into holdings and cash accounts you check before saving.
+                  <p className="truncate text-sm font-semibold text-ink">{user?.email ?? 'Not signed in'}</p>
+                  <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-muted">
+                    {syncBadge && <span className={`font-semibold ${syncBadge.cls}`}>{syncBadge.text}</span>}
+                    {!user ? (
+                      <span>Data stays on this device</span>
+                    ) : lastSyncedAt ? (
+                      <span>Last synced {lastSyncedAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+                    ) : (
+                      !syncBadge && <span>Not synced yet</span>
+                    )}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setAiImportOpen(true)}
-                  className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 cursor-pointer"
-                >
-                  <SparkleIcon className="h-4 w-4" />
-                  Import
-                </button>
+                {user && <DataAction label="Sign out" tone="danger" onClick={logout} />}
               </div>
             </Card>
 
-            {/* ── Supabase Cloud Sync ─────────────────────────────── */}
-            <div id="guide-settings-sync">
-              <Card className="animate-rise">
-                <div className="flex items-start justify-between gap-3 mb-1">
-                  <h2 className="font-display text-lg font-bold text-ink">Cloud Sync (Supabase)</h2>
-                  {syncBadge && (
-                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${syncBadge.cls}`}>
-                      {syncBadge.text}
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-ink-muted mb-4">
-                  Your data is securely backed up and synchronized automatically.
-                </p>
+            <SpendDataSection />
 
-                <div className="flex flex-col gap-2 rounded-2xl bg-surface-muted p-4 text-sm mb-4">
-                  <div className="flex justify-between">
-                    <span className="text-ink-muted">Account</span>
-                    <span className="font-semibold text-ink">{user?.email ?? 'Not signed in'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-ink-muted">Last synced</span>
-                    <span className="font-semibold text-ink">
-                      {lastSyncedAt ? lastSyncedAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'Never'}
-                    </span>
-                  </div>
-                </div>
+            {/* ── Invest data ── */}
+            <DataCard
+              id="ai-import"
+              title="Invest data"
+              summary={investSummary(data)}
+            >
+              <DataRow
+                title="Import with AI"
+                description="From a screenshot or text from your broker or bank. AI turns it into holdings and cash accounts you check before saving."
+                action={<DataAction label="Import" icon={<SparkleIcon className="h-4 w-4" />} onClick={() => setAiImportOpen(true)} />}
+              />
+            </DataCard>
 
-                {user && (
-                  <button
-                    onClick={logout}
-                    className="w-full py-2.5 px-4 rounded-xl border border-line bg-surface hover:bg-surface-muted text-sm font-semibold text-loss transition-colors duration-200 active:scale-[0.98]"
-                  >
-                    Sign out
-                  </button>
-                )}
-              </Card>
-            </div>
-          <SpendDataSection />
-            {/* ── Data & Backup ───────────────────────────────────── */}
+            {/* ── All data: one backup file for Invest and Spend, restore, reset ── */}
             <div id="guide-settings-backup">
-              <Card className="animate-rise">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h2 className="font-display text-lg font-bold text-ink [text-wrap:balance]">
-                      Full backup
-                    </h2>
-                    <p className="mt-1 text-sm text-ink-muted [text-wrap:pretty]">
-                      {dataSummary(data)} stored on this device.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-5 divide-y divide-line">
-
-                  {/* Export row */}
-                  <div className="flex items-start justify-between gap-4 py-4">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-ink">Export data</p>
-                      <p className="mt-0.5 text-xs text-ink-muted">
-                        Everything in Spendiary, Invest and Spend: holdings, logs, cash accounts, cards, spending, bills, loans, goals, settings and history, in one JSON file.
+              <DataCard title="All data" summary={`${dataSummary(data)}, stored on this device.`}>
+                <DataRow
+                  title="Export backup"
+                  description="Everything in Invest and Spend in one JSON file. Keep it somewhere safe."
+                  status={
+                    exportToast.kind !== 'idle' && (
+                      <p role="status" aria-live="polite" className={`mt-1.5 text-xs font-medium ${exportToast.kind === 'success' ? 'text-gain' : 'text-loss'}`}>
+                        {exportToast.msg}
                       </p>
-                      {exportToast.kind !== 'idle' && (
-                        <p
-                          role="status"
-                          aria-live="polite"
-                          className={`mt-1.5 text-xs font-medium ${
-                            exportToast.kind === 'success' ? 'text-gain' : 'text-loss'
-                          }`}
-                        >
-                          {exportToast.msg}
-                        </p>
-                      )}
-                    </div>
-                    <button
-                      id="btn-export"
-                      onClick={handleExport}
-                      className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95"
-                    >
-                      <DownloadIcon className="h-4 w-4" />
-                      Export
-                    </button>
-                  </div>
-
-                  {/* Import row */}
-                  <div className="flex items-start justify-between gap-4 py-4">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-ink">Import data</p>
-                      <p className="mt-0.5 text-xs text-ink-muted">
-                        Restore from a Spendiary JSON backup. This will overwrite current data.
+                    )
+                  }
+                  action={<DataAction id="btn-export" label="Export" icon={<DownloadIcon className="h-4 w-4" />} onClick={handleExport} />}
+                />
+                <DataRow
+                  title="Restore backup"
+                  description="Load a Spendiary JSON backup. It replaces everything on this device."
+                  status={
+                    importToast.kind !== 'idle' && (
+                      <p
+                        role="status"
+                        aria-live="polite"
+                        className={`mt-1.5 flex items-center gap-1.5 text-xs font-medium ${
+                          importToast.kind === 'success' ? 'text-gain' : importToast.kind === 'error' ? 'text-loss' : 'text-ink-muted'
+                        }`}
+                      >
+                        {importToast.kind === 'loading' && (
+                          <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" strokeLinecap="round" />
+                          </svg>
+                        )}
+                        {importToast.msg}
                       </p>
-                      {importToast.kind !== 'idle' && (
-                        <p
-                          role="status"
-                          aria-live="polite"
-                          className={`mt-1.5 flex items-center gap-1.5 text-xs font-medium ${
-                            importToast.kind === 'success'
-                              ? 'text-gain'
-                              : importToast.kind === 'error'
-                              ? 'text-loss'
-                              : 'text-ink-muted'
-                          }`}
-                        >
-                          {importToast.kind === 'loading' && (
-                            <svg
-                              className="h-3.5 w-3.5 animate-spin"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2.5"
-                            >
-                              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" strokeLinecap="round" />
-                            </svg>
-                          )}
-                          {importToast.msg}
-                        </p>
-                      )}
-                    </div>
-                    <button
-                      id="btn-import"
-                      onClick={handleImportClick}
-                      disabled={importToast.kind === 'loading'}
-                      aria-label="Import data from JSON backup file"
-                      className="shrink-0 inline-flex items-center gap-2 rounded-full bg-surface-muted px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5] active:scale-95 disabled:pointer-events-none disabled:opacity-50"
-                    >
-                      <UploadIcon className="h-4 w-4" />
-                      Import
-                    </button>
-                    {/* Hidden file input */}
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".json,application/json"
-                      className="sr-only"
-                      aria-hidden="true"
-                      onChange={handleFileChange}
-                    />
-                  </div>
-
-                </div>
-              </Card>
+                    )
+                  }
+                  action={
+                    <>
+                      <DataAction
+                        id="btn-import"
+                        label="Restore"
+                        icon={<UploadIcon className="h-4 w-4" />}
+                        onClick={handleImportClick}
+                        disabled={importToast.kind === 'loading'}
+                        ariaLabel="Restore data from a JSON backup file"
+                      />
+                      <input ref={fileInputRef} type="file" accept=".json,application/json" className="sr-only" aria-hidden="true" onChange={handleFileChange} />
+                    </>
+                  }
+                />
+                <DataRow
+                  title="Reset everything"
+                  description="Deletes all your data and signs you out. Export a backup first; this cannot be undone."
+                  action={
+                    <DataAction id="btn-reset" label="Reset" tone="danger" icon={<TrashIcon className="h-4 w-4" />} onClick={() => setResetOpen(true)} disabled={isResetting} />
+                  }
+                />
+              </DataCard>
             </div>
-            {/* ── Danger zone ─────────────────────────────────────── */}
-            <Card className="animate-rise border-loss/20 bg-loss-soft/20">
-              <h2 className="font-display text-lg font-bold text-ink [text-wrap:balance]">
-                Danger zone
-              </h2>
-              <div className="mt-4 flex items-center justify-between rounded-xl border border-line bg-surface px-4 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-ink">Back up first</p>
-                  <p className="mt-0.5 text-xs text-ink-muted">
-                    Download a full JSON copy of your data before resetting, so you can restore it later.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleExport}
-                  className="ml-4 inline-flex shrink-0 items-center gap-2 rounded-full border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted active:scale-95 cursor-pointer"
-                >
-                  <DownloadIcon className="h-4 w-4" />
-                  Export backup
-                </button>
-              </div>
-              <div className="mt-4 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-ink">Reset all data</p>
-                  <p className="mt-0.5 text-xs text-ink-muted">
-                    Permanently clears all data of this user and brings you back to the login screen. Cannot be undone.
-                  </p>
-                </div>
-                <button
-                  id="btn-reset"
-                  onClick={() => setResetOpen(true)}
-                  disabled={isResetting}
-                  className="ml-4 inline-flex shrink-0 items-center gap-2 rounded-full bg-loss-soft px-4 py-2 text-sm font-semibold text-loss transition-colors hover:bg-loss hover:text-white active:scale-95 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  <TrashIcon className="h-4 w-4" />
-                  Reset
-                </button>
-              </div>
-            </Card>
         </SettingsGroup>
 
         <SettingsGroup id="about" title="About">
@@ -741,7 +639,7 @@ export function Settings() {
         onClose={() => {
           if (!isResetting) setResetOpen(false)
         }}
-        title="Reset all data?"
+        title="Reset everything?"
         description="This will permanently delete all data of this user and return you to the login screen. Export a backup first if you want to keep anything."
         confirmText={isResetting ? 'Resetting and signing out…' : 'Yes, delete everything'}
         confirmVariant="danger"

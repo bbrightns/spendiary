@@ -2,7 +2,8 @@ import { useState, type ReactNode } from 'react'
 import { Card } from '../../../components/ui/Card'
 import { Button } from '../../../components/ui/Button'
 import { ConfirmModal } from '../../../components/ui/ConfirmModal'
-import { TrashIcon } from '../../../components/icons'
+import { DownloadIcon, TrashIcon, UploadIcon } from '../../../components/icons'
+import { DataAction, DataCard, DataRow } from '../../../components/ui/DataCard'
 import { SegmentedControl } from '../../../components/ui/SegmentedControl'
 import { useToast } from '../../../store/ToastContext'
 import { localDateStr, thb } from '../../../lib/format'
@@ -398,66 +399,52 @@ export function SpendSettingsSections() {
 }
 
 /** Statement CSV in / spreadsheet out; lives with the backups in Settings → Data & backup. */
+/** Settings → Data & backup: Spend's own records in and out, and starting the history over. */
 export function SpendDataSection() {
-  const { methods, transactions, clearTransactions } = useSpend()
+  const { methods, transactions, cards, recurring, clearTransactions } = useSpend()
   const { showToast } = useToast()
   const [clearOpen, setClearOpen] = useState(false)
   // Export Spend's own records; dividends and DCA buys belong to the Invest side's backup
   const ownTxns = transactions.filter((t) => !t.source)
+  const n = (count: number, word: string) => `${count} ${count === 1 ? word : `${word}s`}`
   const exportAll = () => {
     const accountName = (id?: string) => methods.find((m) => m.id === id)?.name ?? ''
     downloadCsv(toCsv(ownTxns, { category: (id) => getCategory(id)?.label ?? '', account: accountName }))
-    showToast(`Exported ${ownTxns.length} transactions`)
+    showToast(`Exported ${n(ownTxns.length, 'transaction')}`)
   }
-  const dataButton =
-    'rounded-2xl border border-line px-4 py-3 text-left transition-colors cursor-pointer hover:bg-surface-muted/60 disabled:cursor-default disabled:opacity-50'
   const clearAll = () => {
-    const n = clearTransactions()
+    const count = clearTransactions()
     setClearOpen(false)
-    showToast(`Deleted ${n} ${n === 1 ? 'transaction' : 'transactions'}`, 'info')
+    showToast(`Deleted ${n(count, 'transaction')}`, 'info')
   }
   return (
-      <Section id="data" title="Spending statements (CSV)" description="Bring past transactions in from a bank or card statement, or take all of them out as a spreadsheet.">
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <button type="button" onClick={openImport} className={dataButton}>
-            <span className="block text-sm font-bold text-ink">Import CSV</span>
-            <span className="block text-xs text-ink-muted">A .csv file or pasted text; you check it before saving</span>
-          </button>
-          <button type="button" onClick={exportAll} disabled={ownTxns.length === 0} className={dataButton}>
-            <span className="block text-sm font-bold text-ink">Export CSV</span>
-            <span className="block text-xs text-ink-muted tnum">
-              {ownTxns.length ? `All ${ownTxns.length} transactions · opens in Excel or Sheets` : 'Nothing logged yet'}
-            </span>
-          </button>
-        </div>
-        <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-loss/20 bg-loss-soft/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <span>
-            <span className="block text-sm font-bold text-ink">Delete all transactions</span>
-            <span className="block text-xs text-ink-muted">
-              Clears every Spend transaction to start over. Wallets, cards, categories, budgets and recurring bills stay.
-            </span>
-          </span>
-          <button
-            type="button"
-            onClick={() => setClearOpen(true)}
-            disabled={ownTxns.length === 0}
-            className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full bg-loss-soft px-4 py-2 text-sm font-semibold text-loss transition-colors hover:bg-loss hover:text-white active:scale-95 cursor-pointer disabled:pointer-events-none disabled:opacity-50 sm:self-auto"
-          >
-            <TrashIcon className="h-4 w-4" />
-            Delete all
-          </button>
-        </div>
-        <ConfirmModal
-          open={clearOpen}
-          onClose={() => setClearOpen(false)}
-          title={`Delete all ${ownTxns.length} transactions?`}
-          description="Every Spend transaction is removed. Wallet and card balances move back for entries that changed them, the same as deleting each one. Export CSV first if you may want them again. This cannot be undone."
-          confirmText="Yes, delete all transactions"
-          confirmVariant="danger"
-          confirmIcon={<TrashIcon className="h-4 w-4" strokeWidth={2.2} />}
-          cancelText="Cancel"
-          onConfirm={clearAll}
-        />
-      </Section>
+    <DataCard id="data" title="Spend data" summary={`${n(ownTxns.length, 'transaction')}, ${n(cards.length, 'card')}, ${n(recurring.length, 'bill')}`}>
+      <DataRow
+        title="Import transactions"
+        description="From a bank or card statement, or another money app, as a CSV file or pasted text. You check every row before saving."
+        action={<DataAction label="Import" icon={<UploadIcon className="h-4 w-4" />} onClick={openImport} />}
+      />
+      <DataRow
+        title="Export transactions"
+        description={ownTxns.length ? `All ${n(ownTxns.length, 'transaction')} as a CSV file that opens in Excel or Google Sheets.` : 'Nothing logged yet.'}
+        action={<DataAction label="Export" icon={<DownloadIcon className="h-4 w-4" />} onClick={exportAll} disabled={ownTxns.length === 0} />}
+      />
+      <DataRow
+        title="Delete all transactions"
+        description="Starts your spending history over. Wallets, cards, categories, budgets and bills stay."
+        action={<DataAction label="Delete" tone="danger" icon={<TrashIcon className="h-4 w-4" />} onClick={() => setClearOpen(true)} disabled={ownTxns.length === 0} />}
+      />
+      <ConfirmModal
+        open={clearOpen}
+        onClose={() => setClearOpen(false)}
+        title={`Delete all ${n(ownTxns.length, 'transaction')}?`}
+        description="Every Spend transaction is removed. Wallet and card balances move back for entries that changed them, the same as deleting each one. Export them first if you may want them again. This cannot be undone."
+        confirmText="Yes, delete all transactions"
+        confirmVariant="danger"
+        confirmIcon={<TrashIcon className="h-4 w-4" strokeWidth={2.2} />}
+        cancelText="Cancel"
+        onConfirm={clearAll}
+      />
+    </DataCard>
   )
 }
