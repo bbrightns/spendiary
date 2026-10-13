@@ -375,6 +375,8 @@ export interface SpendSettings {
   categoryEdits?: Record<string, SpendCategoryEdit>
   /** Subcategory labels per category id (built-in or custom), in the order they're offered */
   subcategories?: Record<string, string[]>
+  /** How categories are offered in Quick add and recurring: compact chips (default) or a grid of tiles */
+  categoryLayout?: 'chips' | 'tiles'
 }
 
 /** A user-made Spend category. `tone` and `icon` are keys from the Spend module's palettes. */
@@ -427,7 +429,10 @@ export interface SpendRecurring {
   month?: number
   /** No occurrences before this date (YYYY-MM-DD) */
   startDate: string
+  /** Name first, then #tags, like a transaction's note; `name` is its title */
   note?: string
+  /** Label of one subcategory under `categoryId`, carried onto each logged occurrence */
+  subcategory?: string
   /**
    * Expense only: count toward fixed costs (DCA Plans salary split). Unset = yes,
    * so bills are fixed costs unless you opt one out.

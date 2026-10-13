@@ -360,7 +360,7 @@ export function CommandPalette() {
           ['categories', 'Categories', 'Add, rename or change icons', ['category', 'categories', 'icon', 'หมวด', 'หมวดหมู่']],
           ['category-budgets', 'Budget per category', 'Limits per category', ['budget', 'category', 'limit', 'งบหมวด']],
           ['bill-reminders', 'Bill reminders', 'Days before a card bill or loan is due', ['reminder', 'loan', 'card', 'bill', 'due', 'แจ้งเตือน']],
-          ['quick-add', 'Default payment method', 'Picked for you in Quick add', ['default', 'payment', 'quick add', 'wallet', 'ค่าเริ่มต้น']],
+          ['quick-add', 'Default payment method', 'Picked for you in Quick add; category chips or tiles', ['default', 'payment', 'quick add', 'wallet', 'ค่าเริ่มต้น', 'category style', 'chips', 'tiles']],
           ['data', 'Import / export CSV', 'Statements in, a spreadsheet out', ['import', 'export', 'csv', 'excel', 'download', 'นำเข้า', 'ส่งออก']],
         ] as const
       ).map(([hash, title, subtitle, keywords]) => ({

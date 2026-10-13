@@ -36,6 +36,18 @@ export function noteTitle(note?: string): string {
   return first ? first[1] : ''
 }
 
+/**
+ * A recurring item's note as one line, name first, the way a transaction's note reads.
+ * Items made before Name and Note were merged keep them apart ("Netflix" + "#subscription").
+ */
+export function recurringNote(rec: Pick<SpendRecurring, 'name' | 'note'>): string {
+  const name = rec.name.trim()
+  const note = (rec.note ?? '').trim()
+  if (!note) return name
+  if (!name || note.toLowerCase().startsWith(name.toLowerCase())) return note
+  return `${name} ${note}`
+}
+
 /** The half-typed `#tag` at the very end of a note (without the #), or null if the user isn't typing one. */
 export function activeTagQuery(note: string): string | null {
   const m = /(?:^|\s)#([^\s#]*)$/u.exec(note)

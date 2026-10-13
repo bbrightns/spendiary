@@ -11,6 +11,7 @@ import {
   moveId,
   activeTagQuery,
   noteTitle,
+  recurringNote,
   suggestTags,
   averageMonthlySpend,
   goalProgress,
@@ -534,5 +535,18 @@ describe('paying a debt ahead of its due date', () => {
     const l = { ...base, paidInstallments: 3, lastPaidDate: '2026-09-05', createdAt: '2026-05-01' }
     expect(isLiabilityPaidThisMonth(l, new Date(2026, 9, 12))).toBe(false)
     expect(isLiabilityActionableThisMonth(l, new Date(2026, 9, 12))).toBe(true)
+  })
+})
+
+describe('recurringNote', () => {
+  it('joins an older item’s separate name and note, name first', () => {
+    expect(recurringNote({ name: 'Netflix', note: '#subscription' })).toBe('Netflix #subscription')
+    expect(recurringNote({ name: 'Netflix', note: 'family plan' })).toBe('Netflix family plan')
+  })
+
+  it('keeps a merged note as it is, and falls back to the name', () => {
+    expect(recurringNote({ name: 'Netflix', note: 'Netflix #subscription' })).toBe('Netflix #subscription')
+    expect(recurringNote({ name: 'netflix', note: 'Netflix  #subscription ' })).toBe('Netflix  #subscription')
+    expect(recurringNote({ name: 'Rent' })).toBe('Rent')
   })
 })

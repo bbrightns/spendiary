@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Modal } from '../../components/ui/Modal'
 import { SegmentedControl } from '../../components/ui/SegmentedControl'
 import { FormActions } from '../../components/forms/FormActions'
@@ -7,14 +7,14 @@ import { useToast } from '../../store/ToastContext'
 import { useData } from '../../store/DataContext'
 import { localDateStr, thb } from '../../lib/format'
 import type { SpendSettings, SpendTransaction, SpendTxnType } from '../../lib/types'
-import { categoriesFor, getCategory, type SpendCategory } from './categories'
-import { activeTagQuery, noteTitle, parseTags, recentTags, suggestTags, topTags } from './logic'
-import { TONES, TYPE_ACTIVE } from './tones'
+import { categoriesFor, getCategory } from './categories'
+import { noteTitle } from './logic'
+import { TYPE_ACTIVE } from './tones'
 import { useSpend, type PayMethod, type SpendTxnInput } from './useSpend'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { SwitchVisual } from './AccountSheets'
-import { CategorySheet } from './CategorySheet'
-import { KEEP_CATEGORY, useRemoveCategory } from './useRemoveCategory'
+import { CategoryPicker } from './CategoryPicker'
+import { NoteField } from './NoteField'
 import { firstInstallmentDue, installmentAmount } from './loans'
 
 const OPEN_EVENT = 'spendiary:open-quick-add'
@@ -86,7 +86,7 @@ function pickDefaults(type: SpendTxnType, txns: SpendTransaction[], methods: Pay
 }
 
 export function QuickAddSheet() {
-  const { transactions, methods, cards, settings, addTransaction, updateTransaction, removeTransaction, subcategories, addSubcategory } = useSpend()
+  const { transactions, methods, cards, settings, addTransaction, updateTransaction, removeTransaction } = useSpend()
   const { data, setLiabilities, removeLiability } = useData()
   const { showToast } = useToast()
 
@@ -101,16 +101,11 @@ export function QuickAddSheet() {
   const [date, setDate] = useState(localDateStr())
   const [time, setTime] = useState('')
   const [subcategory, setSubcategory] = useState('')
-  const [newSub, setNewSub] = useState('')
-  const [addingSub, setAddingSub] = useState(false)
   const [note, setNote] = useState('')
   const [alreadyIn, setAlreadyIn] = useState(false)
   // Card purchase paid off in monthly installments (off unless picked)
   const [split, setSplit] = useState(false)
   const [months, setMonths] = useState(10)
-  const [catSheet, setCatSheet] = useState<{ open: boolean; category?: SpendCategory }>({ open: false })
-  const [editingCats, setEditingCats] = useState(false)
-  const removeCategory = useRemoveCategory()
   const [hint, setHint] = useState<string | undefined>()
   // Editing a loan payment: its transfer goes to the loan, so there's no "to" wallet to pick
   const [loanPayment, setLoanPayment] = useState(false)
@@ -140,7 +135,7 @@ export function QuickAddSheet() {
         setToAccountId(source.toAccountId ?? NO_WALLET)
         setDate(source.date)
         setTime(existing?.time ?? '')
-        setSubcategory(existing?.subcategory ?? '')
+        setSubcategory(source.subcategory ?? '')
         setNote(source.note ?? '')
         setAlreadyIn(!!existing?.alreadyInBalance)
         setSplit(false)
@@ -165,9 +160,6 @@ export function QuickAddSheet() {
         setSplit(false)
         setMonths(10)
       }
-      setAddingSub(false)
-      setNewSub('')
-      setEditingCats(false)
       setOpen(true)
     }
     window.addEventListener(OPEN_EVENT, onOpen)
@@ -181,14 +173,6 @@ export function QuickAddSheet() {
     return () => window.clearTimeout(t)
   }, [open])
 
-  const recent = useMemo(() => recentTags(transactions, 3), [transactions])
-  const frequent = useMemo(() => topTags(transactions, 8).filter((t) => !recent.includes(t)).slice(0, 5), [transactions, recent])
-  const noteTokens = note.toLowerCase().split(/\s+/)
-  // While typing `#ta…`, offer tags used before that start with it
-  const tagQuery = activeTagQuery(note)
-  const suggestions = useMemo(() => (tagQuery === null ? [] : suggestTags(transactions, note, tagQuery)), [transactions, note, tagQuery])
-  const previewTags = parseTags(note)
-  const previewTitle = noteTitle(note) || (type === 'transfer' ? 'Transfer' : getCategory(categoryId)?.label ?? 'Other')
   const value = Number(amount.replace(/,/g, ''))
   const amountValid = Number.isFinite(value) && value > 0
   const transferValid =
@@ -204,32 +188,6 @@ export function QuickAddSheet() {
   const backdated = date < localDateStr()
   const touchesBalance = accountId !== NO_WALLET || (type === 'transfer' && toAccountId !== NO_WALLET)
 
-  // Offered subcategories for the chosen category, plus the one already on this entry if it was since removed
-  const subChoices = useMemo(() => {
-    const list = subcategories(categoryId)
-    return subcategory && !list.includes(subcategory) ? [...list, subcategory] : list
-  }, [subcategories, categoryId, subcategory])
-
-  /** Save the typed subcategory under the chosen category and select it. */
-  const commitSub = () => {
-    const label = newSub.trim()
-    if (label) {
-      addSubcategory(categoryId, label)
-      setSubcategory(label)
-    }
-    setAddingSub(false)
-    setNewSub('')
-  }
-
-  /** Take a category out of the picker; if it was picked, the first one left is picked instead. */
-  const removeCat = (c: SpendCategory) => {
-    removeCategory(c)
-    if (c.id === categoryId) {
-      setCategoryId(categoriesFor(type).find((x) => x.id !== c.id)?.id ?? '')
-      setSubcategory('')
-    }
-  }
-
   const changeType = (t: SpendTxnType) => {
     setType(t)
     if (t !== 'transfer' && getCategory(categoryId)?.type !== t) {
@@ -243,15 +201,6 @@ export function QuickAddSheet() {
       setToAccountId(d.to)
     }
   }
-
-  const appendTag = (tag: string) => {
-    const token = `#${tag}`
-    if (noteTokens.includes(token)) return
-    setNote((n) => (n.trim() ? `${n.trimEnd()} ${token}` : token))
-  }
-
-  /** Finish the `#ta…` being typed with a tag used before. */
-  const completeTag = (tag: string) => setNote((n) => n.replace(/#[^\s#]*$/u, `#${tag} `))
 
   /** Bought on installment: nothing is spent today, so it becomes an installment plan paid each month from the card. */
   const saveInstallment = () => {
@@ -360,109 +309,13 @@ export function QuickAddSheet() {
 
           {/* Category */}
           {type !== 'transfer' && (
-            <div>
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-ink-soft">Category</p>
-                <button
-                  type="button"
-                  aria-pressed={editingCats}
-                  onClick={() => setEditingCats((v) => !v)}
-                  className="-my-1 rounded-full px-2.5 py-1 text-xs font-semibold text-brand cursor-pointer hover:bg-brand-soft"
-                >
-                  {editingCats ? 'Done' : 'Edit'}
-                </button>
-              </div>
-              <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-                {categoriesFor(type, categoryId).map((c) => {
-                  const active = c.id === categoryId
-                  return (
-                    <div key={c.id} className="relative">
-                      <button
-                        type="button"
-                        aria-pressed={editingCats ? undefined : active}
-                        aria-label={editingCats ? `Edit ${c.label}` : undefined}
-                        onClick={() => {
-                          if (editingCats) return setCatSheet({ open: true, category: c })
-                          if (c.id !== categoryId) setSubcategory('')
-                          setCategoryId(c.id)
-                        }}
-                        className={`flex min-h-[72px] w-full flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 text-xs transition-all cursor-pointer active:scale-95 ${
-                          active ? `${TONES[c.tone].active} font-bold` : 'border-line bg-surface font-semibold text-ink-soft hover:bg-surface-muted/60'
-                        } ${editingCats ? 'border-dashed' : ''}`}
-                      >
-                        <span className={`grid h-8 w-8 place-items-center rounded-xl transition-colors ${active ? 'bg-white/70 dark:bg-white/10' : TONES[c.tone].chip}`}>
-                          <c.icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.1 : 1.7} />
-                        </span>
-                        <span className="w-full truncate text-center leading-tight">{c.label}</span>
-                      </button>
-                      {editingCats && !KEEP_CATEGORY.has(c.id) && (
-                        <button
-                          type="button"
-                          aria-label={`Remove ${c.label}`}
-                          onClick={() => removeCat(c)}
-                          className="absolute -right-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full bg-loss text-sm font-bold leading-none text-white shadow-sm cursor-pointer hover:brightness-110"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  )
-                })}
-                <button
-                  type="button"
-                  onClick={() => setCatSheet({ open: true })}
-                  className="flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-line-strong px-1 py-2 text-xs font-semibold text-ink-muted transition-all cursor-pointer hover:bg-surface-muted/60 hover:text-ink active:scale-95"
-                >
-                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-surface-muted text-lg leading-none">+</span>
-                  <span>New</span>
-                </button>
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-1.5" role="group" aria-label="Subcategory">
-                {subChoices.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    aria-pressed={s === subcategory}
-                    onClick={() => setSubcategory(s === subcategory ? '' : s)}
-                    className={`h-8 rounded-full border px-3 text-xs font-semibold transition-colors cursor-pointer ${
-                      s === subcategory ? 'border-brand bg-brand text-white' : 'border-line bg-surface text-ink-soft hover:bg-surface-muted/60'
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
-                {addingSub ? (
-                  <input
-                    autoFocus
-                    value={newSub}
-                    onChange={(e) => setNewSub(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        commitSub()
-                      } else if (e.key === 'Escape') {
-                        e.stopPropagation()
-                        setAddingSub(false)
-                        setNewSub('')
-                      }
-                    }}
-                    onBlur={commitSub}
-                    placeholder="Subcategory"
-                    maxLength={30}
-                    aria-label="New subcategory"
-                    className="h-8 w-32 rounded-full border border-brand bg-surface px-3 text-xs font-semibold text-ink outline-none"
-                  />
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setAddingSub(true)}
-                    className="h-8 rounded-full border border-dashed border-line-strong px-3 text-xs font-semibold text-ink-muted transition-colors cursor-pointer hover:bg-surface-muted/60 hover:text-ink"
-                  >
-                    + Sub
-                  </button>
-                )}
-              </div>
-            </div>
+            <CategoryPicker
+              type={type}
+              value={categoryId}
+              onChange={setCategoryId}
+              subcategory={subcategory}
+              onSubcategoryChange={setSubcategory}
+            />
           )}
 
           {/* Pay with / into */}
@@ -555,93 +408,9 @@ export function QuickAddSheet() {
           )}
 
           {/* Note + hashtags */}
-          <div>
-            <label className="block">
-              <div className="mb-1.5 flex items-center justify-between gap-3">
-                <span className="text-sm font-semibold text-ink-soft">Note</span>
-                <span className="text-xs text-ink-muted">Name first, then #tags to find it later</span>
-              </div>
-              <input
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Brown sugar milk tea #nosetea"
-                autoComplete="off"
-                className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15"
-              />
-            </label>
-            {suggestions.length > 0 && (
-              <div className="mt-2.5 flex flex-wrap items-center gap-1.5" role="listbox" aria-label="Tag suggestions">
-                {suggestions.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    role="option"
-                    aria-selected={false}
-                    // keep focus in the note field so typing can continue
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => completeTag(tag)}
-                    className="rounded-full bg-violet-100 px-3 py-1.5 text-xs font-bold text-violet-700 transition-all cursor-pointer hover:bg-violet-200 active:scale-95 dark:bg-violet-400/15 dark:text-violet-200"
-                  >
-                    #{tag}
-                  </button>
-                ))}
-              </div>
-            )}
-            {note.trim() && (
-              <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-surface-muted/60 px-3 py-2 text-xs">
-                <span className="font-semibold text-ink-muted">Shows as</span>
-                <span className="min-w-0 truncate font-bold text-ink">{previewTitle}</span>
-                {previewTags.map((tag) => (
-                  <span key={tag} className="rounded-full bg-brand-soft px-2 py-0.5 font-semibold text-brand-ink">
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            )}
-            {recent.length + frequent.length > 0 && (
-              <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                {recent.length > 0 && <span className="mr-0.5 text-xs font-semibold text-ink-muted">Recent</span>}
-                {recent.map((tag) => {
-                  const added = noteTokens.includes(`#${tag}`)
-                  return (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => appendTag(tag)}
-                      aria-pressed={added}
-                      className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95 ${
-                        added
-                          ? 'bg-violet-200 text-violet-800 dark:bg-violet-400/30 dark:text-violet-100'
-                          : 'bg-violet-100 text-violet-700 hover:bg-violet-200 dark:bg-violet-400/15 dark:text-violet-200'
-                      }`}
-                    >
-                      #{tag}
-                    </button>
-                  )
-                })}
-                {frequent.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => appendTag(tag)}
-                    className="rounded-full bg-surface-muted px-2.5 py-1 text-xs font-semibold text-ink-soft hover:text-ink cursor-pointer"
-                  >
-                    #{tag}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <NoteField value={note} onChange={setNote} fallbackTitle={type === 'transfer' ? 'Transfer' : getCategory(categoryId)?.label ?? 'Other'} />
         </div>
       </Modal>
-      <CategorySheet
-        open={catSheet.open}
-        category={catSheet.category}
-        type={type === 'income' ? 'income' : 'expense'}
-        onClose={() => setCatSheet({ open: false })}
-        // A new category is picked right away; editing one leaves the pick as it is
-        onSaved={catSheet.category ? undefined : setCategoryId}
-      />
     </>
   )
 }

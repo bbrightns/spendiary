@@ -3,7 +3,7 @@ import { useData } from '../../store/DataContext'
 import type { SpendCard, SpendCustomCategory, SpendGoal, SpendRecurring, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
 import { SPEND_CATEGORIES } from './categories'
 import { investTransactions } from './invest'
-import { DEFAULT_BILL_REMINDER_DAYS, applyOrder, applyToBalances, cardBill, dueRecurring, parseTags, sortTxns, spendWallets } from './logic'
+import { DEFAULT_BILL_REMINDER_DAYS, applyOrder, applyToBalances, cardBill, dueRecurring, parseTags, recurringNote, sortTxns, spendWallets } from './logic'
 import { availableCredit } from './credit'
 
 export type SpendTxnInput = Omit<SpendTransaction, 'id' | 'createdAt' | 'updatedAt' | 'tags'>
@@ -37,7 +37,15 @@ function markOccurrence(list: SpendRecurring[], id: string, date: string, key: '
 
 /** The transaction a recurring occurrence turns into. */
 export function recurringInput(rec: SpendRecurring, date: string): SpendTxnInput {
-  return { type: rec.type, amount: rec.amount, categoryId: rec.categoryId, accountId: rec.accountId, date, note: rec.note ?? rec.name }
+  return {
+    type: rec.type,
+    amount: rec.amount,
+    categoryId: rec.categoryId,
+    subcategory: rec.subcategory,
+    accountId: rec.accountId,
+    date,
+    note: recurringNote(rec),
+  }
 }
 
 function balancesOf(d: SpendiaryData) {
