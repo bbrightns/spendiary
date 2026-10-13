@@ -1,7 +1,7 @@
 import type { ComponentType, SVGProps } from 'react'
 import type { SpendSettings, SpendTxnType } from '../../lib/types'
 import { TONES, type Tone } from './tones'
-import { queryTerms, scoreItem } from '../../lib/paletteSearch'
+import { queryTerms, scoreItem, termScore } from '../../lib/paletteSearch'
 import {
   CarIcon,
   CoinsIcon,
@@ -390,6 +390,8 @@ export function guessCategory(note: string, type: 'expense' | 'income'): SpendCa
   for (const c of manageableCategories(type)) {
     if (c.hidden) continue
     for (const t of terms) {
+      // A one- or two-letter Latin word ("C", "ID") is too short to be the start of a word: only a whole-word match counts
+      if (t.length < 3 && !/\p{Script=Thai}/u.test(t) && ![c.label, ...c.keywords].some((x) => termScore(t, x) === 1)) continue
       const s = scoreItem([t], { title: c.label, keywords: c.keywords })
       if (s >= 0.75 && (!best || s > best.s)) best = { c, s }
     }

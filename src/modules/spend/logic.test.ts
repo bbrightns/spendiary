@@ -292,6 +292,15 @@ describe('guessCategory', () => {
     expect(guessCategory('Team lunch', 'expense')?.id).toBe('food')
     expect(guessCategory('random thing', 'expense')).toBeUndefined()
   })
+
+  it('a one- or two-letter word only counts when it is a whole word', () => {
+    // "c" is the start of "cafe", which isn't a reason to call a transfer Drinks
+    expect(guessCategory('โอนเงิน C', 'expense')).toBeUndefined()
+    expect(guessCategory('Payment ID A1 b', 'expense')).toBeUndefined()
+    expect(guessCategory('ค่ากาแฟ', 'expense')?.id).toBe('drinks')
+    expect(guessCategory('coffee', 'expense')?.id).toBe('drinks')
+    expect(guessCategory('BTS', 'expense')?.id).toBe('transport')
+  })
 })
 
 describe('cardBill early payments', () => {
