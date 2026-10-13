@@ -3,6 +3,7 @@ import type { SpendTransaction } from '../../lib/types'
 import { PortfolioIcon } from '../../components/icons'
 import { thb } from '../../lib/format'
 import { TransferIcon, getCategory } from './categories'
+import { isInvested } from './invest'
 import { noteTitle } from './logic'
 import { openQuickAdd } from './QuickAddSheet'
 import { TONES } from './tones'
@@ -18,22 +19,26 @@ interface Props {
 export function TxnRow({ txn, methods, onTagClick }: Props) {
   const navigate = useNavigate()
   const cat = getCategory(txn.categoryId)
-  const isDca = txn.source === 'dca'
-  const Icon = isDca ? PortfolioIcon : txn.type === 'transfer' ? TransferIcon : cat?.icon ?? TransferIcon
+  const invested = isInvested(txn)
+  const Icon = invested ? PortfolioIcon : txn.type === 'transfer' ? TransferIcon : cat?.icon ?? TransferIcon
   const walletName = (id?: string) => methods.find((m) => m.id === id)?.name
   const from = walletName(txn.accountId)
   const title = noteTitle(txn.note) || (txn.type === 'transfer' ? 'Transfer' : cat?.label ?? 'Other')
-  const meta = isDca
-    ? ['Invested', from && `from ${from}`].filter(Boolean).join(' · ')
-    : txn.type === 'transfer'
+  // Invest rows say where the money came from, or that no account was picked
+  const paidFrom = from ? `from ${from}` : 'no account set'
+  const meta = invested
+    ? [txn.source === 'buy' ? 'Buy more' : 'DCA', txn.time, paidFrom].filter(Boolean).join(' · ')
+    : txn.source === 'dca'
+      ? `Savings DCA · ${from ?? 'no account set'} → ${walletName(txn.toAccountId) ?? '—'}`
+      : txn.type === 'transfer'
       ? // A loan payment goes to the loan, not to another wallet
         `${from ?? '—'} → ${txn.liabilityId && !txn.toAccountId ? 'loan payment' : walletName(txn.toAccountId) ?? '—'}${txn.alreadyInBalance ? ' · already in balance' : ''}`
       : [cat?.label && txn.subcategory ? `${cat.label} › ${txn.subcategory}` : cat?.label, txn.time, from, txn.alreadyInBalance && 'already in balance'].filter(Boolean).join(' · ')
 
   const sign = txn.type === 'income' ? '+' : txn.type === 'expense' ? '−' : ''
   const amountClass = txn.type === 'income' ? 'text-gain' : txn.type === 'transfer' ? 'text-ink-muted' : 'text-ink'
-  // Rows from Invest are edited where they came from
-  const sourcePage = txn.source === 'dividend' ? '/dividends' : isDca ? '/dca' : null
+  // Rows from Invest are edited where they came from: its history
+  const sourcePage = txn.source ? '/logs' : null
 
   return (
     <div className="group py-3">
@@ -45,13 +50,18 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
       >
         <span
           className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
-            isDca ? TONES.indigo.chip : txn.type === 'transfer' ? TONES.sky.chip : TONES[cat?.tone ?? 'slate'].chip
+            invested ? TONES.indigo.chip : txn.type === 'transfer' ? TONES.sky.chip : TONES[cat?.tone ?? 'slate'].chip
           }`}
         >
           <Icon className="h-[18px] w-[18px]" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold text-ink">{title}</span>
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate text-sm font-semibold text-ink">{title}</span>
+            {txn.source && (
+              <span className={`shrink-0 rounded-full px-1.5 py-px text-[10px] font-bold uppercase tracking-wide ${TONES.indigo.chip}`}>Invest</span>
+            )}
+          </span>
           <span className="block truncate text-xs text-ink-muted">{meta}</span>
         </span>
         <span className={`shrink-0 text-sm font-bold tnum ${amountClass}`}>

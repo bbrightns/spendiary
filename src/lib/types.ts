@@ -118,6 +118,8 @@ export interface DcaPlan {
   goldLocationId?: string
   /** For Cash plans: linked cash account id to deposit funds into when confirming */
   cashAccountId?: string
+  /** Cash account each buy is paid from by default (balance goes down on confirm); unset = not tracked */
+  payFromAccountId?: string
   /** ISO date strings of confirmed buys, newest first */
   confirmedDates?: string[]
   /** ISO date strings of skipped periods, newest first */
@@ -218,6 +220,9 @@ export interface HoldingLog {
   realizedPnLPercent?: number
   fee?: number
   cashAccountId?: string
+  /** DCA buys: the cash account the money came out of, and how much (THB) */
+  paidFromAccountId?: string
+  paidAmount?: number
   dividendPerShare?: number
   grossDividend?: number
   withholdingTax?: number
@@ -336,9 +341,9 @@ export interface SpendTransaction {
   updatedAt?: string
   /**
    * Set only on read-only rows derived from the Invest side (never stored):
-   * dividends received and DCA buys. Their cash moves are already applied there.
+   * dividends received, DCA buys and Buy more. Their cash moves are already applied there.
    */
-  source?: 'dividend' | 'dca'
+  source?: 'dividend' | 'dca' | 'buy'
   /** A loan / installment payment: the liability it paid toward */
   liabilityId?: string
 }

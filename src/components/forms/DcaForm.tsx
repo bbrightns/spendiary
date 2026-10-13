@@ -30,6 +30,7 @@ const blank = {
   source: 'portfolio' as 'portfolio' | 'cash' | 'custom',
   holdingId: '',
   cashAccountId: '',
+  payFromAccountId: '',
   btcLocationId: '' as string,
   goldLocationId: '' as string,
   name: '',
@@ -66,6 +67,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
         source: isCashPlan ? 'cash' : editing.holdingId ? 'portfolio' : 'custom',
         holdingId: editing.holdingId ?? '',
         cashAccountId: editing.cashAccountId ?? '',
+        payFromAccountId: editing.payFromAccountId ?? '',
         btcLocationId: editing.btcLocationId ?? '',
         goldLocationId: editing.goldLocationId ?? '',
         name: editing.name,
@@ -146,6 +148,15 @@ export function DcaForm({ open, editing, onClose }: Props) {
   const btcLocations = (form.source === 'portfolio' ? selectedPortfolioHolding?.btcLocations : btcHolding?.btcLocations) ?? []
   const goldLocations = (form.source === 'portfolio' ? selectedPortfolioHolding?.goldLocations : goldHolding?.goldLocations) ?? []
 
+  // Where each buy is paid from: a THB account other than the one a savings plan deposits into
+  const depositInto = form.source === 'cash' || activeAssetClass === 'cash' ? form.cashAccountId || editing?.cashAccountId : undefined
+  const payFromOptions = [
+    { value: '', label: 'Not set (no balance change)' },
+    ...data.cashAccounts
+      .filter((a) => a.currency !== 'USD' && a.id !== depositInto)
+      .map((a) => ({ value: a.id, label: `${a.name} (฿${a.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })})` })),
+  ]
+
   function save() {
     const isCashSource = form.source === 'cash' || activeAssetClass === 'cash'
     const selectedCashAcc = data.cashAccounts.find((a) => a.id === form.cashAccountId)
@@ -190,6 +201,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
       dayOfMonth,
       holdingId: isCashSource ? undefined : (editing ? (editing.holdingId || selectedPortfolioHolding?.id) : (form.source === 'portfolio' ? form.holdingId : undefined)),
       cashAccountId: isCashSource ? (form.cashAccountId || editing?.cashAccountId || selectedCashAcc?.id) : undefined,
+      payFromAccountId: payFromOptions.some((o) => o.value === form.payFromAccountId) && form.payFromAccountId ? form.payFromAccountId : undefined,
       btcLocationId: (isBtc && form.btcLocationId) ? form.btcLocationId : undefined,
       goldLocationId: (isGold && form.goldLocationId) ? form.goldLocationId : undefined,
       confirmedDates: editing?.confirmedDates,
@@ -560,6 +572,20 @@ export function DcaForm({ open, editing, onClose }: Props) {
                 </p>
               </div>
             )}
+          </div>
+
+          <div>
+            <SelectField
+              label="Pay from account"
+              value={payFromOptions.some((o) => o.value === form.payFromAccountId) ? form.payFromAccountId : ''}
+              onChange={(payFromAccountId) => setForm((f) => ({ ...f, payFromAccountId }))}
+              options={payFromOptions}
+            />
+            <p className="mt-1.5 text-xs text-ink-muted leading-relaxed">
+              {form.payFromAccountId
+                ? 'Each confirmed buy takes the money out of this account, shows in Spend and is listed under Bills & recurring. You can change it when confirming.'
+                : 'Pick the account you pay from so its balance goes down when you confirm a buy.'}
+            </p>
           </div>
         </div>
       </div>

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { PageHeader } from '../../../components/layout/PageHeader'
 import { Card } from '../../../components/ui/Card'
 import { AddButton } from '../../../components/ui/AddButton'
 import { EmptyState } from '../../../components/ui/EmptyState'
-import { ChevronRightIcon } from '../../../components/icons'
+import { ChevronRightIcon, PortfolioIcon } from '../../../components/icons'
 import { localDateStr, thb } from '../../../lib/format'
-import type { Liability, SpendRecurring } from '../../../lib/types'
+import { nextBuyDate, planMonthlyEquivalent } from '../../../lib/calc'
+import type { DcaPlan, Liability, SpendRecurring } from '../../../lib/types'
 import { useData } from '../../../store/DataContext'
 import { RepeatIcon, getCategory } from '../categories'
 import { fixedCostRecurring, frequencyLabel, nextOccurrence, perMonth } from '../logic'
@@ -30,9 +31,18 @@ function lookalikeDebt(r: SpendRecurring, debts: Liability[]): Liability | undef
   )
 }
 
+/** How often a DCA plan buys, worded like a recurring bill. */
+const dcaFrequency = (p: DcaPlan) =>
+  (p.frequency ?? 'monthly') === 'daily' ? 'Every day' : frequencyLabel({ frequency: p.frequency === 'weekly' ? 'weekly' : 'monthly', day: p.dayOfMonth, startDate: '' })
+
 export function SpendRecurringPage() {
   const { recurring, methods } = useSpend()
-  const debts = useData().data.liabilities ?? []
+  const { data } = useData()
+  const navigate = useNavigate()
+  const debts = data.liabilities ?? []
+  // DCA plans paid from one of your accounts: listed here, but confirmed (and reminded) on the Invest side
+  const dcaPlans = data.dcaPlans.filter((p) => methods.some((m) => m.id === p.payFromAccountId))
+  const dcaMonthly = dcaPlans.reduce((s, p) => s + planMonthlyEquivalent(p), 0)
   const [sheet, setSheet] = useState<{ open: boolean; rec?: SpendRecurring }>({ open: false })
   // ?new=1 (from Home's "Set up bills that repeat") opens the add sheet straight away
   const [params, setParams] = useSearchParams()
@@ -78,6 +88,7 @@ export function SpendRecurringPage() {
               <p className="text-xs font-medium text-ink-muted">Bills per month</p>
               <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate text-ink">≈ {thb(out)}</p>
               <p className="mt-0.5 text-xs text-ink-muted tnum">Fixed costs ≈ {thb(fixed)}</p>
+              {dcaMonthly > 0 && <p className="text-xs text-ink-muted tnum">DCA ≈ {thb(dcaMonthly)}</p>}
             </Card>
             <Card className="p-3 sm:p-5 animate-rise" padded={false}>
               <p className="text-xs font-medium text-ink-muted">Recurring income</p>
@@ -130,6 +141,43 @@ export function SpendRecurringPage() {
             })}
           </Card>
         </>
+      )}
+
+      {dcaPlans.length > 0 && (
+        <section className="space-y-2.5">
+          <div>
+            <h2 className="font-display text-lg font-extrabold text-ink">DCA from your accounts</h2>
+            <p className="text-sm text-ink-muted">Confirmed and reminded in Invest · DCA, so no reminders here. Tap to open it.</p>
+          </div>
+          <Card padded={false} className="divide-y divide-line">
+            {dcaPlans.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => navigate('/dca')}
+                className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-muted/50 cursor-pointer sm:px-5"
+              >
+                <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${TONES.indigo.chip}`}>
+                  <PortfolioIcon className="h-[18px] w-[18px]" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className="truncate text-sm font-semibold text-ink">{p.name}</span>
+                    <span className={`shrink-0 rounded-full px-1.5 py-px text-[10px] font-bold uppercase tracking-wide ${TONES.indigo.chip}`}>Invest</span>
+                  </span>
+                  <span className="block truncate text-xs text-ink-muted">
+                    Next {shortDay(localDateStr(nextBuyDate(p)))} · {dcaFrequency(p)} · from {methods.find((m) => m.id === p.payFromAccountId)?.name}
+                  </span>
+                </span>
+                <span className="shrink-0 text-sm font-bold tnum text-ink">
+                  {thb(p.monthlyAmount)}
+                  {p.frequency === 'weekly' ? '/wk' : p.frequency === 'daily' ? '/day' : ''}
+                </span>
+                <ChevronRightIcon className="h-4 w-4 shrink-0 text-ink-muted/50" strokeWidth={2} />
+              </button>
+            ))}
+          </Card>
+        </section>
       )}
 
       <RecurringSheet

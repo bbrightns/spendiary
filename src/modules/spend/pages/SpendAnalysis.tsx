@@ -6,6 +6,7 @@ import { SegmentedControl } from '../../../components/ui/SegmentedControl'
 import { localDateStr, thb, thbCompact } from '../../../lib/format'
 import type { SpendTransaction } from '../../../lib/types'
 import { getCategory } from '../categories'
+import { isInvested } from '../invest'
 import { budgetState, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, totalsBySubcategory, totalsFor, type Period } from '../logic'
 import { MonthStepper } from '../MonthStepper'
 import { TONES } from '../tones'
@@ -172,7 +173,7 @@ export function SpendAnalysis() {
   const spentPct = totals.income > 0 ? Math.max(0, (totals.expense / totals.income) * 100) : 0
   const over = totals.income > 0 && totals.net < 0
   // DCA buys from Invest: not spending, but worth seeing next to what you kept
-  const invested = inRange.filter((t) => t.source === 'dca').reduce((s, t) => s + t.amount, 0)
+  const invested = inRange.filter(isInvested).reduce((s, t) => s + t.amount, 0)
   const tagTotals = useMemo(() => {
     const m = new Map<string, number>()
     for (const t of inRange) if (t.type === 'expense') for (const tag of t.tags ?? []) m.set(tag, (m.get(tag) ?? 0) + t.amount)

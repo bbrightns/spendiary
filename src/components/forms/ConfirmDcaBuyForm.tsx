@@ -57,6 +57,9 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const [selectedLocId, setSelectedLocId] = useState<string>('')
   const [newLocName, setNewLocName] = useState('')
 
+  // Cash account this buy is paid from ('' = not tracked)
+  const [payFromId, setPayFromId] = useState('')
+
   const [showErrors, setShowErrors] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const wasOpen = useRef(false)
@@ -98,6 +101,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
 
     // Shared amount initialization
     setAmountSpentThb(plan.monthlyAmount)
+    setPayFromId(plan.payFromAccountId && data.cashAccounts.some((a) => a.id === plan.payFromAccountId) ? plan.payFromAccountId : '')
 
     // US Stock initialization
     setFxRate(rate)
@@ -268,6 +272,8 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     ? cryptoUnitsToAdd > 0 && amountThbNum > 0
     : amountThbNum > 0
 
+  const payFrom = data.cashAccounts.find((a) => a.id === payFromId)
+
   const locValid = !(isBtc || isGold) ||
     (selectedLocId !== '__new__') ||
     (newLocName.trim().length > 0)
@@ -306,6 +312,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     if (!plan) return
     const p = plan
     const today = localDateStr()
+    const payment = payFromId && amountThbNum > 0 ? { accountId: payFromId, amount: amountThbNum } : undefined
 
     const resolvedTargetId = targetHoldingId !== '__new__' ? (holding?.id ?? targetHoldingId) : undefined
 
@@ -324,6 +331,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         undefined,
         undefined,
         undefined,
+        payment,
       )
       showToast(`Added ฿${amountThbNum.toLocaleString()} to ${targetCashAccount?.name || p.name}`, 'success', undefined, { celebrate: true, title: 'Deposit added!' })
       onClose()
@@ -347,6 +355,9 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         },
         undefined,
         resolvedTargetId,
+        undefined,
+        undefined,
+        payment,
       )
     } else if (isFund) {
       confirmDcaBuy(
@@ -365,6 +376,9 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
           nav: fundImpliedNav,
         },
         resolvedTargetId,
+        undefined,
+        undefined,
+        payment,
       )
     } else if (isGold) {
       const goldLocUpdate = selectedLocId === '__new__'
@@ -401,6 +415,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
           gramsBought: goldGramsToAdd,
           amountSpentThb: amountThbNum,
         },
+        payment,
       )
     } else if (isBtc) {
       const btcLocUpdate = selectedLocId === '__new__'
@@ -436,6 +451,8 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
           satsBought: satsNum,
           amountSpentThb: amountThbNum,
         },
+        undefined,
+        payment,
       )
     } else if (isCrypto) {
       confirmDcaBuy(
@@ -450,6 +467,9 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         undefined,
         undefined,
         resolvedTargetId,
+        undefined,
+        undefined,
+        payment,
       )
     } else {
       confirmDcaBuy(
@@ -464,6 +484,9 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         undefined,
         undefined,
         resolvedTargetId,
+        undefined,
+        undefined,
+        payment,
       )
     }
 
@@ -989,6 +1012,28 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
             </div>
           </div>
         )}
+
+        {/* Where the money came from: that account's balance goes down (Undo puts it back) */}
+        <div className="border-t border-line pt-4">
+          <SelectField
+            label="Pay from account"
+            value={payFromId}
+            onChange={setPayFromId}
+            options={[
+              { value: '', label: 'Not set (no balance change)' },
+              ...data.cashAccounts
+                .filter((a) => a.currency !== 'USD' && !(isCash && a.id === targetCashAccount?.id))
+                .map((a) => ({ value: a.id, label: `${a.name} (฿${a.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })})` })),
+            ]}
+          />
+          <p className="mt-1.5 text-xs leading-relaxed text-ink-muted">
+            {payFrom
+              ? `฿${fmtNum(amountThbNum, 2)} leaves ${payFrom.name} → ฿${fmtNum(payFrom.balance - amountThbNum, 2)} left. Shows in Spend as ${isCash ? 'a transfer' : 'invested'}, not spending.`
+              : isCash
+                ? 'Shows in Spend as money saved, with no account it came from.'
+                : 'Shows in Spend as invested, with no account. No balance changes.'}
+          </p>
+        </div>
       </div>
     </Modal>
   )

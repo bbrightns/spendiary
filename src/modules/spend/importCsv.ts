@@ -177,6 +177,22 @@ export interface MatchCandidate {
   categoryId?: string
   subcategory?: string
   accountId?: string
+  /** Set when the entry comes from the Invest side (read-only here) */
+  source?: string
+}
+
+/**
+ * Invest-side rows that moved money on `accountId`, as a statement would show them: a buy paid
+ * from it (or a savings DCA out of it) is money out, a dividend or savings DCA into it is money in.
+ */
+export function investCandidates(txns: (MatchCandidate & { toAccountId?: string })[], accountId: string): MatchCandidate[] {
+  const out: MatchCandidate[] = []
+  for (const t of txns) {
+    if (!t.source) continue
+    if (t.accountId === accountId) out.push({ ...t, type: t.type === 'income' ? 'income' : 'expense' })
+    else if (t.type === 'transfer' && t.toAccountId === accountId) out.push({ ...t, type: 'income', accountId })
+  }
+  return out
 }
 
 /** Notes compared the way the importer reads them: spacing and line breaks collapsed, any letter case. */

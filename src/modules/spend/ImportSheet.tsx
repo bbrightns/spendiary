@@ -5,7 +5,7 @@ import { useToast } from '../../store/ToastContext'
 import { thb } from '../../lib/format'
 import { SwitchVisual } from './AccountSheets'
 import { CATEGORY_ICONS, CATEGORY_TONES, getCategory, guessCategory, manageableCategories } from './categories'
-import { guessColumns, looksLikeHeader, pairExisting, parseCsv, sameNote, toImportRows, type ColumnMap, type Row } from './importCsv'
+import { guessColumns, investCandidates, looksLikeHeader, pairExisting, parseCsv, sameNote, toImportRows, type ColumnMap, type Row } from './importCsv'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { TONES } from './tones'
 import { useSpend } from './useSpend'
@@ -103,7 +103,8 @@ export function ImportSheet() {
       resolved
         ? pairExisting(
             resolved,
-            transactions.filter((t) => !t.source),
+            // Buys and dividends from Invest already moved this account's balance, so its statement lines count as in the app
+            [...transactions.filter((t) => !t.source), ...(accountId === NOT_TRACKED ? [] : investCandidates(transactions, accountId))],
             accountId === NOT_TRACKED ? undefined : accountId,
           )
         : undefined,
@@ -124,7 +125,8 @@ export function ImportSheet() {
       let change = ''
       let overwrite = false
       let noteDiffers = false
-      if (match && r.type !== 'transfer') {
+      // Invest rows are read-only here: matched means "already in the app", nothing to fill in
+      if (match && !match.source && r.type !== 'transfer') {
         const oldCat = getCategory(match.categoryId)?.label ?? 'Other'
         const newCat = name ? (newCategory ?? category?.label ?? oldCat) : oldCat
         const sub = r.subcategory ?? match.subcategory
@@ -436,7 +438,7 @@ export function ImportSheet() {
                                 <>
                                   {r.type === 'transfer' ? `${nameOf(r.fromId)} → ${nameOf(r.toId)}` : cat?.label}
                                   {r.type !== 'transfer' && r.subcategory ? ` › ${r.subcategory}` : ''}
-                                  {r.status === 'same' ? ' · already in the app' : ''}
+                                  {r.status === 'same' ? (r.match?.source ? ' · already in the app from Invest' : ' · already in the app') : ''}
                                 </>
                               )}
                             </span>

@@ -350,6 +350,8 @@ interface DataContextValue {
       gramsBought: number
       amountSpentThb: number
     },
+    /** Take the money for this buy out of a cash account */
+    payment?: DcaPayment,
   ) => void
   skipDcaBuy: (planId: string, date: string) => void
 
@@ -491,6 +493,19 @@ export function revertCashAccountsChange(current: CashAccount[], before: CashAcc
     })
   const deleted = before.filter((b) => !byId(after, b.id) && !byId(current, b.id))
   return [...reverted, ...deleted]
+}
+
+/** A DCA buy paid out of one of the user's cash accounts. */
+export interface DcaPayment {
+  accountId: string
+  /** THB */
+  amount: number
+}
+
+/** The cash accounts after a DCA buy's payment leaves the account it was paid from. */
+function payFromAccount(accounts: CashAccount[], payment?: DcaPayment): CashAccount[] {
+  if (!payment) return accounts
+  return accounts.map((a) => (a.id === payment.accountId ? { ...a, balance: Math.round((a.balance - payment.amount) * 100) / 100 } : a))
 }
 
 function justImportedFixedCosts(before: Partial<SpendiaryData> | null | undefined, after: SpendiaryData): boolean {
@@ -1505,7 +1520,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
           let updatedCashAccounts = prev.cashAccounts ? [...prev.cashAccounts] : []
 
           // ── 1. Revert Cash Account Changes (Delta-based) ──
-          if (log.action === 'sell') {
+          if (log.dcaPlanId && !log.cashAccountId && log.previousCashAccountsState && log.afterCashAccountsState) {
+            // A confirmed DCA buy: the payment goes back to the account it came from, and a
+            // savings deposit comes back out of the account it went into
+            updatedCashAccounts = revertCashAccountsChange(updatedCashAccounts, log.previousCashAccountsState, log.afterCashAccountsState)
+          } else if (log.action === 'sell') {
             // When selling, proceeds were deposited into log.cashAccountId
             if (log.cashAccountId && log.proceeds && log.proceeds > 0) {
               updatedCashAccounts = updatedCashAccounts.map((c) =>
@@ -1892,10 +1911,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
         targetHoldingId,
         btcUpdate,
         goldUpdate,
+        payment,
       ) =>
         updateData((prev) => {
           const plan = prev.dcaPlans.find((p) => p.id === planId)
           if (!plan) return prev
+
+          // Paid from a cash account: its balance goes down, and the log keeps both
+          // snapshots so Undo gives the money back
+          const paid = payment && payment.amount > 0 && (prev.cashAccounts ?? []).some((a) => a.id === payment.accountId) ? payment : undefined
+          const paidLog = paid
+            ? {
+                paidFromAccountId: paid.accountId,
+                paidAmount: paid.amount,
+                previousCashAccountsState: prev.cashAccounts ?? [],
+                afterCashAccountsState: payFromAccount(prev.cashAccounts ?? [], paid),
+              }
+            : {}
+          const paidAccounts = paid ? { cashAccounts: payFromAccount(prev.cashAccounts ?? [], paid) } : {}
 
           // If this is a Cash Account DCA plan, deposit directly into cash account balance
           if (plan.assetClass === 'cash' || plan.cashAccountId) {
@@ -1908,11 +1941,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
               ? oldAccounts.find((a) => a.id === plan.cashAccountId)
               : oldAccounts.find((a) => a.name.toLowerCase() === plan.name.toLowerCase())
 
-            const updatedCashAccounts = targetAcc
-              ? oldAccounts.map((a) =>
-                  a.id === targetAcc.id ? { ...a, balance: a.balance + depositAmount } : a,
-                )
-              : oldAccounts
+            const updatedCashAccounts = payFromAccount(
+              targetAcc
+                ? oldAccounts.map((a) =>
+                    a.id === targetAcc.id ? { ...a, balance: a.balance + depositAmount } : a,
+                  )
+                : oldAccounts,
+              paid,
+            )
 
             const updatedPlans = prev.dcaPlans.map((p) =>
               p.id !== planId
@@ -1934,6 +1970,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
               note: `Deposited ฿${depositAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })} via DCA into ${targetAcc ? targetAcc.name : plan.name}`,
               dcaPlanId: plan.id,
               dcaDate: date,
+              ...(paid ? { paidFromAccountId: paid.accountId, paidAmount: paid.amount } : {}),
               previousCashAccountsState: oldAccounts,
               afterCashAccountsState: updatedCashAccounts,
             }
@@ -2001,9 +2038,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
               note: `Confirmed DCA buy of ฿${plan.monthlyAmount.toLocaleString()} (No linked holding)`,
               dcaPlanId: plan.id,
               dcaDate: date,
+              ...paidLog,
             }
             return {
               ...prev,
+              ...paidAccounts,
               dcaPlans: updatedPlans,
               holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
             }
@@ -2211,10 +2250,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
             afterHoldingState: resultingHolding,
             dcaPlanId: plan.id,
             dcaDate: date,
+            ...paidLog,
           }
 
           return {
             ...prev,
+            ...paidAccounts,
             dcaPlans: updatedPlans,
             holdings: updatedHoldings,
             holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],

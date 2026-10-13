@@ -690,13 +690,13 @@ export function CommandPalette() {
       txnHits.push({
         id: `txn-${t.id}`,
         title,
-        subtitle: `${shortDate(t.date)} · ${sign}${thb(t.amount, true)}${cat ? ` · ${cat.label}` : ''}${t.accountId ? ` · ${methodName(t.accountId)}` : ''}`,
+        subtitle: `${shortDate(t.date)} · ${sign}${thb(t.amount, true)}${cat ? ` · ${cat.label}` : ''}${t.accountId ? ` · ${methodName(t.accountId)}` : ''}${t.source ? ' · Invest' : ''}`,
         keywords: [],
         group: 'Transactions',
         spend: true,
         icon: cat ? <cat.icon className="h-4 w-4" /> : ic(TransferIcon),
         iconBox: cat ? `border-transparent ${TONES[cat.tone].chip}` : undefined,
-        run: () => (t.source ? navigate(t.source === 'dca' ? '/dca' : '/dividends') : openQuickAdd({ editId: t.id })),
+        run: () => (t.source ? navigate('/logs') : openQuickAdd({ editId: t.id })),
         score: s + (inSpend ? 0.2 : 0) - 0.05,
       })
     }
