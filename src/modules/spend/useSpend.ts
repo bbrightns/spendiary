@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useData } from '../../store/DataContext'
+import { localDateStr } from '../../lib/format'
 import type { SpendCard, SpendCustomCategory, SpendGoal, SpendRecurring, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
 import { SPEND_CATEGORIES } from './categories'
 import { investTransactions } from './invest'
@@ -39,15 +40,20 @@ function unmarkOccurrence(list: SpendRecurring[], id: string, date: string, key:
   return list.map((r) => (r.id === id && (r[key] ?? []).includes(date) ? { ...r, [key]: (r[key] ?? []).filter((d) => d !== date) } : r))
 }
 
-/** The transaction a recurring occurrence turns into. */
-export function recurringInput(rec: SpendRecurring, date: string): SpendTxnInput {
+/**
+ * The transaction a recurring occurrence turns into: dated when it's paid (now), not when it
+ * was due; the due date stays on the link to the occurrence.
+ */
+export function recurringInput(rec: SpendRecurring): SpendTxnInput {
+  const now = new Date()
   return {
     type: rec.type,
     amount: rec.amount,
     categoryId: rec.categoryId,
     subcategory: rec.subcategory,
     accountId: rec.accountId,
-    date,
+    date: localDateStr(now),
+    time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
     note: recurringNote(rec),
   }
 }
@@ -136,7 +142,7 @@ export function useSpend() {
 
   /** Log a recurring occurrence as-is (its usual amount, on its date). */
   function confirmRecurring(rec: SpendRecurring, date: string) {
-    return addTransaction(recurringInput(rec, date), { id: rec.id, date })
+    return addTransaction(recurringInput(rec), { id: rec.id, date })
   }
 
   function skipRecurring(id: string, date: string) {

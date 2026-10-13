@@ -89,7 +89,7 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
               <li key={`${rec.id}-${date}`} className="flex items-center gap-3 py-3">
                 <button
                   type="button"
-                  onClick={() => openQuickAdd({ prefill: recurringInput(rec, date), recurring: { id: rec.id, date, name: rec.name } })}
+                  onClick={() => openQuickAdd({ prefill: recurringInput(rec), recurring: { id: rec.id, date, name: rec.name } })}
                   className="flex min-w-0 flex-1 items-center gap-3 text-left cursor-pointer"
                   aria-label={`Review ${rec.name} and adjust the amount`}
                 >

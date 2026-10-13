@@ -134,7 +134,7 @@ export function QuickAddSheet() {
         setAccountId(source.accountId ?? NO_WALLET)
         setToAccountId(source.toAccountId ?? NO_WALLET)
         setDate(source.date)
-        setTime(existing?.time ?? '')
+        setTime(source.time ?? '')
         setSubcategory(source.subcategory ?? '')
         setNote(source.note ?? '')
         setAlreadyIn(!!existing?.alreadyInBalance)

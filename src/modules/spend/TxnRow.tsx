@@ -16,6 +16,12 @@ interface Props {
   onTagClick?: (tag: string) => void
 }
 
+/** "2026-10-13" → "13 Oct" */
+const shortDate = (iso: string) => {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+}
+
 export function TxnRow({ txn, methods, onTagClick }: Props) {
   const navigate = useNavigate()
   const cat = getCategory(txn.categoryId)
@@ -33,7 +39,16 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
       : txn.type === 'transfer'
       ? // A loan payment goes to the loan, not to another wallet
         `${from ?? '—'} → ${txn.liabilityId && !txn.toAccountId ? 'loan payment' : walletName(txn.toAccountId) ?? '—'}${txn.alreadyInBalance ? ' · already in balance' : ''}`
-      : [cat?.label && txn.subcategory ? `${cat.label} › ${txn.subcategory}` : cat?.label, txn.time, from, txn.alreadyInBalance && 'already in balance'].filter(Boolean).join(' · ')
+      : [
+          cat?.label && txn.subcategory ? `${cat.label} › ${txn.subcategory}` : cat?.label,
+          // A bill paid on another day than it was due says when it was due (early, so a long wallet name can't cut it off)
+          txn.recurring && txn.recurring.date !== txn.date && `(due ${shortDate(txn.recurring.date)})`,
+          txn.time,
+          from,
+          txn.alreadyInBalance && 'already in balance',
+        ]
+          .filter(Boolean)
+          .join(' · ')
 
   const sign = txn.type === 'income' ? '+' : txn.type === 'expense' ? '−' : ''
   const amountClass = txn.type === 'income' ? 'text-gain' : txn.type === 'transfer' ? 'text-ink-muted' : 'text-ink'
