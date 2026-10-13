@@ -231,6 +231,27 @@ export function useSpend() {
     return id
   }
 
+  /** Offer a subcategory under a category (no-op if it's blank or already there). */
+  function addSubcategory(categoryId: string, label: string) {
+    const clean = label.trim()
+    if (!clean) return
+    setData((prev) => {
+      const st = prev.spendSettings ?? {}
+      const list = st.subcategories?.[categoryId] ?? []
+      if (list.includes(clean)) return prev
+      return { ...prev, spendSettings: { ...st, subcategories: { ...st.subcategories, [categoryId]: [...list, clean] } } }
+    })
+  }
+
+  /** Stop offering a subcategory; transactions already using it keep the label. */
+  function removeSubcategory(categoryId: string, label: string) {
+    setData((prev) => {
+      const st = prev.spendSettings ?? {}
+      const list = (st.subcategories?.[categoryId] ?? []).filter((s) => s !== label)
+      return { ...prev, spendSettings: { ...st, subcategories: { ...st.subcategories, [categoryId]: list } } }
+    })
+  }
+
   /** Back to the shipped name, icon and color. */
   function resetCategory(id: string) {
     setData((prev) => {
@@ -309,6 +330,9 @@ export function useSpend() {
     upsertCategory,
     resetCategory,
     removeCategory,
+    subcategories: (categoryId: string | undefined): string[] => (categoryId ? settings.subcategories?.[categoryId] ?? [] : []),
+    addSubcategory,
+    removeSubcategory,
     updateSettings,
     setDefaultAccount: (id: string | undefined) => updateSettings({ defaultAccountId: id }),
     setMonthlyBudget: (amount: number | undefined) => updateSettings({ monthlyBudget: amount }),

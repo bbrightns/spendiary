@@ -406,9 +406,21 @@ export function totalsFor(txns: SpendTransaction[]): MonthTotals {
   return { income, expense, net: income - expense, byCategory }
 }
 
-/** Newest first: by date, then by creation time. */
+/** Spend per subcategory label inside one category, biggest first; untagged expenses are left out. */
+export function totalsBySubcategory(txns: SpendTransaction[], categoryId: string): { subcategory: string; amount: number }[] {
+  const sub = new Map<string, number>()
+  for (const t of txns) {
+    if (t.type !== 'expense' || (t.categoryId ?? 'other') !== categoryId || !t.subcategory) continue
+    sub.set(t.subcategory, (sub.get(t.subcategory) ?? 0) + t.amount)
+  }
+  return [...sub.entries()].map(([subcategory, amount]) => ({ subcategory, amount })).sort((a, b) => b.amount - a.amount)
+}
+
+/** Newest first: by date, then time of day (entries without one come last), then creation time. */
 export function sortTxns(txns: SpendTransaction[]): SpendTransaction[] {
-  return [...txns].sort((a, b) => (a.date === b.date ? b.createdAt.localeCompare(a.createdAt) : b.date.localeCompare(a.date)))
+  return [...txns].sort(
+    (a, b) => b.date.localeCompare(a.date) || (b.time ?? '').localeCompare(a.time ?? '') || b.createdAt.localeCompare(a.createdAt),
+  )
 }
 
 /** Tags by when they were last typed (created or edited), most recent first. */

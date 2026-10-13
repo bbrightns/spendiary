@@ -28,6 +28,8 @@ import {
   paydayIn,
   periodFor,
   shiftPeriod,
+  sortTxns,
+  totalsBySubcategory,
 } from './logic'
 
 const txn = (p: Partial<SpendTransaction>): SpendTransaction => ({
@@ -48,6 +50,36 @@ const card = (p: Partial<SpendCard> = {}): SpendCard => ({
   statementDay: 25,
   dueDay: 10,
   ...p,
+})
+
+describe('sortTxns', () => {
+  it('orders newest first by date, then time of day, then creation time', () => {
+    const rows = [
+      txn({ id: 'a', date: '2026-10-12', time: '20:00' }),
+      txn({ id: 'b', date: '2026-10-13', time: '08:15' }),
+      txn({ id: 'c', date: '2026-10-13', time: '19:28' }),
+      txn({ id: 'd', date: '2026-10-13', createdAt: '2026-10-13T23:00:00Z' }),
+      txn({ id: 'e', date: '2026-10-13', createdAt: '2026-10-13T01:00:00Z' }),
+    ]
+    expect(sortTxns(rows).map((t) => t.id)).toEqual(['c', 'b', 'd', 'e', 'a'])
+  })
+})
+
+describe('totalsBySubcategory', () => {
+  it('sums expenses per subcategory within one category, biggest first', () => {
+    const rows = [
+      txn({ categoryId: 'food', subcategory: 'Dessert', amount: 45 }),
+      txn({ categoryId: 'food', subcategory: 'Regular', amount: 50 }),
+      txn({ categoryId: 'food', subcategory: 'Regular', amount: 60 }),
+      txn({ categoryId: 'food', amount: 999 }),
+      txn({ categoryId: 'transport', subcategory: 'Yaris', amount: 1370 }),
+      txn({ type: 'income', categoryId: 'food', subcategory: 'Regular', amount: 5 }),
+    ]
+    expect(totalsBySubcategory(rows, 'food')).toEqual([
+      { subcategory: 'Regular', amount: 110 },
+      { subcategory: 'Dessert', amount: 45 },
+    ])
+  })
 })
 
 describe('parseTags', () => {

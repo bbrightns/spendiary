@@ -319,6 +319,10 @@ export interface SpendTransaction {
   toAccountId?: string
   /** YYYY-MM-DD, local timezone */
   date: string
+  /** HH:mm, local timezone; unset when the time of day wasn't recorded */
+  time?: string
+  /** Label of one subcategory under `categoryId` (see SpendSettings.subcategories) */
+  subcategory?: string
   note?: string
   /**
    * Backdated entry already reflected in the wallet / card balance: recorded for history
@@ -364,6 +368,8 @@ export interface SpendSettings {
   customCategories?: SpendCustomCategory[]
   /** Changes to built-in categories, by id */
   categoryEdits?: Record<string, SpendCategoryEdit>
+  /** Subcategory labels per category id (built-in or custom), in the order they're offered */
+  subcategories?: Record<string, string[]>
 }
 
 /** A user-made Spend category. `tone` and `icon` are keys from the Spend module's palettes. */
