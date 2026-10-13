@@ -1,4 +1,4 @@
-import { AbsoluteFill, Img, OffthreadVideo, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig, Easing, type CalculateMetadataFunction } from 'remotion'
+import { AbsoluteFill, Audio, Img, OffthreadVideo, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig, Easing, type CalculateMetadataFunction } from 'remotion'
 import { loadFont as loadDisplay } from '@remotion/google-fonts/PlusJakartaSans'
 import { loadFont as loadSans } from '@remotion/google-fonts/Inter'
 
@@ -18,12 +18,30 @@ export interface Manifest {
   fps: number
   width: number
   height: number
-  scenes: { id: string; chapter: string; file: string; frames: number; cues: { at: number; title: string; sub: string }[] }[]
+  scenes: {
+    id: string
+    chapter: string
+    file: string
+    frames: number
+    cues: { at: number; title: string; sub: string }[]
+    /** Taps, key presses, toggles and saves, for the sound effects (older manifests have none) */
+    sounds?: { at: number; kind: 'tap' | 'key' | 'toggle' | 'success' }[]
+  }[]
 }
 export interface IntroProps {
   manifest: Manifest | null
+  /** Music and sound effects; off renders the silent cut */
+  withAudio: boolean
   [key: string]: unknown
 }
+
+// Music: "Good for You" by THBD, supplied by the owner. Its full section kicks in at 94.55 s and
+// is lined up with the start of the Analysis chapter, the payoff of the walkthrough.
+const MUSIC = 'good-for-you-by-thbd.mp3'
+const MUSIC_DROP_S = 94.55
+const MUSIC_ON = 'analysis'
+const MUSIC_VOLUME = 0.3
+const SFX_VOLUME = { tap: 0.55, key: 0.3, toggle: 0.45, success: 0.55, whoosh: 0.35, chime: 0.6 }
 
 const INTRO = 105
 const OUTRO = 150
@@ -32,10 +50,10 @@ const FADE = 15
 /** Where the first scene starts. */
 const SCENES = INTRO - FADE
 
-export const calculateIntroMetadata: CalculateMetadataFunction<IntroProps> = async () => {
+export const calculateIntroMetadata: CalculateMetadataFunction<IntroProps> = async ({ props }) => {
   const manifest: Manifest = await fetch(staticFile('clips/manifest.json')).then((r) => r.json())
   const scenes = manifest.scenes.reduce((s, c) => s + c.frames, 0)
-  return { props: { manifest }, durationInFrames: SCENES + scenes + OUTRO - FADE }
+  return { props: { ...props, manifest }, durationInFrames: SCENES + scenes + OUTRO - FADE }
 }
 
 function Background() {
@@ -265,7 +283,44 @@ function Outro() {
   )
 }
 
-export function SpendiaryIntro({ manifest }: IntroProps) {
+/** Music under the whole video, plus a sound for every chapter change, tap, key, toggle and save. */
+function Soundtrack({ manifest, starts, end, total }: { manifest: Manifest; starts: number[]; end: number; total: number }) {
+  const { fps } = useVideoConfig()
+  const dropAt = starts[manifest.scenes.findIndex((s) => s.id === MUSIC_ON)] ?? SCENES
+  // Start the track early enough that its drop lands on that chapter (never before the song's own start)
+  const offset = Math.max(0, Math.round(MUSIC_DROP_S * fps) - dropAt)
+  const fadeOut = Math.round(2.5 * fps)
+  const sfx = (file: string, at: number, volume: number, key: string) => (
+    <Sequence key={key} from={at} durationInFrames={Math.round(2.7 * fps)} layout="none">
+      <Audio src={staticFile(`sfx/${file}.wav`)} volume={volume} />
+    </Sequence>
+  )
+  let keyVariant = 0
+  return (
+    <>
+      <Audio
+        src={staticFile(MUSIC)}
+        startFrom={offset}
+        volume={(f) =>
+          MUSIC_VOLUME *
+          interpolate(f, [0, Math.round(1.2 * fps), total - fadeOut, total - 1], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
+        }
+      />
+      {sfx('chime', 4, SFX_VOLUME.chime, 'chime-in')}
+      {starts.map((s, i) => sfx('whoosh', Math.max(0, s - 6), SFX_VOLUME.whoosh, `whoosh-${i}`))}
+      {sfx('whoosh', end - FADE - 6, SFX_VOLUME.whoosh, 'whoosh-out')}
+      {sfx('chime', end - FADE + 8, SFX_VOLUME.chime, 'chime-out')}
+      {manifest.scenes.flatMap((scene, i) =>
+        (scene.sounds ?? []).map((e, j) => {
+          const file = e.kind === 'key' ? `key${(keyVariant++ % 3) + 1}` : e.kind
+          return sfx(file, starts[i] + e.at, SFX_VOLUME[e.kind], `${scene.id}-${j}`)
+        }),
+      )}
+    </>
+  )
+}
+
+export function SpendiaryIntro({ manifest, withAudio }: IntroProps) {
   const frame = useCurrentFrame()
   const { fps } = useVideoConfig()
   if (!manifest) return null
@@ -309,6 +364,8 @@ export function SpendiaryIntro({ manifest }: IntroProps) {
       <Sequence from={end - FADE} durationInFrames={OUTRO}>
         <Outro />
       </Sequence>
+
+      {withAudio && <Soundtrack manifest={manifest} starts={starts} end={end} total={end - FADE + OUTRO} />}
     </AbsoluteFill>
   )
 }

@@ -90,8 +90,8 @@ async function reveal(el, block = 'center') {
   await sleep(650)
 }
 
-/** Show the tap ripple, then tap the element's center. */
-async function tap(specOrEl, { pause = 550 } = {}) {
+/** Show the tap ripple, then tap the element's center; `then` adds a sound just after (e.g. a save's success). */
+async function tap(specOrEl, { pause = 550, then } = {}) {
   const el = typeof specOrEl.boundingBox === 'function' ? specOrEl : await find(specOrEl)
   const inView = await el.evaluate((e) => {
     const r = e.getBoundingClientRect()
@@ -114,14 +114,29 @@ async function tap(specOrEl, { pause = 550 } = {}) {
     y,
   )
   await sleep(180)
+  sound('tap')
   await page.touchscreen.tap(x, y)
+  if (then) {
+    await sleep(160)
+    sound(then)
+    pause -= 160
+  }
   await sleep(pause)
 }
 
-/** Tap a field, then type into it like a person would. */
+/** Type like a person would, one key sound per character. */
+async function typeKeys(text, delay = 85) {
+  for (const ch of text) {
+    sound('key')
+    await page.keyboard.type(ch)
+    await sleep(delay)
+  }
+}
+
+/** Tap a field, then type into it. */
 async function typeInto(spec, text, delay = 85) {
   await tap(spec, { pause: 250 })
-  await page.keyboard.type(text, { delay })
+  await typeKeys(text, delay)
   await sleep(350)
 }
 
@@ -153,8 +168,9 @@ async function chooseSub(label) {
     await tap({ dialog: true, css: '[aria-label="Subcategory"] button', text: label })
   } else {
     await tap({ dialog: true, text: '+ Sub' }, { pause: 300 })
-    await page.keyboard.type(label, { delay: 85 })
+    await typeKeys(label)
     await sleep(250)
+    sound('key')
     await page.keyboard.press('Enter')
     await sleep(500)
   }
@@ -165,6 +181,8 @@ const manifest = { fps: FPS, width: 780, height: 1688, scenes: [] }
 let frames = []
 let sceneStart = 0
 let cues = []
+/** Sound-effect moments (tap, key, success), only collected while a scene records. */
+let sounds = null
 cdp.on('Page.screencastFrame', async ({ data, metadata, sessionId }) => {
   frames.push({ data, t: metadata.timestamp })
   await cdp.send('Page.screencastFrameAck', { sessionId }).catch(() => {})
@@ -172,10 +190,15 @@ cdp.on('Page.screencastFrame', async ({ data, metadata, sessionId }) => {
 
 /** Caption cue at this moment of the current scene. */
 const cue = (title, sub) => cues.push({ at: Date.now() / 1000 - sceneStart, title, sub })
+/** Sound-effect moment in the current scene (ignored during setup). */
+function sound(kind) {
+  sounds?.push({ at: Date.now() / 1000 - sceneStart, kind })
+}
 
 async function scene(id, chapter, body) {
   frames = []
   cues = []
+  sounds = []
   await sleep(150)
   sceneStart = Date.now() / 1000
   await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 92, maxWidth: 780, maxHeight: 1688, everyNthFrame: 1 })
@@ -203,8 +226,10 @@ async function scene(id, chapter, body) {
     { stdio: 'inherit' },
   )
   const seconds = end - sceneStart
-  manifest.scenes.push({ id, chapter, file: `clips/${id}.mp4`, frames: Math.round(seconds * FPS), cues: cues.map((c) => ({ ...c, at: Math.round(c.at * FPS) })) })
-  console.log(`recorded ${id}: ${seconds.toFixed(1)}s, ${frames.length} frames, ${cues.length} cues`)
+  const toFrame = (e) => ({ ...e, at: Math.round(e.at * FPS) })
+  manifest.scenes.push({ id, chapter, file: `clips/${id}.mp4`, frames: Math.round(seconds * FPS), cues: cues.map(toFrame), sounds: sounds.map(toFrame) })
+  console.log(`recorded ${id}: ${seconds.toFixed(1)}s, ${frames.length} frames, ${cues.length} cues, ${sounds.length} sounds`)
+  sounds = null
 }
 
 // ── Setup (not recorded): a few Food entries with subcategories + tags, so Analysis has a breakdown.
@@ -264,7 +289,7 @@ await scene('accounts', 'Set up your accounts', async () => {
   await typeInto({ dialog: true, css: 'input[placeholder^="KBank"]' }, 'KBank Savings')
   await typeInto({ dialog: true, css: '#account-balance' }, '25000')
   await sleep(400)
-  await tap({ dialog: true, text: 'Save' }, { pause: 1300 })
+  await tap({ dialog: true, text: 'Save' }, { pause: 1300, then: 'success' })
   await page.evaluate(() => scrollTo({ top: 0, behavior: 'smooth' }))
   await sleep(700)
   cue('…and your credit cards', 'Limit, statement day and due day')
@@ -275,7 +300,7 @@ await scene('accounts', 'Set up your accounts', async () => {
   await reveal(await find({ dialog: true, css: 'input[inputmode=numeric][maxlength="2"]' }))
   await sleep(900)
   await tap({ dialog: true, css: 'button[title]', label: 'Amber' }, { pause: 900 })
-  await tap({ dialog: true, css: '[data-modal-submit]' }, { pause: 1600 })
+  await tap({ dialog: true, css: '[data-modal-submit]' }, { pause: 1600, then: 'success' })
 })
 
 // 3. Favorites and default
@@ -283,10 +308,10 @@ await scene('favorites', 'Favorites & default', async () => {
   await page.evaluate(() => scrollTo({ top: 0, behavior: 'smooth' }))
   await sleep(500)
   cue('Star the ones you use most', 'Favorites become one-tap choices')
-  await tap({ label: 'Favorite KBank Savings' }, { pause: 1200 })
+  await tap({ label: 'Favorite KBank Savings' }, { pause: 1200, then: 'toggle' })
   cue('Set a default', "It's picked for you every time you add an expense")
   await tap({ css: '[role=button]', label: 'KBank Savings' }, { pause: 900 })
-  await tap({ dialog: true, css: '[role=switch]', text: 'Default' }, { pause: 1400 })
+  await tap({ dialog: true, css: '[role=switch]', text: 'Default' }, { pause: 1400, then: 'toggle' })
   await tap({ dialog: true, label: 'Close modal' }, { pause: 700 })
   await sleep(600)
 })
@@ -307,7 +332,7 @@ await scene('quickadd', 'Log a spend', async () => {
   cue('Add a note and #tags', 'Tags work across categories, so you can find it later')
   await typeInto({ dialog: true, css: 'input[placeholder^="Brown sugar"]' }, 'Khao man gai #worklunch', 75)
   await sleep(600)
-  await tap({ dialog: true, css: '[data-modal-submit]' }, { pause: 1200 })
+  await tap({ dialog: true, css: '[data-modal-submit]' }, { pause: 1200, then: 'success' })
   cue('Saved', 'It shows up in your day right away')
   await page.evaluate(() => {
     const h = [...document.querySelectorAll('main *')].find((x) => x.children.length === 0 && x.textContent.trim() === 'Khao man gai')
