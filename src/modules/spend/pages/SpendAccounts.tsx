@@ -40,6 +40,9 @@ export function SpendAccounts() {
   const favs = settings.favoriteAccountIds ?? []
 
   const wallets = methods.filter((m) => m.kind === 'cash')
+  // Locked savings aren't for spending; the rest is ready to use
+  const walletTotal = wallets.reduce((s, w) => s + w.balance, 0)
+  const lockedTotal = wallets.filter((w) => w.locked).reduce((s, w) => s + w.balance, 0)
   // An overpaid card is below zero and shows as a negative amount owed
   const owed = cards.reduce((s, c) => s + c.balance, 0)
   // Each shared limit counted once, less installment holds
@@ -93,12 +96,12 @@ export function SpendAccounts() {
             {/* One line for all cards: owed, share of the limit used (installment holds count), and what's left */}
             {cards.length > 0 && (
               <p className="mt-1 px-1 text-xs text-ink-muted tnum">
-                Owed <span className="font-semibold text-ink-soft">{thbSigned(owed, true)}</span>
+                Owed <span className="font-semibold text-ink-soft">{thbSigned(owed)}</span>
                 {limit > 0 && (
                   <>
                     {' · '}
                     <span className="font-semibold text-ink-soft">{usedPct.toFixed(0)}%</span> used{' · '}
-                    <span className="font-semibold text-ink-soft">{thb(Math.max(0, credit.left), true)}</span> left
+                    <span className="font-semibold text-ink-soft">{thb(Math.max(0, credit.left))}</span> left
                   </>
                 )}
               </p>
@@ -128,14 +131,29 @@ export function SpendAccounts() {
 
         {/* ── Wallets ── */}
         <section className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="font-display text-lg font-extrabold text-ink">Wallets</h2>
-            <div className="flex items-center gap-3">
-              <button type="button" onClick={() => navigate('/cash')} className="text-sm font-semibold text-brand hover:underline cursor-pointer">
-                Manage in Cash
-              </button>
-              {wallets.length > 1 && <ArrangeButton label="Arrange wallets" onClick={() => setArrange('wallets')} />}
+          <div>
+            <div className="flex items-center justify-between px-1">
+              <h2 className="font-display text-lg font-extrabold text-ink">Wallets</h2>
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={() => navigate('/cash')} className="text-sm font-semibold text-brand hover:underline cursor-pointer">
+                  Manage in Cash
+                </button>
+                {wallets.length > 1 && <ArrangeButton label="Arrange wallets" onClick={() => setArrange('wallets')} />}
+              </div>
             </div>
+            {/* One line for all wallets: the total, what's ready to spend, and what sits in locked savings */}
+            {wallets.length > 0 && (
+              <p className="mt-1 px-1 text-xs text-ink-muted tnum">
+                Total <span className="font-semibold text-ink-soft">{thbSigned(walletTotal)}</span>
+                {lockedTotal !== 0 && (
+                  <>
+                    {' · '}
+                    <span className="font-semibold text-ink-soft">{thbSigned(walletTotal - lockedTotal)}</span> ready{' · '}
+                    <span className="font-semibold text-ink-soft">{thbSigned(lockedTotal)}</span> locked
+                  </>
+                )}
+              </p>
+            )}
           </div>
           {wallets.length === 0 ? (
             <Card>
