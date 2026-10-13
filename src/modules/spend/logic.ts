@@ -434,6 +434,18 @@ export function totalsBySubcategory(txns: SpendTransaction[], categoryId: string
   return [...sub.entries()].map(([subcategory, amount]) => ({ subcategory, amount })).sort((a, b) => b.amount - a.amount)
 }
 
+/** A category's subcategory list with one label renamed; renaming onto a label already there merges the two. */
+export function renameInList(list: string[], from: string, to: string): string[] {
+  const out = list.includes(from) ? list.map((s) => (s === from ? to : s)) : [...list, to]
+  return out.filter((s, i) => out.indexOf(s) === i)
+}
+
+/** Items (transactions, recurring) under `categoryId` tagged `from` now tagged `to`; returns the same array when nothing matches. */
+export function renameSubOn<T extends { categoryId?: string; subcategory?: string }>(items: T[], categoryId: string, from: string, to: string): T[] {
+  if (!items.some((x) => x.categoryId === categoryId && x.subcategory === from)) return items
+  return items.map((x) => (x.categoryId === categoryId && x.subcategory === from ? { ...x, subcategory: to } : x))
+}
+
 /** Newest first: by date, then time of day (entries without one come last), then creation time. */
 export function sortTxns(txns: SpendTransaction[]): SpendTransaction[] {
   return [...txns].sort(

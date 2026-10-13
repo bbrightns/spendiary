@@ -8,6 +8,7 @@ import { ReorderSheet } from './ReorderSheet'
 import { TONES } from './tones'
 import { KEEP_CATEGORY, useRemoveCategory } from './useRemoveCategory'
 import { useSpend } from './useSpend'
+import { useToast } from '../../store/ToastContext'
 
 export type CategoryLayout = 'chips' | 'tiles'
 
@@ -28,10 +29,11 @@ interface Props {
 
 /**
  * Category and subcategory for a transaction or a recurring item, the same in every sheet:
- * pick one, add a new one, or Edit to rename / restyle (tap), remove (×), arrange, and remove subcategories.
+ * pick one, add a new one, or Edit to rename / restyle (tap), remove (×) and arrange categories, and rename (tap) or remove (×) subcategories.
  */
 export function CategoryPicker({ type, value, onChange, subcategory, onSubcategoryChange, layout, fallback }: Props) {
-  const { settings, updateSettings, subcategories, addSubcategory, removeSubcategory } = useSpend()
+  const { settings, updateSettings, subcategories, addSubcategory, removeSubcategory, renameSubcategory } = useSpend()
+  const { showToast } = useToast()
   const removeCategory = useRemoveCategory()
   const [editing, setEditing] = useState(false)
   const [expanded, setExpanded] = useState(false)
@@ -39,6 +41,8 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
   const [sheet, setSheet] = useState<{ open: boolean; category?: SpendCategory }>({ open: false })
   const [addingSub, setAddingSub] = useState(false)
   const [newSub, setNewSub] = useState('')
+  const [renaming, setRenaming] = useState<string | null>(null)
+  const [renameText, setRenameText] = useState('')
   const tiles = (layout ?? settings.categoryLayout ?? 'tiles') === 'tiles'
 
   // Offered subcategories for the chosen category, plus the one already picked if it was since removed
@@ -77,6 +81,37 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
   const removeSub = (label: string) => {
     removeSubcategory(value, label)
     if (label === subcategory) onSubcategoryChange('')
+  }
+
+  const startRename = (label: string) => {
+    setRenaming(label)
+    setRenameText(label)
+  }
+
+  /** Rename the subcategory being edited, on past transactions too; a name already offered merges into it. */
+  const commitRename = () => {
+    const from = renaming
+    const to = renameText.trim()
+    setRenaming(null)
+    if (!from || !to || to === from) return
+    const merged = subChoices.includes(to)
+    const n = renameSubcategory(value, from, to)
+    if (from === subcategory) onSubcategoryChange(to)
+    const updated = n ? ` · ${n} transaction${n === 1 ? '' : 's'} updated` : ''
+    showToast(
+      merged ? `Merged ${from} into ${to}${updated}` : `Renamed to ${to}${updated}`,
+      'info',
+      // A merge can't be pulled apart again, so only a plain rename offers Undo
+      merged
+        ? undefined
+        : {
+            label: 'Undo',
+            onClick: () => {
+              renameSubcategory(value, to, from)
+              if (from === subcategory) onSubcategoryChange(from)
+            },
+          },
+    )
   }
 
   const list = categoriesFor(type, value)
@@ -211,6 +246,29 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
           <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Subcategory">
             {subChoices.map((s) => {
               const on = s === subcategory
+              if (renaming === s)
+                return (
+                  <input
+                    key={s}
+                    autoFocus
+                    value={renameText}
+                    onChange={(e) => setRenameText(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        commitRename()
+                      } else if (e.key === 'Escape') {
+                        e.stopPropagation()
+                        setRenaming(null)
+                      }
+                    }}
+                    onBlur={commitRename}
+                    maxLength={30}
+                    aria-label={`Rename subcategory ${s}`}
+                    className="h-8 w-32 rounded-full border border-brand bg-surface px-3 text-xs font-semibold text-ink outline-none"
+                  />
+                )
               return (
                 <span
                   key={s}
@@ -221,8 +279,9 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
                 >
                   <button
                     type="button"
-                    aria-pressed={on}
-                    onClick={() => onSubcategoryChange(on ? '' : s)}
+                    aria-pressed={editing ? undefined : on}
+                    aria-label={editing ? `Rename subcategory ${s}` : undefined}
+                    onClick={() => (editing ? startRename(s) : onSubcategoryChange(on ? '' : s))}
                     className={`h-full rounded-full pl-3 cursor-pointer ${editing ? 'pr-1' : 'pr-3'}`}
                   >
                     {s}

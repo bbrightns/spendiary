@@ -31,6 +31,8 @@ import {
   shiftPeriod,
   sortTxns,
   totalsBySubcategory,
+  renameInList,
+  renameSubOn,
 } from './logic'
 
 const txn = (p: Partial<SpendTransaction>): SpendTransaction => ({
@@ -410,6 +412,23 @@ describe('category order', () => {
     expect(ex.slice(-2)).toEqual(['c1', 'other'])
     expect(categoriesFor('income')[0].id).toBe('bonus')
     syncCategories({})
+  })
+})
+
+describe('renaming a subcategory', () => {
+  it('renames in place, merges onto an existing label, and adds a label that was not offered', () => {
+    expect(renameInList(['Snack', 'Sushi'], 'Snack', 'Snacks')).toEqual(['Snacks', 'Sushi'])
+    expect(renameInList(['Snack', 'Sushi', 'Buffet'], 'Snack', 'Sushi')).toEqual(['Sushi', 'Buffet'])
+    expect(renameInList(['Sushi'], 'Gone', 'Back')).toEqual(['Sushi', 'Back'])
+  })
+  it('retags only that category\'s items, and leaves the array alone when nothing matches', () => {
+    const rows = [
+      txn({ id: '1', categoryId: 'food', subcategory: 'Snack' }),
+      txn({ id: '2', categoryId: 'drinks', subcategory: 'Snack' }),
+      txn({ id: '3', categoryId: 'food', subcategory: 'Sushi' }),
+    ]
+    expect(renameSubOn(rows, 'food', 'Snack', 'Snacks').map((t) => t.subcategory)).toEqual(['Snacks', 'Snack', 'Sushi'])
+    expect(renameSubOn(rows, 'food', 'Nope', 'X')).toBe(rows)
   })
 })
 

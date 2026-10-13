@@ -4,7 +4,7 @@ import { localDateStr } from '../../lib/format'
 import type { SpendCard, SpendCustomCategory, SpendGoal, SpendRecurring, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
 import { SPEND_CATEGORIES } from './categories'
 import { investTransactions } from './invest'
-import { DEFAULT_BILL_REMINDER_DAYS, applyOrder, applyToBalances, cardBill, dueRecurring, parseTags, recurringNote, sortTxns, spendWallets } from './logic'
+import { DEFAULT_BILL_REMINDER_DAYS, applyOrder, applyToBalances, cardBill, dueRecurring, parseTags, recurringNote, renameInList, renameSubOn, sortTxns, spendWallets } from './logic'
 import { availableCredit } from './credit'
 
 export type SpendTxnInput = Omit<SpendTransaction, 'id' | 'createdAt' | 'updatedAt' | 'tags'>
@@ -319,6 +319,29 @@ export function useSpend() {
     })
   }
 
+  /**
+   * Rename a subcategory under one category, on past transactions and recurring items too.
+   * A name already in use merges the two. Returns how many transactions changed.
+   */
+  function renameSubcategory(categoryId: string, from: string, to: string): number {
+    const clean = to.trim()
+    if (!clean || clean === from) return 0
+    const count = (data.spendTransactions ?? []).filter((t) => t.categoryId === categoryId && t.subcategory === from).length
+    const now = new Date().toISOString()
+    setData((prev) => {
+      const st = prev.spendSettings ?? {}
+      return {
+        ...prev,
+        spendSettings: { ...st, subcategories: { ...st.subcategories, [categoryId]: renameInList(st.subcategories?.[categoryId] ?? [], from, clean) } },
+        spendTransactions: (prev.spendTransactions ?? []).map((t) =>
+          t.categoryId === categoryId && t.subcategory === from ? { ...t, subcategory: clean, updatedAt: now } : t,
+        ),
+        spendRecurring: renameSubOn(prev.spendRecurring ?? [], categoryId, from, clean),
+      }
+    })
+    return count
+  }
+
   /** Hide a category from the pickers (or show it again), keeping its name, icon and color. */
   function setCategoryHidden(id: string, hidden: boolean) {
     const isBuiltIn = SPEND_CATEGORIES.some((c) => c.id === id)
@@ -418,6 +441,7 @@ export function useSpend() {
     subcategories: (categoryId: string | undefined): string[] => (categoryId ? settings.subcategories?.[categoryId] ?? [] : []),
     addSubcategory,
     removeSubcategory,
+    renameSubcategory,
     updateSettings,
     setDefaultAccount: (id: string | undefined) => updateSettings({ defaultAccountId: id }),
     setMonthlyBudget: (amount: number | undefined) => updateSettings({ monthlyBudget: amount }),
