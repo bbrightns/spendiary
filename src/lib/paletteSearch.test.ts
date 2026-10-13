@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { amountMatches, editDistance, parseAmountFilter, parseQuickAdd, parseVerb, queryTerms, scoreItem, termScore, usageBoost } from './paletteSearch'
+import { amountMatches, dateRangeLabel, editDistance, extractDateRange, parseAmountFilter, parseQuickAdd, parseVerb, queryTerms, scoreItem, termScore, usageBoost } from './paletteSearch'
 
 describe('termScore', () => {
   it('ranks exact > prefix > substring > in-order letters > typo', () => {
@@ -78,5 +78,61 @@ describe('commands', () => {
     const now = Date.now()
     expect(usageBoost(undefined)).toBe(0)
     expect(usageBoost({ n: 10, last: now }, now)).toBeGreaterThan(usageBoost({ n: 1, last: now - 30 * 86_400_000 }, now))
+  })
+})
+
+describe('extractDateRange', () => {
+  // Wednesday 14 Oct 2026
+  const today = '2026-10-14'
+  const at = (q: string, opts = {}) => extractDateRange(q, { today, ...opts })
+
+  it('reads Thai and English month names, and leaves the rest of the query', () => {
+    expect(at('กาแฟ ตุลา')).toEqual({ range: { from: '2026-10-01', to: '2026-10-31' }, rest: 'กาแฟ' })
+    expect(at('>500 กันยา')).toEqual({ range: { from: '2026-09-01', to: '2026-09-30' }, rest: '>500' })
+    expect(at('food Oct').range).toEqual({ from: '2026-10-01', to: '2026-10-31' })
+    expect(at('ต.ค. grab').rest).toBe('grab')
+    expect(at('เดือนตุลา').range?.from).toBe('2026-10-01')
+  })
+
+  it('a month on its own is the latest one, never one still to come', () => {
+    expect(at('ธันวา').range).toEqual({ from: '2025-12-01', to: '2025-12-31' })
+    expect(at('feb').range?.from).toBe('2026-02-01')
+  })
+
+  it('takes a year after the month, Buddhist era too', () => {
+    expect(at('ธันวา 2026').range?.from).toBe('2026-12-01')
+    expect(at('มีนา 2568 ค่าไฟ')).toEqual({ range: { from: '2025-03-01', to: '2025-03-31' }, rest: 'ค่าไฟ' })
+    expect(at('2026-09').range).toEqual({ from: '2026-09-01', to: '2026-09-30' })
+  })
+
+  it('reads days, weeks (Sunday to Saturday) and years', () => {
+    expect(at('เมื่อวาน').range).toEqual({ from: '2026-10-13', to: '2026-10-13' })
+    expect(at('today coffee')).toEqual({ range: { from: '2026-10-14', to: '2026-10-14' }, rest: 'coffee' })
+    expect(at('this week').range).toEqual({ from: '2026-10-11', to: '2026-10-17' })
+    expect(at('grab last week')).toEqual({ range: { from: '2026-10-04', to: '2026-10-10' }, rest: 'grab' })
+    expect(at('อาทิตย์ที่แล้ว').range?.from).toBe('2026-10-04')
+    expect(at('ปีที่แล้ว').range).toEqual({ from: '2025-01-01', to: '2025-12-31' })
+  })
+
+  it('this / last month follow the spending month when there is one', () => {
+    expect(at('this month').range).toEqual({ from: '2026-10-01', to: '2026-10-31' })
+    // Paid on the 29th: 29 Sep – 28 Oct
+    const spendingMonth = (date: string) =>
+      date >= '2026-09-29' ? { from: '2026-09-29', to: '2026-10-28' } : { from: '2026-08-29', to: '2026-09-28' }
+    expect(at('เดือนนี้', { spendingMonth }).range).toEqual({ from: '2026-09-29', to: '2026-10-28' })
+    expect(at('last month', { spendingMonth }).range).toEqual({ from: '2026-08-29', to: '2026-09-28' })
+  })
+
+  it('no date: the query comes back as it was', () => {
+    expect(at('กาแฟ >100')).toEqual({ rest: 'กาแฟ >100' })
+  })
+})
+
+describe('dateRangeLabel', () => {
+  it('says the days it covers', () => {
+    expect(dateRangeLabel({ from: '2026-10-01', to: '2026-10-31' })).toBe('1 – 31 Oct 2026')
+    expect(dateRangeLabel({ from: '2026-09-29', to: '2026-10-28' })).toBe('29 Sept – 28 Oct 2026')
+    expect(dateRangeLabel({ from: '2026-10-13', to: '2026-10-13' })).toBe('13 Oct 2026')
+    expect(dateRangeLabel({ from: '2025-12-28', to: '2026-01-03' })).toBe('28 Dec 2025 – 3 Jan 2026')
   })
 })

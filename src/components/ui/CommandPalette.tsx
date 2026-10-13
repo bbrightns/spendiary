@@ -6,6 +6,8 @@ import { useToast } from '../../store/ToastContext'
 import { thb, thbSigned } from '../../lib/format'
 import {
   amountMatches,
+  dateRangeLabel,
+  extractDateRange,
   parseAmountFilter,
   parseQuickAdd,
   parseVerb,
@@ -13,8 +15,10 @@ import {
   scoreItem,
   usageBoost,
   type AmountFilter,
+  type DateRange,
   type Usage,
 } from '../../lib/paletteSearch'
+import type { SpendTransaction } from '../../lib/types'
 import {
   SearchIcon,
   CommandIcon,
@@ -39,7 +43,7 @@ import { openQuickAdd } from '../../modules/spend/QuickAddSheet'
 import { openPayBill } from '../../modules/spend/PayBillSheet'
 import { openImport } from '../../modules/spend/ImportSheet'
 import { ListBulletIcon, RepeatIcon, TransferIcon, getCategory, guessCategory, manageableCategories } from '../../modules/spend/categories'
-import { frequencyLabel, goalProgress, noteTitle } from '../../modules/spend/logic'
+import { frequencyLabel, goalProgress, noteTitle, periodFor } from '../../modules/spend/logic'
 import { useSpendSide } from '../../modules/spend/side'
 import { TONES } from '../../modules/spend/tones'
 import { useSpend } from '../../modules/spend/useSpend'
@@ -107,6 +111,15 @@ interface CommandItem {
 
 interface Ranked extends CommandItem {
   score: number
+}
+
+/** The transactions a search found, added up */
+interface TxnSummary {
+  count: number
+  spent: number
+  earned: number
+  /** The days the query asked for, if it named any */
+  range?: DateRange
 }
 
 const USAGE_KEY = 'spendiary.palette_usage'
@@ -561,7 +574,7 @@ export function CommandPalette() {
   }, [spend.methods, spend.recurring, spend.goals, spend.wallets, spend.settings.customCategories, spend.settings.categoryEdits, data.holdings, data.dcaPlans, data.liabilities, theme, setTheme, showToast, exportData, go])
 
   // ── Rank everything against the query ──
-  const results = useMemo<Ranked[]>(() => {
+  const { results, summary } = useMemo<{ results: Ranked[]; summary?: TxnSummary }>(() => {
     const q = query.trim()
     const boost = (it: CommandItem) => usageBoost(usage[it.id]) + (inSpend && it.spend ? 0.2 : 0)
 
@@ -593,7 +606,7 @@ export function CommandPalette() {
         .filter((it) => it.group === 'Pages' && !usedIds.has(it.id))
         .map((it) => ({ ...it, score: boost(it) }))
         .sort((a, b) => b.score - a.score)
-      return [...out, ...used, ...actions, ...pages]
+      return { results: [...out, ...used, ...actions, ...pages] }
     }
 
     const ranked: Ranked[] = []
@@ -657,10 +670,16 @@ export function CommandPalette() {
       }
     }
 
-    // Number-like words (65, >1000, 100-500) filter transactions by amount; the rest match text
+    // A date ("ตุลา", "last week") keeps transactions from those days; number-like words (65, >1000, 100-500) filter by amount; the rest match text
+    const { range, rest } = extractDateRange(q, {
+      spendingMonth: (date) => {
+        const p = periodFor(date, spend.settings.cycle)
+        return { from: p.start, to: p.end }
+      },
+    })
     const filters: AmountFilter[] = []
     const textTerms: string[] = []
-    for (const word of q.toLowerCase().split(/\s+/).filter(Boolean)) {
+    for (const word of rest.toLowerCase().split(/\s+/).filter(Boolean)) {
       const f = parseAmountFilter(word)
       if (f) filters.push(f)
       else textTerms.push(...queryTerms(word))
@@ -675,7 +694,9 @@ export function CommandPalette() {
     }
     const methodName = (id?: string) => spend.methods.find((m) => m.id === id)?.name ?? ''
     const txnHits: Ranked[] = []
+    const hits: SpendTransaction[] = []
     for (const t of spend.transactions) {
+      if (range && (t.date < range.from || t.date > range.to)) continue
       if (!filters.every((f) => amountMatches(f, t.amount))) continue
       const cat = getCategory(t.categoryId)
       const title = noteTitle(t.note) || (t.type === 'transfer' ? 'Transfer' : cat?.label ?? 'Other')
@@ -687,6 +708,7 @@ export function CommandPalette() {
           })
         : 0.8
       if (s === 0) continue
+      hits.push(t)
       const sign = t.type === 'income' ? '+' : t.type === 'expense' ? '−' : ''
       txnHits.push({
         id: `txn-${t.id}`,
@@ -704,7 +726,7 @@ export function CommandPalette() {
     // Best match first, then newest
     txnHits.sort((a, b) => b.score - a.score)
     ranked.push(...txnHits)
-    if (txnHits.length > GROUP_LIMIT && textTerms.length) {
+    if (txnHits.length > GROUP_LIMIT && (textTerms.length || range)) {
       ranked.push({
         id: 'txn-all',
         title: `See all ${txnHits.length} matching transactions`,
@@ -712,13 +734,23 @@ export function CommandPalette() {
         group: 'Transactions',
         spend: true,
         icon: ic(ListBulletIcon, 'text-brand'),
-        run: go(`/spend/txns?q=${encodeURIComponent(textTerms.join(' '))}`),
+        // The page takes the same words and days
+        run: go(`/spend/txns?${new URLSearchParams({ ...(textTerms.length ? { q: textTerms.join(' ') } : {}), ...(range ?? {}) })}`),
         score: -1,
       })
     }
 
-    return ranked
-  }, [query, items, usage, recent, inSpend, spend.transactions, spend.methods, spend.cards, spend.bills, spend.settings.categoryBudgets, navigate, go])
+    // What the matching transactions add up to: answers "how much on food in October?"
+    const summary: TxnSummary | undefined = hits.length
+      ? {
+          count: hits.length,
+          spent: hits.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
+          earned: hits.filter((t) => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
+          range,
+        }
+      : undefined
+    return { results: ranked, summary }
+  }, [query, items, usage, recent, inSpend, spend.transactions, spend.methods, spend.cards, spend.bills, spend.settings.categoryBudgets, spend.settings.cycle, navigate, go])
 
   // ── Group: best groups first, a few rows each, with counts ──
   const { rows, counts } = useMemo(() => {
@@ -891,6 +923,31 @@ export function CommandPalette() {
             </kbd>
           )}
         </div>
+
+        {/* What the matching transactions add up to */}
+        {summary && (
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 border-b border-line bg-surface-muted/60 px-4 py-2.5" aria-live="polite">
+            <p className="min-w-0 text-sm text-ink-soft">
+              <b className="font-bold text-ink tnum">{summary.count}</b> {summary.count === 1 ? 'transaction' : 'transactions'}
+              <span className="text-ink-muted"> · {summary.range ? dateRangeLabel(summary.range) : 'all time'}</span>
+            </p>
+            <p className="shrink-0 text-sm tnum">
+              {summary.spent > 0 && (
+                <>
+                  <span className="text-ink-muted">spent </span>
+                  <b className="font-bold text-ink">{thb(summary.spent, true)}</b>
+                </>
+              )}
+              {summary.spent > 0 && summary.earned > 0 && <span className="text-ink-muted"> · </span>}
+              {summary.earned > 0 && (
+                <>
+                  <span className="text-ink-muted">in </span>
+                  <b className="font-bold text-gain">{thb(summary.earned, true)}</b>
+                </>
+              )}
+            </p>
+          </div>
+        )}
 
         {/* Results List */}
         <div ref={listRef} className="flex-1 overflow-y-auto p-2 select-none space-y-0.5" role="listbox">

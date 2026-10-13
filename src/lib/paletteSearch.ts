@@ -166,3 +166,136 @@ export function usageBoost(u: Usage[string] | undefined, now = Date.now()): numb
   const days = (now - u.last) / 86_400_000
   return Math.min(0.15, Math.log2(1 + u.n) * 0.04) + (days < 1 ? 0.1 : days < 7 ? 0.05 : 0)
 }
+
+// ── Dates ────────────────────────────────────────────────────────────────────
+
+export interface DateRange {
+  /** YYYY-MM-DD, both ends included */
+  from: string
+  to: string
+}
+
+const MONTHS: string[][] = [
+  ['jan', 'january', 'มกรา', 'มกราคม', 'ม.ค.', 'มค'],
+  ['feb', 'february', 'กุมภา', 'กุมภาพันธ์', 'ก.พ.', 'กพ'],
+  ['mar', 'march', 'มีนา', 'มีนาคม', 'มี.ค.', 'มีค'],
+  ['apr', 'april', 'เมษา', 'เมษายน', 'เม.ย.', 'เมย'],
+  ['may', 'พฤษภา', 'พฤษภาคม', 'พ.ค.', 'พค'],
+  ['jun', 'june', 'มิถุนา', 'มิถุนายน', 'มิ.ย.', 'มิย'],
+  ['jul', 'july', 'กรกฎา', 'กรกฎาคม', 'ก.ค.', 'กค'],
+  ['aug', 'august', 'สิงหา', 'สิงหาคม', 'ส.ค.', 'สค'],
+  ['sep', 'sept', 'september', 'กันยา', 'กันยายน', 'ก.ย.', 'กย'],
+  ['oct', 'october', 'ตุลา', 'ตุลาคม', 'ต.ค.', 'ตค'],
+  ['nov', 'november', 'พฤศจิกา', 'พฤศจิกายน', 'พ.ย.', 'พย'],
+  ['dec', 'december', 'ธันวา', 'ธันวาคม', 'ธ.ค.', 'ธค'],
+]
+const MONTH_OF = new Map(MONTHS.flatMap((names, i) => names.map((n) => [n, i] as const)))
+
+/** One phrase per range; the longer phrases are tried first, so "last week" wins over "week" */
+const PHRASES: [string[], 'today' | 'yesterday' | 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth' | 'thisYear' | 'lastYear'][] = [
+  [['today', 'วันนี้'], 'today'],
+  [['yesterday', 'เมื่อวาน', 'เมื่อวานนี้'], 'yesterday'],
+  [['this week', 'สัปดาห์นี้', 'อาทิตย์นี้'], 'thisWeek'],
+  [['last week', 'สัปดาห์ที่แล้ว', 'สัปดาห์ก่อน', 'อาทิตย์ที่แล้ว', 'อาทิตย์ก่อน'], 'lastWeek'],
+  [['this month', 'เดือนนี้'], 'thisMonth'],
+  [['last month', 'เดือนที่แล้ว', 'เดือนก่อน'], 'lastMonth'],
+  [['this year', 'ปีนี้'], 'thisYear'],
+  [['last year', 'ปีที่แล้ว', 'ปีก่อน'], 'lastYear'],
+]
+
+const pad = (n: number) => String(n).padStart(2, '0')
+const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+const dayOf = (iso: string) => {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+const shiftDays = (iso: string, n: number) => {
+  const d = dayOf(iso)
+  d.setDate(d.getDate() + n)
+  return ymd(d)
+}
+const monthRange = (y: number, m: number): DateRange => ({ from: ymd(new Date(y, m, 1)), to: ymd(new Date(y, m + 1, 0)) })
+
+/** "2026", "2569" (Buddhist era) → 2026; anything else → undefined */
+const yearOf = (s?: string) => {
+  if (!s || !/^\d{4}$/.test(s)) return undefined
+  const n = Number(s)
+  return n > 2400 ? n - 543 : n
+}
+
+/**
+ * Finds a date range in a query ("กาแฟ ตุลา", "เมื่อวาน", "last week", ">500 กันยา 2568") and
+ * returns it with the rest of the query. A month on its own is its most recent one, never a
+ * future month. "This / last month" follow `spendingMonth` (e.g. payday to payday) when given,
+ * else the calendar month. Weeks run Sunday to Saturday, like the rest of the app.
+ */
+export function extractDateRange(
+  query: string,
+  opts: { today?: string; spendingMonth?: (date: string) => DateRange } = {},
+): { range?: DateRange; rest: string } {
+  const today = opts.today ?? ymd(new Date())
+  const t = dayOf(today)
+  const tokens = query.trim().split(/\s+/).filter(Boolean)
+  const lower = tokens.map((x) => norm(x))
+  const month = (date: string) => opts.spendingMonth?.(date) ?? monthRange(dayOf(date).getFullYear(), dayOf(date).getMonth())
+  const rangeFor = (kind: (typeof PHRASES)[number][1]): DateRange => {
+    const sunday = shiftDays(today, -t.getDay())
+    switch (kind) {
+      case 'today':
+        return { from: today, to: today }
+      case 'yesterday':
+        return { from: shiftDays(today, -1), to: shiftDays(today, -1) }
+      case 'thisWeek':
+        return { from: sunday, to: shiftDays(sunday, 6) }
+      case 'lastWeek':
+        return { from: shiftDays(sunday, -7), to: shiftDays(sunday, -1) }
+      case 'thisMonth':
+        return month(today)
+      case 'lastMonth':
+        return month(shiftDays(month(today).from, -1))
+      case 'thisYear':
+        return { from: `${t.getFullYear()}-01-01`, to: `${t.getFullYear()}-12-31` }
+      case 'lastYear':
+        return { from: `${t.getFullYear() - 1}-01-01`, to: `${t.getFullYear() - 1}-12-31` }
+    }
+  }
+  const without = (i: number, n: number) => [...tokens.slice(0, i), ...tokens.slice(i + n)].join(' ')
+
+  // Two-word phrases first ("last week"), then one word
+  for (const n of [2, 1]) {
+    for (let i = 0; i + n <= lower.length; i++) {
+      const phrase = lower.slice(i, i + n).join(' ')
+      const hit = PHRASES.find(([words]) => words.includes(phrase))
+      if (hit) return { range: rangeFor(hit[1]), rest: without(i, n) }
+    }
+  }
+
+  // A month, maybe written "เดือนตุลา", maybe followed by a year
+  for (let i = 0; i < lower.length; i++) {
+    const m = MONTH_OF.get(lower[i].replace(/^เดือน/, ''))
+    if (m === undefined) continue
+    const year = yearOf(lower[i + 1])
+    const y = year ?? (m > t.getMonth() ? t.getFullYear() - 1 : t.getFullYear())
+    return { range: monthRange(y, m), rest: without(i, year ? 2 : 1) }
+  }
+
+  // 2026-09
+  const iso = lower.findIndex((w) => /^\d{4}-\d{2}$/.test(w))
+  if (iso >= 0) {
+    const [y, m] = lower[iso].split('-').map(Number)
+    if (m >= 1 && m <= 12) return { range: monthRange(y, m - 1), rest: without(iso, 1) }
+  }
+  return { rest: tokens.join(' ') }
+}
+
+/** "1 – 31 Oct 2026", "14 Oct 2026" */
+export function dateRangeLabel(r: DateRange): string {
+  const f = dayOf(r.from)
+  const e = dayOf(r.to)
+  const full = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  if (r.from === r.to) return full(f)
+  if (f.getFullYear() !== e.getFullYear()) return `${full(f)} – ${full(e)}`
+  const sameMonth = f.getMonth() === e.getMonth()
+  const start = f.toLocaleDateString('en-GB', sameMonth ? { day: 'numeric' } : { day: 'numeric', month: 'short' })
+  return `${start} – ${full(e)}`
+}

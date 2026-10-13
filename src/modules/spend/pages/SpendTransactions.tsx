@@ -10,6 +10,7 @@ import { FilterChip } from '../../../components/ui/FilterChip'
 import { SegmentedControl } from '../../../components/ui/SegmentedControl'
 import { CloseIcon, SearchIcon } from '../../../components/icons'
 import { localDateStr, thb } from '../../../lib/format'
+import { dateRangeLabel } from '../../../lib/paletteSearch'
 import type { SpendTransaction, SpendTxnType } from '../../../lib/types'
 import { ListBulletIcon, categoriesFor, getCategory } from '../categories'
 import { inPeriod, periodFor, shiftDate, weekOf, type Period } from '../logic'
@@ -103,6 +104,10 @@ export function SpendTransactions() {
   const cycle = settings.cycle
   const [params, setParams] = useSearchParams()
   const query = params.get('q') ?? ''
+  // Days from a search ("food ตุลา" in the search bar opens here with from / to)
+  const from = params.get('from')
+  const to = params.get('to')
+  const days: Period | null = useMemo(() => (from && to ? { start: from, end: to } : null), [from, to])
   const [range, setRange] = useState<Range>('month')
   const [anchor, setAnchor] = useState(localDateStr())
   const period: Period | null = useMemo(() => {
@@ -120,10 +125,15 @@ export function SpendTransactions() {
     else next.delete('q')
     setParams(next, { replace: true })
   }
+  const clearSearch = () => {
+    const next = new URLSearchParams(params)
+    for (const k of ['q', 'from', 'to']) next.delete(k)
+    setParams(next, { replace: true })
+  }
 
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean)
   // A search looks across every month; browsing without one stays on the chosen range
-  const searching = terms.length > 0
+  const searching = terms.length > 0 || !!days
   // Without a single day or year in view, day headers carry the year
   const showYear = searching || range === 'all'
 
@@ -131,9 +141,12 @@ export function SpendTransactions() {
     const walletName = (id?: string) => methods.find((m) => m.id === id)?.name ?? ''
     const words = query.toLowerCase().split(/\s+/).filter(Boolean)
     return transactions.filter(
-      (t) => (words.length > 0 || !period || inPeriod(period, t.date)) && (type === 'all' || t.type === type) && matches(t, words, walletName),
+      (t) =>
+        (days ? inPeriod(days, t.date) : words.length > 0 || !period || inPeriod(period, t.date)) &&
+        (type === 'all' || t.type === type) &&
+        matches(t, words, walletName),
     )
-  }, [transactions, methods, period, type, query])
+  }, [transactions, methods, period, days, type, query])
 
   const groups = useMemo(() => {
     const map = new Map<string, SpendTransaction[]>()
@@ -166,11 +179,11 @@ export function SpendTransactions() {
                 className="inline-flex max-w-[16rem] items-center gap-2 rounded-full border border-brand/40 bg-brand-soft px-3.5 py-2 text-sm font-bold text-brand-ink cursor-pointer"
               >
                 <SearchIcon className="h-4 w-4 shrink-0" />
-                <span className="truncate">{query}</span>
+                <span className="truncate">{[query, days && dateRangeLabel({ from: days.start, to: days.end })].filter(Boolean).join(' · ')}</span>
               </button>
               <button
                 type="button"
-                onClick={() => setQuery('')}
+                onClick={clearSearch}
                 aria-label="Clear search"
                 className="grid h-9 w-9 place-items-center rounded-full border border-line bg-surface text-ink-muted hover:text-ink cursor-pointer"
               >
