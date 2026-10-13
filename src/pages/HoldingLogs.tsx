@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, Fragment } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
@@ -413,6 +414,12 @@ export function HoldingLogs() {
   const [assetFilter, setAssetFilter] = useState<AssetClass | 'all'>('all')
   const [actionFilter, setActionFilter] = useState<'all' | 'buy' | 'sell' | 'dividend' | 'transfer' | 'edit'>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  // Opened from the search bar with ?search=BTC: start filtered to it
+  const [searchParams] = useSearchParams()
+  useEffect(() => {
+    const q = searchParams.get('search')
+    if (q) setSearchQuery(q)
+  }, [searchParams])
   const [datePreset, setDatePreset] = useState<'all' | 'month' | '30d' | 'year' | 'custom'>('all')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useData } from '../../store/DataContext'
 import { useTheme } from '../../hooks/useTheme'
 import { useToast } from '../../store/ToastContext'
-import { thb, thbSigned } from '../../lib/format'
+import { localDateStr, thb, thbSigned } from '../../lib/format'
 import {
   amountMatches,
   dateRangeLabel,
@@ -18,7 +18,7 @@ import {
   type DateRange,
   type Usage,
 } from '../../lib/paletteSearch'
-import type { SpendTransaction } from '../../lib/types'
+import type { HoldingLog, SpendTransaction } from '../../lib/types'
 import {
   SearchIcon,
   CommandIcon,
@@ -38,6 +38,7 @@ import {
   CloseIcon,
   ArrowUpRightIcon,
   CreditCardIcon,
+  CoinsIcon,
 } from '../icons'
 import { openQuickAdd } from '../../modules/spend/QuickAddSheet'
 import { openPayBill } from '../../modules/spend/PayBillSheet'
@@ -68,6 +69,8 @@ type Group =
   | 'Recurring'
   | 'Pages'
   | 'Holdings'
+  | 'Invest history'
+  | 'Dividends'
   | 'DCA plans'
   | 'Debts'
   | 'Settings'
@@ -85,12 +88,26 @@ const GROUP_ORDER: Group[] = [
   'Recurring',
   'Pages',
   'Holdings',
+  'Invest history',
+  'Dividends',
   'DCA plans',
   'Debts',
   'Settings',
   'System',
 ]
 const GROUP_LIMIT = 5
+
+/** How Invest history entries read in search, and the words that find them */
+const LOG_VERBS: Record<HoldingLog['action'], { label: string; keywords: string[] }> = {
+  add: { label: 'Added', keywords: ['add', 'new', 'เพิ่ม'] },
+  buy_more: { label: 'Bought', keywords: ['buy', 'bought', 'dca', 'ซื้อ'] },
+  sell: { label: 'Sold', keywords: ['sell', 'sold', 'ขาย'] },
+  edit: { label: 'Edited', keywords: ['edit', 'แก้'] },
+  note: { label: 'Note', keywords: ['note', 'โน้ต'] },
+  transfer: { label: 'Moved', keywords: ['move', 'transfer', 'ย้าย', 'โอน'] },
+  dividend: { label: 'Dividend', keywords: ['dividend', 'ปันผล'] },
+}
+const DIVIDEND_WORDS = ['dividend', 'dividends', 'ปันผล', 'เงินปันผล', 'payout']
 
 interface CommandItem {
   id: string
@@ -740,6 +757,55 @@ export function CommandPalette() {
       })
     }
 
+    // ── Invest history: buys, sells, moves between locations (dividends come from their records below) ──
+    const inDays = (date: string) => !range || (date >= range.from && date <= range.to)
+    const fitsAmount = (amount?: number) => !filters.length || (amount !== undefined && filters.every((f) => amountMatches(f, amount)))
+    const logHits: Ranked[] = []
+    for (const l of data.holdingLogs ?? []) {
+      // Loan payments are logged here too, but they're Spend transactions already
+      if (l.action === 'dividend' || l.ticker === 'DEBT') continue
+      const date = localDateStr(new Date(l.timestamp))
+      const amount = l.paidAmount ?? l.proceeds
+      if (!inDays(date) || !fitsAmount(amount)) continue
+      const verb = LOG_VERBS[l.action]
+      const s = textTerms.length
+        ? scoreItem(textTerms, { title: `${l.ticker} ${l.holdingName}`, subtitle: l.note, keywords: verb.keywords })
+        : 0.7
+      if (s === 0) continue
+      logHits.push({
+        id: `log-${l.id}`,
+        title: `${verb.label} · ${l.holdingName}`,
+        subtitle: [shortDate(date), amount !== undefined && thb(amount, true), l.note].filter(Boolean).join(' · '),
+        keywords: [],
+        group: 'Invest history',
+        icon: <span className="text-xs font-bold text-brand">{l.ticker.slice(0, 2).toUpperCase()}</span>,
+        run: go(`/logs?search=${encodeURIComponent(l.ticker)}`),
+        score: s - 0.1 + (inSpend ? 0 : 0.2),
+      })
+    }
+    ranked.push(...logHits.sort((a, b) => b.score - a.score))
+
+    // ── Dividends received ──
+    const divHits: Ranked[] = []
+    for (const r of data.dividendRecords ?? []) {
+      if (!inDays(r.paymentDate) || !fitsAmount(r.netAmount)) continue
+      const s = textTerms.length
+        ? scoreItem(textTerms, { title: `${r.ticker} ${r.holdingName}`, subtitle: r.cashAccountName, keywords: DIVIDEND_WORDS })
+        : 0.7
+      if (s === 0) continue
+      divHits.push({
+        id: `div-${r.id}`,
+        title: `${r.ticker} dividend`,
+        subtitle: [shortDate(r.paymentDate), `+${thb(r.netAmount, true)}`, r.holdingName, r.cashAccountName && `into ${r.cashAccountName}`].filter(Boolean).join(' · '),
+        keywords: [],
+        group: 'Dividends',
+        icon: ic(CoinsIcon, 'text-gain'),
+        run: go('/dividends'),
+        score: s - 0.1 + (inSpend ? 0 : 0.2),
+      })
+    }
+    ranked.push(...divHits.sort((a, b) => b.score - a.score))
+
     // What the matching transactions add up to: answers "how much on food in October?"
     const summary: TxnSummary | undefined = hits.length
       ? {
@@ -750,7 +816,7 @@ export function CommandPalette() {
         }
       : undefined
     return { results: ranked, summary }
-  }, [query, items, usage, recent, inSpend, spend.transactions, spend.methods, spend.cards, spend.bills, spend.settings.categoryBudgets, spend.settings.cycle, navigate, go])
+  }, [query, items, usage, recent, inSpend, spend.transactions, spend.methods, spend.cards, spend.bills, spend.settings.categoryBudgets, spend.settings.cycle, data.holdingLogs, data.dividendRecords, navigate, go])
 
   // ── Group: best groups first, a few rows each, with counts ──
   const { rows, counts } = useMemo(() => {
