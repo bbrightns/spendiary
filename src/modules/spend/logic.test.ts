@@ -31,6 +31,7 @@ import {
   shiftPeriod,
   sortTxns,
   totalsBySubcategory,
+  categoryBreakdown,
   renameInList,
   renameSubOn,
 } from './logic'
@@ -82,6 +83,31 @@ describe('totalsBySubcategory', () => {
       { subcategory: 'Regular', amount: 110 },
       { subcategory: 'Dessert', amount: 45 },
     ])
+  })
+})
+
+describe('categoryBreakdown', () => {
+  it('names untagged entries by their note, so the biggest spend is not left out', () => {
+    const rows = [
+      txn({ categoryId: 'family', subcategory: 'Pop', amount: 500 }),
+      txn({ categoryId: 'family', note: 'ค่าส่งเงินพ่อแม่', amount: 6000 }),
+      txn({ categoryId: 'family', amount: 40 }),
+      txn({ categoryId: 'food', note: 'Sushi', amount: 300 }),
+    ]
+    expect(categoryBreakdown(rows, 'family')).toEqual([
+      { label: 'ค่าส่งเงินพ่อแม่', amount: 6000 },
+      { label: 'Pop', amount: 500 },
+      { label: 'Other', amount: 40 },
+    ])
+  })
+  it('folds the long tail into Other and stays empty when nothing is named', () => {
+    const rows = ['A', 'B', 'C'].map((note, i) => txn({ categoryId: 'food', note, amount: 30 - i * 10 }))
+    expect(categoryBreakdown(rows, 'food', 2)).toEqual([
+      { label: 'A', amount: 30 },
+      { label: 'B', amount: 20 },
+      { label: 'Other', amount: 10 },
+    ])
+    expect(categoryBreakdown([txn({ categoryId: 'food', amount: 9 })], 'food')).toEqual([])
   })
 })
 

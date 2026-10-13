@@ -62,20 +62,19 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
 
   const shown = months[hover ?? MONTHS - 1]
 
-  // Top categories over the six months, with this month against their average
+  // This month's top categories, biggest first, each against its average over the earlier months
   const cats = useMemo(() => {
-    const total = new Map<string, number>()
-    for (const m of months) for (const [id, v] of m.byCategory) total.set(id, (total.get(id) ?? 0) + v)
-    return [...total.entries()]
+    return [...months[MONTHS - 1].byCategory.entries()]
+      .filter(([, v]) => v > 0)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
-      .map(([id, sum]) => {
+      .map(([id]) => {
         const series = months.map((m) => m.byCategory.get(id) ?? 0)
         // Average over earlier months with anything logged, so months before tracking began don't count as ฿0
         const earlier = series.slice(0, -1).filter((_, i) => months[i].income + months[i].expense > 0)
         const avg = earlier.length >= 2 ? earlier.reduce((s, v) => s + v, 0) / earlier.length : 0
         const now = series[MONTHS - 1]
-        return { id, sum, series, now, change: avg > 0 ? ((now - avg) / avg) * 100 : null }
+        return { id, series, now, change: avg > 0 ? ((now - avg) / avg) * 100 : null }
       })
   }, [months])
 
