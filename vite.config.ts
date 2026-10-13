@@ -20,7 +20,8 @@ export default defineConfig({
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
   },
   server: {
-    port: 3000,
+    // A preview launcher may assign another port when 3000 is taken
+    port: Number(process.env.PORT) || 3000,
   },
   build: {
     chunkSizeWarningLimit: 1600,
