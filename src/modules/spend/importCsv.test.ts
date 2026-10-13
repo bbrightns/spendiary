@@ -139,8 +139,24 @@ describe('export round trip', () => {
     expect(header[0]).toBe('Date')
     const map = guessColumns(header)!
     expect(toImportRows(rows, map).rows).toEqual([
-      { date: '2026-10-01', time: '08:15', type: 'expense', amount: 65.5, description: 'Tea, "large" #nosetea', category: 'drinks', subcategory: 'Milk tea' },
-      { date: '2026-10-02', type: 'income', amount: 50000, description: 'เงินเดือน', category: 'salary' },
+      { date: '2026-10-01', time: '08:15', type: 'expense', amount: 65.5, description: 'Tea, "large" #nosetea', category: 'drinks', subcategory: 'Milk tea', account: 'SCB Easy' },
+      { date: '2026-10-02', type: 'income', amount: 50000, description: 'เงินเดือน', category: 'salary', account: 'SCB Easy' },
+    ])
+  })
+})
+
+describe('transfers in an export', () => {
+  it('reads Type and To account so transfers come back as transfers', () => {
+    const text = [
+      'Date\tTime\tType\tCategory\tSubcategory\tAccount\tTo account\tDescription\tTags\tAmount',
+      '11-10-26\t\ttransfer\t\t\tKBank\tttb Disney\tPay ttb Disney card\t\t-5490',
+      '12-10-26\t\texpense\tFood\t\tKBank\t\tCoffee\t\t-65',
+    ].join('\n')
+    const [header, ...rows] = parseCsv(text)
+    const map = guessColumns(header)!
+    expect(toImportRows(rows, map).rows).toMatchObject([
+      { type: 'transfer', amount: 5490, account: 'KBank', toAccount: 'ttb Disney', description: 'Pay ttb Disney card' },
+      { type: 'expense', amount: 65, account: 'KBank', category: 'Food' },
     ])
   })
 })

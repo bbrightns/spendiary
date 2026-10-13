@@ -59,6 +59,11 @@ export interface ColumnMap {
   /** Category / subcategory names, e.g. from Spendiary's own export or another money app */
   category?: number
   subcategory?: number
+  /** Spendiary's own export: "transfer" rows move money between two accounts */
+  type?: number
+  /** Account names (from / to) as written in the file; used for transfers */
+  account?: number
+  toAccount?: number
 }
 
 const HEADER_HINTS: Record<keyof ColumnMap, RegExp> = {
@@ -70,6 +75,9 @@ const HEADER_HINTS: Record<keyof ColumnMap, RegExp> = {
   time: /^time$|^เวลา$/i,
   category: /^category$|^หมวด(หมู่)?$/i,
   subcategory: /^sub[- ]?category$|^หมวดย่อย$/i,
+  type: /^type$|^ประเภท$/i,
+  account: /^account$|^บัญชี$/i,
+  toAccount: /^to[- ]?account$|^บัญชีปลายทาง$/i,
 }
 
 /** Guess which column is which from the header row; undefined if no date or amount is found. */
@@ -82,7 +90,7 @@ export function guessColumns(header: Row): ColumnMap | undefined {
   const amount = find('amount', [date, out, inn])
   const description = find('description', [date, out, inn, amount])
   const map: ColumnMap = { date, description: description >= 0 ? description : undefined }
-  for (const key of ['time', 'category', 'subcategory'] as const) {
+  for (const key of ['time', 'category', 'subcategory', 'type', 'account', 'toAccount'] as const) {
     const i = find(key, [date, out, inn, amount, description])
     if (i >= 0) map[key] = i
   }
@@ -146,7 +154,10 @@ export interface ImportRow {
   date: string
   /** HH:mm when the file has a time */
   time?: string
-  type: 'expense' | 'income'
+  type: 'expense' | 'income' | 'transfer'
+  /** Account names as written in the file (transfers: from → to) */
+  account?: string
+  toAccount?: string
   /** Positive */
   amount: number
   description: string
@@ -229,7 +240,9 @@ export function toImportRows(rows: Row[], map: ColumnMap): { rows: ImportRow[]; 
       time: parseTime(cell(map.time)) ?? parseTime(r[map.date]?.trim().split(/[ T]/).slice(1).join(' ')),
       category: cell(map.category),
       subcategory: cell(map.subcategory),
-      type: signed < 0 ? 'expense' : 'income',
+      type: cell(map.type)?.toLowerCase() === 'transfer' ? 'transfer' : signed < 0 ? 'expense' : 'income',
+      account: cell(map.account),
+      toAccount: cell(map.toAccount),
       amount: Math.round(Math.abs(signed) * 100) / 100,
       description: (map.description !== undefined ? r[map.description] : '')?.replace(/\s+/g, ' ').trim() ?? '',
     })

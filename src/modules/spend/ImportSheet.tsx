@@ -84,33 +84,47 @@ export function ImportSheet() {
 
   const result = useMemo(() => (parsed && columns ? toImportRows(parsed.body, columns) : undefined), [parsed, columns])
 
+  // A transfer row needs both wallets by name; if the destination isn't tracked here (e.g. a top-up to an outside wallet), money still left, so it's an expense
+  const resolved = useMemo(() => {
+    if (!result) return undefined
+    const byName = (name?: string) => (name ? methods.find((m) => m.name.trim().toLowerCase() === name.trim().toLowerCase())?.id : undefined)
+    return result.rows.map((r) => {
+      if (r.type !== 'transfer') return { ...r, type: r.type, fromId: undefined as string | undefined, toId: undefined as string | undefined }
+      const fromId = byName(r.account) ?? (accountId || undefined)
+      const toId = byName(r.toAccount)
+      if (fromId && toId && fromId !== toId) return { ...r, type: 'transfer' as const, fromId, toId }
+      return { ...r, type: 'expense' as const, fromId: undefined, toId: undefined }
+    })
+  }, [result, methods, accountId])
+
   // Which entry in the app each row is (same day, direction, amount; same time when both have one)
   const pairs = useMemo(
     () =>
-      result
+      resolved
         ? pairExisting(
-            result.rows,
+            resolved,
             transactions.filter((t) => !t.source),
             accountId === NOT_TRACKED ? undefined : accountId,
           )
         : undefined,
-    [result, transactions, accountId],
+    [resolved, transactions, accountId],
   )
 
   const rows = useMemo(() => {
-    if (!result || !pairs) return []
-    return result.rows.map((r, i) => {
-      // A category named in the file wins; a name the app doesn't have yet becomes a new category
-      const name = r.category ? cleanName(r.category) : ''
-      const named = name ? categoryNamed(name, r.type) : undefined
-      const category = named ?? (name ? undefined : guessCategory(r.description, r.type))
+    if (!resolved || !pairs) return []
+    return resolved.map((r, i) => {
+      // Transfers have no category; for the others, a category named in the file wins and a name the app doesn't have yet becomes a new category
+      const kind = r.type === 'transfer' ? undefined : r.type
+      const name = kind && r.category ? cleanName(r.category) : ''
+      const named = kind && name ? categoryNamed(name, kind) : undefined
+      const category = kind ? (named ?? (name ? undefined : guessCategory(r.description, kind))) : undefined
       const newCategory = name && !named ? name : undefined
       const match = pairs.get(i)
       // What the file would add to the matched entry; only what the file actually has counts
       let change = ''
       let overwrite = false
       let noteDiffers = false
-      if (match) {
+      if (match && r.type !== 'transfer') {
         const oldCat = getCategory(match.categoryId)?.label ?? 'Other'
         const newCat = name ? (newCategory ?? category?.label ?? oldCat) : oldCat
         const sub = r.subcategory ?? match.subcategory
@@ -130,11 +144,13 @@ export function ImportSheet() {
       const status: 'new' | 'same' | 'update' = !match ? 'new' : change ? 'update' : 'same'
       return { ...r, category, newCategory, match, status, change, overwrite, noteDiffers }
     })
-  }, [result, pairs])
+  }, [resolved, pairs])
 
+  const nameOf = (id?: string) => methods.find((m) => m.id === id)?.name ?? ''
   const defaultPick = (r: (typeof rows)[number]) => r.status === 'new' || (r.status === 'update' && !r.overwrite)
   const included = rows.map((r, i) => picked.get(i) ?? defaultPick(r))
   const chosen = rows.filter((_, i) => included[i])
+  const moved = chosen.filter((r) => r.type === 'transfer').reduce((s, r) => s + r.amount, 0)
   const spent = chosen.filter((r) => r.type === 'expense').reduce((s, r) => s + r.amount, 0)
   const earned = chosen.filter((r) => r.type === 'income').reduce((s, r) => s + r.amount, 0)
   const count = { same: 0, update: 0, new: 0 }
@@ -156,11 +172,12 @@ export function ImportSheet() {
     const categoryIdFor = (r: (typeof chosen)[number]) => {
       if (r.category) return r.category.id
       if (!r.newCategory) return r.type === 'income' ? 'other_in' : 'other'
+      if (r.type === 'transfer') return undefined
       const key = `${r.type}|${r.newCategory.toLowerCase()}`
       let id = created.get(key)
       if (!id) {
         const tone = CATEGORY_TONES[created.size % CATEGORY_TONES.length]
-        id = upsertCategory({ type: r.type, label: r.newCategory, icon: 'tag', tone })
+        id = upsertCategory({ type: r.type as 'expense' | 'income', label: r.newCategory, icon: 'tag', tone })
         created.set(key, id)
       }
       return id
@@ -181,13 +198,14 @@ export function ImportSheet() {
       .map((r) => ({
         type: r.type,
         amount: r.amount,
-        categoryId: categoryIdFor(r),
-        subcategory: r.subcategory,
-        accountId: accountId || undefined,
+        categoryId: r.type === 'transfer' ? undefined : categoryIdFor(r),
+        subcategory: r.type === 'transfer' ? undefined : r.subcategory,
+        accountId: r.fromId ?? (accountId || undefined),
+        toAccountId: r.toId,
         date: r.date,
         time: r.time,
         note: r.description || undefined,
-        alreadyInBalance: accountId && alreadyIn ? true : undefined,
+        alreadyInBalance: (r.fromId ?? accountId) && alreadyIn ? true : undefined,
       }))
     const withSub = [...inputs, ...patches].filter((t) => t.subcategory && t.categoryId)
     const subs = new Set(withSub.map((t) => JSON.stringify([t.categoryId, t.subcategory])))
@@ -302,6 +320,9 @@ export function ImportSheet() {
               {colSelect('Time', 'time')}
               {colSelect('Category', 'category')}
               {colSelect('Subcategory', 'subcategory')}
+              {colSelect('Type', 'type')}
+              {colSelect('Account', 'account')}
+              {colSelect('To account', 'toAccount')}
             </div>
             {!columns && <p className="mt-2 text-xs font-semibold text-warn">Pick the date and amount columns.</p>}
           </div>
@@ -375,6 +396,7 @@ export function ImportSheet() {
                 <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 text-xs text-ink-muted tnum">
                   <span>
                     <b className="font-bold text-ink">{chosen.length}</b> ticked · out {thb(spent, true)} · in <span className="text-gain">{thb(earned, true)}</span>
+                    {moved > 0 && ` · moved ${thb(moved, true)}`}
                     {(result?.skipped ?? 0) > 0 && ` · ${plural(result!.skipped, 'row')} unreadable`}
                   </span>
                   <span className="flex items-center gap-3">
@@ -412,15 +434,15 @@ export function ImportSheet() {
                                 </span>
                               ) : (
                                 <>
-                                  {cat?.label}
-                                  {r.subcategory ? ` › ${r.subcategory}` : ''}
+                                  {r.type === 'transfer' ? `${nameOf(r.fromId)} → ${nameOf(r.toId)}` : cat?.label}
+                                  {r.type !== 'transfer' && r.subcategory ? ` › ${r.subcategory}` : ''}
                                   {r.status === 'same' ? ' · already in the app' : ''}
                                 </>
                               )}
                             </span>
                           </span>
                           <span className={`shrink-0 text-sm font-bold tnum ${r.type === 'income' ? 'text-gain' : 'text-ink'}`}>
-                            {r.type === 'income' ? '+' : '−'}
+                            {r.type === 'income' ? '+' : r.type === 'transfer' ? '⇄ ' : '−'}
                             {thb(r.amount, true)}
                           </span>
                         </label>
