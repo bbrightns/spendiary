@@ -1,18 +1,22 @@
 import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import type { SpendTxnType } from '../../lib/types'
 import { openQuickAdd } from './QuickAddSheet'
 
-/** The query that opens Quick Add on load; the installed app's "Quick add" shortcut points here (see manifest). */
+/** The query that opens Quick Add on load; the installed app's shortcuts point here (see manifest). */
 export const QUICK_ADD_PARAM = 'add'
 
-/** Opens Quick Add when the URL carries `?add=1`, then clears it so a refresh doesn't reopen the sheet. */
+const TYPES: SpendTxnType[] = ['expense', 'income', 'transfer']
+
+/** Opens Quick Add for `?add=1` (the usual entry) or `?add=expense|income|transfer`, then clears the query so a refresh doesn't reopen it. */
 export function QuickAddLink() {
   const [params, setParams] = useSearchParams()
-  const wanted = params.get(QUICK_ADD_PARAM) === '1'
+  const raw = params.get(QUICK_ADD_PARAM)
 
   useEffect(() => {
-    if (!wanted) return
-    openQuickAdd()
+    if (raw === null) return
+    const type = TYPES.find((t) => t === raw)
+    if (type || raw === '1') openQuickAdd(type ? { type } : {})
     setParams(
       (prev) => {
         const next = new URLSearchParams(prev)
@@ -21,7 +25,7 @@ export function QuickAddLink() {
       },
       { replace: true },
     )
-  }, [wanted, setParams])
+  }, [raw, setParams])
 
   return null
 }

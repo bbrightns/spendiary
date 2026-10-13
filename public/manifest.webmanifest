@@ -28,10 +28,49 @@
   ],
   "shortcuts": [
     {
-      "name": "Quick Add",
-      "short_name": "Add",
-      "description": "Add a transaction",
-      "url": "/?add=1",
+      "name": "Add expense",
+      "short_name": "Expense",
+      "description": "Add an expense",
+      "url": "/?add=expense",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Add income",
+      "short_name": "Income",
+      "description": "Add income",
+      "url": "/?add=income",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Transactions",
+      "short_name": "Txns",
+      "description": "Open the transaction list",
+      "url": "/spend/txns",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Invest dashboard",
+      "short_name": "Invest",
+      "description": "Open the investing dashboard",
+      "url": "/invest",
       "icons": [
         {
           "src": "/icon-192.png",
