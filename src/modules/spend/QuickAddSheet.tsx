@@ -498,18 +498,7 @@ export function QuickAddSheet() {
             </div>
           )}
 
-          <TransactionDateField value={date} onChange={setDate} />
-
-          <label className="-mt-2 flex items-center justify-between gap-3">
-            <span className="text-sm font-semibold text-ink-soft">Time</span>
-            <input
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              aria-label="Time of day"
-              className="h-11 rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink tnum outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15"
-            />
-          </label>
+          <TransactionDateField value={date} onChange={setDate} time={time} onTimeChange={setTime} />
 
           {backdated && touchesBalance && (
             <button
