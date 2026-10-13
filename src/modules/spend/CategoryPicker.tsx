@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { categoriesFor, type SpendCategory } from './categories'
+import { categoriesFor, getCategory, type SpendCategory } from './categories'
 import { CategorySheet } from './CategorySheet'
 import { TONES } from './tones'
 import { KEEP_CATEGORY, useRemoveCategory } from './useRemoveCategory'
@@ -167,50 +167,54 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
         </div>
       )}
 
-      <div className="mt-3 flex flex-wrap items-center gap-1.5" role="group" aria-label="Subcategory">
-        {subChoices.map((s) => (
-          <button
-            key={s}
-            type="button"
-            aria-pressed={s === subcategory}
-            onClick={() => onSubcategoryChange(s === subcategory ? '' : s)}
-            className={`h-8 rounded-full border px-3 text-xs font-semibold transition-colors cursor-pointer ${
-              s === subcategory ? 'border-brand bg-brand text-white' : 'border-line bg-surface text-ink-soft hover:bg-surface-muted/60'
-            }`}
-          >
-            {s}
-          </button>
-        ))}
-        {addingSub ? (
-          <input
-            autoFocus
-            value={newSub}
-            onChange={(e) => setNewSub(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                commitSub()
-              } else if (e.key === 'Escape') {
-                e.stopPropagation()
-                setAddingSub(false)
-                setNewSub('')
-              }
-            }}
-            onBlur={commitSub}
-            placeholder="Subcategory"
-            maxLength={30}
-            aria-label="New subcategory"
-            className="h-8 w-32 rounded-full border border-brand bg-surface px-3 text-xs font-semibold text-ink outline-none"
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setAddingSub(true)}
-            className="h-8 rounded-full border border-dashed border-line-strong px-3 text-xs font-semibold text-ink-muted transition-colors cursor-pointer hover:bg-surface-muted/60 hover:text-ink"
-          >
-            + Sub
-          </button>
-        )}
+      {/* Sub-level: indented under the category, with a rule in that category's color */}
+      <div className="mt-3 flex gap-2.5 pl-3">
+        <span className={`w-0.5 shrink-0 rounded-full ${TONES[getCategory(value)?.tone ?? 'slate'].bar}`} aria-hidden="true" />
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5" role="group" aria-label="Subcategory">
+          {subChoices.map((s) => (
+            <button
+              key={s}
+              type="button"
+              aria-pressed={s === subcategory}
+              onClick={() => onSubcategoryChange(s === subcategory ? '' : s)}
+              className={`h-8 rounded-full border px-3 text-xs font-semibold transition-colors cursor-pointer ${
+                s === subcategory ? 'border-brand bg-brand text-white' : 'border-line bg-surface text-ink-soft hover:bg-surface-muted/60'
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+          {addingSub ? (
+            <input
+              autoFocus
+              value={newSub}
+              onChange={(e) => setNewSub(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  commitSub()
+                } else if (e.key === 'Escape') {
+                  e.stopPropagation()
+                  setAddingSub(false)
+                  setNewSub('')
+                }
+              }}
+              onBlur={commitSub}
+              placeholder="Subcategory"
+              maxLength={30}
+              aria-label="New subcategory"
+              className="h-8 w-32 rounded-full border border-brand bg-surface px-3 text-xs font-semibold text-ink outline-none"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAddingSub(true)}
+              className="h-8 rounded-full border border-dashed border-line-strong px-3 text-xs font-semibold text-ink-muted transition-colors cursor-pointer hover:bg-surface-muted/60 hover:text-ink"
+            >
+              + Sub
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Outside the sheet this picker sits in, so it isn't clipped by it */}
