@@ -507,7 +507,7 @@ export function QuickAddSheet() {
               value={time}
               onChange={(e) => setTime(e.target.value)}
               aria-label="Time of day"
-              className="h-10 rounded-xl border border-line bg-surface px-3 text-sm font-semibold text-ink tnum outline-none focus:border-brand"
+              className="h-11 rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink tnum outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15"
             />
           </label>
 

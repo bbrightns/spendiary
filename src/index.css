@@ -654,15 +654,18 @@
   }
 }
 
-/* Style calendar picker icon for dark/light mode */
-input[type="date"]::-webkit-calendar-picker-indicator {
+/* Style calendar / clock picker icon for dark/light mode */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
   opacity: 0.5;
   transition: opacity 0.15s ease;
 }
-input[type="date"]::-webkit-calendar-picker-indicator:hover {
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
   opacity: 0.8;
 }
-.dark input[type="date"]::-webkit-calendar-picker-indicator {
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="time"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
