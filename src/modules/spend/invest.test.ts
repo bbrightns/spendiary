@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import type { CashAccount, DcaPlan, Holding, HoldingLog, SpendiaryData } from '../../lib/types'
+import type { CashAccount, DcaPlan, Holding, HoldingLog, SpendTransaction, SpendiaryData } from '../../lib/types'
 import { investTransactions, isInvested } from './invest'
-import { investCandidates } from './importCsv'
+import { guessColumns, investCandidates, pairExisting, parseCsv, toImportRows } from './importCsv'
+import { toCsv } from './exportCsv'
 
 const acct = (id: string, balance: number): CashAccount => ({ id, name: id, balance })
 const holding = (thb: number): Holding => ({ id: 'h1', name: 'S&P 500', ticker: 'SPX', assetClass: 'fund', units: 1, avgCost: thb, price: thb, totalThbInvested: thb }) as Holding
@@ -60,6 +61,24 @@ describe('investTransactions', () => {
       null,
     )
     expect(rows).toEqual([])
+  })
+})
+
+describe('export → import with Invest rows on the account', () => {
+  it('pairs exported transfers and expenses with their own entries, and a statement-only DCA line with the Invest row', () => {
+    const own = [
+      { id: 't1', type: 'transfer', amount: 5000, date: '2026-10-05', accountId: 'kbank', toAccountId: 'card', note: 'Pay card', createdAt: '' },
+      { id: 'e1', type: 'expense', amount: 5000, date: '2026-10-05', accountId: 'kbank', note: 'Rent', createdAt: '' },
+    ] as SpendTransaction[]
+    const dca = { id: 'dca-1', type: 'transfer', amount: 5000, date: '2026-10-05', accountId: 'kbank', note: 'Monthly S&P', source: 'dca', createdAt: '' } as SpendTransaction
+    const name = (id?: string) => ({ kbank: 'KBank', card: 'KTC' })[id as 'kbank'] ?? ''
+    // Spend's export leaves Invest rows out, the bank statement line for the DCA is added by hand
+    const csv = toCsv(own, { category: () => '', account: name }) + '2026-10-05,,expense,,,KBank,,S&P 500 fund,,-5000.00\r\n'
+    const [header, ...body] = parseCsv(csv)
+    const rows = toImportRows(body, guessColumns(header)!).rows
+    const pairs = pairExisting(rows, [...own, ...investCandidates([...own, dca], 'kbank')], 'kbank')
+    expect(rows.map((r) => r.type)).toEqual(['transfer', 'expense', 'expense'])
+    expect([0, 1, 2].map((i) => pairs.get(i)?.id)).toEqual(['t1', 'e1', 'dca-1'])
   })
 })
 
