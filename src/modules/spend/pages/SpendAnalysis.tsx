@@ -176,7 +176,7 @@ export function SpendAnalysis() {
   const tagTotals = useMemo(() => {
     const m = new Map<string, number>()
     for (const t of inRange) if (t.type === 'expense') for (const tag of t.tags ?? []) m.set(tag, (m.get(tag) ?? 0) + t.amount)
-    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3)
+    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
   }, [inRange])
 
   const catBudgets = range === 'month' ? settings.categoryBudgets ?? {} : {}
