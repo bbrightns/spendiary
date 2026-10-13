@@ -26,6 +26,19 @@ export interface ResultState {
   confetti?: boolean
   /** A button under the message (e.g. Undo); the popup stays a little longer to reach it */
   action?: ToastAction
+  /** A receipt-like layout instead of title + message: the amount leads, then what it was for */
+  detail?: ResultDetail
+}
+
+export interface ResultDetail {
+  /** e.g. "฿899" — the biggest line */
+  amount: string
+  /** What it was for, e.g. the bill's name */
+  name: string
+  /** e.g. "KTC Visa · Bills" */
+  meta?: string
+  /** A boxed line at the bottom, e.g. "Next due Fri 13 Nov" */
+  footnote?: string
 }
 
 export interface ToastOptions {
@@ -35,6 +48,8 @@ export interface ToastOptions {
   popup?: boolean
   /** Override the popup headline (defaults depend on the status). */
   title?: string
+  /** Popup only: show it as a receipt (amount first) instead of title + message */
+  detail?: ResultDetail
 }
 
 interface ToastContextValue {
@@ -90,6 +105,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           message,
           confetti: !!options?.celebrate && status === 'success',
           action,
+          detail: options?.detail,
         })
         return
       }

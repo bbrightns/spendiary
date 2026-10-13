@@ -15,6 +15,7 @@ import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { SwitchVisual } from './AccountSheets'
 import { CategoryPicker } from './CategoryPicker'
 import { NoteField } from './NoteField'
+import { paidDetail } from './billPaid'
 import { firstInstallmentDue, installmentAmount } from './loans'
 
 const OPEN_EVENT = 'spendiary:open-quick-add'
@@ -86,7 +87,7 @@ function pickDefaults(type: SpendTxnType, txns: SpendTransaction[], methods: Pay
 }
 
 export function QuickAddSheet() {
-  const { transactions, methods, cards, settings, addTransaction, updateTransaction, removeTransaction } = useSpend()
+  const { transactions, methods, cards, settings, recurring, addTransaction, updateTransaction, removeTransaction } = useSpend()
   const { data, setLiabilities, removeLiability } = useData()
   const { showToast } = useToast()
 
@@ -265,7 +266,20 @@ export function QuickAddSheet() {
           `${sign}${thb(input.amount)} · ${fromRecurring.name}`,
           'success',
           { label: 'Undo', onClick: () => removeTransaction(txn.id) },
-          { popup: true, title: type === 'income' ? 'Received!' : 'Paid!' },
+          {
+            popup: true,
+            title: type === 'income' ? 'Received' : 'Paid',
+            // What was actually logged, which may differ from the bill's usual amount or wallet
+            detail: paidDetail({
+              rec: recurring.find((r) => r.id === fromRecurring.id),
+              date: fromRecurring.date,
+              name: fromRecurring.name,
+              amount: input.amount,
+              accountName: methods.find((m) => m.id === input.accountId)?.name,
+              categoryId: input.categoryId,
+              subcategory: input.subcategory,
+            }),
+          },
         )
       } else showToast(`${sign}${thb(input.amount)} · ${label}`)
     }

@@ -9,7 +9,7 @@ const AUTO_CLOSE_MS = 2600
 const AUTO_CLOSE_WITH_ACTION_MS = 5000
 const EXIT_MS = 180
 
-function StatusIcon({ status }: { status: ResultState['status'] }) {
+function StatusIcon({ status, small = false }: { status: ResultState['status']; small?: boolean }) {
   if (status === 'loading') {
     return (
       <div className="relative grid h-[72px] w-[72px] place-items-center">
@@ -28,11 +28,11 @@ function StatusIcon({ status }: { status: ResultState['status'] }) {
 
   return (
     <div
-      className={`success-ring grid h-[72px] w-[72px] place-items-center rounded-full animate-pop ${tone} ${
+      className={`success-ring grid place-items-center rounded-full animate-pop ${small ? 'h-[52px] w-[52px]' : 'h-[72px] w-[72px]'} ${tone} ${
         status === 'error' ? 'animate-shake' : ''
       }`}
     >
-      <svg viewBox="0 0 24 24" className="h-9 w-9" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <svg viewBox="0 0 24 24" className={small ? 'h-7 w-7' : 'h-9 w-9'} fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         {status === 'success' && <path className="result-draw" d="M5 12.5l4.5 4.5L19 7.5" />}
         {status === 'error' && <path className="result-draw" d="M7 7l10 10M17 7L7 17" />}
         {status === 'warn' && <path className="result-draw" d="M12 7v6m0 4h.01" />}
@@ -122,17 +122,35 @@ export function ResultOverlay() {
           role={shown.status === 'error' ? 'alertdialog' : 'status'}
           aria-live={shown.status === 'error' ? 'assertive' : 'polite'}
           aria-busy={shown.status === 'loading'}
-          aria-label={shown.title}
+          aria-label={shown.detail ? `${shown.title} ${shown.detail.amount}, ${shown.detail.name}` : shown.title}
           onClick={(e) => e.stopPropagation()}
           className={`relative w-full max-w-[340px] overflow-hidden rounded-[28px] border border-line bg-surface px-7 pb-7 pt-8 text-center shadow-[var(--shadow-lift)] ${
             closing ? 'result-card-out' : 'result-card-in'
           }`}
         >
-          <div className="mb-5 flex justify-center">
-            <StatusIcon status={shown.status} />
-          </div>
-          <h2 className="font-display text-xl font-extrabold tracking-tight text-ink [text-wrap:balance]">{shown.title}</h2>
-          {shown.message && <p className="mt-2 text-sm leading-relaxed text-ink-muted [text-wrap:pretty]">{shown.message}</p>}
+          {shown.detail && finished ? (
+            // Receipt: the amount leads, then what it was for
+            <>
+              <div className="mb-2 flex justify-center">
+                <StatusIcon status={shown.status} small />
+              </div>
+              <h2 className={`text-sm font-bold ${shown.status === 'success' ? 'text-gain' : 'text-ink-muted'}`}>{shown.title}</h2>
+              <p className="mt-1 font-display text-4xl font-extrabold tracking-tight tnum text-ink">{shown.detail.amount}</p>
+              <p className="mt-1.5 truncate text-base font-bold text-ink">{shown.detail.name}</p>
+              {shown.detail.meta && <p className="mt-0.5 truncate text-xs text-ink-muted">{shown.detail.meta}</p>}
+              {shown.detail.footnote && (
+                <p className="mt-4 rounded-xl bg-surface-muted px-3 py-2 text-xs font-semibold text-ink-soft">{shown.detail.footnote}</p>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="mb-5 flex justify-center">
+                <StatusIcon status={shown.status} />
+              </div>
+              <h2 className="font-display text-xl font-extrabold tracking-tight text-ink [text-wrap:balance]">{shown.title}</h2>
+              {shown.message && <p className="mt-2 text-sm leading-relaxed text-ink-muted [text-wrap:pretty]">{shown.message}</p>}
+            </>
+          )}
 
           {finished && shown.action && (
             <button

@@ -6,6 +6,7 @@ import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb } from '../../lib/format'
 import { RepeatIcon, getCategory } from './categories'
 import { nextOccurrence } from './logic'
+import { paidDetail } from './billPaid'
 import { openQuickAdd } from './QuickAddSheet'
 import { TONES } from './tones'
 import { recurringInput, useSpend } from './useSpend'
@@ -27,7 +28,7 @@ const daysFrom = (today: string, iso: string) => {
 
 /** Recurring items waiting for a confirm, plus what's coming in the next week. */
 export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
-  const { recurring, dueRecurring, confirmRecurring, skipRecurring, unskipRecurring, removeTransaction } = useSpend()
+  const { recurring, methods, dueRecurring, confirmRecurring, skipRecurring, unskipRecurring, removeTransaction } = useSpend()
   const { showToast } = useToast()
   const today = localDateStr()
 
@@ -122,7 +123,19 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
                       `${rec.type === 'income' ? '+' : '−'}${thb(rec.amount)} · ${rec.name}`,
                       'success',
                       { label: 'Undo', onClick: () => removeTransaction(txn.id) },
-                      { popup: true, title: rec.type === 'income' ? 'Received!' : 'Paid!' },
+                      {
+                        popup: true,
+                        title: rec.type === 'income' ? 'Received' : 'Paid',
+                        detail: paidDetail({
+                          rec,
+                          date,
+                          name: rec.name,
+                          amount: rec.amount,
+                          accountName: methods.find((m) => m.id === rec.accountId)?.name,
+                          categoryId: rec.categoryId,
+                          subcategory: rec.subcategory,
+                        }),
+                      },
                     )
                   }}
                   aria-label={`Mark ${rec.name} ${rec.type === 'income' ? 'received' : 'paid'}, ${thb(rec.amount)}`}
