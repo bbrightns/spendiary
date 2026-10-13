@@ -66,6 +66,7 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
   }
 
   const list = categoriesFor(type, value)
+  const tone = getCategory(value)?.tone ?? 'slate'
 
   return (
     <div>
@@ -170,7 +171,7 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
 
       {/* Sub-level: indented under the category, led by a > in that category's color */}
       <div className="mt-3 flex gap-2.5 pl-3">
-        <span className={`mt-1.5 grid h-5 w-5 shrink-0 place-items-center rounded-md ${TONES[getCategory(value)?.tone ?? 'slate'].chip}`} aria-hidden="true">
+        <span className={`mt-1.5 grid h-5 w-5 shrink-0 place-items-center rounded-md ${TONES[tone].chip}`} aria-hidden="true">
           <ChevronRightIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
         </span>
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5" role="group" aria-label="Subcategory">
@@ -181,7 +182,8 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
               aria-pressed={s === subcategory}
               onClick={() => onSubcategoryChange(s === subcategory ? '' : s)}
               className={`h-8 rounded-full border px-3 text-xs font-semibold transition-colors cursor-pointer ${
-                s === subcategory ? 'border-brand bg-brand text-white' : 'border-line bg-surface text-ink-soft hover:bg-surface-muted/60'
+                // Picked: solid in the category's color, so it reads as part of it without looking like a category chip
+                s === subcategory ? `border-transparent ${TONES[tone].bar} font-bold text-slate-900` : 'border-line bg-surface text-ink-soft hover:bg-surface-muted/60'
               }`}
             >
               {s}
