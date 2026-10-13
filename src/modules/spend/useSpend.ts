@@ -35,6 +35,10 @@ function markOccurrence(list: SpendRecurring[], id: string, date: string, key: '
   return list.map((r) => (r.id === id && !(r[key] ?? []).includes(date) ? { ...r, [key]: [...(r[key] ?? []), date].slice(-24) } : r))
 }
 
+function unmarkOccurrence(list: SpendRecurring[], id: string, date: string, key: 'doneDates' | 'skippedDates'): SpendRecurring[] {
+  return list.map((r) => (r.id === id && (r[key] ?? []).includes(date) ? { ...r, [key]: (r[key] ?? []).filter((d) => d !== date) } : r))
+}
+
 /** The transaction a recurring occurrence turns into. */
 export function recurringInput(rec: SpendRecurring, date: string): SpendTxnInput {
   return {
@@ -101,7 +105,14 @@ export function useSpend() {
    * update, so a confirmed bill can never be logged twice.
    */
   function addTransaction(input: SpendTxnInput, fromRecurring?: { id: string; date: string }): SpendTransaction {
-    const txn: SpendTransaction = { ...input, id: newId(), tags: parseTags(input.note), createdAt: new Date().toISOString() }
+    const txn: SpendTransaction = {
+      ...input,
+      id: newId(),
+      tags: parseTags(input.note),
+      createdAt: new Date().toISOString(),
+      // Remembered so deleting it puts the occurrence back as due
+      ...(fromRecurring ? { recurring: { id: fromRecurring.id, date: fromRecurring.date } } : {}),
+    }
     setData((prev) => ({
       ...prev,
       ...applyToBalances(balancesOf(prev), txn, 1),
@@ -130,6 +141,11 @@ export function useSpend() {
 
   function skipRecurring(id: string, date: string) {
     setData((prev) => ({ ...prev, spendRecurring: markOccurrence(prev.spendRecurring ?? [], id, date, 'skippedDates') }))
+  }
+
+  /** Undo a skip: the occurrence is due again. */
+  function unskipRecurring(id: string, date: string) {
+    setData((prev) => ({ ...prev, spendRecurring: unmarkOccurrence(prev.spendRecurring ?? [], id, date, 'skippedDates') }))
   }
 
   function upsertRecurring(rec: Omit<SpendRecurring, 'id'> & { id?: string }) {
@@ -207,6 +223,8 @@ export function useSpend() {
         ...prev,
         ...applyToBalances(balancesOf(prev), old, -1),
         spendTransactions: list.filter((t) => t.id !== id),
+        // A bill marked paid comes back as due once its transaction is gone
+        ...(old.recurring ? { spendRecurring: unmarkOccurrence(prev.spendRecurring ?? [], old.recurring.id, old.recurring.date, 'doneDates') } : {}),
       }
     })
   }
@@ -372,6 +390,7 @@ export function useSpend() {
     dueRecurring: dueRecurringList,
     confirmRecurring,
     skipRecurring,
+    unskipRecurring,
     upsertRecurring,
     removeRecurring,
     addTransaction,

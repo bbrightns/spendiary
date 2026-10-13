@@ -27,7 +27,7 @@ const daysFrom = (today: string, iso: string) => {
 
 /** Recurring items waiting for a confirm, plus what's coming in the next week. */
 export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
-  const { recurring, dueRecurring, confirmRecurring, skipRecurring } = useSpend()
+  const { recurring, dueRecurring, confirmRecurring, skipRecurring, unskipRecurring, removeTransaction } = useSpend()
   const { showToast } = useToast()
   const today = localDateStr()
 
@@ -107,7 +107,7 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
                   type="button"
                   onClick={() => {
                     skipRecurring(rec.id, date)
-                    showToast(`Skipped ${rec.name}`, 'info')
+                    showToast(`Skipped ${rec.name}`, 'info', { label: 'Undo', onClick: () => unskipRecurring(rec.id, date) })
                   }}
                   className="shrink-0 rounded-full px-2.5 py-1.5 text-xs font-semibold text-ink-muted hover:bg-surface-muted hover:text-ink cursor-pointer"
                 >
@@ -116,8 +116,14 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
                 <button
                   type="button"
                   onClick={() => {
-                    confirmRecurring(rec, date)
-                    showToast(`${rec.type === 'income' ? '+' : '−'}${thb(rec.amount)} · ${rec.name}`)
+                    const txn = confirmRecurring(rec, date)
+                    // Undo deletes the logged transaction, which puts the bill back as due
+                    showToast(
+                      `${rec.type === 'income' ? '+' : '−'}${thb(rec.amount)} · ${rec.name}`,
+                      'success',
+                      { label: 'Undo', onClick: () => removeTransaction(txn.id) },
+                      { popup: true, title: rec.type === 'income' ? 'Received!' : 'Paid!' },
+                    )
                   }}
                   aria-label={`Mark ${rec.name} ${rec.type === 'income' ? 'received' : 'paid'}, ${thb(rec.amount)}`}
                   className="flex shrink-0 items-center gap-1 rounded-full bg-ink px-3 py-1.5 text-xs font-bold text-white cursor-pointer dark:bg-[#4f46e5]"

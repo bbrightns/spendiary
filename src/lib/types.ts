@@ -346,6 +346,8 @@ export interface SpendTransaction {
   source?: 'dividend' | 'dca' | 'buy'
   /** A loan / installment payment: the liability it paid toward */
   liabilityId?: string
+  /** Logged from a recurring item's occurrence; deleting it puts that occurrence back as due */
+  recurring?: { id: string; date: string }
 }
 
 export interface SpendSettings {

@@ -24,6 +24,8 @@ export interface ResultState {
   message?: string
   /** Fire a confetti burst when the popup reaches a success state. */
   confetti?: boolean
+  /** A button under the message (e.g. Undo); the popup stays a little longer to reach it */
+  action?: ToastAction
 }
 
 export interface ToastOptions {
@@ -87,6 +89,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           title: options?.title ?? DEFAULT_TITLES[status],
           message,
           confetti: !!options?.celebrate && status === 'success',
+          action,
         })
         return
       }

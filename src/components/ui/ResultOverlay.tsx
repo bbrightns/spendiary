@@ -5,6 +5,8 @@ import { ConfettiBurst } from './ConfettiBurst'
 /** Keep the "working…" state visible long enough to read, even when the work is instant. */
 const MIN_LOADING_MS = 650
 const AUTO_CLOSE_MS = 2600
+/** Longer when there's a button (Undo) to reach */
+const AUTO_CLOSE_WITH_ACTION_MS = 5000
 const EXIT_MS = 180
 
 function StatusIcon({ status }: { status: ResultState['status'] }) {
@@ -82,13 +84,14 @@ export function ResultOverlay() {
 
   const finished = shown && shown.status !== 'loading'
   const autoCloses = finished && (shown.status === 'success' || shown.status === 'info')
+  const closeAfter = shown?.action ? AUTO_CLOSE_WITH_ACTION_MS : AUTO_CLOSE_MS
 
   // Auto-dismiss happy outcomes; errors and warnings wait for the user
   useEffect(() => {
     if (!autoCloses) return
-    const t = window.setTimeout(() => hideResult(), AUTO_CLOSE_MS)
+    const t = window.setTimeout(() => hideResult(), closeAfter)
     return () => window.clearTimeout(t)
-  }, [autoCloses, shown?.id, hideResult])
+  }, [autoCloses, shown?.id, hideResult, closeAfter])
 
   useEffect(() => {
     if (finished && !autoCloses) closeButtonRef.current?.focus()
@@ -131,6 +134,19 @@ export function ResultOverlay() {
           <h2 className="font-display text-xl font-extrabold tracking-tight text-ink [text-wrap:balance]">{shown.title}</h2>
           {shown.message && <p className="mt-2 text-sm leading-relaxed text-ink-muted [text-wrap:pretty]">{shown.message}</p>}
 
+          {finished && shown.action && (
+            <button
+              type="button"
+              onClick={() => {
+                shown.action!.onClick()
+                hideResult()
+              }}
+              className="mt-5 inline-flex h-10 items-center justify-center rounded-full border border-line-strong px-5 text-sm font-semibold text-ink transition-all hover:bg-surface-muted active:scale-[0.98] cursor-pointer"
+            >
+              {shown.action.label}
+            </button>
+          )}
+
           {finished && !autoCloses && (
             <button
               ref={closeButtonRef}
@@ -147,7 +163,7 @@ export function ResultOverlay() {
               <div
                 key={shown.id}
                 className={`result-progress h-full ${shown.status === 'success' ? 'bg-gain' : 'bg-brand'}`}
-                style={{ animationDuration: `${AUTO_CLOSE_MS}ms` }}
+                style={{ animationDuration: `${closeAfter}ms` }}
               />
             </div>
           )}

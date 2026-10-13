@@ -256,9 +256,18 @@ export function QuickAddSheet() {
       updateTransaction(editId, input)
       showToast('Transaction updated')
     } else {
-      addTransaction(input, fromRecurring ? { id: fromRecurring.id, date: fromRecurring.date } : undefined)
+      const txn = addTransaction(input, fromRecurring ? { id: fromRecurring.id, date: fromRecurring.date } : undefined)
       const label = type === 'transfer' ? 'Transfer' : getCategory(categoryId)?.label ?? ''
-      showToast(`${type === 'income' ? '+' : type === 'expense' ? '−' : ''}${thb(input.amount)} · ${label}`)
+      const sign = type === 'income' ? '+' : type === 'expense' ? '−' : ''
+      if (fromRecurring) {
+        // Like marking it paid from the bills card: Undo puts the bill back as due
+        showToast(
+          `${sign}${thb(input.amount)} · ${fromRecurring.name}`,
+          'success',
+          { label: 'Undo', onClick: () => removeTransaction(txn.id) },
+          { popup: true, title: type === 'income' ? 'Received!' : 'Paid!' },
+        )
+      } else showToast(`${sign}${thb(input.amount)} · ${label}`)
     }
     setOpen(false)
   }
