@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { guessColumns, looksLikeHeader, parseAmount, parseCsv, parseDate, toImportRows } from './importCsv'
+import { guessColumns, looksLikeHeader, parseAmount, parseCsv, parseDate, parseTime, toImportRows } from './importCsv'
 import { toCsv } from './exportCsv'
 
 describe('parseCsv', () => {
@@ -24,6 +24,17 @@ describe('parseDate', () => {
     expect(parseDate('05.10.26 14:32')).toBe('2026-10-05')
     expect(parseDate('31/02/2026')).toBeUndefined()
     expect(parseDate('Coffee')).toBeUndefined()
+  })
+})
+
+describe('parseTime', () => {
+  it('reads 24-hour and AM/PM times', () => {
+    expect(parseTime('4:48')).toBe('04:48')
+    expect(parseTime('16:43:10')).toBe('16:43')
+    expect(parseTime('4.48 PM')).toBe('16:48')
+    expect(parseTime('12:05 am')).toBe('00:05')
+    expect(parseTime('25:00')).toBeUndefined()
+    expect(parseTime('Food')).toBeUndefined()
   })
 })
 
@@ -59,6 +70,27 @@ describe('columns and rows', () => {
   })
 })
 
+describe('category columns', () => {
+  it('reads time, category and subcategory from a tab-separated paste with multi-line notes', () => {
+    const text = [
+      'Date\tTime\tType\tCategory\tSubcategory\tAccount\tTo account\tDescription\tTags\tAmount',
+      '31-05-26\t4:48\texpense\tTransport\tAirplane\t\t\t"flight kkc-bkk-kkc\nfu eye"\t\t-2621',
+      '06-06-26\t16:21\texpense\tGift\t\t\t\tชุดหว่าหวา 85\t\t-300',
+    ].join('\n')
+    const [header, ...rows] = parseCsv(text)
+    const map = guessColumns(header)!
+    expect(map).toMatchObject({ date: 0, time: 1, category: 3, subcategory: 4, description: 7, amount: 9 })
+    expect(toImportRows(rows, map).rows).toEqual([
+      { date: '2026-05-31', time: '04:48', type: 'expense', amount: 2621, description: 'flight kkc-bkk-kkc fu eye', category: 'Transport', subcategory: 'Airplane' },
+      { date: '2026-06-06', time: '16:21', type: 'expense', amount: 300, description: 'ชุดหว่าหวา 85', category: 'Gift' },
+    ])
+  })
+  it('takes the time from the date cell when there is no time column', () => {
+    const map = guessColumns(['Date', 'Amount'])!
+    expect(toImportRows([['2026-10-01 19:28', '-5']], map).rows[0]).toMatchObject({ date: '2026-10-01', time: '19:28' })
+  })
+})
+
 describe('BOM', () => {
   it('drops a leading byte-order mark', () => {
     expect(parseCsv(String.fromCharCode(0xfeff) + 'Date,Amount\n2026-10-01,5')[0][0]).toBe('Date')
@@ -71,7 +103,7 @@ describe('export round trip', () => {
     const csv = toCsv(
       [
         { ...base, id: '2', type: 'income', amount: 50000, date: '2026-10-02', note: 'เงินเดือน', categoryId: 'salary', accountId: 'w' },
-        { ...base, id: '1', type: 'expense', amount: 65.5, date: '2026-10-01', note: 'Tea, "large" #nosetea', tags: ['nosetea'], categoryId: 'drinks', accountId: 'w' },
+        { ...base, id: '1', type: 'expense', amount: 65.5, date: '2026-10-01', time: '08:15', subcategory: 'Milk tea', note: 'Tea, "large" #nosetea', tags: ['nosetea'], categoryId: 'drinks', accountId: 'w' },
       ],
       { category: (id) => id ?? '', account: (id) => (id === 'w' ? 'SCB Easy' : '') },
     )
@@ -79,8 +111,8 @@ describe('export round trip', () => {
     expect(header[0]).toBe('Date')
     const map = guessColumns(header)!
     expect(toImportRows(rows, map).rows).toEqual([
-      { date: '2026-10-01', type: 'expense', amount: 65.5, description: 'Tea, "large" #nosetea' },
-      { date: '2026-10-02', type: 'income', amount: 50000, description: 'เงินเดือน' },
+      { date: '2026-10-01', time: '08:15', type: 'expense', amount: 65.5, description: 'Tea, "large" #nosetea', category: 'drinks', subcategory: 'Milk tea' },
+      { date: '2026-10-02', type: 'income', amount: 50000, description: 'เงินเดือน', category: 'salary' },
     ])
   })
 })

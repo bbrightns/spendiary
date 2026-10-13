@@ -54,6 +54,11 @@ export interface ColumnMap {
   out?: number
   in?: number
   description?: number
+  /** Time of day (H:mm); a time inside the date cell is read too */
+  time?: number
+  /** Category / subcategory names, e.g. from Spendiary's own export or another money app */
+  category?: number
+  subcategory?: number
 }
 
 const HEADER_HINTS: Record<keyof ColumnMap, RegExp> = {
@@ -62,6 +67,9 @@ const HEADER_HINTS: Record<keyof ColumnMap, RegExp> = {
   out: /withdraw|debit|ถอน|จ่าย|เดบิต|money out|paid out|spent/i,
   in: /deposit|credit|ฝาก|รับ|เครดิต|money in|paid in|received/i,
   description: /desc|detail|รายการ|รายละเอียด|note|memo|merchant|payee|narrative|บันทึก/i,
+  time: /^time$|^เวลา$/i,
+  category: /^category$|^หมวด(หมู่)?$/i,
+  subcategory: /^sub[- ]?category$|^หมวดย่อย$/i,
 }
 
 /** Guess which column is which from the header row; undefined if no date or amount is found. */
@@ -74,6 +82,10 @@ export function guessColumns(header: Row): ColumnMap | undefined {
   const amount = find('amount', [date, out, inn])
   const description = find('description', [date, out, inn, amount])
   const map: ColumnMap = { date, description: description >= 0 ? description : undefined }
+  for (const key of ['time', 'category', 'subcategory'] as const) {
+    const i = find(key, [date, out, inn, amount, description])
+    if (i >= 0) map[key] = i
+  }
   if (out >= 0 || inn >= 0) {
     if (out >= 0) map.out = out
     if (inn >= 0) map.in = inn
@@ -115,12 +127,32 @@ export function parseDate(s: string | undefined): string | undefined {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 }
 
+/** "4:48", "16:43:10", "4.48 PM" → "HH:mm"; undefined when it isn't a time. */
+export function parseTime(s: string | undefined): string | undefined {
+  const m = s?.trim().match(/^(\d{1,2})[:.](\d{2})(?:[:.]\d{2})?\s*([ap]\.?m\.?)?$/i)
+  if (!m) return undefined
+  let h = Number(m[1])
+  const min = Number(m[2])
+  const pm = m[3]?.toLowerCase().startsWith('p')
+  if (m[3]) {
+    if (h < 1 || h > 12) return undefined
+    h = (h % 12) + (pm ? 12 : 0)
+  }
+  if (h > 23 || min > 59) return undefined
+  return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`
+}
+
 export interface ImportRow {
   date: string
+  /** HH:mm when the file has a time */
+  time?: string
   type: 'expense' | 'income'
   /** Positive */
   amount: number
   description: string
+  /** Names as written in the file, matched to the app's categories by the importer */
+  category?: string
+  subcategory?: string
 }
 
 /** Turn CSV rows into transactions; rows without a date or amount are counted as skipped. */
@@ -141,8 +173,12 @@ export function toImportRows(rows: Row[], map: ColumnMap): { rows: ImportRow[]; 
       skipped++
       continue
     }
+    const cell = (i?: number) => (i !== undefined ? r[i]?.trim() || undefined : undefined)
     out.push({
       date,
+      time: parseTime(cell(map.time)) ?? parseTime(r[map.date]?.trim().split(/[ T]/).slice(1).join(' ')),
+      category: cell(map.category),
+      subcategory: cell(map.subcategory),
       type: signed < 0 ? 'expense' : 'income',
       amount: Math.round(Math.abs(signed) * 100) / 100,
       description: (map.description !== undefined ? r[map.description] : '')?.replace(/\s+/g, ' ').trim() ?? '',

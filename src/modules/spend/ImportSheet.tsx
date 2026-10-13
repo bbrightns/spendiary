@@ -4,7 +4,7 @@ import { Button } from '../../components/ui/Button'
 import { useToast } from '../../store/ToastContext'
 import { thb } from '../../lib/format'
 import { SwitchVisual } from './AccountSheets'
-import { getCategory, guessCategory } from './categories'
+import { CATEGORY_ICONS, CATEGORY_TONES, getCategory, guessCategory, manageableCategories } from './categories'
 import { guessColumns, looksLikeHeader, parseCsv, toImportRows, type ColumnMap, type Row } from './importCsv'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { TONES } from './tones'
@@ -19,6 +19,13 @@ export function openImport() {
 
 const SHOWN = 100
 
+/** "🍜 Food" → "Food": category names from other apps often start with an emoji. */
+const cleanName = (s: string) => s.replace(/^[^\p{L}\p{N}]+/u, '').trim()
+
+/** The app's category with this name (any letter case), hidden ones included. */
+const categoryNamed = (name: string, type: 'expense' | 'income') =>
+  manageableCategories(type).find((c) => c.label.toLowerCase() === name.toLowerCase())
+
 const short = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number)
   return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })
@@ -26,7 +33,7 @@ const short = (iso: string) => {
 
 /** Bank / card statement CSV → Spend transactions, with a review step before anything is saved. */
 export function ImportSheet() {
-  const { transactions, methods, settings, addTransactions } = useSpend()
+  const { transactions, methods, settings, addTransactions, upsertCategory, addSubcategory } = useSpend()
   const { showToast } = useToast()
   const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
@@ -64,18 +71,27 @@ export function ImportSheet() {
   const result = useMemo(() => (parsed && columns ? toImportRows(parsed.body, columns) : undefined), [parsed, columns])
 
   // Same day, amount and direction on the same account already logged → probably a duplicate
+  // (unless both have a time of day and the times differ)
   const rows = useMemo(() => {
     if (!result) return []
-    const seen = new Set(
-      transactions
-        .filter((t) => !t.source && (accountId === NOT_TRACKED || t.accountId === accountId))
-        .map((t) => `${t.date}|${t.type}|${t.amount.toFixed(2)}`),
-    )
-    return result.rows.map((r) => ({
-      ...r,
-      category: guessCategory(r.description, r.type),
-      duplicate: seen.has(`${r.date}|${r.type}|${r.amount.toFixed(2)}`),
-    }))
+    const seen = new Map<string, (string | undefined)[]>()
+    for (const t of transactions) {
+      if (t.source || (accountId !== NOT_TRACKED && t.accountId !== accountId)) continue
+      const key = `${t.date}|${t.type}|${t.amount.toFixed(2)}`
+      seen.set(key, [...(seen.get(key) ?? []), t.time])
+    }
+    return result.rows.map((r) => {
+      // A category named in the file wins; a name the app doesn't have yet becomes a new category
+      const name = r.category ? cleanName(r.category) : ''
+      const named = name ? categoryNamed(name, r.type) : undefined
+      const times = seen.get(`${r.date}|${r.type}|${r.amount.toFixed(2)}`)
+      return {
+        ...r,
+        category: named ?? (name ? undefined : guessCategory(r.description, r.type)),
+        newCategory: name && !named ? name : undefined,
+        duplicate: !!times?.some((t) => !t || !r.time || t === r.time),
+      }
+    })
   }, [result, transactions, accountId])
 
   const included = rows.map((r, i) => !excluded.has(i) && !(r.duplicate && !excluded.has(-1 - i)))
@@ -83,6 +99,8 @@ export function ImportSheet() {
   const spent = chosen.filter((r) => r.type === 'expense').reduce((s, r) => s + r.amount, 0)
   const earned = chosen.filter((r) => r.type === 'income').reduce((s, r) => s + r.amount, 0)
   const duplicates = rows.filter((r) => r.duplicate).length
+  const fromFile = rows.some((r) => r.category || r.newCategory)
+  const newCategories = new Set(chosen.filter((r) => r.newCategory).map((r) => `${r.type}|${r.newCategory!.toLowerCase()}`)).size
 
   // Excluded holds i for an unticked row, and -1 - i for a duplicate the user ticked anyway
   const toggle = (i: number) =>
@@ -95,17 +113,34 @@ export function ImportSheet() {
     })
 
   const save = () => {
-    const n = addTransactions(
-      chosen.map((r) => ({
-        type: r.type,
-        amount: r.amount,
-        categoryId: r.category?.id ?? (r.type === 'income' ? 'other_in' : 'other'),
-        accountId: accountId || undefined,
-        date: r.date,
-        note: r.description || undefined,
-        alreadyInBalance: accountId && alreadyIn ? true : undefined,
-      })),
-    )
+    // Categories named in the file but missing from the app are added once each
+    const created = new Map<string, string>()
+    const categoryIdFor = (r: (typeof chosen)[number]) => {
+      if (r.category) return r.category.id
+      if (!r.newCategory) return r.type === 'income' ? 'other_in' : 'other'
+      const key = `${r.type}|${r.newCategory.toLowerCase()}`
+      let id = created.get(key)
+      if (!id) {
+        const tone = CATEGORY_TONES[created.size % CATEGORY_TONES.length]
+        id = upsertCategory({ type: r.type, label: r.newCategory, icon: 'tag', tone })
+        created.set(key, id)
+      }
+      return id
+    }
+    const inputs = chosen.map((r) => ({
+      type: r.type,
+      amount: r.amount,
+      categoryId: categoryIdFor(r),
+      subcategory: r.subcategory,
+      accountId: accountId || undefined,
+      date: r.date,
+      time: r.time,
+      note: r.description || undefined,
+      alreadyInBalance: accountId && alreadyIn ? true : undefined,
+    }))
+    const subs = new Set(inputs.filter((t) => t.subcategory).map((t) => JSON.stringify([t.categoryId, t.subcategory])))
+    for (const pair of subs) addSubcategory(...(JSON.parse(pair) as [string, string]))
+    const n = addTransactions(inputs)
     showToast(`Imported ${n} ${n === 1 ? 'transaction' : 'transactions'}`)
     setOpen(false)
   }
@@ -171,7 +206,7 @@ export function ImportSheet() {
             <input
               ref={fileRef}
               type="file"
-              accept=".csv,.txt,text/csv"
+              accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0]
@@ -204,6 +239,9 @@ export function ImportSheet() {
               {colSelect('Description', 'description')}
               {colSelect('Money out (or amount)', columns?.amount !== undefined ? 'amount' : 'out')}
               {colSelect('Money in', 'in')}
+              {colSelect('Time', 'time')}
+              {colSelect('Category', 'category')}
+              {colSelect('Subcategory', 'subcategory')}
             </div>
             {!columns && <p className="mt-2 text-xs font-semibold text-warn">Pick the date and amount columns.</p>}
           </div>
@@ -252,7 +290,9 @@ export function ImportSheet() {
               </div>
               <ul className="max-h-72 divide-y divide-line overflow-y-auto rounded-xl border border-line">
                 {rows.slice(0, SHOWN).map((r, i) => {
-                  const cat = r.category ?? getCategory(r.type === 'income' ? 'other_in' : 'other')
+                  const cat = r.newCategory
+                    ? { label: `${r.newCategory} (new)`, tone: 'slate' as const, icon: CATEGORY_ICONS.tag }
+                    : r.category ?? getCategory(r.type === 'income' ? 'other_in' : 'other')
                   return (
                     <li key={i}>
                       <label className={`flex cursor-pointer items-center gap-2.5 px-3 py-2 ${included[i] ? '' : 'opacity-50'}`}>
@@ -265,7 +305,9 @@ export function ImportSheet() {
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-semibold text-ink">{r.description || cat?.label}</span>
                           <span className="block truncate text-xs text-ink-muted">
-                            {short(r.date)} · {cat?.label}
+                            {short(r.date)}
+                            {r.time ? ` ${r.time}` : ''} · {cat?.label}
+                            {r.subcategory ? ` › ${r.subcategory}` : ''}
                             {r.duplicate ? ' · already logged?' : ''}
                           </span>
                         </span>
@@ -279,7 +321,11 @@ export function ImportSheet() {
                 })}
               </ul>
               {rows.length > SHOWN && <p className="mt-1.5 text-xs text-ink-muted">Showing the first {SHOWN}; all {chosen.length} ticked rows will be imported.</p>}
-              <p className="mt-1.5 text-xs text-ink-muted">Categories are guessed from the description; edit any of them afterwards.</p>
+              <p className="mt-1.5 text-xs text-ink-muted">
+                {fromFile
+                  ? `Categories come from the file${newCategories ? `; ${newCategories} new ${newCategories === 1 ? 'one is' : 'ones are'} added` : ''}. Edit any of them afterwards.`
+                  : 'Categories are guessed from the description; edit any of them afterwards.'}
+              </p>
             </div>
           </>
         )}
