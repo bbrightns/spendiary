@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Liability } from '../../lib/types'
 import { thb } from '../../lib/format'
-import { loanPaidDetail } from './billPaid'
+import { cardPaidDetail, loanPaidDetail } from './billPaid'
 
 const loan = (over: Partial<Liability> = {}): Liability => ({ id: 'l1', name: 'Car', category: 'auto_loan', balance: 100_000, ...over })
 const oct14 = new Date(2026, 9, 14)
@@ -44,5 +44,29 @@ describe('loanPaidDetail', () => {
     const { detail, paidOff } = loanPaidDetail({ loan: loan({ totalInstallments: 10, paidInstallments: 5, balance: 2_000 }), amount: 2_000 })
     expect(paidOff).toBe(true)
     expect(detail.footnote).toBe('Nothing left to pay')
+  })
+})
+
+describe('cardPaidDetail', () => {
+  const base = { cardName: 'KTC Visa', due: 12_000, owed: 15_000, dueDate: '2026-10-25' }
+
+  it('shows what is still due on the statement after a partial payment', () => {
+    const d = cardPaidDetail({ ...base, amount: 2_000, accountName: 'KBank' })
+    expect(d.meta).toBe('KBank')
+    expect(d.footnote).toBe(`${thb(10_000)} still due by Sun 25 Oct`)
+  })
+
+  it('says the statement is paid and what is left on the card', () => {
+    expect(cardPaidDetail({ ...base, amount: 12_000 }).footnote).toBe(`Statement paid · ${thb(3_000)} left on the card`)
+  })
+
+  it('paying early, before a statement: only what is left on the card', () => {
+    expect(cardPaidDetail({ ...base, due: 0, amount: 5_000 }).footnote).toBe(`${thb(10_000)} left on the card`)
+  })
+
+  it('is paid off when everything owed is paid, and notes a payment made outside the app', () => {
+    const d = cardPaidDetail({ ...base, amount: 15_000 })
+    expect(d.footnote).toBe('Card paid off')
+    expect(d.meta).toBe('Paid outside the app')
   })
 })

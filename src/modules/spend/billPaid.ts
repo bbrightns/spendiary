@@ -77,3 +77,37 @@ export function loanPaidDetail(p: {
     paidOff,
   }
 }
+
+/**
+ * The "Paid" popup for a credit card payment: the amount and the card, then what that leaves —
+ * part of the statement still due, the rest of the card's balance, or nothing at all.
+ */
+export function cardPaidDetail(p: {
+  cardName: string
+  amount: number
+  /** Left to pay on the closed statement, before this payment */
+  due: number
+  /** Everything owed on the card, before this payment */
+  owed: number
+  /** The statement's due date */
+  dueDate: string
+  /** Where it was paid from; undefined when paid outside the app */
+  accountName?: string
+}): ResultDetail {
+  const stillDue = Math.round((p.due - p.amount) * 100) / 100
+  const left = Math.round((p.owed - p.amount) * 100) / 100
+  const footnote =
+    stillDue > 0
+      ? `${money(stillDue)} still due by ${day(p.dueDate)}`
+      : left > 0
+        ? p.due > 0
+          ? `Statement paid · ${money(left)} left on the card`
+          : `${money(left)} left on the card`
+        : 'Card paid off'
+  return {
+    amount: money(p.amount),
+    name: p.cardName,
+    meta: p.accountName ?? 'Paid outside the app',
+    footnote,
+  }
+}

@@ -4,6 +4,7 @@ import { Button } from '../../components/ui/Button'
 import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb, thbSigned } from '../../lib/format'
 import { getCategory } from './categories'
+import { cardPaidDetail } from './billPaid'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { DEFAULT_MIN_PAYMENT_PERCENT, cardCycle, minimumPayment, noteTitle } from './logic'
 import { useSpend } from './useSpend'
@@ -33,7 +34,7 @@ export function dueText(days: number): string {
 }
 
 export function PayBillSheet() {
-  const { bills, methods, settings, addTransaction } = useSpend()
+  const { bills, methods, settings, addTransaction, removeTransaction } = useSpend()
   const { showToast } = useToast()
   const [cardId, setCardId] = useState<string | null>(null)
   // full: the closed statement · all: everything owed now, this cycle included (paying early)
@@ -78,15 +79,32 @@ export function PayBillSheet() {
 
   const pay = () => {
     if (!bill || !canPay) return
-    addTransaction({
+    const paid = Math.round(amount * 100) / 100
+    const txn = addTransaction({
       type: 'transfer',
-      amount: Math.round(amount * 100) / 100,
+      amount: paid,
       accountId: outside ? undefined : fromId,
       toAccountId: bill.card.id,
       date: localDateStr(),
       note: `Pay ${bill.card.name} ${due > 0 ? 'bill' : 'card'}`,
     })
-    showToast(outside ? `Marked ${thb(amount, true)} as paid on ${bill.card.name}` : `Paid ${thb(amount, true)} to ${bill.card.name}`)
+    showToast(
+      outside ? `Marked ${thb(amount, true)} as paid on ${bill.card.name}` : `Paid ${thb(amount, true)} to ${bill.card.name}`,
+      'success',
+      { label: 'Undo', onClick: () => removeTransaction(txn.id) },
+      {
+        popup: true,
+        title: 'Paid',
+        detail: cardPaidDetail({
+          cardName: bill.card.name,
+          amount: paid,
+          due,
+          owed,
+          dueDate: bill.dueDate,
+          accountName: outside ? undefined : wallets.find((w) => w.id === fromId)?.name,
+        }),
+      },
+    )
     close()
   }
 
