@@ -364,6 +364,12 @@ export function shiftPeriod(p: Period, delta: number, cycle?: PayCycle): Period 
   return cur
 }
 
+/** Sunday-to-Saturday week containing `date` */
+export function weekOf(date: string): Period {
+  const start = addDays(date, -parse(date).getDay())
+  return { start, end: addDays(start, 6) }
+}
+
 export const inPeriod = (p: Period, date: string) => date >= p.start && date <= p.end
 
 /** Days from `today` to the period's end, counting both (0 if the period is over). */

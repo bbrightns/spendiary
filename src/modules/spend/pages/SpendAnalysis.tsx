@@ -7,7 +7,7 @@ import { localDateStr, thb, thbCompact } from '../../../lib/format'
 import type { SpendTransaction } from '../../../lib/types'
 import { getCategory } from '../categories'
 import { isInvested } from '../invest'
-import { budgetState, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, totalsBySubcategory, totalsFor, type Period } from '../logic'
+import { budgetState, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, totalsBySubcategory, totalsFor, weekOf, type Period } from '../logic'
 import { MonthStepper } from '../MonthStepper'
 import { TONES } from '../tones'
 import { useSpend } from '../useSpend'
@@ -20,12 +20,6 @@ const parse = (s: string) => {
   return new Date(y, m - 1, d)
 }
 const daysBetween = (a: string, b: string) => Math.round((parse(b).getTime() - parse(a).getTime()) / 86_400_000)
-
-/** Sunday-to-Saturday week containing `date` */
-function weekOf(date: string): Period {
-  const start = shiftDate(date, -parse(date).getDay())
-  return { start, end: shiftDate(start, 6) }
-}
 
 const shortDay = (s: string, year = false) =>
   parse(s).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', ...(year ? { year: 'numeric' } : {}) })

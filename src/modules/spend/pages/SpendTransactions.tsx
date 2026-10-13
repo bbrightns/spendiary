@@ -7,11 +7,12 @@ import { Button } from '../../../components/ui/Button'
 import { Modal } from '../../../components/ui/Modal'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import { FilterChip } from '../../../components/ui/FilterChip'
+import { SegmentedControl } from '../../../components/ui/SegmentedControl'
 import { CloseIcon, SearchIcon } from '../../../components/icons'
 import { localDateStr, thb } from '../../../lib/format'
 import type { SpendTransaction, SpendTxnType } from '../../../lib/types'
 import { ListBulletIcon, categoriesFor, getCategory } from '../categories'
-import { inPeriod, periodFor } from '../logic'
+import { inPeriod, periodFor, shiftDate, weekOf, type Period } from '../logic'
 import { MonthStepper } from '../MonthStepper'
 import { openQuickAdd } from '../QuickAddSheet'
 import { TxnRow } from '../TxnRow'
@@ -26,6 +27,49 @@ const TYPE_FILTERS: { value: TypeFilter; label: string }[] = [
   { value: 'income', label: 'Income' },
   { value: 'transfer', label: 'Transfers' },
 ]
+
+type Range = 'day' | 'week' | 'month' | 'year' | 'all'
+
+const RANGES: { value: Range; label: string }[] = [
+  { value: 'day', label: 'Day' },
+  { value: 'week', label: 'Week' },
+  { value: 'month', label: 'Month' },
+  { value: 'year', label: 'Year' },
+  { value: 'all', label: 'All' },
+]
+
+const EMPTY_TITLE: Record<Range, string> = {
+  day: 'Nothing logged this day',
+  week: 'Nothing logged this week',
+  month: 'Nothing logged this month',
+  year: 'Nothing logged this year',
+  all: 'Nothing logged yet',
+}
+
+/** Calendar year (Jan–Dec) containing `date` */
+const yearOf = (date: string): Period => ({ start: `${date.slice(0, 4)}-01-01`, end: `${date.slice(0, 4)}-12-31` })
+
+/** Step a day, week or year; months go through MonthStepper's own pay-cycle aware step */
+function stepRange(range: Range, p: Period, delta: 1 | -1): Period {
+  if (range === 'day') {
+    const d = shiftDate(p.start, delta)
+    return { start: d, end: d }
+  }
+  if (range === 'week') return weekOf(shiftDate(p.start, 7 * delta))
+  return yearOf(`${Number(p.start.slice(0, 4)) + delta}-01-01`)
+}
+
+function rangeLabel(range: Range, p: Period): string | undefined {
+  const short = (s: string, opts: Intl.DateTimeFormatOptions) => {
+    const [y, m, d] = s.split('-').map(Number)
+    return new Date(y, m - 1, d).toLocaleDateString('en-GB', opts)
+  }
+  if (range === 'day') return short(p.start, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+  if (range === 'week')
+    return `${short(p.start, { day: 'numeric', month: 'short' })} – ${short(p.end, { day: 'numeric', month: 'short', year: 'numeric' })}`
+  if (range === 'year') return p.start.slice(0, 4)
+  return undefined
+}
 
 /**
  * Search terms starting with # match a tag (or the note text, for non-tags like `#7-11`);
@@ -44,14 +88,14 @@ function matches(t: SpendTransaction, terms: string[], walletName: (id?: string)
   )
 }
 
-function dayLabel(date: string): string {
+function dayLabel(date: string, withYear = false): string {
   const [y, m, d] = date.split('-').map(Number)
   const dt = new Date(y, m - 1, d)
   const today = new Date()
   const yesterday = new Date(Date.now() - 86_400_000)
   if (dt.toDateString() === today.toDateString()) return 'Today'
   if (dt.toDateString() === yesterday.toDateString()) return 'Yesterday'
-  return dt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+  return dt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', ...(withYear ? { year: 'numeric' } : {}) })
 }
 
 export function SpendTransactions() {
@@ -59,8 +103,15 @@ export function SpendTransactions() {
   const cycle = settings.cycle
   const [params, setParams] = useSearchParams()
   const query = params.get('q') ?? ''
+  const [range, setRange] = useState<Range>('month')
   const [anchor, setAnchor] = useState(localDateStr())
-  const period = useMemo(() => periodFor(anchor, cycle), [anchor, cycle])
+  const period: Period | null = useMemo(() => {
+    if (range === 'all') return null
+    if (range === 'day') return { start: anchor, end: anchor }
+    if (range === 'week') return weekOf(anchor)
+    if (range === 'year') return yearOf(anchor)
+    return periodFor(anchor, cycle)
+  }, [range, anchor, cycle])
   const [type, setType] = useState<TypeFilter>('all')
 
   const setQuery = (q: string) => {
@@ -71,14 +122,16 @@ export function SpendTransactions() {
   }
 
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean)
-  // A search looks across every month; browsing without one stays on the chosen month
+  // A search looks across every month; browsing without one stays on the chosen range
   const searching = terms.length > 0
+  // Without a single day or year in view, day headers carry the year
+  const showYear = searching || range === 'all'
 
   const filtered = useMemo(() => {
     const walletName = (id?: string) => methods.find((m) => m.id === id)?.name ?? ''
     const words = query.toLowerCase().split(/\s+/).filter(Boolean)
     return transactions.filter(
-      (t) => (words.length > 0 || inPeriod(period, t.date)) && (type === 'all' || t.type === type) && matches(t, words, walletName),
+      (t) => (words.length > 0 || !period || inPeriod(period, t.date)) && (type === 'all' || t.type === type) && matches(t, words, walletName),
     )
   }, [transactions, methods, period, type, query])
 
@@ -125,8 +178,30 @@ export function SpendTransactions() {
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <MonthStepper value={period} cycle={cycle} onChange={(p) => setAnchor(p.start)} />
+            <div className="flex flex-wrap items-center gap-2">
+              <SegmentedControl
+                ariaLabel="Range"
+                size="sm"
+                shape="pill"
+                fullWidth={false}
+                value={range}
+                onChange={(r) => {
+                  setRange(r)
+                  setAnchor(localDateStr())
+                }}
+                options={RANGES}
+              />
+              {period &&
+                (range === 'month' ? (
+                  <MonthStepper value={period} cycle={cycle} onChange={(p) => setAnchor(p.start)} />
+                ) : (
+                  <MonthStepper
+                    value={period}
+                    label={rangeLabel(range, period)}
+                    step={(p, delta) => stepRange(range, p, delta)}
+                    onChange={(p) => setAnchor(p.start)}
+                  />
+                ))}
               <button
                 type="button"
                 onClick={() => setSearchOpen(true)}
@@ -188,7 +263,7 @@ export function SpendTransactions() {
         <Card>
           <EmptyState
             icon={<ListBulletIcon className="h-7 w-7" />}
-            title={searching ? 'No matches' : 'Nothing logged this month'}
+            title={searching ? 'No matches' : EMPTY_TITLE[range]}
             description={searching ? 'Try another word or tag.' : 'Tap + to record what you spend or earn.'}
             action={!searching ? <AddButton onClick={() => openQuickAdd()} label="Add transaction" /> : undefined}
           />
@@ -200,7 +275,7 @@ export function SpendTransactions() {
             return (
               <Card key={date} padded={false} className="px-4 sm:px-5 pt-3 pb-1">
                 <div className="flex items-center justify-between border-b border-line pb-2 text-xs font-semibold text-ink-muted">
-                  <span>{searching ? `${dayLabel(date)} ${date.slice(0, 4)}` : dayLabel(date)}</span>
+                  <span>{dayLabel(date, showYear)}</span>
                   <span className="tnum">
                     {dayNet > 0 ? '+' : dayNet < 0 ? '−' : ''}
                     {thb(Math.abs(dayNet), true)}
