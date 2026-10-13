@@ -155,6 +155,43 @@ export function useSpend() {
     })
   }
 
+  /**
+   * Fill in category, subcategory and time on entries that are already logged (e.g. a re-import).
+   * Amount, date, note and wallet stay as they are, so no balance moves.
+   */
+  function patchTransactions(patches: { id: string; categoryId?: string; subcategory?: string; time?: string }[]): number {
+    const byId = new Map(patches.map((p) => [p.id, p]))
+    const now = new Date().toISOString()
+    let n = 0
+    setData((prev) => ({
+      ...prev,
+      spendTransactions: (prev.spendTransactions ?? []).map((t) => {
+        const p = byId.get(t.id)
+        if (!p) return t
+        n++
+        return {
+          ...t,
+          ...(p.categoryId ? { categoryId: p.categoryId } : {}),
+          ...(p.subcategory ? { subcategory: p.subcategory } : {}),
+          ...(p.time ? { time: p.time } : {}),
+          updatedAt: now,
+        }
+      }),
+    }))
+    return n
+  }
+
+  /** Delete every Spend transaction, putting wallet and card balances back as if each had been deleted one by one. */
+  function clearTransactions(): number {
+    const count = (data.spendTransactions ?? []).length
+    setData((prev) => ({
+      ...prev,
+      ...(prev.spendTransactions ?? []).reduce((b, t) => applyToBalances(b, t, -1), balancesOf(prev)),
+      spendTransactions: [],
+    }))
+    return count
+  }
+
   function removeTransaction(id: string) {
     setData((prev) => {
       const list = prev.spendTransactions ?? []
@@ -321,6 +358,8 @@ export function useSpend() {
     addTransactions,
     updateTransaction,
     removeTransaction,
+    patchTransactions,
+    clearTransactions,
     upsertCard,
     removeCard,
     toggleFavorite,

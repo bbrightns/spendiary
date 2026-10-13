@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { guessColumns, looksLikeHeader, parseAmount, parseCsv, parseDate, parseTime, toImportRows } from './importCsv'
+import { guessColumns, looksLikeHeader, matchExisting, parseAmount, parseCsv, parseDate, parseTime, toImportRows, type ImportRow, type MatchCandidate } from './importCsv'
 import { toCsv } from './exportCsv'
 
 describe('parseCsv', () => {
@@ -88,6 +88,27 @@ describe('category columns', () => {
   it('takes the time from the date cell when there is no time column', () => {
     const map = guessColumns(['Date', 'Amount'])!
     expect(toImportRows([['2026-10-01 19:28', '-5']], map).rows[0]).toMatchObject({ date: '2026-10-01', time: '19:28' })
+  })
+})
+
+describe('matchExisting', () => {
+  const row = (p: Partial<ImportRow>): ImportRow => ({ date: '2026-10-12', type: 'expense', amount: 50, description: '', category: 'Food', ...p })
+  const bare = (id: string, p: Partial<MatchCandidate> = {}): MatchCandidate => ({ id, date: '2026-10-12', type: 'expense', amount: 50, ...p })
+
+  it('pairs each row with one bare entry of the same day and amount, same text first', () => {
+    const rows = [row({ description: 'ข้าวมันไก่', time: '12:38' }), row({ description: 'ขุนช้าง ขาหมู', time: '12:42' })]
+    const existing = [bare('a', { note: 'ขุนช้าง  ขาหมู' }), bare('b', { note: 'something else' })]
+    expect([...matchExisting(rows, existing)]).toEqual([
+      [1, 'a'],
+      [0, 'b'],
+    ])
+  })
+  it('skips entries that already have a time or subcategory, and rows with nothing to add', () => {
+    const existing = [bare('timed', { time: '12:00' }), bare('sub', { subcategory: 'Regular' }), bare('free')]
+    expect(matchExisting([row({ category: undefined }), row({})], existing)).toEqual(new Map([[1, 'free']]))
+  })
+  it('leaves extra rows unmatched when there are fewer entries than rows', () => {
+    expect(matchExisting([row({}), row({}), row({ amount: 60 })], [bare('only')])).toEqual(new Map([[0, 'only']]))
   })
 })
 

@@ -5,7 +5,7 @@ import { useToast } from '../../store/ToastContext'
 import { thb } from '../../lib/format'
 import { SwitchVisual } from './AccountSheets'
 import { CATEGORY_ICONS, CATEGORY_TONES, getCategory, guessCategory, manageableCategories } from './categories'
-import { guessColumns, looksLikeHeader, parseCsv, toImportRows, type ColumnMap, type Row } from './importCsv'
+import { guessColumns, looksLikeHeader, matchExisting, parseCsv, toImportRows, type ColumnMap, type Row } from './importCsv'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { TONES } from './tones'
 import { useSpend } from './useSpend'
@@ -33,7 +33,7 @@ const short = (iso: string) => {
 
 /** Bank / card statement CSV → Spend transactions, with a review step before anything is saved. */
 export function ImportSheet() {
-  const { transactions, methods, settings, addTransactions, upsertCategory, addSubcategory } = useSpend()
+  const { transactions, methods, settings, addTransactions, patchTransactions, upsertCategory, addSubcategory } = useSpend()
   const { showToast } = useToast()
   const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
@@ -42,6 +42,8 @@ export function ImportSheet() {
   const [accountId, setAccountId] = useState(NOT_TRACKED)
   const [alreadyIn, setAlreadyIn] = useState(true)
   const [excluded, setExcluded] = useState<Set<number>>(new Set())
+  // Fill in matching entries that are already logged (no time / subcategory yet) instead of adding copies
+  const [updateMode, setUpdateMode] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -52,6 +54,7 @@ export function ImportSheet() {
       setAccountId(settings.defaultAccountId ?? NOT_TRACKED)
       setAlreadyIn(true)
       setExcluded(new Set())
+      setUpdateMode(false)
       setOpen(true)
     }
     window.addEventListener(OPEN_EVENT, onOpen)
@@ -70,6 +73,13 @@ export function ImportSheet() {
 
   const result = useMemo(() => (parsed && columns ? toImportRows(parsed.body, columns) : undefined), [parsed, columns])
 
+  // Rows that can update an entry already logged bare (e.g. an earlier import that missed the categories).
+  // Any wallet counts: the earlier import may have gone to a different one than picked now.
+  const matches = useMemo(
+    () => (result ? matchExisting(result.rows, transactions.filter((t) => !t.source)) : new Map<number, string>()),
+    [result, transactions],
+  )
+
   // Same day, amount and direction on the same account already logged → probably a duplicate
   // (unless both have a time of day and the times differ)
   const rows = useMemo(() => {
@@ -80,25 +90,29 @@ export function ImportSheet() {
       const key = `${t.date}|${t.type}|${t.amount.toFixed(2)}`
       seen.set(key, [...(seen.get(key) ?? []), t.time])
     }
-    return result.rows.map((r) => {
+    return result.rows.map((r, i) => {
       // A category named in the file wins; a name the app doesn't have yet becomes a new category
       const name = r.category ? cleanName(r.category) : ''
       const named = name ? categoryNamed(name, r.type) : undefined
       const times = seen.get(`${r.date}|${r.type}|${r.amount.toFixed(2)}`)
+      const updateId = updateMode ? matches.get(i) : undefined
       return {
         ...r,
         category: named ?? (name ? undefined : guessCategory(r.description, r.type)),
         newCategory: name && !named ? name : undefined,
-        duplicate: !!times?.some((t) => !t || !r.time || t === r.time),
+        updateId,
+        duplicate: !updateId && !!times?.some((t) => !t || !r.time || t === r.time),
       }
     })
-  }, [result, transactions, accountId])
+  }, [result, transactions, accountId, updateMode, matches])
 
   const included = rows.map((r, i) => !excluded.has(i) && !(r.duplicate && !excluded.has(-1 - i)))
   const chosen = rows.filter((_, i) => included[i])
   const spent = chosen.filter((r) => r.type === 'expense').reduce((s, r) => s + r.amount, 0)
   const earned = chosen.filter((r) => r.type === 'income').reduce((s, r) => s + r.amount, 0)
   const duplicates = rows.filter((r) => r.duplicate).length
+  const updates = chosen.filter((r) => r.updateId).length
+  const adds = chosen.length - updates
   const fromFile = rows.some((r) => r.category || r.newCategory)
   const newCategories = new Set(chosen.filter((r) => r.newCategory).map((r) => `${r.type}|${r.newCategory!.toLowerCase()}`)).size
 
@@ -111,6 +125,9 @@ export function ImportSheet() {
       else next.add(key)
       return next
     })
+  // Tick every row (duplicates included) / untick every row
+  const tickAll = () => setExcluded(new Set(rows.flatMap((r, i) => (r.duplicate ? [-1 - i] : []))))
+  const untickAll = () => setExcluded(new Set(rows.map((_, i) => i)))
 
   const save = () => {
     // Categories named in the file but missing from the app are added once each
@@ -127,7 +144,17 @@ export function ImportSheet() {
       }
       return id
     }
-    const inputs = chosen.map((r) => ({
+    const toAdd = chosen.filter((r) => !r.updateId)
+    // Updates only fill in what the file has; amount, date, note and wallet stay untouched
+    const patches = chosen
+      .filter((r) => r.updateId)
+      .map((r) => ({
+        id: r.updateId!,
+        categoryId: r.category || r.newCategory ? categoryIdFor(r) : undefined,
+        subcategory: r.subcategory,
+        time: r.time,
+      }))
+    const inputs = toAdd.map((r) => ({
       type: r.type,
       amount: r.amount,
       categoryId: categoryIdFor(r),
@@ -138,10 +165,15 @@ export function ImportSheet() {
       note: r.description || undefined,
       alreadyInBalance: accountId && alreadyIn ? true : undefined,
     }))
-    const subs = new Set(inputs.filter((t) => t.subcategory).map((t) => JSON.stringify([t.categoryId, t.subcategory])))
+    const withSub = [...inputs, ...patches].filter((t) => t.subcategory && t.categoryId)
+    const subs = new Set(withSub.map((t) => JSON.stringify([t.categoryId, t.subcategory])))
     for (const pair of subs) addSubcategory(...(JSON.parse(pair) as [string, string]))
-    const n = addTransactions(inputs)
-    showToast(`Imported ${n} ${n === 1 ? 'transaction' : 'transactions'}`)
+    const updated = patches.length ? patchTransactions(patches) : 0
+    const n = inputs.length ? addTransactions(inputs) : 0
+    const plural = (k: number) => (k === 1 ? 'transaction' : 'transactions')
+    showToast(
+      updated ? `Updated ${patches.length} ${plural(patches.length)}${n ? `, imported ${n}` : ''}` : `Imported ${n} ${plural(n)}`,
+    )
     setOpen(false)
   }
 
@@ -192,7 +224,11 @@ export function ImportSheet() {
       size="lg"
       footer={
         <Button data-modal-submit className="w-full" disabled={chosen.length === 0} onClick={save}>
-          {chosen.length ? `Import ${chosen.length} ${chosen.length === 1 ? 'transaction' : 'transactions'}` : 'Import'}
+          {updates
+            ? `Update ${updates}${adds ? ` · add ${adds}` : ''}`
+            : chosen.length
+              ? `Import ${chosen.length} ${chosen.length === 1 ? 'transaction' : 'transactions'}`
+              : 'Import'}
         </Button>
       }
     >
@@ -275,6 +311,27 @@ export function ImportSheet() {
                 <SwitchVisual on={alreadyIn} />
               </button>
             )}
+            {matches.size > 0 && (
+              <button
+                type="button"
+                role="switch"
+                aria-checked={updateMode}
+                onClick={() => {
+                  setUpdateMode((v) => !v)
+                  setExcluded(new Set())
+                }}
+                className="-mt-2 flex w-full items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 text-left cursor-pointer hover:bg-surface-muted/50"
+              >
+                <span>
+                  <span className="block text-sm font-bold text-ink">Update entries already logged</span>
+                  <span className="block text-xs text-ink-muted tnum">
+                    {matches.size} {matches.size === 1 ? 'row matches an entry' : 'rows match entries'} with the same day and amount but no time
+                    or subcategory yet. {updateMode ? 'Their category, subcategory and time are filled in; nothing is added twice.' : 'Turn on to fill those in instead of adding copies.'}
+                  </span>
+                </span>
+                <SwitchVisual on={updateMode} />
+              </button>
+            )}
 
             <div>
               <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 text-xs text-ink-muted tnum">
@@ -282,7 +339,15 @@ export function ImportSheet() {
                   <b className="font-bold text-ink">{chosen.length}</b> of {rows.length} · out {thb(spent, true)} · in{' '}
                   <span className="text-gain">{thb(earned, true)}</span>
                 </span>
-                <span>
+                <span className="flex items-center gap-3">
+                  <button type="button" onClick={tickAll} className="font-semibold text-brand hover:underline cursor-pointer">
+                    Tick all
+                  </button>
+                  <button type="button" onClick={untickAll} className="font-semibold text-brand hover:underline cursor-pointer">
+                    None
+                  </button>
+                </span>
+                <span className="w-full sm:w-auto">
                   {duplicates > 0 && `${duplicates} look already logged`}
                   {duplicates > 0 && (result?.skipped ?? 0) > 0 && ' · '}
                   {(result?.skipped ?? 0) > 0 && `${result!.skipped} rows unreadable`}
@@ -308,7 +373,7 @@ export function ImportSheet() {
                             {short(r.date)}
                             {r.time ? ` ${r.time}` : ''} · {cat?.label}
                             {r.subcategory ? ` › ${r.subcategory}` : ''}
-                            {r.duplicate ? ' · already logged?' : ''}
+                            {r.updateId ? ' · updates the logged entry' : r.duplicate ? ' · already logged?' : ''}
                           </span>
                         </span>
                         <span className={`shrink-0 text-sm font-bold tnum ${r.type === 'income' ? 'text-gain' : 'text-ink'}`}>
