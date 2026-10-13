@@ -11,6 +11,7 @@ import { ModeSwitcher } from '../../modules/spend/ModeSwitcher'
 import { useSpendSide } from '../../modules/spend/side'
 import { SIDE_ACTIVE } from '../../modules/spend/tones'
 import { QuickAddSheet } from '../../modules/spend/QuickAddSheet'
+import { QuickAddLink } from '../../modules/spend/QuickAddLink'
 import { ImportSheet } from '../../modules/spend/ImportSheet'
 import { PayBillSheet } from '../../modules/spend/PayBillSheet'
 import { PayLoanSheet } from '../../modules/spend/PayLoanSheet'
@@ -96,6 +97,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {/* Spend sheets — Quick Add (+ button, sidebar, command palette) and card Pay bill (reminders) */}
       <QuickAddSheet />
+      <QuickAddLink />
       <ImportSheet />
       <PayBillSheet />
       <PayLoanSheet />
