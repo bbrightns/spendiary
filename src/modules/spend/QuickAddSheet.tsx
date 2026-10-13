@@ -7,13 +7,14 @@ import { useToast } from '../../store/ToastContext'
 import { useData } from '../../store/DataContext'
 import { localDateStr, thb } from '../../lib/format'
 import type { SpendSettings, SpendTransaction, SpendTxnType } from '../../lib/types'
-import { categoriesFor, getCategory } from './categories'
+import { categoriesFor, getCategory, type SpendCategory } from './categories'
 import { activeTagQuery, noteTitle, parseTags, recentTags, suggestTags, topTags } from './logic'
 import { TONES, TYPE_ACTIVE } from './tones'
 import { useSpend, type PayMethod, type SpendTxnInput } from './useSpend'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { SwitchVisual } from './AccountSheets'
 import { CategorySheet } from './CategorySheet'
+import { KEEP_CATEGORY, useRemoveCategory } from './useRemoveCategory'
 import { firstInstallmentDue, installmentAmount } from './loans'
 
 const OPEN_EVENT = 'spendiary:open-quick-add'
@@ -107,7 +108,9 @@ export function QuickAddSheet() {
   // Card purchase paid off in monthly installments (off unless picked)
   const [split, setSplit] = useState(false)
   const [months, setMonths] = useState(10)
-  const [newCategory, setNewCategory] = useState(false)
+  const [catSheet, setCatSheet] = useState<{ open: boolean; category?: SpendCategory }>({ open: false })
+  const [editingCats, setEditingCats] = useState(false)
+  const removeCategory = useRemoveCategory()
   const [hint, setHint] = useState<string | undefined>()
   // Editing a loan payment: its transfer goes to the loan, so there's no "to" wallet to pick
   const [loanPayment, setLoanPayment] = useState(false)
@@ -164,6 +167,7 @@ export function QuickAddSheet() {
       }
       setAddingSub(false)
       setNewSub('')
+      setEditingCats(false)
       setOpen(true)
     }
     window.addEventListener(OPEN_EVENT, onOpen)
@@ -215,6 +219,15 @@ export function QuickAddSheet() {
     }
     setAddingSub(false)
     setNewSub('')
+  }
+
+  /** Take a category out of the picker; if it was picked, the first one left is picked instead. */
+  const removeCat = (c: SpendCategory) => {
+    removeCategory(c)
+    if (c.id === categoryId) {
+      setCategoryId(categoriesFor(type).find((x) => x.id !== c.id)?.id ?? '')
+      setSubcategory('')
+    }
   }
 
   const changeType = (t: SpendTxnType) => {
@@ -348,33 +361,56 @@ export function QuickAddSheet() {
           {/* Category */}
           {type !== 'transfer' && (
             <div>
-              <p className="mb-2 text-sm font-semibold text-ink-soft">Category</p>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-ink-soft">Category</p>
+                <button
+                  type="button"
+                  aria-pressed={editingCats}
+                  onClick={() => setEditingCats((v) => !v)}
+                  className="-my-1 rounded-full px-2.5 py-1 text-xs font-semibold text-brand cursor-pointer hover:bg-brand-soft"
+                >
+                  {editingCats ? 'Done' : 'Edit'}
+                </button>
+              </div>
               <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
                 {categoriesFor(type, categoryId).map((c) => {
                   const active = c.id === categoryId
                   return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => {
-                        if (c.id !== categoryId) setSubcategory('')
-                        setCategoryId(c.id)
-                      }}
-                      className={`flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 text-xs transition-all cursor-pointer active:scale-95 ${
-                        active ? `${TONES[c.tone].active} font-bold` : 'border-line bg-surface font-semibold text-ink-soft hover:bg-surface-muted/60'
-                      }`}
-                    >
-                      <span className={`grid h-8 w-8 place-items-center rounded-xl transition-colors ${active ? 'bg-white/70 dark:bg-white/10' : TONES[c.tone].chip}`}>
-                        <c.icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.1 : 1.7} />
-                      </span>
-                      <span className="w-full truncate text-center leading-tight">{c.label}</span>
-                    </button>
+                    <div key={c.id} className="relative">
+                      <button
+                        type="button"
+                        aria-pressed={editingCats ? undefined : active}
+                        aria-label={editingCats ? `Edit ${c.label}` : undefined}
+                        onClick={() => {
+                          if (editingCats) return setCatSheet({ open: true, category: c })
+                          if (c.id !== categoryId) setSubcategory('')
+                          setCategoryId(c.id)
+                        }}
+                        className={`flex min-h-[72px] w-full flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 text-xs transition-all cursor-pointer active:scale-95 ${
+                          active ? `${TONES[c.tone].active} font-bold` : 'border-line bg-surface font-semibold text-ink-soft hover:bg-surface-muted/60'
+                        } ${editingCats ? 'border-dashed' : ''}`}
+                      >
+                        <span className={`grid h-8 w-8 place-items-center rounded-xl transition-colors ${active ? 'bg-white/70 dark:bg-white/10' : TONES[c.tone].chip}`}>
+                          <c.icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.1 : 1.7} />
+                        </span>
+                        <span className="w-full truncate text-center leading-tight">{c.label}</span>
+                      </button>
+                      {editingCats && !KEEP_CATEGORY.has(c.id) && (
+                        <button
+                          type="button"
+                          aria-label={`Remove ${c.label}`}
+                          onClick={() => removeCat(c)}
+                          className="absolute -right-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full bg-loss text-sm font-bold leading-none text-white shadow-sm cursor-pointer hover:brightness-110"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
                   )
                 })}
                 <button
                   type="button"
-                  onClick={() => setNewCategory(true)}
+                  onClick={() => setCatSheet({ open: true })}
                   className="flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-line-strong px-1 py-2 text-xs font-semibold text-ink-muted transition-all cursor-pointer hover:bg-surface-muted/60 hover:text-ink active:scale-95"
                 >
                   <span className="grid h-8 w-8 place-items-center rounded-xl bg-surface-muted text-lg leading-none">+</span>
@@ -599,10 +635,12 @@ export function QuickAddSheet() {
         </div>
       </Modal>
       <CategorySheet
-        open={newCategory}
+        open={catSheet.open}
+        category={catSheet.category}
         type={type === 'income' ? 'income' : 'expense'}
-        onClose={() => setNewCategory(false)}
-        onSaved={setCategoryId}
+        onClose={() => setCatSheet({ open: false })}
+        // A new category is picked right away; editing one leaves the pick as it is
+        onSaved={catSheet.category ? undefined : setCategoryId}
       />
     </>
   )

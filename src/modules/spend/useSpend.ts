@@ -287,6 +287,20 @@ export function useSpend() {
     })
   }
 
+  /** Hide a category from the pickers (or show it again), keeping its name, icon and color. */
+  function setCategoryHidden(id: string, hidden: boolean) {
+    const isBuiltIn = SPEND_CATEGORIES.some((c) => c.id === id)
+    setData((prev) => {
+      const st = prev.spendSettings ?? {}
+      if (isBuiltIn) {
+        const edit = { ...st.categoryEdits?.[id], hidden: hidden || undefined }
+        return { ...prev, spendSettings: { ...st, categoryEdits: { ...st.categoryEdits, [id]: edit } } }
+      }
+      const list = (st.customCategories ?? []).map((c) => (c.id === id ? { ...c, hidden: hidden || undefined } : c))
+      return { ...prev, spendSettings: { ...st, customCategories: list } }
+    })
+  }
+
   /** Back to the shipped name, icon and color. */
   function resetCategory(id: string) {
     setData((prev) => {
@@ -367,6 +381,7 @@ export function useSpend() {
     upsertCategory,
     resetCategory,
     removeCategory,
+    setCategoryHidden,
     subcategories: (categoryId: string | undefined): string[] => (categoryId ? settings.subcategories?.[categoryId] ?? [] : []),
     addSubcategory,
     removeSubcategory,

@@ -189,7 +189,7 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
             className="flex w-full items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 text-left cursor-pointer hover:bg-surface-muted/50"
           >
             <span>
-              <span className="block text-sm font-bold text-ink">Hide from Quick add</span>
+              <span className="block text-sm font-bold text-ink">Hide from Quick add and recurring</span>
               <span className="block text-xs text-ink-muted">Past transactions keep this category</span>
             </span>
             <SwitchVisual on={form.hidden} />
