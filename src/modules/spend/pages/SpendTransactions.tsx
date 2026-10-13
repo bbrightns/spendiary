@@ -34,7 +34,7 @@ const TYPE_FILTERS: { value: TypeFilter; label: string }[] = [
 function matches(t: SpendTransaction, terms: string[], walletName: (id?: string) => string): boolean {
   if (terms.length === 0) return true
   const cat = getCategory(t.categoryId)
-  const haystack = [t.note ?? '', cat?.label ?? '', ...(cat?.keywords ?? []), walletName(t.accountId), walletName(t.toAccountId)]
+  const haystack = [t.note ?? '', cat?.label ?? '', t.subcategory ?? '', ...(cat?.keywords ?? []), walletName(t.accountId), walletName(t.toAccountId)]
     .join(' ')
     .toLowerCase()
   return terms.every((term) =>

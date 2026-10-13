@@ -28,10 +28,11 @@ const TYPE_OPTIONS = [
 
 /** Add or edit a category: name, icon and color, for expense or income. */
 export function CategorySheet({ open, category, type = 'expense', onClose, onSaved }: Props) {
-  const { upsertCategory, resetCategory, removeCategory } = useSpend()
+  const { upsertCategory, resetCategory, removeCategory, subcategories, addSubcategory, removeSubcategory } = useSpend()
   const { showToast } = useToast()
   const [form, setForm] = useState({ type: type as CatType, label: '', icon: 'tag', tone: 'violet' as Tone, hidden: false })
   const [lastOpen, setLastOpen] = useState(false)
+  const [newSub, setNewSub] = useState('')
   if (open !== lastOpen) {
     setLastOpen(open)
     if (open)
@@ -142,6 +143,42 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
             ))}
           </div>
         </div>
+
+        {category && (
+          <div>
+            <p className="mb-2 text-sm font-semibold text-ink-soft">Subcategories</p>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {subcategories(category.id).map((s) => (
+                <span key={s} className="inline-flex h-8 items-center gap-1 rounded-full border border-line bg-surface pl-3 pr-1 text-xs font-semibold text-ink-soft">
+                  {s}
+                  <button
+                    type="button"
+                    aria-label={`Remove ${s}`}
+                    onClick={() => removeSubcategory(category.id, s)}
+                    className="grid h-6 w-6 place-items-center rounded-full text-ink-muted cursor-pointer hover:bg-surface-muted hover:text-ink"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              <input
+                value={newSub}
+                onChange={(e) => setNewSub(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return
+                  e.preventDefault()
+                  addSubcategory(category.id, newSub)
+                  setNewSub('')
+                }}
+                placeholder="+ Add, then Enter"
+                maxLength={30}
+                aria-label="New subcategory"
+                className="h-8 w-36 rounded-full border border-dashed border-line-strong bg-transparent px-3 text-xs font-semibold text-ink outline-none focus:border-brand"
+              />
+            </div>
+            <p className="mt-1.5 text-xs text-ink-muted">Past transactions keep a removed subcategory.</p>
+          </div>
+        )}
 
         {category && (
           <button

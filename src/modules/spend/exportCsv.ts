@@ -2,7 +2,7 @@ import type { SpendTransaction } from '../../lib/types'
 import { localDateStr } from '../../lib/format'
 
 /** Columns written; Date, Description and a signed Amount are what the importer reads back. */
-export const EXPORT_HEADER = ['Date', 'Type', 'Category', 'Account', 'To account', 'Description', 'Tags', 'Amount']
+export const EXPORT_HEADER = ['Date', 'Time', 'Type', 'Category', 'Subcategory', 'Account', 'To account', 'Description', 'Tags', 'Amount']
 
 const field = (v: string) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v)
 
@@ -15,13 +15,15 @@ export function toCsv(
   names: { category: (id?: string) => string; account: (id?: string) => string },
 ): string {
   const rows = [...txns]
-    .sort((a, b) => (a.date === b.date ? a.createdAt.localeCompare(b.createdAt) : a.date.localeCompare(b.date)))
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.time ?? '').localeCompare(b.time ?? '') || a.createdAt.localeCompare(b.createdAt))
     .map((t) => {
       const signed = t.type === 'income' ? t.amount : -t.amount
       return [
         t.date,
+        t.time ?? '',
         t.type,
         t.type === 'transfer' ? '' : names.category(t.categoryId),
+        t.subcategory ?? '',
         names.account(t.accountId),
         t.type === 'transfer' ? names.account(t.toAccountId) : '',
         t.note ?? '',

@@ -51,6 +51,12 @@ const AMOUNT_COLOR: Record<SpendTxnType, string> = {
 
 const NO_WALLET = NOT_TRACKED
 
+/** Current local time as HH:mm */
+const nowTime = () => {
+  const d = new Date()
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
 const shortDue = (iso: string) => {
   if (!iso) return ''
   const [y, m, d] = iso.split('-').map(Number)
@@ -79,7 +85,7 @@ function pickDefaults(type: SpendTxnType, txns: SpendTransaction[], methods: Pay
 }
 
 export function QuickAddSheet() {
-  const { transactions, methods, cards, settings, addTransaction, updateTransaction, removeTransaction } = useSpend()
+  const { transactions, methods, cards, settings, addTransaction, updateTransaction, removeTransaction, subcategories, addSubcategory } = useSpend()
   const { data, setLiabilities, removeLiability } = useData()
   const { showToast } = useToast()
 
@@ -92,6 +98,10 @@ export function QuickAddSheet() {
   const [accountId, setAccountId] = useState(NO_WALLET)
   const [toAccountId, setToAccountId] = useState(NO_WALLET)
   const [date, setDate] = useState(localDateStr())
+  const [time, setTime] = useState('')
+  const [subcategory, setSubcategory] = useState('')
+  const [newSub, setNewSub] = useState('')
+  const [addingSub, setAddingSub] = useState(false)
   const [note, setNote] = useState('')
   const [alreadyIn, setAlreadyIn] = useState(false)
   // Card purchase paid off in monthly installments (off unless picked)
@@ -126,6 +136,8 @@ export function QuickAddSheet() {
         setAccountId(source.accountId ?? NO_WALLET)
         setToAccountId(source.toAccountId ?? NO_WALLET)
         setDate(source.date)
+        setTime(existing?.time ?? '')
+        setSubcategory(existing?.subcategory ?? '')
         setNote(source.note ?? '')
         setAlreadyIn(!!existing?.alreadyInBalance)
         setSplit(false)
@@ -143,11 +155,15 @@ export function QuickAddSheet() {
         setAccountId(from)
         setToAccountId(t === 'transfer' && draft.accountId ? otherCash ?? (d.to !== from ? d.to : NO_WALLET) : d.to === from ? NO_WALLET : d.to)
         setDate(localDateStr())
+        setTime(nowTime())
+        setSubcategory('')
         setNote(draft.note ?? '')
         setAlreadyIn(false)
         setSplit(false)
         setMonths(10)
       }
+      setAddingSub(false)
+      setNewSub('')
       setOpen(true)
     }
     window.addEventListener(OPEN_EVENT, onOpen)
@@ -184,9 +200,29 @@ export function QuickAddSheet() {
   const backdated = date < localDateStr()
   const touchesBalance = accountId !== NO_WALLET || (type === 'transfer' && toAccountId !== NO_WALLET)
 
+  // Offered subcategories for the chosen category, plus the one already on this entry if it was since removed
+  const subChoices = useMemo(() => {
+    const list = subcategories(categoryId)
+    return subcategory && !list.includes(subcategory) ? [...list, subcategory] : list
+  }, [subcategories, categoryId, subcategory])
+
+  /** Save the typed subcategory under the chosen category and select it. */
+  const commitSub = () => {
+    const label = newSub.trim()
+    if (label) {
+      addSubcategory(categoryId, label)
+      setSubcategory(label)
+    }
+    setAddingSub(false)
+    setNewSub('')
+  }
+
   const changeType = (t: SpendTxnType) => {
     setType(t)
-    if (t !== 'transfer' && getCategory(categoryId)?.type !== t) setCategoryId(categoriesFor(t)[0]?.id ?? '')
+    if (t !== 'transfer' && getCategory(categoryId)?.type !== t) {
+      setCategoryId(categoriesFor(t)[0]?.id ?? '')
+      setSubcategory('')
+    }
     // New entries follow the defaults for the new type; edits keep what was recorded
     if (!editId) {
       const d = pickDefaults(t, transactions, methods, settings)
@@ -249,6 +285,8 @@ export function QuickAddSheet() {
       accountId: accountId || undefined,
       toAccountId: type === 'transfer' ? toAccountId || undefined : undefined,
       date,
+      time: time || undefined,
+      subcategory: type === 'transfer' ? undefined : subcategory || undefined,
       note: note.trim() || undefined,
       alreadyInBalance: backdated && touchesBalance && alreadyIn ? true : undefined,
     }
@@ -319,7 +357,10 @@ export function QuickAddSheet() {
                       key={c.id}
                       type="button"
                       aria-pressed={active}
-                      onClick={() => setCategoryId(c.id)}
+                      onClick={() => {
+                        if (c.id !== categoryId) setSubcategory('')
+                        setCategoryId(c.id)
+                      }}
                       className={`flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 text-xs transition-all cursor-pointer active:scale-95 ${
                         active ? `${TONES[c.tone].active} font-bold` : 'border-line bg-surface font-semibold text-ink-soft hover:bg-surface-muted/60'
                       }`}
@@ -339,6 +380,51 @@ export function QuickAddSheet() {
                   <span className="grid h-8 w-8 place-items-center rounded-xl bg-surface-muted text-lg leading-none">+</span>
                   <span>New</span>
                 </button>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-1.5" role="group" aria-label="Subcategory">
+                {subChoices.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    aria-pressed={s === subcategory}
+                    onClick={() => setSubcategory(s === subcategory ? '' : s)}
+                    className={`h-8 rounded-full border px-3 text-xs font-semibold transition-colors cursor-pointer ${
+                      s === subcategory ? 'border-brand bg-brand text-white' : 'border-line bg-surface text-ink-soft hover:bg-surface-muted/60'
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+                {addingSub ? (
+                  <input
+                    autoFocus
+                    value={newSub}
+                    onChange={(e) => setNewSub(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        commitSub()
+                      } else if (e.key === 'Escape') {
+                        e.stopPropagation()
+                        setAddingSub(false)
+                        setNewSub('')
+                      }
+                    }}
+                    onBlur={commitSub}
+                    placeholder="Subcategory"
+                    maxLength={30}
+                    aria-label="New subcategory"
+                    className="h-8 w-32 rounded-full border border-brand bg-surface px-3 text-xs font-semibold text-ink outline-none"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setAddingSub(true)}
+                    className="h-8 rounded-full border border-dashed border-line-strong px-3 text-xs font-semibold text-ink-muted transition-colors cursor-pointer hover:bg-surface-muted/60 hover:text-ink"
+                  >
+                    + Sub
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -413,6 +499,17 @@ export function QuickAddSheet() {
           )}
 
           <TransactionDateField value={date} onChange={setDate} />
+
+          <label className="-mt-2 flex items-center justify-between gap-3">
+            <span className="text-sm font-semibold text-ink-soft">Time</span>
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              aria-label="Time of day"
+              className="h-10 rounded-xl border border-line bg-surface px-3 text-sm font-semibold text-ink tnum outline-none focus:border-brand"
+            />
+          </label>
 
           {backdated && touchesBalance && (
             <button

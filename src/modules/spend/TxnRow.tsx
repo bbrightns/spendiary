@@ -28,7 +28,7 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
     : txn.type === 'transfer'
       ? // A loan payment goes to the loan, not to another wallet
         `${from ?? '—'} → ${txn.liabilityId && !txn.toAccountId ? 'loan payment' : walletName(txn.toAccountId) ?? '—'}${txn.alreadyInBalance ? ' · already in balance' : ''}`
-      : [cat?.label, from, txn.alreadyInBalance && 'already in balance'].filter(Boolean).join(' · ')
+      : [cat?.label && txn.subcategory ? `${cat.label} › ${txn.subcategory}` : cat?.label, txn.time, from, txn.alreadyInBalance && 'already in balance'].filter(Boolean).join(' · ')
 
   const sign = txn.type === 'income' ? '+' : txn.type === 'expense' ? '−' : ''
   const amountClass = txn.type === 'income' ? 'text-gain' : txn.type === 'transfer' ? 'text-ink-muted' : 'text-ink'
