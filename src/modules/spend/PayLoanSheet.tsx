@@ -6,6 +6,7 @@ import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb } from '../../lib/format'
 import { SwitchVisual } from './AccountSheets'
 import { loanPaymentAmount, paymentIsSpending } from './loans'
+import { loanPaidDetail } from './billPaid'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { useSpend } from './useSpend'
 
@@ -101,16 +102,23 @@ export function PayLoanSheet() {
             liabilityId: loan.id,
           })
         : undefined
+    // Before paying: the popup reads the loan as it was
+    const { detail, paidOff } = loanPaidDetail({ loan, amount: value, accountName: methods.find((m) => m.id === fromId)?.name })
     payLiabilityInstallment(loan.id, value)
-    const name = loan.name
     const id = loan.id
-    showToast(`Paid ${thb(value, true)} toward ${name}`, 'success', {
-      label: 'Undo',
-      onClick: () => {
-        if (txn) removeTransaction(txn.id)
-        undoLiabilityPayment(id)
+    showToast(
+      `Paid ${thb(value, true)} toward ${loan.name}`,
+      'success',
+      {
+        label: 'Undo',
+        onClick: () => {
+          if (txn) removeTransaction(txn.id)
+          undoLiabilityPayment(id)
+        },
       },
-    })
+      // Confetti only for the last payment
+      { popup: true, celebrate: paidOff, title: paidOff ? 'Paid off' : 'Paid', detail },
+    )
     close()
   }
 
