@@ -34,7 +34,7 @@
       "url": "/?add=expense",
       "icons": [
         {
-          "src": "/icon-192.png",
+          "src": "/shortcut-expense.png",
           "sizes": "192x192",
           "type": "image/png"
         }
@@ -47,33 +47,20 @@
       "url": "/?add=income",
       "icons": [
         {
-          "src": "/icon-192.png",
+          "src": "/shortcut-income.png",
           "sizes": "192x192",
           "type": "image/png"
         }
       ]
     },
     {
-      "name": "Transactions",
-      "short_name": "Txns",
+      "name": "Transaction",
+      "short_name": "Transaction",
       "description": "Open the transaction list",
       "url": "/spend/txns",
       "icons": [
         {
-          "src": "/icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Invest dashboard",
-      "short_name": "Invest",
-      "description": "Open the investing dashboard",
-      "url": "/invest",
-      "icons": [
-        {
-          "src": "/icon-192.png",
+          "src": "/shortcut-transaction.png",
           "sizes": "192x192",
           "type": "image/png"
         }
