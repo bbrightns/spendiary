@@ -105,6 +105,10 @@ describe('extractDateRange', () => {
     expect(at('2026-09').range).toEqual({ from: '2026-09-01', to: '2026-09-30' })
   })
 
+  it('leaves a 4-digit amount after the month alone', () => {
+    expect(at('ตุลา 1500')).toEqual({ range: { from: '2026-10-01', to: '2026-10-31' }, rest: '1500' })
+  })
+
   it('reads days, weeks (Sunday to Saturday) and years', () => {
     expect(at('เมื่อวาน').range).toEqual({ from: '2026-10-13', to: '2026-10-13' })
     expect(at('today coffee')).toEqual({ range: { from: '2026-10-14', to: '2026-10-14' }, rest: 'coffee' })

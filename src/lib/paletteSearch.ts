@@ -216,11 +216,12 @@ const shiftDays = (iso: string, n: number) => {
 }
 const monthRange = (y: number, m: number): DateRange => ({ from: ymd(new Date(y, m, 1)), to: ymd(new Date(y, m + 1, 0)) })
 
-/** "2026", "2569" (Buddhist era) → 2026; anything else → undefined */
+/** "2026", "2569" (Buddhist era) → 2026; anything else, like an amount ("1500"), → undefined */
 const yearOf = (s?: string) => {
   if (!s || !/^\d{4}$/.test(s)) return undefined
   const n = Number(s)
-  return n > 2400 ? n - 543 : n
+  const y = n > 2400 ? n - 543 : n
+  return y >= 1970 && y <= 2100 ? y : undefined
 }
 
 /**
