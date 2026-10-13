@@ -185,13 +185,13 @@ export function SpendAccounts() {
                     }}
                     aria-label={`${w.name}${isDefault ? ', default' : ''}${w.locked ? ', locked savings' : ''}, ${thb(w.balance, true)}`}
                     title={`${w.name} · ${thb(w.balance, true)}`}
-                    className={`@container relative flex aspect-square min-w-0 flex-col rounded-2xl border bg-surface p-2 sm:p-2.5 text-left shadow-[var(--shadow-soft)] transition-all cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                    className={`@container relative flex aspect-square min-w-0 flex-col rounded-2xl border bg-surface p-1.5 min-[370px]:p-2 sm:p-2.5 text-left shadow-[var(--shadow-soft)] transition-all cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                       isDefault ? 'border-brand/60 ring-1 ring-brand/30' : 'border-line'
                     }`}
                   >
                     <div className="flex items-start justify-between">
                       <span
-                        className="relative grid h-8 w-8 place-items-center rounded-xl bg-surface-muted"
+                        className="relative grid h-7 w-7 @min-[6.5rem]:h-8 @min-[6.5rem]:w-8 place-items-center rounded-xl bg-surface-muted"
                         style={w.color ? { background: `${w.color}22` } : undefined}
                       >
                         <MethodIcon method={w} className="h-4 w-4" />
@@ -223,7 +223,7 @@ export function SpendAccounts() {
                       </p>
                       {/* Satang in small type so it still fits a third of a phone; millions go compact.
                           The gaps grow with the tile: none on a small phone, where the tile is full */}
-                      <p className="truncate mt-[clamp(0px,calc((100cqw_-_90px)*0.2),6px)] font-display text-[14px] min-[380px]:text-[15px] font-extrabold tracking-tight tnum text-ink">
+                      <p className="truncate mt-[clamp(0px,calc((100cqw_-_90px)*0.2),6px)] font-display text-[14px] min-[380px]:text-[15px] font-extrabold leading-tight tracking-tight tnum text-ink">
                         {Math.abs(w.balance) >= 1_000_000 ? (
                           thbCompact(w.balance)
                         ) : (
