@@ -4,10 +4,10 @@ import { SegmentedControl } from '../ui/SegmentedControl'
 import { NumberField, SelectField, TextField } from '../ui/Field'
 import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
-import { useToast } from '../../store/ToastContext'
+import { useToast, type ResultDetail } from '../../store/ToastContext'
 import type { DcaPlan } from '../../lib/types'
-import { localDateStr } from '../../lib/format'
-import { findMatchingHolding, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd } from '../../lib/calc'
+import { localDateStr, thb } from '../../lib/format'
+import { findMatchingHolding, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd, nextBuyDate } from '../../lib/calc'
 import { fetchStockPricesUsd } from '../../lib/prices'
 
 interface Props {
@@ -308,6 +308,28 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     })
   }
 
+  /** The popup after a confirm: the amount leads, then what was bought, and when the next one is */
+  function boughtDetail(p: DcaPlan): ResultDetail {
+    const qty = isCash
+      ? undefined
+      : isStock
+      ? `${fmtNum(stockUnitsBoughtNum)} shares`
+      : isFund
+      ? `${fmtNum(fundUnitsNum)} units`
+      : isGold
+      ? `${fmtNum(goldGramsToAdd, 2)} g`
+      : isBtc
+      ? `${satsNum.toLocaleString()} sats`
+      : `${fmtNum(cryptoUnitsToAdd)} ${holding?.ticker ?? p.ticker ?? 'units'}`
+    const next = nextBuyDate(p).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+    return {
+      amount: thb(amountThbNum),
+      name: isCash ? (targetCashAccount?.name ?? p.name) : (holding?.name ?? p.name),
+      meta: [qty, isBtc || isGold ? resolvedLocationName : undefined, payFrom && `from ${payFrom.name}`].filter(Boolean).join(' · ') || undefined,
+      footnote: `${isCash ? 'Next deposit' : 'Next buy'} ${next}`,
+    }
+  }
+
   function applyConfirm() {
     if (!plan) return
     const p = plan
@@ -333,7 +355,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         undefined,
         payment,
       )
-      showToast(`Added ฿${amountThbNum.toLocaleString()} to ${targetCashAccount?.name || p.name}`, 'success', undefined, { celebrate: true, title: 'Deposit added!' })
+      showToast(`Added ${thb(amountThbNum)} to ${targetCashAccount?.name || p.name}`, 'success', undefined, { celebrate: true, title: 'Deposited', detail: boughtDetail(p) })
       onClose()
       return
     }
@@ -490,7 +512,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
       )
     }
 
-    showToast(`Your DCA buy for ${holding?.name ?? plan.name} is recorded.`, 'success', undefined, { celebrate: true, title: 'Buy confirmed!' })
+    showToast(`Your DCA buy for ${holding?.name ?? plan.name} is recorded.`, 'success', undefined, { celebrate: true, title: 'Bought', detail: boughtDetail(p) })
     onClose()
   }
 
