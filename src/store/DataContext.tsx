@@ -358,7 +358,8 @@ interface DataContextValue {
   upsertTransfer: (transfer: Omit<Transfer, 'id'> & { id?: string }) => void
   removeTransfer: (id: string) => void
 
-  recordDividend: (record: Omit<DividendRecord, 'id' | 'createdAt'>) => void
+  /** Returns the new record's id, so it can be undone with `removeDividendRecord` */
+  recordDividend: (record: Omit<DividendRecord, 'id' | 'createdAt'>) => string
   removeDividendRecord: (id: string) => void
 
   setRetirement: (settings: RetirementSettings) => void
@@ -2298,9 +2299,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       removeTransfer: (id) =>
         updateData((prev) => ({ ...prev, transfers: prev.transfers.filter((t) => t.id !== id) })),
 
-      recordDividend: (record) =>
+      recordDividend: (record) => {
+        const id = newId()
         updateData((prev) => {
-          const id = newId()
           const now = new Date().toISOString()
           const oldAccounts = prev.cashAccounts ?? []
           const cashAcc = record.cashAccountId
@@ -2350,7 +2351,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
             dividendRecords: [newRecord, ...(prev.dividendRecords ?? [])],
             holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
           }
-        }),
+        })
+        return id
+      },
 
       removeDividendRecord: (recordId) =>
         updateData((prev) => {

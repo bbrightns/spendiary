@@ -5,7 +5,7 @@ import { Button } from '../ui/Button'
 import { AssetLogo } from '../ui/AssetLogo'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
-import { ASSET_META, getHoldingDpsForMonth } from '../../lib/calc'
+import { ASSET_META, getHoldingDpsForMonth, nextPayoutMonth } from '../../lib/calc'
 import type { Holding } from '../../lib/types'
 import { localDateStr, thb } from '../../lib/format'
 import { CheckCircleIcon } from '../icons'
@@ -18,7 +18,7 @@ interface Props {
 }
 
 export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Props) {
-  const { data, recordDividend } = useData()
+  const { data, recordDividend, removeDividendRecord } = useData()
   const { showToast } = useToast()
 
   const [selectedHoldingId, setSelectedHoldingId] = useState<string>('')
@@ -109,7 +109,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
 
     const selectedCashAcc = data.cashAccounts.find((c) => c.id === cashAccountId)
 
-    recordDividend({
+    const recordId = recordDividend({
       holdingId: targetHolding.id,
       holdingName: targetHolding.name,
       ticker: targetHolding.ticker,
@@ -126,7 +126,23 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
       note: note.trim() || undefined,
     })
 
-    showToast(`${formatCur(netAmount)} from ${targetHolding.ticker} has been recorded.`, 'success', undefined, { celebrate: true, title: 'Dividend received!' })
+    const next = nextPayoutMonth(targetHolding.dividendMonths ?? [], paymentDate)
+    showToast(
+      `${formatCur(netAmount)} from ${targetHolding.ticker} has been recorded.`,
+      'success',
+      { label: 'Undo', onClick: () => removeDividendRecord(recordId) },
+      {
+        celebrate: true,
+        title: 'Received',
+        // The amount that landed, then whose dividend it was, the tax and where it went
+        detail: {
+          amount: formatCur(netAmount),
+          name: targetHolding.name,
+          meta: [effectiveTaxRate > 0 ? `After ${+(effectiveTaxRate * 100).toFixed(2)}% tax` : undefined, selectedCashAcc?.name].filter(Boolean).join(' · ') || undefined,
+          footnote: next ? `Next payout in ${next}` : undefined,
+        },
+      },
+    )
     onClose()
   }
 

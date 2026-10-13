@@ -1213,6 +1213,20 @@ export function isDividendReceivedThisMonth(
 }
 
 /**
+ * The next month a holding pays after a payout on `paidOn` (YYYY-MM-DD), e.g. "March", or
+ * "March 2027" when it comes round next year. Undefined when the paying months aren't set.
+ */
+export function nextPayoutMonth(months: number[], paidOn: string): string | undefined {
+  if (!months.length) return undefined
+  const [y, m] = paidOn.split('-').map(Number)
+  const sorted = [...months].sort((a, b) => a - b)
+  const later = sorted.find((x) => x > m)
+  const year = later ? y : y + 1
+  const name = new Date(year, (later ?? sorted[0]) - 1, 1).toLocaleDateString('en-GB', { month: 'long' })
+  return year === y ? name : `${name} ${year}`
+}
+
+/**
  * Returns the expected DPS for a specific month (1-12) for a holding.
  * Looks up month-specific dividendPayouts first, falling back to expectedDps.
  */
