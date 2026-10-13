@@ -185,7 +185,7 @@ export function SpendAccounts() {
                     }}
                     aria-label={`${w.name}${isDefault ? ', default' : ''}${w.locked ? ', locked savings' : ''}, ${thb(w.balance, true)}`}
                     title={`${w.name} · ${thb(w.balance, true)}`}
-                    className={`relative flex aspect-square min-w-0 flex-col rounded-2xl border bg-surface p-2 sm:p-2.5 text-left shadow-[var(--shadow-soft)] transition-all cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                    className={`@container relative flex aspect-square min-w-0 flex-col rounded-2xl border bg-surface p-2 sm:p-2.5 text-left shadow-[var(--shadow-soft)] transition-all cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                       isDefault ? 'border-brand/60 ring-1 ring-brand/30' : 'border-line'
                     }`}
                   >
@@ -217,12 +217,13 @@ export function SpendAccounts() {
 
                     <div className="mt-auto min-w-0">
                       {/* Always two lines tall, so a one-line name gives the same tile as a long one */}
-                      <p className="line-clamp-2 min-h-[2lh] break-words text-[11px] font-semibold leading-tight text-ink-soft">
+                      <p className="line-clamp-2 min-h-[2lh] break-words text-[11px] font-semibold leading-tight @min-[8rem]:leading-snug text-ink-soft">
                         {isDefault && <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-brand align-middle" aria-hidden />}
                         {w.name}
                       </p>
-                      {/* Satang in small type so it still fits a third of a phone; millions go compact */}
-                      <p className="truncate font-display text-[14px] min-[380px]:text-[15px] font-extrabold tracking-tight tnum text-ink">
+                      {/* Satang in small type so it still fits a third of a phone; millions go compact.
+                          The gaps grow with the tile: none on a small phone, where the tile is full */}
+                      <p className="truncate mt-[clamp(0px,calc((100cqw_-_90px)*0.2),6px)] font-display text-[14px] min-[380px]:text-[15px] font-extrabold tracking-tight tnum text-ink">
                         {Math.abs(w.balance) >= 1_000_000 ? (
                           thbCompact(w.balance)
                         ) : (
@@ -232,7 +233,7 @@ export function SpendAccounts() {
                           </>
                         )}
                       </p>
-                      <p className="truncate text-[10px] leading-tight text-ink-muted tnum">
+                      <p className="truncate mt-[clamp(0px,calc((100cqw_-_90px)*0.12),4px)] text-[10px] leading-tight text-ink-muted tnum">
                         {f ? (
                           <>
                             <span className="text-gain">+{compact(f.in)}</span> · −{compact(f.out)}
