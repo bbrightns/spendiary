@@ -130,6 +130,14 @@
 
   html {
     -webkit-text-size-adjust: 100%;
+    /* Painted behind the system nav/gesture bar on Android PWAs (edge-to-edge) */
+    background-color: #faf6f4;
+    color-scheme: light;
+  }
+
+  html.dark {
+    background-color: var(--color-canvas);
+    color-scheme: dark;
   }
 
   body {
