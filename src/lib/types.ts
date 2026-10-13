@@ -377,8 +377,10 @@ export interface SpendSettings {
   categoryEdits?: Record<string, SpendCategoryEdit>
   /** Subcategory labels per category id (built-in or custom), in the order they're offered */
   subcategories?: Record<string, string[]>
-  /** How categories are offered in Quick add and recurring: compact chips (default) or a grid of tiles */
+  /** How categories are offered in Quick add and recurring: a grid of tiles (default) or compact chips */
   categoryLayout?: 'chips' | 'tiles'
+  /** Order of categories in the pickers, by id, per type; unlisted ones follow, and "Other" stays last */
+  categoryOrder?: Partial<Record<'expense' | 'income', string[]>>
 }
 
 /** A user-made Spend category. `tone` and `icon` are keys from the Spend module's palettes. */

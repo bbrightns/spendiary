@@ -1,13 +1,18 @@
 import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ChevronRightIcon } from '../../components/icons'
+import { ChevronDownIcon } from '../../components/icons'
 import { categoriesFor, getCategory, type SpendCategory } from './categories'
 import { CategorySheet } from './CategorySheet'
+import { moveId } from './logic'
+import { ReorderSheet } from './ReorderSheet'
 import { TONES } from './tones'
 import { KEEP_CATEGORY, useRemoveCategory } from './useRemoveCategory'
 import { useSpend } from './useSpend'
 
 export type CategoryLayout = 'chips' | 'tiles'
+
+/** Tiles shown before "more": two rows of five, the last slot being the "more" tile */
+const COLLAPSED = 9
 
 interface Props {
   type: 'expense' | 'income'
@@ -23,16 +28,18 @@ interface Props {
 
 /**
  * Category and subcategory for a transaction or a recurring item, the same in every sheet:
- * pick one, add a new one, or Edit to rename / restyle (tap) and remove (×).
+ * pick one, add a new one, or Edit to rename / restyle (tap), remove (×), arrange, and remove subcategories.
  */
 export function CategoryPicker({ type, value, onChange, subcategory, onSubcategoryChange, layout, fallback }: Props) {
-  const { settings, subcategories, addSubcategory } = useSpend()
+  const { settings, updateSettings, subcategories, addSubcategory, removeSubcategory } = useSpend()
   const removeCategory = useRemoveCategory()
   const [editing, setEditing] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const [arranging, setArranging] = useState(false)
   const [sheet, setSheet] = useState<{ open: boolean; category?: SpendCategory }>({ open: false })
   const [addingSub, setAddingSub] = useState(false)
   const [newSub, setNewSub] = useState('')
-  const tiles = (layout ?? settings.categoryLayout ?? 'chips') === 'tiles'
+  const tiles = (layout ?? settings.categoryLayout ?? 'tiles') === 'tiles'
 
   // Offered subcategories for the chosen category, plus the one already picked if it was since removed
   const subChoices = useMemo(() => {
@@ -43,6 +50,8 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
   const pick = (id: string) => {
     if (id !== value) onSubcategoryChange('')
     onChange(id)
+    // Fold the grid back so the subcategories sit right under it; the pick stays in view
+    setExpanded(false)
   }
 
   /** Take a category out of the picker; if it was picked, another one is picked instead. */
@@ -65,26 +74,49 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
     setNewSub('')
   }
 
+  const removeSub = (label: string) => {
+    removeSubcategory(value, label)
+    if (label === subcategory) onSubcategoryChange('')
+  }
+
   const list = categoriesFor(type, value)
-  const tone = getCategory(value)?.tone ?? 'slate'
+  const current = getCategory(value)
+  const tone = current?.tone ?? 'slate'
+  const arrangeable = categoriesFor(type).filter((c) => !KEEP_CATEGORY.has(c.id))
+
+  // Tiles fold to two rows; a pick from further down takes the last slot so it's always in view
+  const foldable = tiles && list.length > COLLAPSED + 1
+  const folded = foldable && !expanded && !editing
+  let shown = list
+  if (folded) {
+    shown = list.slice(0, COLLAPSED)
+    if (current && !shown.some((c) => c.id === value) && list.some((c) => c.id === value)) shown = [...shown.slice(0, -1), current]
+  }
+
+  const link = '-my-1 rounded-full px-2.5 py-1 text-xs font-semibold text-brand cursor-pointer hover:bg-brand-soft'
 
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-3">
         <p className="text-sm font-semibold text-ink-soft">Category</p>
-        <button
-          type="button"
-          aria-pressed={editing}
-          onClick={() => setEditing((v) => !v)}
-          className="-my-1 rounded-full px-2.5 py-1 text-xs font-semibold text-brand cursor-pointer hover:bg-brand-soft"
-        >
-          {editing ? 'Done' : 'Edit'}
-        </button>
+        <div className="flex items-center gap-0.5">
+          {editing && arrangeable.length > 1 && (
+            <button type="button" onClick={() => setArranging(true)} className={link}>
+              Arrange
+            </button>
+          )}
+          <button type="button" onClick={() => setSheet({ open: true })} className={link}>
+            + New
+          </button>
+          <button type="button" aria-pressed={editing} onClick={() => setEditing((v) => !v)} className={link}>
+            {editing ? 'Done' : 'Edit'}
+          </button>
+        </div>
       </div>
 
       {tiles ? (
-        <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-          {list.map((c) => {
+        <div className="grid grid-cols-5 gap-1.5">
+          {shown.map((c) => {
             const active = c.id === value
             return (
               <div key={c.id} className="relative">
@@ -93,12 +125,12 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
                   aria-pressed={editing ? undefined : active}
                   aria-label={editing ? `Edit ${c.label}` : undefined}
                   onClick={() => (editing ? setSheet({ open: true, category: c }) : pick(c.id))}
-                  className={`flex min-h-[72px] w-full flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 text-xs transition-all cursor-pointer active:scale-95 ${
+                  className={`flex min-h-[60px] w-full flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-1.5 text-[11px] transition-all cursor-pointer active:scale-95 ${
                     active ? `${TONES[c.tone].active} font-bold` : 'border-line bg-surface font-semibold text-ink-soft hover:bg-surface-muted/60'
                   } ${editing ? 'border-dashed' : ''}`}
                 >
-                  <span className={`grid h-8 w-8 place-items-center rounded-xl transition-colors ${active ? 'bg-white/70 dark:bg-white/10' : TONES[c.tone].chip}`}>
-                    <c.icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.1 : 1.7} />
+                  <span className={`grid h-7 w-7 place-items-center rounded-lg transition-colors ${active ? 'bg-white/70 dark:bg-white/10' : TONES[c.tone].chip}`}>
+                    <c.icon className="h-4 w-4" strokeWidth={active ? 2.1 : 1.7} />
                   </span>
                   <span className="w-full truncate text-center leading-tight">{c.label}</span>
                 </button>
@@ -115,14 +147,19 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
               </div>
             )
           })}
-          <button
-            type="button"
-            onClick={() => setSheet({ open: true })}
-            className="flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-line-strong px-1 py-2 text-xs font-semibold text-ink-muted transition-all cursor-pointer hover:bg-surface-muted/60 hover:text-ink active:scale-95"
-          >
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-surface-muted text-lg leading-none">+</span>
-            <span>New</span>
-          </button>
+          {foldable && !editing && (
+            <button
+              type="button"
+              aria-expanded={expanded}
+              onClick={() => setExpanded((v) => !v)}
+              className="flex min-h-[60px] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-line-strong px-1 py-1.5 text-[11px] font-semibold text-ink-muted transition-all cursor-pointer hover:bg-surface-muted/60 hover:text-ink active:scale-95"
+            >
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-surface-muted">
+                <ChevronDownIcon className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} strokeWidth={2} />
+              </span>
+              <span>{expanded ? 'Less' : `+${list.length - shown.length} more`}</span>
+            </button>
+          )}
         </div>
       ) : (
         <div className="flex flex-wrap gap-1.5">
@@ -159,79 +196,116 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
               </span>
             )
           })}
-          <button
-            type="button"
-            onClick={() => setSheet({ open: true })}
-            className="flex min-h-8 items-center gap-1 rounded-full border border-dashed border-line-strong px-2.5 py-1.5 text-xs font-semibold text-ink-muted cursor-pointer hover:bg-surface-muted/60 hover:text-ink"
-          >
-            <span className="leading-none">+</span> New
-          </button>
         </div>
       )}
 
-      {/* Sub-level: indented under the category, led by a > in that category's color */}
-      <div className="mt-3 flex gap-2.5 pl-3">
-        <span className={`mt-1.5 grid h-5 w-5 shrink-0 place-items-center rounded-md ${TONES[tone].chip}`} aria-hidden="true">
-          <ChevronRightIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
-        </span>
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5" role="group" aria-label="Subcategory">
-          {subChoices.map((s) => (
-            <button
-              key={s}
-              type="button"
-              aria-pressed={s === subcategory}
-              onClick={() => onSubcategoryChange(s === subcategory ? '' : s)}
-              className={`h-8 rounded-full border px-3 text-xs font-semibold transition-colors cursor-pointer ${
-                // Picked: solid in the category's color, so it reads as part of it without looking like a category chip
-                s === subcategory ? `border-transparent ${TONES[tone].bar} font-bold text-slate-900` : 'border-line bg-surface text-ink-soft hover:bg-surface-muted/60'
-              }`}
-            >
-              {s}
-            </button>
-          ))}
-          {addingSub ? (
-            <input
-              autoFocus
-              value={newSub}
-              onChange={(e) => setNewSub(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  commitSub()
-                } else if (e.key === 'Escape') {
-                  e.stopPropagation()
-                  setAddingSub(false)
-                  setNewSub('')
-                }
-              }}
-              onBlur={commitSub}
-              placeholder="Subcategory"
-              maxLength={30}
-              aria-label="New subcategory"
-              className="h-8 w-32 rounded-full border border-brand bg-surface px-3 text-xs font-semibold text-ink outline-none"
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={() => setAddingSub(true)}
-              className="h-8 rounded-full border border-dashed border-line-strong px-3 text-xs font-semibold text-ink-muted transition-colors cursor-pointer hover:bg-surface-muted/60 hover:text-ink"
-            >
-              + Sub
-            </button>
-          )}
+      {/* Sub-level: a panel in the picked category's color, headed by its name, so it reads as part of it */}
+      {current && (
+        <div className={`mt-3 rounded-2xl border px-3 pb-3 pt-2.5 ${TONES[tone].tray}`}>
+          <p className={`mb-2 flex items-center gap-1.5 text-xs font-semibold ${TONES[tone].ink}`}>
+            <current.icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden="true" />
+            <span className="truncate">
+              {current.label} <span className="font-medium">· subcategory (optional)</span>
+            </span>
+          </p>
+          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Subcategory">
+            {subChoices.map((s) => {
+              const on = s === subcategory
+              return (
+                <span
+                  key={s}
+                  className={`inline-flex h-8 items-center rounded-full border text-xs font-semibold transition-colors ${
+                    // Picked: solid in the category's color; the rest are outlined in it
+                    on ? `border-transparent ${TONES[tone].bar} font-bold text-slate-900` : TONES[tone].subChip
+                  } ${editing ? 'border-dashed' : ''}`}
+                >
+                  <button
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => onSubcategoryChange(on ? '' : s)}
+                    className={`h-full rounded-full pl-3 cursor-pointer ${editing ? 'pr-1' : 'pr-3'}`}
+                  >
+                    {s}
+                  </button>
+                  {editing && (
+                    <button
+                      type="button"
+                      aria-label={`Remove subcategory ${s}`}
+                      onClick={() => removeSub(s)}
+                      className="mr-0.5 grid h-6 w-6 place-items-center rounded-full text-sm leading-none cursor-pointer hover:bg-loss/15 hover:text-loss"
+                    >
+                      ×
+                    </button>
+                  )}
+                </span>
+              )
+            })}
+            {addingSub ? (
+              <input
+                autoFocus
+                value={newSub}
+                onChange={(e) => setNewSub(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    commitSub()
+                  } else if (e.key === 'Escape') {
+                    e.stopPropagation()
+                    setAddingSub(false)
+                    setNewSub('')
+                  }
+                }}
+                onBlur={commitSub}
+                placeholder="Subcategory"
+                maxLength={30}
+                aria-label="New subcategory"
+                className="h-8 w-32 rounded-full border border-brand bg-surface px-3 text-xs font-semibold text-ink outline-none"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAddingSub(true)}
+                className={`h-8 rounded-full border border-dashed border-current/50 px-3 text-xs font-semibold transition-colors cursor-pointer hover:bg-surface/60 ${TONES[tone].ink}`}
+              >
+                {subChoices.length ? '+ Add' : '+ Add subcategory'}
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Outside the sheet this picker sits in, so it isn't clipped by it */}
       {createPortal(
-        <CategorySheet
-          open={sheet.open}
-          category={sheet.category}
-          type={type}
-          onClose={() => setSheet({ open: false })}
-          // A new category is picked right away; editing one leaves the pick as it is
-          onSaved={sheet.category ? undefined : (id) => pick(id)}
-        />,
+        <>
+          <CategorySheet
+            open={sheet.open}
+            category={sheet.category}
+            type={type}
+            onClose={() => setSheet({ open: false })}
+            // A new category is picked right away; editing one leaves the pick as it is
+            onSaved={sheet.category ? undefined : (id) => pick(id)}
+          />
+          <ReorderSheet
+            open={arranging}
+            onClose={() => setArranging(false)}
+            title={type === 'income' ? 'Arrange income categories' : 'Arrange categories'}
+            description="Sets the order in Quick add and recurring. Other always stays last."
+            items={arrangeable.map((c) => ({
+              id: c.id,
+              label: c.label,
+              leading: (
+                <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${TONES[c.tone].chip}`}>
+                  <c.icon className="h-4 w-4" />
+                </span>
+              ),
+            }))}
+            onMove={(id, delta) =>
+              updateSettings({ categoryOrder: { ...settings.categoryOrder, [type]: moveId(arrangeable.map((c) => c.id), id, delta) } })
+            }
+            canReset={!!settings.categoryOrder?.[type]}
+            onReset={() => updateSettings({ categoryOrder: { ...settings.categoryOrder, [type]: undefined } })}
+          />
+        </>,
         document.body,
       )}
     </div>

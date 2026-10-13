@@ -399,6 +399,18 @@ describe('category order', () => {
     const inc = categoriesFor('income').map((c) => c.label)
     expect(inc.slice(-2)).toEqual(['Tips', 'Other'])
   })
+  it('follows the saved order per type, with unlisted ones after and Other still last', () => {
+    syncCategories({
+      customCategories: [{ id: 'c1', label: 'Pets', type: 'expense', icon: 'tag', tone: 'rose' }],
+      categoryEdits: {},
+      categoryOrder: { expense: ['fun', 'other', 'food'], income: ['bonus'] },
+    })
+    const ex = categoriesFor('expense').map((c) => c.id)
+    expect(ex.slice(0, 3)).toEqual(['fun', 'food', 'drinks'])
+    expect(ex.slice(-2)).toEqual(['c1', 'other'])
+    expect(categoriesFor('income')[0].id).toBe('bonus')
+    syncCategories({})
+  })
 })
 
 describe('saved order', () => {

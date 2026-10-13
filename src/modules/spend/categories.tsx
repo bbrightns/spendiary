@@ -2,6 +2,7 @@ import type { ComponentType, SVGProps } from 'react'
 import type { SpendSettings, SpendTxnType } from '../../lib/types'
 import { TONES, type Tone } from './tones'
 import { queryTerms, scoreItem, termScore } from '../../lib/paletteSearch'
+import { applyOrder } from './logic'
 import {
   CarIcon,
   CoinsIcon,
@@ -332,13 +333,14 @@ export const SPEND_CATEGORIES: SpendCategory[] = BUILT_IN.map(withIcon)
 // Synced from Spend settings by the data provider, so plain lookups stay synchronous.
 let live: SpendCategory[] = SPEND_CATEGORIES
 let byId = new Map(live.map((c) => [c.id, c]))
-let syncedFrom: [unknown, unknown] = [undefined, undefined]
+let syncedFrom: [unknown, unknown, unknown] = [undefined, undefined, undefined]
 
-export function syncCategories(settings?: Pick<SpendSettings, 'customCategories' | 'categoryEdits'>) {
+export function syncCategories(settings?: Pick<SpendSettings, 'customCategories' | 'categoryEdits' | 'categoryOrder'>) {
   const custom = settings?.customCategories
   const edits = settings?.categoryEdits
-  if (syncedFrom[0] === custom && syncedFrom[1] === edits) return
-  syncedFrom = [custom, edits]
+  const order = settings?.categoryOrder
+  if (syncedFrom[0] === custom && syncedFrom[1] === edits && syncedFrom[2] === order) return
+  syncedFrom = [custom, edits, order]
   const builtIns = BUILT_IN.map((c) => {
     const e = c.system ? undefined : edits?.[c.id]
     if (!e) return withIcon(c)
@@ -362,9 +364,14 @@ export function syncCategories(settings?: Pick<SpendSettings, 'customCategories'
       custom: true,
     }),
   )
-  // "Other" is the catch-all, so it always stays last — the user's own categories slot in before it
+  // "Other" is the catch-all, so it always stays last — the user's own categories slot in before it.
+  // The user's saved order (per type) comes first; categories not in it follow in their usual place.
   const all = [...builtIns, ...mine]
-  live = [...all.filter((c) => !CATCH_ALL.has(c.id)), ...all.filter((c) => CATCH_ALL.has(c.id))]
+  const ordered = applyOrder(
+    all.filter((c) => !CATCH_ALL.has(c.id)),
+    [...(order?.expense ?? []), ...(order?.income ?? [])],
+  )
+  live = [...ordered, ...all.filter((c) => CATCH_ALL.has(c.id))]
   byId = new Map(live.map((c) => [c.id, c]))
 }
 

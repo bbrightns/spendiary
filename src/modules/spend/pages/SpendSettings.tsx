@@ -397,14 +397,14 @@ export function SpendSettingsSections() {
           <p className="mb-2 text-sm font-semibold text-ink-soft">Category style</p>
           <SegmentedControl
             ariaLabel="Category style in Quick add and recurring"
-            value={settings.categoryLayout ?? 'chips'}
+            value={settings.categoryLayout ?? 'tiles'}
             onChange={(categoryLayout) => updateSettings({ categoryLayout })}
             options={[
-              { value: 'chips', label: 'Chips' },
               { value: 'tiles', label: 'Tiles' },
+              { value: 'chips', label: 'Chips' },
             ]}
           />
-          <p className="mt-1.5 text-xs text-ink-muted">Chips are compact; tiles are bigger, with an icon each. Used in Quick add and recurring.</p>
+          <p className="mt-1.5 text-xs text-ink-muted">Tiles have an icon each and fold to two rows; chips are more compact. Used in Quick add and recurring.</p>
         </div>
       </Section>
     </>
