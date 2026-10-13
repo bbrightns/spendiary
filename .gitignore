@@ -8,3 +8,7 @@ dist-ssr
 npm-debug.log*
 .node/
 *.tsbuildinfo
+
+# Other AI tools' local workspaces
+.gemini/
+.freebuff/
