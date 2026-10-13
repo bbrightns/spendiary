@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { ChevronRightIcon } from '../../components/icons'
 import { categoriesFor, getCategory, type SpendCategory } from './categories'
 import { CategorySheet } from './CategorySheet'
 import { TONES } from './tones'
@@ -167,9 +168,11 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
         </div>
       )}
 
-      {/* Sub-level: indented under the category, with a rule in that category's color */}
+      {/* Sub-level: indented under the category, led by a > in that category's color */}
       <div className="mt-3 flex gap-2.5 pl-3">
-        <span className={`w-0.5 shrink-0 rounded-full ${TONES[getCategory(value)?.tone ?? 'slate'].bar}`} aria-hidden="true" />
+        <span className={`mt-1.5 grid h-5 w-5 shrink-0 place-items-center rounded-md ${TONES[getCategory(value)?.tone ?? 'slate'].chip}`} aria-hidden="true">
+          <ChevronRightIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
+        </span>
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5" role="group" aria-label="Subcategory">
           {subChoices.map((s) => (
             <button
