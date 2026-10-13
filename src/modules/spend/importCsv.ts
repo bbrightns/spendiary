@@ -168,7 +168,8 @@ export interface MatchCandidate {
   accountId?: string
 }
 
-const sameNote = (a: string | undefined, b: string | undefined) =>
+/** Notes compared the way the importer reads them: spacing and line breaks collapsed, any letter case. */
+export const sameNote = (a: string | undefined, b: string | undefined) =>
   (a ?? '').replace(/\s+/g, ' ').trim().toLowerCase() === (b ?? '').replace(/\s+/g, ' ').trim().toLowerCase()
 
 /**

@@ -5,7 +5,7 @@ import { useToast } from '../../store/ToastContext'
 import { thb } from '../../lib/format'
 import { SwitchVisual } from './AccountSheets'
 import { CATEGORY_ICONS, CATEGORY_TONES, getCategory, guessCategory, manageableCategories } from './categories'
-import { guessColumns, looksLikeHeader, pairExisting, parseCsv, toImportRows, type ColumnMap, type Row } from './importCsv'
+import { guessColumns, looksLikeHeader, pairExisting, parseCsv, sameNote, toImportRows, type ColumnMap, type Row } from './importCsv'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { TONES } from './tones'
 import { useSpend } from './useSpend'
@@ -109,19 +109,26 @@ export function ImportSheet() {
       // What the file would add to the matched entry; only what the file actually has counts
       let change = ''
       let overwrite = false
+      let noteDiffers = false
       if (match) {
         const oldCat = getCategory(match.categoryId)?.label ?? 'Other'
         const newCat = name ? (newCategory ?? category?.label ?? oldCat) : oldCat
         const sub = r.subcategory ?? match.subcategory
         const from = `${oldCat}${match.subcategory ? ` › ${match.subcategory}` : ''}`
         const to = `${newCat}${sub ? ` › ${sub}` : ''}`
-        const parts = [from !== to ? `${from} → ${to}` : '', r.time && !match.time ? `+ ${r.time}` : ''].filter(Boolean)
+        noteDiffers = !!r.description && !sameNote(match.note, r.description)
+        const quote = (t: string) => `“${t.replace(/\s+/g, ' ').trim()}”`
+        const parts = [
+          from !== to ? `${from} → ${to}` : '',
+          r.time && !match.time ? `+ ${r.time}` : '',
+          noteDiffers ? (match.note ? `note ${quote(match.note)} → ${quote(r.description)}` : `+ note ${quote(r.description)}`) : '',
+        ].filter(Boolean)
         change = parts.join(' · ')
         // Replacing details the entry already had (not just filling in blanks) needs a tick from the user
-        overwrite = !!change && (!!match.subcategory || !!match.time) && from !== to
+        overwrite = ((!!match.subcategory || !!match.time) && from !== to) || (noteDiffers && !!match.note)
       }
       const status: 'new' | 'same' | 'update' = !match ? 'new' : change ? 'update' : 'same'
-      return { ...r, category, newCategory, match, status, change, overwrite }
+      return { ...r, category, newCategory, match, status, change, overwrite, noteDiffers }
     })
   }, [result, pairs])
 
@@ -166,6 +173,7 @@ export function ImportSheet() {
         categoryId: r.category || r.newCategory ? categoryIdFor(r) : undefined,
         subcategory: r.subcategory,
         time: r.time,
+        note: r.noteDiffers ? r.description : undefined,
       }))
     // New rows, plus any "already in the app" row the user ticked on purpose (logged as a copy)
     const inputs = chosen
@@ -352,7 +360,7 @@ export function ImportSheet() {
               )}
               {count.update > 0 && (
                 <p className="mt-0.5 text-xs text-ink-muted">
-                  Rows with different details fill in that entry's category, subcategory and time. Its amount, date, note and wallet stay.
+                  Rows with different details update that entry's category, subcategory, time and note. Its amount, date and wallet stay.
                 </p>
               )}
               {count.same > 0 && (

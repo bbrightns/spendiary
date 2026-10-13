@@ -156,10 +156,10 @@ export function useSpend() {
   }
 
   /**
-   * Fill in category, subcategory and time on entries that are already logged (e.g. a re-import).
-   * Amount, date, note and wallet stay as they are, so no balance moves.
+   * Fill in category, subcategory, time and note on entries that are already logged (e.g. a re-import).
+   * Amount, date and wallet stay as they are, so no balance moves.
    */
-  function patchTransactions(patches: { id: string; categoryId?: string; subcategory?: string; time?: string }[]) {
+  function patchTransactions(patches: { id: string; categoryId?: string; subcategory?: string; time?: string; note?: string }[]) {
     const byId = new Map(patches.map((p) => [p.id, p]))
     const now = new Date().toISOString()
     setData((prev) => ({
@@ -172,6 +172,7 @@ export function useSpend() {
           ...(p.categoryId ? { categoryId: p.categoryId } : {}),
           ...(p.subcategory ? { subcategory: p.subcategory } : {}),
           ...(p.time ? { time: p.time } : {}),
+          ...(p.note ? { note: p.note, tags: parseTags(p.note) } : {}),
           updatedAt: now,
         }
       }),
