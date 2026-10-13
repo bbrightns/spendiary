@@ -155,7 +155,7 @@ export interface ImportRow {
   subcategory?: string
 }
 
-/** An entry already in the app that an import row may update. */
+/** An entry already in the app that an import row may be the same as. */
 export interface MatchCandidate {
   id: string
   date: string
@@ -163,38 +163,42 @@ export interface MatchCandidate {
   amount: number
   note?: string
   time?: string
+  categoryId?: string
   subcategory?: string
+  accountId?: string
 }
 
 const sameNote = (a: string | undefined, b: string | undefined) =>
   (a ?? '').replace(/\s+/g, ' ').trim().toLowerCase() === (b ?? '').replace(/\s+/g, ' ').trim().toLowerCase()
 
 /**
- * Which import rows can fill in an entry that is already logged instead of adding a copy.
- * A row matches an entry with the same day, direction and amount that still has no time or
- * subcategory (so it was logged bare, e.g. by an earlier import). Each entry is used once;
- * a row whose text equals the entry's note is paired first, the rest in file order.
- * Returns row index → entry id. Rows with nothing to add (no category, subcategory or time) never match.
+ * Pair import rows with entries already in the app: same day, direction and amount, and the
+ * same time of day when both have one. Each entry is used once. Same text (any wallet) is paired
+ * first, then the same time, then file order; the last two only on `accountId` when one is given.
+ * Returns row index → entry.
  */
-export function matchExisting(rows: ImportRow[], existing: MatchCandidate[]): Map<number, string> {
+export function pairExisting(rows: ImportRow[], existing: MatchCandidate[], accountId?: string): Map<number, MatchCandidate> {
   const key = (date: string, type: string, amount: number) => `${date}|${type}|${amount.toFixed(2)}`
   const pool = new Map<string, MatchCandidate[]>()
   for (const e of existing) {
-    if (e.time || e.subcategory) continue
     const k = key(e.date, e.type, e.amount)
     pool.set(k, [...(pool.get(k) ?? []), e])
   }
-  const out = new Map<number, string>()
-  const eligible = (r: ImportRow) => !!(r.category || r.subcategory || r.time)
-  const take = (candidates: MatchCandidate[], at: number) => candidates.splice(at, 1)[0]
-  // Pass 1: same text; pass 2: whatever is left for the same day and amount
-  for (const pass of [1, 2]) {
+  const timesAgree = (r: ImportRow, e: MatchCandidate) => !r.time || !e.time || r.time === e.time
+  const onAccount = (e: MatchCandidate) => !accountId || e.accountId === accountId
+  const passes: ((r: ImportRow, e: MatchCandidate) => boolean)[] = [
+    (r, e) => sameNote(e.note, r.description) && (r.time ?? '') === (e.time ?? ''),
+    (r, e) => sameNote(e.note, r.description),
+    (r, e) => !!r.time && r.time === e.time && onAccount(e),
+    (_, e) => onAccount(e),
+  ]
+  const out = new Map<number, MatchCandidate>()
+  for (const fits of passes) {
     rows.forEach((r, i) => {
-      if (out.has(i) || !eligible(r)) return
+      if (out.has(i)) return
       const candidates = pool.get(key(r.date, r.type, r.amount))
-      if (!candidates?.length) return
-      const at = pass === 1 ? candidates.findIndex((e) => sameNote(e.note, r.description)) : 0
-      if (at >= 0) out.set(i, take(candidates, at).id)
+      const at = candidates?.findIndex((e) => timesAgree(r, e) && fits(r, e)) ?? -1
+      if (at >= 0) out.set(i, candidates!.splice(at, 1)[0])
     })
   }
   return out

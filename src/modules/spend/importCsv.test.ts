@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { guessColumns, looksLikeHeader, matchExisting, parseAmount, parseCsv, parseDate, parseTime, toImportRows, type ImportRow, type MatchCandidate } from './importCsv'
+import { guessColumns, looksLikeHeader, pairExisting, parseAmount, parseCsv, parseDate, parseTime, toImportRows, type ImportRow, type MatchCandidate } from './importCsv'
 import { toCsv } from './exportCsv'
 
 describe('parseCsv', () => {
@@ -91,24 +91,31 @@ describe('category columns', () => {
   })
 })
 
-describe('matchExisting', () => {
-  const row = (p: Partial<ImportRow>): ImportRow => ({ date: '2026-10-12', type: 'expense', amount: 50, description: '', category: 'Food', ...p })
-  const bare = (id: string, p: Partial<MatchCandidate> = {}): MatchCandidate => ({ id, date: '2026-10-12', type: 'expense', amount: 50, ...p })
+describe('pairExisting', () => {
+  const row = (p: Partial<ImportRow>): ImportRow => ({ date: '2026-10-12', type: 'expense', amount: 50, description: '', ...p })
+  const entry = (id: string, p: Partial<MatchCandidate> = {}): MatchCandidate => ({ id, date: '2026-10-12', type: 'expense', amount: 50, accountId: 'w', ...p })
+  const ids = (m: Map<number, MatchCandidate>) => [...m].map(([i, e]) => [i, e.id])
 
-  it('pairs each row with one bare entry of the same day and amount, same text first', () => {
+  it('pairs each row with one entry of the same day and amount, same text first', () => {
     const rows = [row({ description: 'ข้าวมันไก่', time: '12:38' }), row({ description: 'ขุนช้าง ขาหมู', time: '12:42' })]
-    const existing = [bare('a', { note: 'ขุนช้าง  ขาหมู' }), bare('b', { note: 'something else' })]
-    expect([...matchExisting(rows, existing)]).toEqual([
+    const existing = [entry('a', { note: 'ขุนช้าง  ขาหมู' }), entry('b', { note: 'something else' })]
+    expect(ids(pairExisting(rows, existing))).toEqual([
       [1, 'a'],
       [0, 'b'],
     ])
   })
-  it('skips entries that already have a time or subcategory, and rows with nothing to add', () => {
-    const existing = [bare('timed', { time: '12:00' }), bare('sub', { subcategory: 'Regular' }), bare('free')]
-    expect(matchExisting([row({ category: undefined }), row({})], existing)).toEqual(new Map([[1, 'free']]))
+  it('never pairs when both have a time of day and the times differ', () => {
+    expect(pairExisting([row({ time: '20:00' })], [entry('a', { time: '19:00' })]).size).toBe(0)
+    expect(ids(pairExisting([row({ time: '19:00' })], [entry('a', { time: '19:00' })]))).toEqual([[0, 'a']])
   })
-  it('leaves extra rows unmatched when there are fewer entries than rows', () => {
-    expect(matchExisting([row({}), row({}), row({ amount: 60 })], [bare('only')])).toEqual(new Map([[0, 'only']]))
+  it('uses each entry once, so extra rows stay unpaired', () => {
+    expect(ids(pairExisting([row({}), row({}), row({ amount: 60 })], [entry('only')]))).toEqual([[0, 'only']])
+  })
+  it('pairs by text on any wallet, but by amount alone only on the chosen wallet', () => {
+    const other = entry('elsewhere', { accountId: 'card', note: 'Grab' })
+    expect(ids(pairExisting([row({ description: 'Grab' })], [other], 'w'))).toEqual([[0, 'elsewhere']])
+    expect(pairExisting([row({ description: 'Bolt' })], [other], 'w').size).toBe(0)
+    expect(ids(pairExisting([row({ description: 'Bolt' })], [other]))).toEqual([[0, 'elsewhere']])
   })
 })
 

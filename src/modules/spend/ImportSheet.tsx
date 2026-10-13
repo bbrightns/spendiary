@@ -5,7 +5,7 @@ import { useToast } from '../../store/ToastContext'
 import { thb } from '../../lib/format'
 import { SwitchVisual } from './AccountSheets'
 import { CATEGORY_ICONS, CATEGORY_TONES, getCategory, guessCategory, manageableCategories } from './categories'
-import { guessColumns, looksLikeHeader, matchExisting, parseCsv, toImportRows, type ColumnMap, type Row } from './importCsv'
+import { guessColumns, looksLikeHeader, pairExisting, parseCsv, toImportRows, type ColumnMap, type Row } from './importCsv'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { TONES } from './tones'
 import { useSpend } from './useSpend'
@@ -31,7 +31,13 @@ const short = (iso: string) => {
   return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })
 }
 
-/** Bank / card statement CSV → Spend transactions, with a review step before anything is saved. */
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
+
+/**
+ * Bank / card statement CSV → Spend transactions, with a review step before anything is saved.
+ * Each row is new, already in the app as is (skipped), or already in the app with less detail
+ * (its category, subcategory and time are filled in on that entry instead of adding a copy).
+ */
 export function ImportSheet() {
   const { transactions, methods, settings, addTransactions, patchTransactions, upsertCategory, addSubcategory } = useSpend()
   const { showToast } = useToast()
@@ -41,10 +47,15 @@ export function ImportSheet() {
   const [map, setMap] = useState<ColumnMap | undefined>()
   const [accountId, setAccountId] = useState(NOT_TRACKED)
   const [alreadyIn, setAlreadyIn] = useState(true)
-  const [excluded, setExcluded] = useState<Set<number>>(new Set())
-  // Fill in matching entries that are already logged (no time / subcategory yet) instead of adding copies
-  const [updateMode, setUpdateMode] = useState(false)
+  // Rows the user ticked or unticked; the rest follow their default (see `defaultPick`)
+  const [picked, setPicked] = useState<Map<number, boolean>>(new Map())
+  const [showSame, setShowSame] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  const resetPicks = () => {
+    setPicked(new Map())
+    setShowSame(false)
+  }
 
   useEffect(() => {
     const onOpen = () => {
@@ -53,8 +64,8 @@ export function ImportSheet() {
       setMap(undefined)
       setAccountId(settings.defaultAccountId ?? NOT_TRACKED)
       setAlreadyIn(true)
-      setExcluded(new Set())
-      setUpdateMode(false)
+      setPicked(new Map())
+      setShowSame(false)
       setOpen(true)
     }
     window.addEventListener(OPEN_EVENT, onOpen)
@@ -73,61 +84,64 @@ export function ImportSheet() {
 
   const result = useMemo(() => (parsed && columns ? toImportRows(parsed.body, columns) : undefined), [parsed, columns])
 
-  // Rows that can update an entry already logged bare (e.g. an earlier import that missed the categories).
-  // Any wallet counts: the earlier import may have gone to a different one than picked now.
-  const matches = useMemo(
-    () => (result ? matchExisting(result.rows, transactions.filter((t) => !t.source)) : new Map<number, string>()),
-    [result, transactions],
+  // Which entry in the app each row is (same day, direction, amount; same time when both have one)
+  const pairs = useMemo(
+    () =>
+      result
+        ? pairExisting(
+            result.rows,
+            transactions.filter((t) => !t.source),
+            accountId === NOT_TRACKED ? undefined : accountId,
+          )
+        : undefined,
+    [result, transactions, accountId],
   )
 
-  // Same day, amount and direction on the same account already logged → probably a duplicate
-  // (unless both have a time of day and the times differ)
   const rows = useMemo(() => {
-    if (!result) return []
-    const seen = new Map<string, (string | undefined)[]>()
-    for (const t of transactions) {
-      if (t.source || (accountId !== NOT_TRACKED && t.accountId !== accountId)) continue
-      const key = `${t.date}|${t.type}|${t.amount.toFixed(2)}`
-      seen.set(key, [...(seen.get(key) ?? []), t.time])
-    }
+    if (!result || !pairs) return []
     return result.rows.map((r, i) => {
       // A category named in the file wins; a name the app doesn't have yet becomes a new category
       const name = r.category ? cleanName(r.category) : ''
       const named = name ? categoryNamed(name, r.type) : undefined
-      const times = seen.get(`${r.date}|${r.type}|${r.amount.toFixed(2)}`)
-      const updateId = updateMode ? matches.get(i) : undefined
-      return {
-        ...r,
-        category: named ?? (name ? undefined : guessCategory(r.description, r.type)),
-        newCategory: name && !named ? name : undefined,
-        updateId,
-        duplicate: !updateId && !!times?.some((t) => !t || !r.time || t === r.time),
+      const category = named ?? (name ? undefined : guessCategory(r.description, r.type))
+      const newCategory = name && !named ? name : undefined
+      const match = pairs.get(i)
+      // What the file would add to the matched entry; only what the file actually has counts
+      let change = ''
+      let overwrite = false
+      if (match) {
+        const oldCat = getCategory(match.categoryId)?.label ?? 'Other'
+        const newCat = name ? (newCategory ?? category?.label ?? oldCat) : oldCat
+        const sub = r.subcategory ?? match.subcategory
+        const from = `${oldCat}${match.subcategory ? ` › ${match.subcategory}` : ''}`
+        const to = `${newCat}${sub ? ` › ${sub}` : ''}`
+        const parts = [from !== to ? `${from} → ${to}` : '', r.time && !match.time ? `+ ${r.time}` : ''].filter(Boolean)
+        change = parts.join(' · ')
+        // Replacing details the entry already had (not just filling in blanks) needs a tick from the user
+        overwrite = !!change && (!!match.subcategory || !!match.time) && from !== to
       }
+      const status: 'new' | 'same' | 'update' = !match ? 'new' : change ? 'update' : 'same'
+      return { ...r, category, newCategory, match, status, change, overwrite }
     })
-  }, [result, transactions, accountId, updateMode, matches])
+  }, [result, pairs])
 
-  const included = rows.map((r, i) => !excluded.has(i) && !(r.duplicate && !excluded.has(-1 - i)))
+  const defaultPick = (r: (typeof rows)[number]) => r.status === 'new' || (r.status === 'update' && !r.overwrite)
+  const included = rows.map((r, i) => picked.get(i) ?? defaultPick(r))
   const chosen = rows.filter((_, i) => included[i])
   const spent = chosen.filter((r) => r.type === 'expense').reduce((s, r) => s + r.amount, 0)
   const earned = chosen.filter((r) => r.type === 'income').reduce((s, r) => s + r.amount, 0)
-  const duplicates = rows.filter((r) => r.duplicate).length
-  const updates = chosen.filter((r) => r.updateId).length
+  const count = { same: 0, update: 0, new: 0 }
+  for (const r of rows) count[r.status]++
+  const updates = chosen.filter((r) => r.status === 'update').length
   const adds = chosen.length - updates
   const fromFile = rows.some((r) => r.category || r.newCategory)
   const newCategories = new Set(chosen.filter((r) => r.newCategory).map((r) => `${r.type}|${r.newCategory!.toLowerCase()}`)).size
 
-  // Excluded holds i for an unticked row, and -1 - i for a duplicate the user ticked anyway
-  const toggle = (i: number) =>
-    setExcluded((prev) => {
-      const next = new Set(prev)
-      const key = rows[i].duplicate ? -1 - i : i
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
-  // Tick every row (duplicates included) / untick every row
-  const tickAll = () => setExcluded(new Set(rows.flatMap((r, i) => (r.duplicate ? [-1 - i] : []))))
-  const untickAll = () => setExcluded(new Set(rows.map((_, i) => i)))
+  // Rows already in the app as they are stay out of the list unless asked for
+  const visible = rows.map((r, i) => ({ r, i })).filter(({ r }) => showSame || r.status !== 'same')
+  const toggle = (i: number) => setPicked((prev) => new Map(prev).set(i, !included[i]))
+  const tickAll = () => setPicked(new Map(visible.map(({ i }) => [i, true])))
+  const untickAll = () => setPicked(new Map(rows.map((_, i) => [i, false])))
 
   const save = () => {
     // Categories named in the file but missing from the app are added once each
@@ -144,36 +158,36 @@ export function ImportSheet() {
       }
       return id
     }
-    const toAdd = chosen.filter((r) => !r.updateId)
     // Updates only fill in what the file has; amount, date, note and wallet stay untouched
     const patches = chosen
-      .filter((r) => r.updateId)
+      .filter((r) => r.status === 'update')
       .map((r) => ({
-        id: r.updateId!,
+        id: r.match!.id,
         categoryId: r.category || r.newCategory ? categoryIdFor(r) : undefined,
         subcategory: r.subcategory,
         time: r.time,
       }))
-    const inputs = toAdd.map((r) => ({
-      type: r.type,
-      amount: r.amount,
-      categoryId: categoryIdFor(r),
-      subcategory: r.subcategory,
-      accountId: accountId || undefined,
-      date: r.date,
-      time: r.time,
-      note: r.description || undefined,
-      alreadyInBalance: accountId && alreadyIn ? true : undefined,
-    }))
+    // New rows, plus any "already in the app" row the user ticked on purpose (logged as a copy)
+    const inputs = chosen
+      .filter((r) => r.status !== 'update')
+      .map((r) => ({
+        type: r.type,
+        amount: r.amount,
+        categoryId: categoryIdFor(r),
+        subcategory: r.subcategory,
+        accountId: accountId || undefined,
+        date: r.date,
+        time: r.time,
+        note: r.description || undefined,
+        alreadyInBalance: accountId && alreadyIn ? true : undefined,
+      }))
     const withSub = [...inputs, ...patches].filter((t) => t.subcategory && t.categoryId)
     const subs = new Set(withSub.map((t) => JSON.stringify([t.categoryId, t.subcategory])))
     for (const pair of subs) addSubcategory(...(JSON.parse(pair) as [string, string]))
     if (patches.length) patchTransactions(patches)
-    const n = inputs.length ? addTransactions(inputs) : 0
-    const plural = (k: number) => (k === 1 ? 'transaction' : 'transactions')
-    showToast(
-      patches.length ? `Updated ${patches.length} ${plural(patches.length)}${n ? `, imported ${n}` : ''}` : `Imported ${n} ${plural(n)}`,
-    )
+    if (inputs.length) addTransactions(inputs)
+    const parts = [patches.length ? `Updated ${plural(patches.length, 'transaction')}` : '', inputs.length ? `${patches.length ? 'imported' : 'Imported'} ${plural(inputs.length, 'new one')}` : '']
+    showToast(parts.filter(Boolean).join(', '))
     setOpen(false)
   }
 
@@ -183,7 +197,7 @@ export function ImportSheet() {
     reader.onload = () => {
       setText(String(reader.result ?? ''))
       setMap(undefined)
-      setExcluded(new Set())
+      resetPicks()
     }
     reader.readAsText(f)
   }
@@ -201,7 +215,7 @@ export function ImportSheet() {
           if (key === 'amount' && v >= 0) Object.assign(next, { out: undefined, in: undefined })
           if ((key === 'out' || key === 'in') && v >= 0) next.amount = undefined
           setMap(next)
-          setExcluded(new Set())
+          resetPicks()
         }}
         className="h-10 w-full truncate rounded-xl border border-line-strong bg-surface px-2.5 text-sm text-ink outline-none focus:border-brand"
       >
@@ -227,8 +241,10 @@ export function ImportSheet() {
           {updates
             ? `Update ${updates}${adds ? ` · add ${adds}` : ''}`
             : chosen.length
-              ? `Import ${chosen.length} ${chosen.length === 1 ? 'transaction' : 'transactions'}`
-              : 'Import'}
+              ? `Import ${plural(chosen.length, 'transaction')}`
+              : rows.length && count.same === rows.length
+                ? 'Nothing new to import'
+                : 'Import'}
         </Button>
       }
     >
@@ -257,7 +273,7 @@ export function ImportSheet() {
               setText(e.target.value)
               setFileName('')
               setMap(undefined)
-              setExcluded(new Set())
+              resetPicks()
             }}
             rows={4}
             spellCheck={false}
@@ -289,12 +305,15 @@ export function ImportSheet() {
               label="Account"
               methods={methods}
               value={accountId}
-              onChange={setAccountId}
+              onChange={(id) => {
+                setAccountId(id)
+                resetPicks()
+              }}
               favoriteIds={settings.favoriteAccountIds ?? []}
               defaultId={settings.defaultAccountId}
               allowNone
             />
-            {accountId !== NOT_TRACKED && (
+            {accountId !== NOT_TRACKED && count.new > 0 && (
               <button
                 type="button"
                 role="switch"
@@ -311,87 +330,106 @@ export function ImportSheet() {
                 <SwitchVisual on={alreadyIn} />
               </button>
             )}
-            {matches.size > 0 && (
-              <button
-                type="button"
-                role="switch"
-                aria-checked={updateMode}
-                onClick={() => {
-                  setUpdateMode((v) => !v)
-                  setExcluded(new Set())
-                }}
-                className="-mt-2 flex w-full items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 text-left cursor-pointer hover:bg-surface-muted/50"
-              >
-                <span>
-                  <span className="block text-sm font-bold text-ink">Update entries already logged</span>
-                  <span className="block text-xs text-ink-muted tnum">
-                    {matches.size} {matches.size === 1 ? 'row matches an entry' : 'rows match entries'} with the same day and amount but no time
-                    or subcategory yet. {updateMode ? 'Their category, subcategory and time are filled in; nothing is added twice.' : 'Turn on to fill those in instead of adding copies.'}
-                  </span>
-                </span>
-                <SwitchVisual on={updateMode} />
-              </button>
-            )}
 
-            <div>
-              <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 text-xs text-ink-muted tnum">
-                <span>
-                  <b className="font-bold text-ink">{chosen.length}</b> of {rows.length} · out {thb(spent, true)} · in{' '}
-                  <span className="text-gain">{thb(earned, true)}</span>
-                </span>
-                <span className="flex items-center gap-3">
-                  <button type="button" onClick={tickAll} className="font-semibold text-brand hover:underline cursor-pointer">
-                    Tick all
-                  </button>
-                  <button type="button" onClick={untickAll} className="font-semibold text-brand hover:underline cursor-pointer">
-                    None
-                  </button>
-                </span>
-                <span className="w-full sm:w-auto">
-                  {duplicates > 0 && `${duplicates} look already logged`}
-                  {duplicates > 0 && (result?.skipped ?? 0) > 0 && ' · '}
-                  {(result?.skipped ?? 0) > 0 && `${result!.skipped} rows unreadable`}
-                </span>
-              </div>
-              <ul className="max-h-72 divide-y divide-line overflow-y-auto rounded-xl border border-line">
-                {rows.slice(0, SHOWN).map((r, i) => {
-                  const cat = r.newCategory
-                    ? { label: `${r.newCategory} (new)`, tone: 'slate' as const, icon: CATEGORY_ICONS.tag }
-                    : r.category ?? getCategory(r.type === 'income' ? 'other_in' : 'other')
-                  return (
-                    <li key={i}>
-                      <label className={`flex cursor-pointer items-center gap-2.5 px-3 py-2 ${included[i] ? '' : 'opacity-50'}`}>
-                        <input type="checkbox" checked={included[i]} onChange={() => toggle(i)} className="h-4 w-4 shrink-0 accent-[var(--color-brand)]" />
-                        {cat && (
-                          <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${TONES[cat.tone].chip}`}>
-                            <cat.icon className="h-3.5 w-3.5" />
-                          </span>
-                        )}
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-semibold text-ink">{r.description || cat?.label}</span>
-                          <span className="block truncate text-xs text-ink-muted">
-                            {short(r.date)}
-                            {r.time ? ` ${r.time}` : ''} · {cat?.label}
-                            {r.subcategory ? ` › ${r.subcategory}` : ''}
-                            {r.updateId ? ' · updates the logged entry' : r.duplicate ? ' · already logged?' : ''}
-                          </span>
-                        </span>
-                        <span className={`shrink-0 text-sm font-bold tnum ${r.type === 'income' ? 'text-gain' : 'text-ink'}`}>
-                          {r.type === 'income' ? '+' : '−'}
-                          {thb(r.amount, true)}
-                        </span>
-                      </label>
-                    </li>
-                  )
-                })}
-              </ul>
-              {rows.length > SHOWN && <p className="mt-1.5 text-xs text-ink-muted">Showing the first {SHOWN}; all {chosen.length} ticked rows will be imported.</p>}
-              <p className="mt-1.5 text-xs text-ink-muted">
-                {fromFile
-                  ? `Categories come from the file${newCategories ? `; ${newCategories} new ${newCategories === 1 ? 'one is' : 'ones are'} added` : ''}. Edit any of them afterwards.`
-                  : 'Categories are guessed from the description; edit any of them afterwards.'}
+            {/* What the file holds compared with what's already in the app */}
+            <div className="rounded-2xl border border-line bg-surface-muted/40 px-4 py-3">
+              <p className="text-sm font-bold text-ink">
+                {count.same === rows.length
+                  ? `All ${plural(rows.length, 'row')} are already in the app, nothing differs`
+                  : count.new === rows.length
+                    ? plural(rows.length, 'new row')
+                    : `${plural(rows.length, 'row')}: ${[
+                        count.update ? `${count.update} already in the app with different details` : '',
+                        count.new ? `${count.new} new` : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}`}
               </p>
+              {count.same > 0 && count.same < rows.length && (
+                <p className="mt-0.5 text-xs text-ink-muted tnum">
+                  {plural(count.same, 'row is', 'rows are')} already in the app exactly as they are and won't be added again.
+                </p>
+              )}
+              {count.update > 0 && (
+                <p className="mt-0.5 text-xs text-ink-muted">
+                  Rows with different details fill in that entry's category, subcategory and time. Its amount, date, note and wallet stay.
+                </p>
+              )}
+              {count.same > 0 && (
+                <button type="button" onClick={() => setShowSame((v) => !v)} className="mt-1 text-xs font-semibold text-brand hover:underline cursor-pointer">
+                  {showSame ? 'Hide' : 'Show'} the {plural(count.same, 'matching row')}
+                </button>
+              )}
             </div>
+
+            {visible.length > 0 && (
+              <div>
+                <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 text-xs text-ink-muted tnum">
+                  <span>
+                    <b className="font-bold text-ink">{chosen.length}</b> ticked · out {thb(spent, true)} · in <span className="text-gain">{thb(earned, true)}</span>
+                    {(result?.skipped ?? 0) > 0 && ` · ${plural(result!.skipped, 'row')} unreadable`}
+                  </span>
+                  <span className="flex items-center gap-3">
+                    <button type="button" onClick={tickAll} className="font-semibold text-brand hover:underline cursor-pointer">
+                      Tick all
+                    </button>
+                    <button type="button" onClick={untickAll} className="font-semibold text-brand hover:underline cursor-pointer">
+                      None
+                    </button>
+                  </span>
+                </div>
+                <ul className="max-h-72 divide-y divide-line overflow-y-auto rounded-xl border border-line">
+                  {visible.slice(0, SHOWN).map(({ r, i }) => {
+                    const cat = r.newCategory
+                      ? { label: `${r.newCategory} (new)`, tone: 'slate' as const, icon: CATEGORY_ICONS.tag }
+                      : r.category ?? getCategory(r.type === 'income' ? 'other_in' : 'other')
+                    return (
+                      <li key={i}>
+                        <label className={`flex cursor-pointer items-center gap-2.5 px-3 py-2 ${included[i] ? '' : 'opacity-50'}`}>
+                          <input type="checkbox" checked={included[i]} onChange={() => toggle(i)} className="h-4 w-4 shrink-0 accent-[var(--color-brand)]" />
+                          {cat && (
+                            <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${TONES[cat.tone].chip}`}>
+                              <cat.icon className="h-3.5 w-3.5" />
+                            </span>
+                          )}
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-semibold text-ink">{r.description || cat?.label}</span>
+                            <span className="block truncate text-xs text-ink-muted">
+                              {short(r.date)}
+                              {r.time ? ` ${r.time}` : ''} ·{' '}
+                              {r.status === 'update' ? (
+                                <span className={r.overwrite ? 'font-semibold text-warn' : 'font-semibold text-brand'}>
+                                  {r.overwrite ? 'Replaces ' : ''}
+                                  {r.change}
+                                </span>
+                              ) : (
+                                <>
+                                  {cat?.label}
+                                  {r.subcategory ? ` › ${r.subcategory}` : ''}
+                                  {r.status === 'same' ? ' · already in the app' : ''}
+                                </>
+                              )}
+                            </span>
+                          </span>
+                          <span className={`shrink-0 text-sm font-bold tnum ${r.type === 'income' ? 'text-gain' : 'text-ink'}`}>
+                            {r.type === 'income' ? '+' : '−'}
+                            {thb(r.amount, true)}
+                          </span>
+                        </label>
+                      </li>
+                    )
+                  })}
+                </ul>
+                {visible.length > SHOWN && (
+                  <p className="mt-1.5 text-xs text-ink-muted">Showing the first {SHOWN}; all {chosen.length} ticked rows will be saved.</p>
+                )}
+                <p className="mt-1.5 text-xs text-ink-muted">
+                  {fromFile
+                    ? `Categories come from the file${newCategories ? `; ${newCategories} new ${newCategories === 1 ? 'one is' : 'ones are'} added` : ''}. Edit any of them afterwards.`
+                    : 'Categories are guessed from the description; edit any of them afterwards.'}
+                </p>
+              </div>
+            )}
           </>
         )}
       </div>
