@@ -80,6 +80,11 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
 
   if (months.every((m) => m.income === 0 && m.expense === 0)) return null
 
+  // Totals across all six months, so the chart's months can be read as one span too
+  const sum = months.reduce((t, m) => ({ income: t.income + m.income, expense: t.expense + m.expense }), { income: 0, expense: 0 })
+  const kept = sum.income - sum.expense
+  const span = `${months[0].label} – ${months[MONTHS - 1].label}`
+
   // "this month" only while the card ends on the current month; stepping back names the month instead
   const latest = inPeriod(end, localDateStr()) ? 'this month' : `in ${months[MONTHS - 1].label}`
 
@@ -89,7 +94,7 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
         <h2 className="font-display text-lg font-extrabold text-ink">Last 6 months</h2>
         {/* Legend, with the hovered (or latest) month's values */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted tnum" aria-live="polite">
-          <span className="font-semibold text-ink">{shown.label}</span>
+          <span className="font-semibold text-ink">In {shown.label}:</span>
           <span className="flex items-center gap-1.5">
             <span className="h-0.5 w-3 rounded-full" style={{ background: INCOME }} />
             Income <b className="font-bold text-ink">{thb(shown.income)}</b>
@@ -160,6 +165,25 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
             </span>
           ))}
         </div>
+      </div>
+
+      {/* The six months added up */}
+      <div className="mt-4 border-t border-line pt-3">
+        <p className="text-xs font-semibold text-ink-soft">6-month total · {span}</p>
+        <dl className="mt-1.5 grid grid-cols-3 gap-2 tnum">
+          <div className="min-w-0">
+            <dt className="text-xs text-ink-muted">Income</dt>
+            <dd className="truncate text-sm font-bold text-ink">{thb(sum.income)}</dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs text-ink-muted">Spent</dt>
+            <dd className="truncate text-sm font-bold text-ink">{thb(sum.expense)}</dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs text-ink-muted">{kept < 0 ? 'Overspent' : 'Kept'}</dt>
+            <dd className={`truncate text-sm font-bold ${kept < 0 ? 'text-loss' : 'text-gain'}`}>{thb(Math.abs(kept))}</dd>
+          </div>
+        </dl>
       </div>
 
       {/* Table view for screen readers */}
