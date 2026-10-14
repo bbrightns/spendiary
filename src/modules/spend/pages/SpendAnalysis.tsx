@@ -6,7 +6,6 @@ import { SegmentedControl } from '../../../components/ui/SegmentedControl'
 import { localDateStr, thb, thbCompact } from '../../../lib/format'
 import type { SpendTransaction } from '../../../lib/types'
 import { getCategory } from '../categories'
-import { isInvested } from '../invest'
 import { budgetState, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, categoryBreakdown, totalsFor, weekOf, type Period } from '../logic'
 import { MonthStepper } from '../MonthStepper'
 import { TONES } from '../tones'
@@ -166,8 +165,6 @@ export function SpendAnalysis() {
   const savingsRate = totals.income > 0 ? (totals.net / totals.income) * 100 : null
   const spentPct = totals.income > 0 ? Math.max(0, (totals.expense / totals.income) * 100) : 0
   const over = totals.income > 0 && totals.net < 0
-  // DCA buys from Invest: not spending, but worth seeing next to what you kept
-  const invested = inRange.filter(isInvested).reduce((s, t) => s + t.amount, 0)
   const tagTotals = useMemo(() => {
     const m = new Map<string, number>()
     for (const t of inRange) if (t.type === 'expense') for (const tag of t.tags ?? []) m.set(tag, (m.get(tag) ?? 0) + t.amount)
@@ -229,7 +226,7 @@ export function SpendAnalysis() {
           </div>
         </div>
 
-        {/* Where the income went: spent vs. kept; past 100% the whole bar turns red */}
+        {/* Where the income went: spent vs. left; past 100% the whole bar turns red */}
         {totals.income > 0 && (
           <>
             <div className="mt-5 flex h-2.5 w-full gap-1 overflow-hidden rounded-full bg-surface-muted" aria-hidden>
@@ -249,11 +246,10 @@ export function SpendAnalysis() {
               <p className="min-w-0 text-right">
                 <span className="flex items-center justify-end gap-1.5 text-xs font-semibold text-ink-soft">
                   <span className={`h-2 w-2 shrink-0 rounded-full ${over ? 'bg-loss' : 'bg-emerald-500'}`} />
-                  {over ? 'Over by' : 'Kept'}
+                  {over ? 'Over by' : 'Left'}
                 </span>
                 <span className={`mt-1 block truncate font-display text-base sm:text-lg font-extrabold tnum ${over ? 'text-loss' : 'text-ink'}`}>
                   {thb(Math.abs(totals.net))}
-                  {invested > 0 && <span className="text-xs font-semibold text-ink-muted"> · {thb(invested)} invested</span>}
                 </span>
               </p>
             </div>
@@ -289,7 +285,6 @@ export function SpendAnalysis() {
         <Card className="p-3 sm:p-4" padded={false}>
           <p className="text-xs text-ink-muted">Saved of income</p>
           <p className="mt-1 font-display text-lg font-extrabold tnum text-ink">{savingsRate === null ? '—' : `${Math.round(savingsRate)}%`}</p>
-          {invested > 0 && <p className="text-xs text-ink-muted tnum">{thb(invested)} invested</p>}
         </Card>
       </div>
 
