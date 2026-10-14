@@ -182,7 +182,7 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
 
       {cats.length > 0 && (
         <div className="mt-6">
-          <p className="mb-2 text-sm font-semibold text-ink-soft">Top categories</p>
+          <p className="mb-2 text-sm font-semibold text-ink-soft">Top categories this month</p>
           <ul className="divide-y divide-line">
             {cats.map((c) => {
               const cat = getCategory(c.id)
