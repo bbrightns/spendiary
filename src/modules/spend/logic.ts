@@ -445,7 +445,8 @@ export function categoryBreakdown(txns: SpendTransaction[], categoryId: string, 
   for (const t of txns) {
     if (t.type !== 'expense' || (t.categoryId ?? 'other') !== categoryId) continue
     const label = t.subcategory || noteTitle(t.note)
-    if (label) named.set(label, (named.get(label) ?? 0) + t.amount)
+    // A note literally titled "Other" joins the trailing Other row rather than doubling it
+    if (label && label !== 'Other') named.set(label, (named.get(label) ?? 0) + t.amount)
     else other += t.amount
   }
   const rows = [...named.entries()].map(([label, amount]) => ({ label, amount })).sort((a, b) => b.amount - a.amount)

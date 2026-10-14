@@ -109,6 +109,13 @@ describe('categoryBreakdown', () => {
     ])
     expect(categoryBreakdown([txn({ categoryId: 'food', amount: 9 })], 'food')).toEqual([])
   })
+  it('keeps a single Other row when a note is titled Other', () => {
+    const rows = [txn({ categoryId: 'food', note: 'Sushi', amount: 50 }), txn({ categoryId: 'food', note: 'Other', amount: 7 }), txn({ categoryId: 'food', amount: 3 })]
+    expect(categoryBreakdown(rows, 'food')).toEqual([
+      { label: 'Sushi', amount: 50 },
+      { label: 'Other', amount: 10 },
+    ])
+  })
 })
 
 describe('parseTags', () => {
