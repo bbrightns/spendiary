@@ -7,7 +7,7 @@ import { localDateStr, thb, thbCompact } from '../../../lib/format'
 import type { SpendTransaction } from '../../../lib/types'
 import { getCategory } from '../categories'
 import { isInvested } from '../invest'
-import { budgetState, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, totalsBySubcategory, totalsFor, weekOf, type Period } from '../logic'
+import { budgetState, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, categoryBreakdown, totalsFor, weekOf, type Period } from '../logic'
 import { MonthStepper } from '../MonthStepper'
 import { TONES } from '../tones'
 import { useSpend } from '../useSpend'
@@ -324,7 +324,7 @@ export function SpendAnalysis() {
                   const state = b ? budgetState(amount, b) : 'ok'
                   const share = totals.expense > 0 ? (amount / totals.expense) * 100 : 0
                   const width = b ? Math.min(100, (amount / b) * 100) : share
-                  const subs = totalsBySubcategory(inRange, categoryId)
+                  const subs = categoryBreakdown(inRange, categoryId)
                   return (
                     <li key={categoryId}>
                       <div className="flex items-center justify-between gap-3 text-sm">
@@ -350,8 +350,8 @@ export function SpendAnalysis() {
                       {subs.length > 0 && (
                         <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-muted">
                           {subs.map((s) => (
-                            <span key={s.subcategory} className="tnum">
-                              {s.subcategory} <span className="font-semibold text-ink-soft">{thb(s.amount)}</span>
+                            <span key={s.label} className="tnum">
+                              {s.label} <span className="font-semibold text-ink-soft">{thb(s.amount)}</span>
                             </span>
                           ))}
                         </p>

@@ -434,6 +434,27 @@ export function totalsBySubcategory(txns: SpendTransaction[], categoryId: string
   return [...sub.entries()].map(([subcategory, amount]) => ({ subcategory, amount })).sort((a, b) => b.amount - a.amount)
 }
 
+/**
+ * What a category's spending went on: each entry counts under its subcategory, else its note's title, so
+ * untagged spending still shows. Biggest first, at most `limit` rows; the rest (and entries with neither) fold
+ * into a trailing "Other". Empty when there is nothing to name.
+ */
+export function categoryBreakdown(txns: SpendTransaction[], categoryId: string, limit = 4): { label: string; amount: number }[] {
+  const named = new Map<string, number>()
+  let other = 0
+  for (const t of txns) {
+    if (t.type !== 'expense' || (t.categoryId ?? 'other') !== categoryId) continue
+    const label = t.subcategory || noteTitle(t.note)
+    // A note literally titled "Other" joins the trailing Other row rather than doubling it
+    if (label && label !== 'Other') named.set(label, (named.get(label) ?? 0) + t.amount)
+    else other += t.amount
+  }
+  const rows = [...named.entries()].map(([label, amount]) => ({ label, amount })).sort((a, b) => b.amount - a.amount)
+  if (rows.length === 0) return []
+  other += rows.slice(limit).reduce((s, r) => s + r.amount, 0)
+  return other > 0 ? [...rows.slice(0, limit), { label: 'Other', amount: other }] : rows.slice(0, limit)
+}
+
 /** A category's subcategory list with one label renamed; renaming onto a label already there merges the two. */
 export function renameInList(list: string[], from: string, to: string): string[] {
   const out = list.includes(from) ? list.map((s) => (s === from ? to : s)) : [...list, to]

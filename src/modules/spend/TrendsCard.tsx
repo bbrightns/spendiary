@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Card } from '../../components/ui/Card'
-import { thb } from '../../lib/format'
+import { localDateStr, thb } from '../../lib/format'
 import type { PayCycle, SpendTransaction } from '../../lib/types'
 import { getCategory } from './categories'
 import { inPeriod, shiftPeriod, totalsFor, type Period } from './logic'
@@ -62,24 +62,31 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
 
   const shown = months[hover ?? MONTHS - 1]
 
-  // Top categories over the six months, with this month against their average
+  // This month's top categories, biggest first, each against its average over the earlier months
   const cats = useMemo(() => {
-    const total = new Map<string, number>()
-    for (const m of months) for (const [id, v] of m.byCategory) total.set(id, (total.get(id) ?? 0) + v)
-    return [...total.entries()]
+    return [...months[MONTHS - 1].byCategory.entries()]
+      .filter(([, v]) => v > 0)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
-      .map(([id, sum]) => {
+      .map(([id]) => {
         const series = months.map((m) => m.byCategory.get(id) ?? 0)
         // Average over earlier months with anything logged, so months before tracking began don't count as ฿0
         const earlier = series.slice(0, -1).filter((_, i) => months[i].income + months[i].expense > 0)
         const avg = earlier.length >= 2 ? earlier.reduce((s, v) => s + v, 0) / earlier.length : 0
         const now = series[MONTHS - 1]
-        return { id, sum, series, now, change: avg > 0 ? ((now - avg) / avg) * 100 : null }
+        return { id, series, now, avg, change: avg > 0 ? ((now - avg) / avg) * 100 : null }
       })
   }, [months])
 
   if (months.every((m) => m.income === 0 && m.expense === 0)) return null
+
+  // Totals across all six months, so the chart's months can be read as one span too
+  const sum = months.reduce((t, m) => ({ income: t.income + m.income, expense: t.expense + m.expense }), { income: 0, expense: 0 })
+  const kept = sum.income - sum.expense
+  const span = `${months[0].label} – ${months[MONTHS - 1].label}`
+
+  // "this month" only while the card ends on the current month; stepping back names the month instead
+  const latest = inPeriod(end, localDateStr()) ? 'this month' : `in ${months[MONTHS - 1].label}`
 
   return (
     <Card>
@@ -87,7 +94,7 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
         <h2 className="font-display text-lg font-extrabold text-ink">Last 6 months</h2>
         {/* Legend, with the hovered (or latest) month's values */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted tnum" aria-live="polite">
-          <span className="font-semibold text-ink">{shown.label}</span>
+          <span className="font-semibold text-ink">In {shown.label}:</span>
           <span className="flex items-center gap-1.5">
             <span className="h-0.5 w-3 rounded-full" style={{ background: INCOME }} />
             Income <b className="font-bold text-ink">{thb(shown.income)}</b>
@@ -160,6 +167,25 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
         </div>
       </div>
 
+      {/* The six months added up */}
+      <div className="mt-4 border-t border-line pt-3">
+        <p className="text-xs font-semibold text-ink-soft">6-month total · {span}</p>
+        <dl className="mt-1.5 grid grid-cols-3 gap-2 tnum">
+          <div className="min-w-0">
+            <dt className="text-xs text-ink-muted">Income</dt>
+            <dd className="truncate text-sm font-bold text-ink">{thb(sum.income)}</dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs text-ink-muted">Spent</dt>
+            <dd className="truncate text-sm font-bold text-ink">{thb(sum.expense)}</dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs text-ink-muted">{kept < 0 ? 'Overspent' : 'Kept'}</dt>
+            <dd className={`truncate text-sm font-bold ${kept < 0 ? 'text-loss' : 'text-gain'}`}>{thb(Math.abs(kept))}</dd>
+          </div>
+        </dl>
+      </div>
+
       {/* Table view for screen readers */}
       <table className="sr-only">
         <caption>Income and spending, last 6 months</caption>
@@ -183,7 +209,10 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
 
       {cats.length > 0 && (
         <div className="mt-6">
-          <p className="mb-2 text-sm font-semibold text-ink-soft">Top categories</p>
+          <div className="mb-2 flex items-baseline justify-between gap-3">
+            <p className="text-sm font-semibold text-ink-soft">Top categories {latest}</p>
+            <p className="w-24 shrink-0 text-center text-[11px] text-ink-muted">Last 6 months</p>
+          </div>
           <ul className="divide-y divide-line">
             {cats.map((c) => {
               const cat = getCategory(c.id)
@@ -196,12 +225,13 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-ink">{cat?.label ?? 'Other'}</span>
                     <span className="block text-xs text-ink-muted tnum">
-                      {thb(c.now)} this month
+                      {thb(c.now)} {latest}
                       {c.change !== null && Math.abs(c.change) >= 1 && (
                         <>
                           {' · '}
+                          {/* Against the average of the earlier months, shown so the % has a base */}
                           <span className={c.change > 15 ? 'font-semibold text-warn' : ''}>
-                            {c.change > 0 ? '↑' : '↓'} {Math.abs(Math.round(c.change))}% vs avg
+                            {c.change > 0 ? '↑' : '↓'} {Math.abs(Math.round(c.change))}% vs {thb(c.avg)} avg
                           </span>
                         </>
                       )}
