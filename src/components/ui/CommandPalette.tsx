@@ -158,6 +158,7 @@ interface TxnSummary {
 
 const USAGE_KEY = 'spendiary.palette_usage'
 const RECENT_KEY = 'spendiary.palette_recent'
+const MAX_RECENT = 2
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -208,7 +209,7 @@ export function CommandPalette() {
     setQuery('')
     setSelectedIndex(0)
     setUsage(readJson<Usage>(USAGE_KEY, {}))
-    setRecent(readJson<string[]>(RECENT_KEY, []).filter((x) => typeof x === 'string').slice(0, 5))
+    setRecent(readJson<string[]>(RECENT_KEY, []).filter((x) => typeof x === 'string').slice(0, MAX_RECENT))
   }, [])
 
   // Listen for global custom events and keyboard shortcuts
@@ -921,7 +922,7 @@ export function CommandPalette() {
         // Keep the 200 most recent so storage stays small
         writeJson(USAGE_KEY, Object.fromEntries(Object.entries(next).sort((a, b) => b[1].last - a[1].last).slice(0, 200)))
       }
-      if (q) writeJson(RECENT_KEY, [q, ...recent.filter((r) => r !== q)].slice(0, 5))
+      if (q) writeJson(RECENT_KEY, [q, ...recent.filter((r) => r !== q)].slice(0, MAX_RECENT))
       closePalette()
     }
     item.run()
