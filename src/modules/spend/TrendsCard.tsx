@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Card } from '../../components/ui/Card'
-import { thb } from '../../lib/format'
+import { localDateStr, thb } from '../../lib/format'
 import type { PayCycle, SpendTransaction } from '../../lib/types'
 import { getCategory } from './categories'
 import { inPeriod, shiftPeriod, totalsFor, type Period } from './logic'
@@ -74,11 +74,14 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
         const earlier = series.slice(0, -1).filter((_, i) => months[i].income + months[i].expense > 0)
         const avg = earlier.length >= 2 ? earlier.reduce((s, v) => s + v, 0) / earlier.length : 0
         const now = series[MONTHS - 1]
-        return { id, series, now, change: avg > 0 ? ((now - avg) / avg) * 100 : null }
+        return { id, series, now, avg, change: avg > 0 ? ((now - avg) / avg) * 100 : null }
       })
   }, [months])
 
   if (months.every((m) => m.income === 0 && m.expense === 0)) return null
+
+  // "this month" only while the card ends on the current month; stepping back names the month instead
+  const latest = inPeriod(end, localDateStr()) ? 'this month' : `in ${months[MONTHS - 1].label}`
 
   return (
     <Card>
@@ -182,7 +185,10 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
 
       {cats.length > 0 && (
         <div className="mt-6">
-          <p className="mb-2 text-sm font-semibold text-ink-soft">Top categories this month</p>
+          <div className="mb-2 flex items-baseline justify-between gap-3">
+            <p className="text-sm font-semibold text-ink-soft">Top categories {latest}</p>
+            <p className="w-24 shrink-0 text-center text-[11px] text-ink-muted">Last 6 months</p>
+          </div>
           <ul className="divide-y divide-line">
             {cats.map((c) => {
               const cat = getCategory(c.id)
@@ -195,12 +201,13 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-ink">{cat?.label ?? 'Other'}</span>
                     <span className="block text-xs text-ink-muted tnum">
-                      {thb(c.now)} this month
+                      {thb(c.now)} {latest}
                       {c.change !== null && Math.abs(c.change) >= 1 && (
                         <>
                           {' · '}
+                          {/* Against the average of the earlier months, shown so the % has a base */}
                           <span className={c.change > 15 ? 'font-semibold text-warn' : ''}>
-                            {c.change > 0 ? '↑' : '↓'} {Math.abs(Math.round(c.change))}% vs avg
+                            {c.change > 0 ? '↑' : '↓'} {Math.abs(Math.round(c.change))}% vs {thb(c.avg)} avg
                           </span>
                         </>
                       )}
