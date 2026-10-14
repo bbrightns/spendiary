@@ -13,10 +13,7 @@ import { TONES } from '../tones'
 import { useSpend } from '../useSpend'
 import { TrendsCard } from '../TrendsCard'
 
-type Range = 'week' | 'month' | 'half' | 'year'
-
-/** Ranges shown as calendar months, one bar per month */
-const MONTHS_IN: Partial<Record<Range, number>> = { half: 6, year: 12 }
+type Range = 'week' | 'month' | 'year'
 
 const parse = (s: string) => {
   const [y, m, d] = s.split('-').map(Number)
@@ -29,7 +26,7 @@ const shortDay = (s: string, year = false) =>
 
 function rangeLabel(range: Range, p: Period): string | undefined {
   if (range === 'week') return `${shortDay(p.start)} – ${shortDay(p.end, true)}`
-  if (MONTHS_IN[range]) {
+  if (range === 'year') {
     const s = parse(p.start)
     const e = parse(p.end)
     const mon = (d: Date) => d.toLocaleDateString('en-GB', { month: 'short' })
@@ -38,10 +35,10 @@ function rangeLabel(range: Range, p: Period): string | undefined {
   return undefined
 }
 
-/** The `n` calendar months ending with the month of `date` */
-function monthsOf(date: string, n: number): Period {
+/** The 12 calendar months ending with the month of `date` */
+function yearOf(date: string): Period {
   const d = parse(date)
-  return { start: localDateStr(new Date(d.getFullYear(), d.getMonth() - (n - 1), 1)), end: localDateStr(new Date(d.getFullYear(), d.getMonth() + 1, 0)) }
+  return { start: localDateStr(new Date(d.getFullYear(), d.getMonth() - 11, 1)), end: localDateStr(new Date(d.getFullYear(), d.getMonth() + 1, 0)) }
 }
 
 interface Bucket {
@@ -52,15 +49,14 @@ interface Bucket {
 }
 
 function buckets(range: Range, p: Period, txns: SpendTransaction[], today: string): Bucket[] {
-  const months = MONTHS_IN[range]
   const spentOn = new Map<string, number>()
   for (const t of txns) if (t.type === 'expense' && inPeriod(p, t.date)) {
-    const k = months ? t.date.slice(0, 7) : t.date
+    const k = range === 'year' ? t.date.slice(0, 7) : t.date
     spentOn.set(k, (spentOn.get(k) ?? 0) + t.amount)
   }
-  if (months) {
+  if (range === 'year') {
     const s = parse(p.start)
-    return Array.from({ length: months }, (_, i) => {
+    return Array.from({ length: 12 }, (_, i) => {
       const d = new Date(s.getFullYear(), s.getMonth() + i, 1)
       const key = localDateStr(d).slice(0, 7)
       return { key, label: String(d.getMonth() + 1), spent: spentOn.get(key) ?? 0, future: key > today.slice(0, 7) }
@@ -146,7 +142,7 @@ export function SpendAnalysis() {
   const [anchor, setAnchor] = useState(today)
 
   const period: Period = useMemo(
-    () => (range === 'week' ? weekOf(anchor) : range === 'month' ? periodFor(anchor, settings.cycle) : monthsOf(anchor, MONTHS_IN[range]!)),
+    () => (range === 'week' ? weekOf(anchor) : range === 'year' ? yearOf(anchor) : periodFor(anchor, settings.cycle)),
     [range, anchor, settings.cycle],
   )
   const inRange = useMemo(() => transactions.filter((t) => inPeriod(period, t.date)), [transactions, period])
@@ -156,7 +152,7 @@ export function SpendAnalysis() {
   // Same point in the previous period: e.g. the first 12 days of last month vs the first 12 of this one
   const isCurrent = inPeriod(period, today)
   const compare = useMemo(() => {
-    if (MONTHS_IN[range]) return null
+    if (range === 'year') return null
     const prev = range === 'week' ? weekOf(shiftDate(period.start, -1)) : shiftPeriod(period, -1, settings.cycle)
     const elapsed = isCurrent ? daysBetween(period.start, today) : daysBetween(period.start, period.end)
     const prevUpTo = { start: prev.start, end: shiftDate(prev.start, Math.min(elapsed, daysBetween(prev.start, prev.end))) }
@@ -179,9 +175,7 @@ export function SpendAnalysis() {
   }, [inRange])
 
   const catBudgets = range === 'month' ? settings.categoryBudgets ?? {} : {}
-  const rangeName = range === 'half' ? '6 months' : range
-  // "this week", "these 6 months"
-  const thisRange = range === 'half' ? 'these 6 months' : `this ${rangeName}`
+  const rangeName = range === 'week' ? 'week' : range === 'year' ? 'year' : 'month'
 
   return (
     <div className="space-y-5">
@@ -199,7 +193,6 @@ export function SpendAnalysis() {
           options={[
             { value: 'week', label: 'Week' },
             { value: 'month', label: 'Month' },
-            { value: 'half', label: '6M' },
             { value: 'year', label: 'Year' },
           ]}
         />
@@ -209,13 +202,8 @@ export function SpendAnalysis() {
           <MonthStepper
             value={period}
             label={rangeLabel(range, period)}
-            // Anchor on the period's end so the 6-month and year views keep ending on the chosen month
-            step={(p, delta) => {
-              if (range === 'week') return weekOf(shiftDate(p.start, 7 * delta))
-              const n = MONTHS_IN[range]!
-              const e = parse(p.end)
-              return monthsOf(localDateStr(new Date(e.getFullYear(), e.getMonth() + n * delta, 1)), n)
-            }}
+            // Anchor on the period's end so the year view keeps ending on the chosen month
+            step={(p, delta) => (range === 'week' ? weekOf(shiftDate(p.start, 7 * delta)) : yearOf(localDateStr(new Date(parse(p.end).getFullYear() + delta, parse(p.end).getMonth(), 1))))}
             onChange={(p) => setAnchor(p.end > today ? today : p.end)}
           />
         )}
@@ -225,7 +213,7 @@ export function SpendAnalysis() {
       <Card className="p-4 sm:p-6 animate-rise" padded={false}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
-            <p className="text-sm font-medium text-ink-muted">{isCurrent ? `Spent ${thisRange}` : `Spent ${range === 'half' ? 'those 6 months' : `that ${rangeName}`}`}</p>
+            <p className="text-sm font-medium text-ink-muted">{isCurrent ? `Spent this ${rangeName}` : `Spent that ${rangeName}`}</p>
             <p className="mt-1 font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ink tnum truncate">{thb(totals.expense)}</p>
             {compare !== null && (
               <p className={`mt-1 text-xs font-semibold tnum ${compare <= 0 ? 'text-gain' : 'text-orange-600 dark:text-orange-300'}`}>
@@ -237,7 +225,7 @@ export function SpendAnalysis() {
           <div className="sm:text-right">
             <p className="text-sm font-medium text-ink-muted">Income</p>
             <p className="mt-1 font-display text-xl sm:text-2xl font-extrabold text-ink tnum">{thb(totals.income)}</p>
-            {totals.income === 0 && <p className="mt-0.5 text-xs text-ink-muted">None logged {thisRange}</p>}
+            {totals.income === 0 && <p className="mt-0.5 text-xs text-ink-muted">None logged this {rangeName}</p>}
           </div>
         </div>
 
@@ -274,8 +262,8 @@ export function SpendAnalysis() {
       </Card>
 
       <Card>
-        <h2 className="mb-3 font-display text-lg font-extrabold text-ink">Spent per {MONTHS_IN[range] ? 'month' : 'day'}</h2>
-        <Bars data={data} unit={MONTHS_IN[range] ? 'month' : 'day'} />
+        <h2 className="mb-3 font-display text-lg font-extrabold text-ink">Spent per {range === 'year' ? 'month' : 'day'}</h2>
+        <Bars data={data} unit={range === 'year' ? 'month' : 'day'} />
       </Card>
 
       {range === 'month' && <TrendsCard end={period} txns={transactions} cycle={settings.cycle} />}
@@ -317,7 +305,7 @@ export function SpendAnalysis() {
             )}
           </div>
           {totals.byCategory.length === 0 && Object.keys(catBudgets).length === 0 ? (
-            <p className="mt-3 text-sm text-ink-muted">No spending in {thisRange}.</p>
+            <p className="mt-3 text-sm text-ink-muted">No spending in this {rangeName}.</p>
           ) : (
             <ul className="mt-4 space-y-3.5">
               {[
