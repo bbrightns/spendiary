@@ -195,6 +195,13 @@
     backdrop-filter: blur(8px);
   }
 
+  /* Dark: solid surface, so the translucent white above doesn't wash the rows out to grey */
+  .dark .logs-table-shell {
+    border-color: var(--color-line-strong);
+    background: var(--color-surface);
+    box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.6);
+  }
+
   .logs-table {
     border-collapse: separate;
     border-spacing: 0;
@@ -231,11 +238,11 @@
   }
 
   .dark .logs-table-row {
-    background: rgba(12, 13, 18, 0.24);
+    background: transparent;
   }
 
   .dark .logs-table-row:hover {
-    background: rgba(31, 35, 48, 0.72);
+    background: var(--color-surface-muted);
   }
 
   .logs-table-row.is-expanded {
@@ -317,6 +324,12 @@
     line-height: 1.25;
     font-weight: 700;
     max-width: 100%;
+  }
+
+  .dark .logs-table-location-badge {
+    border-color: rgba(96, 165, 250, 0.3);
+    background: rgba(96, 165, 250, 0.12);
+    color: #93c5fd;
   }
 
   .logs-table-note-text {
