@@ -1791,7 +1791,7 @@ export function HoldingLogs() {
             />
           </Card>
         ) : viewMode === 'table' ? (
-          <Card padded={false} className="card-bleed-wide overflow-hidden border-0 shadow-none">
+          <Card padded={false} className="card-bleed-wide overflow-hidden border-0 shadow-none !bg-transparent">
             <div className="logs-table-shell overflow-x-auto">
               <table className="logs-table w-full text-left text-sm min-w-[980px]">
                 <thead>
