@@ -8,6 +8,7 @@ import { detectBankPreset, findMatchingHolding, inferCashCategory } from '../lib
 import { THAI_STOCKS, THAI_DRS, US_STOCKS } from '../lib/securities'
 import { importFixedCosts } from '../modules/spend/migrate'
 import { syncCategories } from '../modules/spend/categories'
+import { resolveRemoteLoad, type RestLoad } from './remoteLoad'
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
 
@@ -257,6 +258,10 @@ interface DataContextValue {
   syncStatus: SyncStatus
   /** False until the initial load (cloud / guest / test data) for the current user has finished. */
   dataReady: boolean
+  /** True when the cloud load failed. Saving stays off so the real data is never overwritten. */
+  loadError: boolean
+  /** Try the cloud load again after a failure */
+  retryLoad: () => void
   user: User | null
   loginWithGoogle: () => void
   loginAsGuest: () => void
@@ -532,6 +537,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [usdThb, setUsdThb] = useState<number | null>(null)
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle')
   const [dataReady, setDataReady] = useState(false)
+  const [loadError, setLoadError] = useState(false)
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(() => {
     const stored = localStorage.getItem('spendiary.last_synced_time')
     return stored ? new Date(stored) : null
@@ -805,8 +811,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const supabaseKey = import.meta.env.VITE_API_TOKEN || ''
 
       // Attempt 1: Via supabase-js client
-      let remotePayload: SpendiaryData | null = null
-
       const { data: row, error } = await supabase
         .from('user_data')
         .select('payload')
@@ -815,18 +819,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       console.log('Fetch remote data response (client):', { row, error })
 
-      if (!error && row?.payload) {
-        remotePayload = row.payload as SpendiaryData
-      } else {
+      let rest: RestLoad | null = null
+      if (error || !row?.payload) {
         // Attempt 2: Via direct REST call with Authorization Bearer header
         // Retrieve token from Supabase localStorage or hash
         const storageKey = `sb-dgxjifbsdpggoyyzhpeb-auth-token`
         let token = supabaseKey
+        let usedUserToken = false
         try {
           const raw = localStorage.getItem(storageKey)
           if (raw) {
             const parsed = JSON.parse(raw)
-            if (parsed.access_token) token = parsed.access_token
+            if (parsed.access_token) {
+              token = parsed.access_token
+              usedUserToken = true
+            }
           }
         } catch {
           // ignore: storage or JSON unavailable
@@ -840,20 +847,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
               'Content-Type': 'application/json',
             }
           })
-          if (restRes.ok) {
-            const list = await restRes.json()
-            console.log('Fetch remote data response (REST API):', list)
-            if (Array.isArray(list) && list.length > 0 && list[0]?.payload) {
-              remotePayload = list[0].payload as SpendiaryData
-            }
-          }
+          const list = restRes.ok ? await restRes.json() : null
+          console.log('Fetch remote data response (REST API):', list)
+          rest = { ok: restRes.ok, list, usedUserToken }
         } catch (restErr) {
           console.warn('REST API fallback error:', restErr)
         }
       }
 
-      if (remotePayload) {
+      const result = resolveRemoteLoad({ error, payload: row?.payload }, rest)
+
+      if (result.kind === 'failed') {
+        // We can't tell what is in the cloud. Keep saving off so empty data never overwrites the real row.
+        console.error('Could not load remote data; saving is paused until a retry succeeds')
+        setSyncStatus('error')
+        setLoadError(true)
+        return
+      }
+
+      if (result.kind === 'loaded') {
         console.log('Successfully loaded remote data from Supabase')
+        const remotePayload = result.payload as SpendiaryData
         const migrated = migrate(remotePayload)
         const migratedStr = JSON.stringify(migrated)
 
@@ -869,17 +883,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setSyncStatus('synced')
         updateLastSynced(null)
       }
+      // Only a confirmed load turns saving on
+      syncReady.current = true
     } catch (err) {
       console.error('Error fetching remote data:', err)
       setSyncStatus('error')
+      setLoadError(true)
     } finally {
-      syncReady.current = true
       setDataReady(true)
     }
   }
 
+  const retryLoad = () => {
+    if (!user) return
+    setLoadError(false)
+    syncReady.current = false
+    setDataReady(false)
+    fetchRemoteData(user.id)
+  }
+
   // Fetch remote data once user is loaded
   useEffect(() => {
+    setLoadError(false)
     if (user) {
       const storedLastUser = localStorage.getItem('spendiary.last_user_id')
       const isSwitch = Boolean(storedLastUser && storedLastUser !== user.id)
@@ -979,6 +1004,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       clearAll,
       syncStatus,
       dataReady,
+      loadError,
+      retryLoad,
       lastSyncedAt,
       user,
       loginWithGoogle,
@@ -2832,7 +2859,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }),
         })),
     }),
-    [data, syncStatus, dataReady, lastSyncedAt, user],
+    [data, syncStatus, dataReady, loadError, lastSyncedAt, user],
   )
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>
