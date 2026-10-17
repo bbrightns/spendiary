@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import type { AcquisitionSource, BtcLocation, CashAccount, DcaPlan, DebtCategory, DividendRecord, GoldLocation, Holding, HoldingLog, InvestAssetClass, Liability, NetWorthSnapshot, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryBackup, SpendiaryData, Transfer } from '../lib/types'
+import type { AcquisitionSource, BtcLocation, CashAccount, DcaPlan, DebtCategory, DividendRecord, GoldLocation, Holding, HoldingLog, InvestAssetClass, Liability, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryBackup, SpendiaryData, Transfer } from '../lib/types'
 import { localDateStr } from '../lib/format'
 import { seedData } from '../lib/seed'
 import { detectBankPreset, findMatchingHolding, inferCashCategory } from '../lib/calc'
@@ -9,9 +9,16 @@ import { inferAssetClass } from '../lib/assetClass'
 import { syncCategories } from '../modules/spend/categories'
 import { emptyData, migrate, newId } from './migrate'
 import { parseCleanNumber, validateSpendiaryData } from './validate'
-import { payFromAccount, revertCashAccountsChange, upsert, type DcaPayment } from './dataHelpers'
+import { payFromAccount, upsert, type DcaPayment } from './dataHelpers'
 import { useAuth } from './useAuth'
 import { useCloudSync, type SyncStatus } from './useCloudSync'
+import * as cashActions from './actions/cash'
+import * as liabilityActions from './actions/liabilities'
+import * as holdingActions from './actions/holdings'
+import * as holdingLogActions from './actions/holdingLogs'
+import * as dcaActions from './actions/dca'
+import * as dividendActions from './actions/dividends'
+import * as planningActions from './actions/planning'
 
 /** Result returned by importData — UI can react to success/error */
 export type ImportResult =
@@ -23,7 +30,7 @@ export type ImportPortfolioAndCashResult =
   | { ok: true; count: { holdings: number; cashAccounts: number; liabilities?: number } }
   | { ok: false; error: string }
 
-interface DataContextValue {
+export interface DataContextValue {
   data: SpendiaryData
   setData: (next: SpendiaryData | ((prev: SpendiaryData) => SpendiaryData)) => void
   loadSample: () => void
@@ -316,925 +323,44 @@ export function DataProvider({ children }: { children: ReactNode }) {
       logout,
       usdThb,
       setUsdThb,
-      setCashAccounts: (cashAccounts) =>
-        updateData((prev) => {
-          const changes: string[] = []
-          const oldAccounts = prev.cashAccounts ?? []
-          
-          for (const oldAcc of oldAccounts) {
-            const newAcc = cashAccounts.find((a) => a.id === oldAcc.id)
-            if (!newAcc) {
-              const oldSymbol = (oldAcc.currency ?? 'THB') === 'USD' ? '$' : '฿'
-              changes.push(`Removed "${oldAcc.name}" (${oldSymbol}${oldAcc.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })})`)
-            } else {
-              const oldCurr = oldAcc.currency ?? 'THB'
-              const newCurr = newAcc.currency ?? 'THB'
-              const symbol = newCurr === 'USD' ? '$' : '฿'
-              const nameChanged = newAcc.name !== oldAcc.name
-              const balanceChanged = newAcc.balance !== oldAcc.balance
-              const currChanged = newCurr !== oldCurr
+      setCashAccounts: (cashAccounts) => updateData((prev) => cashActions.setCashAccounts(prev, cashAccounts)),
+      setMonthlyIncome: (monthlyIncome) => updateData((prev) => cashActions.setMonthlyIncome(prev, monthlyIncome)),
+      setUserName: (userName) => updateData((prev) => cashActions.setUserName(prev, userName)),
 
-              if (nameChanged || balanceChanged || currChanged) {
-                const diff = newAcc.balance - oldAcc.balance
-                const diffSign = diff > 0 ? '+' : '-'
-                const diffFormatted = `${diffSign}${symbol}${Math.abs(diff).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
-                const diffSuffix = balanceChanged && !currChanged ? ` (${diffFormatted})` : ''
+      upsertLiability: (item) => updateData((prev) => liabilityActions.upsertLiability(prev, item)),
+      removeLiability: (id) => updateData((prev) => liabilityActions.removeLiability(prev, id)),
+      setLiabilities: (liabilities) => updateData((prev) => liabilityActions.setLiabilities(prev, liabilities)),
 
-                if (nameChanged && balanceChanged) {
-                  changes.push(`Renamed "${oldAcc.name}" to "${newAcc.name}" and set balance to ${symbol}${newAcc.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}${diffSuffix}`)
-                } else if (currChanged && balanceChanged) {
-                  changes.push(`Changed "${oldAcc.name}" currency to ${newCurr} and set balance to ${symbol}${newAcc.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}`)
-                } else if (nameChanged) {
-                  changes.push(`Renamed "${oldAcc.name}" to "${newAcc.name}"`)
-                } else if (currChanged) {
-                  changes.push(`Changed "${oldAcc.name}" currency to ${newCurr}`)
-                } else if (balanceChanged) {
-                  changes.push(`Updated "${oldAcc.name}" balance to ${symbol}${newAcc.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}${diffSuffix}`)
-                }
-              }
-            }
-          }
-          
-          for (const newAcc of cashAccounts) {
-            if (!oldAccounts.some((a) => a.id === newAcc.id)) {
-              const symbol = (newAcc.currency ?? 'THB') === 'USD' ? '$' : '฿'
-              changes.push(`Added "${newAcc.name}" with balance ${symbol}${newAcc.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}`)
-            }
-          }
-          
-          if (changes.length === 0) {
-            return { ...prev, cashAccounts }
-          }
-          
-          const isOnlyAdd = changes.length > 0 && changes.every((c) => c.startsWith('Added "'))
+      payLiabilityInstallment: (id, amount) => updateData((prev) => liabilityActions.payLiabilityInstallment(prev, id, amount)),
 
-          const logEntry: HoldingLog = {
-            id: newId(),
-            timestamp: new Date().toISOString(),
-            action: isOnlyAdd ? 'add' : 'edit',
-            holdingName: 'Cash Accounts',
-            ticker: 'CASH',
-            assetClass: 'cash',
-            note: changes.join(', '),
-            previousCashAccountsState: oldAccounts,
-            afterCashAccountsState: cashAccounts,
-          }
-          
-          return {
-            ...prev,
-            cashAccounts,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
-          }
-        }),
-      setMonthlyIncome: (monthlyIncome) => updateData((prev) => ({ ...prev, monthlyIncome })),
-      setUserName: (userName) => updateData((prev) => ({ ...prev, userName })),
+      undoLiabilityPayment: (id) => updateData((prev) => liabilityActions.undoLiabilityPayment(prev, id)),
 
-      upsertLiability: (item) =>
-        updateData((prev) => {
-          const isEdit = item.id && (prev.liabilities ?? []).some((x) => x.id === item.id)
-          const updatedItems = upsert(prev.liabilities ?? [], {
-            ...item,
-            updatedAt: new Date().toISOString().slice(0, 10),
-          })
-          const logEntry: HoldingLog = {
-            id: newId(),
-            timestamp: new Date().toISOString(),
-            action: isEdit ? 'edit' : 'add',
-            holdingName: `Liability: ${item.name}`,
-            ticker: 'DEBT',
-            assetClass: 'cash',
-            note: isEdit
-              ? `Updated liability "${item.name}" balance to ฿${item.balance.toLocaleString()}`
-              : `Added liability "${item.name}" with balance ฿${item.balance.toLocaleString()}`,
-          }
-          return {
-            ...prev,
-            liabilities: updatedItems,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
-          }
-        }),
-      removeLiability: (id) =>
-        updateData((prev) => {
-          const item = (prev.liabilities ?? []).find((x) => x.id === id)
-          if (!item) return prev
-          const updatedItems = (prev.liabilities ?? []).filter((x) => x.id !== id)
-          const logEntry: HoldingLog = {
-            id: newId(),
-            timestamp: new Date().toISOString(),
-            action: 'sell',
-            holdingName: `Liability: ${item.name}`,
-            ticker: 'DEBT',
-            assetClass: 'cash',
-            note: `Paid off / removed liability "${item.name}" (฿${item.balance.toLocaleString()})`,
-          }
-          return {
-            ...prev,
-            liabilities: updatedItems,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
-          }
-        }),
-      setLiabilities: (liabilities) =>
-        updateData((prev) => ({ ...prev, liabilities })),
+      upsertHolding: (holding) => updateData((prev) => holdingActions.upsertHolding(prev, holding)),
+      removeHolding: (id) => updateData((prev) => holdingActions.removeHolding(prev, id)),
+      toggleHoldingLock: (id) => updateData((prev) => holdingActions.toggleHoldingLock(prev, id)),
+      transferLocation: (params) => updateData((prev) => holdingActions.transferLocation(prev, params)),
+      toggleLocationLock: (holdingId, locationId, isBtc) => updateData((prev) => holdingActions.toggleLocationLock(prev, holdingId, locationId, isBtc)),
 
-      payLiabilityInstallment: (id, amount) =>
-        updateData((prev) => {
-          const item = (prev.liabilities ?? []).find((x) => x.id === id)
-          if (!item) return prev
+      reorderHoldings: (ids) => updateData((prev) => holdingActions.reorderHoldings(prev, ids)),
 
-          const currentPaid = item.paidInstallments ?? 0
-          const totalInst = item.totalInstallments
-          const nextPaid = currentPaid + 1
-          
-          // Determine installment payment amount
-          let paymentAmount = amount && amount > 0 ? amount : item.monthlyPayment ?? 0
-          if (paymentAmount <= 0) {
-            const remainingInst = Math.max(1, (totalInst ?? 1) - currentPaid)
-            paymentAmount = Math.round(item.balance / remainingInst)
-          }
+      sellHolding: (params) => updateData((prev) => holdingActions.sellHolding(prev, params)),
 
-          const newBalance = Math.max(0, item.balance - paymentAmount)
-          // Local date: toISOString() is UTC, which in Thailand is still yesterday before 7am
-          const todayStr = localDateStr()
+      buyMoreHolding: (params) => updateData((prev) => holdingActions.buyMoreHolding(prev, params)),
 
-          const updatedItems = (prev.liabilities ?? []).map((x) =>
-            x.id === id
-              ? {
-                  ...x,
-                  balance: newBalance,
-                  paidInstallments: nextPaid,
-                  lastPaidDate: todayStr,
-                  // What actually came off (the balance can't go below 0)
-                  lastPaidAmount: item.balance - newBalance,
-                  updatedAt: todayStr,
-                }
-              : x,
-          )
+      addHoldingLog: (log) => updateData((prev) => holdingLogActions.addHoldingLog(prev, log)),
 
-          const logEntry: HoldingLog = {
-            id: newId(),
-            timestamp: new Date().toISOString(),
-            action: 'edit',
-            holdingName: `Liability: ${item.name}`,
-            ticker: 'DEBT',
-            assetClass: 'cash',
-            note: `Paid installment ${nextPaid}${totalInst ? `/${totalInst}` : ''} for "${item.name}" (฿${paymentAmount.toLocaleString()})`,
-          }
+      removeHoldingLog: (logId) => updateData((prev) => holdingLogActions.removeHoldingLog(prev, logId)),
 
-          return {
-            ...prev,
-            liabilities: updatedItems,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
-          }
-        }),
+      removeHoldingLogs: (logIds) => updateData((prev) => holdingLogActions.removeHoldingLogs(prev, logIds)),
 
-      undoLiabilityPayment: (id) =>
-        updateData((prev) => {
-          const item = (prev.liabilities ?? []).find((x) => x.id === id)
-          if (!item || (item.paidInstallments ?? 0) <= 0) return prev
+      updateHoldingLogTimestamp: (logId, timestamp) => updateData((prev) => holdingLogActions.updateHoldingLogTimestamp(prev, logId, timestamp)),
 
-          const prevPaid = Math.max(0, (item.paidInstallments ?? 1) - 1)
-          // Put back what the payment took off; older records without it fall back to the monthly amount
-          const paymentAmount = item.lastPaidAmount ?? item.monthlyPayment ?? 0
-          const restoredBalance = item.originalBalance
-            ? Math.min(item.originalBalance, item.balance + paymentAmount)
-            : item.balance + paymentAmount
+      updateHoldingLog: (logId, patch) => updateData((prev) => holdingLogActions.updateHoldingLog(prev, logId, patch)),
 
-          const todayStr = localDateStr()
+      undoHoldingLog: (logId) => updateData((prev) => holdingLogActions.undoHoldingLog(prev, logId)),
 
-          const updatedItems = (prev.liabilities ?? []).map((x) =>
-            x.id === id
-              ? {
-                  ...x,
-                  balance: restoredBalance,
-                  paidInstallments: prevPaid,
-                  lastPaidDate: undefined,
-                  lastPaidAmount: undefined,
-                  updatedAt: todayStr,
-                }
-              : x,
-          )
-
-          const logEntry: HoldingLog = {
-            id: newId(),
-            timestamp: new Date().toISOString(),
-            action: 'edit',
-            holdingName: `Liability: ${item.name}`,
-            ticker: 'DEBT',
-            assetClass: 'cash',
-            note: `Undid installment payment for "${item.name}" (reverted to ${prevPaid} paid, balance ฿${restoredBalance.toLocaleString()})`,
-          }
-
-          return {
-            ...prev,
-            liabilities: updatedItems,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
-          }
-        }),
-
-      upsertHolding: (holding) =>
-        updateData((prev) => ({ ...prev, holdings: upsert(prev.holdings, holding) })),
-      removeHolding: (id) =>
-        updateData((prev) => {
-          const target = prev.holdings.find((h) => h.id === id)
-          if (target?.isLocked) return prev // Guard against deleting safe-haven locked holding
-          const { [id]: _, ...restTargets } = prev.rebalanceHoldingTargets ?? {}
-          return {
-            ...prev,
-            holdings: prev.holdings.filter((h) => h.id !== id),
-            rebalanceHoldingTargets: restTargets,
-          }
-        }),
-      toggleHoldingLock: (id) =>
-        updateData((prev) => ({
-          ...prev,
-          holdings: prev.holdings.map((h) =>
-            h.id === id ? { ...h, isLocked: !h.isLocked } : h
-          ),
-        })),
-      transferLocation: ({ holdingId, fromLocationId, toLocationId, newLocationName, amount, fee = 0, timestamp }) =>
-        updateData((prev) => {
-          const holding = prev.holdings.find((h) => h.id === holdingId)
-          if (!holding) return prev
-          const isBtc = holding.assetClass === 'crypto' && (holding.btcLocations?.length ?? 0) > 0
-          const isGold = holding.assetClass === 'gold' && (holding.goldLocations?.length ?? 0) > 0
-          if (!isBtc && !isGold) return prev
-
-          type Loc = { id: string; name: string; qty: number; thbSpent: number; isLocked?: boolean }
-          const rawLocs: Loc[] = isBtc
-            ? (holding.btcLocations ?? []).map((l) => ({ id: l.id, name: l.name, qty: l.satoshi, thbSpent: l.thbSpent, isLocked: l.isLocked }))
-            : (holding.goldLocations ?? []).map((l) => ({ id: l.id, name: l.name, qty: l.grams, thbSpent: l.thbSpent, isLocked: l.isLocked }))
-
-          const round = (n: number) => (isBtc ? Math.round(n) : parseFloat(n.toFixed(4)))
-          const from = rawLocs.find((l) => l.id === fromLocationId)
-          if (!from || from.isLocked) return prev
-
-          const moveAmount = round(amount)
-          const feeAmount = round(fee)
-          const eps = isBtc ? 0 : 0.00005
-          if (!(moveAmount > 0) || moveAmount > from.qty + eps || feeAmount < 0 || feeAmount >= moveAmount) return prev
-
-          const received = round(moveAmount - feeAmount)
-          const movesAll = moveAmount >= from.qty - eps
-          // Cost basis travels with the coins; moving everything moves the exact remaining cost
-          const costMoved = movesAll ? from.thbSpent : parseFloat(((from.thbSpent * moveAmount) / from.qty).toFixed(2))
-
-          // Destination: an existing location, or a (possibly same-named) one
-          const typedName = (newLocationName ?? '').trim()
-          let dest: Loc | undefined = toLocationId ? rawLocs.find((l) => l.id === toLocationId) : undefined
-          if (!dest && typedName) dest = rawLocs.find((l) => l.name.toLowerCase() === typedName.toLowerCase())
-          if (dest && dest.id === from.id) return prev
-          if (!dest && !typedName) return prev
-          const destCreated = !dest
-          const destId = dest ? dest.id : newId()
-          const destName = dest ? dest.name : typedName
-
-          const nextLocs: Loc[] = rawLocs.map((l) => {
-            if (l.id === from.id) {
-              const qty = movesAll ? 0 : round(l.qty - moveAmount)
-              return { ...l, qty, thbSpent: movesAll ? 0 : parseFloat((l.thbSpent - costMoved).toFixed(2)) }
-            }
-            if (dest && l.id === dest.id) {
-              return { ...l, qty: round(l.qty + received), thbSpent: parseFloat((l.thbSpent + costMoved).toFixed(2)) }
-            }
-            return l
-          })
-          if (destCreated) nextLocs.push({ id: destId, name: destName, qty: received, thbSpent: costMoved })
-
-          const toBtc = (l: Loc) => ({ id: l.id, name: l.name, satoshi: l.qty, thbSpent: l.thbSpent, ...(l.isLocked ? { isLocked: true } : {}) })
-          const toGold = (l: Loc) => ({ id: l.id, name: l.name, grams: l.qty, thbSpent: l.thbSpent, ...(l.isLocked ? { isLocked: true } : {}) })
-
-          // Holding totals: the fee shrinks the coins, the money put in stays → average cost rises slightly
-          const prevUnits = holding.units ?? holding.totalUnits ?? 0
-          const feeUnits = isBtc ? feeAmount / 100_000_000 : feeAmount
-          const newUnits = Math.max(0, prevUnits - feeUnits)
-          const totalThb = holding.totalThbInvested ?? 0
-          const newAvg = newUnits > 0 ? totalThb / newUnits : holding.avgCost
-
-          const afterHolding: Holding = {
-            ...holding,
-            units: newUnits,
-            totalUnits: newUnits,
-            avgCost: newAvg,
-            avgCostThb: newAvg,
-            ...(isBtc ? { btcLocations: nextLocs.map(toBtc) } : { goldLocations: nextLocs.map(toGold) }),
-          }
-
-          const unitLabel = isBtc ? 'sats' : 'g'
-          const fmtQty = (n: number) => (isBtc ? n.toLocaleString() : n.toFixed(4))
-          const note = `Moved ${fmtQty(moveAmount)} ${unitLabel} from ${from.name} to ${destName}${
-            feeAmount > 0 ? ` · network fee ${fmtQty(feeAmount)} ${unitLabel}` : ''
-          }`
-
-          const logEntry: HoldingLog = {
-            id: newId(),
-            timestamp: timestamp ?? new Date().toISOString(),
-            action: 'transfer',
-            holdingName: holding.name,
-            ticker: holding.ticker,
-            assetClass: holding.assetClass,
-            note,
-            holdingId: holding.id,
-            previousHoldingState: JSON.parse(JSON.stringify(holding)),
-            afterHoldingState: afterHolding,
-            transfer: {
-              fromLocationId: from.id,
-              fromName: from.name,
-              toLocationId: destId,
-              toName: destName,
-              destCreated,
-              unit: isBtc ? 'sats' : 'grams',
-              amount: moveAmount,
-              fee: feeAmount,
-              received,
-              costMoved,
-            },
-          }
-
-          return {
-            ...prev,
-            holdings: prev.holdings.map((h) => (h.id === holding.id ? afterHolding : h)),
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
-          }
-        }),
-      toggleLocationLock: (holdingId, locationId, isBtc) =>
-        updateData((prev) => ({
-          ...prev,
-          holdings: prev.holdings.map((h) => {
-            if (h.id !== holdingId) return h
-            if (isBtc) {
-              return {
-                ...h,
-                btcLocations: (h.btcLocations ?? []).map((l) =>
-                  l.id === locationId ? { ...l, isLocked: !l.isLocked } : l
-                ),
-              }
-            }
-            return {
-              ...h,
-              goldLocations: (h.goldLocations ?? []).map((l) =>
-                l.id === locationId ? { ...l, isLocked: !l.isLocked } : l
-              ),
-            }
-          }),
-        })),
-
-      reorderHoldings: (ids) =>
-        updateData((prev) => ({
-          ...prev,
-          holdings: ids.map((id) => prev.holdings.find((h) => h.id === id)!).filter(Boolean),
-        })),
-
-      sellHolding: (params) =>
-        updateData((prev) => {
-          const holding = prev.holdings.find((h) => h.id === params.holdingId)
-          if (!holding) return prev
-
-          const previousHoldingState = JSON.parse(JSON.stringify(holding))
-          const previousCashAccountsState = prev.cashAccounts ? JSON.parse(JSON.stringify(prev.cashAccounts)) : []
-
-          let updatedHoldings: Holding[]
-          let restTargets = prev.rebalanceHoldingTargets ?? {}
-
-          if (params.remainingHolding && params.remainingHolding.units > 0) {
-            updatedHoldings = prev.holdings.map((h) =>
-              h.id === params.holdingId ? params.remainingHolding! : h
-            )
-          } else {
-            // 100% sold: remove holding
-            updatedHoldings = prev.holdings.filter((h) => h.id !== params.holdingId)
-            const { [params.holdingId]: _, ...cleanedTargets } = restTargets
-            restTargets = cleanedTargets
-          }
-
-          let updatedCashAccounts = prev.cashAccounts ? [...prev.cashAccounts] : []
-          if (params.cashAccountId && params.cashDepositAmount && params.cashDepositAmount > 0) {
-            updatedCashAccounts = updatedCashAccounts.map((c) =>
-              c.id === params.cashAccountId
-                ? { ...c, balance: Number((c.balance + params.cashDepositAmount!).toFixed(2)) }
-                : c
-            )
-          }
-
-          const logEntry: HoldingLog = {
-            id: newId(),
-            timestamp: params.timestamp ?? new Date().toISOString(),
-            action: 'sell',
-            holdingId: holding.id,
-            holdingName: holding.name,
-            ticker: holding.ticker,
-            assetClass: holding.assetClass,
-            note: params.note,
-            soldUnits: params.soldUnits,
-            soldPrice: params.soldPrice,
-            proceeds: params.proceeds,
-            realizedPnL: params.realizedPnL,
-            realizedPnLPercent: params.realizedPnLPercent,
-            fee: params.fee,
-            cashAccountId: params.cashAccountId,
-            previousHoldingState,
-            afterHoldingState: params.remainingHolding && params.remainingHolding.units > 0 ? params.remainingHolding : undefined,
-            previousCashAccountsState: params.cashAccountId ? previousCashAccountsState : undefined,
-            afterCashAccountsState: params.cashAccountId ? updatedCashAccounts : undefined,
-          }
-
-          return {
-            ...prev,
-            holdings: updatedHoldings,
-            rebalanceHoldingTargets: restTargets,
-            cashAccounts: updatedCashAccounts,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
-          }
-        }),
-
-      buyMoreHolding: (params) =>
-        updateData((prev) => {
-          const holding = prev.holdings.find((h) => h.id === params.updatedHolding.id)
-          const previousHoldingState = holding ? JSON.parse(JSON.stringify(holding)) : undefined
-          const previousCashAccountsState = prev.cashAccounts ? JSON.parse(JSON.stringify(prev.cashAccounts)) : []
-
-          const updatedHoldings = prev.holdings.map((h) =>
-            h.id === params.updatedHolding.id ? params.updatedHolding : h
-          )
-
-          let updatedCashAccounts = prev.cashAccounts ? [...prev.cashAccounts] : []
-          if (params.cashAccountId && params.cashDeductAmount && params.cashDeductAmount > 0) {
-            updatedCashAccounts = updatedCashAccounts.map((c) =>
-              c.id === params.cashAccountId
-                ? { ...c, balance: Number((c.balance - params.cashDeductAmount!).toFixed(2)) }
-                : c
-            )
-          }
-
-          const logEntry: HoldingLog = {
-            id: newId(),
-            timestamp: params.timestamp ?? new Date().toISOString(),
-            action: 'buy_more',
-            holdingId: params.updatedHolding.id,
-            holdingName: params.updatedHolding.name,
-            ticker: params.updatedHolding.ticker,
-            assetClass: params.updatedHolding.assetClass,
-            note: params.note,
-            previousHoldingState,
-            afterHoldingState: params.updatedHolding,
-            previousCashAccountsState: params.cashAccountId ? previousCashAccountsState : undefined,
-            afterCashAccountsState: params.cashAccountId ? updatedCashAccounts : undefined,
-            cashAccountId: params.cashAccountId,
-            source: params.source,
-            receivedFrom: params.receivedFrom,
-          }
-
-          return {
-            ...prev,
-            holdings: updatedHoldings,
-            cashAccounts: updatedCashAccounts,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
-          }
-        }),
-
-      addHoldingLog: (log) =>
-        updateData((prev) => {
-          const holding = log.holdingId
-            ? prev.holdings.find((h) => h.id === log.holdingId)
-            : prev.holdings.find((h) => h.ticker === log.ticker)
-          const previousHoldingState =
-            log.previousHoldingState ??
-            (log.action !== 'add' && log.action !== 'note' && holding
-              ? JSON.parse(JSON.stringify(holding))
-              : undefined)
-
-          return {
-            ...prev,
-            holdingLogs: [
-              {
-                ...log,
-                id: log.id ?? newId(),
-                timestamp: log.timestamp ?? new Date().toISOString(),
-                holdingId: log.holdingId ?? holding?.id,
-                previousHoldingState,
-              },
-              ...(prev.holdingLogs ?? []),
-            ],
-          }
-        }),
-
-      removeHoldingLog: (logId) =>
-        updateData((prev) => ({
-          ...prev,
-          holdingLogs: (prev.holdingLogs ?? []).filter((log) => log.id !== logId),
-        })),
-
-      removeHoldingLogs: (logIds) =>
-        updateData((prev) => {
-          const ids = new Set(logIds)
-          return {
-            ...prev,
-            holdingLogs: (prev.holdingLogs ?? []).filter((log) => !ids.has(log.id)),
-          }
-        }),
-
-      updateHoldingLogTimestamp: (logId, timestamp) =>
-        updateData((prev) => {
-          const logs = prev.holdingLogs ?? []
-          const updatedLogs = logs.map((l) => (l.id === logId ? { ...l, timestamp } : l))
-          return {
-            ...prev,
-            holdingLogs: updatedLogs,
-          }
-        }),
-
-      updateHoldingLog: (logId, patch) =>
-        updateData((prev) => ({
-          ...prev,
-          holdingLogs: (prev.holdingLogs ?? []).map((l) => (l.id === logId ? { ...l, ...patch } : l)),
-        })),
-
-      undoHoldingLog: (logId) =>
-        updateData((prev) => {
-          const logs = prev.holdingLogs ?? []
-          const log = logs.find((l) => l.id === logId)
-          if (!log) return prev
-
-          let updatedHoldings = [...prev.holdings]
-          let updatedPlans = [...prev.dcaPlans]
-          let updatedCashAccounts = prev.cashAccounts ? [...prev.cashAccounts] : []
-
-          // ── 1. Revert Cash Account Changes (Delta-based) ──
-          if (log.dcaPlanId && !log.cashAccountId && log.previousCashAccountsState && log.afterCashAccountsState) {
-            // A confirmed DCA buy: the payment goes back to the account it came from, and a
-            // savings deposit comes back out of the account it went into
-            updatedCashAccounts = revertCashAccountsChange(updatedCashAccounts, log.previousCashAccountsState, log.afterCashAccountsState)
-          } else if (log.action === 'sell') {
-            // When selling, proceeds were deposited into log.cashAccountId
-            if (log.cashAccountId && log.proceeds && log.proceeds > 0) {
-              updatedCashAccounts = updatedCashAccounts.map((c) =>
-                c.id === log.cashAccountId
-                  ? { ...c, balance: Number(Math.max(0, c.balance - log.proceeds!).toFixed(2)) }
-                  : c
-              )
-            }
-          } else if (log.action === 'buy_more') {
-            // When buying, cash was deducted from log.cashAccountId
-            if (log.cashAccountId) {
-              let deductAmount = 0
-              if (log.previousCashAccountsState && log.afterCashAccountsState) {
-                const pAcc = log.previousCashAccountsState.find((c) => c.id === log.cashAccountId)
-                const aAcc = log.afterCashAccountsState.find((c) => c.id === log.cashAccountId)
-                if (pAcc && aAcc && pAcc.balance > aAcc.balance) {
-                  deductAmount = pAcc.balance - aAcc.balance
-                }
-              }
-              if (deductAmount === 0 && log.afterHoldingState && log.previousHoldingState) {
-                deductAmount = Math.max(
-                  0,
-                  (log.afterHoldingState.totalThbInvested ?? 0) - (log.previousHoldingState.totalThbInvested ?? 0)
-                )
-              }
-              if (deductAmount === 0 && log.note) {
-                const m = log.note.match(/฿([0-9,.]+)\s*spent/)
-                if (m) deductAmount = parseFloat(m[1].replace(/,/g, ''))
-              }
-              if (deductAmount > 0) {
-                updatedCashAccounts = updatedCashAccounts.map((c) =>
-                  c.id === log.cashAccountId
-                    ? { ...c, balance: Number((c.balance + deductAmount).toFixed(2)) }
-                    : c
-                )
-              }
-            }
-          } else if (log.action === 'dividend') {
-            // When receiving dividend, netDividend was deposited into log.cashAccountId
-            if (log.cashAccountId && log.netDividend && log.netDividend > 0) {
-              updatedCashAccounts = updatedCashAccounts.map((c) =>
-                c.id === log.cashAccountId
-                  ? { ...c, balance: Number(Math.max(0, c.balance - log.netDividend!).toFixed(2)) }
-                  : c
-              )
-            }
-          } else if (log.assetClass === 'cash' || log.holdingName === 'Cash Accounts') {
-            // For direct cash account management logs, undo just this log's changes so later
-            // balance moves (e.g. Spend transactions) survive; old logs without an "after"
-            // snapshot fall back to restoring the previous state
-            if (log.previousCashAccountsState) {
-              updatedCashAccounts = log.afterCashAccountsState
-                ? revertCashAccountsChange(updatedCashAccounts, log.previousCashAccountsState, log.afterCashAccountsState)
-                : log.previousCashAccountsState
-            }
-          }
-
-          // ── 2. Revert Holding Changes (Delta-based) ──
-          if (log.holdingId) {
-            const hIndex = updatedHoldings.findIndex((h) => h.id === log.holdingId)
-
-            if (log.action === 'sell') {
-              // Calculate units and cost basis sold in this specific transaction
-              let soldUnits = log.soldUnits ?? 0
-              if (soldUnits <= 0 && log.previousHoldingState) {
-                const prevU = log.previousHoldingState.units ?? log.previousHoldingState.totalUnits ?? 0
-                const afterU = log.afterHoldingState ? (log.afterHoldingState.units ?? log.afterHoldingState.totalUnits ?? 0) : 0
-                soldUnits = Math.max(0, prevU - afterU)
-              }
-              if (soldUnits <= 0 && log.note) {
-                const m = log.note.match(/Sold\s+([0-9,.]+)\s*(?:g|shares|units|sats)/i)
-                if (m) {
-                  const raw = parseFloat(m[1].replace(/,/g, ''))
-                  soldUnits = log.assetClass === 'crypto' ? raw / 100_000_000 : raw
-                }
-              }
-
-              let costBasisSold = 0
-              if (log.proceeds !== undefined && log.realizedPnL !== undefined) {
-                costBasisSold = Math.max(0, log.proceeds - log.realizedPnL)
-              } else if (log.previousHoldingState) {
-                const prevCost = log.previousHoldingState.totalThbInvested ?? 0
-                const afterCost = log.afterHoldingState?.totalThbInvested ?? 0
-                costBasisSold = Math.max(0, prevCost - afterCost)
-              }
-
-              if (hIndex >= 0) {
-                // Holding currently exists in portfolio -> add back sold units and cost basis
-                const current = updatedHoldings[hIndex]
-                const newUnits = (current.units ?? current.totalUnits ?? 0) + soldUnits
-                const newTotalThb = parseFloat(((current.totalThbInvested ?? 0) + costBasisSold).toFixed(2))
-                const newAvgCost = newUnits > 0 ? newTotalThb / newUnits : current.avgCost
-
-                // Restore gold location if applicable
-                let updatedGoldLocs = current.goldLocations ? [...current.goldLocations] : undefined
-                if (current.assetClass === 'gold' && log.previousHoldingState?.goldLocations) {
-                  const prevLocs = log.previousHoldingState.goldLocations
-                  const afterLocs = log.afterHoldingState?.goldLocations ?? []
-                  const candidate = prevLocs.find((pl) => {
-                    const al = afterLocs.find((a) => a.id === pl.id)
-                    return !al || pl.grams > al.grams
-                  }) ?? prevLocs[0]
-
-                  if (candidate) {
-                    const locId = candidate.id
-                    const locName = candidate.name
-                    const existingLoc = updatedGoldLocs?.find((l) => l.id === locId || l.name === locName)
-                    if (existingLoc) {
-                      updatedGoldLocs = (updatedGoldLocs ?? []).map((l) =>
-                        l.id === existingLoc.id
-                          ? { ...l, grams: l.grams + soldUnits, thbSpent: parseFloat((l.thbSpent + costBasisSold).toFixed(2)) }
-                          : l
-                      )
-                    } else {
-                      updatedGoldLocs = [
-                        ...(updatedGoldLocs ?? []),
-                        { id: locId || newId(), name: locName, grams: soldUnits, thbSpent: costBasisSold, isLocked: candidate.isLocked },
-                      ]
-                    }
-                  }
-                }
-
-                // Restore BTC location if applicable
-                let updatedBtcLocs = current.btcLocations ? [...current.btcLocations] : undefined
-                if (current.assetClass === 'crypto' && log.previousHoldingState?.btcLocations) {
-                  const soldSats = Math.round(soldUnits * 100_000_000)
-                  const prevLocs = log.previousHoldingState.btcLocations
-                  const afterLocs = log.afterHoldingState?.btcLocations ?? []
-                  const candidate = prevLocs.find((pl) => {
-                    const al = afterLocs.find((a) => a.id === pl.id)
-                    return !al || pl.satoshi > al.satoshi
-                  }) ?? prevLocs[0]
-
-                  if (candidate) {
-                    const locId = candidate.id
-                    const locName = candidate.name
-                    const existingLoc = updatedBtcLocs?.find((l) => l.id === locId || l.name === locName)
-                    if (existingLoc) {
-                      updatedBtcLocs = (updatedBtcLocs ?? []).map((l) =>
-                        l.id === existingLoc.id
-                          ? { ...l, satoshi: l.satoshi + soldSats, thbSpent: parseFloat((l.thbSpent + costBasisSold).toFixed(2)) }
-                          : l
-                      )
-                    } else {
-                      updatedBtcLocs = [
-                        ...(updatedBtcLocs ?? []),
-                        { id: locId || newId(), name: locName, satoshi: soldSats, thbSpent: costBasisSold, isLocked: candidate.isLocked },
-                      ]
-                    }
-                  }
-                }
-
-                updatedHoldings[hIndex] = {
-                  ...current,
-                  units: newUnits,
-                  totalUnits: newUnits,
-                  totalThbInvested: newTotalThb,
-                  avgCost: newAvgCost,
-                  avgCostThb: newAvgCost,
-                  ...(updatedGoldLocs ? { goldLocations: updatedGoldLocs } : {}),
-                  ...(updatedBtcLocs ? { btcLocations: updatedBtcLocs } : {}),
-                }
-              } else {
-                // Holding was completely removed (e.g. 100% sold) -> restore holding
-                if (log.previousHoldingState) {
-                  const isFinalFullSell = !log.afterHoldingState || (log.afterHoldingState.units ?? 0) <= 0
-                  if (isFinalFullSell) {
-                    updatedHoldings.push(log.previousHoldingState)
-                  } else {
-                    const restored: Holding = {
-                      ...log.previousHoldingState,
-                      units: soldUnits,
-                      totalUnits: soldUnits,
-                      totalThbInvested: costBasisSold,
-                      avgCost: soldUnits > 0 ? costBasisSold / soldUnits : log.previousHoldingState.avgCost,
-                      avgCostThb: soldUnits > 0 ? costBasisSold / soldUnits : log.previousHoldingState.avgCostThb,
-                    }
-                    updatedHoldings.push(restored)
-                  }
-                }
-              }
-            } else if (log.action === 'buy_more') {
-              // Reverse buy_more: subtract the units and cost basis that were added in this buy
-              if (hIndex >= 0) {
-                const current = updatedHoldings[hIndex]
-                const prevU = log.previousHoldingState ? (log.previousHoldingState.units ?? log.previousHoldingState.totalUnits ?? 0) : 0
-                const afterU = log.afterHoldingState ? (log.afterHoldingState.units ?? log.afterHoldingState.totalUnits ?? 0) : 0
-                const boughtUnits = Math.max(0, afterU - prevU)
-
-                const prevCost = log.previousHoldingState?.totalThbInvested ?? 0
-                const afterCost = log.afterHoldingState?.totalThbInvested ?? 0
-                const addedCost = Math.max(0, afterCost - prevCost)
-
-                const newUnits = Math.max(0, (current.units ?? current.totalUnits ?? 0) - boughtUnits)
-                const newTotalThb = Math.max(0, parseFloat(((current.totalThbInvested ?? 0) - addedCost).toFixed(2)))
-                const newAvgCost = newUnits > 0 ? newTotalThb / newUnits : current.avgCost
-
-                // Adjust gold location if applicable
-                let updatedGoldLocs = current.goldLocations ? [...current.goldLocations] : undefined
-                if (current.assetClass === 'gold' && updatedGoldLocs && log.afterHoldingState?.goldLocations) {
-                  const afterLocs = log.afterHoldingState.goldLocations
-                  const prevLocs = log.previousHoldingState?.goldLocations ?? []
-                  const targetLoc = afterLocs.find((al) => {
-                    const pl = prevLocs.find((p) => p.id === al.id)
-                    return !pl || al.grams > pl.grams
-                  })
-                  if (targetLoc) {
-                    updatedGoldLocs = updatedGoldLocs.map((l) => {
-                      if (l.id !== targetLoc.id && l.name !== targetLoc.name) return l
-                      const remG = Math.max(0, l.grams - boughtUnits)
-                      const remS = Math.max(0, parseFloat((l.thbSpent - addedCost).toFixed(2)))
-                      return { ...l, grams: remG, thbSpent: remS }
-                    }).filter((l) => l.grams > 0.0001)
-                  }
-                }
-
-                // Adjust btc location if applicable
-                let updatedBtcLocs = current.btcLocations ? [...current.btcLocations] : undefined
-                if (current.assetClass === 'crypto' && updatedBtcLocs && log.afterHoldingState?.btcLocations) {
-                  const boughtSats = Math.round(boughtUnits * 100_000_000)
-                  const afterLocs = log.afterHoldingState.btcLocations
-                  const prevLocs = log.previousHoldingState?.btcLocations ?? []
-                  const targetLoc = afterLocs.find((al) => {
-                    const pl = prevLocs.find((p) => p.id === al.id)
-                    return !pl || al.satoshi > pl.satoshi
-                  })
-                  if (targetLoc) {
-                    updatedBtcLocs = updatedBtcLocs.map((l) => {
-                      if (l.id !== targetLoc.id && l.name !== targetLoc.name) return l
-                      const remSats = Math.max(0, l.satoshi - boughtSats)
-                      const remSpent = Math.max(0, parseFloat((l.thbSpent - addedCost).toFixed(2)))
-                      return { ...l, satoshi: remSats, thbSpent: remSpent }
-                    }).filter((l) => l.satoshi > 0)
-                  }
-                }
-
-                updatedHoldings[hIndex] = {
-                  ...current,
-                  units: newUnits,
-                  totalUnits: newUnits,
-                  totalThbInvested: newTotalThb,
-                  avgCost: newAvgCost,
-                  avgCostThb: newAvgCost,
-                  ...(updatedGoldLocs ? { goldLocations: updatedGoldLocs } : {}),
-                  ...(updatedBtcLocs ? { btcLocations: updatedBtcLocs } : {}),
-                }
-              }
-            } else if (log.action === 'transfer') {
-              // Revert a location transfer: coins and their cost go back to the source location
-              const t = log.transfer
-              if (t && hIndex >= 0) {
-                const current = updatedHoldings[hIndex]
-                const adjust = <T extends { id: string; thbSpent: number }>(locs: T[], key: 'satoshi' | 'grams'): T[] =>
-                  locs
-                    .map((l) => {
-                      const qty = l as unknown as Record<string, number>
-                      if (l.id === t.fromLocationId) {
-                        return { ...l, [key]: qty[key] + t.amount, thbSpent: parseFloat((l.thbSpent + t.costMoved).toFixed(2)) }
-                      }
-                      if (l.id === t.toLocationId) {
-                        return {
-                          ...l,
-                          [key]: Math.max(0, qty[key] - t.received),
-                          thbSpent: Math.max(0, parseFloat((l.thbSpent - t.costMoved).toFixed(2))),
-                        }
-                      }
-                      return l
-                    })
-                    // A location that only existed because of this transfer goes away with it
-                    .filter((l) => !(t.destCreated && l.id === t.toLocationId && (l as unknown as Record<string, number>)[key] <= 0))
-
-                const feeUnits = t.unit === 'sats' ? t.fee / 100_000_000 : t.fee
-                const newUnits = (current.units ?? current.totalUnits ?? 0) + feeUnits
-                const totalThb = current.totalThbInvested ?? 0
-                const newAvg = newUnits > 0 ? totalThb / newUnits : current.avgCost
-                updatedHoldings[hIndex] = {
-                  ...current,
-                  units: newUnits,
-                  totalUnits: newUnits,
-                  avgCost: newAvg,
-                  avgCostThb: newAvg,
-                  ...(current.btcLocations && t.unit === 'sats' ? { btcLocations: adjust(current.btcLocations, 'satoshi') } : {}),
-                  ...(current.goldLocations && t.unit === 'grams' ? { goldLocations: adjust(current.goldLocations, 'grams') } : {}),
-                }
-              }
-            } else if (log.action === 'add') {
-              // Revert add: remove the holding that was added
-              if (log.ticker !== 'FIXED' && log.ticker !== 'DCA') {
-                updatedHoldings = updatedHoldings.filter((h) => h.id !== log.holdingId)
-              }
-            } else if (log.action === 'edit') {
-              // Revert edit: restore previous holding state
-              if (log.previousHoldingState && hIndex >= 0) {
-                updatedHoldings[hIndex] = log.previousHoldingState
-              }
-            }
-          }
-
-          // ── 3. Revert DCA plan confirmations if linked ──
-          if (log.dcaPlanId && log.dcaDate) {
-            updatedPlans = updatedPlans.map((p) => {
-              if (p.id !== log.dcaPlanId) return p
-              return {
-                ...p,
-                confirmedDates: (p.confirmedDates ?? []).filter((d) => d !== log.dcaDate),
-                skippedDates: (p.skippedDates ?? []).filter((d) => d !== log.dcaDate),
-              }
-            })
-          }
-
-          // ── 4. Remove this log entry ──
-          const updatedLogs = logs.filter((l) => l.id !== logId)
-          let updatedDividendRecords = prev.dividendRecords ?? []
-          if (log.action === 'dividend' && log.dividendRecordId) {
-            updatedDividendRecords = updatedDividendRecords.filter((r) => r.id !== log.dividendRecordId)
-          }
-
-          return {
-            ...prev,
-            holdings: updatedHoldings,
-            dcaPlans: updatedPlans,
-            cashAccounts: updatedCashAccounts,
-            dividendRecords: updatedDividendRecords,
-            holdingLogs: updatedLogs,
-          }
-        }),
-
-      upsertPlan: (plan) =>
-        updateData((prev) => {
-          const isEdit = plan.id && prev.dcaPlans.some((p) => p.id === plan.id)
-          const updatedPlans = upsert(prev.dcaPlans, plan)
-          const savedPlan = updatedPlans.find((p) => p.id === plan.id) || updatedPlans[updatedPlans.length - 1]
-
-          const logEntry: import('../lib/types').HoldingLog = {
-            id: newId(),
-            timestamp: new Date().toISOString(),
-            action: isEdit ? 'edit' : 'add',
-            holdingName: `DCA Plan: ${savedPlan.name}`,
-            ticker: 'DCA',
-            assetClass: savedPlan.assetClass,
-            note: `${isEdit ? 'Updated' : 'Created'} DCA plan of ฿${savedPlan.monthlyAmount.toLocaleString()}/month`,
-          }
-
-          return {
-            ...prev,
-            dcaPlans: updatedPlans,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
-          }
-        }),
-      removePlan: (id) =>
-        updateData((prev) => {
-          const plan = prev.dcaPlans.find((p) => p.id === id)
-          if (!plan) return prev
-          const updatedPlans = prev.dcaPlans.filter((p) => p.id !== id)
-
-          const logEntry: import('../lib/types').HoldingLog = {
-            id: newId(),
-            timestamp: new Date().toISOString(),
-            action: 'edit',
-            holdingName: `DCA Plan: ${plan.name}`,
-            ticker: 'DCA',
-            assetClass: plan.assetClass,
-            note: `Deleted DCA plan of ฿${plan.monthlyAmount.toLocaleString()}/month`,
-          }
-
-          return {
-            ...prev,
-            dcaPlans: updatedPlans,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
-          }
-        }),
+      upsertPlan: (plan) => updateData((prev) => dcaActions.upsertPlan(prev, plan)),
+      removePlan: (id) => updateData((prev) => dcaActions.removePlan(prev, id)),
 
       confirmDcaBuy: (
         planId,
@@ -1601,41 +727,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }
         }),
 
-      skipDcaBuy: (planId, date) =>
-        updateData((prev) => {
-          const plan = prev.dcaPlans.find((p) => p.id === planId)
-          if (!plan) return prev
+      skipDcaBuy: (planId, date) => updateData((prev) => dcaActions.skipDcaBuy(prev, planId, date)),
 
-          const updatedPlans = prev.dcaPlans.map((p) =>
-            p.id !== planId ? p : {
-              ...p,
-              skippedDates: [date, ...(p.skippedDates ?? [])],
-            }
-          )
-
-          const logEntry: import('../lib/types').HoldingLog = {
-            id: newId(),
-            timestamp: new Date().toISOString(),
-            action: 'edit',
-            holdingName: `DCA Plan: ${plan.name}`,
-            ticker: 'DCA',
-            assetClass: plan.assetClass,
-            note: `Skipped DCA buy of ฿${plan.monthlyAmount.toLocaleString()} for this period`,
-            dcaPlanId: plan.id,
-            dcaDate: date,
-          }
-
-          return {
-            ...prev,
-            dcaPlans: updatedPlans,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
-          }
-        }),
-
-      upsertTransfer: (transfer) =>
-        updateData((prev) => ({ ...prev, transfers: upsert(prev.transfers, transfer) })),
-      removeTransfer: (id) =>
-        updateData((prev) => ({ ...prev, transfers: prev.transfers.filter((t) => t.id !== id) })),
+      upsertTransfer: (transfer) => updateData((prev) => planningActions.upsertTransfer(prev, transfer)),
+      removeTransfer: (id) => updateData((prev) => planningActions.removeTransfer(prev, id)),
 
       recordDividend: (record) => {
         const id = newId()
@@ -1693,77 +788,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return id
       },
 
-      removeDividendRecord: (recordId) =>
-        updateData((prev) => {
-          const records = prev.dividendRecords ?? []
-          const target = records.find((r) => r.id === recordId)
-          if (!target) return prev
+      removeDividendRecord: (recordId) => updateData((prev) => dividendActions.removeDividendRecord(prev, recordId)),
 
-          // Revert cash balance if deposited
-          const oldAccounts = prev.cashAccounts ?? []
-          const updatedCashAccounts = target.cashAccountId
-            ? oldAccounts.map((a) =>
-                a.id === target.cashAccountId
-                  ? { ...a, balance: Math.max(0, a.balance - target.netAmount) }
-                  : a,
-              )
-            : oldAccounts
+      setRetirement: (retirement) => updateData((prev) => planningActions.setRetirement(prev, retirement)),
+      setRebalanceMode: (rebalanceMode) => updateData((prev) => planningActions.setRebalanceMode(prev, rebalanceMode)),
+      setRebalanceTargets: (rebalanceTargets) => updateData((prev) => planningActions.setRebalanceTargets(prev, rebalanceTargets)),
+      setRebalanceHoldingTargets: (rebalanceHoldingTargets) => updateData((prev) => planningActions.setRebalanceHoldingTargets(prev, rebalanceHoldingTargets)),
+      upsertPlannedAsset: (asset) => updateData((prev) => planningActions.upsertPlannedAsset(prev, asset)),
+      removePlannedAsset: (id) => updateData((prev) => planningActions.removePlannedAsset(prev, id)),
 
-          const updatedRecords = records.filter((r) => r.id !== recordId)
-          const updatedLogs = (prev.holdingLogs ?? []).filter(
-            (l) => l.dividendRecordId !== recordId,
-          )
+      recordNetWorthSnapshot: (value) => updateData((prev) => planningActions.recordNetWorthSnapshot(prev, value)),
 
-          return {
-            ...prev,
-            cashAccounts: updatedCashAccounts,
-            dividendRecords: updatedRecords,
-            holdingLogs: updatedLogs,
-          }
-        }),
-
-      setRetirement: (retirement) =>
-        updateData((prev) => ({ ...prev, retirement })),
-      setRebalanceMode: (rebalanceMode) =>
-        updateData((prev) => ({ ...prev, rebalanceMode })),
-      setRebalanceTargets: (rebalanceTargets) =>
-        updateData((prev) => ({ ...prev, rebalanceTargets })),
-      setRebalanceHoldingTargets: (rebalanceHoldingTargets) =>
-        updateData((prev) => ({ ...prev, rebalanceHoldingTargets })),
-      upsertPlannedAsset: (asset) =>
-        updateData((prev) => ({ ...prev, plannedAssets: upsert(prev.plannedAssets ?? [], asset) })),
-      removePlannedAsset: (id) =>
-        updateData((prev) => {
-          const { [id]: _, ...restTargets } = prev.rebalanceHoldingTargets ?? {}
-          return {
-            ...prev,
-            plannedAssets: (prev.plannedAssets ?? []).filter((a) => a.id !== id),
-            rebalanceHoldingTargets: restTargets,
-          }
-        }),
-
-      recordNetWorthSnapshot: (value) =>
-        updateData((prev) => {
-          if (value <= 0) return prev
-          const today = localDateStr()
-          const existing = prev.netWorthHistory ?? []
-          // Replace today's entry (prices may have updated) and keep last 365
-          const updated = [...existing.filter((s: NetWorthSnapshot) => s.date !== today), { date: today, value }]
-            .sort((a: NetWorthSnapshot, b: NetWorthSnapshot) => a.date.localeCompare(b.date))
-            .slice(-365)
-          return { ...prev, netWorthHistory: updated }
-        }),
-
-      recordPortfolioSnapshot: (value) =>
-        updateData((prev) => {
-          if (value <= 0) return prev
-          const today = localDateStr()
-          const existing = prev.portfolioHistory ?? []
-          const updated = [...existing.filter((s: NetWorthSnapshot) => s.date !== today), { date: today, value }]
-            .sort((a: NetWorthSnapshot, b: NetWorthSnapshot) => a.date.localeCompare(b.date))
-            .slice(-365)
-          return { ...prev, portfolioHistory: updated }
-        }),
+      recordPortfolioSnapshot: (value) => updateData((prev) => planningActions.recordPortfolioSnapshot(prev, value)),
 
 
 
@@ -2089,63 +1125,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
       },
 
-      upsertBtcLocation: (holdingId, loc) =>
-        updateData((prev) => ({
-          ...prev,
-          holdings: prev.holdings.map((h) => {
-            if (h.id !== holdingId) return h
-            const locations = upsert(h.btcLocations ?? [], loc)
-            const totalSats = locations.reduce((s, l) => s + l.satoshi, 0)
-            const totalThb = locations.reduce((s, l) => s + l.thbSpent, 0)
-            const units = totalSats / 100_000_000
-            const avgCost = units > 0 ? totalThb / units : h.avgCost
-            return { ...h, btcLocations: locations, units, totalUnits: units, avgCost, totalThbInvested: totalThb, avgCostThb: avgCost }
-          }),
-        })),
+      upsertBtcLocation: (holdingId, loc) => updateData((prev) => holdingActions.upsertBtcLocation(prev, holdingId, loc)),
 
-      removeBtcLocation: (holdingId, locId) =>
-        updateData((prev) => ({
-          ...prev,
-          holdings: prev.holdings.map((h) => {
-            if (h.id !== holdingId) return h
-            const targetLoc = (h.btcLocations ?? []).find((l) => l.id === locId)
-            if (targetLoc?.isLocked) return h // Guard against deleting locked pocket
-            const locations = (h.btcLocations ?? []).filter((l) => l.id !== locId)
-            const totalSats = locations.reduce((s, l) => s + l.satoshi, 0)
-            const totalThb = locations.reduce((s, l) => s + l.thbSpent, 0)
-            const units = totalSats / 100_000_000
-            const avgCost = units > 0 ? totalThb / units : h.avgCost
-            return { ...h, btcLocations: locations, units, totalUnits: units, avgCost, totalThbInvested: totalThb, avgCostThb: avgCost }
-          }),
-        })),
+      removeBtcLocation: (holdingId, locId) => updateData((prev) => holdingActions.removeBtcLocation(prev, holdingId, locId)),
 
-      upsertGoldLocation: (holdingId, loc) =>
-        updateData((prev) => ({
-          ...prev,
-          holdings: prev.holdings.map((h) => {
-            if (h.id !== holdingId) return h
-            const locations = upsert(h.goldLocations ?? [], loc)
-            const totalGrams = locations.reduce((s, l) => s + l.grams, 0)
-            const totalThb = locations.reduce((s, l) => s + l.thbSpent, 0)
-            const avgCost = totalGrams > 0 ? totalThb / totalGrams : h.avgCost
-            return { ...h, goldLocations: locations, units: totalGrams, totalUnits: totalGrams, avgCost, totalThbInvested: totalThb, avgCostThb: avgCost }
-          }),
-        })),
+      upsertGoldLocation: (holdingId, loc) => updateData((prev) => holdingActions.upsertGoldLocation(prev, holdingId, loc)),
 
-      removeGoldLocation: (holdingId, locId) =>
-        updateData((prev) => ({
-          ...prev,
-          holdings: prev.holdings.map((h) => {
-            if (h.id !== holdingId) return h
-            const targetLoc = (h.goldLocations ?? []).find((l) => l.id === locId)
-            if (targetLoc?.isLocked) return h // Guard against deleting locked pocket
-            const locations = (h.goldLocations ?? []).filter((l) => l.id !== locId)
-            const totalGrams = locations.reduce((s, l) => s + l.grams, 0)
-            const totalThb = locations.reduce((s, l) => s + l.thbSpent, 0)
-            const avgCost = totalGrams > 0 ? totalThb / totalGrams : h.avgCost
-            return { ...h, goldLocations: locations, units: totalGrams, totalUnits: totalGrams, avgCost, totalThbInvested: totalThb, avgCostThb: avgCost }
-          }),
-        })),
+      removeGoldLocation: (holdingId, locId) => updateData((prev) => holdingActions.removeGoldLocation(prev, holdingId, locId)),
     }),
     [data, syncStatus, dataReady, loadError, syncConflict, lastSyncedAt, user],
   )
