@@ -15,7 +15,9 @@ import { usePageGuide } from '../hooks/usePageGuide'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC } from '../lib/calc'
 import { getCashDiffItems, getLogTransactionDetails } from '../lib/activitySummary'
 import { dateStrToTimestamp, localDateStr, thb } from '../lib/format'
-import type { AssetClass, HoldingLog } from '../lib/types'
+import type { AcquisitionSource, AssetClass, HoldingLog } from '../lib/types'
+import { logTookCash, noteForSource, paidFromName } from '../lib/acquisition'
+import { AcquisitionSourceField } from '../components/forms/AcquisitionSourceField'
 import {
   ClockIcon,
   DownloadIcon,
@@ -381,6 +383,11 @@ const ACTION_FILTERS = [
   { key: 'edit', label: 'Edited' },
 ] as const
 
+/** Buy / add entries for a real holding — the ones that can be a purchase or a gift */
+function isAcquisitionLog(log: HoldingLog): boolean {
+  return (log.action === 'add' || log.action === 'buy_more') && log.assetClass !== 'cash' && log.ticker !== 'IMPORT'
+}
+
 export function HoldingLogs() {
   const {
     steps,
@@ -392,7 +399,7 @@ export function HoldingLogs() {
     nextStep,
     prevStep,
   } = usePageGuide('logs')
-  const { data, removeHoldingLog, removeHoldingLogs, undoHoldingLog, updateHoldingLogTimestamp, usdThb } = useData()
+  const { data, removeHoldingLog, removeHoldingLogs, undoHoldingLog, updateHoldingLog, usdThb } = useData()
   const { showToast } = useToast()
   const rawLogs = data.holdingLogs ?? []
   const logs = [...rawLogs].sort(
@@ -403,6 +410,8 @@ export function HoldingLogs() {
   const [editingDateLog, setEditingDateLog] = useState<HoldingLog | null>(null)
   const [editDateValue, setEditDateValue] = useState<string>('')
   const [editTimeValue, setEditTimeValue] = useState<string>('')
+  const [editSource, setEditSource] = useState<AcquisitionSource>('bought')
+  const [editReceivedFrom, setEditReceivedFrom] = useState('')
   const [confirmDeleteLog, setConfirmDeleteLog] = useState(false)
   const deleteTimerRef = useRef<number | null>(null)
 
@@ -418,6 +427,33 @@ export function HoldingLogs() {
     const dt = new Date(log.timestamp)
     setEditDateValue(localDateStr(dt))
     setEditTimeValue(dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
+    setEditSource(log.source ?? 'bought')
+    setEditReceivedFrom(log.receivedFrom ?? '')
+  }
+
+  function closeEdit() {
+    setEditingDateLog(null)
+    setConfirmDeleteLog(false)
+  }
+
+  function saveEdit() {
+    const log = editingDateLog
+    if (!log || !editDateValue) return
+    const patch: Parameters<typeof updateHoldingLog>[1] = {
+      timestamp: dateStrToTimestamp(editDateValue, editTimeValue),
+    }
+    if (isAcquisitionLog(log) && !logTookCash(log)) {
+      const from = editReceivedFrom.trim()
+      const sourceChanged = editSource !== (log.source ?? 'bought') || (editSource === 'received' && from !== (log.receivedFrom ?? ''))
+      if (sourceChanged) {
+        patch.source = editSource === 'received' ? 'received' : undefined
+        patch.receivedFrom = editSource === 'received' ? from || undefined : undefined
+        patch.note = noteForSource(log.note, editSource, from)
+      }
+    }
+    updateHoldingLog(log.id, patch)
+    showToast(`Updated "${log.holdingName}"`, 'success')
+    closeEdit()
   }
 
   const [assetFilter, setAssetFilter] = useState<AssetClass | 'all'>('all')
@@ -1826,7 +1862,7 @@ export function HoldingLogs() {
                               e.stopPropagation()
                               startEditDate(log)
                             } : undefined}
-                            title={editMode ? 'Click to edit date' : undefined}
+                            title={editMode ? 'Click to edit transaction' : undefined}
                           >
                             <div className="logs-table-date-main tnum flex items-center gap-1.5">
                               <span>{dateStr}</span>
@@ -1932,7 +1968,7 @@ export function HoldingLogs() {
                                   e.stopPropagation()
                                   startEditDate(log)
                                 }}
-                                title="Edit date"
+                                title="Edit transaction"
                                 aria-label={`Edit date for ${log.holdingName}`}
                                 className="rounded-lg p-1.5 text-ink-muted hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
                               >
@@ -2039,7 +2075,7 @@ export function HoldingLogs() {
                                 type="button"
                                 onClick={() => startEditDate(log)}
                                 className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-medium text-ink-faint hover:text-brand hover:bg-brand/5 transition-colors cursor-pointer"
-                                title="Edit date"
+                                title="Edit transaction"
                               >
                                 <time>
                                   {new Date(log.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
@@ -2172,118 +2208,117 @@ export function HoldingLogs() {
         })()}
       </ConfirmModal>
 
-      {/* Edit Date Modal */}
-      {editingDateLog && (
-        <Modal
-          open={!!editingDateLog}
-          onClose={() => {
-            setEditingDateLog(null)
-            setConfirmDeleteLog(false)
-          }}
-          title="Edit Transaction"
-          description={`Change the date and time recorded for "${editingDateLog.holdingName}" (${getLogActionMeta(editingDateLog).label})`}
-          footer={
-            <div className="flex items-center justify-between gap-3 w-full">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault()
-                  if (confirmDeleteLog) {
-                    if (deleteTimerRef.current) window.clearTimeout(deleteTimerRef.current)
-                    removeHoldingLog(editingDateLog.id)
-                    showToast(`Deleted "${editingDateLog.holdingName}"`, 'success')
-                    setEditingDateLog(null)
-                    setConfirmDeleteLog(false)
-                  } else {
-                    setConfirmDeleteLog(true)
-                    deleteTimerRef.current = window.setTimeout(() => {
-                      setConfirmDeleteLog(false)
-                    }, 3000)
-                  }
-                }}
-                className={[
-                  'inline-flex h-11 shrink-0 items-center justify-center rounded-full transition-all duration-200 border text-sm font-semibold',
-                  confirmDeleteLog
-                    ? 'px-4 bg-loss border-loss text-white dark:bg-rose-600 dark:border-rose-600 dark:text-white hover:opacity-90'
-                    : 'w-11 border-loss/25 bg-loss-soft text-loss hover:bg-loss/15',
-                ].join(' ')}
-                aria-label={confirmDeleteLog ? 'Confirm Delete' : 'Delete'}
-              >
-                {confirmDeleteLog ? 'Confirm Delete' : <TrashIcon className="h-[18px] w-[18px]" />}
-              </button>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setEditingDateLog(null)
-                    setConfirmDeleteLog(false)
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    if (editingDateLog && editDateValue) {
-                      const newTimestamp = dateStrToTimestamp(editDateValue, editTimeValue)
-                      updateHoldingLogTimestamp(editingDateLog.id, newTimestamp)
-                      showToast(`Updated the date for "${editingDateLog.holdingName}"`, 'success')
-                      setEditingDateLog(null)
-                      setConfirmDeleteLog(false)
+      {/* Edit Transaction Modal */}
+      {editingDateLog && (() => {
+        const log = editingDateLog
+        const meta = getLogActionMeta(log)
+        const canChangeSource = isAcquisitionLog(log)
+        const tookCash = canChangeSource && logTookCash(log)
+        const payer = tookCash ? (log.dcaPlanId ? 'a DCA plan' : paidFromName(log) ?? 'a cash account') : ''
+        const showTicker = log.ticker && !['CASH', 'FIXED', 'DCA'].includes(log.ticker)
+        return (
+          <Modal
+            open
+            onClose={closeEdit}
+            title="Edit transaction"
+            description={canChangeSource ? 'Change when it happened or how you got it.' : 'Change when it happened.'}
+            footer={
+              <div className="flex w-full items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (confirmDeleteLog) {
+                      if (deleteTimerRef.current) window.clearTimeout(deleteTimerRef.current)
+                      removeHoldingLog(log.id)
+                      showToast(`Deleted "${log.holdingName}"`, 'success')
+                      closeEdit()
+                    } else {
+                      setConfirmDeleteLog(true)
+                      deleteTimerRef.current = window.setTimeout(() => {
+                        setConfirmDeleteLog(false)
+                      }, 3000)
                     }
                   }}
+                  className={[
+                    'inline-flex h-11 shrink-0 items-center justify-center rounded-full transition-all duration-200 border text-sm font-semibold',
+                    confirmDeleteLog
+                      ? 'px-4 bg-loss border-loss text-white dark:bg-rose-600 dark:border-rose-600 dark:text-white hover:opacity-90'
+                      : 'w-11 border-loss/25 bg-loss-soft text-loss hover:bg-loss/15',
+                  ].join(' ')}
+                  aria-label={confirmDeleteLog ? 'Confirm Delete' : 'Delete'}
                 >
-                  Save date
-                </Button>
+                  {confirmDeleteLog ? 'Confirm Delete' : <TrashIcon className="h-[18px] w-[18px]" />}
+                </button>
+                <div className="flex items-center gap-2">
+                  <Button variant="secondary" onClick={closeEdit}>
+                    Cancel
+                  </Button>
+                  <Button variant="primary" onClick={saveEdit} disabled={!editDateValue}>
+                    Save
+                  </Button>
+                </div>
               </div>
-            </div>
-          }
-        >
-          <div className="space-y-4">
-            {/* Info card */}
-            <div className="rounded-2xl border border-line bg-surface-muted p-3.5 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-bold text-sm text-ink truncate">
-                    {editingDateLog.holdingName}
-                  </span>
-                  {editingDateLog.ticker && editingDateLog.ticker !== 'CASH' && editingDateLog.ticker !== 'FIXED' && editingDateLog.ticker !== 'DCA' && (
-                    <span className="rounded-md bg-surface px-1.5 py-0.5 text-xs font-medium text-ink-muted">
-                      {editingDateLog.ticker}
-                    </span>
+            }
+          >
+            <div className="space-y-5">
+              {/* What this entry is */}
+              <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface-muted px-3.5 py-3">
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-base font-bold text-ink"
+                  aria-hidden
+                >
+                  {meta.icon}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="truncate text-sm font-bold text-ink">{log.holdingName}</span>
+                    {showTicker && <span className="shrink-0 text-xs font-medium text-ink-muted">{log.ticker}</span>}
+                  </div>
+                  <p className="truncate text-xs text-ink-muted">{getDisplayNote(log) || meta.label}</p>
+                </div>
+                <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ${meta.style}`}>{meta.label}</span>
+              </div>
+
+              {/* When */}
+              <div className="space-y-3">
+                <TransactionDateField value={editDateValue} onChange={setEditDateValue} label="Date" />
+                <div>
+                  <label htmlFor="edit-log-time" className="mb-1.5 block text-sm font-semibold text-ink-soft">
+                    Time
+                  </label>
+                  <input
+                    id="edit-log-time"
+                    type="time"
+                    value={editTimeValue}
+                    onChange={(e) => setEditTimeValue(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15"
+                  />
+                </div>
+              </div>
+
+              {/* How it was acquired */}
+              {canChangeSource && (
+                <div className="border-t border-line pt-4">
+                  {tookCash ? (
+                    <p className="rounded-xl bg-surface-muted px-3 py-2.5 text-xs text-ink-muted">
+                      Paid from {payer}, so this stays a purchase. To record it as a gift, undo it and add it again.
+                    </p>
+                  ) : (
+                    <AcquisitionSourceField
+                      source={editSource}
+                      onSourceChange={setEditSource}
+                      receivedFrom={editReceivedFrom}
+                      onReceivedFromChange={setEditReceivedFrom}
+                      hint="Only the label changes. The cost you recorded stays the same."
+                    />
                   )}
                 </div>
-                <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${getLogActionMeta(editingDateLog).style}`}>
-                  {getLogActionMeta(editingDateLog).label}
-                </span>
-              </div>
-              <p className="text-xs text-ink-muted truncate">
-                {getDisplayNote(editingDateLog)}
-              </p>
+              )}
             </div>
-
-            {/* Date Picker */}
-            <TransactionDateField
-              value={editDateValue}
-              onChange={setEditDateValue}
-              label="Transaction date"
-            />
-
-            {/* Time Picker */}
-            <div>
-              <label className="block mb-1.5 text-sm font-semibold text-ink-soft">
-                Transaction time
-              </label>
-              <input
-                type="time"
-                value={editTimeValue}
-                onChange={(e) => setEditTimeValue(e.target.value)}
-                className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15"
-              />
-            </div>
-          </div>
-        </Modal>
-      )}
+          </Modal>
+        )
+      })()}
 
       <GuideTour
         isOpen={isRunning}

@@ -329,6 +329,8 @@ interface DataContextValue {
   removeHoldingLogs: (logIds: string[]) => void
   undoHoldingLog: (logId: string) => void
   updateHoldingLogTimestamp: (logId: string, timestamp: string) => void
+  /** Edit a log's own record (date, note, how it was acquired) without touching holdings or cash */
+  updateHoldingLog: (logId: string, patch: Partial<Pick<HoldingLog, 'timestamp' | 'note' | 'source' | 'receivedFrom'>>) => void
 
   upsertPlan: (plan: Omit<DcaPlan, 'id'> & { id?: string }) => void
   removePlan: (id: string) => void
@@ -1582,6 +1584,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
             holdingLogs: updatedLogs,
           }
         }),
+
+      updateHoldingLog: (logId, patch) =>
+        updateData((prev) => ({
+          ...prev,
+          holdingLogs: (prev.holdingLogs ?? []).map((l) => (l.id === logId ? { ...l, ...patch } : l)),
+        })),
 
       undoHoldingLog: (logId) =>
         updateData((prev) => {

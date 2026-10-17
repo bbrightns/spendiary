@@ -7,10 +7,12 @@ interface Props {
   onSourceChange: (source: AcquisitionSource) => void
   receivedFrom: string
   onReceivedFromChange: (value: string) => void
+  /** Replaces the default explanation shown under a gift */
+  hint?: string
 }
 
 /** "Bought" vs "Received" (gift / inheritance) picker shared by the add and buy-more forms. */
-export function AcquisitionSourceField({ source, onSourceChange, receivedFrom, onReceivedFromChange }: Props) {
+export function AcquisitionSourceField({ source, onSourceChange, receivedFrom, onReceivedFromChange, hint }: Props) {
   return (
     <div className="space-y-3">
       <div className="space-y-1">
@@ -34,7 +36,7 @@ export function AcquisitionSourceField({ source, onSourceChange, receivedFrom, o
             placeholder="e.g. Brother, Mom, Grandpa"
           />
           <p className="rounded-xl bg-surface-muted px-3 py-2 text-xs text-ink-muted">
-            No cash is taken. The cost is the market value on the day you received it, so profit and loss count from that day.
+            {hint ?? 'No cash is taken. The cost is the market value on the day you received it, so profit and loss count from that day.'}
           </p>
         </>
       )}
