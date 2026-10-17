@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import type { AcquisitionSource, BtcLocation, CashAccount, DcaPlan, DebtCategory, DividendRecord, GoldLocation, Holding, HoldingLog, InvestAssetClass, Liability, NetWorthSnapshot, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryBackup, SpendiaryData, Transfer } from '../lib/types'
@@ -7,13 +7,11 @@ import { seedData } from '../lib/seed'
 import { detectBankPreset, findMatchingHolding, inferCashCategory } from '../lib/calc'
 import { inferAssetClass } from '../lib/assetClass'
 import { syncCategories } from '../modules/spend/categories'
-import { resolveRemoteLoad, type RestLoad } from './remoteLoad'
-import { interpretSave, type SaveMode, type SaveOutcome } from './remoteSave'
-import { emptyData, justImportedFixedCosts, migrate, newId } from './migrate'
+import { emptyData, migrate, newId } from './migrate'
 import { parseCleanNumber, validateSpendiaryData } from './validate'
 import { payFromAccount, revertCashAccountsChange, upsert, type DcaPayment } from './dataHelpers'
-
-export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
+import { useAuth } from './useAuth'
+import { useCloudSync, type SyncStatus } from './useCloudSync'
 
 /** Result returned by importData — UI can react to success/error */
 export type ImportResult =
@@ -190,163 +188,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // Spend category lookups are plain functions; keep their user-made list in step with the data
   syncCategories(data.spendSettings)
   const [usdThb, setUsdThb] = useState<number | null>(null)
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle')
-  const [dataReady, setDataReady] = useState(false)
-  const [loadError, setLoadError] = useState(false)
-  const [syncConflict, setSyncConflict] = useState(false)
-  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(() => {
-    const stored = localStorage.getItem('spendiary.last_synced_time')
-    return stored ? new Date(stored) : null
-  })
+  const { user, setUser, authError, setAuthError, loginWithGoogle, loginAsGuest } = useAuth()
+  const {
+    syncStatus, setSyncStatus, dataReady, loadError, syncConflict, lastSyncedAt, updateLastSynced,
+    retryLoad, pushNow, syncReady, lastSynced,
+  } = useCloudSync(user, data, setDataState)
 
-  const updateLastSynced = (date: Date | null) => {
-    setLastSyncedAt(date)
-    if (date) {
-      localStorage.setItem('spendiary.last_synced_time', date.toISOString())
-    } else {
-      localStorage.removeItem('spendiary.last_synced_time')
-    }
-  }
-
-  const [user, setUser] = useState<User | null>(null)
-  const [authError, setAuthError] = useState<string | null>(null)
-  
-  // Tracks whether the initial Supabase load has completed (prevents syncing
-  // back immediately after we receive data from the server).
-  const syncReady = useRef(false)
-  // Last data string we synced to Supabase — avoids redundant writes.
-  const lastSynced = useRef('')
-  // The cloud row's version stamp (`updated_at`) as we last loaded or saved it; see remoteSave.ts
-  const remoteStamp = useRef<{ exists: boolean; updatedAt: string | null }>({ exists: false, updatedAt: null })
-  // Cloud saves run one at a time, so each one checks against the stamp the previous one left
-  const saveQueue = useRef<Promise<unknown>>(Promise.resolve())
   // Mirror of current data as a ref so callbacks can read it without
   // capturing a stale closure.
   const dataRef = useRef(data)
   dataRef.current = data
-
-  // Auth setup
-  useEffect(() => {
-    // If returning with hash tokens from OAuth redirect, extract user from JWT payload safely
-    if (window.location.hash && window.location.hash.includes('access_token=')) {
-      try {
-        const hashParams = new URLSearchParams(window.location.hash.substring(1))
-        const accessToken = hashParams.get('access_token')
-
-        if (accessToken) {
-          // Store token in Supabase standard localStorage key
-          const projectRef = 'dgxjifbsdpggoyyzhpeb'
-          const storageKey = `sb-${projectRef}-auth-token`
-          const refreshToken = hashParams.get('refresh_token') || ''
-          const expiresIn = Number(hashParams.get('expires_in')) || 3600
-
-          // Parse JWT payload (Base64Url decode)
-          const base64Url = accessToken.split('.')[1]
-          if (base64Url) {
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-            const jsonPayload = decodeURIComponent(
-              atob(base64)
-                .split('')
-                .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-                .join('')
-            )
-            const payload = JSON.parse(jsonPayload)
-            console.log('Restored user directly from token payload:', payload.email)
-
-            const restoredUser: User = {
-              id: payload.sub || payload.id || 'user-google',
-              app_metadata: payload.app_metadata || { provider: 'google' },
-              user_metadata: payload.user_metadata || {},
-              aud: payload.aud || 'authenticated',
-              created_at: new Date().toISOString(),
-              email: payload.email || '',
-              role: payload.role || 'authenticated'
-            }
-
-            const sessionObj = {
-              access_token: accessToken,
-              refresh_token: refreshToken,
-              expires_in: expiresIn,
-              expires_at: Math.floor(Date.now() / 1000) + expiresIn,
-              token_type: 'bearer',
-              user: restoredUser
-            }
-            try {
-              localStorage.setItem(storageKey, JSON.stringify(sessionObj))
-            } catch {
-              // ignore: storage or JSON unavailable
-            }
-
-            setUser(restoredUser)
-            window.history.replaceState(null, '', window.location.pathname)
-          }
-        }
-      } catch (e) {
-        console.error('Error parsing token from hash:', e)
-      }
-    }
-
-    // Supabase hands back a fresh user object on every token refresh (e.g. when you come back to
-    // the tab). Keep the current one when it's the same person: a new object would re-run the
-    // load below, swap the pages for a loading screen and close any form being filled in.
-    const signIn = (next: User) => setUser((prev) => (prev?.id === next.id ? prev : next))
-
-    if (supabase?.auth?.getSession) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        console.log('Initial Supabase session:', session?.user?.email ?? 'No user')
-        if (session?.user) {
-          signIn(session.user)
-        }
-      })
-    }
-
-    if (supabase?.auth?.onAuthStateChange) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-        console.log('Supabase onAuthStateChange:', event, session?.user?.email ?? 'No user')
-        if (session?.user) {
-          signIn(session.user)
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null)
-        }
-      })
-      return () => subscription.unsubscribe()
-    }
-  }, [])
-
-  const loginWithGoogle = () => {
-    setAuthError(null)
-    const supabaseUrl = import.meta.env.VITE_API_URL || ''
-    const supabaseKey = import.meta.env.VITE_API_TOKEN || ''
-
-    if (!supabaseUrl || !supabaseKey) {
-      setAuthError('Supabase URL or token is missing in your .env file (see .env.example, or use Test Mode below).')
-      return
-    }
-
-    try {
-      const redirectUri = encodeURIComponent(window.location.origin)
-      const targetUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${redirectUri}`
-      console.log('Navigating directly to Supabase Google OAuth URL:', targetUrl)
-      window.location.href = targetUrl
-    } catch (err) {
-      console.error('Sign in exception:', err)
-      setAuthError(`Sign-in failed: ${(err instanceof Error && err.message) || 'could not reach Supabase'}`)
-    }
-  }
-
-  const loginAsGuest = () => {
-    setAuthError(null)
-    const guestUser: User = {
-      id: 'guest-user-local',
-      app_metadata: { provider: 'guest' },
-      user_metadata: { name: 'Guest User' },
-      aud: 'authenticated',
-      created_at: new Date().toISOString(),
-      email: 'guest@spendiary.local',
-      role: 'authenticated'
-    }
-    setUser(guestUser)
-  }
 
   const loginAsTestMode = () => {
     setAuthError(null)
@@ -431,176 +282,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const fetchRemoteData = async (userId: string) => {
-    if (userId === 'guest-user-local') {
-      const local = localStorage.getItem('spendiary.guest_data')
-      if (local) {
-        try {
-          const parsed = JSON.parse(local)
-          const migrated = migrate(parsed)
-          lastSynced.current = justImportedFixedCosts(parsed, migrated) ? '' : JSON.stringify(migrated)
-          setDataState(migrated)
-        } catch {
-          setDataState(emptyData)
-        }
-      } else {
-        setDataState(emptyData)
-      }
-      setSyncStatus('synced')
-      syncReady.current = true
-      setDataReady(true)
-      return
-    }
-
-    if (userId === 'test-user-local') {
-      localStorage.removeItem('spendiary.test_data')
-      const freshSample = migrate(JSON.parse(JSON.stringify(seedData)))
-      lastSynced.current = JSON.stringify(freshSample)
-      setDataState(freshSample)
-      setSyncStatus('synced')
-      syncReady.current = true
-      setDataReady(true)
-      return
-    }
-
-    try {
-      console.log('Fetching remote data for userId:', userId)
-      setSyncStatus('syncing')
-
-      const supabaseUrl = import.meta.env.VITE_API_URL || ''
-      const supabaseKey = import.meta.env.VITE_API_TOKEN || ''
-
-      // Attempt 1: Via supabase-js client
-      const { data: row, error } = await supabase
-        .from('user_data')
-        .select('payload, updated_at')
-        .eq('id', userId)
-        .maybeSingle()
-
-      console.log('Fetch remote data response (client):', { row, error })
-
-      let rest: RestLoad | null = null
-      if (error || !row?.payload) {
-        // Attempt 2: Via direct REST call with Authorization Bearer header
-        // Retrieve token from Supabase localStorage or hash
-        const storageKey = `sb-dgxjifbsdpggoyyzhpeb-auth-token`
-        let token = supabaseKey
-        let usedUserToken = false
-        try {
-          const raw = localStorage.getItem(storageKey)
-          if (raw) {
-            const parsed = JSON.parse(raw)
-            if (parsed.access_token) {
-              token = parsed.access_token
-              usedUserToken = true
-            }
-          }
-        } catch {
-          // ignore: storage or JSON unavailable
-        }
-
-        try {
-          const restRes = await fetch(`${supabaseUrl}/rest/v1/user_data?id=eq.${encodeURIComponent(userId)}&select=payload,updated_at`, {
-            headers: {
-              'apikey': supabaseKey,
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            }
-          })
-          const list = restRes.ok ? await restRes.json() : null
-          console.log('Fetch remote data response (REST API):', list)
-          rest = { ok: restRes.ok, list, usedUserToken }
-        } catch (restErr) {
-          console.warn('REST API fallback error:', restErr)
-        }
-      }
-
-      const result = resolveRemoteLoad({ error, row }, rest)
-
-      if (result.kind === 'failed') {
-        // We can't tell what is in the cloud. Keep saving off so empty data never overwrites the real row.
-        console.error('Could not load remote data; saving is paused until a retry succeeds')
-        setSyncStatus('error')
-        setLoadError(true)
-        return
-      }
-
-      if (result.kind === 'loaded') {
-        console.log('Successfully loaded remote data from Supabase')
-        const remotePayload = result.payload as SpendiaryData
-        const migrated = migrate(remotePayload)
-        const migratedStr = JSON.stringify(migrated)
-        remoteStamp.current = { exists: true, updatedAt: result.updatedAt }
-
-        // A one-time move just happened: leave lastSynced stale so it gets saved back once
-        lastSynced.current = justImportedFixedCosts(remotePayload, migrated) ? '' : migratedStr
-        setDataState(migrated)
-        setSyncStatus('synced')
-        updateLastSynced(new Date())
-      } else {
-        console.log('Cloud data is empty for user:', userId)
-        remoteStamp.current = { exists: false, updatedAt: null }
-        lastSynced.current = JSON.stringify(emptyData)
-        setDataState(emptyData)
-        setSyncStatus('synced')
-        updateLastSynced(null)
-      }
-      // Only a confirmed load turns saving on
-      syncReady.current = true
-    } catch (err) {
-      console.error('Error fetching remote data:', err)
-      setSyncStatus('error')
-      setLoadError(true)
-    } finally {
-      setDataReady(true)
-    }
-  }
-
-  const retryLoad = () => {
-    if (!user) return
-    setLoadError(false)
-    setSyncConflict(false)
-    syncReady.current = false
-    setDataReady(false)
-    fetchRemoteData(user.id)
-  }
-
-  // Fetch remote data once user is loaded
-  useEffect(() => {
-    setLoadError(false)
-    setSyncConflict(false)
-    remoteStamp.current = { exists: false, updatedAt: null }
-    if (user) {
-      const storedLastUser = localStorage.getItem('spendiary.last_user_id')
-      const isSwitch = Boolean(storedLastUser && storedLastUser !== user.id)
-
-      if (isSwitch) {
-        setDataState(emptyData)
-        lastSynced.current = ''
-      }
-
-      localStorage.setItem('spendiary.last_user_id', user.id)
-
-      // Automatically pre-fill default userName from email username prefix if empty
-      setDataState((prev) => {
-        if (!prev.userName && user.email) {
-          const emailPrefix = user.email.split('@')[0]
-          const capitalized = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)
-          return { ...prev, userName: capitalized }
-        }
-        return prev
-      })
-
-      syncReady.current = false
-      setDataReady(false)
-      fetchRemoteData(user.id)
-    } else {
-      syncReady.current = false
-      setDataState(emptyData)
-      updateLastSynced(null)
-    }
-  }, [user])
-
   // A wrapper for setDataState that automatically adds/updates lastUpdatedAt.
   const updateData = (next: SpendiaryData | ((prev: SpendiaryData) => SpendiaryData)) => {
     setDataState((prev) => {
@@ -611,80 +292,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
     })
   }
-
-  /** Saves to the cloud under the optimistic lock (see remoteSave.ts), after any save already in flight */
-  const writeRemote = (userId: string, payload: SpendiaryData, force = false): Promise<SaveOutcome> => {
-    const run = async (): Promise<SaveOutcome> => {
-      const { exists, updatedAt } = remoteStamp.current
-      const mode: SaveMode = force ? 'force' : exists ? 'update' : 'insert'
-      const row = { payload, updated_at: new Date().toISOString() }
-      const table = supabase.from('user_data')
-      const res =
-        mode === 'force'
-          ? await table.upsert({ id: userId, ...row }).select('updated_at')
-          : mode === 'insert'
-          ? await table.insert({ id: userId, ...row }).select('updated_at')
-          : updatedAt
-          ? await table.update(row).eq('id', userId).eq('updated_at', updatedAt).select('updated_at')
-          : await table.update(row).eq('id', userId).is('updated_at', null).select('updated_at')
-      const outcome = interpretSave(mode, res)
-      if (outcome.kind === 'saved') {
-        remoteStamp.current = { exists: true, updatedAt: outcome.updatedAt ?? row.updated_at }
-      }
-      return outcome
-    }
-    const next = saveQueue.current.then(run, run)
-    saveQueue.current = next.catch(() => undefined)
-    return next
-  }
-
-  // ── Debounced sync to Supabase (or localStorage for Guest) on data change ──────────────
-  useEffect(() => {
-    if (!user) return
-    if (!syncReady.current) return
-    const serialised = JSON.stringify(data)
-    if (serialised === lastSynced.current) return   // nothing changed
-
-    if (user.id === 'guest-user-local') {
-      localStorage.setItem('spendiary.guest_data', serialised)
-      lastSynced.current = serialised
-      setSyncStatus('synced')
-      updateLastSynced(new Date())
-      return
-    }
-
-    if (user.id === 'test-user-local') {
-      // Test Mode is strictly in-memory — never persist to localStorage so mock data stays fresh
-      lastSynced.current = serialised
-      setSyncStatus('synced')
-      updateLastSynced(new Date())
-      return
-    }
-
-    setSyncStatus('syncing')
-    const timer = setTimeout(async () => {
-      try {
-        const outcome = await writeRemote(user.id, data)
-        if (outcome.kind === 'conflict') {
-          // Another tab or device saved first. Stop rather than overwrite their changes.
-          console.error('Cloud data changed elsewhere; saving is paused until the latest data is loaded')
-          syncReady.current = false
-          setSyncConflict(true)
-          setSyncStatus('error')
-          return
-        }
-        if (outcome.kind === 'error') throw outcome.error
-
-        lastSynced.current = serialised
-        setSyncStatus('synced')
-        updateLastSynced(new Date())
-      } catch (err) {
-        console.error('Error syncing to Supabase:', err)
-        setSyncStatus('error')
-      }
-    }, 2000)
-    return () => clearTimeout(timer)
-  }, [data, user])
 
   const value = useMemo<DataContextValue>(
     () => ({
@@ -2242,21 +1849,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
 
         // 6. Force an immediate cloud push (bypass the 2-second debounce)
-        if (user) {
-          const serialised = JSON.stringify(stamped)
-          setSyncStatus('syncing')
-          // Restoring a backup replaces the cloud data on purpose, so this write skips the lock
-          writeRemote(user.id, stamped, true)
-            .then((outcome) => {
-              if (outcome.kind === 'saved') {
-                lastSynced.current = serialised
-                setSyncStatus('synced')
-                updateLastSynced(new Date())
-              } else {
-                setSyncStatus('error')
-              }
-            }, () => setSyncStatus('error'))
-        }
+        if (user) pushNow(user.id, stamped)
 
         return { ok: true }
       },
