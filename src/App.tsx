@@ -34,8 +34,23 @@ function PageLoadingFallback() {
   return <PageSkeleton />
 }
 
-/** Shown when the cloud load failed. Saving is paused, so the real data in the cloud stays untouched. */
-function LoadErrorScreen({ onRetry }: { onRetry: () => void }) {
+const SYNC_PROBLEM_COPY = {
+  loadError: {
+    title: "Couldn't load your data",
+    description: 'Your saved data is safe. We paused saving so nothing gets overwritten. Check your connection and try again.',
+    action: 'Try again',
+  },
+  conflict: {
+    title: 'Changed on another device',
+    description:
+      "Your data was saved from another tab or device after this one opened. We didn't save here, so nothing was overwritten. Load the latest version, then redo your last change.",
+    action: 'Load latest',
+  },
+}
+
+/** Shown when saving is paused (failed load, or newer data saved elsewhere), so the cloud data stays untouched. */
+function SyncProblemScreen({ kind, onRetry }: { kind: keyof typeof SYNC_PROBLEM_COPY; onRetry: () => void }) {
+  const copy = SYNC_PROBLEM_COPY[kind]
   return (
     <Card className="mx-auto mt-6 max-w-md animate-rise">
       <EmptyState
@@ -46,9 +61,9 @@ function LoadErrorScreen({ onRetry }: { onRetry: () => void }) {
             <line x1="1" y1="1" x2="23" y2="23" />
           </svg>
         }
-        title="Couldn't load your data"
-        description="Your saved data is safe. We paused saving so nothing gets overwritten. Check your connection and try again."
-        action={<Button onClick={onRetry}>Try again</Button>}
+        title={copy.title}
+        description={copy.description}
+        action={<Button onClick={onRetry}>{copy.action}</Button>}
       />
     </Card>
   )
@@ -68,7 +83,7 @@ function SpendSettingsRedirect() {
 
 // 💡 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
 function AppContent() {
-  const { user, loginWithGoogle, loginAsTestMode, authError, dataReady, loadError, retryLoad } = useData()
+  const { user, loginWithGoogle, loginAsTestMode, authError, dataReady, loadError, syncConflict, retryLoad } = useData()
 
   // Safety net: if the first load stalls (silent network), show the app after a while instead of a skeleton forever
   const [loadTimedOut, setLoadTimedOut] = useState(false)
@@ -283,8 +298,8 @@ function AppContent() {
     <Layout>
       <ScrollToTop />
       {/* Hold back the pages until the first load finishes, so users never see fake empty states */}
-      {loadError ? (
-        <LoadErrorScreen onRetry={retryLoad} />
+      {loadError || syncConflict ? (
+        <SyncProblemScreen kind={loadError ? 'loadError' : 'conflict'} onRetry={retryLoad} />
       ) : !dataReady && !loadTimedOut ? (
         <PageLoadingFallback />
       ) : (

@@ -6,16 +6,23 @@
  * So we only report `empty` when a source positively confirmed there is no row.
  */
 export type RemoteLoadResult =
-  | { kind: 'loaded'; payload: unknown }
+  /** `updatedAt` is the row's version stamp; the next save only succeeds if it is still current */
+  | { kind: 'loaded'; payload: unknown; updatedAt: string | null }
   /** Confirmed: no row exists yet, so this is a new user */
   | { kind: 'empty' }
   /** Not sure what is in the cloud, so saving must stay off */
   | { kind: 'failed' }
 
+/** A `user_data` row as selected (`payload, updated_at`) */
+interface RemoteRow {
+  payload?: unknown
+  updated_at?: unknown
+}
+
 /** What the supabase-js query returned */
 export interface ClientLoad {
   error: unknown
-  payload: unknown
+  row: RemoteRow | null | undefined
 }
 
 /** What the REST fallback returned; null when it was not tried or threw */
@@ -26,13 +33,21 @@ export interface RestLoad {
   usedUserToken: boolean
 }
 
-export function resolveRemoteLoad(client: ClientLoad, rest: RestLoad | null): RemoteLoadResult {
-  if (!client.error && client.payload) return { kind: 'loaded', payload: client.payload }
+function loadedFrom(row: unknown): RemoteLoadResult | null {
+  if (!row || typeof row !== 'object') return null
+  const { payload, updated_at } = row as RemoteRow
+  if (!payload) return null
+  return { kind: 'loaded', payload, updatedAt: typeof updated_at === 'string' ? updated_at : null }
+}
 
-  const restRow = rest?.ok && Array.isArray(rest.list) ? rest.list[0] : undefined
-  if (restRow && typeof restRow === 'object' && 'payload' in restRow && restRow.payload) {
-    return { kind: 'loaded', payload: restRow.payload }
+export function resolveRemoteLoad(client: ClientLoad, rest: RestLoad | null): RemoteLoadResult {
+  if (!client.error) {
+    const fromClient = loadedFrom(client.row)
+    if (fromClient) return fromClient
   }
+
+  const fromRest = rest?.ok && Array.isArray(rest.list) ? loadedFrom(rest.list[0]) : null
+  if (fromRest) return fromRest
 
   // The client query ran without error and found no row: a new user
   if (!client.error) return { kind: 'empty' }

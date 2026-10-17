@@ -9,6 +9,7 @@ import { THAI_STOCKS, THAI_DRS, US_STOCKS } from '../lib/securities'
 import { importFixedCosts } from '../modules/spend/migrate'
 import { syncCategories } from '../modules/spend/categories'
 import { resolveRemoteLoad, type RestLoad } from './remoteLoad'
+import { interpretSave, type SaveMode, type SaveOutcome } from './remoteSave'
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
 
@@ -260,7 +261,9 @@ interface DataContextValue {
   dataReady: boolean
   /** True when the cloud load failed. Saving stays off so the real data is never overwritten. */
   loadError: boolean
-  /** Try the cloud load again after a failure */
+  /** True when another tab or device saved first. Saving stays off so their changes are not overwritten. */
+  syncConflict: boolean
+  /** Try the cloud load again after a failure, or load the latest data after a conflict */
   retryLoad: () => void
   user: User | null
   loginWithGoogle: () => void
@@ -538,6 +541,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle')
   const [dataReady, setDataReady] = useState(false)
   const [loadError, setLoadError] = useState(false)
+  const [syncConflict, setSyncConflict] = useState(false)
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(() => {
     const stored = localStorage.getItem('spendiary.last_synced_time')
     return stored ? new Date(stored) : null
@@ -560,6 +564,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const syncReady = useRef(false)
   // Last data string we synced to Supabase — avoids redundant writes.
   const lastSynced = useRef('')
+  // The cloud row's version stamp (`updated_at`) as we last loaded or saved it; see remoteSave.ts
+  const remoteStamp = useRef<{ exists: boolean; updatedAt: string | null }>({ exists: false, updatedAt: null })
+  // Cloud saves run one at a time, so each one checks against the stamp the previous one left
+  const saveQueue = useRef<Promise<unknown>>(Promise.resolve())
   // Mirror of current data as a ref so callbacks can read it without
   // capturing a stale closure.
   const dataRef = useRef(data)
@@ -813,7 +821,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       // Attempt 1: Via supabase-js client
       const { data: row, error } = await supabase
         .from('user_data')
-        .select('payload')
+        .select('payload, updated_at')
         .eq('id', userId)
         .maybeSingle()
 
@@ -840,7 +848,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
 
         try {
-          const restRes = await fetch(`${supabaseUrl}/rest/v1/user_data?id=eq.${encodeURIComponent(userId)}&select=payload`, {
+          const restRes = await fetch(`${supabaseUrl}/rest/v1/user_data?id=eq.${encodeURIComponent(userId)}&select=payload,updated_at`, {
             headers: {
               'apikey': supabaseKey,
               'Authorization': `Bearer ${token}`,
@@ -855,7 +863,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const result = resolveRemoteLoad({ error, payload: row?.payload }, rest)
+      const result = resolveRemoteLoad({ error, row }, rest)
 
       if (result.kind === 'failed') {
         // We can't tell what is in the cloud. Keep saving off so empty data never overwrites the real row.
@@ -870,6 +878,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const remotePayload = result.payload as SpendiaryData
         const migrated = migrate(remotePayload)
         const migratedStr = JSON.stringify(migrated)
+        remoteStamp.current = { exists: true, updatedAt: result.updatedAt }
 
         // A one-time move just happened: leave lastSynced stale so it gets saved back once
         lastSynced.current = justImportedFixedCosts(remotePayload, migrated) ? '' : migratedStr
@@ -878,6 +887,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         updateLastSynced(new Date())
       } else {
         console.log('Cloud data is empty for user:', userId)
+        remoteStamp.current = { exists: false, updatedAt: null }
         lastSynced.current = JSON.stringify(emptyData)
         setDataState(emptyData)
         setSyncStatus('synced')
@@ -897,6 +907,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const retryLoad = () => {
     if (!user) return
     setLoadError(false)
+    setSyncConflict(false)
     syncReady.current = false
     setDataReady(false)
     fetchRemoteData(user.id)
@@ -905,6 +916,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // Fetch remote data once user is loaded
   useEffect(() => {
     setLoadError(false)
+    setSyncConflict(false)
+    remoteStamp.current = { exists: false, updatedAt: null }
     if (user) {
       const storedLastUser = localStorage.getItem('spendiary.last_user_id')
       const isSwitch = Boolean(storedLastUser && storedLastUser !== user.id)
@@ -947,6 +960,32 @@ export function DataProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  /** Saves to the cloud under the optimistic lock (see remoteSave.ts), after any save already in flight */
+  const writeRemote = (userId: string, payload: SpendiaryData, force = false): Promise<SaveOutcome> => {
+    const run = async (): Promise<SaveOutcome> => {
+      const { exists, updatedAt } = remoteStamp.current
+      const mode: SaveMode = force ? 'force' : exists ? 'update' : 'insert'
+      const row = { payload, updated_at: new Date().toISOString() }
+      const table = supabase.from('user_data')
+      const res =
+        mode === 'force'
+          ? await table.upsert({ id: userId, ...row }).select('updated_at')
+          : mode === 'insert'
+          ? await table.insert({ id: userId, ...row }).select('updated_at')
+          : updatedAt
+          ? await table.update(row).eq('id', userId).eq('updated_at', updatedAt).select('updated_at')
+          : await table.update(row).eq('id', userId).is('updated_at', null).select('updated_at')
+      const outcome = interpretSave(mode, res)
+      if (outcome.kind === 'saved') {
+        remoteStamp.current = { exists: true, updatedAt: outcome.updatedAt ?? row.updated_at }
+      }
+      return outcome
+    }
+    const next = saveQueue.current.then(run, run)
+    saveQueue.current = next.catch(() => undefined)
+    return next
+  }
+
   // ── Debounced sync to Supabase (or localStorage for Guest) on data change ──────────────
   useEffect(() => {
     if (!user) return
@@ -973,14 +1012,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setSyncStatus('syncing')
     const timer = setTimeout(async () => {
       try {
-        const { error } = await supabase
-          .from('user_data')
-          .upsert({
-            id: user.id,
-            payload: data,
-            updated_at: new Date().toISOString()
-          })
-        if (error) throw error
+        const outcome = await writeRemote(user.id, data)
+        if (outcome.kind === 'conflict') {
+          // Another tab or device saved first. Stop rather than overwrite their changes.
+          console.error('Cloud data changed elsewhere; saving is paused until the latest data is loaded')
+          syncReady.current = false
+          setSyncConflict(true)
+          setSyncStatus('error')
+          return
+        }
+        if (outcome.kind === 'error') throw outcome.error
 
         lastSynced.current = serialised
         setSyncStatus('synced')
@@ -1005,6 +1046,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       syncStatus,
       dataReady,
       loadError,
+      syncConflict,
       retryLoad,
       lastSyncedAt,
       user,
@@ -2545,15 +2587,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (user) {
           const serialised = JSON.stringify(stamped)
           setSyncStatus('syncing')
-          supabase
-            .from('user_data')
-            .upsert({
-              id: user.id,
-              payload: stamped,
-              updated_at: new Date().toISOString()
-            })
-            .then(({ error }) => {
-              if (!error) {
+          // Restoring a backup replaces the cloud data on purpose, so this write skips the lock
+          writeRemote(user.id, stamped, true)
+            .then((outcome) => {
+              if (outcome.kind === 'saved') {
                 lastSynced.current = serialised
                 setSyncStatus('synced')
                 updateLastSynced(new Date())
@@ -2859,7 +2896,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }),
         })),
     }),
-    [data, syncStatus, dataReady, loadError, lastSyncedAt, user],
+    [data, syncStatus, dataReady, loadError, syncConflict, lastSyncedAt, user],
   )
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>

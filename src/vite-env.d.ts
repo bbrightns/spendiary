@@ -65,11 +65,18 @@ declare module '@supabase/supabase-js' {
         single: () => Promise<{ data: any; error: any }>
         maybeSingle: () => Promise<{ data: any; error: any }>
       }
-      upsert: (payload: any) => Promise<{ data?: any; error: any }>
-      insert: (payload: any) => Promise<{ data?: any; error: any }>
-      update: (payload: any) => Promise<{ data?: any; error: any }>
-      delete: () => Promise<{ data?: any; error: any }>
+      upsert: (payload: any) => WriteQuery
+      insert: (payload: any) => WriteQuery
+      update: (payload: any) => WriteQuery
+      delete: () => WriteQuery
     }
+  }
+
+  /** A write: await it as is, or narrow it with filters and ask for the written rows back */
+  export interface WriteQuery extends PromiseLike<{ data?: any; error: any }> {
+    eq: (column: string, value: any) => WriteQuery
+    is: (column: string, value: null) => WriteQuery
+    select: (columns?: string) => WriteQuery
   }
 
   export function createClient(supabaseUrl: string, supabaseKey: string, options?: any): SupabaseClient
