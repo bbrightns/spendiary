@@ -1562,7 +1562,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         </div>
 
         {/* Accordion 2: Dividend tracking (optional for funds and stocks) */}
-        {!isBtc && !isGold && !isRealEstate && (
+        {(form.assetClass === 'fund' || form.assetClass === 'stock') && (
           <div className="rounded-2xl border border-line bg-surface overflow-hidden shadow-2xs">
             <button
               type="button"
