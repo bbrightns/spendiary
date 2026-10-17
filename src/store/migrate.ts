@@ -51,7 +51,8 @@ export function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
       merged.fixedCostItems = []
     }
   }
-  // Migrate holdings to strictly track totalThbInvested and totalUnits + fix USD stock price bugs
+  // Migrate holdings to strictly track totalThbInvested and totalUnits.
+  // The saved price is kept as is: live quotes (useLivePrices) are the only thing that changes it.
   merged.holdings = (merged.holdings ?? []).map((h) => {
     const units = h.units ?? h.totalUnits ?? 0
     let totalThb = h.totalThbInvested
@@ -65,20 +66,13 @@ export function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
       }
     }
 
-    let price = h.price
-    // Heal US stock holding if price was saved in USD ($100-$1000) while avgCostThb is in THB (฿2000+)
-    if (h.assetClass === 'stock' && typeof price === 'number' && price > 0 && price < 1000 && (h.avgCostThb ?? h.avgCost ?? 0) > 2000) {
-      const estimatedFx = (h.avgCostUsd && h.avgCostUsd > 0) ? ((h.avgCostThb ?? h.avgCost) / h.avgCostUsd) : 34
-      price = price * estimatedFx
-    }
-
     return {
       ...h,
       totalUnits: units,
       units,
       totalThbInvested: totalThb,
       avgCostThb: h.avgCostThb ?? h.avgCost,
-      price: typeof price === 'number' && price > 0 ? price : (h.avgCostThb ?? h.avgCost ?? 0),
+      price: typeof h.price === 'number' && h.price > 0 ? h.price : (h.avgCostThb ?? h.avgCost ?? 0),
     }
   })
   delete (merged as { cash?: number }).cash

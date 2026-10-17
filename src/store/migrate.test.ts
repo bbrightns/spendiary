@@ -63,14 +63,12 @@ describe('migrate', () => {
     expect(migrate(legacy({ holdings: [holding({ price: 0, avgCost: 80 })] })).holdings[0].price).toBe(80)
   })
 
-  it('converts a US stock price that was saved in dollars back to baht', () => {
-    const us = holding({ assetClass: 'stock', price: 150, avgCost: 5000, avgCostThb: 5000, avgCostUsd: 150 })
-    expect(migrate(legacy({ holdings: [us] })).holdings[0].price).toBeCloseTo(5000)
-  })
-
-  it('uses 34 baht per dollar for that fix when the dollar cost is unknown', () => {
-    const us = holding({ assetClass: 'stock', price: 100, avgCost: 3400, avgCostThb: 3400 })
-    expect(migrate(legacy({ holdings: [us] })).holdings[0].price).toBe(3400)
+  it('leaves a stock price as saved, even when it fell a lot', () => {
+    // Bought at ฿5,000 and now worth ฿900: a real drop, not a price in dollars
+    const fell = holding({ assetClass: 'stock', price: 900, avgCost: 5000, avgCostThb: 5000, avgCostUsd: 150 })
+    expect(migrate(legacy({ holdings: [fell] })).holdings[0].price).toBe(900)
+    const noUsdCost = holding({ assetClass: 'stock', price: 100, avgCost: 3400, avgCostThb: 3400 })
+    expect(migrate(legacy({ holdings: [noUsdCost] })).holdings[0].price).toBe(100)
   })
 
   it('does not change the object it was given', () => {
