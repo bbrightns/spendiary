@@ -230,7 +230,14 @@ export interface HoldingLog {
   dividendRecordId?: string
   /** Set on 'transfer' logs: coins / grams moved between two storage locations of one holding */
   transfer?: LocationTransfer
+  /** 'add' / 'buy_more' logs: how the units were acquired (unset = bought) */
+  source?: AcquisitionSource
+  /** Who gave the units, when source is 'received' (e.g. "Brother") */
+  receivedFrom?: string
 }
+
+/** Bought with own money, or received for free (gift / inheritance) at the market value on that day. */
+export type AcquisitionSource = 'bought' | 'received'
 
 /** Details of moving a holding between its own storage locations (units are sats for BTC, grams for gold). */
 export interface LocationTransfer {

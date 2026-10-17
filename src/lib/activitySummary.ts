@@ -355,7 +355,7 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
           priceDisplay = `$${(curr.price / fx).toFixed(2)}`
         }
       } else if (log.assetClass === 'crypto') {
-        const noteSpentMatch = log.note.match(/฿([0-9,.]+)\s*spent/)
+        const noteSpentMatch = log.note.match(/฿([0-9,.]+)\s*(?:spent|worth)/)
         if (noteSpentMatch && Math.abs(unitDiff) > 0) {
           const spent = parseFloat(noteSpentMatch[1].replace(/,/g, ''))
           costDiff = spent
@@ -365,7 +365,7 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
           priceDisplay = `฿${Math.round(curr.price).toLocaleString()}`
         }
       } else if (log.assetClass === 'gold') {
-        const noteSpentMatch = log.note.match(/฿([0-9,.]+)\s*spent/)
+        const noteSpentMatch = log.note.match(/฿([0-9,.]+)\s*(?:spent|worth)/)
         if (noteSpentMatch && Math.abs(unitDiff) > 0) {
           const spent = parseFloat(noteSpentMatch[1].replace(/,/g, ''))
           costDiff = spent
@@ -404,7 +404,7 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
     let amountThbDisplay = '-'
     let amountThbValue: number | null = null
 
-    const spentMatch = log.note.match(/฿([0-9,.]+)\s*spent/)
+    const spentMatch = log.note.match(/฿([0-9,.]+)\s*(?:spent|worth)/)
     const depositMatch = log.note.match(/Deposited\s*฿([0-9,.]+)/)
     const costMatch = log.note.match(/\(\+฿([0-9,.]+)\)/)
 
@@ -771,6 +771,8 @@ export function summarizeActivity(
       bucket.net += dividend.net
     } else if (log.action === 'buy_more' || log.action === 'add') {
       buyCount += 1
+      // A gift / inheritance is not money you put in
+      if (log.source === 'received') continue
       const amount = getLogTransactionDetails(log, usdThb).amountThbValue ?? 0
       invested += amount
       row.invested += amount

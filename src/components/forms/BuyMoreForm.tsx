@@ -6,9 +6,10 @@ import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, applyBuy, goldThbPerGramToXauUsd, holdingMetrics, upsert } from '../../lib/calc'
-import type { BtcLocation, GoldLocation, Holding } from '../../lib/types'
+import type { AcquisitionSource, BtcLocation, GoldLocation, Holding } from '../../lib/types'
 import { dateStrToTimestamp, money, thb, localDateStr } from '../../lib/format'
 import { TransactionDateField } from './TransactionDateField'
+import { AcquisitionSourceField } from './AcquisitionSourceField'
 
 export const BUY_SELL_SEGMENT_OPTIONS: SegmentOption<'buy' | 'sell'>[] = [
   {
@@ -102,6 +103,11 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
 
   // Backdated transaction date
   const [txDate, setTxDate] = useState<string>(localDateStr())
+
+  // Bought with own money, or received as a gift / inheritance (no cash leaves, cost = market value)
+  const [source, setSource] = useState<AcquisitionSource>('bought')
+  const [receivedFrom, setReceivedFrom] = useState('')
+  const isReceived = source === 'received'
 
   const isBtc = holding?.assetClass === 'crypto'
   const isGold = holding?.assetClass === 'gold'
@@ -285,6 +291,8 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
     setUnits('')
     setShowErrors(false)
     setCashAccountId('none')
+    setSource('bought')
+    setReceivedFrom('')
     setSatoshi('')
     setThbSpent('')
     const btcLocs = holding.btcLocations ?? []
@@ -324,6 +332,46 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
       label: `${c.name} (${c.currency === 'USD' ? '$' : '฿'}${c.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`,
     })),
   ]
+
+  // A gift never touches a cash account
+  const payFromId = !isReceived && cashAccountId !== 'none' ? cashAccountId : undefined
+  const fromName = receivedFrom.trim()
+  /** Note tail: who it came from, or which account paid */
+  const noteSuffix = isReceived
+    ? ` · Received${fromName ? ` from ${fromName}` : ''}`
+    : (payFromId ? ` · Paid from ${data.cashAccounts.find((c) => c.id === payFromId)?.name ?? ''}` : '')
+  const spentWord = isReceived ? 'worth' : 'spent'
+  const sourceParams = isReceived ? { source: 'received' as const, receivedFrom: fromName || undefined } : {}
+  const verb = isReceived ? 'Received' : 'Bought'
+  const toastTitle = isReceived ? 'Gift recorded!' : 'Buy recorded!'
+  const modalTitle = `${isReceived ? 'Add gift' : 'Buy more'} · ${holding.name}`
+
+  /** Value of a received amount at today's price (THB) */
+  const marketValueOf = (amount: number) => Math.round(amount * holding.price * 100) / 100
+
+  const sourceField = (
+    <AcquisitionSourceField
+      source={source}
+      onSourceChange={(next) => {
+        setSource(next)
+        if (next !== 'received') return
+        // Pre-fill the cost with today's market value; the user can still change it
+        if (isBtc && satoshi !== '' && Number(satoshi) > 0) setThbSpent(marketValueOf(Number(satoshi) / SATS_PER_BTC))
+        if (isGold && goldGrams !== '' && Number(goldGrams) > 0) setGoldThbSpent(marketValueOf(Number(goldGrams)))
+      }}
+      receivedFrom={receivedFrom}
+      onReceivedFromChange={setReceivedFrom}
+    />
+  )
+
+  const cashField = isReceived ? null : (
+    <SelectField
+      label="Take the payment from a cash account"
+      value={cashAccountId}
+      onChange={setCashAccountId}
+      options={cashAccountOptions}
+    />
+  )
 
   // ── Gold path ──
   if (isGold) {
@@ -379,16 +427,15 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         avgCostThb: avgCost,
       }
       const bahtAmount = (g / GRAMS_PER_BAHT_GOLD).toFixed(4)
-      const chosenCash = cashAccountId !== 'none' ? data.cashAccounts.find((c) => c.id === cashAccountId) : undefined
-      const cashSuffix = chosenCash ? ` · Paid from ${chosenCash.name}` : ''
       buyMoreHolding({
         updatedHolding: afterHoldingState,
-        cashAccountId: cashAccountId !== 'none' ? cashAccountId : undefined,
-        cashDeductAmount: cashAccountId !== 'none' ? spent : undefined,
-        note: `+${g.toFixed(4)} g (${bahtAmount} gold baht) · ฿${spent.toLocaleString()} spent · ${goldLocName}${cashSuffix}`,
+        cashAccountId: payFromId,
+        cashDeductAmount: payFromId ? spent : undefined,
+        note: `+${g.toFixed(4)} g (${bahtAmount} gold baht) · ฿${spent.toLocaleString()} ${spentWord} · ${goldLocName}${noteSuffix}`,
         timestamp: dateStrToTimestamp(txDate),
+        ...sourceParams,
       })
-      showToast(`Bought ${g.toFixed(4)}g (${bahtAmount} gold baht) gold for ${holding!.name}`, 'success', undefined, { celebrate: true, title: 'Buy recorded!' })
+      showToast(`${verb} ${g.toFixed(4)}g (${bahtAmount} gold baht) gold for ${holding!.name}`, 'success', undefined, { celebrate: true, title: toastTitle })
       onClose()
     }
 
@@ -396,9 +443,9 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
       <Modal
         open={open}
         onClose={onClose}
-        title={lockedGoldLocName ? `Buy more · ${holding.name} — ${lockedGoldLocName}` : `Buy more · ${holding.name}`}
+        title={lockedGoldLocName ? `${modalTitle} — ${lockedGoldLocName}` : modalTitle}
         description={lockedGoldLocName
-          ? `This purchase goes into "${lockedGoldLocName}".`
+          ? `This ${isReceived ? 'gold' : 'purchase'} goes into "${lockedGoldLocName}".`
           : "Log a purchase in grams or gold baht (1 gold baht = 15.244 g). Choose or create a location."}
         footer={
           <Button variant="success" onClick={saveGold} className="w-full">
@@ -421,6 +468,8 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
 
           {/* Transaction Date */}
           <TransactionDateField value={txDate} onChange={setTxDate} />
+
+          {sourceField}
 
           <div className="rounded-2xl bg-surface-muted px-4 py-3">
             <div className="flex items-center justify-between text-sm">
@@ -452,7 +501,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
 
           {/* Unit selector tab */}
           <div className="space-y-1">
-            <label className="text-sm font-medium text-ink-soft">Purchase unit</label>
+            <label className="text-sm font-medium text-ink-soft">{isReceived ? 'Unit' : 'Purchase unit'}</label>
             <SegmentedControl
               size="sm"
               value={goldUnit}
@@ -467,13 +516,14 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
           <div className="grid grid-cols-1 gap-3">
             {goldUnit === 'grams' ? (
               <NumberField
-                label="Grams bought"
+                label={isReceived ? 'Grams received' : 'Grams bought'}
                 value={goldGrams}
                 error={showErrors && (goldGrams === '' || Number(goldGrams) <= 0) ? 'Required (> 0)' : undefined}
                 onChange={(val) => {
                   setGoldGrams(val)
                   if (val !== '' && Number(val) > 0) {
                     setGoldBaht(Number((Number(val) / GRAMS_PER_BAHT_GOLD).toFixed(6)))
+                    if (isReceived) setGoldThbSpent(marketValueOf(Number(val)))
                   } else {
                     setGoldBaht('')
                   }
@@ -483,13 +533,14 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
               />
             ) : (
               <NumberField
-                label="Weight bought in gold baht"
+                label={isReceived ? 'Weight received in gold baht' : 'Weight bought in gold baht'}
                 value={goldBaht}
                 error={showErrors && (goldBaht === '' || Number(goldBaht) <= 0) ? 'Required (> 0)' : undefined}
                 onChange={(val) => {
                   setGoldBaht(val)
                   if (val !== '' && Number(val) > 0) {
                     setGoldGrams(Number((Number(val) * GRAMS_PER_BAHT_GOLD).toFixed(6)))
+                    if (isReceived) setGoldThbSpent(marketValueOf(Number(val) * GRAMS_PER_BAHT_GOLD))
                   } else {
                     setGoldGrams('')
                   }
@@ -499,7 +550,8 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
               />
             )}
             <NumberField
-              label="THB spent"
+              label={isReceived ? 'Value when received (THB)' : 'THB spent'}
+              hint={isReceived ? 'Today’s price · editable' : undefined}
               prefix="฿"
               value={goldThbSpent}
               error={showErrors && (goldThbSpent === '' || Number(goldThbSpent) <= 0) ? 'Required (> 0)' : undefined}
@@ -508,12 +560,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
             />
           </div>
 
-          <SelectField
-            label="Take the payment from a cash account"
-            value={cashAccountId}
-            onChange={setCashAccountId}
-            options={cashAccountOptions}
-          />
+          {cashField}
 
           {g > 0 && spent > 0 && (
             <div
@@ -596,16 +643,15 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         totalThbInvested: totalThb,
         avgCostThb: avgCost,
       }
-      const chosenCash = cashAccountId !== 'none' ? data.cashAccounts.find((c) => c.id === cashAccountId) : undefined
-      const cashSuffix = chosenCash ? ` · Paid from ${chosenCash.name}` : ''
       buyMoreHolding({
         updatedHolding: afterHoldingState,
-        cashAccountId: cashAccountId !== 'none' ? cashAccountId : undefined,
-        cashDeductAmount: cashAccountId !== 'none' ? spent : undefined,
-        note: `+${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} spent · ${locName}${cashSuffix}`,
+        cashAccountId: payFromId,
+        cashDeductAmount: payFromId ? spent : undefined,
+        note: `+${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} ${spentWord} · ${locName}${noteSuffix}`,
         timestamp: dateStrToTimestamp(txDate),
+        ...sourceParams,
       })
-      showToast(`Bought ${sats.toLocaleString()} sats for ${holding!.name}`, 'success', undefined, { celebrate: true, title: 'Buy recorded!' })
+      showToast(`${verb} ${sats.toLocaleString()} sats for ${holding!.name}`, 'success', undefined, { celebrate: true, title: toastTitle })
       onClose()
     }
 
@@ -613,10 +659,10 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
       <Modal
         open={open}
         onClose={onClose}
-        title={lockedBtcLocName ? `Buy more · ${holding.name} — ${lockedBtcLocName}` : `Buy more · ${holding.name}`}
+        title={lockedBtcLocName ? `${modalTitle} — ${lockedBtcLocName}` : modalTitle}
         description={lockedBtcLocName
-          ? `This purchase goes into "${lockedBtcLocName}".`
-          : "Log a purchase in Satoshi. Choose or create a location."}
+          ? `This ${isReceived ? 'BTC' : 'purchase'} goes into "${lockedBtcLocName}".`
+          : `Log ${isReceived ? 'the BTC you received' : 'a purchase'} in Satoshi. Choose or create a location.`}
         footer={
           <Button variant="success" onClick={saveBtc} className="w-full">
             Add to holding
@@ -638,6 +684,8 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
 
           {/* Transaction Date */}
           <TransactionDateField value={txDate} onChange={setTxDate} />
+
+          {sourceField}
 
           <div className="rounded-2xl bg-surface-muted px-4 py-3">
             <div className="flex items-center justify-between text-sm">
@@ -669,15 +717,19 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
 
           <div className="grid grid-cols-1 gap-3 ">
             <NumberField
-              label="Satoshi bought"
+              label={isReceived ? 'Satoshi received' : 'Satoshi bought'}
               value={satoshi}
               error={showErrors && (satoshi === '' || Number(satoshi) <= 0) ? 'Required (> 0)' : undefined}
-              onChange={setSatoshi}
+              onChange={(val) => {
+                setSatoshi(val)
+                if (isReceived && val !== '' && Number(val) > 0) setThbSpent(marketValueOf(Number(val) / SATS_PER_BTC))
+              }}
               placeholder="e.g. 500000"
               step={1}
             />
             <NumberField
-              label="THB spent"
+              label={isReceived ? 'Value when received (THB)' : 'THB spent'}
+              hint={isReceived ? 'Today’s price · editable' : undefined}
               prefix="฿"
               value={thbSpent}
               error={showErrors && (thbSpent === '' || Number(thbSpent) <= 0) ? 'Required (> 0)' : undefined}
@@ -686,12 +738,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
             />
           </div>
 
-          <SelectField
-            label="Take the payment from a cash account"
-            value={cashAccountId}
-            onChange={setCashAccountId}
-            options={cashAccountOptions}
-          />
+          {cashField}
 
           {satoshi !== '' && Number(satoshi) > 0 && thbSpent !== '' && Number(thbSpent) > 0 && (
             <div
@@ -756,16 +803,15 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
       }
 
       const updated = { ...holding!, ...next, ...extra }
-      const chosenCash = cashAccountId !== 'none' ? data.cashAccounts.find((c) => c.id === cashAccountId) : undefined
-      const cashSuffix = chosenCash ? ` · Paid from ${chosenCash.name}` : ''
       buyMoreHolding({
         updatedHolding: updated,
-        cashAccountId: cashAccountId !== 'none' ? cashAccountId : undefined,
-        cashDeductAmount: cashAccountId !== 'none' ? amountSpentThbNum : undefined,
-        note: `+${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${priceUsdNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/unit${cashSuffix}`,
+        cashAccountId: payFromId,
+        cashDeductAmount: payFromId ? amountSpentThbNum : undefined,
+        note: `+${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${priceUsdNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/unit${noteSuffix}`,
         timestamp: dateStrToTimestamp(txDate),
+        ...sourceParams,
       })
-      showToast(`Bought ${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares of ${holding!.name}`, 'success', undefined, { celebrate: true, title: 'Buy recorded!' })
+      showToast(`${verb} ${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares of ${holding!.name}`, 'success', undefined, { celebrate: true, title: toastTitle })
       onClose()
     } else {
       if (!valid) { setShowErrors(true); return }
@@ -782,16 +828,15 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         avgCostThb: next.avgCost,
       }
       const updated = { ...holding!, ...next, ...extra }
-      const chosenCash = cashAccountId !== 'none' ? data.cashAccounts.find((c) => c.id === cashAccountId) : undefined
-      const cashSuffix = chosenCash ? ` · Paid from ${chosenCash.name}` : ''
       buyMoreHolding({
         updatedHolding: updated,
-        cashAccountId: cashAccountId !== 'none' ? cashAccountId : undefined,
-        cashDeductAmount: cashAccountId !== 'none' ? amountSpentThb : undefined,
-        note: `+${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${label} @ ฿${Number(price).toLocaleString()}/unit${cashSuffix}`,
+        cashAccountId: payFromId,
+        cashDeductAmount: payFromId ? amountSpentThb : undefined,
+        note: `+${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} ${label} @ ฿${Number(price).toLocaleString()}/unit${noteSuffix}`,
         timestamp: dateStrToTimestamp(txDate),
+        ...sourceParams,
       })
-      showToast(`Bought ${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} units of ${holding!.name}`, 'success', undefined, { celebrate: true, title: 'Buy recorded!' })
+      showToast(`${verb} ${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} units of ${holding!.name}`, 'success', undefined, { celebrate: true, title: toastTitle })
       onClose()
     }
   }
@@ -800,13 +845,13 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
     <Modal
       open={open}
       onClose={onClose}
-      title={`Buy more · ${holding.name}`}
+      title={modalTitle}
       description={
         isStock
           ? usdThb
             ? `Price in USD, converted at ฿${rate.toFixed(2)}/USD.`
             : 'USD/THB rate loading…'
-          : 'Log a purchase. Units grow and your average cost is recalculated.'
+          : `Log ${isReceived ? 'what you received' : 'a purchase'}. Units grow and your average cost is recalculated.`
       }
       footer={
         <Button variant="success" onClick={save} className="w-full" disabled={isStock ? !validStock : !valid}>
@@ -829,6 +874,8 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
 
         {/* Transaction Date */}
         <TransactionDateField value={txDate} onChange={setTxDate} />
+
+        {sourceField}
 
         {isStock && !usdThb && (
           <div className="rounded-xl bg-warn-soft px-4 py-3 text-sm font-medium text-warn">
@@ -855,7 +902,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         {isStock ? (
           <div className="grid grid-cols-1 gap-3">
             <NumberField
-              label="Amount Spent (THB)"
+              label={isReceived ? 'Value when received (THB)' : 'Amount Spent (THB)'}
               prefix="฿"
               value={amountSpentThb}
               error={showErrors && (amountSpentThb === '' || Number(amountSpentThb) <= 0) ? 'Required (> 0)' : undefined}
@@ -886,7 +933,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
               allowString
             />
             <NumberField
-              label="Shares Bought"
+              label={isReceived ? 'Shares Received' : 'Shares Bought'}
               value={sharesBought}
               error={showErrors && (sharesBought === '' || Number(sharesBought) <= 0) ? 'Required (> 0)' : undefined}
               onChange={handleSharesBoughtChange}
@@ -899,7 +946,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         ) : (
           <div className="grid grid-cols-1 gap-3">
             <NumberField
-              label={`${label} bought`}
+              label={`${label} ${isReceived ? 'received' : 'bought'}`}
               value={units}
               error={showErrors && (units === '' || Number(units) <= 0) ? 'Required (> 0)' : undefined}
               onChange={setUnits}
@@ -907,7 +954,8 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
               step={0.0001}
             />
             <NumberField
-              label="Price / unit"
+              label={isReceived ? 'Price / unit on the day received' : 'Price / unit'}
+              hint={isReceived ? 'Today’s price · editable' : undefined}
               prefix="฿"
               value={price}
               error={showErrors && (price === '' || Number(price) <= 0) ? 'Required (> 0)' : undefined}
@@ -917,12 +965,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
           </div>
         )}
 
-        <SelectField
-          label="Take the payment from a cash account"
-          value={cashAccountId}
-          onChange={setCashAccountId}
-          options={cashAccountOptions}
-        />
+        {cashField}
 
         {isStock && validStock && (
           <div
@@ -933,7 +976,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
             }}
           >
             <div className="flex items-center justify-between text-sm">
-              <span className="text-ink-soft">Transaction Cost</span>
+              <span className="text-ink-soft">{isReceived ? 'Value received' : 'Transaction Cost'}</span>
               <span className="font-semibold tnum text-ink">
                 ฿{amountSpentThbNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
                 <span className="text-ink-muted">
@@ -965,7 +1008,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
             }}
           >
             <div className="flex items-center justify-between text-sm">
-              <span className="text-ink-soft">Cost of this buy</span>
+              <span className="text-ink-soft">{isReceived ? 'Value received' : 'Cost of this buy'}</span>
               <span className="font-semibold tnum text-ink">{thb(cost)}</span>
             </div>
             <div className="mt-1.5 flex items-center justify-between text-sm">

@@ -85,7 +85,7 @@ export function investTransactions(data: SpendiaryData, usdThb: number | null): 
     }
 
     // Buy more on a holding (not cash accounts): what left the paying account, else what was invested
-    if (log.action !== 'buy_more' || log.assetClass === 'cash' || !log.holdingId) continue
+    if (log.action !== 'buy_more' || log.assetClass === 'cash' || !log.holdingId || log.source === 'received') continue
     const paid = log.cashAccountId
       ? (balanceOf(log.previousCashAccountsState, log.cashAccountId) ?? 0) - (balanceOf(log.afterCashAccountsState, log.cashAccountId) ?? 0)
       : 0

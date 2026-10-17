@@ -75,6 +75,15 @@ function getLogActionMeta(log: HoldingLog): ActionMeta {
     }
   }
 
+  if ((log.action === 'add' || log.action === 'buy_more') && log.source === 'received') {
+    return {
+      label: 'Received',
+      style: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20',
+      icon: '🎁',
+      isPriceUpdate: false,
+    }
+  }
+
   if (log.action === 'add') {
     return {
       label: 'Added',
@@ -235,9 +244,9 @@ function getDisplayNote(log: HoldingLog): string {
     n = n.replace(/จ่ายจาก\s*/g, 'Paid from ')
 
     // Remove "+15.2440 g (1.0000 gold baht) · ฿42,500 spent · "
-    n = n.replace(/^\+[0-9,.]+\s*g(?:\s*\([^)]+\))?\s*·\s*฿[0-9,.]+\s*spent\s*·\s*/i, '')
+    n = n.replace(/^\+[0-9,.]+\s*g(?:\s*\([^)]+\))?\s*·\s*฿[0-9,.]+\s*(?:spent|worth)\s*·\s*/i, '')
     // Remove "฿42,500 spent · "
-    n = n.replace(/(?:·\s*)?฿[0-9,.]+\s*spent\s*(?:·\s*)?/gi, '')
+    n = n.replace(/(?:·\s*)?฿[0-9,.]+\s*(?:spent|worth)\s*(?:·\s*)?/gi, '')
     // Remove "DCA Buy: 800 units @ ฿22.50 (+฿18,000.00)" or "Buy 800 units @ ฿22.50"
     n = n.replace(/^(?:DCA Buy:|Buy)\s*[0-9,.]+\s*(?:units|shares|g|sats)?\s*@[^·\n(]+(?:\(\+?[฿$][0-9,.]+\))?\s*(?:·\s*)?/i, '')
 
@@ -1213,6 +1222,8 @@ export function HoldingLogs() {
             const paidMatch = log.note.match(/(?:Paid from|จ่ายจาก)\s*([^·\n()]+)/i)
             if (paidMatch) cashSource = `From ${paidMatch[1].trim()}`
           }
+          const isReceived = log.source === 'received'
+          const receivedLine = isReceived ? (log.receivedFrom ? `From ${log.receivedFrom}` : 'Gift / inheritance') : ''
 
           return (
             <>
@@ -1221,13 +1232,13 @@ export function HoldingLogs() {
                 {/* Col 1: amount bought */}
                 <div className="flex flex-col min-w-0">
                   <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                    <span>💳</span> <span className="truncate">Amount bought</span>
+                    <span>{isReceived ? '🎁' : '💳'}</span> <span className="truncate">{isReceived ? 'Value received' : 'Amount bought'}</span>
                   </span>
                   <div className="text-sm sm:text-base font-black tracking-tight text-sky-700 dark:text-sky-300 truncate mt-0.5">
                     {txDetails.amountThbDisplay && txDetails.amountThbDisplay !== '-' ? txDetails.amountThbDisplay : (txDetails.sharesDisplay || '-')}
                   </div>
-                  <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={cashSource || 'Invested'}>
-                    {cashSource || 'Invested'}
+                  <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={receivedLine || cashSource || 'Invested'}>
+                    {receivedLine || cashSource || 'Invested'}
                   </span>
                 </div>
 
@@ -1252,13 +1263,13 @@ export function HoldingLogs() {
                 {/* Col 3: purchase price */}
                 <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
                   <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                    <span>🏷️</span> <span className="truncate">Buy price</span>
+                    <span>🏷️</span> <span className="truncate">{isReceived ? 'Price that day' : 'Buy price'}</span>
                   </span>
                   <div className="text-sm sm:text-base font-extrabold tracking-tight text-ink truncate mt-0.5">
                     {buyPriceDisplay || '-'}
                   </div>
                   <span className="text-xs font-medium text-ink-faint truncate mt-0.5">
-                    Price per unit
+                    {isReceived ? 'Your cost per unit' : 'Price per unit'}
                   </span>
                 </div>
               </div>

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import type { BtcLocation, CashAccount, DcaPlan, DebtCategory, DividendRecord, GoldLocation, Holding, HoldingLog, InvestAssetClass, Liability, NetWorthSnapshot, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryBackup, SpendiaryData, Transfer } from '../lib/types'
+import type { AcquisitionSource, BtcLocation, CashAccount, DcaPlan, DebtCategory, DividendRecord, GoldLocation, Holding, HoldingLog, InvestAssetClass, Liability, NetWorthSnapshot, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryBackup, SpendiaryData, Transfer } from '../lib/types'
 import { localDateStr } from '../lib/format'
 import { seedData } from '../lib/seed'
 import { detectBankPreset, findMatchingHolding, inferCashCategory } from '../lib/calc'
@@ -313,6 +313,8 @@ interface DataContextValue {
     cashDeductAmount?: number
     note: string
     timestamp?: string
+    source?: AcquisitionSource
+    receivedFrom?: string
   }) => void
   addHoldingLog: (log: Omit<HoldingLog, 'id' | 'timestamp'> & { id?: string; timestamp?: string }) => void
   removeHoldingLog: (logId: string) => void
@@ -1449,6 +1451,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             previousCashAccountsState: params.cashAccountId ? previousCashAccountsState : undefined,
             afterCashAccountsState: params.cashAccountId ? updatedCashAccounts : undefined,
             cashAccountId: params.cashAccountId,
+            source: params.source,
+            receivedFrom: params.receivedFrom,
           }
 
           return {

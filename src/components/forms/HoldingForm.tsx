@@ -6,12 +6,13 @@ import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd, upsert } from '../../lib/calc'
-import type { AssetClass, DividendPayoutSchedule, Holding, PlannedAsset } from '../../lib/types'
+import type { AcquisitionSource, AssetClass, DividendPayoutSchedule, Holding, PlannedAsset } from '../../lib/types'
 import { dateStrToTimestamp, localDateStr, thb } from '../../lib/format'
 import { searchSecurities, type Security } from '../../lib/securities'
 import { fetchStockQuote, searchStocksRemote } from '../../lib/prices'
 import { ChevronDownIcon, PencilIcon, LockClosedIcon } from '../icons'
 import { TransactionDateField } from './TransactionDateField'
+import { AcquisitionSourceField } from './AcquisitionSourceField'
 
 interface Props {
   open: boolean
@@ -118,6 +119,15 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
   // Backdated transaction date
   const [txDate, setTxDate] = useState<string>(localDateStr())
 
+  // New holdings only: bought, or received as a gift / inheritance
+  const [source, setSource] = useState<AcquisitionSource>('bought')
+  const [receivedFrom, setReceivedFrom] = useState('')
+  const isReceived = !editing && source === 'received'
+  const spentWord = isReceived ? 'worth' : 'spent'
+  const fromName = receivedFrom.trim()
+  const receivedSuffix = isReceived ? ` · Received${fromName ? ` from ${fromName}` : ''}` : ''
+  const sourceLogFields = isReceived ? { source: 'received' as const, receivedFrom: fromName || undefined } : {}
+
   const isBtc = form.assetClass === 'crypto' && (
     form.ticker.trim().toUpperCase() === 'BTC' ||
     form.name.toLowerCase().includes('bitcoin')
@@ -182,6 +192,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
     }
 
     setTxDate(localDateStr())
+    setSource('bought')
+    setReceivedFrom('')
 
     if (initialSection === 'dividend') {
       setIsGeneralExpanded(false)
@@ -448,8 +460,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         holdingName: 'Bitcoin',
         ticker: 'BTC',
         assetClass: 'crypto',
-        note: `${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} spent · ${locName} (merged into existing)`,
+        note: `${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} ${spentWord} · ${locName} (merged into existing)${receivedSuffix}`,
         afterHoldingState: mergedHolding,
+        ...sourceLogFields,
       })
       onClose()
       return
@@ -482,8 +495,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       holdingName: 'Bitcoin',
       ticker: 'BTC',
       assetClass: 'crypto',
-      note: `${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} spent · ${locName}`,
+      note: `${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} ${spentWord} · ${locName}${receivedSuffix}`,
       afterHoldingState: savedHolding,
+      ...sourceLogFields,
     })
     onClose()
   }
@@ -531,8 +545,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         holdingName: 'Gold',
         ticker: 'XAU',
         assetClass: 'gold',
-        note: `${g.toFixed(4)} g (${bahtAmount} gold baht) · ฿${spent.toLocaleString()} spent · ${locName} (merged into existing)`,
+        note: `${g.toFixed(4)} g (${bahtAmount} gold baht) · ฿${spent.toLocaleString()} ${spentWord} · ${locName} (merged into existing)${receivedSuffix}`,
         afterHoldingState: mergedHolding,
+        ...sourceLogFields,
       })
       onClose()
       return
@@ -565,8 +580,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       holdingName: 'Gold',
       ticker: 'XAU',
       assetClass: 'gold',
-      note: `${g.toFixed(4)} g (${bahtAmount} gold baht) · ฿${spent.toLocaleString()} spent · ${locName}`,
+      note: `${g.toFixed(4)} g (${bahtAmount} gold baht) · ฿${spent.toLocaleString()} ${spentWord} · ${locName}${receivedSuffix}`,
       afterHoldingState: savedHolding,
+      ...sourceLogFields,
     })
     onClose()
   }
@@ -746,7 +762,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         ? changes.join(' · ')
         : `Updated holding details`
     } else {
-      logNote = `${unitsNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ ${isUsd ? `$${avgCostInput.toLocaleString()}` : `฿${avgCostInput.toLocaleString()}`}/unit`
+      logNote = `${unitsNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ ${isUsd ? `$${avgCostInput.toLocaleString()}` : `฿${avgCostInput.toLocaleString()}`}/unit${receivedSuffix}`
     }
 
     addHoldingLog({
@@ -759,6 +775,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       note: logNote,
       previousHoldingState: editing ? JSON.parse(JSON.stringify(editing)) : undefined,
       afterHoldingState: savedHolding,
+      ...sourceLogFields,
     })
     showToast(editing ? `Updated ${name}` : `${name} is now in your portfolio.`, 'success', undefined, { celebrate: !editing, title: 'Holding added!' })
     onClose()
@@ -950,6 +967,15 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         {/* Transaction Date */}
         <TransactionDateField value={txDate} onChange={setTxDate} />
 
+        {!editing && (
+          <AcquisitionSourceField
+            source={source}
+            onSourceChange={setSource}
+            receivedFrom={receivedFrom}
+            onReceivedFromChange={setReceivedFrom}
+          />
+        )}
+
         {/* Name + Ticker + Tag — only for fund/stock/real_estate (and edit mode for all) */}
         {(!isBtc && !isGold) || editing ? (
           <>
@@ -1098,7 +1124,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
             />
             <div className="grid grid-cols-1 gap-3 ">
               <NumberField
-                label="Satoshi bought"
+                label={isReceived ? 'Satoshi received' : 'Satoshi bought'}
                 value={satoshi}
                 error={showErrors && (satoshi === '' || Number(satoshi) <= 0) ? 'Required (> 0)' : undefined}
                 onChange={setSatoshi}
@@ -1106,7 +1132,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 step={1}
               />
               <NumberField
-                label="THB spent"
+                label={isReceived ? 'Value when received (THB)' : 'THB spent'}
                 prefix="฿"
                 value={btcThbSpent}
                 error={showErrors && (btcThbSpent === '' || Number(btcThbSpent) <= 0) ? 'Required (> 0)' : undefined}
@@ -1218,7 +1244,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
             <div className="grid grid-cols-1 gap-3">
               {goldUnit === 'grams' ? (
                 <NumberField
-                  label="Grams bought"
+                  label={isReceived ? 'Grams received' : 'Grams bought'}
                   value={grams}
                   error={showErrors && (grams === '' || Number(grams) <= 0) ? 'Required (> 0)' : undefined}
                   onChange={(val) => {
@@ -1234,7 +1260,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 />
               ) : (
                 <NumberField
-                  label="Weight bought in gold baht"
+                  label={isReceived ? 'Weight received in gold baht' : 'Weight bought in gold baht'}
                   value={goldBaht}
                   error={showErrors && (goldBaht === '' || Number(goldBaht) <= 0) ? 'Required (> 0)' : undefined}
                   onChange={(val) => {
@@ -1250,7 +1276,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 />
               )}
               <NumberField
-                label="THB spent"
+                label={isReceived ? 'Value when received (THB)' : 'THB spent'}
                 prefix="฿"
                 value={goldThbSpent}
                 error={showErrors && (goldThbSpent === '' || Number(goldThbSpent) <= 0) ? 'Required (> 0)' : undefined}
@@ -1510,7 +1536,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
               />
               <div className="grid grid-cols-1 gap-3 ">
                 <NumberField
-                  label={isRealEstate ? "Purchase Cost (THB)" : form.assetClass === 'crypto' ? "Cost per Unit (THB)" : "Avg cost / unit"}
+                  label={isReceived
+                    ? (isRealEstate ? 'Value when received (THB)' : 'Price / unit on the day received')
+                    : isRealEstate ? "Purchase Cost (THB)" : form.assetClass === 'crypto' ? "Cost per Unit (THB)" : "Avg cost / unit"}
                   prefix="฿"
                   value={form.avgCost}
                   error={showErrors && form.avgCost === '' ? 'Cost is required' : undefined}
