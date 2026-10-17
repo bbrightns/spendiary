@@ -26,9 +26,32 @@ const SpendLoansPage = lazy(() => import('./modules/spend/pages/SpendLoans').the
 const SpendAnalysis = lazy(() => import('./modules/spend/pages/SpendAnalysis').then(m => ({ default: m.SpendAnalysis })))
 const SpendAccounts = lazy(() => import('./modules/spend/pages/SpendAccounts').then(m => ({ default: m.SpendAccounts })))
 import { PageSkeleton } from './components/ui/PageSkeleton'
+import { Card } from './components/ui/Card'
+import { EmptyState } from './components/ui/EmptyState'
+import { Button } from './components/ui/Button'
 
 function PageLoadingFallback() {
   return <PageSkeleton />
+}
+
+/** Shown when the cloud load failed. Saving is paused, so the real data in the cloud stays untouched. */
+function LoadErrorScreen({ onRetry }: { onRetry: () => void }) {
+  return (
+    <Card className="mx-auto mt-6 max-w-md animate-rise">
+      <EmptyState
+        accent="var(--color-loss)"
+        icon={
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M22.61 16.95A5 5 0 0 0 18 10h-1.26a8 8 0 0 0-7.05-6M5 5a8 8 0 0 0 4 15h9a5 5 0 0 0 1.7-.3" />
+            <line x1="1" y1="1" x2="23" y2="23" />
+          </svg>
+        }
+        title="Couldn't load your data"
+        description="Your saved data is safe. We paused saving so nothing gets overwritten. Check your connection and try again."
+        action={<Button onClick={onRetry}>Try again</Button>}
+      />
+    </Card>
+  )
 }
 
 /** Old Debts links (bookmarks, ?action=new) land on Spend's loans page with their query intact. */
@@ -45,7 +68,7 @@ function SpendSettingsRedirect() {
 
 // 💡 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
 function AppContent() {
-  const { user, loginWithGoogle, loginAsTestMode, authError, dataReady } = useData()
+  const { user, loginWithGoogle, loginAsTestMode, authError, dataReady, loadError, retryLoad } = useData()
 
   // Safety net: if the first load stalls (silent network), show the app after a while instead of a skeleton forever
   const [loadTimedOut, setLoadTimedOut] = useState(false)
@@ -260,7 +283,9 @@ function AppContent() {
     <Layout>
       <ScrollToTop />
       {/* Hold back the pages until the first load finishes, so users never see fake empty states */}
-      {!dataReady && !loadTimedOut ? (
+      {loadError ? (
+        <LoadErrorScreen onRetry={retryLoad} />
+      ) : !dataReady && !loadTimedOut ? (
         <PageLoadingFallback />
       ) : (
       <Suspense fallback={<PageLoadingFallback />}>
