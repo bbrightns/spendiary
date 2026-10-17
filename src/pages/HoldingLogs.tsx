@@ -1793,7 +1793,7 @@ export function HoldingLogs() {
         ) : viewMode === 'table' ? (
           <Card padded={false} className="card-bleed-wide overflow-hidden border-0 shadow-none">
             <div className="logs-table-shell overflow-x-auto">
-              <table className="logs-table w-full text-left text-sm border-collapse min-w-[980px]">
+              <table className="logs-table w-full text-left text-sm min-w-[980px]">
                 <thead>
                   <tr className="logs-table-head text-xs font-bold text-ink-muted uppercase tracking-[0.12em]">
                     {editMode && (

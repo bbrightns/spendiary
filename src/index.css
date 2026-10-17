@@ -200,6 +200,16 @@
     border-color: var(--color-line-strong);
     background: var(--color-surface);
     box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.6);
+    backdrop-filter: none;
+  }
+
+  /* Round the header's outer cells so its fill never pokes past the shell's corners */
+  .logs-table-head > .logs-table-cell:first-child {
+    border-top-left-radius: calc(1.25rem - 1px);
+  }
+
+  .logs-table-head > .logs-table-cell:last-child {
+    border-top-right-radius: calc(1.25rem - 1px);
   }
 
   .logs-table {
@@ -207,12 +217,13 @@
     border-spacing: 0;
   }
 
-  .logs-table-head {
+  /* Fill sits on the cells (not the row) so the rounded corner cells can clip it */
+  .logs-table-head > .logs-table-cell {
     background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.9));
     box-shadow: inset 0 -1px 0 rgba(148, 163, 184, 0.2);
   }
 
-  .dark .logs-table-head {
+  .dark .logs-table-head > .logs-table-cell {
     background: linear-gradient(180deg, rgba(31, 35, 48, 0.96), rgba(24, 27, 38, 0.94));
   }
 
