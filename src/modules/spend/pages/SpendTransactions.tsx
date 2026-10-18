@@ -19,6 +19,7 @@ import { openQuickAdd } from '../QuickAddSheet'
 import { TxnRow } from '../TxnRow'
 import { useSpend } from '../useSpend'
 import { TONES } from '../tones'
+import { STORAGE_KEYS } from '../../../lib/storageKeys'
 
 type TypeFilter = 'all' | SpendTxnType
 
@@ -319,7 +320,7 @@ function SearchFilterIcon(p: { className?: string }) {
   )
 }
 
-const RECENT_KEY = 'spendiary.spend_recent_searches'
+const RECENT_KEY = STORAGE_KEYS.spendRecentSearches
 
 function readRecent(): string[] {
   try {

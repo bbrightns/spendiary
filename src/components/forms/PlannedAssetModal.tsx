@@ -6,6 +6,7 @@ import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { searchSecurities, type Security } from '../../lib/securities'
 import type { InvestAssetClass } from '../../lib/types'
+import { newId } from '../../lib/id'
 
 interface Props {
   open: boolean
@@ -48,12 +49,9 @@ export function PlannedAssetModal({ open, onClose, onAdded }: Props) {
       return
     }
 
-    const newId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID()
-      : `plan-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-
+    const id = newId()
     upsertPlannedAsset({
-      id: newId,
+      id,
       name,
       ticker,
       assetClass: form.assetClass,
@@ -61,7 +59,7 @@ export function PlannedAssetModal({ open, onClose, onAdded }: Props) {
 
     const targetNum = Number(form.targetPct) || 0
     showToast(`Added "${name}" as a planned target asset`, 'success')
-    onAdded?.(newId, targetNum > 0 ? targetNum : undefined)
+    onAdded?.(id, targetNum > 0 ? targetNum : undefined)
     onClose()
   }
 

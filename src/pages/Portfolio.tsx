@@ -42,6 +42,7 @@ import { InteractivePortfolioChart } from '../components/charts/InteractiveTrend
 import type { AssetClass, BtcLocation, Holding } from '../lib/types'
 import { localDateStr, money, thb, thbCompact, pct } from '../lib/format'
 import { isValidRate, rateOrZero } from '../lib/fx'
+import { STORAGE_KEYS } from '../lib/storageKeys'
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -95,7 +96,7 @@ export function Portfolio() {
   // How PnL is rendered on holding rows: percentage or absolute THB amount (persisted)
   const [pnlDisplay, setPnlDisplay] = useState<'pct' | 'thb'>(() => {
     try {
-      return localStorage.getItem('spendiary_pnl_display') === 'thb' ? 'thb' : 'pct'
+      return localStorage.getItem(STORAGE_KEYS.pnlDisplay) === 'thb' ? 'thb' : 'pct'
     } catch {
       return 'pct'
     }
@@ -103,7 +104,7 @@ export function Portfolio() {
   const changePnlDisplay = (mode: 'pct' | 'thb') => {
     setPnlDisplay(mode)
     try {
-      localStorage.setItem('spendiary_pnl_display', mode)
+      localStorage.setItem(STORAGE_KEYS.pnlDisplay, mode)
     } catch {
       // ignore
     }

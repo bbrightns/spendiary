@@ -1,10 +1,11 @@
 import { useLocation } from 'react-router-dom'
 import { SPEND_HOME, SPEND_ROOT, isSpendPath } from './nav'
 import { INVEST_HOME } from '../../components/layout/nav'
+import { STORAGE_KEYS } from '../../lib/storageKeys'
 
-export const LAST_INVEST_KEY = 'spendiary.last_invest_path'
-export const LAST_SPEND_KEY = 'spendiary.last_spend_path'
-export const LAST_SIDE_KEY = 'spendiary.last_side'
+export const LAST_INVEST_KEY = STORAGE_KEYS.lastInvestPath
+export const LAST_SPEND_KEY = STORAGE_KEYS.lastSpendPath
+export const LAST_SIDE_KEY = STORAGE_KEYS.lastSide
 /** One Settings page serves both sides; it isn't a side of its own */
 export const SETTINGS_PATH = '/settings'
 

@@ -6,6 +6,7 @@ import { seedData } from '../lib/seed'
 import { resolveRemoteLoad } from './remoteLoad'
 import { interpretSave, lockHeaders, type SaveMode, type SaveOutcome } from './remoteSave'
 import { emptyData, justImportedFixedCosts, migrate } from './migrate'
+import { STORAGE_KEYS } from '../lib/storageKeys'
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
 
@@ -25,16 +26,16 @@ export function useCloudSync(
   const [loadError, setLoadError] = useState(false)
   const [syncConflict, setSyncConflict] = useState(false)
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(() => {
-    const stored = localStorage.getItem('spendiary.last_synced_time')
+    const stored = localStorage.getItem(STORAGE_KEYS.lastSyncedTime)
     return stored ? new Date(stored) : null
   })
 
   const updateLastSynced = (date: Date | null) => {
     setLastSyncedAt(date)
     if (date) {
-      localStorage.setItem('spendiary.last_synced_time', date.toISOString())
+      localStorage.setItem(STORAGE_KEYS.lastSyncedTime, date.toISOString())
     } else {
-      localStorage.removeItem('spendiary.last_synced_time')
+      localStorage.removeItem(STORAGE_KEYS.lastSyncedTime)
     }
   }
 
@@ -54,7 +55,7 @@ export function useCloudSync(
     const seq = ++loadSeq.current
     const isStale = () => seq !== loadSeq.current
     if (userId === 'guest-user-local') {
-      const local = localStorage.getItem('spendiary.guest_data')
+      const local = localStorage.getItem(STORAGE_KEYS.guestData)
       if (local) {
         try {
           const parsed = JSON.parse(local)
@@ -74,7 +75,7 @@ export function useCloudSync(
     }
 
     if (userId === 'test-user-local') {
-      localStorage.removeItem('spendiary.test_data')
+      localStorage.removeItem(STORAGE_KEYS.testData)
       const freshSample = migrate(JSON.parse(JSON.stringify(seedData)))
       lastSynced.current = JSON.stringify(freshSample)
       setDataState(freshSample)
@@ -151,7 +152,7 @@ export function useCloudSync(
     setSyncConflict(false)
     remoteStamp.current = { exists: false, updatedAt: null }
     if (user) {
-      const storedLastUser = localStorage.getItem('spendiary.last_user_id')
+      const storedLastUser = localStorage.getItem(STORAGE_KEYS.lastUserId)
       const isSwitch = Boolean(storedLastUser && storedLastUser !== user.id)
 
       if (isSwitch) {
@@ -159,7 +160,7 @@ export function useCloudSync(
         lastSynced.current = ''
       }
 
-      localStorage.setItem('spendiary.last_user_id', user.id)
+      localStorage.setItem(STORAGE_KEYS.lastUserId, user.id)
 
       // Automatically pre-fill default userName from email username prefix if empty
       setDataState((prev) => {
@@ -242,7 +243,7 @@ export function useCloudSync(
     if (serialised === lastSynced.current) return   // nothing changed
 
     if (user.id === 'guest-user-local') {
-      localStorage.setItem('spendiary.guest_data', serialised)
+      localStorage.setItem(STORAGE_KEYS.guestData, serialised)
       lastSynced.current = serialised
       setSyncStatus('synced')
       updateLastSynced(new Date())

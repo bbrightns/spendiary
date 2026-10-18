@@ -2,6 +2,7 @@ import type { SpendiaryData, Holding, HoldingLog } from '../../lib/types'
 import type { DataContextValue } from '../DataContext'
 import { newId } from '../migrate'
 import { upsert } from '../dataHelpers'
+import { roundMoney } from '../../lib/money'
 
 /**
  * Holdings and their wallet / storage locations.
@@ -55,7 +56,7 @@ export function transferLocation(prev: SpendiaryData, ...[{ holdingId, fromLocat
   const received = round(moveAmount - feeAmount)
   const movesAll = moveAmount >= from.qty - eps
   // Cost basis travels with the coins; moving everything moves the exact remaining cost
-  const costMoved = movesAll ? from.thbSpent : parseFloat(((from.thbSpent * moveAmount) / from.qty).toFixed(2))
+  const costMoved = movesAll ? from.thbSpent : roundMoney((from.thbSpent * moveAmount) / from.qty)
 
   // Destination: an existing location, or a (possibly same-named) one
   const typedName = (newLocationName ?? '').trim()
@@ -70,10 +71,10 @@ export function transferLocation(prev: SpendiaryData, ...[{ holdingId, fromLocat
   const nextLocs: Loc[] = rawLocs.map((l) => {
     if (l.id === from.id) {
       const qty = movesAll ? 0 : round(l.qty - moveAmount)
-      return { ...l, qty, thbSpent: movesAll ? 0 : parseFloat((l.thbSpent - costMoved).toFixed(2)) }
+      return { ...l, qty, thbSpent: movesAll ? 0 : roundMoney(l.thbSpent - costMoved) }
     }
     if (dest && l.id === dest.id) {
-      return { ...l, qty: round(l.qty + received), thbSpent: parseFloat((l.thbSpent + costMoved).toFixed(2)) }
+      return { ...l, qty: round(l.qty + received), thbSpent: roundMoney(l.thbSpent + costMoved) }
     }
     return l
   })
@@ -191,7 +192,7 @@ export function sellHolding(prev: SpendiaryData, ...[params]: Parameters<DataCon
   if (params.cashAccountId && params.cashDepositAmount && params.cashDepositAmount > 0) {
     updatedCashAccounts = updatedCashAccounts.map((c) =>
       c.id === params.cashAccountId
-        ? { ...c, balance: Number((c.balance + params.cashDepositAmount!).toFixed(2)) }
+        ? { ...c, balance: roundMoney(c.balance + params.cashDepositAmount!) }
         : c
     )
   }
@@ -240,7 +241,7 @@ export function buyMoreHolding(prev: SpendiaryData, ...[params]: Parameters<Data
   if (params.cashAccountId && params.cashDeductAmount && params.cashDeductAmount > 0) {
     updatedCashAccounts = updatedCashAccounts.map((c) =>
       c.id === params.cashAccountId
-        ? { ...c, balance: Number((c.balance - params.cashDeductAmount!).toFixed(2)) }
+        ? { ...c, balance: roundMoney(c.balance - params.cashDeductAmount!) }
         : c
     )
   }

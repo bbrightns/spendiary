@@ -12,6 +12,7 @@ import { dateStrToTimestamp, thb, localDateStr } from '../../lib/format'
 import { isValidRate } from '../../lib/fx'
 import { TransactionDateField } from './TransactionDateField'
 import { LockClosedIcon } from '../icons'
+import { STORAGE_KEYS } from '../../lib/storageKeys'
 
 interface Props {
   open: boolean
@@ -23,7 +24,7 @@ interface Props {
 }
 
 const SATS_PER_BTC = 100_000_000
-const GOLD_SELL_UNIT_KEY = 'spendiary_gold_sell_unit'
+const GOLD_SELL_UNIT_KEY = STORAGE_KEYS.goldSellUnit
 
 export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, lockedLocationId }: Props) {
   const { sellHolding, data, usdThb } = useData()

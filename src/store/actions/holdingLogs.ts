@@ -2,6 +2,7 @@ import type { SpendiaryData, Holding } from '../../lib/types'
 import type { DataContextValue } from '../DataContext'
 import { newId } from '../migrate'
 import { revertCashAccountsChange } from '../dataHelpers'
+import { roundMoney } from '../../lib/money'
 
 /**
  * The activity log of holding changes, including undoing a logged change.
@@ -82,7 +83,7 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
     if (log.cashAccountId && log.proceeds && log.proceeds > 0) {
       updatedCashAccounts = updatedCashAccounts.map((c) =>
         c.id === log.cashAccountId
-          ? { ...c, balance: Number(Math.max(0, c.balance - log.proceeds!).toFixed(2)) }
+          ? { ...c, balance: roundMoney(Math.max(0, c.balance - log.proceeds!)) }
           : c
       )
     }
@@ -110,7 +111,7 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
       if (deductAmount > 0) {
         updatedCashAccounts = updatedCashAccounts.map((c) =>
           c.id === log.cashAccountId
-            ? { ...c, balance: Number((c.balance + deductAmount).toFixed(2)) }
+            ? { ...c, balance: roundMoney(c.balance + deductAmount) }
             : c
         )
       }
@@ -120,7 +121,7 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
     if (log.cashAccountId && log.netDividend && log.netDividend > 0) {
       updatedCashAccounts = updatedCashAccounts.map((c) =>
         c.id === log.cashAccountId
-          ? { ...c, balance: Number(Math.max(0, c.balance - log.netDividend!).toFixed(2)) }
+          ? { ...c, balance: roundMoney(Math.max(0, c.balance - log.netDividend!)) }
           : c
       )
     }
@@ -168,7 +169,7 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
         // Holding currently exists in portfolio -> add back sold units and cost basis
         const current = updatedHoldings[hIndex]
         const newUnits = (current.units ?? current.totalUnits ?? 0) + soldUnits
-        const newTotalThb = parseFloat(((current.totalThbInvested ?? 0) + costBasisSold).toFixed(2))
+        const newTotalThb = roundMoney((current.totalThbInvested ?? 0) + costBasisSold)
         const newAvgCost = newUnits > 0 ? newTotalThb / newUnits : current.avgCost
 
         // Restore gold location if applicable
@@ -188,7 +189,7 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
             if (existingLoc) {
               updatedGoldLocs = (updatedGoldLocs ?? []).map((l) =>
                 l.id === existingLoc.id
-                  ? { ...l, grams: l.grams + soldUnits, thbSpent: parseFloat((l.thbSpent + costBasisSold).toFixed(2)) }
+                  ? { ...l, grams: l.grams + soldUnits, thbSpent: roundMoney(l.thbSpent + costBasisSold) }
                   : l
               )
             } else {
@@ -218,7 +219,7 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
             if (existingLoc) {
               updatedBtcLocs = (updatedBtcLocs ?? []).map((l) =>
                 l.id === existingLoc.id
-                  ? { ...l, satoshi: l.satoshi + soldSats, thbSpent: parseFloat((l.thbSpent + costBasisSold).toFixed(2)) }
+                  ? { ...l, satoshi: l.satoshi + soldSats, thbSpent: roundMoney(l.thbSpent + costBasisSold) }
                   : l
               )
             } else {
@@ -272,7 +273,7 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
         const addedCost = Math.max(0, afterCost - prevCost)
 
         const newUnits = Math.max(0, (current.units ?? current.totalUnits ?? 0) - boughtUnits)
-        const newTotalThb = Math.max(0, parseFloat(((current.totalThbInvested ?? 0) - addedCost).toFixed(2)))
+        const newTotalThb = Math.max(0, roundMoney((current.totalThbInvested ?? 0) - addedCost))
         const newAvgCost = newUnits > 0 ? newTotalThb / newUnits : current.avgCost
 
         // Adjust gold location if applicable
@@ -288,7 +289,7 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
             updatedGoldLocs = updatedGoldLocs.map((l) => {
               if (l.id !== targetLoc.id && l.name !== targetLoc.name) return l
               const remG = Math.max(0, l.grams - boughtUnits)
-              const remS = Math.max(0, parseFloat((l.thbSpent - addedCost).toFixed(2)))
+              const remS = Math.max(0, roundMoney(l.thbSpent - addedCost))
               return { ...l, grams: remG, thbSpent: remS }
             }).filter((l) => l.grams > 0.0001)
           }
@@ -308,7 +309,7 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
             updatedBtcLocs = updatedBtcLocs.map((l) => {
               if (l.id !== targetLoc.id && l.name !== targetLoc.name) return l
               const remSats = Math.max(0, l.satoshi - boughtSats)
-              const remSpent = Math.max(0, parseFloat((l.thbSpent - addedCost).toFixed(2)))
+              const remSpent = Math.max(0, roundMoney(l.thbSpent - addedCost))
               return { ...l, satoshi: remSats, thbSpent: remSpent }
             }).filter((l) => l.satoshi > 0)
           }
@@ -335,13 +336,13 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
             .map((l) => {
               const qty = l as unknown as Record<string, number>
               if (l.id === t.fromLocationId) {
-                return { ...l, [key]: qty[key] + t.amount, thbSpent: parseFloat((l.thbSpent + t.costMoved).toFixed(2)) }
+                return { ...l, [key]: qty[key] + t.amount, thbSpent: roundMoney(l.thbSpent + t.costMoved) }
               }
               if (l.id === t.toLocationId) {
                 return {
                   ...l,
                   [key]: Math.max(0, qty[key] - t.received),
-                  thbSpent: Math.max(0, parseFloat((l.thbSpent - t.costMoved).toFixed(2))),
+                  thbSpent: Math.max(0, roundMoney(l.thbSpent - t.costMoved)),
                 }
               }
               return l

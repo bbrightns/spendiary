@@ -4,9 +4,10 @@
  * reads as "no price yet" instead of reaching the totals.
  */
 import { isValidRate } from './fx'
+import { STORAGE_KEYS } from './storageKeys'
 
-const GOLD_KEY = 'spendiary.cached_gold_thb_gram'
-const UPDATED_AT_KEY = 'spendiary.cached_prices_last_updated'
+const GOLD_KEY = STORAGE_KEYS.goldThbPerGram
+const UPDATED_AT_KEY = STORAGE_KEYS.pricesUpdatedAt
 
 /** A usable price: a finite number above zero */
 export const isValidPrice = isValidRate

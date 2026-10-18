@@ -3,6 +3,7 @@ import type { Liability, SpendRecurring } from '../../lib/types'
 import type { ResultDetail } from '../../store/ToastContext'
 import { getCategory } from './categories'
 import { nextOccurrence } from './logic'
+import { roundMoney } from '../../lib/money'
 
 const day = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number)
@@ -94,8 +95,8 @@ export function cardPaidDetail(p: {
   /** Where it was paid from; undefined when paid outside the app */
   accountName?: string
 }): ResultDetail {
-  const stillDue = Math.round((p.due - p.amount) * 100) / 100
-  const left = Math.round((p.owed - p.amount) * 100) / 100
+  const stillDue = roundMoney(p.due - p.amount)
+  const left = roundMoney(p.owed - p.amount)
   const footnote =
     stillDue > 0
       ? `${money(stillDue)} still due by ${day(p.dueDate)}`

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react'
+import { STORAGE_KEYS } from '../lib/storageKeys'
 
 export type Theme = 'light' | 'dark' | 'system'
 
-const STORAGE_KEY = 'spendiary.theme'
+const STORAGE_KEY = STORAGE_KEYS.theme
 
 function prefersDark(): boolean {
   return window.matchMedia('(prefers-color-scheme: dark)').matches

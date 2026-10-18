@@ -16,6 +16,7 @@ import { ASSET_META, totalCash } from '../lib/calc'
 import { thb, thbCompact } from '../lib/format'
 import type { Holding, InvestAssetClass, PlannedAsset, RebalanceMode } from '../lib/types'
 import { CheckIcon, CopyIcon, PlusIcon, TrashIcon, LockClosedIcon } from '../components/icons'
+import { STORAGE_KEYS } from '../lib/storageKeys'
 
 
 const REBALANCE_ASSETS: InvestAssetClass[] = ['fund', 'stock', 'gold', 'crypto', 'real_estate']
@@ -46,7 +47,7 @@ export function Rebalance() {
   const [copied, setCopied] = useState(false)
   const [excludeSafeHaven, setExcludeSafeHaven] = useState<boolean>(() => {
     try {
-      return localStorage.getItem('spendiary_rebalance_exclude_safe_haven') === 'true'
+      return localStorage.getItem(STORAGE_KEYS.rebalanceExcludeSafeHaven) === 'true'
     } catch {
       return false
     }
@@ -55,7 +56,7 @@ export function Rebalance() {
   const handleToggleExcludeSafeHaven = (val: boolean) => {
     setExcludeSafeHaven(val)
     try {
-      localStorage.setItem('spendiary_rebalance_exclude_safe_haven', String(val))
+      localStorage.setItem(STORAGE_KEYS.rebalanceExcludeSafeHaven, String(val))
     } catch {
       // ignore
     }

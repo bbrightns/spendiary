@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useData } from '../../store/DataContext'
 import { localDateStr } from '../../lib/format'
+import { newId } from '../../lib/id'
 import type { SpendCard, SpendCustomCategory, SpendGoal, SpendRecurring, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
 import { SPEND_CATEGORIES } from './categories'
 import { investTransactions } from './invest'
@@ -25,11 +26,6 @@ export interface PayMethod {
   /** Card only: credit left, counting cards sharing its limit and installment holds */
   available?: number
   locked?: boolean
-}
-
-function newId(): string {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
-  return `id-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
 function markOccurrence(list: SpendRecurring[], id: string, date: string, key: 'doneDates' | 'skippedDates'): SpendRecurring[] {

@@ -1,5 +1,6 @@
 import type { CashAccount, PayCycle, SpendCard, SpendGoal, SpendRecurring, SpendTransaction } from '../../lib/types'
 import { localDateStr } from '../../lib/format'
+import { roundMoney } from '../../lib/money'
 
 /**
  * A tag is # then everything up to the next space, starting a word: `#7-11`, `#ป.ประสงค์` and
@@ -106,7 +107,7 @@ export interface Balances {
 export function applyToBalances(b: Balances, txn: SpendTransaction, sign: 1 | -1): Balances {
   const deltas = moneyDeltas(txn)
   if (deltas.size === 0) return b
-  const round = (n: number) => Math.round(n * 100) / 100
+  const round = roundMoney
   const touched = (id: string) => (deltas.get(id) ?? 0) * sign
   return {
     cashAccounts: b.cashAccounts.map((a) => (deltas.has(a.id) ? { ...a, balance: round(a.balance + touched(a.id)) } : a)),
@@ -244,9 +245,9 @@ export function cardBill(card: SpendCard, txns: SpendTransaction[], reminderDays
   // Payments during the statement window settle the previous bill first; the rest was paid early
   const paidInWindow = payments.filter((x) => x.date > prevStatement && x.date <= cyc.lastStatement).reduce((s, x) => s + x.amount, 0)
   const owedAtPrev = card.balance - statementTotal - sinceStatement + paidInWindow + paidSoFar
-  const paidEarly = Math.round(Math.max(0, paidInWindow - Math.max(0, owedAtPrev)) * 100) / 100
+  const paidEarly = roundMoney(Math.max(0, paidInWindow - Math.max(0, owedAtPrev)))
 
-  const amountDue = Math.max(0, Math.round((card.balance - sinceStatement) * 100) / 100)
+  const amountDue = Math.max(0, roundMoney(card.balance - sinceStatement))
   const daysToDue = Math.round((parse(cyc.lastStatementDue).getTime() - t.getTime()) / 86_400_000)
   const status: BillStatus = amountDue <= 0 ? 'clear' : daysToDue < 0 ? 'overdue' : daysToDue <= reminderDays ? 'due' : 'upcoming'
 
@@ -261,7 +262,7 @@ export function cardBill(card: SpendCard, txns: SpendTransaction[], reminderDays
     items,
     paidSoFar,
     paidEarly,
-    other: Math.round((amountDue + paidSoFar + paidEarly - statementTotal) * 100) / 100,
+    other: roundMoney(amountDue + paidSoFar + paidEarly - statementTotal),
     status,
     remind: status === 'due' || status === 'overdue',
   }

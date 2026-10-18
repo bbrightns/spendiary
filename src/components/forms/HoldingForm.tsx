@@ -9,6 +9,7 @@ import { ASSET_META, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd, upsert } from 
 import type { AcquisitionSource, AssetClass, DividendPayoutSchedule, Holding, PlannedAsset } from '../../lib/types'
 import { dateStrToTimestamp, localDateStr, thb } from '../../lib/format'
 import { isValidRate } from '../../lib/fx'
+import { newId } from '../../lib/id'
 import { searchSecurities, type Security } from '../../lib/securities'
 import { fetchStockQuote, searchStocksRemote } from '../../lib/prices'
 import { ChevronDownIcon, PencilIcon, LockClosedIcon } from '../icons'
@@ -29,8 +30,6 @@ const THAI_MONTHS_SHORT = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ]
-
-const newId = () => crypto?.randomUUID?.() ?? `id-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
 function formatToMaxDecimals(val: number | string, maxDecimals: number): string {
   const num = Number(val)

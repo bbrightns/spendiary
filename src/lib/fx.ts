@@ -3,11 +3,12 @@
  * time this device was online), never a guessed constant. When no real rate has ever been
  * fetched it is null, and callers must say so rather than invent one.
  */
+import { STORAGE_KEYS } from './storageKeys'
 
-const RATE_KEY = 'spendiary.cached_usd_thb'
-const RATE_AT_KEY = 'spendiary.cached_usd_thb_at'
+const RATE_KEY = STORAGE_KEYS.usdThb
+const RATE_AT_KEY = STORAGE_KEYS.usdThbAt
 // Older builds only stored when any price last refreshed; good enough as the rate's date
-const LEGACY_PRICES_AT_KEY = 'spendiary.cached_prices_last_updated'
+const LEGACY_PRICES_AT_KEY = STORAGE_KEYS.pricesUpdatedAt
 
 export interface UsdThbRate {
   rate: number

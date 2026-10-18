@@ -1,5 +1,6 @@
 import type { CashAccount, SpendTransaction, SpendiaryData } from '../../lib/types'
 import { localDateStr } from '../../lib/format'
+import { roundMoney } from '../../lib/money'
 
 /** Money put into an investment (a DCA or Buy more row), not a savings DCA into your own account. */
 export const isInvested = (t: Pick<SpendTransaction, 'source' | 'toAccountId'>) => (t.source === 'dca' || t.source === 'buy') && !t.toAccountId
@@ -29,7 +30,7 @@ export function investTransactions(data: SpendiaryData, usdThb: number | null): 
     out.push({
       id: `div-${r.id}`,
       type: 'income',
-      amount: Math.round(amount * 100) / 100,
+      amount: roundMoney(amount),
       categoryId: 'dividend',
       accountId: r.cashAccountId,
       date: r.paymentDate,
@@ -57,7 +58,7 @@ export function investTransactions(data: SpendiaryData, usdThb: number | null): 
         out.push({
           id: `dca-${log.id}`,
           type: 'transfer',
-          amount: Math.round(amount * 100) / 100,
+          amount: roundMoney(amount),
           accountId: log.paidFromAccountId,
           toAccountId: into,
           date: log.dcaDate ?? localDateStr(at),
@@ -73,7 +74,7 @@ export function investTransactions(data: SpendiaryData, usdThb: number | null): 
       out.push({
         id: `dca-${log.id}`,
         type: 'transfer',
-        amount: Math.round(amount * 100) / 100,
+        amount: roundMoney(amount),
         accountId: log.paidFromAccountId,
         date: log.dcaDate ?? localDateStr(at),
         time,
@@ -94,7 +95,7 @@ export function investTransactions(data: SpendiaryData, usdThb: number | null): 
     out.push({
       id: `buy-${log.id}`,
       type: 'transfer',
-      amount: Math.round(amount * 100) / 100,
+      amount: roundMoney(amount),
       accountId: log.cashAccountId,
       date: localDateStr(at),
       time,

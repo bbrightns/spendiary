@@ -1,5 +1,6 @@
 import type { DcaPlan, SpendiaryData } from '../lib/types'
 import { importFixedCosts } from '../modules/spend/migrate'
+import { newId } from '../lib/id'
 
 export const emptyData: SpendiaryData = {
   cashAccounts: [],
@@ -11,10 +12,7 @@ export const emptyData: SpendiaryData = {
   liabilities: [],
 }
 
-export function newId(): string {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
-  return `id-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-}
+export { newId }
 
 type LegacyPlan = DcaPlan & { monthlyTarget?: number; contributed?: number }
 

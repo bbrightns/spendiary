@@ -1,5 +1,6 @@
 import type { Liability, SpendCard } from '../../lib/types'
 import { localDateStr } from '../../lib/format'
+import { roundMoney } from '../../lib/money'
 
 /**
  * Whether a payment counts as spending by default: buying on installment (a 0% phone plan) is,
@@ -19,7 +20,7 @@ export function isLoanDone(l: Liability): boolean {
 /** What one payment is: the set monthly amount, else the balance spread over the installments left. */
 export function loanPaymentAmount(l: Liability): number {
   // The last installment clears whatever rounding left behind (฿10,000 / 3 → 3,333.33 ×2 + 3,333.34)
-  if (l.totalInstallments && (l.paidInstallments ?? 0) + 1 >= l.totalInstallments) return Math.round(l.balance * 100) / 100
+  if (l.totalInstallments && (l.paidInstallments ?? 0) + 1 >= l.totalInstallments) return roundMoney(l.balance)
   if ((l.monthlyPayment ?? 0) > 0) return l.monthlyPayment!
   const remaining = Math.max(1, (l.totalInstallments ?? 1) - (l.paidInstallments ?? 0))
   return Math.round(l.balance / remaining)

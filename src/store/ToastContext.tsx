@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import { newId } from '../lib/id'
 
 export type ToastType = 'success' | 'info' | 'error' | 'warn'
 
@@ -76,7 +77,7 @@ const DEFAULT_TITLES: Record<Exclude<ResultStatus, 'loading'>, string> = {
   warn: 'Heads up',
 }
 
-const newId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+const newToastId = (prefix: string) => `${prefix}-${newId()}`
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([])
@@ -87,7 +88,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const showResult = useCallback((next: Omit<ResultState, 'id'>) => {
-    setResult({ ...next, id: newId('result') })
+    setResult({ ...next, id: newToastId('result') })
   }, [])
 
   const hideResult = useCallback((onlyIfLoading = false) => {
@@ -99,7 +100,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       if (type === 'error' || options?.celebrate || options?.popup) {
         const status: ResultStatus = type
         setResult({
-          id: newId('result'),
+          id: newToastId('result'),
           status,
           title: options?.title ?? DEFAULT_TITLES[status],
           message,
@@ -110,7 +111,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      const id = newId('toast')
+      const id = newToastId('toast')
       setToasts((prev) => [...prev, { id, message, type, action }])
       setTimeout(() => dismissToast(id), action ? 6000 : 3500)
     },

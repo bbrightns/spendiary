@@ -1,5 +1,6 @@
 import type { CashAccount } from '../lib/types'
 import { newId } from './migrate'
+import { roundMoney } from '../lib/money'
 
 /**
  * Undo one logged change to the cash accounts as a delta on top of the current list:
@@ -20,7 +21,7 @@ export function revertCashAccountsChange(current: CashAccount[], before: CashAcc
           ;(restored as unknown as Record<string, unknown>)[key] = b[key]
         }
       }
-      restored.balance = Math.round((c.balance + (b.balance - a.balance)) * 100) / 100
+      restored.balance = roundMoney(c.balance + (b.balance - a.balance))
       return restored
     })
   const deleted = before.filter((b) => !byId(after, b.id) && !byId(current, b.id))
@@ -37,7 +38,7 @@ export interface DcaPayment {
 /** The cash accounts after a DCA buy's payment leaves the account it was paid from. */
 export function payFromAccount(accounts: CashAccount[], payment?: DcaPayment): CashAccount[] {
   if (!payment) return accounts
-  return accounts.map((a) => (a.id === payment.accountId ? { ...a, balance: Math.round((a.balance - payment.amount) * 100) / 100 } : a))
+  return accounts.map((a) => (a.id === payment.accountId ? { ...a, balance: roundMoney(a.balance - payment.amount) } : a))
 }
 
 /** Insert (when no id) or replace (when id matches) an item in a list. */

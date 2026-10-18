@@ -50,6 +50,7 @@ import { useSpendSide } from '../../modules/spend/side'
 import { TONES } from '../../modules/spend/tones'
 import { useSpend } from '../../modules/spend/useSpend'
 import { IS_MAC, isSearchShortcut } from '../../lib/shortcut'
+import { STORAGE_KEYS } from '../../lib/storageKeys'
 
 export function openCommandPalette() {
   window.dispatchEvent(new CustomEvent('spendiary:open-command-palette'))
@@ -156,8 +157,8 @@ interface TxnSummary {
   range?: DateRange
 }
 
-const USAGE_KEY = 'spendiary.palette_usage'
-const RECENT_KEY = 'spendiary.palette_recent'
+const USAGE_KEY = STORAGE_KEYS.paletteUsage
+const RECENT_KEY = STORAGE_KEYS.paletteRecent
 const MAX_RECENT = 2
 
 function readJson<T>(key: string, fallback: T): T {

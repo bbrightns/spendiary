@@ -32,6 +32,7 @@ import {
   LockClosedIcon,
 } from '../components/icons'
 import { TransactionDateField } from '../components/forms/TransactionDateField'
+import { STORAGE_KEYS } from '../lib/storageKeys'
 
 
 interface ActionMeta {
@@ -470,7 +471,7 @@ export function HoldingLogs() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [viewMode, setViewMode] = useState<'table' | 'timeline'>(() => {
-    const saved = localStorage.getItem('spendiary_logs_view_mode')
+    const saved = localStorage.getItem(STORAGE_KEYS.logsViewMode)
     if (saved === 'timeline' || saved === 'table') return saved
     return 'timeline'
   })
@@ -515,7 +516,7 @@ export function HoldingLogs() {
 
   const handleViewModeChange = (mode: 'table' | 'timeline') => {
     setViewMode(mode)
-    localStorage.setItem('spendiary_logs_view_mode', mode)
+    localStorage.setItem(STORAGE_KEYS.logsViewMode, mode)
     setSelectedLogIds(new Set())
   }
 

@@ -1,6 +1,7 @@
 import type { AssetClass, CashAccount, CashAccountCategory, DcaPlan, DebtCategory, DividendRecord, Holding, InvestAssetClass, Liability, SpendiaryData, Transfer } from './types'
 import { daysUntil, localDateStr, localDay } from './format'
 import { rateOrZero } from './fx'
+import { newId } from './id'
 
 export interface HoldingMetrics extends Holding {
   marketValue: number
@@ -740,7 +741,7 @@ export function getCashCategory(account: { category?: string; name?: string }): 
 /** A blank THB everyday account for the add form (Cash & Liquidity and Spend's wallets). */
 export function newCashAccount(): CashAccount {
   return {
-    id: `cash-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    id: newId(),
     name: '',
     balance: 0,
     currency: 'THB',
@@ -1217,7 +1218,6 @@ export function findMatchingHolding(
 }
 
 export function upsert<T extends { id: string }>(list: T[], item: Omit<T, 'id'> & { id?: string }): T[] {
-  const newId = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
   const id = item.id ?? newId()
   const exists = list.some((x) => x.id === id)
   const fullItem = { ...item, id } as T

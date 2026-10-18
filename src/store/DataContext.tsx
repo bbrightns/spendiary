@@ -21,6 +21,8 @@ import * as holdingLogActions from './actions/holdingLogs'
 import * as dcaActions from './actions/dca'
 import * as dividendActions from './actions/dividends'
 import * as planningActions from './actions/planning'
+import { STORAGE_KEYS } from '../lib/storageKeys'
+import { roundMoney } from '../lib/money'
 
 /** Result returned by importData — UI can react to success/error */
 export type ImportResult =
@@ -231,7 +233,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const loginAsTestMode = () => {
     setAuthError(null)
-    localStorage.removeItem('spendiary.test_data')
+    localStorage.removeItem(STORAGE_KEYS.testData)
     const testUser: User = {
       id: 'test-user-local',
       app_metadata: { provider: 'test' },
@@ -251,8 +253,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (user?.id !== 'guest-user-local' && user?.id !== 'test-user-local') {
       await supabase.auth.signOut()
     }
-    localStorage.removeItem('spendiary.last_user_id')
-    localStorage.removeItem('spendiary.last_synced_time')
+    localStorage.removeItem(STORAGE_KEYS.lastUserId)
+    localStorage.removeItem(STORAGE_KEYS.lastSyncedTime)
     setUser(null)
     setDataState(emptyData)
     updateLastSynced(null)
@@ -264,9 +266,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     if (currentUser) {
       if (currentUser.id === 'guest-user-local') {
-        localStorage.removeItem('spendiary.guest_data')
+        localStorage.removeItem(STORAGE_KEYS.guestData)
       } else if (currentUser.id === 'test-user-local') {
-        localStorage.removeItem('spendiary.test_data')
+        localStorage.removeItem(STORAGE_KEYS.testData)
       } else {
         // Cloud Supabase user: delete row from user_data table
         try {
@@ -298,8 +300,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    localStorage.removeItem('spendiary.last_user_id')
-    localStorage.removeItem('spendiary.last_synced_time')
+    localStorage.removeItem(STORAGE_KEYS.lastUserId)
+    localStorage.removeItem(STORAGE_KEYS.lastSyncedTime)
 
     lastSynced.current = ''
     setDataState(emptyData)
@@ -571,7 +573,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const currentUsdInvested = holding.totalUsdInvested ?? currentUnits * (holding.avgCostUsd ?? (fxRate > 0 ? (holding.avgCost ?? 0) / fxRate : 0))
 
             const newTotalUnits = currentUnits + unitsBought
-            const newTotalThbInvested = parseFloat((currentThbInvested + amountSpentThb).toFixed(2))
+            const newTotalThbInvested = roundMoney(currentThbInvested + amountSpentThb)
             const newTotalUsdInvested = currentUsdInvested + usdSpentThisTx
 
             const newAvgCostUsd = newTotalUnits > 0 ? newTotalUsdInvested / newTotalUnits : (holding.avgCostUsd ?? 0)
@@ -599,7 +601,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const currentThbInvested = holding.totalThbInvested ?? (currentUnits * (holding.avgCostThb ?? holding.avgCost ?? 0))
 
             const newTotalUnits = currentUnits + unitsBought
-            const newTotalThbInvested = parseFloat((currentThbInvested + amountSpentThb).toFixed(2))
+            const newTotalThbInvested = roundMoney(currentThbInvested + amountSpentThb)
             const newAvgCostThb = newTotalUnits > 0 ? newTotalThbInvested / newTotalUnits : (holding.avgCostThb ?? holding.avgCost ?? 0)
 
             newUnits = newTotalUnits
@@ -619,7 +621,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           } else if (holding.assetClass === 'crypto' && btcLocationUpdate) {
             finalBtcLocations = upsert(holding.btcLocations ?? [], btcLocationUpdate)
             const totalSats = finalBtcLocations.reduce((s: number, l: BtcLocation) => s + l.satoshi, 0)
-            const totalThb = parseFloat(finalBtcLocations.reduce((s: number, l: BtcLocation) => s + l.thbSpent, 0).toFixed(2))
+            const totalThb = roundMoney(finalBtcLocations.reduce((s: number, l: BtcLocation) => s + l.thbSpent, 0))
             newUnits = totalSats / 100_000_000
             newAvgCost = newUnits > 0 ? totalThb / newUnits : holding.avgCost
             if (!isFinite(newAvgCost) || isNaN(newAvgCost)) newAvgCost = holding.avgCost
@@ -649,7 +651,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           } else if (holding.assetClass === 'gold' && goldLocationUpdate) {
             finalGoldLocations = upsert(holding.goldLocations ?? [], goldLocationUpdate)
             const totalGrams = finalGoldLocations.reduce((s: number, l: GoldLocation) => s + l.grams, 0)
-            const totalThb = parseFloat(finalGoldLocations.reduce((s: number, l: GoldLocation) => s + l.thbSpent, 0).toFixed(2))
+            const totalThb = roundMoney(finalGoldLocations.reduce((s: number, l: GoldLocation) => s + l.thbSpent, 0))
             newUnits = totalGrams
             newAvgCost = newUnits > 0 ? totalThb / newUnits : holding.avgCost
             if (!isFinite(newAvgCost) || isNaN(newAvgCost)) newAvgCost = holding.avgCost
@@ -677,7 +679,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const currentThbInvested = holding.totalThbInvested ?? (currentUnits * (holding.avgCostThb ?? holding.avgCost ?? 0))
             const spentThb = plan.monthlyAmount
             const newTotalUnits = overrideUnits !== undefined ? overrideUnits : (currentUnits + calculatedUnits)
-            const newTotalThb = parseFloat((currentThbInvested + spentThb).toFixed(2))
+            const newTotalThb = roundMoney(currentThbInvested + spentThb)
             const newAvgCostThb = newTotalUnits > 0 ? newTotalThb / newTotalUnits : holding.avgCost
             updatedFields = {
               totalThbInvested: newTotalThb,
@@ -692,7 +694,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const spentThb = calculatedUnits * pricePerUnit
             const newTotalUnits = currentUnits + calculatedUnits
             const currentThbInvested = holding.totalThbInvested ?? (currentUnits * (holding.avgCostThb ?? holding.avgCost ?? 0))
-            const newTotalThb = parseFloat((currentThbInvested + spentThb).toFixed(2))
+            const newTotalThb = roundMoney(currentThbInvested + spentThb)
             const newAvgCostThb = newTotalUnits > 0 ? newTotalThb / newTotalUnits : holding.avgCost
             newUnits = newTotalUnits
             newAvgCost = newAvgCostThb
@@ -833,10 +835,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
       exportData: () => {
         const preferences: SpendiaryBackup['preferences'] = {}
         try {
-          const theme = localStorage.getItem('spendiary.theme')
-          const pnlDisplay = localStorage.getItem('spendiary_pnl_display')
-          const logsViewMode = localStorage.getItem('spendiary_logs_view_mode')
-          const goldSellUnit = localStorage.getItem('spendiary_gold_sell_unit')
+          const theme = localStorage.getItem(STORAGE_KEYS.theme)
+          const pnlDisplay = localStorage.getItem(STORAGE_KEYS.pnlDisplay)
+          const logsViewMode = localStorage.getItem(STORAGE_KEYS.logsViewMode)
+          const goldSellUnit = localStorage.getItem(STORAGE_KEYS.goldSellUnit)
           if (theme === 'light' || theme === 'dark' || theme === 'system') preferences.theme = theme
           if (pnlDisplay === 'pct' || pnlDisplay === 'thb') preferences.pnlDisplay = pnlDisplay
           if (logsViewMode === 'table' || logsViewMode === 'timeline') preferences.logsViewMode = logsViewMode
@@ -901,10 +903,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (backup?.schemaVersion === 1 && backup.preferences) {
           try {
             const { theme, pnlDisplay, logsViewMode, goldSellUnit } = backup.preferences
-            if (theme) localStorage.setItem('spendiary.theme', theme)
-            if (pnlDisplay) localStorage.setItem('spendiary_pnl_display', pnlDisplay)
-            if (logsViewMode) localStorage.setItem('spendiary_logs_view_mode', logsViewMode)
-            if (goldSellUnit) localStorage.setItem('spendiary_gold_sell_unit', goldSellUnit)
+            if (theme) localStorage.setItem(STORAGE_KEYS.theme, theme)
+            if (pnlDisplay) localStorage.setItem(STORAGE_KEYS.pnlDisplay, pnlDisplay)
+            if (logsViewMode) localStorage.setItem(STORAGE_KEYS.logsViewMode, logsViewMode)
+            if (goldSellUnit) localStorage.setItem(STORAGE_KEYS.goldSellUnit, goldSellUnit)
           } catch {
             // Preference restoration is best effort and must not invalidate the import.
           }
@@ -978,11 +980,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
               avgCostUsd = rawCost
               avgCostThb = parseFloat((rawCost * fx).toFixed(4))
               totalUsdInvested = suppliedUsdInvested ?? parseFloat((units * rawCost).toFixed(4))
-              totalThbInvested = suppliedThbInvested ?? parseFloat((units * avgCostThb).toFixed(2))
-              price = rawPrice > 0 ? parseFloat((rawPrice * fx).toFixed(2)) : avgCostThb
+              totalThbInvested = suppliedThbInvested ?? roundMoney(units * avgCostThb)
+              price = rawPrice > 0 ? roundMoney(rawPrice * fx) : avgCostThb
             } else {
               avgCostThb = rawCost
-              totalThbInvested = suppliedThbInvested ?? parseFloat((units * avgCostThb).toFixed(2))
+              totalThbInvested = suppliedThbInvested ?? roundMoney(units * avgCostThb)
               if (assetClass === 'stock') {
                 avgCostUsd = fx > 0 ? parseFloat((rawCost / fx).toFixed(4)) : rawCost
                 totalUsdInvested = suppliedUsdInvested ?? (fx > 0 ? parseFloat((totalThbInvested / fx).toFixed(4)) : 0)
