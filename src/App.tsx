@@ -46,9 +46,15 @@ const SYNC_PROBLEM_COPY = {
       "Your data was saved from another tab or device after this one opened. We didn't save here, so nothing was overwritten. Load the latest version, then redo your last change.",
     action: 'Load latest',
   },
+  slow: {
+    title: 'Still loading your data',
+    description:
+      "This is taking longer than usual. Your saved data is safe: nothing is shown or saved until it arrives. Check your connection, or try again.",
+    action: 'Try again',
+  },
 }
 
-/** Shown when saving is paused (failed load, or newer data saved elsewhere), so the cloud data stays untouched. */
+/** Shown when saving is paused (failed or stalled load, or newer data saved elsewhere), so the cloud data stays untouched. */
 function SyncProblemScreen({ kind, onRetry }: { kind: keyof typeof SYNC_PROBLEM_COPY; onRetry: () => void }) {
   const copy = SYNC_PROBLEM_COPY[kind]
   return (
@@ -85,16 +91,20 @@ function SpendSettingsRedirect() {
 function AppContent() {
   const { user, loginWithGoogle, loginAsTestMode, authError, dataReady, loadError, syncConflict, retryLoad } = useData()
 
-  // Safety net: if the first load stalls (silent network), show the app after a while instead of a skeleton forever
+  // Safety net: if the load stalls (silent network), offer a retry after a while instead of a skeleton forever.
+  // The pages stay hidden: they'd show empty data, and anything added there would be replaced when the load lands.
   const [loadTimedOut, setLoadTimedOut] = useState(false)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   useEffect(() => {
-    if (dataReady || !user) {
-      setLoadTimedOut(false)
-      return
-    }
+    setLoadTimedOut(false)
+    if (dataReady || !user) return
     const t = window.setTimeout(() => setLoadTimedOut(true), 8000)
     return () => window.clearTimeout(t)
-  }, [dataReady, user])
+  }, [dataReady, user, loadAttempt])
+  const retrySlowLoad = () => {
+    setLoadAttempt((n) => n + 1)
+    retryLoad()
+  }
 
   // 💡 ถ้ายังไม่ได้ล็อกอิน ให้แสดงหน้าจอ Sign In ธีม Fastwork.com
   if (!user) {
@@ -300,8 +310,8 @@ function AppContent() {
       {/* Hold back the pages until the first load finishes, so users never see fake empty states */}
       {loadError || syncConflict ? (
         <SyncProblemScreen kind={loadError ? 'loadError' : 'conflict'} onRetry={retryLoad} />
-      ) : !dataReady && !loadTimedOut ? (
-        <PageLoadingFallback />
+      ) : !dataReady ? (
+        loadTimedOut ? <SyncProblemScreen kind="slow" onRetry={retrySlowLoad} /> : <PageLoadingFallback />
       ) : (
       <Suspense fallback={<PageLoadingFallback />}>
         <Routes>

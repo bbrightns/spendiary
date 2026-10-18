@@ -47,8 +47,12 @@ export function useCloudSync(
   const remoteStamp = useRef<{ exists: boolean; updatedAt: string | null }>({ exists: false, updatedAt: null })
   // Cloud saves run one at a time, so each one checks against the stamp the previous one left
   const saveQueue = useRef<Promise<unknown>>(Promise.resolve())
+  // Counts loads; a load that a newer one (a retry, another sign-in) has replaced must not touch the state
+  const loadSeq = useRef(0)
 
   const fetchRemoteData = async (userId: string) => {
+    const seq = ++loadSeq.current
+    const isStale = () => seq !== loadSeq.current
     if (userId === 'guest-user-local') {
       const local = localStorage.getItem('spendiary.guest_data')
       if (local) {
@@ -129,6 +133,7 @@ export function useCloudSync(
         }
       }
 
+      if (isStale()) return
       const result = resolveRemoteLoad({ error, row }, rest)
 
       if (result.kind === 'failed') {
@@ -160,11 +165,12 @@ export function useCloudSync(
       // Only a confirmed load turns saving on
       syncReady.current = true
     } catch (err) {
+      if (isStale()) return
       console.error('Error fetching remote data:', err)
       setSyncStatus('error')
       setLoadError(true)
     } finally {
-      setDataReady(true)
+      if (!isStale()) setDataReady(true)
     }
   }
 
@@ -207,6 +213,7 @@ export function useCloudSync(
       setDataReady(false)
       fetchRemoteData(user.id)
     } else {
+      loadSeq.current++ // a load still in flight belongs to the user who just signed out
       syncReady.current = false
       setDataState(emptyData)
       updateLastSynced(null)
