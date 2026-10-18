@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, type MouseEvent as ReactMouseEvent } from 'react'
-import { createPortal } from 'react-dom'
 import { Link, useSearchParams } from 'react-router-dom'
 
 import { useData } from '../store/DataContext'
@@ -27,10 +26,11 @@ import { Button } from '../components/ui/Button'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import { PlusIcon, MinusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon, DownloadIcon, DotsHorizontalIcon, DividendIcon, ChevronDownIcon, LockClosedIcon, LockOpenIcon } from '../components/icons'
+import { PlusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon, DownloadIcon, DotsHorizontalIcon, ChevronDownIcon, LockClosedIcon } from '../components/icons'
 import {
   ASSET_META,
   GRAMS_PER_BAHT_GOLD,
+  SATS_PER_BTC,
   allocations,
   assetGroupAllocations,
   hasRealPrice,
@@ -41,9 +41,11 @@ import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
 import { InteractivePortfolioChart } from '../components/charts/InteractiveTrendChart'
 import type { AssetClass, BtcLocation, Holding } from '../lib/types'
 import { localDateStr, money, thb, thbCompact, pct } from '../lib/format'
-import { isValidRate, rateOrZero } from '../lib/fx'
+import { isValidRate } from '../lib/fx'
 import { STORAGE_KEYS } from '../lib/storageKeys'
 import { buildCsv, downloadCsv } from '../lib/csv'
+import { HoldingActionMenu, PocketActionMenu } from './portfolio/HoldingMenus'
+import { PORTFOLIO_CSV_HEADER, isPriceStale, portfolioCsvRows, unitLabel } from './portfolio/portfolioCsv'
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -53,8 +55,6 @@ const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'gold', label: 'Gold' },
   { key: 'real_estate', label: 'Real Estate' },
 ]
-
-const SATS_PER_BTC = 100_000_000
 
 export function Portfolio() {
   const {
@@ -70,8 +70,6 @@ export function Portfolio() {
   const {
     data,
     removeHolding,
-    toggleHoldingLock,
-    toggleLocationLock,
     upsertBtcLocation,
     removeBtcLocation,
     upsertGoldLocation,
@@ -456,98 +454,10 @@ export function Portfolio() {
       return
     }
 
-    const headers = [
-      'Asset Class',
-      'Tag / Group',
-      'Ticker',
-      'Holding Name',
-      'Quantity',
-      'Unit',
-      'Avg Cost (THB)',
-      'Current Price (THB)',
-      'Total Cost (THB)',
-      'Market Value (THB)',
-      'Unrealized PnL (THB)',
-      'Unrealized PnL (%)',
-      'Portfolio Weight (%)',
-      'Foreign / Native Currency Details',
-      'Storage Locations',
-      'Last Updated',
-    ]
-
-
-    // Real rate or 0: USD figures that need converting are left out rather than worked out at a made-up rate
-    const rate = rateOrZero(usdThb)
-
-    const csvRows = rows.map((h) => {
-      const isStock = h.assetClass === 'stock'
-      const isCrypto = h.assetClass === 'crypto'
-      const isGold = h.assetClass === 'gold'
-      const isFund = h.assetClass === 'fund'
-      const isRealEstate = h.assetClass === 'real_estate'
-
-      const assetClassLabel = ASSET_META[h.assetClass]?.label ?? h.assetClass
-      const uLabel = unitLabel(h.assetClass)
-      const avgCostThb = h.units > 0 ? h.costBasis / h.units : h.avgCost
-
-      let nativeDetails = ''
-      let locationsStr = ''
-
-      if (isStock) {
-        const avgUsd = h.avgCostUsd ?? (rate > 0 ? h.avgCost / rate : 0)
-        const priceUsd = rate > 0 ? h.price / rate : 0
-        const totalCostUsd = h.totalUsdInvested ?? (avgUsd * h.units)
-        const marketValUsd = rate > 0 ? h.marketValue / rate : 0
-        const pnlUsd = marketValUsd - totalCostUsd
-        nativeDetails = rate > 0
-          ? `Avg: $${avgUsd.toFixed(2)} | Price: $${priceUsd.toFixed(2)} | Cost: $${totalCostUsd.toFixed(2)} | Value: $${marketValUsd.toFixed(2)} | PnL: ${pnlUsd >= 0 ? '+' : ''}$${pnlUsd.toFixed(2)}`
-          : `Avg: ${h.avgCostUsd ? `$${h.avgCostUsd.toFixed(2)}` : 'n/a'} | USD price and value: n/a (no USD/THB rate loaded)`
-      } else if (isCrypto) {
-        const sats = Math.round(h.units * SATS_PER_BTC)
-        const avgCostPerBtc = h.units > 0 ? h.costBasis / h.units : h.avgCost
-        const avgCostPerBtcUsd = rate > 0 ? avgCostPerBtc / rate : 0
-        const priceUsd = rate > 0 ? h.price / rate : 0
-        nativeDetails = rate > 0
-          ? `${sats.toLocaleString()} sats | Avg: $${Math.round(avgCostPerBtcUsd).toLocaleString()}/BTC | Price: $${Math.round(priceUsd).toLocaleString()}/BTC`
-          : `${sats.toLocaleString()} sats | Avg: ฿${Math.round(avgCostPerBtc).toLocaleString()}/BTC | Price: ฿${Math.round(h.price).toLocaleString()}/BTC`
-        locationsStr = (h.btcLocations ?? []).map((loc) => `${loc.name}: ${loc.satoshi.toLocaleString()} sats (฿${loc.thbSpent.toLocaleString()})`).join('; ')
-      } else if (isGold) {
-        const bahtGold = h.units / GRAMS_PER_BAHT_GOLD
-        const avgCostPerBaht = (h.units > 0 ? h.costBasis / h.units : h.avgCost) * GRAMS_PER_BAHT_GOLD
-        const pricePerBaht = h.price * GRAMS_PER_BAHT_GOLD
-        nativeDetails = `${bahtGold.toFixed(4)} gold baht | Avg: ฿${Math.round(avgCostPerBaht).toLocaleString()}/gold baht | Price: ฿${Math.round(pricePerBaht).toLocaleString()}/gold baht`
-        locationsStr = (h.goldLocations ?? []).map((loc) => `${loc.name}: ${(loc.grams / GRAMS_PER_BAHT_GOLD).toFixed(4)} gold baht (${loc.grams}g, ฿${loc.thbSpent.toLocaleString()})`).join('; ')
-      } else if (isFund) {
-        nativeDetails = `Avg NAV: ฿${h.avgCost.toFixed(4)} | Current NAV: ฿${h.price.toFixed(4)}`
-      } else if (isRealEstate) {
-        nativeDetails = `Real Estate | Valuation: ฿${h.price.toLocaleString()} | Cost: ฿${h.avgCost.toLocaleString()}`
-      }
-
-      const weightPct = summary.value > 0 ? (h.marketValue / summary.value) * 100 : 0
-      const qty = isCrypto ? Number(h.units.toFixed(8)) : Number(h.units.toFixed(4))
-
-      return [
-        assetClassLabel,
-        h.tag || '',
-        h.ticker,
-        h.name,
-        qty,
-        uLabel,
-        avgCostThb.toFixed(2),
-        h.price.toFixed(2),
-        h.costBasis.toFixed(2),
-        h.marketValue.toFixed(2),
-        // No real price: there is no P/L to write, only a value counted at cost
-        h.priced ? h.pnl.toFixed(2) : '',
-        h.priced ? `${h.pnlPct >= 0 ? '+' : ''}${h.pnlPct.toFixed(2)}%` : 'No price yet',
-        `${weightPct.toFixed(2)}%`,
-        nativeDetails,
-        locationsStr,
-        h.updatedAt || '',
-      ]
-    })
-
-    downloadCsv(buildCsv(headers, csvRows), `spendiary-portfolio-${localDateStr()}.csv`)
+    downloadCsv(
+      buildCsv(PORTFOLIO_CSV_HEADER, portfolioCsvRows(rows, summary.value, usdThb)),
+      `spendiary-portfolio-${localDateStr()}.csv`,
+    )
 
     showToast(`Exported ${rows.length} holding${rows.length === 1 ? '' : 's'} to CSV`, 'success')
   }
@@ -1355,388 +1265,40 @@ export function Portfolio() {
         </Card>
       </div>
 
-      {/* ── Action Dropdown Menu Portal ── */}
-      {activeMenuHolding && menuCoords && typeof document !== 'undefined' && createPortal(
-        <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => {
-              setActiveMenuHoldingId(null)
-              setActiveMenuHolding(null)
-            }}
-            aria-hidden="true"
-          />
-          <div
-            style={{
-              position: 'fixed',
-              top: menuCoords.top !== undefined ? `${menuCoords.top}px` : undefined,
-              bottom: menuCoords.bottom !== undefined ? `${menuCoords.bottom}px` : undefined,
-              right: `${menuCoords.right}px`,
-            }}
-            className={`z-50 min-w-[170px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 ${
-              menuDirection === 'up' ? 'origin-bottom-right' : 'origin-top-right'
-            }`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Safe-Haven Lock / Unlock Toggle */}
-            <button
-              type="button"
-              onClick={() => {
-                const target = activeMenuHolding
-                setActiveMenuHoldingId(null)
-                setActiveMenuHolding(null)
-                toggleHoldingLock(target.id)
-                showToast(
-                  target.isLocked
-                    ? `"${target.name}" unlocked`
-                    : `"${target.name}" locked (protected from selling or deleting)`,
-                  'info'
-                )
-              }}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink hover:bg-surface-muted transition-colors cursor-pointer text-left"
-            >
-              {activeMenuHolding.isLocked ? (
-                <>
-                  <LockOpenIcon className="h-4 w-4 text-amber-500 shrink-0" strokeWidth={2} />
-                  <span>Unlock</span>
-                </>
-              ) : (
-                <>
-                  <LockClosedIcon className="h-4 w-4 text-amber-500 shrink-0" strokeWidth={2} />
-                  <span>Lock (protect from selling)</span>
-                </>
-              )}
-            </button>
-            <div className="my-1 border-t border-line/60" />
-
-            {activeMenuHolding.isLocked ? (
-              <div
-                title="This asset is locked. Unlock it first to make changes."
-                className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
-              >
-                <div className="flex items-center gap-2.5">
-                  <PlusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
-                  <span>Buy more</span>
-                </div>
-                <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                  <LockClosedIcon className="h-3 w-3" /> Locked
-                </span>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  const target = activeMenuHolding
-                  setActiveMenuHoldingId(null)
-                  setActiveMenuHolding(null)
-                  openBuy(target)
-                }}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
-              >
-                <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
-                <span>Buy more</span>
-              </button>
-            )}
-
-            {activeMenuHolding.isLocked ? (
-              <div
-                title="This asset is locked. Unlock it first to sell."
-                className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
-              >
-                <div className="flex items-center gap-2.5">
-                  <MinusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
-                  <span>Sell</span>
-                </div>
-                <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                  <LockClosedIcon className="h-3 w-3" /> Locked
-                </span>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  const target = activeMenuHolding
-                  setActiveMenuHoldingId(null)
-                  setActiveMenuHolding(null)
-                  openSell(target)
-                }}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
-              >
-                <MinusIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.4} />
-                <span>Sell</span>
-              </button>
-            )}
-
-            {(activeMenuHolding.assetClass === 'fund' || activeMenuHolding.assetClass === 'stock') && activeMenuHolding.paysDividend && (
-              activeMenuHolding.isLocked ? (
-                <div
-                  title="This asset is locked. Unlock it first to record a dividend."
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <DividendIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.2} />
-                    <span>Record dividend</span>
-                  </div>
-                  <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <LockClosedIcon className="h-3 w-3" /> Locked
-                  </span>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const target = activeMenuHolding
-                    setActiveMenuHoldingId(null)
-                    setActiveMenuHolding(null)
-                    openDividend(target)
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer text-left"
-                >
-                  <DividendIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={2.2} />
-                  <span>Record dividend</span>
-                </button>
-              )
-            )}
-            <div className="my-1 border-t border-line/60" />
-            {activeMenuHolding.isLocked ? (
-              <div
-                title="This asset is locked. Unlock it first to edit."
-                className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
-              >
-                <div className="flex items-center gap-2.5">
-                  <PencilIcon className="h-3.5 w-3.5 text-ink-muted/40 shrink-0" />
-                  <span>Edit</span>
-                </div>
-                <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                  <LockClosedIcon className="h-3 w-3" /> Locked
-                </span>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  const target = activeMenuHolding
-                  setActiveMenuHoldingId(null)
-                  setActiveMenuHolding(null)
-                  openEdit(target)
-                }}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer text-left"
-              >
-                <PencilIcon className="h-3.5 w-3.5 shrink-0" />
-                <span>Edit</span>
-              </button>
-            )}
-          </div>
-        </>,
-        document.body
+      {/* ── Action Dropdown Menu ── */}
+      {activeMenuHolding && menuCoords && (
+        <HoldingActionMenu
+          holding={activeMenuHolding}
+          coords={menuCoords}
+          direction={menuDirection}
+          onClose={() => {
+            setActiveMenuHoldingId(null)
+            setActiveMenuHolding(null)
+          }}
+          onBuy={openBuy}
+          onSell={openSell}
+          onDividend={openDividend}
+          onEdit={openEdit}
+        />
       )}
 
-      {/* ── Per-pocket (storage location) Action Menu Portal ── */}
-      {pocketMenu && pocketMenuCoords && typeof document !== 'undefined' && (() => {
-        const locs = pocketMenu.isBtc
-          ? (pocketMenu.holding.btcLocations ?? [])
-          : (pocketMenu.holding.goldLocations ?? [])
-        const loc = locs.find((l) => l.id === pocketMenu.locId)
-        const isLocLocked = !!loc?.isLocked
-
-        return createPortal(
-          <>
-            <div
-              className="fixed inset-0 z-40"
-              onClick={closePocketMenu}
-              aria-hidden="true"
-            />
-            <div
-              style={{
-                position: 'fixed',
-                top: pocketMenuCoords.top !== undefined ? `${pocketMenuCoords.top}px` : undefined,
-                bottom: pocketMenuCoords.bottom !== undefined ? `${pocketMenuCoords.bottom}px` : undefined,
-                right: `${pocketMenuCoords.right}px`,
-              }}
-              className={`z-50 min-w-[190px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 ${
-                pocketMenuDirection === 'up' ? 'origin-bottom-right' : 'origin-top-right'
-              }`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Cold-Storage Lock / Unlock Toggle */}
-              <button
-                type="button"
-                onClick={() => {
-                  const t = pocketMenu
-                  closePocketMenu()
-                  toggleLocationLock(t.holding.id, t.locId, t.isBtc)
-                  showToast(
-                    isLocLocked
-                      ? `"${t.locName}" unlocked`
-                      : `"${t.locName}" locked (protected from selling or deleting)`,
-                    'info'
-                  )
-                }}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink hover:bg-surface-muted transition-colors cursor-pointer text-left"
-              >
-                {isLocLocked ? (
-                  <>
-                    <LockOpenIcon className="h-4 w-4 text-amber-500 shrink-0" strokeWidth={2} />
-                    <span>Unlock location</span>
-                  </>
-                ) : (
-                  <>
-                    <LockClosedIcon className="h-4 w-4 text-amber-500 shrink-0" strokeWidth={2} />
-                    <span>Lock location</span>
-                  </>
-                )}
-              </button>
-              <div className="my-1 border-t border-line/60" />
-
-              {isLocLocked ? (
-                <div
-                  title="This location is locked. Unlock it first to make changes."
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <PlusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
-                    <span>Buy into this location</span>
-                  </div>
-                  <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <LockClosedIcon className="h-3 w-3" /> Locked
-                  </span>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const t = pocketMenu
-                    closePocketMenu()
-                    openBuy(t.holding, t.locId)
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
-                >
-                  <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
-                  <span>Buy into this location</span>
-                </button>
-              )}
-
-              {isLocLocked ? (
-                <div
-                  title="This location is locked. Unlock it first to sell."
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <MinusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
-                    <span>Sell from this location</span>
-                  </div>
-                  <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <LockClosedIcon className="h-3 w-3" /> Locked
-                  </span>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const t = pocketMenu
-                    closePocketMenu()
-                    openSell(t.holding, t.locId)
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
-                >
-                  <MinusIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.4} />
-                  <span>Sell from this location</span>
-                </button>
-              )}
-
-              {isLocLocked ? (
-                <div
-                  title="This location is locked. Unlock it first to move coins out."
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-4 text-center text-base leading-none text-ink-muted/40">⇄</span>
-                    <span>Move to another location</span>
-                  </div>
-                  <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <LockClosedIcon className="h-3 w-3" /> Locked
-                  </span>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const t = pocketMenu
-                    closePocketMenu()
-                    setMoveTarget({ holding: t.holding, locId: t.locId })
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-sky-600 dark:text-sky-400 hover:bg-sky-500/10 transition-colors cursor-pointer text-left"
-                >
-                  <span className="w-4 text-center text-base leading-none">⇄</span>
-                  <span>Move to another location</span>
-                </button>
-              )}
-
-              {loc && (
-                isLocLocked ? (
-                  <div
-                    title="This location is locked. Unlock it first to edit."
-                    className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <PencilIcon className="h-3.5 w-3.5 text-ink-muted/40 shrink-0" />
-                      <span>Edit location</span>
-                    </div>
-                    <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                      <LockClosedIcon className="h-3 w-3" /> Locked
-                    </span>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const t = pocketMenu
-                      closePocketMenu()
-                      openLocEdit(t.holding.id, loc)
-                    }}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer text-left"
-                  >
-                    <PencilIcon className="h-3.5 w-3.5 shrink-0" />
-                    <span>Edit location</span>
-                  </button>
-                )
-              )}
-
-              <div className="my-1 border-t border-line/60" />
-
-              {isLocLocked ? (
-                <div
-                  title="A locked location can't be removed. Unlock it first."
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <TrashIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.2} />
-                    <span>Remove location</span>
-                  </div>
-                  <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <LockClosedIcon className="h-3 w-3" /> Locked
-                  </span>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const t = pocketMenu
-                    closePocketMenu()
-                    setRemoveLocTarget({ holdingId: t.holding.id, locId: t.locId, name: t.locName, isBtc: t.isBtc })
-                    setRemoveLocConfirmOpen(true)
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
-                >
-                  <TrashIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.2} />
-                  <span>Remove location</span>
-                </button>
-              )}
-            </div>
-          </>,
-          document.body
-        )
-      })()}
+      {/* ── Per-pocket (storage location) Action Menu ── */}
+      {pocketMenu && pocketMenuCoords && (
+        <PocketActionMenu
+          menu={pocketMenu}
+          coords={pocketMenuCoords}
+          direction={pocketMenuDirection}
+          onClose={closePocketMenu}
+          onBuy={openBuy}
+          onSell={openSell}
+          onMove={(holding, locId) => setMoveTarget({ holding, locId })}
+          onEditLocation={openLocEdit}
+          onRemoveLocation={(target) => {
+            setRemoveLocTarget(target)
+            setRemoveLocConfirmOpen(true)
+          }}
+        />
+      )}
 
       <HoldingForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
       <BuyMoreForm
@@ -1961,20 +1523,4 @@ export function Portfolio() {
       />
     </>
   )
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function isPriceStale(updatedAt?: string): boolean {
-  if (!updatedAt) return false
-  const [y, m, d] = updatedAt.split('-').map(Number)
-  const updated = new Date(y, m - 1, d)
-  return (Date.now() - updated.getTime()) / 86_400_000 >= 7
-}
-
-function unitLabel(assetClass: AssetClass): string {
-  if (assetClass === 'fund') return 'units'
-  if (assetClass === 'stock') return 'shares'
-  if (assetClass === 'gold') return 'g'
-  return 'BTC'
 }
