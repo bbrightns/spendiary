@@ -25,7 +25,7 @@ Rules:
      * Provide an itemized numbered checklist in English directly below the JSON detailing which assets were skipped and what missing data is needed to add them later.
    - Only output clean JSON (wrap in \`\`\`json \`\`\` code fence) accompanied only by the clarification checklist if any items were skipped.
 2. Preserve every record. Never merge different tickers, accounts, transactions, or logs just because their names look similar. Numbers must be JSON numbers without commas.
-3. Asset Classes, Cash, and Liabilities:
+3. Asset Classes, Cash, and Liabilities (always set "assetClass" on every holding to one of the values below):
    - "fund": Thai stocks, Thai mutual funds, Thai DR/DRx, and SET/MAI assets. Values are THB.
    - "stock": US stocks and US ETFs. Costs/prices are USD when supplied; also preserve totalThbInvested, totalUsdInvested, and FX data when present.
    - "crypto": BTC, ETH, SOL, and other tokens. For BTC, preserve btcLocations (satoshi, thbSpent) when available. For other tokens, use fractional units (up to 8 decimal places) with avgCost and price in THB.

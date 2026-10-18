@@ -934,6 +934,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const ticker = cleanTicker
             const name = rawName || rawTicker
             const assetClass = inferAssetClass(ticker, name, typeof r.assetClass === 'string' ? r.assetClass : undefined, rawCurr)
+            if (!assetClass) {
+              return {
+                ok: false,
+                error: `Couldn't tell what kind of asset "${name}" is. Add its assetClass (fund, stock, crypto, gold or real_estate) or its currency (THB or USD), then import again.`,
+              }
+            }
             const units = Math.max(0, parseCleanNumber(r.units ?? r.totalUnits, 0))
             const rawCost = Math.max(0, parseCleanNumber(r.avgCost ?? r.avgCostThb ?? r.avgCostUsd ?? r.price, 0))
             const rawPrice = parseCleanNumber(r.price, 0)
