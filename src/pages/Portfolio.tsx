@@ -38,7 +38,7 @@ import {
 import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
 import { InteractivePortfolioChart } from '../components/charts/InteractiveTrendChart'
 import type { AssetClass, BtcLocation, Holding } from '../lib/types'
-import { money, thb, thbCompact, pct } from '../lib/format'
+import { localDateStr, money, thb, thbCompact, pct } from '../lib/format'
 import { isValidRate, rateOrZero } from '../lib/fx'
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
@@ -555,7 +555,7 @@ export function Portfolio() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `spendiary-portfolio-${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `spendiary-portfolio-${localDateStr()}.csv`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)

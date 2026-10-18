@@ -83,6 +83,15 @@ export function localDateStr(d = new Date()): string {
 }
 
 /**
+ * The local calendar day (YYYY-MM-DD) of a stored date: a plain date stays as is, and a full
+ * timestamp is read in the user's time zone. Slicing a UTC timestamp would give yesterday for
+ * anything saved before 7am in Thailand.
+ */
+export function localDay(dateOrIso: string): string {
+  return dateOrIso.includes('T') ? localDateStr(new Date(dateOrIso)) : dateOrIso
+}
+
+/**
  * Converts a YYYY-MM-DD date string (and optional HH:mm string) to an ISO timestamp.
  * If dateStr matches today's local date and no custom time is given, uses new Date().toISOString()
  * to preserve the current exact second and millisecond.

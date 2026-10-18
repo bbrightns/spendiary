@@ -1,5 +1,5 @@
 import type { AssetClass, CashAccount, CashAccountCategory, DcaPlan, DebtCategory, DividendRecord, Holding, InvestAssetClass, Liability, SpendiaryData, Transfer } from './types'
-import { daysUntil, localDateStr } from './format'
+import { daysUntil, localDateStr, localDay } from './format'
 import { rateOrZero } from './fx'
 
 export interface HoldingMetrics extends Holding {
@@ -415,7 +415,7 @@ export function isConfirmedForPeriod(plan: DcaPlan, now = new Date()): boolean {
   const freq = plan.frequency ?? 'monthly'
   if (freq === 'daily') {
     const todayStr = localDateStr(now)
-    return allDates.some((d) => (d.includes('T') ? d.slice(0, 10) : d) === todayStr)
+    return allDates.some((d) => localDay(d) === todayStr)
   }
   if (freq === 'weekly') {
     const weekStart = new Date(now)
@@ -425,7 +425,7 @@ export function isConfirmedForPeriod(plan: DcaPlan, now = new Date()): boolean {
   }
   // monthly
   const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  return allDates.some((d) => (d.includes('T') ? d.slice(0, 10) : d).startsWith(ym))
+  return allDates.some((d) => localDay(d).startsWith(ym))
 }
 
 /** Was this period explicitly skipped (not confirmed)? */
@@ -435,7 +435,7 @@ export function isSkippedForPeriod(plan: DcaPlan, now = new Date()): boolean {
   const freq = plan.frequency ?? 'monthly'
   if (freq === 'daily') {
     const todayStr = localDateStr(now)
-    return dates.some((d) => (d.includes('T') ? d.slice(0, 10) : d) === todayStr)
+    return dates.some((d) => localDay(d) === todayStr)
   }
   if (freq === 'weekly') {
     const weekStart = new Date(now)
@@ -444,7 +444,7 @@ export function isSkippedForPeriod(plan: DcaPlan, now = new Date()): boolean {
     return dates.some((d) => new Date(d) >= weekStart)
   }
   const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  return dates.some((d) => (d.includes('T') ? d.slice(0, 10) : d).startsWith(ym))
+  return dates.some((d) => localDay(d).startsWith(ym))
 }
 
 /**
