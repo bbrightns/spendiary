@@ -1,4 +1,5 @@
-import type { ComponentType, SVGProps } from 'react'
+import type { ComponentType } from 'react'
+import { appIcon, type IconProps } from './appIcon'
 import {
   Apple, Award, Baby, BadgePercent, Banknote, Beef, Beer, Bike, Bird, Bitcoin, BookOpen, Bone, Briefcase, Building2,
   Bus, CakeSlice, Camera, Car, CarTaxiFront, Cat, ChartLine, Church, Clapperboard, Coffee, Coins, Cookie, CreditCard,
@@ -10,18 +11,6 @@ import {
   SquareParking, Stethoscope, Syringe, Tag, Tent, Ticket, ToyBrick, TrainFront, TrendingUp, Trophy, Truck, Tv,
   Umbrella, Users, Utensils, Wallet, Watch, Wifi, Wine, Wrench, Zap,
 } from 'lucide-react'
-
-type IconProps = Omit<SVGProps<SVGSVGElement>, 'ref'>
-
-/** The app's line weight: Lucide's default (2) looks heavier than the rest of the app (1.6) */
-export const ICON_STROKE = 1.6
-
-/** A Lucide icon with the app's defaults, used like the hand-drawn icons in icons.tsx */
-export function appIcon(Icon: LucideIcon, name: string): ComponentType<IconProps> {
-  const AppIcon = (p: IconProps) => <Icon strokeWidth={ICON_STROKE} {...p} />
-  AppIcon.displayName = name
-  return AppIcon
-}
 
 export type CategoryIconGroup =
   | 'food' | 'transport' | 'home' | 'family' | 'pets' | 'health' | 'shopping' | 'fun' | 'money' | 'work' | 'other'

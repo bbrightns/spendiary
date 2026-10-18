@@ -1,59 +1,19 @@
-import type { ComponentType, SVGProps } from 'react'
+import type { ComponentType } from 'react'
+import { ArrowRightLeft, List, Repeat } from 'lucide-react'
 import type { SpendSettings, SpendTxnType } from '../../lib/types'
 import { TONES, type Tone } from './tones'
 import { queryTerms, scoreItem, termScore } from '../../lib/paletteSearch'
 import { applyOrder } from './logic'
 import { DotsHorizontalIcon } from '../../components/icons'
 import { CATEGORY_ICONS } from '../../components/categoryIcons'
+import { appIcon, type IconProps } from '../../components/appIcon'
 
 // Category icons live in components/categoryIcons (Lucide); re-exported for the Spend screens
 export { CATEGORY_ICONS }
 
-type IconProps = SVGProps<SVGSVGElement>
-
-const base = {
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeWidth: 1.6,
-  strokeLinecap: 'round' as const,
-  strokeLinejoin: 'round' as const,
-  viewBox: '0 0 24 24',
-}
-
-export function TransferIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="m17 3 4 4-4 4" />
-      <path d="M3 7h18" />
-      <path d="m7 21-4-4 4-4" />
-      <path d="M21 17H3" />
-    </svg>
-  )
-}
-
-export function ListBulletIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M8 6h13" />
-      <path d="M8 12h13" />
-      <path d="M8 18h13" />
-      <path d="M3.5 6h.01" />
-      <path d="M3.5 12h.01" />
-      <path d="M3.5 18h.01" />
-    </svg>
-  )
-}
-
-export function RepeatIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="m17 2 4 4-4 4" />
-      <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
-      <path d="m7 22-4-4 4-4" />
-      <path d="M21 13v1a4 4 0 0 1-4 4H3" />
-    </svg>
-  )
-}
+export const TransferIcon = appIcon(ArrowRightLeft, 'TransferIcon')
+export const ListBulletIcon = appIcon(List, 'ListBulletIcon')
+export const RepeatIcon = appIcon(Repeat, 'RepeatIcon')
 
 export const CATEGORY_TONES = Object.keys(TONES) as Tone[]
 
