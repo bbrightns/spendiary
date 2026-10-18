@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import type { AcquisitionSource, BtcLocation, CashAccount, DcaPlan, DebtCategory, DividendRecord, GoldLocation, Holding, HoldingLog, InvestAssetClass, Liability, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryBackup, SpendiaryData, Transfer } from '../lib/types'
@@ -196,8 +196,14 @@ const DataContext = createContext<DataContextValue | null>(null)
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [data, setDataState] = useState<SpendiaryData>(emptyData)
-  // Spend category lookups are plain functions; keep their user-made list in step with the data
+  // Spend category lookups are plain functions read while rendering, so the list has to match
+  // this render's data before the children render; an effect would leave them one render behind.
+  // syncCategories only rebuilds when the settings objects change, so calling it here is a cache.
   syncCategories(data.spendSettings)
+  // A render React throws away could leave the list on its settings; snap back to what committed
+  useLayoutEffect(() => {
+    syncCategories(data.spendSettings)
+  }, [data.spendSettings])
   // Start from the last real rate this device saw, then fetch a fresh one right away
   const [fx, setFx] = useState<UsdThbRate | null>(() => readCachedUsdThb())
   const usdThb = fx?.rate ?? null
