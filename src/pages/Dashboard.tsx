@@ -8,7 +8,7 @@ import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { DonutChart } from '../components/charts/DonutChart'
 import { InteractiveNetWorthChart } from '../components/charts/InteractiveNetWorthChart'
-import { PnLPill, PnLText } from '../components/ui/PnL'
+import { PnLPill, PnLText, UnpricedNote } from '../components/ui/PnL'
 import { LoanSheet } from '../modules/spend/LoanSheet'
 import { SpendSnapshotCard } from '../modules/spend/SpendSnapshotCard'
 import { AiImportModal } from '../components/forms/AiImportModal'
@@ -382,6 +382,7 @@ export function Dashboard() {
                       <PnLPill value={portfolio.pnlPct} asPct size="sm" />
                       <span className="text-xs text-ink-muted font-medium whitespace-nowrap">all-time</span>
                     </div>
+                    <UnpricedNote count={portfolio.unpricedCount} />
                   </div>
                 </div>
               </div>

@@ -19,7 +19,7 @@ const AI_PROMPT_TEMPLATE = `Convert my financial records into a valid JSON impor
 Rules:
 1. Input Completeness & Resilient Generation:
    - Generate valid JSON for all detected assets, cash accounts, and liabilities that have sufficient information.
-   - If current market price is not provided for an asset, set price equal to avgCost so the user can import without interruption.
+   - If current market price is not provided for an asset, leave "price" out. Spendiary counts it at cost and marks it as having no price yet.
    - If any specific holding is missing critical core data (such as unknown unit count or completely missing cost basis) that cannot be reasonably inferred:
      * Exclude that specific incomplete asset from the JSON so valid items can still be imported immediately without blocking the entire import.
      * Provide an itemized numbered checklist in English directly below the JSON detailing which assets were skipped and what missing data is needed to add them later.
@@ -40,7 +40,7 @@ Rules:
 6. Cash sale proceeds are not new deposits. Preserve the original action and amount so Spendiary can distinguish buys, deposits, sales, dividends, and transfers.
 7. Live prices & FX policy:
    - Do not invent live prices, FX rates, IDs, dates, tax, or mock transaction history.
-   - If current market price is not provided, set price equal to avgCost so the user can import without interruption.
+   - If current market price is not provided, leave "price" out. Do not copy avgCost into it.
 
 Expected shape:
 {
@@ -85,7 +85,7 @@ Expected shape:
         "assetClass": "stock",
         "units": 10,
         "avgCost": 220,
-        "price": 220,
+        "price": 231.4,
         "totalUsdInvested": 2200,
         "totalThbInvested": 77000
       }

@@ -47,6 +47,12 @@ export interface Holding {
   avgCost: number
   /** Latest market price / NAV per unit you filled in, in THB */
   price: number
+  /**
+   * Set when no real price was known and `price` was filled with the average cost instead.
+   * While `price` still equals it the holding has no real price: it counts at cost, with no P/L.
+   * Any real price (live quote, a buy, a sale, one typed in) replaces `price` and ends that.
+   */
+  placeholderPrice?: number
   /** ISO date the price was last updated */
   updatedAt?: string
   /** BTC sub-breakdown by location (only for assetClass === 'crypto') */

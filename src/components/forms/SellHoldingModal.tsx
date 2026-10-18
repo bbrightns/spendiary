@@ -6,7 +6,7 @@ import { Button } from '../ui/Button'
 import { BUY_SELL_SEGMENT_OPTIONS } from './BuyMoreForm'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
-import { ASSET_META, GRAMS_PER_BAHT_GOLD, holdingMetrics } from '../../lib/calc'
+import { ASSET_META, GRAMS_PER_BAHT_GOLD, hasRealPrice, holdingMetrics } from '../../lib/calc'
 import type { BtcLocation, GoldLocation, Holding } from '../../lib/types'
 import { dateStrToTimestamp, thb, localDateStr } from '../../lib/format'
 import { isValidRate } from '../../lib/fx'
@@ -96,10 +96,11 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
       setCustomProceeds('')
       setCustomFee('')
 
-      // Initial defaults
+      // Initial defaults: only a real price is offered; a cost stand-in stays empty for the user to fill
+      const knownPrice = hasRealPrice(holding) ? holding.price : 0
       if (holding.assetClass === 'stock') {
         setStockShares('')
-        const defaultUsdPrice = rate > 0 ? Number((holding.price / rate).toFixed(2)) : 0
+        const defaultUsdPrice = rate > 0 ? Number((knownPrice / rate).toFixed(2)) : 0
         setStockPriceUsd(defaultUsdPrice > 0 ? defaultUsdPrice : '')
         setStockFxRate(rate > 0 ? rate : '')
       } else if (holding.assetClass === 'crypto') {
@@ -119,7 +120,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
         setGoldLocationId(locked ? locked.id : (firstUnlocked?.id ?? locs[0]?.id ?? ''))
       } else {
         setUnits('')
-        setPrice(holding.price > 0 ? holding.price : '')
+        setPrice(knownPrice > 0 ? knownPrice : '')
       }
     }
     wasOpen.current = open
@@ -275,12 +276,12 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
   const isFullSell = remainingUnits <= 0.00001
 
   const estBtcProceeds =
-    isBtc && holding.price > 0 && satoshi !== '' && Number(satoshi) > 0
+    isBtc && holding.price > 0 && hasRealPrice(holding) && satoshi !== '' && Number(satoshi) > 0
       ? Math.round((Number(satoshi) / SATS_PER_BTC) * holding.price)
       : 0
 
   const estGoldProceeds =
-    isGold && holding.price > 0 && goldGrams !== '' && Number(goldGrams) > 0
+    isGold && holding.price > 0 && hasRealPrice(holding) && goldGrams !== '' && Number(goldGrams) > 0
       ? Math.round(Number(goldGrams) * holding.price)
       : 0
 

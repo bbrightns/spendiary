@@ -50,3 +50,31 @@ export function PnLText({ value, className, compact = false }: PnLTextProps) {
     </span>
   )
 }
+
+/**
+ * Stands in for a P/L pill when a holding has no real price yet: its value is counted at cost,
+ * so any P/L shown would be a made-up 0%.
+ */
+export function NoPricePill({ size = 'sm' }: { size?: 'sm' | 'md' }) {
+  return (
+    <span
+      title="No price yet: counted at cost, so there is no profit or loss to show"
+      className={cx(
+        'inline-flex shrink-0 items-center whitespace-nowrap rounded-full font-semibold bg-warn-soft text-warn',
+        size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm',
+      )}
+    >
+      No price yet
+    </span>
+  )
+}
+
+/** Says which holdings a P/L total leaves out, so the total isn't read as covering everything */
+export function UnpricedNote({ count, className }: { count: number; className?: string }) {
+  if (count <= 0) return null
+  return (
+    <p className={cx('text-xs font-medium text-warn', className)}>
+      Leaves out {count} {count === 1 ? 'holding' : 'holdings'} with no price yet
+    </p>
+  )
+}

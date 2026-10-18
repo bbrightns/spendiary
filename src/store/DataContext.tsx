@@ -1000,6 +1000,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
               totalThbInvested,
               totalUsdInvested,
               price,
+              // No price in the file: counted at cost, marked as having no real price
+              ...(rawPrice > 0 ? {} : { placeholderPrice: price }),
               updatedAt: today,
               ...(btcLocations ? { btcLocations } : {}),
               ...(goldLocations ? { goldLocations } : {}),
