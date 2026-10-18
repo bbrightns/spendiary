@@ -81,7 +81,6 @@ export function useCloudSync(
     }
 
     try {
-      console.log('Fetching remote data for userId:', userId)
       setSyncStatus('syncing')
 
       const supabaseUrl = import.meta.env.VITE_API_URL || ''
@@ -94,7 +93,6 @@ export function useCloudSync(
         .eq('id', userId)
         .maybeSingle()
 
-      console.log('Fetch remote data response (client):', { row, error })
 
       let rest: RestLoad | null = null
       if (error || !row?.payload) {
@@ -125,7 +123,6 @@ export function useCloudSync(
             }
           })
           const list = restRes.ok ? await restRes.json() : null
-          console.log('Fetch remote data response (REST API):', list)
           rest = { ok: restRes.ok, list, usedUserToken }
         } catch (restErr) {
           console.warn('REST API fallback error:', restErr)
@@ -143,7 +140,6 @@ export function useCloudSync(
       }
 
       if (result.kind === 'loaded') {
-        console.log('Successfully loaded remote data from Supabase')
         const remotePayload = result.payload as SpendiaryData
         const migrated = migrate(remotePayload)
         const migratedStr = JSON.stringify(migrated)
@@ -155,7 +151,6 @@ export function useCloudSync(
         setSyncStatus('synced')
         updateLastSynced(new Date())
       } else {
-        console.log('Cloud data is empty for user:', userId)
         remoteStamp.current = { exists: false, updatedAt: null }
         lastSynced.current = JSON.stringify(emptyData)
         setDataState(emptyData)
