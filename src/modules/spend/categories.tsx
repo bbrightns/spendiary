@@ -15,7 +15,16 @@ export const TransferIcon = appIcon(ArrowRightLeft, 'TransferIcon')
 export const ListBulletIcon = appIcon(List, 'ListBulletIcon')
 export const RepeatIcon = appIcon(Repeat, 'RepeatIcon')
 
-export const CATEGORY_TONES = Object.keys(TONES) as Tone[]
+/**
+ * Colors offered in the pickers, in hue order. Yellow, cyan and teal still render
+ * (shipped categories use them) but look like amber, sky and emerald, so they aren't offered.
+ */
+export const CATEGORY_TONES: Tone[] = ['rose', 'orange', 'amber', 'lime', 'emerald', 'sky', 'indigo', 'violet', 'pink', 'slate']
+
+const TONE_LOOKALIKE: Partial<Record<Tone, Tone>> = { yellow: 'amber', cyan: 'sky', teal: 'emerald' }
+
+/** The picker swatch that shows a tone as selected */
+export const pickerTone = (t: Tone): Tone => TONE_LOOKALIKE[t] ?? t
 
 export interface SpendCategory {
   id: string

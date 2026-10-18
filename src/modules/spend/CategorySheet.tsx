@@ -5,7 +5,7 @@ import { FormActions } from '../../components/forms/FormActions'
 import { useToast } from '../../store/ToastContext'
 import { SearchIcon } from '../../components/icons'
 import { CATEGORY_ICON_GROUPS, pickableCategoryIcons } from '../../components/categoryIcons'
-import { CATEGORY_ICONS, CATEGORY_TONES, SPEND_CATEGORIES, manageableCategories, type SpendCategory } from './categories'
+import { CATEGORY_ICONS, CATEGORY_TONES, SPEND_CATEGORIES, manageableCategories, pickerTone, type SpendCategory } from './categories'
 import { SwitchVisual } from './AccountSheets'
 import { TONES, TYPE_ACTIVE, type Tone } from './tones'
 import { useSpend } from './useSpend'
@@ -160,10 +160,10 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
                 key={t}
                 type="button"
                 aria-label={`Color ${t}`}
-                aria-pressed={form.tone === t}
+                aria-pressed={pickerTone(form.tone) === t}
                 onClick={() => setForm((f) => ({ ...f, tone: t }))}
                 className={`h-8 w-8 rounded-full transition-transform cursor-pointer ${TONES[t].bar} ${
-                  form.tone === t ? 'scale-110 ring-2 ring-brand ring-offset-2 ring-offset-surface' : ''
+                  pickerTone(form.tone) === t ? 'scale-110 ring-2 ring-brand ring-offset-2 ring-offset-surface' : ''
                 }`}
               />
             ))}

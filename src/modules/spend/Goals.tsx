@@ -6,7 +6,7 @@ import { FormActions } from '../../components/forms/FormActions'
 import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb } from '../../lib/format'
 import type { SpendGoal } from '../../lib/types'
-import { CATEGORY_ICONS, CATEGORY_TONES } from './categories'
+import { CATEGORY_ICONS, CATEGORY_TONES, pickerTone } from './categories'
 import { goalProgress } from './logic'
 import { TONES, type Tone } from './tones'
 import { useSpend } from './useSpend'
@@ -224,9 +224,9 @@ function GoalSheet({ open, goal, onClose }: { open: boolean; goal?: SpendGoal; o
                 key={t}
                 type="button"
                 aria-label={`Color ${t}`}
-                aria-pressed={form.tone === t}
+                aria-pressed={pickerTone(form.tone) === t}
                 onClick={() => set('tone', t)}
-                className={`h-7 w-7 rounded-full cursor-pointer ${TONES[t].bar} ${form.tone === t ? 'ring-2 ring-brand ring-offset-2 ring-offset-surface' : ''}`}
+                className={`h-7 w-7 rounded-full cursor-pointer ${TONES[t].bar} ${pickerTone(form.tone) === t ? 'ring-2 ring-brand ring-offset-2 ring-offset-surface' : ''}`}
               />
             ))}
           </div>
