@@ -8,8 +8,9 @@ import { useToast, type ResultDetail } from '../../store/ToastContext'
 import type { DcaPlan } from '../../lib/types'
 import { localDateStr, thb } from '../../lib/format'
 import { isValidRate } from '../../lib/fx'
-import { findMatchingHolding, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd, nextBuyDate } from '../../lib/calc'
+import { findMatchingHolding, GRAMS_PER_BAHT_GOLD, hasRealPrice, nextBuyDate, priceGap } from '../../lib/calc'
 import { fetchStockPricesUsd } from '../../lib/prices'
+import { BuyPreview } from './BuyPreview'
 
 interface Props {
   open: boolean
@@ -196,13 +197,10 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
 
   const stockCurrentUnits = holding?.units ?? holding?.totalUnits ?? 0
   const stockCurrentThbInvested = holding?.totalThbInvested ?? stockCurrentUnits * (holding?.avgCostThb ?? holding?.avgCost ?? 0)
-  const stockCurrentUsdInvested = holding?.totalUsdInvested ?? stockCurrentUnits * (holding?.avgCostUsd ?? (fxRateNum > 0 ? (holding?.avgCost ?? 0) / fxRateNum : 0))
 
   const stockNewTotalUnits = stockCurrentUnits + stockUnitsBoughtNum
   const stockNewTotalThbInvested = stockCurrentThbInvested + amountThbNum
-  const stockNewTotalUsdInvested = stockCurrentUsdInvested + stockUsdSpentThisTx
 
-  const stockNewAvgCostUsd = stockNewTotalUnits > 0 ? stockNewTotalUsdInvested / stockNewTotalUnits : 0
   const stockNewAvgCostThb = stockNewTotalUnits > 0 ? stockNewTotalThbInvested / stockNewTotalUnits : 0
 
   const hasValidStock = unitsBought !== '' && stockUnitsBoughtNum > 0 && amountThbNum > 0 && fxRateNum > 0
@@ -261,6 +259,21 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   // --------------------------------------------------------------------------
   const cryptoPricePerUnit = holding?.price ?? holding?.avgCost ?? 0
   const cryptoUnitsToAdd = cryptoPricePerUnit > 0 ? amountThbNum / cryptoPricePerUnit : 0
+  const cryptoCurrentUnits = holding?.units ?? holding?.totalUnits ?? 0
+  const cryptoTicker = holding?.ticker ?? plan.ticker ?? 'units'
+
+  // --------------------------------------------------------------------------
+  // Typo check: this buy's price against the latest market price (THB per unit)
+  // --------------------------------------------------------------------------
+  const marketPrice = holding && hasRealPrice(holding) && holding.price > 0 ? holding.price : null
+  const stockMarketThb = liveStockPrice && fxRateNum > 0 ? liveStockPrice * fxRateNum : marketPrice
+
+  /** "฿108,519 / BTC is 90% below the market price (฿3,400,000). Check the sats?" */
+  function gapWarning(paid: number, market: number | null, unit: string, field: string): string | undefined {
+    const gap = priceGap(paid, market)
+    if (gap === null || market === null) return undefined
+    return `${thb(paid)} ${unit} is ${Math.round(Math.abs(gap) * 100)}% ${gap < 0 ? 'below' : 'above'} the market price (${thb(market)}). Check the ${field}?`
+  }
 
   const valid = isStock
     ? stockUnitsBoughtNum > 0 && amountThbNum > 0 && fxRateNum > 0
@@ -529,9 +542,6 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     { value: '__new__', label: '+ New location…' },
   ]
 
-  const valueStyle = (isValid: boolean) =>
-    isValid ? 'font-semibold tnum text-ink' : 'font-medium tnum text-ink-muted'
-
   return (
     <Modal
       open={open}
@@ -619,43 +629,17 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               error={showErrors && fundUnitsNum <= 0 ? 'Units bought required (> 0)' : undefined}
             />
 
-            {/* Static PURCHASE SUMMARY Preview Section: Mutual Fund */}
-            <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-3 shadow-sm">
-              <div className="flex items-center justify-between border-b border-line pb-2">
-                <p className="text-xs font-bold uppercase tracking-wider text-brand">PURCHASE PREVIEW (BEFORE → AFTER)</p>
-                <span className="text-xs font-medium text-ink-muted">Max 4 decimals</span>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-ink-muted">Execution NAV (this tx)</span>
-                <span className={valueStyle(hasValidFund)}>
-                  {hasValidFund ? `฿${fmtNum(fundImpliedNav, 4)} / unit` : '฿0 / unit'}
-                </span>
-              </div>
-
-              <div className="space-y-1.5 pt-1 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-ink-muted">Units</span>
-                  <span className="tnum text-ink-soft">
-                    {fmtNum(fundCurrentUnits, 4)} <span className="text-ink-muted font-normal">+ ({hasValidFund ? fmtNum(fundUnitsNum, 4) : '0'})</span> → <strong className={valueStyle(hasValidFund)}>{fmtNum(hasValidFund ? fundNewTotalUnits : fundCurrentUnits, 4)}</strong>
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-ink-muted">THB Invested</span>
-                  <span className="tnum text-ink-soft">
-                    ฿{fmtNum(fundCurrentThbInvested, 2)} → <strong className={valueStyle(hasValidFund)}>฿{fmtNum(hasValidFund ? fundNewTotalThbInvested : fundCurrentThbInvested, 2)}</strong>
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-line flex items-center justify-between text-sm">
-                <span className="font-medium text-ink-muted">New Avg Cost</span>
-                <span className={`tnum ${hasValidFund ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
-                  {hasValidFund ? `฿${fmtNum(fundNewAvgCostThb, 4)} / unit` : `฿${fmtNum(fundCurrentUnits > 0 ? fundCurrentThbInvested / fundCurrentUnits : 0, 4)} / unit`}
-                </span>
-              </div>
-            </div>
+            <BuyPreview
+              paid={thb(amountThbNum)}
+              got={hasValidFund ? `${fmtNum(fundUnitsNum, 4)} units` : undefined}
+              total={`${fmtNum(hasValidFund ? fundNewTotalUnits : fundCurrentUnits, 4)} units`}
+              warning={hasValidFund ? gapWarning(fundImpliedNav, marketPrice, '/ unit', 'units') : undefined}
+              details={[
+                { label: 'NAV this buy', value: hasValidFund ? `฿${fmtNum(fundImpliedNav, 4)} / unit` : '—' },
+                { label: 'Average cost', value: hasValidFund ? `฿${fmtNum(fundNewAvgCostThb, 4)} / unit` : fundCurrentUnits > 0 ? `฿${fmtNum(fundCurrentThbInvested / fundCurrentUnits, 4)} / unit` : '—' },
+                { label: 'Total put in', value: thb(hasValidFund ? fundNewTotalThbInvested : fundCurrentThbInvested) },
+              ]}
+            />
           </div>
         )}
 
@@ -756,47 +740,17 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               )}
             </div>
 
-            {/* Static PURCHASE SUMMARY Preview Section: Stock */}
-            <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-3 shadow-sm">
-              <div className="flex items-center justify-between border-b border-line pb-2">
-                <p className="text-xs font-bold uppercase tracking-wider text-brand">PURCHASE PREVIEW (BEFORE → AFTER)</p>
-                <span className="text-xs font-medium text-ink-muted">Max 4 decimals</span>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-ink-muted">Implied Price (this tx)</span>
-                <span className={valueStyle(hasValidStock)}>
-                  {hasValidStock ? `$${fmtNum(stockImpliedPriceUsd, 4)} / share` : '$0 / share'}
-                </span>
-              </div>
-
-              <div className="space-y-1.5 pt-1 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-ink-muted">Shares</span>
-                  <span className="tnum text-ink-soft">
-                    {fmtNum(stockCurrentUnits, 4)} <span className="text-ink-muted font-normal">+ ({hasValidStock ? fmtNum(stockUnitsBoughtNum, 4) : '0'})</span> → <strong className={valueStyle(hasValidStock)}>{fmtNum(hasValidStock ? stockNewTotalUnits : stockCurrentUnits, 4)}</strong>
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-ink-muted">THB Invested</span>
-                  <span className="tnum text-ink-soft">
-                    ฿{fmtNum(stockCurrentThbInvested, 2)} → <strong className={valueStyle(hasValidStock)}>฿{fmtNum(hasValidStock ? stockNewTotalThbInvested : stockCurrentThbInvested, 2)}</strong>
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-line flex items-center justify-between text-sm">
-                <span className="font-medium text-ink-muted">New Avg Cost</span>
-                <div className={`tnum ${hasValidStock ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
-                  {hasValidStock ? (
-                    <span>${fmtNum(stockNewAvgCostUsd, 4)} ≈ ฿{fmtNum(stockNewAvgCostThb, 2)}</span>
-                  ) : (
-                    <span>$0 ≈ ฿0</span>
-                  )}
-                </div>
-              </div>
-            </div>
+            <BuyPreview
+              paid={thb(amountThbNum)}
+              got={hasValidStock ? `${fmtNum(stockUnitsBoughtNum, 4)} shares` : undefined}
+              total={`${fmtNum(hasValidStock ? stockNewTotalUnits : stockCurrentUnits, 4)} shares`}
+              warning={hasValidStock ? gapWarning(stockImpliedPriceUsd * fxRateNum, stockMarketThb, '/ share', 'shares') : undefined}
+              details={[
+                { label: 'Price this buy', value: hasValidStock ? `$${fmtNum(stockImpliedPriceUsd, 2)} / share (≈ ${thb(stockImpliedPriceUsd * fxRateNum)})` : '—' },
+                { label: 'Average cost', value: hasValidStock ? `${thb(stockNewAvgCostThb)} / share` : stockCurrentUnits > 0 ? `${thb(stockCurrentThbInvested / stockCurrentUnits)} / share` : '—' },
+                { label: 'Total put in', value: thb(hasValidStock ? stockNewTotalThbInvested : stockCurrentThbInvested) },
+              ]}
+            />
           </div>
         )}
 
@@ -841,47 +795,18 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               />
             )}
 
-            {/* Static PURCHASE SUMMARY Preview Section: Crypto / BTC */}
-            <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-3 shadow-sm">
-              <div className="flex items-center justify-between border-b border-line pb-2">
-                <p className="text-xs font-bold uppercase tracking-wider text-brand">PURCHASE PREVIEW (BEFORE → AFTER)</p>
-                <span className="text-xs font-medium text-ink-muted">Digits only</span>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-ink-muted">Implied BTC Price</span>
-                <span className={valueStyle(hasValidBtc)}>
-                  {hasValidBtc ? `฿${fmtNum(Math.round(btcImpliedPriceThbPerBtc), 0)} / BTC` : '฿0 / BTC'}
-                </span>
-              </div>
-
-              <div className="space-y-1.5 pt-1 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-ink-muted">Sats</span>
-                  <span className="tnum text-ink-soft">
-                    {fmtNum(btcCurrentTotalSats, 0)} <span className="text-ink-muted font-normal">+ ({hasValidBtc ? fmtNum(satsNum, 0) : '0'})</span> → <strong className={valueStyle(hasValidBtc)}>{fmtNum(hasValidBtc ? btcNewTotalSats : btcCurrentTotalSats, 0)} sats</strong>
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-ink-muted">THB Invested</span>
-                  <span className="tnum text-ink-soft">
-                    ฿{fmtNum(btcCurrentTotalThb, 2)} → <strong className={valueStyle(hasValidBtc)}>฿{fmtNum(hasValidBtc ? btcNewTotalThbInvested : btcCurrentTotalThb, 2)}</strong>
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-line flex items-center justify-between text-sm">
-                <span className="font-medium text-ink-muted">New Avg Cost</span>
-                <span className={`tnum ${hasValidBtc ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
-                  {hasValidBtc
-                    ? rate > 0
-                      ? `$${fmtNum(Math.round(btcNewAvgCostThb / rate), 0)} / BTC (≈ ฿${fmtNum(Math.round(btcNewAvgCostThb), 0)})`
-                      : `฿${fmtNum(Math.round(btcNewAvgCostThb), 0)} / BTC`
-                    : '$0 / BTC'}
-                </span>
-              </div>
-            </div>
+            <BuyPreview
+              paid={thb(amountThbNum)}
+              got={hasValidBtc ? `${fmtNum(satsNum, 0)} sats` : undefined}
+              total={`${fmtNum(hasValidBtc ? btcNewTotalSats : btcCurrentTotalSats, 0)} sats`}
+              totalSub={`${fmtNum((hasValidBtc ? btcNewTotalSats : btcCurrentTotalSats) / SATS_PER_BTC, 8)} BTC`}
+              warning={hasValidBtc ? gapWarning(btcImpliedPriceThbPerBtc, marketPrice, '/ BTC', 'sats') : undefined}
+              details={[
+                { label: 'Price this buy', value: hasValidBtc ? `${thb(btcImpliedPriceThbPerBtc)} / BTC` : '—' },
+                { label: 'Average cost', value: hasValidBtc ? `${thb(btcNewAvgCostThb)} / BTC` : btcCurrentTotalSats > 0 ? `${thb((btcCurrentTotalThb / btcCurrentTotalSats) * SATS_PER_BTC)} / BTC` : '—' },
+                { label: 'Total put in', value: thb(hasValidBtc ? btcNewTotalThbInvested : btcCurrentTotalThb) },
+              ]}
+            />
           </div>
         )}
 
@@ -895,20 +820,13 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               placeholder="2,000"
               error={showErrors && amountThbNum <= 0 ? 'Required (> 0)' : undefined}
             />
-            <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-2.5">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-ink-muted">Price per unit</span>
-                <span className="tnum font-semibold text-ink">
-                  {cryptoPricePerUnit > 0 ? `฿${fmtNum(cryptoPricePerUnit, 8)}` : 'Set a current price first'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-ink-muted">Units to add</span>
-                <span className={`tnum font-semibold ${cryptoUnitsToAdd > 0 ? 'text-ink' : 'text-loss'}`}>
-                  {fmtNum(cryptoUnitsToAdd, 8)}
-                </span>
-              </div>
-            </div>
+            <BuyPreview
+              paid={thb(amountThbNum)}
+              got={cryptoUnitsToAdd > 0 ? `${fmtNum(cryptoUnitsToAdd, 8)} ${cryptoTicker}` : undefined}
+              total={`${fmtNum(cryptoCurrentUnits + cryptoUnitsToAdd, 8)} ${cryptoTicker}`}
+              warning={cryptoPricePerUnit > 0 ? undefined : 'Set a current price for this coin first: the units are worked out from it.'}
+              details={[{ label: 'Price used', value: cryptoPricePerUnit > 0 ? `฿${fmtNum(cryptoPricePerUnit, 8)} / ${cryptoTicker}` : '—' }]}
+            />
           </div>
         )}
 
@@ -1001,43 +919,18 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               />
             )}
 
-            {/* Static PURCHASE SUMMARY Preview Section: Gold */}
-            <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-3 shadow-sm">
-              <div className="flex items-center justify-between border-b border-line pb-2">
-                <p className="text-xs font-bold uppercase tracking-wider text-brand">PURCHASE PREVIEW (BEFORE → AFTER)</p>
-                <span className="text-xs font-medium text-ink-muted">Max 4 decimals</span>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-ink-muted">Price / Gram</span>
-                <span className={valueStyle(hasValidGold)}>
-                  {hasValidGold ? `฿${fmtNum(goldImpliedPricePerGram, 2)} / g (≈ ฿${fmtNum(goldImpliedPricePerGram * GRAMS_PER_BAHT_GOLD, 0)}${rate > 0 ? ` / gold baht | $${fmtNum(goldThbPerGramToXauUsd(goldImpliedPricePerGram, rate), 0)}/oz)` : ' / gold baht)'}` : '฿0 / g'}
-                </span>
-              </div>
-
-              <div className="space-y-1.5 pt-1 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-ink-muted">Grams</span>
-                  <span className="tnum text-ink-soft">
-                    {fmtNum(goldCurrentTotalGrams, 4)}g <span className="text-ink-muted font-normal">+ ({hasValidGold ? fmtNum(goldGramsToAdd, 4) : '0'})</span> → <strong className={valueStyle(hasValidGold)}>{fmtNum(hasValidGold ? goldNewTotalGrams : goldCurrentTotalGrams, 4)} g (≈ {fmtNum((hasValidGold ? goldNewTotalGrams : goldCurrentTotalGrams) / GRAMS_PER_BAHT_GOLD, 4)} gold baht)</strong>
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-ink-muted">THB Invested</span>
-                  <span className="tnum text-ink-soft">
-                    ฿{fmtNum(goldCurrentTotalThb, 2)} → <strong className={valueStyle(hasValidGold)}>฿{fmtNum(hasValidGold ? goldNewTotalThbInvested : goldCurrentTotalThb, 2)}</strong>
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-line flex items-center justify-between text-sm">
-                <span className="font-medium text-ink-muted">New Avg Cost</span>
-                <span className={`tnum ${hasValidGold ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
-                  {hasValidGold ? `฿${fmtNum(goldNewAvgCostThb * GRAMS_PER_BAHT_GOLD, 0)}/gold baht${rate > 0 ? ` (≈ $${fmtNum(goldThbPerGramToXauUsd(goldNewAvgCostThb, rate), 0)}/oz XAUUSD)` : ''}` : '฿0 / gold baht'}
-                </span>
-              </div>
-            </div>
+            <BuyPreview
+              paid={thb(amountThbNum)}
+              got={hasValidGold ? `${fmtNum(goldGramsToAdd, 4)} g` : undefined}
+              total={`${fmtNum(hasValidGold ? goldNewTotalGrams : goldCurrentTotalGrams, 4)} g`}
+              totalSub={`≈ ${fmtNum((hasValidGold ? goldNewTotalGrams : goldCurrentTotalGrams) / GRAMS_PER_BAHT_GOLD, 4)} gold baht`}
+              warning={hasValidGold ? gapWarning(goldImpliedPricePerGram * GRAMS_PER_BAHT_GOLD, marketPrice ? marketPrice * GRAMS_PER_BAHT_GOLD : null, '/ gold baht', goldInputMode === 'grams' || goldInputMode === 'baht' ? 'weight' : 'price') : undefined}
+              details={[
+                { label: 'Price this buy', value: hasValidGold ? `${thb(goldImpliedPricePerGram * GRAMS_PER_BAHT_GOLD)} / gold baht` : '—' },
+                { label: 'Average cost', value: hasValidGold ? `${thb(goldNewAvgCostThb * GRAMS_PER_BAHT_GOLD)} / gold baht` : goldCurrentTotalGrams > 0 ? `${thb((goldCurrentTotalThb / goldCurrentTotalGrams) * GRAMS_PER_BAHT_GOLD)} / gold baht` : '—' },
+                { label: 'Total put in', value: thb(hasValidGold ? goldNewTotalThbInvested : goldCurrentTotalThb) },
+              ]}
+            />
           </div>
         )}
 

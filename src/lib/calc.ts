@@ -17,6 +17,19 @@ export function hasRealPrice(h: Pick<Holding, 'price' | 'placeholderPrice'>): bo
   return h.placeholderPrice === undefined || h.price !== h.placeholderPrice
 }
 
+/** How far a buy's price can drift from the market before the preview asks to check the numbers */
+export const PRICE_CHECK_TOLERANCE = 0.2
+
+/**
+ * How far this buy's price is from the market price, as a fraction (−0.9 = 90% below),
+ * or null when it's within tolerance or either price is unknown.
+ */
+export function priceGap(paid: number, market: number | undefined | null, tolerance = PRICE_CHECK_TOLERANCE): number | null {
+  if (!(paid > 0) || !market || !(market > 0) || !isFinite(paid) || !isFinite(market)) return null
+  const gap = paid / market - 1
+  return Math.abs(gap) > tolerance ? gap : null
+}
+
 /**
  * Apply a "buy more" purchase to a holding: units grow and the average cost
  * becomes the weighted average of the old basis and the new lot. The purchase
