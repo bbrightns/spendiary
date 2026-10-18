@@ -5,6 +5,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
 import { useLivePrices } from '../hooks/useLivePrices'
+import { isValidPrice } from '../lib/priceCache'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -32,6 +33,7 @@ import {
   GRAMS_PER_BAHT_GOLD,
   allocations,
   assetGroupAllocations,
+  hasRealPrice,
   holdingMetrics,
   portfolioSummary,
 } from '../lib/calc'
@@ -78,7 +80,7 @@ export function Portfolio() {
   const { status: priceStatus, lastUpdated, usdThb, goldThbPerGram, errorMsg, refresh: refreshPrices } = useLivePrices()
   // A BTC cost per coin in USD at the real rate; without one it stays in THB instead of using a made-up rate
   const btcPerCoin = (thbPerBtc: number) => (isValidRate(usdThb) ? money(thbPerBtc / usdThb, 'USD') : thb(thbPerBtc))
-  const goldHolding = data.holdings.find((h) => h.assetClass === 'gold' && h.price > 0)
+  const goldHolding = data.holdings.find((h) => h.assetClass === 'gold' && isValidPrice(h.price) && hasRealPrice(h))
   const effectiveGoldThbPerGram = goldThbPerGram ?? goldHolding?.price ?? null
   const effectiveGoldPerBaht = effectiveGoldThbPerGram ? Math.round(effectiveGoldThbPerGram * GRAMS_PER_BAHT_GOLD) : null
   const effectiveUsdThb = usdThb && usdThb > 0 ? usdThb : null
