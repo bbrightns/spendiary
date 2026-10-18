@@ -1,475 +1,71 @@
-import type { SVGProps } from 'react'
+/**
+ * The app's icons. They come from Lucide (lucide-react, pinned in package.json) with the app's line
+ * weight; the names below stay the same, so screens import them as before.
+ */
+import {
+  ArrowDownRight as LArrowDownRight, ArrowLeftRight, ArrowUpRight as LArrowUpRight, CalendarSync, Car, ChartPie, Check,
+  ChevronDown, ChevronRight, CircleCheck, CircleHelp, Clock, Coins, Command, Copy, CreditCard, Download, Ellipsis,
+  FlaskConical, HandCoins, House, Keyboard, Layers, LayoutGrid, List, Lock, LockOpen, LogOut, Minus, Pencil, Plus,
+  Receipt, ReceiptText, Scale, Search, Settings, ShoppingBag, Sparkle, Sparkles, Table, Trash2, TreePalm,
+  TrendingUp, TriangleAlert, Undo, Upload, Wallet, X,
+} from 'lucide-react'
+import { appIcon } from './appIcon'
 
-type IconProps = SVGProps<SVGSVGElement>
+// Navigation
+export const DashboardIcon = appIcon(LayoutGrid, 'DashboardIcon')
+export const PortfolioIcon = appIcon(TrendingUp, 'PortfolioIcon')
+export const DcaIcon = appIcon(CalendarSync, 'DcaIcon')
+export const CashflowIcon = appIcon(ArrowLeftRight, 'CashflowIcon')
+export const DividendIcon = appIcon(HandCoins, 'DividendIcon')
+export const StrategyIcon = appIcon(Layers, 'StrategyIcon')
+export const RetirementIcon = appIcon(TreePalm, 'RetirementIcon')
+export const DebtIcon = appIcon(Receipt, 'DebtIcon')
+export const PieChartIcon = appIcon(ChartPie, 'PieChartIcon')
 
-const base = {
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeWidth: 1.6,
-  strokeLinecap: 'round' as const,
-  strokeLinejoin: 'round' as const,
-  viewBox: '0 0 24 24',
-}
+// Money
+export const WalletIcon = appIcon(Wallet, 'WalletIcon')
+export const CoinsIcon = appIcon(Coins, 'CoinsIcon')
+export const CreditCardIcon = appIcon(CreditCard, 'CreditCardIcon')
+export const ReceiptPercentIcon = appIcon(ReceiptText, 'ReceiptPercentIcon')
+export const ArrowUpRight = appIcon(LArrowUpRight, 'ArrowUpRight')
+export const ArrowDownRight = appIcon(LArrowDownRight, 'ArrowDownRight')
+export const ArrowUpRightIcon = appIcon(LArrowUpRight, 'ArrowUpRightIcon')
 
-export function DashboardIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <rect x="3" y="3" width="7.5" height="9" rx="2" />
-      <rect x="13.5" y="3" width="7.5" height="6" rx="2" />
-      <rect x="13.5" y="13" width="7.5" height="8" rx="2" />
-      <rect x="3" y="15" width="7.5" height="6" rx="2" />
-    </svg>
-  )
-}
+// Actions
+export const PlusIcon = appIcon(Plus, 'PlusIcon')
+export const MinusIcon = appIcon(Minus, 'MinusIcon')
+export const CheckIcon = appIcon(Check, 'CheckIcon')
+export const CheckCircleIcon = appIcon(CircleCheck, 'CheckCircleIcon')
+export const PencilIcon = appIcon(Pencil, 'PencilIcon')
+export const TrashIcon = appIcon(Trash2, 'TrashIcon')
+export const CloseIcon = appIcon(X, 'CloseIcon')
+export const CopyIcon = appIcon(Copy, 'CopyIcon')
+export const UndoIcon = appIcon(Undo, 'UndoIcon')
+export const DownloadIcon = appIcon(Download, 'DownloadIcon')
+export const UploadIcon = appIcon(Upload, 'UploadIcon')
+export const SearchIcon = appIcon(Search, 'SearchIcon')
+export const LogOutIcon = appIcon(LogOut, 'LogOutIcon')
+export const LockClosedIcon = appIcon(Lock, 'LockClosedIcon')
+export const LockOpenIcon = appIcon(LockOpen, 'LockOpenIcon')
+export const DotsHorizontalIcon = appIcon(Ellipsis, 'DotsHorizontalIcon')
+export const ChevronDownIcon = appIcon(ChevronDown, 'ChevronDownIcon')
+export const ChevronRightIcon = appIcon(ChevronRight, 'ChevronRightIcon')
 
-export function PortfolioIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M3 17.5 9 11l4 3.5L21 6" />
-      <path d="M21 11V6h-5" />
-    </svg>
-  )
-}
-
-export function DcaIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <rect x="3" y="5" width="18" height="16" rx="2.5" />
-      <path d="M3 10h18M8 3v4M16 3v4" />
-      <path d="M14.8 14.2a3 3 0 1 0 .4 2.6" />
-      <path d="M15.2 12.2v2.2h-2.2" />
-    </svg>
-  )
-}
-
-
-export function CashflowIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M4 8h13M14 5l3 3-3 3" />
-      <path d="M20 16H7M10 19l-3-3 3-3" />
-    </svg>
-  )
-}
-
-export function DividendIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <ellipse cx="9" cy="7" rx="6" ry="3" />
-      <path d="M3 7v5c0 1.7 2.7 3 6 3" />
-      <path d="M15 9.5c3.3 0 6 1.3 6 3v5c0 1.7-2.7 3-6 3s-6-1.3-6-3v-5" />
-    </svg>
-  )
-}
-
-export function WalletIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H17a2 2 0 0 1 2 2v.5" />
-      <path d="M3 7.5V17a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H5.5A2.5 2.5 0 0 1 3 7.5Z" />
-      <circle cx="16.5" cy="13" r="1.2" fill="currentColor" stroke="none" />
-    </svg>
-  )
-}
-
-export function ArrowUpRight(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M7 17 17 7M8 7h9v9" />
-    </svg>
-  )
-}
-
-export function ArrowDownRight(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M7 7l10 10M17 8v9H8" />
-    </svg>
-  )
-}
-
-export function ClockIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 2" />
-    </svg>
-  )
-}
-
-export function AlertIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M10.3 3.8 2.5 17.5A2 2 0 0 0 4.2 20.5h15.6a2 2 0 0 0 1.7-3L13.7 3.8a2 2 0 0 0-3.4 0Z" />
-      <path d="M12 9v4M12 16.5h.01" />
-    </svg>
-  )
-}
-
-export function PlusIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  )
-}
-
-export function MinusIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M5 12h14" />
-    </svg>
-  )
-}
-
-export function DotsHorizontalIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
-      <circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none" />
-      <circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none" />
-    </svg>
-  )
-}
-
-export function SparkleIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M12 3.5 13.6 9 19 10.5 13.6 12 12 17.5 10.4 12 5 10.5 10.4 9 12 3.5Z" />
-      <path d="M19 4v3M20.5 5.5h-3" />
-    </svg>
-  )
-}
-
-export function CheckIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M5 12.5 10 17 19 7" />
-    </svg>
-  )
-}
-
-export function CheckCircleIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="m8.5 12.5 2.5 2.5 5-5" />
-    </svg>
-  )
-}
-
-
-export function PencilIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M14 5.5 18.5 10M4 20l1-4L16 5a2.1 2.1 0 0 1 3 3L8 19l-4 1Z" />
-    </svg>
-  )
-}
-
-export function TrashIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M4 7h16M9 7V5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5v2" />
-      <path d="M6 7l1 12a2 2 0 0 0 2 1.8h6a2 2 0 0 0 2-1.8L18 7" />
-      <path d="M10 11v6M14 11v6" />
-    </svg>
-  )
-}
-
-export function CloseIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M6 6l12 12M18 6 6 18" />
-    </svg>
-  )
-}
-
-export function CoinsIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <ellipse cx="9" cy="7" rx="6" ry="3" />
-      <path d="M3 7v5c0 1.7 2.7 3 6 3" />
-      <path d="M15 9.5c3.3 0 6 1.3 6 3v5c0 1.7-2.7 3-6 3s-6-1.3-6-3v-5" />
-    </svg>
-  )
-}
-
-export function SettingsIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  )
-}
-
-
-export function StrategyIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="m12 2 9 5-9 5-9-5 9-5Z" />
-      <path d="m3 12 9 5 9-5" />
-      <path d="m3 17 9 5 9-5" />
-    </svg>
-  )
-}
-
-export function PieChartIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M12 3v9h9" />
-      <path d="M21 12a9 9 0 1 1-9-9" />
-      <path d="M14.5 9.5 20 4" opacity="0.55" />
-    </svg>
-  )
-}
-
-export function DownloadIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M12 3v12M8 11l4 4 4-4" />
-      <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
-    </svg>
-  )
-}
-
-export function UploadIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M12 15V3M8 7l4-4 4 4" />
-      <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
-    </svg>
-  )
-}
-
-export function RetirementIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M3 20h18" />
-      <path d="M5 20V10l7-7 7 7v10" />
-      <path d="M9 20v-5h6v5" />
-      <circle cx="12" cy="9" r="1.5" fill="currentColor" stroke="none" />
-    </svg>
-  )
-}
-
-
-export function UndoIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M3 7v6h6" />
-      <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
-    </svg>
-  )
-}
-
-export function CopyIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-    </svg>
-  )
-}
-
-export function ScaleIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
-      <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
-      <path d="M7 21h10" />
-      <path d="M12 3v18" />
-      <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" />
-    </svg>
-  )
-}
-
-export function HelpCircleIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-      <line x1="12" y1="17" x2="12.01" y2="17" />
-    </svg>
-  )
-}
-
-export function SearchIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-    </svg>
-  )
-}
-
-export function TableIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <rect width="18" height="18" x="3" y="3" rx="2" />
-      <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
-    </svg>
-  )
-}
-
-export function ListIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <line x1="8" y1="6" x2="21" y2="6" />
-      <line x1="8" y1="12" x2="21" y2="12" />
-      <line x1="8" y1="18" x2="21" y2="18" />
-      <line x1="3" y1="6" x2="3.01" y2="6" />
-      <line x1="3" y1="12" x2="3.01" y2="12" />
-      <line x1="3" y1="18" x2="3.01" y2="18" />
-    </svg>
-  )
-}
-
-export function ChevronDownIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  )
-}
-
-export function ChevronRightIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="m9 5 7 7-7 7" />
-    </svg>
-  )
-}
-
-export function CreditCardIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <rect width="20" height="14" x="2" y="5" rx="2" />
-      <line x1="2" x2="22" y1="10" y2="10" />
-    </svg>
-  )
-}
-
-export function HomeIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-  )
-}
-
-export function CarIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
-      <circle cx="7" cy="17" r="2" />
-      <path d="M9 17h6" />
-      <circle cx="17" cy="17" r="2" />
-    </svg>
-  )
-}
-
-export function DebtIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
-      <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
-      <path d="M12 6v12" />
-    </svg>
-  )
-}
-
-export function ReceiptPercentIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
-      <path d="m9 15 6-6" />
-      <circle cx="9.5" cy="9.5" r=".5" fill="currentColor" />
-      <circle cx="14.5" cy="14.5" r=".5" fill="currentColor" />
-    </svg>
-  )
-}
-
-export function FlaskIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M10 2v7.31a2 2 0 0 1-.37 1.17L4.22 18.6A2 2 0 0 0 5.86 22h12.28a2 2 0 0 0 1.64-3.4l-5.41-8.12A2 2 0 0 1 14 9.31V2" />
-      <path d="M8.5 2h7" />
-      <path d="M7 16h10" />
-    </svg>
-  )
-}
-
-export function LogOutIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-      <polyline points="16 17 21 12 16 7" />
-      <line x1="21" y1="12" x2="9" y2="12" />
-    </svg>
-  )
-}
-
-export function ShoppingBagIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
-      <path d="M3 6h18" />
-      <path d="M16 10a4 4 0 0 1-8 0" />
-    </svg>
-  )
-}
-
-export function ArrowUpRightIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M7 17 17 7M7 7h10v10" />
-    </svg>
-  )
-}
-
-export function CommandIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
-    </svg>
-  )
-}
-
-export function KeyboardIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <rect width="20" height="16" x="2" y="4" rx="2" />
-      <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10" />
-    </svg>
-  )
-}
-
-export function LockClosedIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  )
-}
-
-export function LockOpenIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 9.9-1" />
-    </svg>
-  )
-}
-
-export function SparklesIcon(p: IconProps) {
-  return (
-    <svg {...base} {...p}>
-      <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z" />
-    </svg>
-  )
-}
-
+// Status & misc
+export const ClockIcon = appIcon(Clock, 'ClockIcon')
+export const AlertIcon = appIcon(TriangleAlert, 'AlertIcon')
+export const HelpCircleIcon = appIcon(CircleHelp, 'HelpCircleIcon')
+export const SettingsIcon = appIcon(Settings, 'SettingsIcon')
+export const ScaleIcon = appIcon(Scale, 'ScaleIcon')
+export const TableIcon = appIcon(Table, 'TableIcon')
+export const ListIcon = appIcon(List, 'ListIcon')
+export const HomeIcon = appIcon(House, 'HomeIcon')
+export const CarIcon = appIcon(Car, 'CarIcon')
+export const ShoppingBagIcon = appIcon(ShoppingBag, 'ShoppingBagIcon')
+export const FlaskIcon = appIcon(FlaskConical, 'FlaskIcon')
+export const CommandIcon = appIcon(Command, 'CommandIcon')
+export const KeyboardIcon = appIcon(Keyboard, 'KeyboardIcon')
+/** The four-point star with a small cross (AI, highlights) */
+export const SparkleIcon = appIcon(Sparkles, 'SparkleIcon')
+/** A single four-point star */
+export const SparklesIcon = appIcon(Sparkle, 'SparklesIcon')

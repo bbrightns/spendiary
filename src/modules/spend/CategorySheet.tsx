@@ -3,6 +3,8 @@ import { Modal } from '../../components/ui/Modal'
 import { SegmentedControl } from '../../components/ui/SegmentedControl'
 import { FormActions } from '../../components/forms/FormActions'
 import { useToast } from '../../store/ToastContext'
+import { SearchIcon } from '../../components/icons'
+import { CATEGORY_ICON_GROUPS, pickableCategoryIcons } from '../../components/categoryIcons'
 import { CATEGORY_ICONS, CATEGORY_TONES, SPEND_CATEGORIES, manageableCategories, type SpendCategory } from './categories'
 import { SwitchVisual } from './AccountSheets'
 import { TONES, TYPE_ACTIVE, type Tone } from './tones'
@@ -33,8 +35,10 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
   const [form, setForm] = useState({ type: type as CatType, label: '', icon: 'tag', tone: 'violet' as Tone, hidden: false })
   const [lastOpen, setLastOpen] = useState(false)
   const [newSub, setNewSub] = useState('')
+  const [iconQuery, setIconQuery] = useState('')
   if (open !== lastOpen) {
     setLastOpen(open)
+    setIconQuery('')
     if (open)
       setForm(
         category
@@ -47,6 +51,8 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
   const changed = shipped && (shipped.label !== category?.label || shipped.iconKey !== category?.iconKey || shipped.tone !== category?.tone || !!category?.hidden)
   const canSave = form.label.trim() !== ''
   const Icon = CATEGORY_ICONS[form.icon] ?? CATEGORY_ICONS.tag
+  const iconMatches = pickableCategoryIcons(iconQuery)
+  const iconGroups = CATEGORY_ICON_GROUPS.map((g) => ({ ...g, icons: iconMatches.filter((d) => d.group === g.id) })).filter((g) => g.icons.length > 0)
 
   const save = () => {
     if (!canSave) return
@@ -105,24 +111,44 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
 
         <div>
           <p className="mb-2 text-sm font-semibold text-ink-soft">Icon</p>
-          <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
-            {Object.entries(CATEGORY_ICONS).map(([key, I]) => {
-              const on = form.icon === key
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  aria-label={`Icon ${key}`}
-                  aria-pressed={on}
-                  onClick={() => setForm((f) => ({ ...f, icon: key }))}
-                  className={`grid aspect-square place-items-center rounded-xl border transition-all cursor-pointer active:scale-95 ${
-                    on ? `${TONES[form.tone].active}` : 'border-line bg-surface text-ink-soft hover:bg-surface-muted/60'
-                  }`}
-                >
-                  <I className="h-5 w-5" />
-                </button>
-              )
-            })}
+          <label className="relative mb-2 block">
+            <span className="sr-only">Search icons</span>
+            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
+            <input
+              type="search"
+              value={iconQuery}
+              onChange={(e) => setIconQuery(e.target.value)}
+              placeholder="Search icons, e.g. dog, หมา, cake"
+              className="h-10 w-full rounded-xl border border-line-strong bg-surface pl-9 pr-3 text-base text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15 sm:text-sm"
+            />
+          </label>
+          {/* Its own scroll area, so Color and Subcategories stay one swipe away */}
+          <div className="max-h-72 space-y-3 overflow-y-auto overscroll-contain rounded-xl border border-line bg-surface-muted/30 p-2">
+            {iconGroups.length === 0 && <p className="px-1 py-6 text-center text-sm text-ink-muted">No icons match "{iconQuery.trim()}"</p>}
+            {iconGroups.map((g) => (
+              <section key={g.id} aria-label={g.label}>
+                <p className="mb-1.5 px-0.5 text-[11px] font-bold uppercase tracking-wider text-ink-muted">{g.label}</p>
+                <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
+                  {g.icons.map(({ key, Icon: I }) => {
+                    const on = form.icon === key
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        aria-label={`Icon ${key}`}
+                        aria-pressed={on}
+                        onClick={() => setForm((f) => ({ ...f, icon: key }))}
+                        className={`grid aspect-square place-items-center rounded-xl border transition-all cursor-pointer active:scale-95 ${
+                          on ? `${TONES[form.tone].active}` : 'border-line bg-surface text-ink-soft hover:bg-surface-muted/60'
+                        }`}
+                      >
+                        <I className="h-5 w-5" />
+                      </button>
+                    )
+                  })}
+                </div>
+              </section>
+            ))}
           </div>
         </div>
 
