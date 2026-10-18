@@ -43,6 +43,7 @@ import type { AssetClass, BtcLocation, Holding } from '../lib/types'
 import { localDateStr, money, thb, thbCompact, pct } from '../lib/format'
 import { isValidRate, rateOrZero } from '../lib/fx'
 import { STORAGE_KEYS } from '../lib/storageKeys'
+import { buildCsv, downloadCsv } from '../lib/csv'
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -474,14 +475,6 @@ export function Portfolio() {
       'Last Updated',
     ]
 
-    const escapeCsv = (val: string | number | null | undefined): string => {
-      if (val === null || val === undefined) return ''
-      const str = String(val).trim()
-      if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
-        return `"${str.replace(/"/g, '""')}"`
-      }
-      return str
-    }
 
     // Real rate or 0: USD figures that need converting are left out rather than worked out at a made-up rate
     const rate = rateOrZero(usdThb)
@@ -534,36 +527,27 @@ export function Portfolio() {
       const qty = isCrypto ? Number(h.units.toFixed(8)) : Number(h.units.toFixed(4))
 
       return [
-        escapeCsv(assetClassLabel),
-        escapeCsv(h.tag || ''),
-        escapeCsv(h.ticker),
-        escapeCsv(h.name),
-        escapeCsv(qty),
-        escapeCsv(uLabel),
-        escapeCsv(avgCostThb.toFixed(2)),
-        escapeCsv(h.price.toFixed(2)),
-        escapeCsv(h.costBasis.toFixed(2)),
-        escapeCsv(h.marketValue.toFixed(2)),
+        assetClassLabel,
+        h.tag || '',
+        h.ticker,
+        h.name,
+        qty,
+        uLabel,
+        avgCostThb.toFixed(2),
+        h.price.toFixed(2),
+        h.costBasis.toFixed(2),
+        h.marketValue.toFixed(2),
         // No real price: there is no P/L to write, only a value counted at cost
-        escapeCsv(h.priced ? h.pnl.toFixed(2) : ''),
-        escapeCsv(h.priced ? `${h.pnlPct >= 0 ? '+' : ''}${h.pnlPct.toFixed(2)}%` : 'No price yet'),
-        escapeCsv(`${weightPct.toFixed(2)}%`),
-        escapeCsv(nativeDetails),
-        escapeCsv(locationsStr),
-        escapeCsv(h.updatedAt || ''),
-      ].join(',')
+        h.priced ? h.pnl.toFixed(2) : '',
+        h.priced ? `${h.pnlPct >= 0 ? '+' : ''}${h.pnlPct.toFixed(2)}%` : 'No price yet',
+        `${weightPct.toFixed(2)}%`,
+        nativeDetails,
+        locationsStr,
+        h.updatedAt || '',
+      ]
     })
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...csvRows].join('\r\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `spendiary-portfolio-${localDateStr()}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    downloadCsv(buildCsv(headers, csvRows), `spendiary-portfolio-${localDateStr()}.csv`)
 
     showToast(`Exported ${rows.length} holding${rows.length === 1 ? '' : 's'} to CSV`, 'success')
   }

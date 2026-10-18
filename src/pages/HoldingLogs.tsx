@@ -33,6 +33,7 @@ import {
 } from '../components/icons'
 import { TransactionDateField } from '../components/forms/TransactionDateField'
 import { STORAGE_KEYS } from '../lib/storageKeys'
+import { buildCsv, downloadCsv } from '../lib/csv'
 
 
 interface ActionMeta {
@@ -591,14 +592,6 @@ export function HoldingLogs() {
       'Note',
     ]
 
-    const escapeCsv = (val: string | number | null | undefined): string => {
-      if (val === null || val === undefined) return ''
-      const str = String(val).trim()
-      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-        return `"${str.replace(/"/g, '""')}"`
-      }
-      return str
-    }
 
     const rows = filtered.map((log) => {
       const dt = new Date(log.timestamp)
@@ -613,31 +606,22 @@ export function HoldingLogs() {
         : (log.note.match(/Realized PnL:\s*([+-]?฿[0-9,.]+)/) ? log.note.match(/Realized PnL:\s*([+-]?฿[0-9,.]+)/)![1].replace(/[฿,]/g, '') : '')
 
       return [
-        escapeCsv(dateStr),
-        escapeCsv(timeStr),
-        escapeCsv(actionMeta.label),
-        escapeCsv(log.assetClass),
-        escapeCsv(log.ticker || ''),
-        escapeCsv(log.holdingName),
-        escapeCsv(tx.sharesDisplay !== '-' ? tx.sharesDisplay : ''),
-        escapeCsv(tx.priceDisplay !== '-' ? tx.priceDisplay : ''),
-        escapeCsv(tx.amountThbValue !== null ? tx.amountThbValue.toFixed(2) : ''),
-        escapeCsv(realizedPnLStr),
-        escapeCsv(locName || ''),
-        escapeCsv(noteStr),
-      ].join(',')
+        dateStr,
+        timeStr,
+        actionMeta.label,
+        log.assetClass,
+        log.ticker || '',
+        log.holdingName,
+        tx.sharesDisplay !== '-' ? tx.sharesDisplay : '',
+        tx.priceDisplay !== '-' ? tx.priceDisplay : '',
+        tx.amountThbValue !== null ? tx.amountThbValue.toFixed(2) : '',
+        realizedPnLStr,
+        locName || '',
+        noteStr,
+      ]
     })
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `spendiary-activity-logs-${localDateStr()}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    downloadCsv(buildCsv(headers, rows), `spendiary-activity-logs-${localDateStr()}.csv`)
 
     showToast(`Exported ${filtered.length} transaction${filtered.length === 1 ? '' : 's'} to CSV`, 'success')
   }
