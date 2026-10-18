@@ -186,9 +186,9 @@
 
 | # | งาน | ขอบเขต |
 |---|---|---|
-| C1 · 23 | test ให้ `src/lib/calc.ts` (~1,300 บรรทัด ตอนนี้ test แค่บางฟังก์ชัน) | holdingMetrics, portfolioSummary, allocations, DCA period, liabilities, totalCash (มี/ไม่มี USD rate) |
-| C2 · 23 | test ให้ actions อีก 34 ตัวใน `src/store/actions/` | ทุก action เป็นฟังก์ชันบริสุทธิ์ `(prev, ...args) => next` เขียน test ง่าย |
-| C3 | (ไม่บังคับ) component test | ตอนนี้ยังไม่มี setup ถ้าจะทำต้องเพิ่ม jsdom + Testing Library |
+| ~~C1 · 23~~ ✅ | test ให้ `src/lib/calc.ts` (~1,300 บรรทัด ตอนนี้ test แค่บางฟังก์ชัน) | **เสร็จแล้ว (`5bacf66`):** `calc.test.ts` 45 test: holdingMetrics, applyBuy, allocations, findMatchingHolding, ทอง/BTC, รอบ DCA ทั้ง daily/weekly/monthly (วันที่ 31, ข้ามปี), sortDcaPlans, ดอกเบี้ยเงินสด (มี/ไม่มี USD rate), หนี้, netWorth, สถานะครบกำหนดหนี้ |
+| ~~C2 · 23~~ ✅ | test ให้ actions อีก 34 ตัวใน `src/store/actions/` | **เสร็จแล้ว (`5564a92`):** ทุก action ใน cash/dca/dividends/holdingLogs/holdings/liabilities/planning มี test รวมถึง undo แบบไป-กลับ (ขาย, ซื้อเพิ่ม, ย้ายที่เก็บ, ปันผล, ยืนยัน DCA, แก้บัญชีเงินสดแล้วมีรายการ Spend ตามมา) |
+| C3 | (ไม่บังคับ) component test | ไม่ได้ทำ: ไม่บังคับ และต้องเพิ่ม jsdom + Testing Library |
 
 **เกณฑ์ว่าเสร็จ:** ฟังก์ชันทุกตัวที่เฟส D จะย้าย มี test ครอบอยู่ก่อนย้าย
 
