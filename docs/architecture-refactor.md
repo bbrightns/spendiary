@@ -198,7 +198,7 @@
 
 | ลำดับ | # | งาน | หมายเหตุ |
 |---|---|---|---|
-| D1 | 19 | รวม `newId` ที่ซ้ำอยู่ 6 ที่ให้เหลือที่เดียว, เพิ่ม `lib/money.ts`, รวม localStorage keys ไว้ใน `lib/storageKeys.ts` | งานเล็ก ทำให้ D2–D4 ง่ายขึ้น |
+| ~~D1~~ ✅ | 19 | รวม `newId` ที่ซ้ำอยู่ 6 ที่ให้เหลือที่เดียว, เพิ่ม `lib/money.ts`, รวม localStorage keys ไว้ใน `lib/storageKeys.ts` | **เสร็จแล้ว (`7b4e0d3`):** `lib/id.ts` (`store/migrate` ยัง export `newId` ชื่อเดิม), `roundMoney` ใช้แทนการปัดเศษใน store และ logic ของ Spend (ฟอร์มใหญ่ HoldingForm/BuyMoreForm/SellHoldingModal ยังใช้ `toFixed(2)` อยู่ จะเปลี่ยนตอนแตกไฟล์ใน D4) และ `STORAGE_KEYS` ครบทุก key โดยค่าเดิมไม่เปลี่ยน การตั้งค่าที่บันทึกไว้จึงยังอ่านได้ |
 | D2 | 21 | แก้ทิศทาง import: `lib/` และ `components/` ห้าม import จาก `modules/spend` | เพิ่มกฎ eslint `no-restricted-imports` กันไว้ ไอคอนหมวดหมู่ย้ายไปแล้วใน A2 |
 | D3 | 17 | ย้ายส่วนที่เหลือออกจาก `DataContext.tsx`: `confirmDcaBuy` (~365 บรรทัด), `recordDividend`, import/export | ใช้รูปแบบเดิม: pure action ใน `store/actions/` และ `useData()` ไม่เปลี่ยน ทดสอบแบบ differential: export JSON แล้วเทียบ build เก่ากับใหม่ |
 | D4 | 20 | แตกไฟล์ใหญ่ (`HoldingLogs`, `Portfolio`, `HoldingForm`) และรวม CSV exporter 3 ตัวเป็นตัวเดียว | ทำทีละไฟล์ ทีละ PR |
