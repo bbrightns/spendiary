@@ -1,17 +1,13 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import type { AcquisitionSource, BtcLocation, CashAccount, DcaPlan, DebtCategory, DividendRecord, GoldLocation, Holding, HoldingLog, InvestAssetClass, Liability, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryBackup, SpendiaryData, Transfer } from '../lib/types'
-import { localDateStr } from '../lib/format'
+import type { AcquisitionSource, BtcLocation, CashAccount, DcaPlan, DividendRecord, GoldLocation, Holding, HoldingLog, InvestAssetClass, Liability, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
 import { isValidRate, readCachedUsdThb, writeCachedUsdThb, type UsdThbRate } from '../lib/fx'
 import { fetchUsdThb } from '../lib/prices'
 import { seedData } from './seed'
-import { detectBankPreset, findMatchingHolding, inferCashCategory } from '../lib/calc'
-import { inferAssetClass } from '../lib/assetClass'
 import { syncCategories } from '../modules/spend/categories'
 import { emptyData, migrate, newId } from './migrate'
-import { parseCleanNumber, validateSpendiaryData } from './validate'
-import { payFromAccount, upsert, type DcaPayment } from './dataHelpers'
+import type { DcaPayment } from './dataHelpers'
 import { useAuth } from './useAuth'
 import { useCloudSync, type SyncStatus } from './useCloudSync'
 import * as cashActions from './actions/cash'
@@ -21,8 +17,9 @@ import * as holdingLogActions from './actions/holdingLogs'
 import * as dcaActions from './actions/dca'
 import * as dividendActions from './actions/dividends'
 import * as planningActions from './actions/planning'
+import { applyImport, prepareImport } from './actions/importPortfolio'
+import { applyPreferences, downloadBackup, makeBackup, parseBackup, readPreferences } from './backup'
 import { STORAGE_KEYS } from '../lib/storageKeys'
-import { roundMoney } from '../lib/money'
 
 /** Result returned by importData — UI can react to success/error */
 export type ImportResult =
@@ -178,10 +175,8 @@ export interface DataContextValue {
   /** Download the current data as a dated JSON file (browser download). */
   exportData: () => void
   /**
-   * Parse + validate a JSON string and, if valid, atomically:
-   *   1. Update React state
-   *   2. Persist to localStorage
-   *   3. Immediately push to Cloudflare cloud (skips debounce)
+   * Parse + validate a backup file and, if valid, replace the data with it, restore its
+   * preferences and save to the cloud right away (skips the debounce).
    * Returns { ok: true } on success or { ok: false; error } on failure.
    */
   importData: (jsonString: string) => ImportResult
@@ -406,354 +401,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         goldUpdate,
         payment,
       ) =>
-        updateData((prev) => {
-          const plan = prev.dcaPlans.find((p) => p.id === planId)
-          if (!plan) return prev
-
-          // Paid from a cash account: its balance goes down, and the log keeps both
-          // snapshots so Undo gives the money back
-          const paid = payment && payment.amount > 0 && (prev.cashAccounts ?? []).some((a) => a.id === payment.accountId) ? payment : undefined
-          const paidLog = paid
-            ? {
-                paidFromAccountId: paid.accountId,
-                paidAmount: paid.amount,
-                previousCashAccountsState: prev.cashAccounts ?? [],
-                afterCashAccountsState: payFromAccount(prev.cashAccounts ?? [], paid),
-              }
-            : {}
-          const paidAccounts = paid ? { cashAccounts: payFromAccount(prev.cashAccounts ?? [], paid) } : {}
-
-          // If this is a Cash Account DCA plan, deposit directly into cash account balance
-          if (plan.assetClass === 'cash' || plan.cashAccountId) {
-            const oldAccounts = prev.cashAccounts ?? []
-            const depositAmount =
-              (fundUpdate as { amountSpentThb?: number } | undefined)?.amountSpentThb ||
-              (stockUpdate as { amountSpentThb?: number } | undefined)?.amountSpentThb ||
-              (pricePerUnit > 0 ? pricePerUnit : plan.monthlyAmount)
-            const targetAcc = plan.cashAccountId
-              ? oldAccounts.find((a) => a.id === plan.cashAccountId)
-              : oldAccounts.find((a) => a.name.toLowerCase() === plan.name.toLowerCase())
-
-            const updatedCashAccounts = payFromAccount(
-              targetAcc
-                ? oldAccounts.map((a) =>
-                    a.id === targetAcc.id ? { ...a, balance: a.balance + depositAmount } : a,
-                  )
-                : oldAccounts,
-              paid,
-            )
-
-            const updatedPlans = prev.dcaPlans.map((p) =>
-              p.id !== planId
-                ? p
-                : {
-                    ...p,
-                    cashAccountId: targetAcc ? targetAcc.id : p.cashAccountId,
-                    confirmedDates: [date, ...(p.confirmedDates ?? [])],
-                  },
-            )
-
-            const logEntry: import('../lib/types').HoldingLog = {
-              id: newId(),
-              timestamp: new Date().toISOString(),
-              action: 'buy_more',
-              holdingName: targetAcc ? targetAcc.name : plan.name,
-              ticker: 'CASH',
-              assetClass: 'cash',
-              note: `Deposited ฿${depositAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })} via DCA into ${targetAcc ? targetAcc.name : plan.name}`,
-              dcaPlanId: plan.id,
-              dcaDate: date,
-              ...(paid ? { paidFromAccountId: paid.accountId, paidAmount: paid.amount } : {}),
-              previousCashAccountsState: oldAccounts,
-              afterCashAccountsState: updatedCashAccounts,
-            }
-
-            return {
-              ...prev,
-              cashAccounts: updatedCashAccounts,
-              dcaPlans: updatedPlans,
-              holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
-            }
-          }
-
-          // Check if holding already existed before this transaction (via targetHoldingId or findMatchingHolding)
-          const existingHolding = targetHoldingId
-            ? prev.holdings.find((h) => h.id === targetHoldingId)
-            : findMatchingHolding(prev.holdings, plan)
-
-          const isNewHolding = !existingHolding
-          let holding = existingHolding
-          let holdingsList = prev.holdings
-
-          // Auto-create holding if needed when location or buy detail is provided
-          if (!holding && (stockUpdate || fundUpdate || btcLocationUpdate || goldLocationUpdate || (pricePerUnit > 0 && (plan.assetClass === 'gold' || plan.assetClass === 'crypto' || plan.assetClass === 'stock' || plan.assetClass === 'fund')))) {
-            const createdHolding: import('../lib/types').Holding = {
-              id: newId(),
-              name: plan.name,
-              ticker: plan.ticker || plan.name.toUpperCase().slice(0, 6),
-              assetClass: plan.assetClass,
-              units: 0,
-              totalUnits: 0,
-              totalThbInvested: 0,
-              totalUsdInvested: 0,
-              avgCostUsd: 0,
-              avgCostThb: 0,
-              avgCost: pricePerUnit,
-              price: pricePerUnit,
-              updatedAt: date,
-              btcLocations: [],
-              goldLocations: [],
-            }
-            holding = createdHolding
-            holdingsList = [...prev.holdings, createdHolding]
-          }
-
-          // Mark date as confirmed on the plan + link holdingId to prevent future binding bugs
-          const updatedPlans = prev.dcaPlans.map((p) =>
-            p.id !== planId
-              ? p
-              : {
-                  ...p,
-                  holdingId: holding ? holding.id : p.holdingId,
-                  confirmedDates: [date, ...(p.confirmedDates ?? [])],
-                },
-          )
-
-          if (!holding) {
-            // Log simple plan confirmation (no holding update)
-            const logEntry: import('../lib/types').HoldingLog = {
-              id: newId(),
-              timestamp: new Date().toISOString(),
-              action: 'buy_more',
-              holdingName: `DCA Plan: ${plan.name}`,
-              ticker: 'DCA',
-              assetClass: plan.assetClass,
-              note: `Confirmed DCA buy of ฿${plan.monthlyAmount.toLocaleString()} (No linked holding)`,
-              dcaPlanId: plan.id,
-              dcaDate: date,
-              ...paidLog,
-            }
-            return {
-              ...prev,
-              ...paidAccounts,
-              dcaPlans: updatedPlans,
-              holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
-            }
-          }
-
-          // Capture previous state (for undo) BEFORE applying updates (if holding existed)
-          const previousHoldingState = !isNewHolding ? JSON.parse(JSON.stringify(holding)) : undefined
-
-          let calculatedUnits = pricePerUnit > 0 ? plan.monthlyAmount / pricePerUnit : 0
-          if (!isFinite(calculatedUnits) || isNaN(calculatedUnits)) calculatedUnits = 0
-
-          let newUnits = overrideUnits !== undefined ? overrideUnits : holding.units + calculatedUnits
-          let newAvgCost =
-            overrideAvgCost !== undefined
-              ? overrideAvgCost
-              : newUnits > 0
-              ? (holding.units * holding.avgCost + calculatedUnits * pricePerUnit) / newUnits
-              : holding.avgCost
-          if (!isFinite(newAvgCost) || isNaN(newAvgCost)) newAvgCost = holding.avgCost
-          const finalPrice = overridePrice !== undefined ? overridePrice : pricePerUnit
-
-          let finalBtcLocations = holding.btcLocations
-          let finalGoldLocations = holding.goldLocations
-          let updatedFields: Partial<import('../lib/types').Holding> = {}
-          let logNote = ''
-
-          if (stockUpdate) {
-            const { unitsBought, amountSpentThb, fxRate } = stockUpdate
-            const usdSpentThisTx = fxRate > 0 ? amountSpentThb / fxRate : 0
-            const pricePerShareUsd = unitsBought > 0 ? usdSpentThisTx / unitsBought : 0
-            const pricePerShareThb = pricePerShareUsd > 0 ? pricePerShareUsd * fxRate : holding.price
-
-            const currentUnits = holding.units ?? holding.totalUnits ?? 0
-            const currentThbInvested = holding.totalThbInvested ?? currentUnits * (holding.avgCostThb ?? holding.avgCost ?? 0)
-            const currentUsdInvested = holding.totalUsdInvested ?? currentUnits * (holding.avgCostUsd ?? (fxRate > 0 ? (holding.avgCost ?? 0) / fxRate : 0))
-
-            const newTotalUnits = currentUnits + unitsBought
-            const newTotalThbInvested = roundMoney(currentThbInvested + amountSpentThb)
-            const newTotalUsdInvested = currentUsdInvested + usdSpentThisTx
-
-            const newAvgCostUsd = newTotalUnits > 0 ? newTotalUsdInvested / newTotalUnits : (holding.avgCostUsd ?? 0)
-            const newAvgCostThb = newTotalUnits > 0 ? newTotalThbInvested / newTotalUnits : (holding.avgCostThb ?? holding.avgCost ?? 0)
-
-            newUnits = newTotalUnits
-            newAvgCost = newAvgCostThb
-            calculatedUnits = unitsBought
-
-            updatedFields = {
-              units: newTotalUnits,
-              totalUnits: newTotalUnits,
-              totalThbInvested: newTotalThbInvested,
-              totalUsdInvested: newTotalUsdInvested,
-              avgCostUsd: newAvgCostUsd,
-              avgCostThb: newAvgCostThb,
-              avgCost: newAvgCostThb,
-              price: pricePerShareThb > 0 ? pricePerShareThb : holding.price,
-            }
-
-            logNote = `DCA Buy: ${unitsBought} shares @ $${pricePerShareUsd.toFixed(2)}/share (+฿${amountSpentThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
-          } else if (fundUpdate) {
-            const { unitsBought, amountSpentThb, nav } = fundUpdate
-            const currentUnits = holding.units ?? holding.totalUnits ?? 0
-            const currentThbInvested = holding.totalThbInvested ?? (currentUnits * (holding.avgCostThb ?? holding.avgCost ?? 0))
-
-            const newTotalUnits = currentUnits + unitsBought
-            const newTotalThbInvested = roundMoney(currentThbInvested + amountSpentThb)
-            const newAvgCostThb = newTotalUnits > 0 ? newTotalThbInvested / newTotalUnits : (holding.avgCostThb ?? holding.avgCost ?? 0)
-
-            newUnits = newTotalUnits
-            newAvgCost = newAvgCostThb
-            calculatedUnits = unitsBought
-
-            updatedFields = {
-              units: newTotalUnits,
-              totalUnits: newTotalUnits,
-              totalThbInvested: newTotalThbInvested,
-              avgCostThb: newAvgCostThb,
-              avgCost: newAvgCostThb,
-              price: nav > 0 ? nav : (holding.price > 0 ? holding.price : newAvgCostThb),
-            }
-
-            logNote = `DCA Buy: ${unitsBought} units @ ฿${nav.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}/unit (+฿${amountSpentThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
-          } else if (holding.assetClass === 'crypto' && btcLocationUpdate) {
-            finalBtcLocations = upsert(holding.btcLocations ?? [], btcLocationUpdate)
-            const totalSats = finalBtcLocations.reduce((s: number, l: BtcLocation) => s + l.satoshi, 0)
-            const totalThb = roundMoney(finalBtcLocations.reduce((s: number, l: BtcLocation) => s + l.thbSpent, 0))
-            newUnits = totalSats / 100_000_000
-            newAvgCost = newUnits > 0 ? totalThb / newUnits : holding.avgCost
-            if (!isFinite(newAvgCost) || isNaN(newAvgCost)) newAvgCost = holding.avgCost
-
-            const existingLoc = btcLocationUpdate.id ? holding.btcLocations?.find((l) => l.id === btcLocationUpdate.id) : undefined
-            const satsBought = (btcUpdate && typeof btcUpdate.satsBought === 'number' && btcUpdate.satsBought > 0)
-              ? btcUpdate.satsBought
-              : (existingLoc ? btcLocationUpdate.satoshi - existingLoc.satoshi : btcLocationUpdate.satoshi)
-            const amountSpent = (btcUpdate && typeof btcUpdate.amountSpentThb === 'number' && btcUpdate.amountSpentThb > 0)
-              ? btcUpdate.amountSpentThb
-              : (existingLoc ? btcLocationUpdate.thbSpent - existingLoc.thbSpent : btcLocationUpdate.thbSpent)
-            calculatedUnits = satsBought / 100_000_000
-
-            const impliedBtcPrice = satsBought > 0 ? (amountSpent / satsBought) * 100_000_000 : (pricePerUnit > 0 ? pricePerUnit : holding.price)
-
-            updatedFields = {
-              totalThbInvested: totalThb,
-              totalUnits: newUnits,
-              units: newUnits,
-              avgCostThb: newAvgCost,
-              avgCost: newAvgCost,
-              price: impliedBtcPrice > 0 ? impliedBtcPrice : holding.price,
-            }
-
-            const btcLocName = btcLocationUpdate.name || existingLoc?.name
-            logNote = `DCA Buy: ${satsBought.toLocaleString()} sats @ ฿${Math.round(impliedBtcPrice).toLocaleString()}/BTC (+฿${amountSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})${btcLocName ? ` · ${btcLocName}` : ''}`
-          } else if (holding.assetClass === 'gold' && goldLocationUpdate) {
-            finalGoldLocations = upsert(holding.goldLocations ?? [], goldLocationUpdate)
-            const totalGrams = finalGoldLocations.reduce((s: number, l: GoldLocation) => s + l.grams, 0)
-            const totalThb = roundMoney(finalGoldLocations.reduce((s: number, l: GoldLocation) => s + l.thbSpent, 0))
-            newUnits = totalGrams
-            newAvgCost = newUnits > 0 ? totalThb / newUnits : holding.avgCost
-            if (!isFinite(newAvgCost) || isNaN(newAvgCost)) newAvgCost = holding.avgCost
-
-            const existingLoc = goldLocationUpdate.id ? holding.goldLocations?.find((l) => l.id === goldLocationUpdate.id) : undefined
-            const gramsBought = goldUpdate?.gramsBought ?? (existingLoc ? goldLocationUpdate.grams - existingLoc.grams : goldLocationUpdate.grams)
-            const amountSpent = goldUpdate?.amountSpentThb ?? (existingLoc ? goldLocationUpdate.thbSpent - existingLoc.thbSpent : goldLocationUpdate.thbSpent)
-            calculatedUnits = gramsBought
-
-            const impliedPricePerGram = gramsBought > 0 ? amountSpent / gramsBought : pricePerUnit
-
-            updatedFields = {
-              totalThbInvested: totalThb,
-              totalUnits: newUnits,
-              units: newUnits,
-              avgCostThb: newAvgCost,
-              avgCost: newAvgCost,
-              price: impliedPricePerGram > 0 ? impliedPricePerGram : holding.price,
-            }
-
-            const goldLocName = goldLocationUpdate.name || existingLoc?.name
-            logNote = `DCA Buy: ${gramsBought.toFixed(4)} g @ ฿${impliedPricePerGram.toFixed(2)}/g (+฿${amountSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})${goldLocName ? ` · ${goldLocName}` : ''}`
-          } else if (holding.assetClass === 'fund') {
-            const currentUnits = holding.units ?? holding.totalUnits ?? 0
-            const currentThbInvested = holding.totalThbInvested ?? (currentUnits * (holding.avgCostThb ?? holding.avgCost ?? 0))
-            const spentThb = plan.monthlyAmount
-            const newTotalUnits = overrideUnits !== undefined ? overrideUnits : (currentUnits + calculatedUnits)
-            const newTotalThb = roundMoney(currentThbInvested + spentThb)
-            const newAvgCostThb = newTotalUnits > 0 ? newTotalThb / newTotalUnits : holding.avgCost
-            updatedFields = {
-              totalThbInvested: newTotalThb,
-              totalUnits: newTotalUnits,
-              units: newTotalUnits,
-              avgCostThb: newAvgCostThb,
-              avgCost: newAvgCostThb,
-            }
-            logNote = `DCA Buy: ${calculatedUnits.toFixed(4)} units @ ฿${pricePerUnit.toFixed(2)}/unit (+฿${spentThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
-          } else if (holding.assetClass === 'crypto') {
-            const currentUnits = holding.units ?? holding.totalUnits ?? 0
-            const spentThb = calculatedUnits * pricePerUnit
-            const newTotalUnits = currentUnits + calculatedUnits
-            const currentThbInvested = holding.totalThbInvested ?? (currentUnits * (holding.avgCostThb ?? holding.avgCost ?? 0))
-            const newTotalThb = roundMoney(currentThbInvested + spentThb)
-            const newAvgCostThb = newTotalUnits > 0 ? newTotalThb / newTotalUnits : holding.avgCost
-            newUnits = newTotalUnits
-            newAvgCost = newAvgCostThb
-            updatedFields = {
-              totalThbInvested: newTotalThb,
-              totalUnits: newTotalUnits,
-              units: newTotalUnits,
-              avgCostThb: newAvgCostThb,
-              avgCost: newAvgCostThb,
-              price: pricePerUnit > 0 ? pricePerUnit : holding.price,
-            }
-            logNote = `DCA Buy: ${calculatedUnits.toFixed(8)} units @ ฿${pricePerUnit.toFixed(8)}/unit (+฿${spentThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
-          }
-
-          const isBtcWithLocations = holding.assetClass === 'crypto' && (finalBtcLocations?.length ?? 0) > 0
-          const isGoldWithLocations = holding.assetClass === 'gold' && (finalGoldLocations?.length ?? 0) > 0
-
-          const resultingHolding: import('../lib/types').Holding = {
-            ...holding,
-            units: newUnits,
-            totalUnits: newUnits,
-            avgCost: newAvgCost,
-            price: finalPrice,
-            updatedAt: date,
-            ...updatedFields,
-            ...(isBtcWithLocations ? { btcLocations: finalBtcLocations } : {}),
-            ...(isGoldWithLocations ? { goldLocations: finalGoldLocations } : {}),
-          }
-
-          const resolvedHoldingId = holding.id
-          const updatedHoldings = holdingsList.map((h) =>
-            h.id !== resolvedHoldingId ? h : resultingHolding
-          )
-
-          // 3. Add to holding log
-          const logEntry: import('../lib/types').HoldingLog = {
-            id: newId(),
-            timestamp: new Date().toISOString(),
-            action: isNewHolding ? 'add' : 'buy_more',
-            holdingName: holding.name,
-            ticker: holding.ticker,
-            assetClass: holding.assetClass,
-            note: logNote || `DCA Buy: ${calculatedUnits.toFixed(4)} units @ ฿${pricePerUnit.toLocaleString()} (+฿${plan.monthlyAmount.toLocaleString()})`,
-            holdingId: holding.id,
-            previousHoldingState,
-            afterHoldingState: resultingHolding,
-            dcaPlanId: plan.id,
-            dcaDate: date,
-            ...paidLog,
-          }
-
-          return {
-            ...prev,
-            ...paidAccounts,
-            dcaPlans: updatedPlans,
-            holdings: updatedHoldings,
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
-          }
-        }),
+        updateData((prev) =>
+          dcaActions.confirmDcaBuy(
+            prev, planId, pricePerUnit, date, overrideUnits, overrideAvgCost, overridePrice, btcLocationUpdate,
+            goldLocationUpdate, stockUpdate, fundUpdate, targetHoldingId, btcUpdate, goldUpdate, payment,
+          ),
+        ),
 
       skipDcaBuy: (planId, date) => updateData((prev) => dcaActions.skipDcaBuy(prev, planId, date)),
 
@@ -762,57 +415,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       recordDividend: (record) => {
         const id = newId()
-        updateData((prev) => {
-          const now = new Date().toISOString()
-          const oldAccounts = prev.cashAccounts ?? []
-          const cashAcc = record.cashAccountId
-            ? oldAccounts.find((a) => a.id === record.cashAccountId)
-            : undefined
-
-          // 1. Credit cash account if specified
-          const updatedCashAccounts = cashAcc
-            ? oldAccounts.map((a) =>
-                a.id === cashAcc.id
-                  ? { ...a, balance: a.balance + record.netAmount }
-                  : a,
-              )
-            : oldAccounts
-
-          // 2. Create DividendRecord
-          const newRecord: DividendRecord = {
-            ...record,
-            id,
-            cashAccountName: cashAcc ? cashAcc.name : record.cashAccountName,
-            createdAt: now,
-          }
-
-          // 3. Create Activity HoldingLog
-          const logEntry: HoldingLog = {
-            id: newId(),
-            timestamp: now,
-            action: 'dividend',
-            holdingId: record.holdingId,
-            holdingName: record.holdingName,
-            ticker: record.ticker,
-            assetClass: record.assetClass,
-            note: `Received dividend ฿${record.netAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (DPS: ฿${record.dps.toLocaleString()}, Tax 10%: -฿${record.taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) into ${cashAcc ? cashAcc.name : 'Cash'}`,
-            previousCashAccountsState: oldAccounts,
-            afterCashAccountsState: updatedCashAccounts,
-            cashAccountId: record.cashAccountId,
-            dividendPerShare: record.dps,
-            grossDividend: record.grossAmount,
-            withholdingTax: record.taxAmount,
-            netDividend: record.netAmount,
-            dividendRecordId: id,
-          }
-
-          return {
-            ...prev,
-            cashAccounts: updatedCashAccounts,
-            dividendRecords: [newRecord, ...(prev.dividendRecords ?? [])],
-            holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
-          }
-        })
+        updateData((prev) => dividendActions.recordDividend(prev, record, id))
         return id
       },
 
@@ -832,335 +435,31 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
 
       // ── Export ────────────────────────────────────────────────
-      exportData: () => {
-        const preferences: SpendiaryBackup['preferences'] = {}
-        try {
-          const theme = localStorage.getItem(STORAGE_KEYS.theme)
-          const pnlDisplay = localStorage.getItem(STORAGE_KEYS.pnlDisplay)
-          const logsViewMode = localStorage.getItem(STORAGE_KEYS.logsViewMode)
-          const goldSellUnit = localStorage.getItem(STORAGE_KEYS.goldSellUnit)
-          if (theme === 'light' || theme === 'dark' || theme === 'system') preferences.theme = theme
-          if (pnlDisplay === 'pct' || pnlDisplay === 'thb') preferences.pnlDisplay = pnlDisplay
-          if (logsViewMode === 'table' || logsViewMode === 'timeline') preferences.logsViewMode = logsViewMode
-          if (goldSellUnit === 'grams' || goldSellUnit === 'baht') preferences.goldSellUnit = goldSellUnit
-        } catch {
-          // Preferences are optional; financial data remains exportable if storage is unavailable.
-        }
-        const backup: SpendiaryBackup = {
-          schemaVersion: 1,
-          exportedAt: new Date().toISOString(),
-          data: dataRef.current,
-          preferences,
-        }
-        const json = JSON.stringify(backup, null, 2)
-        const blob = new Blob([json], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `spendiary-backup-${localDateStr()}.json`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-      },
+      exportData: () => downloadBackup(makeBackup(dataRef.current, readPreferences())),
 
       // ── Import ────────────────────────────────────────────────
       importData: (jsonString) => {
-        // 1. Parse
-        let parsed: unknown
-        try {
-          parsed = JSON.parse(jsonString)
-        } catch {
-          return { ok: false, error: 'The file is not valid JSON. Make sure you chose the right file.' }
-        }
-
-        // 2. Accept the current envelope and legacy root-data exports.
-        const backup = typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
-          ? parsed as Partial<SpendiaryBackup> & SpendiaryData
-          : null
-        const importedData = backup && backup.schemaVersion === 1 && backup.data
-          ? backup.data
-          : parsed
-
-        // 3. Strict schema validation
-        if (!validateSpendiaryData(importedData)) {
-          return {
-            ok: false,
-            error: 'File does not match the Spendiary data format. Required fields (holdings, dcaPlans, cashAccounts, transfers, monthlyIncome) are missing or have the wrong type.',
-          }
-        }
-
-        // 4. Migrate legacy fields
-        const migrated = migrate(importedData)
-        // Stamp lastUpdatedAt so this import wins any cloud conflict resolution
-        const stamped: SpendiaryData = { ...migrated, lastUpdatedAt: Date.now() }
-
-
-
-        // 5. Update React state
-        setDataState(stamped)
-
-        if (backup?.schemaVersion === 1 && backup.preferences) {
-          try {
-            const { theme, pnlDisplay, logsViewMode, goldSellUnit } = backup.preferences
-            if (theme) localStorage.setItem(STORAGE_KEYS.theme, theme)
-            if (pnlDisplay) localStorage.setItem(STORAGE_KEYS.pnlDisplay, pnlDisplay)
-            if (logsViewMode) localStorage.setItem(STORAGE_KEYS.logsViewMode, logsViewMode)
-            if (goldSellUnit) localStorage.setItem(STORAGE_KEYS.goldSellUnit, goldSellUnit)
-          } catch {
-            // Preference restoration is best effort and must not invalidate the import.
-          }
-        }
-
-        // 6. Force an immediate cloud push (bypass the 2-second debounce)
-        if (user) pushNow(user.id, stamped)
-
+        const parsed = parseBackup(jsonString)
+        if (!parsed.ok) return parsed
+        setDataState(parsed.data)
+        if (parsed.preferences) applyPreferences(parsed.preferences)
+        // Save to the cloud right away instead of after the usual 2-second wait
+        if (user) pushNow(user.id, parsed.data)
         return { ok: true }
       },
 
       importPortfolioAndCash: (payload, mode) => {
         try {
-          const rawHoldings = Array.isArray(payload.holdings) ? payload.holdings : []
-          const rawCash = Array.isArray(payload.cashAccounts) ? payload.cashAccounts : []
-
-          if (rawHoldings.length === 0 && rawCash.length === 0) {
-            return { ok: false, error: 'No holdings or cash accounts found in the provided data.' }
-          }
-
-          const today = localDateStr(new Date())
-
-          const sanitizedHoldings: Holding[] = []
-          for (const item of rawHoldings) {
-            if (typeof item !== 'object' || item === null) continue
-            const r = item as Record<string, unknown>
-            const rawTicker = typeof r.ticker === 'string' ? r.ticker.trim() : ''
-            const rawName = typeof r.name === 'string' ? r.name.trim() : ''
-            if (!rawTicker && !rawName) continue
-
-            const rawCurr = typeof r.currency === 'string' ? r.currency.toUpperCase().trim() : ''
-            const cleanTicker = (rawTicker || rawName).toUpperCase().replace(/\.(BK|SET|TB)$/i, '')
-            const ticker = cleanTicker
-            const name = rawName || rawTicker
-            const assetClass = inferAssetClass(ticker, name, typeof r.assetClass === 'string' ? r.assetClass : undefined, rawCurr)
-            if (!assetClass) {
-              return {
-                ok: false,
-                error: `Couldn't tell what kind of asset "${name}" is. Add its assetClass (fund, stock, crypto, gold or real_estate) or its currency (THB or USD), then import again.`,
-              }
-            }
-            const units = Math.max(0, parseCleanNumber(r.units ?? r.totalUnits, 0))
-            const rawCost = Math.max(0, parseCleanNumber(r.avgCost ?? r.avgCostThb ?? r.avgCostUsd ?? r.price, 0))
-            const rawPrice = parseCleanNumber(r.price, 0)
-
-            // If currency is explicitly USD, or if assetClass is 'stock' and currency is not explicitly 'THB'
-            const isUsd = rawCurr === 'USD' || (assetClass === 'stock' && rawCurr !== 'THB')
-            // US stocks keep both a THB and a USD cost, so they need a real rate; never import with a guessed one
-            if ((isUsd || assetClass === 'stock') && !isValidRate(usdThb)) {
-              return {
-                ok: false,
-                error: `"${name}" needs a USD/THB exchange rate, and none has loaded yet. Check your internet connection, then try again.`,
-              }
-            }
-            const fx = usdThb ?? 0
-
-            let avgCostThb: number
-            let avgCostUsd: number | undefined
-            let totalThbInvested: number
-            let totalUsdInvested: number | undefined
-            let price: number
-
-            const suppliedThbInvested = typeof r.totalThbInvested === 'number' && r.totalThbInvested > 0
-              ? r.totalThbInvested
-              : undefined
-            const suppliedUsdInvested = typeof r.totalUsdInvested === 'number' && r.totalUsdInvested > 0
-              ? r.totalUsdInvested
-              : undefined
-
-            if (isUsd) {
-              avgCostUsd = rawCost
-              avgCostThb = parseFloat((rawCost * fx).toFixed(4))
-              totalUsdInvested = suppliedUsdInvested ?? parseFloat((units * rawCost).toFixed(4))
-              totalThbInvested = suppliedThbInvested ?? roundMoney(units * avgCostThb)
-              price = rawPrice > 0 ? roundMoney(rawPrice * fx) : avgCostThb
-            } else {
-              avgCostThb = rawCost
-              totalThbInvested = suppliedThbInvested ?? roundMoney(units * avgCostThb)
-              if (assetClass === 'stock') {
-                avgCostUsd = fx > 0 ? parseFloat((rawCost / fx).toFixed(4)) : rawCost
-                totalUsdInvested = suppliedUsdInvested ?? (fx > 0 ? parseFloat((totalThbInvested / fx).toFixed(4)) : 0)
-              }
-              price = rawPrice > 0 ? rawPrice : avgCostThb
-            }
-
-            const btcLocations = Array.isArray(r.btcLocations) ? (r.btcLocations as BtcLocation[]) : undefined
-            const goldLocations = Array.isArray(r.goldLocations) ? (r.goldLocations as GoldLocation[]) : undefined
-
-            sanitizedHoldings.push({
-              id: typeof r.id === 'string' && r.id && r.id !== 'optional' ? r.id : newId(),
-              ticker,
-              name,
-              assetClass,
-              units,
-              totalUnits: units,
-              avgCost: avgCostThb,
-              avgCostThb,
-              avgCostUsd,
-              totalThbInvested,
-              totalUsdInvested,
-              price,
-              // No price in the file: counted at cost, marked as having no real price
-              ...(rawPrice > 0 ? {} : { placeholderPrice: price }),
-              updatedAt: today,
-              ...(btcLocations ? { btcLocations } : {}),
-              ...(goldLocations ? { goldLocations } : {}),
-            })
-          }
-
-          const sanitizedCash: CashAccount[] = []
-          for (const item of rawCash) {
-            if (typeof item !== 'object' || item === null) continue
-            const r = item as Record<string, unknown>
-            const rawName = typeof r.name === 'string' ? r.name.trim() : ''
-            if (!rawName) continue
-
-            const balance = parseCleanNumber(r.balance, 0)
-            const rawCurr = typeof r.currency === 'string' ? r.currency.toUpperCase().trim() : 'THB'
-            const currency: 'THB' | 'USD' = rawCurr === 'USD' ? 'USD' : 'THB'
-            const preset = detectBankPreset(rawName)
-            const rawCat = typeof r.category === 'string' ? r.category.toLowerCase().trim() : ''
-            const category = (rawCat === 'locked'
-              ? 'locked'
-              : rawCat === 'spending'
-                ? 'spending'
-                : inferCashCategory(rawName)) as CashAccount['category']
-
-            sanitizedCash.push({
-              id: typeof r.id === 'string' && r.id && r.id !== 'optional' ? r.id : newId(),
-              name: rawName,
-              balance,
-              currency,
-              bankPreset: preset?.id,
-              category,
-            })
-          }
-
-          const rawLiabilities = Array.isArray(payload.liabilities) ? payload.liabilities : []
-          const sanitizedLiabilities: Liability[] = []
-          for (const item of rawLiabilities) {
-            if (typeof item !== 'object' || item === null) continue
-            const r = item as Record<string, unknown>
-            const rawName = typeof r.name === 'string' ? r.name.trim() : ''
-            if (!rawName) continue
-
-            const balance = parseCleanNumber(r.balance, 0)
-            const rawCat = typeof r.category === 'string' ? r.category.toLowerCase().trim() : 'other'
-            const validCategories: DebtCategory[] = ['installment', 'credit_card', 'mortgage', 'auto_loan', 'personal_loan', 'student_loan', 'other']
-            const category: DebtCategory = validCategories.includes(rawCat as DebtCategory) ? (rawCat as DebtCategory) : 'other'
-
-            sanitizedLiabilities.push({
-              id: typeof r.id === 'string' && r.id && r.id !== 'optional' ? r.id : newId(),
-              name: rawName,
-              category,
-              balance,
-              interestRate: typeof r.interestRate === 'number' ? r.interestRate : undefined,
-              monthlyPayment: typeof r.monthlyPayment === 'number' ? r.monthlyPayment : undefined,
-              lender: typeof r.lender === 'string' ? r.lender : undefined,
-              dueDay: typeof r.dueDay === 'number' ? r.dueDay : undefined,
-              note: typeof r.note === 'string' ? r.note : undefined,
-              isInstallment: typeof r.isInstallment === 'boolean' ? r.isInstallment : (category === 'installment'),
-              totalInstallments: typeof r.totalInstallments === 'number' ? r.totalInstallments : undefined,
-              paidInstallments: typeof r.paidInstallments === 'number' ? r.paidInstallments : undefined,
-              createdAt: today,
-              updatedAt: today,
-            })
-          }
-
-          if (sanitizedHoldings.length === 0 && sanitizedCash.length === 0 && sanitizedLiabilities.length === 0) {
-            return { ok: false, error: 'Could not extract any valid holdings, cash accounts, or liabilities. Please check your JSON format.' }
-          }
-
-          const summaryParts = [
-            sanitizedHoldings.length > 0 ? `${sanitizedHoldings.length} holdings` : '',
-            sanitizedCash.length > 0 ? `${sanitizedCash.length} cash accounts` : '',
-            sanitizedLiabilities.length > 0 ? `${sanitizedLiabilities.length} liabilities` : '',
-          ].filter(Boolean).join(', ')
-
-          const logEntry: HoldingLog = {
-            id: newId(),
-            timestamp: new Date().toISOString(),
-            action: 'add',
-            holdingName: `AI Import (${summaryParts})`,
-            ticker: 'IMPORT',
-            assetClass: 'stock',
-            note: `Imported via AI/JSON Assistant (${mode === 'replace' ? 'Replaced' : 'Merged'})`,
-          }
-
-          updateData((prev) => {
-            let nextHoldings: Holding[] = []
-            if (mode === 'replace') {
-              nextHoldings = sanitizedHoldings
-            } else {
-              const existing = [...prev.holdings]
-              for (const h of sanitizedHoldings) {
-                const idx = existing.findIndex(
-                  (e) => e.ticker.toUpperCase() === h.ticker.toUpperCase() && e.assetClass === h.assetClass,
-                )
-                if (idx >= 0) {
-                  existing[idx] = { ...existing[idx], ...h, id: existing[idx].id }
-                } else {
-                  existing.push(h)
-                }
-              }
-              nextHoldings = existing
-            }
-
-            let nextCash: CashAccount[] = []
-            if (mode === 'replace') {
-              nextCash = sanitizedCash
-            } else {
-              const existing = [...prev.cashAccounts]
-              for (const c of sanitizedCash) {
-                const idx = existing.findIndex((e) => e.name.toLowerCase() === c.name.toLowerCase())
-                if (idx >= 0) {
-                  existing[idx] = { ...existing[idx], ...c, id: existing[idx].id }
-                } else {
-                  existing.push(c)
-                }
-              }
-              nextCash = existing
-            }
-
-            let nextLiabilities: Liability[] = []
-            if (mode === 'replace') {
-              nextLiabilities = sanitizedLiabilities
-            } else {
-              const existing = [...(prev.liabilities ?? [])]
-              for (const l of sanitizedLiabilities) {
-                const idx = existing.findIndex((e) => e.name.toLowerCase() === l.name.toLowerCase())
-                if (idx >= 0) {
-                  existing[idx] = { ...existing[idx], ...l, id: existing[idx].id }
-                } else {
-                  existing.push(l)
-                }
-              }
-              nextLiabilities = existing
-            }
-
-            return {
-              ...prev,
-              holdings: nextHoldings,
-              cashAccounts: nextCash,
-              liabilities: (sanitizedLiabilities.length > 0 || mode === 'replace') ? nextLiabilities : (prev.liabilities ?? []),
-              holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
-            }
-          })
-
+          const result = prepareImport(payload, mode, usdThb)
+          if (!result.ok) return result
+          const { prepared } = result
+          updateData((prev) => applyImport(prev, prepared, mode))
           return {
             ok: true,
             count: {
-              holdings: sanitizedHoldings.length,
-              cashAccounts: sanitizedCash.length,
-              liabilities: sanitizedLiabilities.length,
+              holdings: prepared.sanitizedHoldings.length,
+              cashAccounts: prepared.sanitizedCash.length,
+              liabilities: prepared.sanitizedLiabilities.length,
             },
           }
         } catch (err) {
