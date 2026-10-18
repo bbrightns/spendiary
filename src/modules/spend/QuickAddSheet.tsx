@@ -17,8 +17,9 @@ import { CategoryPicker } from './CategoryPicker'
 import { NoteField } from './NoteField'
 import { paidDetail } from './billPaid'
 import { firstInstallmentDue, installmentAmount } from './loans'
+import { SHEET_EVENTS } from './sheetEvents'
 
-const OPEN_EVENT = 'spendiary:open-quick-add'
+const OPEN_EVENT = SHEET_EVENTS.quickAdd
 
 interface OpenDetail {
   type?: SpendTxnType

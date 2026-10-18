@@ -9,8 +9,9 @@ import { guessColumns, investCandidates, looksLikeHeader, pairExisting, parseCsv
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { TONES } from './tones'
 import { useSpend } from './useSpend'
+import { SHEET_EVENTS } from './sheetEvents'
 
-const OPEN_EVENT = 'spendiary:open-import'
+const OPEN_EVENT = SHEET_EVENTS.import
 
 /** Open the statement import sheet from anywhere. */
 export function openImport() {

@@ -9,8 +9,9 @@ import { loanPaymentAmount, paymentIsSpending } from './loans'
 import { loanPaidDetail } from './billPaid'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { useSpend } from './useSpend'
+import { SHEET_EVENTS } from './sheetEvents'
 
-const OPEN_EVENT = 'spendiary:open-pay-loan'
+const OPEN_EVENT = SHEET_EVENTS.payLoan
 
 /** Open the "Pay" sheet for a loan or installment plan from anywhere in the app. */
 export function openPayLoan(liabilityId: string) {
