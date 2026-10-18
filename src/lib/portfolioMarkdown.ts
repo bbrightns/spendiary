@@ -1,4 +1,5 @@
 import type { SpendiaryData } from './types'
+import { rateOrZero } from './fx'
 import {
   ASSET_META,
   GRAMS_PER_BAHT_GOLD,
@@ -57,7 +58,8 @@ export function generatePortfolioMarkdown(
     minute: '2-digit',
   })
 
-  const rate = usdThb && usdThb > 0 ? usdThb : 35
+  // Real rate or 0: without one, USD amounts are left unconverted and the snapshot says so
+  const rate = rateOrZero(usdThb)
   const holdings = data.holdings ?? []
   const cashAccounts = data.cashAccounts ?? []
   const dcaPlans = data.dcaPlans ?? []
@@ -81,7 +83,8 @@ export function generatePortfolioMarkdown(
   lines.push(`# 📊 Spendiary - Portfolio Snapshot`)
   lines.push(`> 📅 **Date**: ${dateStr} at ${timeStr}`)
   const rateInfo: string[] = []
-  if (usdThb) rateInfo.push(`USD/THB exchange rate: **${usdThb.toFixed(2)} baht**`)
+  if (rate > 0) rateInfo.push(`USD/THB exchange rate: **${rate.toFixed(2)} baht**`)
+  else rateInfo.push('USD/THB exchange rate: **not loaded**, so USD amounts are shown in USD only and left out of THB totals')
   if (goldThbPerGram) {
     const goldPricePerBaht = Math.round(goldThbPerGram * GRAMS_PER_BAHT_GOLD)
     rateInfo.push(`Gold bar price: **฿${goldPricePerBaht.toLocaleString()} / gold baht** (฿${fmtNum(goldThbPerGram, 2)}/g)`)
@@ -146,6 +149,9 @@ export function generatePortfolioMarkdown(
       if (isStock) {
         typeLabel = 'US Stock'
         qtyStr = `${fmtNum(h.units, 4)} shares`
+      }
+      // Converting to USD needs a real rate; without one the THB figures above stay as they are
+      if (isStock && rate > 0) {
         const avgUsd = h.avgCostUsd ?? (rate > 0 ? h.avgCost / rate : 0)
         const priceUsd = rate > 0 ? h.price / rate : 0
         avgCostStr = `${fmtMoney(avgUsd, 'USD', 2)} (${fmtMoney(h.avgCost, 'THB', 2)})`
@@ -174,8 +180,8 @@ export function generatePortfolioMarkdown(
         const avgCostXauUsd = goldThbPerBahtToXauUsd(avgCostPerBaht, rate)
         const pricePerBaht = h.price * GRAMS_PER_BAHT_GOLD
         const priceXauUsd = goldThbPerBahtToXauUsd(pricePerBaht, rate)
-        avgCostStr = `${fmtMoney(avgCostPerBaht, 'THB', 0)}/gold baht<br/>(${fmtMoney(avgCostXauUsd, 'USD', 0)}/oz)`
-        priceStr = `${fmtMoney(pricePerBaht, 'THB', 0)}/gold baht<br/>(${fmtMoney(priceXauUsd, 'USD', 0)}/oz)`
+        avgCostStr = `${fmtMoney(avgCostPerBaht, 'THB', 0)}/gold baht${rate > 0 ? `<br/>(${fmtMoney(avgCostXauUsd, 'USD', 0)}/oz)` : ''}`
+        priceStr = `${fmtMoney(pricePerBaht, 'THB', 0)}/gold baht${rate > 0 ? `<br/>(${fmtMoney(priceXauUsd, 'USD', 0)}/oz)` : ''}`
       } else if (isRealEstate) {
         typeLabel = 'Real estate'
         qtyStr = `${h.units} ${h.units === 1 ? 'property' : 'properties'}`
@@ -202,7 +208,7 @@ export function generatePortfolioMarkdown(
         for (const loc of h.btcLocations) {
           const locCostPerBtc = loc.satoshi > 0 ? (loc.thbSpent / loc.satoshi) * SATS_PER_BTC : 0
           const locCostPerBtcUsd = rate > 0 ? locCostPerBtc / rate : 0
-          lines.push(`- 📍 **${loc.name}**: ${loc.satoshi.toLocaleString()} sats (${(loc.satoshi / SATS_PER_BTC).toFixed(8)} BTC) | Cost: ${fmtMoney(loc.thbSpent, 'THB', 2)} | Avg cost: ${fmtMoney(locCostPerBtcUsd, 'USD', 0)}/BTC (≈ ${fmtMoney(locCostPerBtc, 'THB', 0)})`)
+          lines.push(`- 📍 **${loc.name}**: ${loc.satoshi.toLocaleString()} sats (${(loc.satoshi / SATS_PER_BTC).toFixed(8)} BTC) | Cost: ${fmtMoney(loc.thbSpent, 'THB', 2)} | Avg cost: ${rate > 0 ? `${fmtMoney(locCostPerBtcUsd, 'USD', 0)}/BTC (≈ ${fmtMoney(locCostPerBtc, 'THB', 0)})` : `${fmtMoney(locCostPerBtc, 'THB', 0)}/BTC`}`)
         }
         lines.push('')
       }
@@ -212,7 +218,7 @@ export function generatePortfolioMarkdown(
           const locBaht = loc.grams / GRAMS_PER_BAHT_GOLD
           const locCostPerBaht = loc.grams > 0 ? (loc.thbSpent / loc.grams) * GRAMS_PER_BAHT_GOLD : 0
           const locCostXauUsd = goldThbPerBahtToXauUsd(locCostPerBaht, rate)
-          lines.push(`- 📍 **${loc.name}**: ${fmtNum(locBaht, 4)} gold baht (${fmtNum(loc.grams, 4)} g) | Cost: ${fmtMoney(loc.thbSpent, 'THB', 2)} | Avg cost: ${fmtMoney(locCostPerBaht, 'THB', 0)}/gold baht (${fmtMoney(locCostXauUsd, 'USD', 0)}/oz)`)
+          lines.push(`- 📍 **${loc.name}**: ${fmtNum(locBaht, 4)} gold baht (${fmtNum(loc.grams, 4)} g) | Cost: ${fmtMoney(loc.thbSpent, 'THB', 2)} | Avg cost: ${fmtMoney(locCostPerBaht, 'THB', 0)}/gold baht${rate > 0 ? ` (${fmtMoney(locCostXauUsd, 'USD', 0)}/oz)` : ''}`)
         }
         lines.push('')
       }
@@ -306,7 +312,7 @@ export function generatePortfolioMarkdown(
       const isUsd = acc.currency === 'USD'
       const thbVal = isUsd ? acc.balance * rate : acc.balance
       const balStr = isUsd
-        ? `${fmtMoney(acc.balance, 'USD', 2)}<br/>(≈ ${fmtMoney(thbVal, 'THB', 2)})`
+        ? `${fmtMoney(acc.balance, 'USD', 2)}${rate > 0 ? `<br/>(≈ ${fmtMoney(thbVal, 'THB', 2)})` : ''}`
         : fmtMoney(acc.balance, 'THB', 2)
 
       const interestStr = acc.interestRate && acc.interestRate > 0 ? ` (${acc.interestRate}%)` : ''

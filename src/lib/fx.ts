@@ -47,3 +47,11 @@ export function writeCachedUsdThb(rate: number, asOf: Date): void {
     // Storage full or blocked: the rate still works for this visit
   }
 }
+
+/**
+ * The rate to convert with, or 0 when no real rate is known. Multiplying by 0 leaves USD amounts
+ * out of THB totals (the app says so in a notice) instead of converting them at a made-up rate.
+ */
+export function rateOrZero(usdThb: number | null | undefined): number {
+  return isValidRate(usdThb) ? usdThb : 0
+}

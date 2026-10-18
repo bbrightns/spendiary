@@ -8,7 +8,7 @@ import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, applyBuy, goldThbPerGramToXauUsd, holdingMetrics, upsert } from '../../lib/calc'
 import type { AcquisitionSource, BtcLocation, GoldLocation, Holding } from '../../lib/types'
 import { dateStrToTimestamp, money, thb, localDateStr } from '../../lib/format'
-import { isValidRate } from '../../lib/fx'
+import { isValidRate, rateOrZero } from '../../lib/fx'
 import { TransactionDateField } from './TransactionDateField'
 import { AcquisitionSourceField } from './AcquisitionSourceField'
 
@@ -113,7 +113,8 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
   const isBtc = holding?.assetClass === 'crypto'
   const isGold = holding?.assetClass === 'gold'
   const isStock = holding?.assetClass === 'stock'
-  const rate = usdThb && usdThb > 1 ? usdThb : 1
+  // Real rate or 0 (never a stand-in value): the FX field is required, so USD maths waits for a typed rate
+  const rate = rateOrZero(usdThb)
   const existingLocations = holding?.btcLocations ?? []
 
   // Guard: only reset form when modal *freshly opens* (false→true),

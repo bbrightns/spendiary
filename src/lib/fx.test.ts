@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { isValidRate, readCachedUsdThb, writeCachedUsdThb } from './fx'
+import { isValidRate, rateOrZero, readCachedUsdThb, writeCachedUsdThb } from './fx'
+import { sortCashAccounts, totalCash } from './calc'
+import { emptyData } from '../store/migrate'
 
 // Vitest runs in Node here, so give the module a minimal localStorage
 const store = new Map<string, string>()
@@ -49,5 +51,38 @@ describe('cached USD/THB rate', () => {
   it('keeps the rate even when no date is known', () => {
     store.set('spendiary.cached_usd_thb', '34.1')
     expect(readCachedUsdThb()).toEqual({ rate: 34.1, asOf: null })
+  })
+})
+
+describe('rateOrZero', () => {
+  it('passes a real rate through and turns anything else into 0', () => {
+    expect(rateOrZero(33.2)).toBe(33.2)
+    expect(rateOrZero(null)).toBe(0)
+    expect(rateOrZero(undefined)).toBe(0)
+    expect(rateOrZero(Number.NaN)).toBe(0)
+  })
+})
+
+describe('cash totals never use a made-up rate', () => {
+  const data = {
+    ...emptyData,
+    cashAccounts: [
+      { id: 'thb', name: 'Bank', balance: 1000 },
+      { id: 'usd', name: 'Dollar account', balance: 100, currency: 'USD' as const },
+    ],
+  }
+
+  it('converts USD with the real rate', () => {
+    expect(totalCash(data, 33)).toBe(4300)
+  })
+
+  it('leaves USD out when there is no rate', () => {
+    expect(totalCash(data, null)).toBe(1000)
+  })
+
+  it('sorts a USD account after THB ones when its THB value is unknown', () => {
+    const accounts = [{ name: 'Dollar account', balance: 999999, currency: 'USD' }, { name: 'Bank', balance: 10 }]
+    expect(sortCashAccounts(accounts, null).map((a) => a.name)).toEqual(['Bank', 'Dollar account'])
+    expect(sortCashAccounts(accounts, 33).map((a) => a.name)).toEqual(['Dollar account', 'Bank'])
   })
 })

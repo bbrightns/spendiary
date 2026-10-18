@@ -1,5 +1,6 @@
 import type { AssetClass, CashAccount, CashAccountCategory, DcaPlan, DebtCategory, DividendRecord, Holding, InvestAssetClass, Liability, SpendiaryData, Transfer } from './types'
 import { daysUntil, localDateStr } from './format'
+import { rateOrZero } from './fx'
 
 export interface HoldingMetrics extends Holding {
   marketValue: number
@@ -736,8 +737,10 @@ export function newCashAccount(): CashAccount {
  */
 export function sortCashAccounts<T extends { name: string; balance: number | string; currency?: string }>(
   accounts: T[],
-  usdThbRate = 35,
+  usdThbRate?: number | null,
 ): T[] {
+  // Without a real rate a USD account's THB value is unknown, so it sorts after the THB accounts
+  const rate = rateOrZero(usdThbRate)
   return [...accounts].sort((a, b) => {
     const presetA = detectBankPreset(a.name)
     const presetB = detectBankPreset(b.name)
@@ -766,8 +769,8 @@ export function sortCashAccounts<T extends { name: string; balance: number | str
     const balA = parseBal(a.balance)
     const balB = parseBal(b.balance)
 
-    const valA = a.currency === 'USD' ? balA * usdThbRate : balA
-    const valB = b.currency === 'USD' ? balB * usdThbRate : balB
+    const valA = a.currency === 'USD' ? balA * rate : balA
+    const valB = b.currency === 'USD' ? balB * rate : balB
 
     if (valB !== valA) {
       return valB - valA
@@ -779,7 +782,7 @@ export function sortCashAccounts<T extends { name: string; balance: number | str
 }
 
 export function totalCash(data: SpendiaryData, usdThb?: number | null): number {
-  const rate = usdThb && usdThb > 0 ? usdThb : 35
+  const rate = rateOrZero(usdThb)
   return data.cashAccounts.reduce((sum, a) => {
     const isUsd = a.currency === 'USD'
     const thbVal = isUsd ? a.balance * rate : a.balance
@@ -788,7 +791,7 @@ export function totalCash(data: SpendiaryData, usdThb?: number | null): number {
 }
 
 export function calculateAnnualCashInterest(accounts: CashAccount[], usdThb?: number | null): number {
-  const rate = usdThb && usdThb > 0 ? usdThb : 35
+  const rate = rateOrZero(usdThb)
   return accounts.reduce((sum, a) => {
     if (!a.interestRate || a.interestRate <= 0) return sum
     const eligibleBalance = a.maxEligibleBalance && a.maxEligibleBalance > 0
@@ -807,7 +810,7 @@ export function calculateMonthlyCashInterest(
   totalCompounded: number
   byMonth: Record<number, number>
 } {
-  const rate = usdThb && usdThb > 0 ? usdThb : 35
+  const rate = rateOrZero(usdThb)
   const byMonth: Record<number, number> = {
     1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0,
   }
@@ -861,7 +864,7 @@ export function getCashLiquidityBreakdown(
   locked: number
   total: number
 } {
-  const rate = usdThb && usdThb > 0 ? usdThb : 35
+  const rate = rateOrZero(usdThb)
   const res = { spending: 0, locked: 0, total: 0 }
 
   for (const a of accounts) {

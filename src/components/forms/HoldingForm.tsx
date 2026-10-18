@@ -140,7 +140,6 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
   const isUsd = form.assetClass === 'stock'
   const isGold = form.assetClass === 'gold'
   const isRealEstate = form.assetClass === 'real_estate'
-  const rate = usdThb ?? 1
 
   // Guard: only reset form when modal freshly opens (false→true),
   // not when editing/price changes due to live price ticks.
@@ -209,11 +208,13 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
     }
 
     if (editing) {
+      // A US stock's fields are in USD: convert from THB only with a real rate, else leave them empty
+      // to be filled in (putting the THB figure in a USD field would save it 30x too high)
       const loadedAvgCost = editing.assetClass === 'stock'
-        ? (editing.avgCostUsd ?? (rate > 1 ? Number((editing.avgCost / rate).toFixed(4)) : editing.avgCost))
+        ? (editing.avgCostUsd ?? (liveFx > 0 ? Number((editing.avgCost / liveFx).toFixed(4)) : ''))
         : editing.avgCost
       const loadedPrice = editing.assetClass === 'stock'
-        ? (rate > 1 ? Number((editing.price / rate).toFixed(4)) : editing.price)
+        ? (liveFx > 0 ? Number((editing.price / liveFx).toFixed(4)) : '')
         : editing.price
 
       setForm({
@@ -1302,7 +1303,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                   <span className="text-ink-soft">Implied cost / gold baht</span>
                   <span className="font-semibold tnum text-brand">
                     {thb(goldImpliedPrice * GRAMS_PER_BAHT_GOLD)}
-                    {rate > 1 && ` ($${Math.round(goldThbPerGramToXauUsd(goldImpliedPrice, rate)).toLocaleString()}/oz XAUUSD)`}
+                    {liveFx > 0 && ` ($${Math.round(goldThbPerGramToXauUsd(goldImpliedPrice, liveFx)).toLocaleString()}/oz XAUUSD)`}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">

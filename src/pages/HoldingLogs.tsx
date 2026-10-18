@@ -15,6 +15,7 @@ import { usePageGuide } from '../hooks/usePageGuide'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC } from '../lib/calc'
 import { getCashDiffItems, getLogTransactionDetails } from '../lib/activitySummary'
 import { dateStrToTimestamp, localDateStr, thb } from '../lib/format'
+import { rateOrZero } from '../lib/fx'
 import type { AcquisitionSource, AssetClass, HoldingLog } from '../lib/types'
 import { logTookCash, noteForSource, paidFromName } from '../lib/acquisition'
 import { AcquisitionSourceField } from '../components/forms/AcquisitionSourceField'
@@ -844,7 +845,8 @@ export function HoldingLogs() {
     const avgCostDiffThb = currAvgCostThb - prevAvgCostThb
     const avgCostChanged = Math.abs(avgCostDiffThb) > 0.01 && Number(currAvgCostThb.toFixed(2)) !== Number(prevAvgCostThb.toFixed(2))
 
-    const fx = usdThb && usdThb > 0 ? usdThb : 34
+    // Real rate or 0: without one, USD figures fall back to THB below instead of using a made-up rate
+    const fx = rateOrZero(usdThb)
 
     // Price change calculations
     const prevPriceThb = prev.price ?? 0
@@ -887,7 +889,7 @@ export function HoldingLogs() {
     let currAvgCostDisplay = ''
     let avgCostDeltaBadge: { text: string; positive: boolean } | null = null
 
-    if (log.assetClass === 'crypto') {
+    if (log.assetClass === 'crypto' && fx > 0) {
       const prevUsd = (prev.avgCostUsd && prev.avgCostUsd > 0) ? prev.avgCostUsd : (fx > 0 ? prevAvgCostThb / fx : 0)
       const currUsd = (curr.avgCostUsd && curr.avgCostUsd > 0) ? curr.avgCostUsd : (fx > 0 ? currAvgCostThb / fx : 0)
       prevAvgCostDisplay = `$${Math.round(prevUsd).toLocaleString()}/BTC`
@@ -900,7 +902,7 @@ export function HoldingLogs() {
           positive: diffUsd < 0,
         }
       }
-    } else if (log.assetClass === 'stock') {
+    } else if (log.assetClass === 'stock' && (fx > 0 || ((prev.avgCostUsd ?? 0) > 0 && (curr.avgCostUsd ?? 0) > 0))) {
       const prevUsd = (prev.avgCostUsd && prev.avgCostUsd > 0) ? prev.avgCostUsd : (fx > 0 ? prevAvgCostThb / fx : 0)
       const currUsd = (curr.avgCostUsd && curr.avgCostUsd > 0) ? curr.avgCostUsd : (fx > 0 ? currAvgCostThb / fx : 0)
       prevAvgCostDisplay = `$${prevUsd.toFixed(2)}/share`
@@ -946,7 +948,7 @@ export function HoldingLogs() {
     let priceDeltaBadge: { text: string; positive: boolean } | null = null
 
     if (priceChanged || (log.action === 'edit' && !unitsChanged && !avgCostChanged)) {
-      if (log.assetClass === 'stock') {
+      if (log.assetClass === 'stock' && fx > 0) {
         const prevUsd = (prevPriceThb > 0 && fx > 0) ? prevPriceThb / fx : 0
         const currUsd = (currPriceThb > 0 && fx > 0) ? currPriceThb / fx : 0
         prevPriceDisplay = `$${prevUsd.toFixed(2)}/share`
@@ -960,7 +962,7 @@ export function HoldingLogs() {
             positive: diffUsd >= 0,
           }
         }
-      } else if (log.assetClass === 'fund') {
+      } else if (log.assetClass === 'fund' || (fx <= 0 && (log.assetClass === 'stock' || log.assetClass === 'crypto'))) {
         prevPriceDisplay = `฿${prevPriceThb.toFixed(4)}/unit`
         currPriceDisplay = `฿${currPriceThb.toFixed(4)}/unit`
         const diff = Number((currPriceThb - prevPriceThb).toFixed(4))
@@ -972,7 +974,7 @@ export function HoldingLogs() {
             positive: diff >= 0,
           }
         }
-      } else if (log.assetClass === 'crypto') {
+      } else if (log.assetClass === 'crypto' && fx > 0) {
         const prevUsd = (prevPriceThb > 0 && fx > 0) ? prevPriceThb / fx : 0
         const currUsd = (currPriceThb > 0 && fx > 0) ? currPriceThb / fx : 0
         prevPriceDisplay = `$${Math.round(prevUsd).toLocaleString()}/BTC`

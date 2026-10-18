@@ -36,6 +36,7 @@ import {
   totalMonthlyDebtPayment,
 } from '../lib/calc'
 import { moneyCompact, thb, thbCompact } from '../lib/format'
+import { rateOrZero } from '../lib/fx'
 
 // Distinct colors for cash account segments — cycles if >8 accounts
 const CASH_COLORS = [
@@ -500,7 +501,8 @@ export function Dashboard() {
                 <div className="mt-4 space-y-3">
                   <div className="flex h-2 overflow-hidden rounded-full bg-surface-muted">
                     {data.cashAccounts.map((a, i) => {
-                      const rate = usdThb && usdThb > 0 ? usdThb : 35
+                      // Without a real rate a USD account has no THB width (the Layout notice explains)
+                      const rate = rateOrZero(usdThb)
                       const thbVal = a.currency === 'USD' ? a.balance * rate : a.balance
                       const preset = detectBankPreset(a.name)
                       const color = preset?.color ?? CASH_COLORS[i % CASH_COLORS.length]

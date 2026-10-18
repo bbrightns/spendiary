@@ -267,7 +267,7 @@ export function SpendAccounts() {
           initialAccount={newWallet}
           onClose={() => setNewWallet(null)}
           onSave={(saved) => {
-            setCashAccounts(sortCashAccounts([...(data.cashAccounts ?? []), saved], usdThb && usdThb > 0 ? usdThb : 35))
+            setCashAccounts(sortCashAccounts([...(data.cashAccounts ?? []), saved], usdThb))
             setNewWallet(null)
             showToast(`Added "${saved.name}"`, 'success')
           }}

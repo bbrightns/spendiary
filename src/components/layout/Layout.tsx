@@ -4,6 +4,7 @@ import { BottomNav } from './BottomNav'
 import { Sidebar } from './Sidebar'
 import { Footer } from './Footer'
 import { TestModeBanner } from './TestModeBanner'
+import { FxMissingNotice } from './FxMissingNotice'
 import { SettingsIcon, SearchIcon } from '../icons'
 import { CommandPalette, openCommandPalette } from '../ui/CommandPalette'
 import { useData } from '../../store/DataContext'
@@ -85,6 +86,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <main id="main-content" className="flex-1 lg:pl-64 transition-all duration-300">
         <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-10 py-6 sm:py-7 pb-28 lg:pb-7 flex flex-col min-h-[calc(100dvh-60px)] lg:min-h-dvh">
           <div className="flex-1">
+            <FxMissingNotice />
             {children}
           </div>
           <Footer />

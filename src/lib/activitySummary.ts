@@ -1,5 +1,6 @@
 import { GRAMS_PER_BAHT_GOLD, SATS_PER_BTC } from './calc'
 import { localDateStr } from './format'
+import { rateOrZero } from './fx'
 import type { AssetClass, HoldingLog, NetWorthSnapshot } from './types'
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -217,7 +218,9 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
 } {
   const prev = log.previousHoldingState
   const curr = log.afterHoldingState
-  const fx = usdThb && usdThb > 0 ? usdThb : 34
+  // Real rate or 0: without one, USD amounts are left out of THB totals and prices stay in THB
+  const fx = rateOrZero(usdThb)
+  const priceInUsdOrThb = (thbValue: number) => (fx > 0 ? `$${(thbValue / fx).toFixed(2)}` : `฿${thbValue.toFixed(2)}`)
 
   // Check if it is a cash log
   if (log.assetClass === 'cash' || log.ticker === 'CASH' || log.holdingName === 'Cash Accounts') {
@@ -281,7 +284,7 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
       if (notePriceMatch) {
         priceDisplay = `$${notePriceMatch[1]}`
       } else if (log.soldPrice && log.soldPrice > 0) {
-        priceDisplay = `$${(log.soldPrice / fx).toFixed(2)}`
+        priceDisplay = priceInUsdOrThb(log.soldPrice)
       }
     } else {
       const notePriceMatch = log.note.match(/(?:@|ที่ราคา)\s*฿([0-9,.]+)/)
@@ -352,7 +355,7 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
         } else if (curr.avgCostUsd && curr.avgCostUsd > 0) {
           priceDisplay = `$${curr.avgCostUsd.toFixed(2)}`
         } else if (curr.price && curr.price > 0) {
-          priceDisplay = `$${(curr.price / fx).toFixed(2)}`
+          priceDisplay = priceInUsdOrThb(curr.price)
         }
       } else if (log.assetClass === 'crypto') {
         const noteSpentMatch = log.note.match(/฿([0-9,.]+)\s*(?:spent|worth)/)
@@ -391,7 +394,7 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
       const currPrice = curr.price ?? 0
       if (Math.abs(currPrice - prevPrice) > 0.001) {
         if (log.assetClass === 'stock') {
-          priceDisplay = `$${(currPrice / fx).toFixed(2)}`
+          priceDisplay = priceInUsdOrThb(currPrice)
         } else if (log.assetClass === 'crypto') {
           priceDisplay = `฿${Math.round(currPrice).toLocaleString()}`
         } else {
@@ -420,7 +423,7 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
       const notePriceMatch = log.note.match(/@\s*\$([0-9,.]+)/)
       if (notePriceMatch) {
         const pUsd = parseFloat(notePriceMatch[1].replace(/,/g, ''))
-        amountThbValue = Math.abs(unitDiff) * pUsd * fx
+        if (fx > 0) amountThbValue = Math.abs(unitDiff) * pUsd * fx
       }
     }
 

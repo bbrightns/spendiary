@@ -17,7 +17,8 @@ import {
   sortCashAccounts,
   totalCash,
 } from '../lib/calc'
-import { thb } from '../lib/format'
+import { money, thb } from '../lib/format'
+import { rateOrZero } from '../lib/fx'
 import { ListBulletIcon } from '../modules/spend/categories'
 import { EditAccountModal } from '../components/forms/EditCashAccountModal'
 import {
@@ -71,7 +72,11 @@ export function CashLiquidity() {
     }
   }, [searchParams, setSearchParams])
 
-  const rate = usdThb && usdThb > 0 ? usdThb : 35
+  // Real rate or 0: without one, USD balances stay out of THB totals (see the notice in Layout)
+  const rate = rateOrZero(usdThb)
+  // A USD account's yearly interest: in THB with a real rate, otherwise in USD (never ฿0)
+  const yearlyInterest = (currency: string | undefined, interestInOwnCurrency: number, annualEarnedThb: number) =>
+    currency === 'USD' && rate <= 0 ? money(interestInOwnCurrency, 'USD') : thb(annualEarnedThb)
   const accounts = data.cashAccounts ?? []
 
   // Net worth & total cash
@@ -217,7 +222,7 @@ export function CashLiquidity() {
             <p className="mt-1 font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ink tnum truncate">{thb(totalCashThb)}</p>
             <p className="mt-1 text-xs text-ink-muted tnum">
               {currentNetWorth > 0 ? `${((totalCashThb / currentNetWorth) * 100).toFixed(0)}% of net worth` : 'Part of your net worth'}
-              {usdOnlyTotal > 0 && ` · includes $${usdOnlyTotal.toLocaleString()}`}
+              {usdOnlyTotal > 0 && (rate > 0 ? ` · includes $${usdOnlyTotal.toLocaleString()}` : ` · plus $${usdOnlyTotal.toLocaleString()} not converted`)}
             </p>
           </div>
           <div className="sm:text-right">
@@ -412,11 +417,11 @@ export function CashLiquidity() {
                     <div className="font-display font-black text-sm text-ink tnum">
                       {a.currency === 'USD' ? `$${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : thb(a.balance, true)}
                     </div>
-                    {annualEarned > 0 ? (
+                    {annualEarned > 0 || (a.currency === 'USD' && rate <= 0 && rateNum > 0 && eligibleBal > 0) ? (
                       <div className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 tnum">
-                        +{thb(annualEarned)}/yr
+                        +{yearlyInterest(a.currency, eligibleBal * (rateNum / 100), annualEarned)}/yr
                       </div>
-                    ) : a.currency === 'USD' && a.balance > 0 ? (
+                    ) : a.currency === 'USD' && a.balance > 0 && rate > 0 ? (
                       <div className="text-[11px] text-ink-muted tnum">
                         ≈ {thb(a.balance * rate)}
                       </div>
@@ -522,7 +527,7 @@ export function CashLiquidity() {
                             <span className="font-display font-bold text-sm text-ink block truncate group-hover:text-brand transition-colors">
                               {a.name || 'Untitled Account'}
                             </span>
-                            {a.currency === 'USD' && a.balance > 0 && (
+                            {a.currency === 'USD' && a.balance > 0 && rate > 0 && (
                               <span className="text-xs font-mono text-ink-muted block">
                                 ≈ {thb(a.balance * rate)} (@{rate.toFixed(2)})
                               </span>
@@ -552,7 +557,7 @@ export function CashLiquidity() {
                               )}
                             </div>
                             <div className="text-xs text-ink-muted font-mono">
-                              ≈ {thb(annualEarned)}/year{' '}
+                              ≈ {yearlyInterest(a.currency, eligibleBal * (rateNum / 100), annualEarned)}/year{' '}
                               <span className="opacity-70 font-sans">
                                 ({a.payoutSchedule === 'monthly' ? 'paid monthly' : a.payoutSchedule === 'semi_annual' ? 'paid twice a year' : 'paid once a year'})
                               </span>

@@ -39,6 +39,7 @@ import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
 import { InteractivePortfolioChart } from '../components/charts/InteractiveTrendChart'
 import type { AssetClass, BtcLocation, Holding } from '../lib/types'
 import { money, thb, thbCompact, pct } from '../lib/format'
+import { isValidRate, rateOrZero } from '../lib/fx'
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -75,6 +76,8 @@ export function Portfolio() {
   } = useData()
   const { showToast } = useToast()
   const { status: priceStatus, lastUpdated, usdThb, goldThbPerGram, errorMsg, refresh: refreshPrices } = useLivePrices()
+  // A BTC cost per coin in USD at the real rate; without one it stays in THB instead of using a made-up rate
+  const btcPerCoin = (thbPerBtc: number) => (isValidRate(usdThb) ? money(thbPerBtc / usdThb, 'USD') : thb(thbPerBtc))
   const goldHolding = data.holdings.find((h) => h.assetClass === 'gold' && h.price > 0)
   const effectiveGoldThbPerGram = goldThbPerGram ?? goldHolding?.price ?? null
   const effectiveGoldPerBaht = effectiveGoldThbPerGram ? Math.round(effectiveGoldThbPerGram * GRAMS_PER_BAHT_GOLD) : null
@@ -477,7 +480,8 @@ export function Portfolio() {
       return str
     }
 
-    const rate = usdThb && usdThb > 0 ? usdThb : 35
+    // Real rate or 0: USD figures that need converting are left out rather than worked out at a made-up rate
+    const rate = rateOrZero(usdThb)
 
     const csvRows = rows.map((h) => {
       const isStock = h.assetClass === 'stock'
@@ -499,13 +503,17 @@ export function Portfolio() {
         const totalCostUsd = h.totalUsdInvested ?? (avgUsd * h.units)
         const marketValUsd = rate > 0 ? h.marketValue / rate : 0
         const pnlUsd = marketValUsd - totalCostUsd
-        nativeDetails = `Avg: $${avgUsd.toFixed(2)} | Price: $${priceUsd.toFixed(2)} | Cost: $${totalCostUsd.toFixed(2)} | Value: $${marketValUsd.toFixed(2)} | PnL: ${pnlUsd >= 0 ? '+' : ''}$${pnlUsd.toFixed(2)}`
+        nativeDetails = rate > 0
+          ? `Avg: $${avgUsd.toFixed(2)} | Price: $${priceUsd.toFixed(2)} | Cost: $${totalCostUsd.toFixed(2)} | Value: $${marketValUsd.toFixed(2)} | PnL: ${pnlUsd >= 0 ? '+' : ''}$${pnlUsd.toFixed(2)}`
+          : `Avg: ${h.avgCostUsd ? `$${h.avgCostUsd.toFixed(2)}` : 'n/a'} | USD price and value: n/a (no USD/THB rate loaded)`
       } else if (isCrypto) {
         const sats = Math.round(h.units * SATS_PER_BTC)
         const avgCostPerBtc = h.units > 0 ? h.costBasis / h.units : h.avgCost
         const avgCostPerBtcUsd = rate > 0 ? avgCostPerBtc / rate : 0
         const priceUsd = rate > 0 ? h.price / rate : 0
-        nativeDetails = `${sats.toLocaleString()} sats | Avg: $${Math.round(avgCostPerBtcUsd).toLocaleString()}/BTC | Price: $${Math.round(priceUsd).toLocaleString()}/BTC`
+        nativeDetails = rate > 0
+          ? `${sats.toLocaleString()} sats | Avg: $${Math.round(avgCostPerBtcUsd).toLocaleString()}/BTC | Price: $${Math.round(priceUsd).toLocaleString()}/BTC`
+          : `${sats.toLocaleString()} sats | Avg: ฿${Math.round(avgCostPerBtc).toLocaleString()}/BTC | Price: ฿${Math.round(h.price).toLocaleString()}/BTC`
         locationsStr = (h.btcLocations ?? []).map((loc) => `${loc.name}: ${loc.satoshi.toLocaleString()} sats (฿${loc.thbSpent.toLocaleString()})`).join('; ')
       } else if (isGold) {
         const bahtGold = h.units / GRAMS_PER_BAHT_GOLD
@@ -575,13 +583,11 @@ export function Portfolio() {
       />
     )
 
-    const fxRate = usdThb && usdThb > 0 ? usdThb : 35
     const btcAvgCostThb = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost)
-    const btcAvgCostUsd = fxRate > 0 ? btcAvgCostThb / fxRate : 0
     const goldAvgCostPerBaht = (h.units > 0 ? (h.costBasis / h.units) : h.avgCost) * GRAMS_PER_BAHT_GOLD
     const goldBaht = h.units / GRAMS_PER_BAHT_GOLD
     const unitsLabel = isBtc
-      ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats · avg ${money(btcAvgCostUsd, 'USD')}/BTC`
+      ? `${Math.round(h.units * SATS_PER_BTC).toLocaleString()} sats · avg ${btcPerCoin(btcAvgCostThb)}/BTC`
       : isGold
       ? `${h.units.toFixed(4)} g (${goldBaht.toFixed(4)} gold baht) · avg ${thb(goldAvgCostPerBaht)}/gold baht`
       : isRealEstate
@@ -781,7 +787,6 @@ export function Portfolio() {
                   <ul className="space-y-1.5">
                     {(h.btcLocations ?? []).map((loc) => {
                       const locCostPerBtcThb = loc.satoshi > 0 ? (loc.thbSpent / loc.satoshi) * SATS_PER_BTC : 0
-                      const locCostPerBtcUsd = fxRate > 0 ? locCostPerBtcThb / fxRate : 0
                       return (
                         <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
                           <div className="min-w-0 flex-1">
@@ -809,7 +814,7 @@ export function Portfolio() {
                               })()}
                             </div>
                             <p className="tnum text-xs text-ink-muted">
-                              {loc.satoshi.toLocaleString()} sats · {thb(loc.thbSpent)} spent · avg {money(locCostPerBtcUsd, 'USD')}/BTC
+                              {loc.satoshi.toLocaleString()} sats · {thb(loc.thbSpent)} spent · avg {btcPerCoin(locCostPerBtcThb)}/BTC
                             </p>
                           </div>
                           {pocketMenuButton(loc.id, loc.name)}
@@ -1868,7 +1873,7 @@ export function Portfolio() {
               <div className="flex items-center justify-between">
                 <span className="text-ink-muted">Avg cost / BTC</span>
                 <span className="font-semibold text-brand tnum">
-                  {money(((Number(locThbSpent) / Number(locSatoshi)) * SATS_PER_BTC) / (usdThb && usdThb > 0 ? usdThb : 35), 'USD')} (≈ {thb((Number(locThbSpent) / Number(locSatoshi)) * SATS_PER_BTC)})
+                  {isValidRate(usdThb) ? <>{btcPerCoin((Number(locThbSpent) / Number(locSatoshi)) * SATS_PER_BTC)} (≈ {thb((Number(locThbSpent) / Number(locSatoshi)) * SATS_PER_BTC)})</> : btcPerCoin((Number(locThbSpent) / Number(locSatoshi)) * SATS_PER_BTC)}
                 </span>
               </div>
             </div>
