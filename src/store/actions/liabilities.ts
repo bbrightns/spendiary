@@ -12,7 +12,7 @@ export function upsertLiability(prev: SpendiaryData, ...[item]: Parameters<DataC
   const isEdit = item.id && (prev.liabilities ?? []).some((x) => x.id === item.id)
   const updatedItems = upsert(prev.liabilities ?? [], {
     ...item,
-    updatedAt: new Date().toISOString().slice(0, 10),
+    updatedAt: localDateStr(),
   })
   const logEntry: HoldingLog = {
     id: newId(),

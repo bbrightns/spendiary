@@ -1,5 +1,5 @@
 import type { AssetClass, CashAccount, CashAccountCategory, DcaPlan, DebtCategory, DividendRecord, Holding, InvestAssetClass, Liability, SpendiaryData, Transfer } from './types'
-import { daysUntil, localDateStr } from './format'
+import { daysUntil, localDateStr, localDay } from './format'
 import { rateOrZero } from './fx'
 
 export interface HoldingMetrics extends Holding {
@@ -7,6 +7,13 @@ export interface HoldingMetrics extends Holding {
   costBasis: number
   pnl: number
   pnlPct: number
+  /** False while the price is only the average cost (see Holding.placeholderPrice): P/L is unknown, not 0 */
+  priced: boolean
+}
+
+/** True unless the price is still the cost stand-in written when no real price was known */
+export function hasRealPrice(h: Pick<Holding, 'price' | 'placeholderPrice'>): boolean {
+  return h.placeholderPrice === undefined || h.price !== h.placeholderPrice
 }
 
 /**
@@ -34,9 +41,10 @@ export function applyBuy(
 export function holdingMetrics(h: Holding): HoldingMetrics {
   const marketValue = h.units * h.price
   const costBasis = h.totalThbInvested ?? (h.units * h.avgCost)
-  const pnl = marketValue - costBasis
-  const pnlPct = costBasis > 0 ? (pnl / costBasis) * 100 : 0
-  return { ...h, marketValue, costBasis, pnl, pnlPct }
+  const priced = hasRealPrice(h)
+  const pnl = priced ? marketValue - costBasis : 0
+  const pnlPct = priced && costBasis > 0 ? (pnl / costBasis) * 100 : 0
+  return { ...h, marketValue, costBasis, pnl, pnlPct, priced }
 }
 
 export const ASSET_META: Record<
@@ -100,11 +108,14 @@ export interface AssetGroupAllocation {
   assetClass?: AssetClass
   value: number
   cost: number
+  /** P/L of the holdings that have a real price */
   pnl: number
   pnlPct: number
   pct: number
   color: string
   holdingCount: number
+  /** Holdings counted at cost because they have no real price yet */
+  unpricedCount: number
   holdings: HoldingMetrics[]
 }
 
@@ -220,8 +231,7 @@ export function assetGroupAllocations(holdings: Holding[]): AssetGroupAllocation
   const groups = Array.from(groupMap.entries()).map(([key, g], idx) => {
     const val = g.holdings.reduce((sum, item) => sum + item.marketValue, 0)
     const cost = g.holdings.reduce((sum, item) => sum + item.costBasis, 0)
-    const pnl = val - cost
-    const pnlPct = cost > 0 ? (pnl / cost) * 100 : 0
+    const { pnl, pnlPct, unpricedCount } = pricedPnl(g.holdings)
     const pct = total > 0 ? (val / total) * 100 : 0
     const color = getAssetGroupColor(g.name, idx, g.assetClass)
 
@@ -241,6 +251,7 @@ export function assetGroupAllocations(holdings: Holding[]): AssetGroupAllocation
       pct,
       color,
       holdingCount: g.holdings.length,
+      unpricedCount,
       holdings: sortedHoldings,
     }
   })
@@ -249,17 +260,28 @@ export function assetGroupAllocations(holdings: Holding[]): AssetGroupAllocation
 }
 
 export interface PortfolioSummary {
+  /** Every holding; one with no real price counts at cost */
   value: number
   cost: number
+  /** P/L of the holdings that have a real price */
   pnl: number
   pnlPct: number
+  /** Holdings left out of the P/L because they have no real price yet */
+  unpricedCount: number
+}
+
+/** P/L over the holdings that have a real price; the rest have no P/L to add */
+function pricedPnl(metrics: HoldingMetrics[]): { pnl: number; pnlPct: number; unpricedCount: number } {
+  const priced = metrics.filter((m) => m.priced)
+  const pnl = priced.reduce((sum, m) => sum + m.pnl, 0)
+  const cost = priced.reduce((sum, m) => sum + m.costBasis, 0)
+  return { pnl, pnlPct: cost > 0 ? (pnl / cost) * 100 : 0, unpricedCount: metrics.length - priced.length }
 }
 
 export function portfolioSummary(holdings: Holding[]): PortfolioSummary {
   const value = portfolioValue(holdings)
   const cost = portfolioCost(holdings)
-  const pnl = value - cost
-  return { value, cost, pnl, pnlPct: cost > 0 ? (pnl / cost) * 100 : 0 }
+  return { value, cost, ...pricedPnl(holdings.map(holdingMetrics)) }
 }
 
 /* ----------------------------- Gold Calculations ----------------------------- */
@@ -415,7 +437,7 @@ export function isConfirmedForPeriod(plan: DcaPlan, now = new Date()): boolean {
   const freq = plan.frequency ?? 'monthly'
   if (freq === 'daily') {
     const todayStr = localDateStr(now)
-    return allDates.some((d) => (d.includes('T') ? d.slice(0, 10) : d) === todayStr)
+    return allDates.some((d) => localDay(d) === todayStr)
   }
   if (freq === 'weekly') {
     const weekStart = new Date(now)
@@ -425,7 +447,7 @@ export function isConfirmedForPeriod(plan: DcaPlan, now = new Date()): boolean {
   }
   // monthly
   const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  return allDates.some((d) => (d.includes('T') ? d.slice(0, 10) : d).startsWith(ym))
+  return allDates.some((d) => localDay(d).startsWith(ym))
 }
 
 /** Was this period explicitly skipped (not confirmed)? */
@@ -435,7 +457,7 @@ export function isSkippedForPeriod(plan: DcaPlan, now = new Date()): boolean {
   const freq = plan.frequency ?? 'monthly'
   if (freq === 'daily') {
     const todayStr = localDateStr(now)
-    return dates.some((d) => (d.includes('T') ? d.slice(0, 10) : d) === todayStr)
+    return dates.some((d) => localDay(d) === todayStr)
   }
   if (freq === 'weekly') {
     const weekStart = new Date(now)
@@ -444,7 +466,7 @@ export function isSkippedForPeriod(plan: DcaPlan, now = new Date()): boolean {
     return dates.some((d) => new Date(d) >= weekStart)
   }
   const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  return dates.some((d) => (d.includes('T') ? d.slice(0, 10) : d).startsWith(ym))
+  return dates.some((d) => localDay(d).startsWith(ym))
 }
 
 /**

@@ -10,7 +10,7 @@ import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { AddButton } from '../components/ui/AddButton'
 import { DonutChart } from '../components/charts/DonutChart'
-import { PnLPill, PnLText } from '../components/ui/PnL'
+import { NoPricePill, PnLPill, PnLText, UnpricedNote } from '../components/ui/PnL'
 import { HoldingForm } from '../components/forms/HoldingForm'
 import { BuyMoreForm } from '../components/forms/BuyMoreForm'
 import { SellHoldingModal } from '../components/forms/SellHoldingModal'
@@ -38,7 +38,7 @@ import {
 import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
 import { InteractivePortfolioChart } from '../components/charts/InteractiveTrendChart'
 import type { AssetClass, BtcLocation, Holding } from '../lib/types'
-import { money, thb, thbCompact, pct } from '../lib/format'
+import { localDateStr, money, thb, thbCompact, pct } from '../lib/format'
 import { isValidRate, rateOrZero } from '../lib/fx'
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
@@ -541,8 +541,9 @@ export function Portfolio() {
         escapeCsv(h.price.toFixed(2)),
         escapeCsv(h.costBasis.toFixed(2)),
         escapeCsv(h.marketValue.toFixed(2)),
-        escapeCsv(h.pnl.toFixed(2)),
-        escapeCsv(`${h.pnlPct >= 0 ? '+' : ''}${h.pnlPct.toFixed(2)}%`),
+        // No real price: there is no P/L to write, only a value counted at cost
+        escapeCsv(h.priced ? h.pnl.toFixed(2) : ''),
+        escapeCsv(h.priced ? `${h.pnlPct >= 0 ? '+' : ''}${h.pnlPct.toFixed(2)}%` : 'No price yet'),
         escapeCsv(`${weightPct.toFixed(2)}%`),
         escapeCsv(nativeDetails),
         escapeCsv(locationsStr),
@@ -555,7 +556,7 @@ export function Portfolio() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `spendiary-portfolio-${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `spendiary-portfolio-${localDateStr()}.csv`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -701,7 +702,9 @@ export function Portfolio() {
                 {unitsLabel}
                 {h.tag && <span className="sm:hidden text-brand font-medium"> · #{h.tag}</span>}
               </p>
-              <PnLPill value={pnlDisplay === 'thb' ? h.pnl : h.pnlPct} asPct={pnlDisplay !== 'thb'} size="sm" />
+              {h.priced
+                ? <PnLPill value={pnlDisplay === 'thb' ? h.pnl : h.pnlPct} asPct={pnlDisplay !== 'thb'} size="sm" />
+                : <NoPricePill />}
             </div>
           </div>
 
@@ -1070,6 +1073,7 @@ export function Portfolio() {
                     <PnLPill value={summary.pnlPct} asPct size="sm" />
                     <span className="text-xs text-ink-muted font-medium whitespace-nowrap">all-time</span>
                   </div>
+                  <UnpricedNote count={summary.unpricedCount} />
                 </div>
               </div>
             </div>
@@ -1320,8 +1324,14 @@ export function Portfolio() {
                         <div className="mt-2 flex items-center justify-between gap-2 text-xs">
                           <span className="text-ink-muted truncate">Cost: {thb(group.cost)}</span>
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <PnLText value={group.pnl} className="font-semibold" />
-                            <PnLPill value={group.pnlPct} asPct size="sm" />
+                            {group.unpricedCount === group.holdingCount ? (
+                              <NoPricePill />
+                            ) : (
+                              <>
+                                <PnLText value={group.pnl} className="font-semibold" />
+                                <PnLPill value={group.pnlPct} asPct size="sm" />
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>

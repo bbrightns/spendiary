@@ -1,4 +1,4 @@
-import { localDateStr, thb } from '../../lib/format'
+import { localDateStr, thbExact } from '../../lib/format'
 import type { Liability, SpendRecurring } from '../../lib/types'
 import type { ResultDetail } from '../../store/ToastContext'
 import { getCategory } from './categories'
@@ -26,7 +26,7 @@ export function paidDetail(p: {
   const cat = getCategory(p.categoryId)
   const next = p.rec ? nextOccurrence(p.rec, p.date) : undefined
   return {
-    amount: thb(p.amount),
+    amount: thbExact(p.amount),
     name: p.name,
     meta: [p.accountName, cat && (p.subcategory ? `${cat.label} › ${p.subcategory}` : cat.label)].filter(Boolean).join(' · ') || undefined,
     footnote: next ? `Next due ${day(next)}` : undefined,
@@ -34,7 +34,7 @@ export function paidDetail(p: {
 }
 
 /** Satang only when there are some: ฿3,333.33 but ฿8,500 */
-const money = (n: number) => thb(n, !Number.isInteger(Math.round(n * 100) / 100))
+const money = thbExact
 
 /**
  * The "Paid" popup for a loan payment: the amount, the loan, which payment it was and where it

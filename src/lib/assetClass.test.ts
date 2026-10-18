@@ -29,8 +29,13 @@ describe('inferAssetClass', () => {
     expect(inferAssetClass('ZZZZZZ', '', undefined, 'USD')).toBe('stock')
   })
 
-  it('guesses stock for a short unknown Latin ticker and fund otherwise', () => {
-    expect(inferAssetClass('ABCD', '')).toBe('stock')
-    expect(inferAssetClass('ABCDEFG', '')).toBe('fund')
+  it("doesn't guess when nothing says what an unknown ticker is", () => {
+    expect(inferAssetClass('ABCD', '')).toBeNull()
+    expect(inferAssetClass('ABCDEFG', '')).toBeNull()
+    expect(inferAssetClass('ABC', '', 'bond')).toBeNull()
+  })
+
+  it('keeps an explicit real estate class', () => {
+    expect(inferAssetClass('CONDO', 'My condo', 'real_estate')).toBe('real_estate')
   })
 })

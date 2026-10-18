@@ -478,7 +478,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       avgCost: avgCostThb,
       avgCostThb,
       totalThbInvested: spent,
+      // No live price yet: count at cost and say so (see Holding.placeholderPrice)
       price: editing?.price ?? avgCostThb,
+      placeholderPrice: editing ? editing.placeholderPrice : avgCostThb,
       btcLocations: [{ id: newId(), name: locName, satoshi: sats, thbSpent: spent }],
       updatedAt: localDateStr(),
     }
@@ -563,7 +565,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       avgCost: avgCostThb,
       avgCostThb,
       totalThbInvested: spent,
-      price: avgCostThb,
+      // No live price yet: count at cost and say so (see Holding.placeholderPrice)
+      price: editing?.price ?? avgCostThb,
+      placeholderPrice: editing ? editing.placeholderPrice : avgCostThb,
       goldLocations: [{ id: newId(), name: locName, grams: g, thbSpent: spent }],
       updatedAt: localDateStr(),
     }
@@ -615,6 +619,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       totalUnits: unitsNum,
       avgCost: avgCostInput,
       price: Number(form.price) || 0,
+      // Re-saving the same stand-in price keeps it marked; typing a new price makes it real
+      placeholderPrice: editing?.placeholderPrice,
       updatedAt: localDateStr(),
       ...(editing?.btcLocations ? { btcLocations: editing.btcLocations } : {}),
       ...(editing?.goldLocations ? { goldLocations: editing.goldLocations } : {}),
@@ -643,6 +649,10 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         avgCostThb,
         avgCost: avgCostThb,
         price: useLivePrice ? livePrice! : parseFloat(((Number(form.price) || 0) * (usdThb || fxRateVal)).toFixed(2)),
+      }
+      // No price typed and none found: count at cost and say so, instead of a price of 0
+      if (!useLivePrice && form.price === '') {
+        updateObj = { ...updateObj, price: avgCostThb, placeholderPrice: avgCostThb }
       }
     } else {
       const avgCostThb = avgCostInput

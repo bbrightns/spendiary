@@ -59,8 +59,11 @@ describe('migrate', () => {
     expect(migrate(legacy({ holdings: [holding({ totalThbInvested: 999 })] })).holdings[0].totalThbInvested).toBe(999)
   })
 
-  it('falls back to the cost when a holding has no price', () => {
-    expect(migrate(legacy({ holdings: [holding({ price: 0, avgCost: 80 })] })).holdings[0].price).toBe(80)
+  it('falls back to the cost when a holding has no price, and marks it as having none', () => {
+    const h = migrate(legacy({ holdings: [holding({ price: 0, avgCost: 80 })] })).holdings[0]
+    expect(h.price).toBe(80)
+    expect(h.placeholderPrice).toBe(80)
+    expect(migrate(legacy({ holdings: [holding({ price: 120 })] })).holdings[0].placeholderPrice).toBeUndefined()
   })
 
   it('leaves a stock price as saved, even when it fell a lot', () => {

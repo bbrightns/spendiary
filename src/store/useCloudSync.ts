@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import type { SpendiaryData } from '../lib/types'
 import { seedData } from '../lib/seed'
 import { resolveRemoteLoad, type RestLoad } from './remoteLoad'
-import { interpretSave, type SaveMode, type SaveOutcome } from './remoteSave'
+import { interpretSave, lockHeaders, type SaveMode, type SaveOutcome } from './remoteSave'
 import { emptyData, justImportedFixedCosts, migrate } from './migrate'
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
@@ -47,8 +47,12 @@ export function useCloudSync(
   const remoteStamp = useRef<{ exists: boolean; updatedAt: string | null }>({ exists: false, updatedAt: null })
   // Cloud saves run one at a time, so each one checks against the stamp the previous one left
   const saveQueue = useRef<Promise<unknown>>(Promise.resolve())
+  // Counts loads; a load that a newer one (a retry, another sign-in) has replaced must not touch the state
+  const loadSeq = useRef(0)
 
   const fetchRemoteData = async (userId: string) => {
+    const seq = ++loadSeq.current
+    const isStale = () => seq !== loadSeq.current
     if (userId === 'guest-user-local') {
       const local = localStorage.getItem('spendiary.guest_data')
       if (local) {
@@ -129,6 +133,7 @@ export function useCloudSync(
         }
       }
 
+      if (isStale()) return
       const result = resolveRemoteLoad({ error, row }, rest)
 
       if (result.kind === 'failed') {
@@ -160,11 +165,12 @@ export function useCloudSync(
       // Only a confirmed load turns saving on
       syncReady.current = true
     } catch (err) {
+      if (isStale()) return
       console.error('Error fetching remote data:', err)
       setSyncStatus('error')
       setLoadError(true)
     } finally {
-      setDataReady(true)
+      if (!isStale()) setDataReady(true)
     }
   }
 
@@ -207,6 +213,7 @@ export function useCloudSync(
       setDataReady(false)
       fetchRemoteData(user.id)
     } else {
+      loadSeq.current++ // a load still in flight belongs to the user who just signed out
       syncReady.current = false
       setDataState(emptyData)
       updateLastSynced(null)
@@ -220,14 +227,17 @@ export function useCloudSync(
       const mode: SaveMode = force ? 'force' : exists ? 'update' : 'insert'
       const row = { payload, updated_at: new Date().toISOString() }
       const table = supabase.from('user_data')
-      const res =
+      const query =
         mode === 'force'
-          ? await table.upsert({ id: userId, ...row }).select('updated_at')
+          ? table.upsert({ id: userId, ...row }).select('updated_at')
           : mode === 'insert'
-          ? await table.insert({ id: userId, ...row }).select('updated_at')
+          ? table.insert({ id: userId, ...row }).select('updated_at')
           : updatedAt
-          ? await table.update(row).eq('id', userId).eq('updated_at', updatedAt).select('updated_at')
-          : await table.update(row).eq('id', userId).is('updated_at', null).select('updated_at')
+          ? table.update(row).eq('id', userId).eq('updated_at', updatedAt).select('updated_at')
+          : table.update(row).eq('id', userId).is('updated_at', null).select('updated_at')
+      // The database checks the same lock (supabase/sql/user_data_write_lock.sql)
+      for (const [name, value] of Object.entries(lockHeaders(mode, updatedAt))) query.setHeader(name, value)
+      const res = await query
       const outcome = interpretSave(mode, res)
       if (outcome.kind === 'saved') {
         remoteStamp.current = { exists: true, updatedAt: outcome.updatedAt ?? row.updated_at }

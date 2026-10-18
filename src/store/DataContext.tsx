@@ -277,6 +277,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 payload: emptyData,
                 updated_at: new Date().toISOString()
               })
+              // Clearing replaces the data on purpose; the database's write lock lets it through
+              .setHeader('x-spendiary-force', '1')
           }
         } catch (err) {
           console.error('Error clearing remote user data:', err)
@@ -847,7 +849,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `spendiary-backup-${new Date().toISOString().slice(0, 10)}.json`
+        a.download = `spendiary-backup-${localDateStr()}.json`
         document.body.appendChild(a)
         a.click()
         document.body.removeChild(a)
@@ -932,6 +934,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const ticker = cleanTicker
             const name = rawName || rawTicker
             const assetClass = inferAssetClass(ticker, name, typeof r.assetClass === 'string' ? r.assetClass : undefined, rawCurr)
+            if (!assetClass) {
+              return {
+                ok: false,
+                error: `Couldn't tell what kind of asset "${name}" is. Add its assetClass (fund, stock, crypto, gold or real_estate) or its currency (THB or USD), then import again.`,
+              }
+            }
             const units = Math.max(0, parseCleanNumber(r.units ?? r.totalUnits, 0))
             const rawCost = Math.max(0, parseCleanNumber(r.avgCost ?? r.avgCostThb ?? r.avgCostUsd ?? r.price, 0))
             const rawPrice = parseCleanNumber(r.price, 0)
@@ -992,6 +1000,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
               totalThbInvested,
               totalUsdInvested,
               price,
+              // No price in the file: counted at cost, marked as having no real price
+              ...(rawPrice > 0 ? {} : { placeholderPrice: price }),
               updatedAt: today,
               ...(btcLocations ? { btcLocations } : {}),
               ...(goldLocations ? { goldLocations } : {}),

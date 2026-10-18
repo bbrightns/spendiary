@@ -8,6 +8,7 @@ import {
   dcaPerMonth,
   dcaThisMonth,
   getCashCategory,
+  hasRealPrice,
   goldThbPerBahtToXauUsd,
   isBuyDayOverdue,
   isBuyDayToday,
@@ -99,6 +100,9 @@ export function generatePortfolioMarkdown(
   lines.push(`- **Total portfolio value (Market Value)**: **${fmtMoney(summary.value, 'THB')}**`)
   lines.push(`- **Total amount invested (Total Cost)**: **${fmtMoney(summary.cost, 'THB')}**`)
   lines.push(`- **Total profit / loss (All-time PnL)**: **${fmtSignMoney(summary.pnl, 'THB')} (${fmtPct(summary.pnlPct)})**`)
+  if (summary.unpricedCount > 0) {
+    lines.push(`- **No price yet**: ${summary.unpricedCount} ${summary.unpricedCount === 1 ? 'holding is' : 'holdings are'} counted at cost and left out of the PnL`)
+  }
   if (cashAccounts.length > 0) {
     if (lockedCashThb > 0) {
       lines.push(
@@ -117,7 +121,8 @@ export function generatePortfolioMarkdown(
   if (groupAllocs.length > 0) {
     lines.push(`## 🎯 Asset Group Allocation`)
     for (const g of groupAllocs) {
-      lines.push(`- **${g.name}**: **${fmtMoney(g.value, 'THB')}** (**${g.pct.toFixed(1)}%**) · PnL: ${fmtSignMoney(g.pnl, 'THB')} (${fmtPct(g.pnlPct)})`)
+      const groupPnl = g.unpricedCount === g.holdingCount ? 'no price yet' : `${fmtSignMoney(g.pnl, 'THB')} (${fmtPct(g.pnlPct)})`
+      lines.push(`- **${g.name}**: **${fmtMoney(g.value, 'THB')}** (**${g.pct.toFixed(1)}%**) · PnL: ${groupPnl}`)
     }
     lines.push('')
   }
@@ -189,7 +194,7 @@ export function generatePortfolioMarkdown(
         priceStr = fmtMoney(h.price, 'THB')
       }
 
-      const pnlStr = `${fmtSignMoney(pnl, 'THB', 2)}<br/>(${fmtPct(pnlPct, 2)})`
+      const pnlStr = hasRealPrice(h) ? `${fmtSignMoney(pnl, 'THB', 2)}<br/>(${fmtPct(pnlPct, 2)})` : 'No price yet'
       const tagBadge = h.tag ? ` \`#${h.tag}\`` : ''
       lines.push(`| **${h.name}** (${h.ticker})${tagBadge} | ${typeLabel} | ${qtyStr} | ${avgCostStr} | ${priceStr} | ${totalCostStr} | ${marketValStr} | ${pnlStr} |`)
     }
@@ -239,7 +244,9 @@ export function generatePortfolioMarkdown(
       lines.push(`- **Number of properties**: **${h.units}**`)
       lines.push(`- **Total amount invested**: **${fmtMoney(costBasis, 'THB', 2)}**`)
       lines.push(`- **Estimated current value**: **${fmtMoney(marketValue, 'THB', 2)}**`)
-      lines.push(`- **Estimated profit / loss (PnL)**: **${fmtSignMoney(pnl, 'THB', 2)} (${fmtPct(pnlPct, 2)})**`)
+      lines.push(hasRealPrice(h)
+        ? `- **Estimated profit / loss (PnL)**: **${fmtSignMoney(pnl, 'THB', 2)} (${fmtPct(pnlPct, 2)})**`
+        : `- **Estimated profit / loss (PnL)**: no price yet (value counted at cost)`)
       lines.push('')
     }
   }

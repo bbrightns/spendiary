@@ -28,17 +28,26 @@ const US_TICKER_SET = new Set([
   'XLP', 'XLY', 'XLRE', 'XLC', 'VNQ', 'JEPI', 'JEPQ', 'DGRO', 'VYM', 'VIG', 'IWM', 'IJR',
 ])
 
+/**
+ * Works out an imported holding's class from its explicit class, its ticker and name, and its
+ * currency. Returns null when none of them says, so the import can ask instead of guessing.
+ */
 export function inferAssetClass(
   ticker: string,
   name: string,
   rawClass?: string,
   currency?: string,
-): InvestAssetClass {
+): InvestAssetClass | null {
   const normClass = (rawClass ?? '').toLowerCase().trim()
   const cleanCurr = (currency ?? '').toUpperCase().trim()
   const cleanTicker = ticker.trim().toUpperCase().replace(/\.(BK|SET|TB)$/i, '')
   const combined = `${ticker} ${name}`.trim()
   const upperCombined = combined.toUpperCase()
+
+  // 0. Explicit Real Estate (nothing in a ticker or name tells it apart)
+  if (normClass === 'real_estate' || normClass === 'real estate') {
+    return 'real_estate'
+  }
 
   // 1. Explicit Crypto
   if (normClass === 'crypto' || /\b(BTC|ETH|SOL|DOGE|ADA|XRP|BNB|USDT|USDC|CRYPTO|BITCOIN)\b/i.test(upperCombined)) {
@@ -110,10 +119,6 @@ export function inferAssetClass(
     return 'stock'
   }
 
-  // 12. Default fallback: Latin tickers (e.g. 1-5 chars) default to stock, otherwise fund
-  if (/^[A-Z]{1,5}$/.test(cleanTicker)) {
-    return 'stock'
-  }
-
-  return 'fund'
+  // Nothing above says what it is. Don't guess: the caller asks for the class instead.
+  return null
 }

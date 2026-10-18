@@ -601,7 +601,7 @@ export function HoldingLogs() {
 
     const rows = filtered.map((log) => {
       const dt = new Date(log.timestamp)
-      const dateStr = dt.toISOString().slice(0, 10)
+      const dateStr = localDateStr(dt)
       const timeStr = dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
       const actionMeta = getLogActionMeta(log)
       const locName = getDestinationLocation(log)
@@ -632,7 +632,7 @@ export function HoldingLogs() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `spendiary-activity-logs-${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `spendiary-activity-logs-${localDateStr()}.csv`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)

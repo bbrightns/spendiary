@@ -19,6 +19,11 @@ export function thb(value: number, decimals = false): string {
   return `฿${NBSP}${n}`
 }
 
+/** The amount as entered: satang only when there are some, so ฿45.50 and ฿3,333.33 but ฿8,500 */
+export function thbExact(value: number): string {
+  return thb(value, !Number.isInteger(Math.round(value * 100) / 100))
+}
+
 /** Like thb, with a leading minus sign for negatives: −฿1,031.00 */
 export function thbSigned(value: number, decimals = false): string {
   return `${value < 0 ? '−' : ''}${thb(Math.abs(value), decimals)}`
@@ -80,6 +85,15 @@ export function localDateStr(d = new Date()): string {
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
+}
+
+/**
+ * The local calendar day (YYYY-MM-DD) of a stored date: a plain date stays as is, and a full
+ * timestamp is read in the user's time zone. Slicing a UTC timestamp would give yesterday for
+ * anything saved before 7am in Thailand.
+ */
+export function localDay(dateOrIso: string): string {
+  return dateOrIso.includes('T') ? localDateStr(new Date(dateOrIso)) : dateOrIso
 }
 
 /**

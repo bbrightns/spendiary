@@ -72,7 +72,9 @@ export function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
       units,
       totalThbInvested: totalThb,
       avgCostThb: h.avgCostThb ?? h.avgCost,
-      price: typeof h.price === 'number' && h.price > 0 ? h.price : (h.avgCostThb ?? h.avgCost ?? 0),
+      ...(typeof h.price === 'number' && h.price > 0
+        ? { price: h.price }
+        : { price: h.avgCostThb ?? h.avgCost ?? 0, placeholderPrice: h.avgCostThb ?? h.avgCost ?? 0 }),
     }
   })
   delete (merged as { cash?: number }).cash

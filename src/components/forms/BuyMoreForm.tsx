@@ -5,7 +5,7 @@ import { NumberField, TextField, SelectField } from '../ui/Field'
 import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
-import { ASSET_META, GRAMS_PER_BAHT_GOLD, applyBuy, goldThbPerGramToXauUsd, holdingMetrics, upsert } from '../../lib/calc'
+import { ASSET_META, GRAMS_PER_BAHT_GOLD, applyBuy, goldThbPerGramToXauUsd, hasRealPrice, holdingMetrics, upsert } from '../../lib/calc'
 import type { AcquisitionSource, BtcLocation, GoldLocation, Holding } from '../../lib/types'
 import { dateStrToTimestamp, money, thb, localDateStr } from '../../lib/format'
 import { isValidRate, rateOrZero } from '../../lib/fx'
@@ -128,7 +128,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
   const label = holding?.assetClass === 'fund' ? 'units' : 'shares'
 
   const fxRateNum = Number(fxRate) || rate
-  const priceUsdNum = Number(priceUsd) || (holding && rate > 0 ? holding.price / rate : 0)
+  const priceUsdNum = Number(priceUsd) || (holding && rate > 0 && hasRealPrice(holding) ? holding.price / rate : 0)
   const amountSpentThbNum = Number(amountSpentThb)
   const sharesBoughtNum = Number(sharesBought)
   const validStock =
@@ -158,7 +158,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
     }
     const valNum = Number(val)
     const currentFxRate = Number(fxRate) || rate
-    const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 ? holding.price / rate : 1)
+    const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 && hasRealPrice(holding) ? holding.price / rate : 1)
     if (currentFxRate > 0 && currentPriceUsd > 0) {
       const usdSpent = valNum / currentFxRate
       const shares = usdSpent / currentPriceUsd
@@ -177,7 +177,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
     }
     const valNum = Number(val)
     const currentFxRate = Number(fxRate) || rate
-    const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 ? holding.price / rate : 1)
+    const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 && hasRealPrice(holding) ? holding.price / rate : 1)
     if (currentFxRate > 0 && currentPriceUsd > 0) {
       const usdSpent = valNum * currentPriceUsd
       const thbSpentVal = usdSpent * currentFxRate
@@ -191,7 +191,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
     setFxRate(val)
     if (val === '' || Number(val) <= 0) return
     const valNum = Number(val)
-    const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 ? holding.price / rate : 1)
+    const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 && hasRealPrice(holding) ? holding.price / rate : 1)
     if (lastFocused === 'thb' && amountSpentThb !== '' && Number(amountSpentThb) > 0) {
       const usdSpent = Number(amountSpentThb) / valNum
       const shares = usdSpent / currentPriceUsd
@@ -224,7 +224,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
       const formatted = Number(Number(amountSpentThb).toFixed(2))
       setAmountSpentThb(formatted)
       const currentFxRate = Number(fxRate) || rate
-      const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 ? holding.price / rate : 1)
+      const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 && hasRealPrice(holding) ? holding.price / rate : 1)
       if (currentFxRate > 0 && currentPriceUsd > 0) {
         const usdSpent = formatted / currentFxRate
         const shares = usdSpent / currentPriceUsd
@@ -239,7 +239,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
       setSharesBought(formatted)
       const formattedNum = Number(formatted)
       const currentFxRate = Number(fxRate) || rate
-      const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 ? holding.price / rate : 1)
+      const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 && hasRealPrice(holding) ? holding.price / rate : 1)
       if (currentFxRate > 0 && currentPriceUsd > 0) {
         const usdSpent = formattedNum * currentPriceUsd
         const thbSpentVal = usdSpent * currentFxRate
@@ -253,7 +253,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
       const formatted = formatCostOrFx(fxRate)
       setFxRate(formatted)
       const formattedNum = Number(formatted)
-      const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 ? holding.price / rate : 1)
+      const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 && hasRealPrice(holding) ? holding.price / rate : 1)
       if (lastFocused === 'thb' && amountSpentThb !== '' && Number(amountSpentThb) > 0) {
         const usdSpent = Number(amountSpentThb) / formattedNum
         const shares = usdSpent / currentPriceUsd
@@ -309,8 +309,18 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
     const lockedGold = lockedLocationId ? goldLocs.find((l) => l.id === lockedLocationId) : undefined
     setGoldLocationId(lockedGold ? lockedGold.id : (goldLocs[0]?.id ?? '__new__'))
     setGoldNewLocationName('')
-    // Pre-fill price: USD for stocks, THB for funds, not used for BTC
-    if (!isBtc) {
+    // Pre-fill price: USD for stocks, THB for funds, not used for BTC.
+    // Only a real price is offered; a cost stand-in (no price yet) leaves it for the user to type.
+    if (!isBtc && !hasRealPrice(holding)) {
+      setPrice('')
+      if (isStock && rate > 1) {
+        setFxRate(formatCostOrFx(rate))
+        setPriceUsd('')
+        setAmountSpentThb('')
+        setSharesBought('')
+        setLastFocused('thb')
+      }
+    } else if (!isBtc) {
       if (isStock && rate > 1) {
         const usdPrice = Number((holding.price / rate).toFixed(4))
         setPrice(usdPrice)
