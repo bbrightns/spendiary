@@ -9,8 +9,9 @@ import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { DEFAULT_MIN_PAYMENT_PERCENT, cardCycle, minimumPayment, noteTitle } from './logic'
 import { useSpend } from './useSpend'
 import { TONES } from './tones'
+import { SHEET_EVENTS } from './sheetEvents'
 
-const OPEN_EVENT = 'spendiary:open-pay-bill'
+const OPEN_EVENT = SHEET_EVENTS.payBill
 
 /** Open the "Pay bill" sheet for a credit card from anywhere in the app. */
 export function openPayBill(cardId: string) {

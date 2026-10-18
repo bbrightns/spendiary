@@ -12,3 +12,6 @@ npm-debug.log*
 # Other AI tools' local workspaces
 .gemini/
 .freebuff/
+
+# Local secrets (set the same values in Vercel → Project Settings → Environment Variables)
+.env

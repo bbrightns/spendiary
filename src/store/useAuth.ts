@@ -33,7 +33,6 @@ export function useAuth() {
                 .join('')
             )
             const payload = JSON.parse(jsonPayload)
-            console.log('Restored user directly from token payload:', payload.email)
 
             const restoredUser: User = {
               id: payload.sub || payload.id || 'user-google',
@@ -75,7 +74,6 @@ export function useAuth() {
 
     if (supabase?.auth?.getSession) {
       supabase.auth.getSession().then(({ data: { session } }) => {
-        console.log('Initial Supabase session:', session?.user?.email ?? 'No user')
         if (session?.user) {
           signIn(session.user)
         }
@@ -84,7 +82,6 @@ export function useAuth() {
 
     if (supabase?.auth?.onAuthStateChange) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-        console.log('Supabase onAuthStateChange:', event, session?.user?.email ?? 'No user')
         if (session?.user) {
           signIn(session.user)
         } else if (event === 'SIGNED_OUT') {
@@ -108,7 +105,6 @@ export function useAuth() {
     try {
       const redirectUri = encodeURIComponent(window.location.origin)
       const targetUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${redirectUri}`
-      console.log('Navigating directly to Supabase Google OAuth URL:', targetUrl)
       window.location.href = targetUrl
     } catch (err) {
       console.error('Sign in exception:', err)

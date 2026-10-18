@@ -18,9 +18,11 @@ import { ImportSheet } from '../../modules/spend/ImportSheet'
 import { PayBillSheet } from '../../modules/spend/PayBillSheet'
 import { PayLoanSheet } from '../../modules/spend/PayLoanSheet'
 import { SpendBottomNav } from '../../modules/spend/SpendBottomNav'
+import { SheetsPaused } from '../../modules/spend/SheetsPaused'
 
 export function Layout({ children }: { children: ReactNode }) {
-  const { user } = useData()
+  const { user, dataReady, loadError, syncConflict } = useData()
+  const canEdit = dataReady && !loadError && !syncConflict
   const isTestMode = user?.id === 'test-user-local'
   const isSpend = useSpendSide()
   const side = SIDE_ACTIVE[isSpend ? 'spend' : 'invest']
@@ -98,12 +100,19 @@ export function Layout({ children }: { children: ReactNode }) {
         {isSpend ? <SpendBottomNav /> : <BottomNav />}
       </div>
 
-      {/* Spend sheets — Quick Add (+ button, sidebar, command palette) and card Pay bill (reminders) */}
-      <QuickAddSheet />
-      <QuickAddLink />
-      <ImportSheet />
-      <PayBillSheet />
-      <PayLoanSheet />
+      {/* Spend sheets — Quick Add (+ button, sidebar, command palette) and card Pay bill (reminders).
+          Only while the data is loaded: an entry added before then would be replaced when it arrives. */}
+      {canEdit ? (
+        <>
+          <QuickAddSheet />
+          <QuickAddLink />
+          <ImportSheet />
+          <PayBillSheet />
+          <PayLoanSheet />
+        </>
+      ) : (
+        <SheetsPaused reason={loadError || syncConflict ? 'problem' : 'loading'} />
+      )}
     </div>
   )
 }
