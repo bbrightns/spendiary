@@ -104,9 +104,16 @@ export function isPriceStale(updatedAt?: string): boolean {
   return (Date.now() - updated.getTime()) / 86_400_000 >= 7
 }
 
+const UNIT_LABEL: Record<AssetClass, string> = {
+  fund: 'units',
+  stock: 'shares',
+  crypto: 'BTC',
+  gold: 'g',
+  real_estate: 'units',
+  cash: 'THB',
+}
+
+/** What a holding's units count: a Record so every asset class has to have its own label. */
 export function unitLabel(assetClass: AssetClass): string {
-  if (assetClass === 'fund') return 'units'
-  if (assetClass === 'stock') return 'shares'
-  if (assetClass === 'gold') return 'g'
-  return 'BTC'
+  return UNIT_LABEL[assetClass] ?? 'units'
 }
