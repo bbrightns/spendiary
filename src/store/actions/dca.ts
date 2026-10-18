@@ -83,6 +83,21 @@ export function skipDcaBuy(prev: SpendiaryData, ...[planId, date]: Parameters<Da
   }
 }
 
+export function unskipDcaBuy(prev: SpendiaryData, ...[planId, date]: Parameters<DataContextValue['unskipDcaBuy']>): SpendiaryData {
+  const plan = prev.dcaPlans.find((p) => p.id === planId)
+  if (!plan || !(plan.skippedDates ?? []).includes(date)) return prev
+  return {
+    ...prev,
+    dcaPlans: prev.dcaPlans.map((p) =>
+      p.id !== planId ? p : { ...p, skippedDates: (p.skippedDates ?? []).filter((d) => d !== date) },
+    ),
+    // The skip's own entry: a skip changes no holding, so it has no state to restore
+    holdingLogs: (prev.holdingLogs ?? []).filter(
+      (l) => !(l.dcaPlanId === planId && l.dcaDate === date && l.ticker === 'DCA' && l.note?.startsWith('Skipped')),
+    ),
+  }
+}
+
 export function confirmDcaBuy(
   prev: SpendiaryData,
   ...[

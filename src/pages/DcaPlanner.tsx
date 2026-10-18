@@ -305,7 +305,7 @@ export function DcaPlanner() {
   } = usePageGuide('dca')
   const {
     data, setMonthlyIncome,
-    upsertPlan, skipDcaBuy,
+    upsertPlan, skipDcaBuy, unskipDcaBuy,
   } = useData()
   const { showToast } = useToast()
 
@@ -839,8 +839,9 @@ export function DcaPlanner() {
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation()
-                                          skipDcaBuy(p.id, localDateStr())
-                                          showToast(`Skipped DCA buy for "${p.name}" this period`, 'info')
+                                          const date = localDateStr()
+                                          skipDcaBuy(p.id, date)
+                                          showToast(`Skipped ${p.name} this time`, 'info', { label: 'Undo', onClick: () => unskipDcaBuy(p.id, date) })
                                         }}
                                         aria-label={`Skip DCA buy for ${p.name} this period`}
                                         className="inline-flex items-center rounded-full border border-line-strong bg-surface hover:bg-surface-muted text-ink-muted hover:text-ink px-3.5 py-1.5 text-xs font-semibold active:scale-95 transition-all cursor-pointer min-h-[34px]"

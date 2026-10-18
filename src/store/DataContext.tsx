@@ -147,6 +147,8 @@ export interface DataContextValue {
     payment?: DcaPayment,
   ) => void
   skipDcaBuy: (planId: string, date: string) => void
+  /** Undo a skip: the buy is waiting again and the skip's log entry goes away */
+  unskipDcaBuy: (planId: string, date: string) => void
 
   upsertTransfer: (transfer: Omit<Transfer, 'id'> & { id?: string }) => void
   removeTransfer: (id: string) => void
@@ -405,6 +407,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         ),
 
       skipDcaBuy: (planId, date) => updateData((prev) => dcaActions.skipDcaBuy(prev, planId, date)),
+      unskipDcaBuy: (planId, date) => updateData((prev) => dcaActions.unskipDcaBuy(prev, planId, date)),
 
       upsertTransfer: (transfer) => updateData((prev) => planningActions.upsertTransfer(prev, transfer)),
       removeTransfer: (id) => updateData((prev) => planningActions.removeTransfer(prev, id)),

@@ -33,7 +33,7 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         badge: 'Time to invest',
         title: 'Today',
         description:
-          'When DCA buys, dividends, card bills or loans need you, this line says how many. Tap it to handle them all on Spend Home.',
+          'When DCA buys or dividends need logging, this line takes you to them. Card bills and loans are paid on Spend Home.',
         position: 'bottom',
       },
       {

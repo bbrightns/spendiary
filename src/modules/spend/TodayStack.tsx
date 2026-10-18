@@ -12,9 +12,10 @@ import {
   isLiabilityActionableThisMonth,
   shouldConfirmBuy,
 } from '../../lib/calc'
-import { thb } from '../../lib/format'
+import { localDateStr, thb } from '../../lib/format'
 import type { DcaPlan, Holding } from '../../lib/types'
 import { useData } from '../../store/DataContext'
+import { useToast } from '../../store/ToastContext'
 import { DEFAULT_BILL_REMINDER_DAYS } from './logic'
 import { dueText, openPayBill } from './PayBillSheet'
 import { openPayLoan } from './PayLoanSheet'
@@ -53,6 +54,8 @@ interface Item {
   icon?: ReactNode
   action: string
   onAction: () => void
+  /** A quieter second button, e.g. Skip */
+  secondary?: { label: string; onClick: () => void }
 }
 
 interface Group {
@@ -64,6 +67,8 @@ interface Group {
   title: (n: number) => string
   summary: (items: Item[]) => string
   items: Item[]
+  /** Where these items live when they come from the other side, e.g. DCA plans in Invest */
+  source?: { label: string; to: string; linkText: string }
 }
 
 const worst = (items: Item[]): Tone => items.reduce<Tone>((t, i) => (RANK[i.tone] < RANK[t] ? i.tone : t), 'gain')
@@ -81,7 +86,8 @@ function planTitle(p: DcaPlan) {
  * confirm and dividends to log. Groups come most urgent first.
  */
 function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: Holding, dps: number) => void): Group[] {
-  const { data } = useData()
+  const { data, skipDcaBuy, unskipDcaBuy } = useData()
+  const { showToast } = useToast()
   const { reminders, settings } = useSpend()
   const now = new Date()
   const month = now.getMonth() + 1
@@ -153,6 +159,14 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
         color: ASSET_META[p.assetClass]?.color,
         action: 'Log',
         onAction: () => onConfirmDca(p),
+        secondary: {
+          label: 'Skip',
+          onClick: () => {
+            const date = localDateStr()
+            skipDcaBuy(p.id, date)
+            showToast(`Skipped ${p.name} this time`, 'info', { label: 'Undo', onClick: () => unskipDcaBuy(p.id, date) })
+          },
+        },
       }
     })
 
@@ -198,6 +212,7 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
       title: (n) => `${count(n, 'DCA buy')} to log`,
       summary: (items) => `${total(items)}${lateText(items, 'late')}`,
       items: dca,
+      source: { label: 'Invest', to: '/dca', linkText: 'Plans live in Invest → DCA' },
     },
     {
       id: 'dividends',
@@ -211,31 +226,48 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
   return groups.filter((g) => g.items.length > 0).sort((a, b) => RANK[worst(a.items)] - RANK[worst(b.items)])
 }
 
-/** One item: the whole card is the button. */
-function ItemCard({ item, icon, badge }: { item: Item; icon: ReactNode; badge: string }) {
+/** "Invest": where an item lives when it isn't a Spend thing */
+function SourceTag({ label }: { label: string }) {
+  return <span className="shrink-0 rounded-md bg-surface/70 px-1.5 py-0.5 text-[11px] font-bold text-ink-soft">{label}</span>
+}
+
+const SECONDARY = 'shrink-0 rounded-full px-2.5 py-1.5 text-xs font-semibold text-ink-muted hover:text-ink cursor-pointer min-h-8'
+
+/** One item: the whole card is the button (a second action, like Skip, sits beside it). */
+function ItemCard({ item, icon, badge, source }: { item: Item; icon: ReactNode; badge: string; source?: Group['source'] }) {
   const t = TONE[item.tone]
   return (
-    <button
-      type="button"
-      onClick={item.onAction}
-      className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-[filter] cursor-pointer animate-rise hover:brightness-[0.98] dark:hover:brightness-110 ${t.card}`}
-    >
-      <span
-        className={`grid h-9 w-12 shrink-0 place-items-center rounded-lg ${item.color ? 'text-white' : badge}`}
-        style={item.color ? { background: item.color } : undefined}
+    <div className={`flex w-full items-center gap-1 rounded-2xl border pr-4 animate-rise ${t.card}`}>
+      <button
+        type="button"
+        onClick={item.onAction}
+        className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl py-3 pl-4 text-left transition-[filter] cursor-pointer hover:brightness-[0.98] dark:hover:brightness-110"
       >
-        {item.icon ?? icon}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex min-w-0 items-center gap-1.5 text-sm font-bold text-ink">
-          <span className="truncate">{item.title}</span>
-          {/* Phones keep the room for the name; the ticker shows from sm up */}
-          {item.tag && <span className="hidden shrink-0 rounded-md bg-surface/70 px-1.5 py-0.5 text-[11px] font-bold text-ink-soft sm:inline">{item.tag}</span>}
+        <span
+          className={`grid h-9 w-12 shrink-0 place-items-center rounded-lg ${item.color ? 'text-white' : badge}`}
+          style={item.color ? { background: item.color } : undefined}
+        >
+          {item.icon ?? icon}
         </span>
-        <span className={`block truncate text-xs font-semibold tnum ${t.text}`}>{item.detail}</span>
-      </span>
-      <span className={PILL}>{item.action}</span>
-    </button>
+        <span className="min-w-0 flex-1">
+          <span className="flex min-w-0 items-center gap-1.5 text-sm font-bold text-ink">
+            <span className="truncate">{item.title}</span>
+            {/* Phones keep the room for the name; the ticker shows from sm up */}
+            {item.tag && <span className="hidden shrink-0 rounded-md bg-surface/70 px-1.5 py-0.5 text-[11px] font-bold text-ink-soft sm:inline">{item.tag}</span>}
+            {source && <SourceTag label={source.label} />}
+          </span>
+          <span className={`block truncate text-xs font-semibold tnum ${t.text}`}>{item.detail}</span>
+        </span>
+      </button>
+      {item.secondary && (
+        <button type="button" onClick={item.secondary.onClick} className={SECONDARY}>
+          {item.secondary.label}
+        </button>
+      )}
+      <button type="button" onClick={item.onAction} tabIndex={-1} aria-hidden="true" className={PILL}>
+        {item.action}
+      </button>
+    </div>
   )
 }
 
@@ -248,7 +280,10 @@ function GroupCard({ group }: { group: Group }) {
       <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex w-full items-center gap-3 px-4 py-3 text-left cursor-pointer">
         <span className={`grid h-9 w-12 shrink-0 place-items-center rounded-lg ${group.badge}`}>{group.icon}</span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-bold text-ink">{group.title(group.items.length)}</span>
+          <span className="flex min-w-0 items-center gap-1.5 text-sm font-bold text-ink">
+            <span className="truncate">{group.title(group.items.length)}</span>
+            {group.source && <SourceTag label={group.source.label} />}
+          </span>
           <span className={`block truncate text-xs font-semibold tnum ${TONE[tone].text}`}>{group.summary(group.items)}</span>
         </span>
         <span className={PILL}>{open ? 'Hide' : 'Review'}</span>
@@ -262,11 +297,24 @@ function GroupCard({ group }: { group: Group }) {
                 <span className="block truncate text-sm font-semibold text-ink">{i.title}</span>
                 <span className={`block truncate text-xs font-semibold tnum ${i.tone === 'brand' ? 'text-ink-muted' : TONE[i.tone].text}`}>{i.detail}</span>
               </span>
-              <button type="button" onClick={i.onAction} className={PILL}>
+              {i.secondary && (
+                <button type="button" onClick={i.secondary.onClick} aria-label={`${i.secondary.label} ${i.title}`} className={SECONDARY}>
+                  {i.secondary.label}
+                </button>
+              )}
+              <button type="button" onClick={i.onAction} aria-label={`${i.action} ${i.title}`} className={PILL}>
                 {i.action}
               </button>
             </li>
           ))}
+          {group.source && (
+            <li>
+              <Link to={group.source.to} className="flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-ink-muted hover:text-ink">
+                {group.source.linkText}
+                <span aria-hidden="true">→</span>
+              </Link>
+            </li>
+          )}
         </ul>
       )}
     </div>
@@ -286,7 +334,7 @@ export function TodayStack() {
     <>
       {groups.length > 0 && (
         <div className="space-y-2" role="region" aria-label="To do today">
-          {groups.map((g) => (g.items.length === 1 ? <ItemCard key={g.id} item={g.items[0]} icon={g.icon} badge={g.badge} /> : <GroupCard key={g.id} group={g} />))}
+          {groups.map((g) => (g.items.length === 1 ? <ItemCard key={g.id} item={g.items[0]} icon={g.icon} badge={g.badge} source={g.source} /> : <GroupCard key={g.id} group={g} />))}
         </div>
       )}
       <ConfirmDcaBuyForm open={!!confirmingPlan} plan={confirmingPlan} onClose={() => setConfirmingPlan(null)} />
@@ -297,21 +345,32 @@ export function TodayStack() {
 
 const noop = () => {}
 
-/** Invest Home's one line pointing at Spend Home's Today stack, when anything is waiting. */
+/**
+ * Invest Home's lines for what's waiting today. Each points where the item lives, so DCA buys and
+ * dividends stay in Invest (DCA page) and only bills and loans send you to Spend Home.
+ */
 export function TodayLink({ id }: { id?: string }) {
   const groups = useTodayGroups(noop, noop)
+  if (groups.length === 0) return null
+  const invest = groups.filter((g) => g.id !== 'pay')
+  const spend = groups.filter((g) => g.id === 'pay')
+  return (
+    <div id={id} className="divide-y divide-line overflow-hidden rounded-2xl border border-line text-sm text-ink-muted">
+      {invest.length > 0 && <TodayLinkRow to="/dca" groups={invest} />}
+      {spend.length > 0 && <TodayLinkRow to="/" groups={spend} where="on Spend Home" />}
+    </div>
+  )
+}
+
+function TodayLinkRow({ to, groups, where }: { to: string; groups: Group[]; where?: string }) {
   const items = groups.flatMap((g) => g.items)
-  if (items.length === 0) return null
   const urgent = items.filter((i) => i.tone === 'loss' || i.tone === 'warn').length
   return (
-    <Link
-      id={id}
-      to="/"
-      className="flex items-center justify-between gap-3 rounded-2xl border border-line px-4 py-2.5 text-sm text-ink-muted transition-colors hover:bg-surface-muted/60"
-    >
+    <Link to={to} className="flex items-center justify-between gap-3 px-4 py-2.5 transition-colors hover:bg-surface-muted/60">
       <span>
-        <span className="font-semibold text-ink">{count(items.length, 'thing')} to do today</span>
-        {urgent > 0 && <span className="font-semibold text-warn"> · {urgent} due or late</span>} · on Spend Home
+        <span className="font-semibold text-ink">{groups.map((g) => g.title(g.items.length)).join(' · ')}</span>
+        {urgent > 0 && <span className="font-semibold text-warn"> · {urgent} due or late</span>}
+        {where && ` · ${where}`}
       </span>
       <span aria-hidden="true">→</span>
     </Link>

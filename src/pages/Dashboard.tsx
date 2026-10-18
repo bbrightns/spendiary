@@ -141,7 +141,7 @@ export function Dashboard() {
       {/* The greeting lives on Spend Home, where the app opens */}
       <PageHeader eyebrow="Invest" title="Overview" subtitle="Your wealth at a glance." onStartGuide={startTour} className="mb-4" />
 
-      {/* ── Today: DCA buys, dividends, bills and loans are all handled on Spend Home ── */}
+      {/* ── Today: DCA buys and dividends open the DCA page; bills and loans open Spend Home ── */}
       <TodayLink id="guide-dashboard-dca" />
 
       {/* ── ROW 1: Net Worth Master Hero (Full Width Bento) ── */}

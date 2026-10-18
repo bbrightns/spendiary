@@ -1,57 +1,33 @@
 import { describe, expect, it } from 'vitest'
 import type { DcaPlan, SpendiaryData } from '../../lib/types'
 import { emptyData } from '../migrate'
-import { removePlan, skipDcaBuy, upsertPlan } from './dca'
-import { undoHoldingLog } from './holdingLogs'
+import { skipDcaBuy, unskipDcaBuy } from './dca'
 
-const plan: DcaPlan = { id: 'p1', name: 'S&P 500', assetClass: 'fund', frequency: 'monthly', monthlyAmount: 5000, dayOfMonth: 10 }
-const state = (over: Partial<SpendiaryData> = {}): SpendiaryData => ({ ...emptyData, dcaPlans: [plan], ...over })
+const plan = { id: 'p1', name: 'Bitcoin', assetClass: 'crypto', monthlyAmount: 300, dayOfMonth: 1 } as DcaPlan
+const state = (): SpendiaryData => ({ ...emptyData, dcaPlans: [plan], holdingLogs: [] })
 
-describe('upsertPlan', () => {
-  it('adds a new plan with an id and logs it as created', () => {
-    const out = upsertPlan(state(), { name: 'Gold', assetClass: 'gold', monthlyAmount: 2000, dayOfMonth: 1 })
-    expect(out.dcaPlans).toHaveLength(2)
-    expect(out.dcaPlans[1].id).toBeTruthy()
-    expect(out.holdingLogs?.[0]).toMatchObject({ action: 'add', ticker: 'DCA', holdingName: 'DCA Plan: Gold', assetClass: 'gold' })
-    expect(out.holdingLogs?.[0].note).toBe('Created DCA plan of ฿2,000/month')
+describe('unskipDcaBuy', () => {
+  it('undoes a skip: the date and its log entry are gone', () => {
+    const skipped = skipDcaBuy(state(), 'p1', '2026-10-18')
+    expect(skipped.dcaPlans[0].skippedDates).toEqual(['2026-10-18'])
+    expect(skipped.holdingLogs).toHaveLength(1)
+
+    const back = unskipDcaBuy(skipped, 'p1', '2026-10-18')
+    expect(back.dcaPlans[0].skippedDates).toEqual([])
+    expect(back.holdingLogs).toEqual([])
   })
 
-  it('updates an existing plan and logs it as an edit', () => {
-    const out = upsertPlan(state(), { ...plan, monthlyAmount: 6000 })
-    expect(out.dcaPlans).toEqual([{ ...plan, monthlyAmount: 6000 }])
-    expect(out.holdingLogs?.[0]).toMatchObject({ action: 'edit', note: 'Updated DCA plan of ฿6,000/month' })
-  })
-})
-
-describe('removePlan', () => {
-  it('removes the plan and logs it', () => {
-    const out = removePlan(state(), 'p1')
-    expect(out.dcaPlans).toEqual([])
-    expect(out.holdingLogs?.[0].note).toBe('Deleted DCA plan of ฿5,000/month')
+  it('leaves other days and other plans alone', () => {
+    let s = skipDcaBuy(state(), 'p1', '2026-10-17')
+    s = skipDcaBuy(s, 'p1', '2026-10-18')
+    const back = unskipDcaBuy(s, 'p1', '2026-10-18')
+    expect(back.dcaPlans[0].skippedDates).toEqual(['2026-10-17'])
+    expect(back.holdingLogs).toHaveLength(1)
+    expect(back.holdingLogs?.[0].dcaDate).toBe('2026-10-17')
   })
 
-  it('changes nothing for an unknown plan', () => {
-    const before = state()
-    expect(removePlan(before, 'nope')).toBe(before)
-  })
-})
-
-describe('skipDcaBuy', () => {
-  it('records the skipped date first and links the log to the plan', () => {
-    const out = skipDcaBuy(state({ dcaPlans: [{ ...plan, skippedDates: ['2026-09-10'] }] }), 'p1', '2026-10-10')
-    expect(out.dcaPlans[0].skippedDates).toEqual(['2026-10-10', '2026-09-10'])
-    expect(out.holdingLogs?.[0]).toMatchObject({ dcaPlanId: 'p1', dcaDate: '2026-10-10' })
-  })
-
-  it('can be undone from the log', () => {
-    const skipped = skipDcaBuy(state(), 'p1', '2026-10-10')
-    const undone = undoHoldingLog(skipped, skipped.holdingLogs![0].id)
-    expect(undone.dcaPlans[0].skippedDates).toEqual([])
-    expect(undone.holdingLogs).toEqual([])
-  })
-
-  it('changes nothing for an unknown plan', () => {
-    const before = state()
-    expect(skipDcaBuy(before, 'nope', '2026-10-10')).toBe(before)
+  it('does nothing when that day was not skipped', () => {
+    const s = state()
+    expect(unskipDcaBuy(s, 'p1', '2026-10-18')).toBe(s)
   })
 })

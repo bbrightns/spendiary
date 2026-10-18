@@ -36,9 +36,9 @@
 ### C. หนึ่งบ้าน หลายประตู
 | # | งาน | สถานะ |
 |---|---|---|
-| C1 | เพิ่ม **Skip** (มี Undo) ใน Today stack | ⬜ |
-| C2 | ป้าย `Invest · DCA` บนกลุ่ม DCA ใน Today stack | ⬜ |
-| C3 | แบนเนอร์บน Invest Home: DCA พาไป `/invest/dca` อยู่โหมดเดิม | ⬜ |
+| C1 | เพิ่ม **Skip** (มี Undo) ใน Today stack | ✅ |
+| C2 | ป้าย `Invest · DCA` บนกลุ่ม DCA ใน Today stack | ✅ |
+| C3 | แบนเนอร์บน Invest Home: DCA พาไป `/dca` อยู่โหมดเดิม · บิล/หนี้ยังพาไป Spend Home | ✅ |
 
 ### E. สีและตัวเลข
 | # | งาน | สถานะ |
