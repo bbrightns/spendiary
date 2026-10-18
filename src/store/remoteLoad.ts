@@ -23,14 +23,8 @@ interface RemoteRow {
 export interface ClientLoad {
   error: unknown
   row: RemoteRow | null | undefined
-}
-
-/** What the REST fallback returned; null when it was not tried or threw */
-export interface RestLoad {
-  ok: boolean
-  list: unknown
-  /** False when no user access token was found and the public anon key was sent instead */
-  usedUserToken: boolean
+  /** True when the query was sent with this user's session; without one, row-level security hides the row */
+  asUser: boolean
 }
 
 function loadedFrom(row: unknown): RemoteLoadResult | null {
@@ -40,23 +34,10 @@ function loadedFrom(row: unknown): RemoteLoadResult | null {
   return { kind: 'loaded', payload, updatedAt: typeof updated_at === 'string' ? updated_at : null }
 }
 
-export function resolveRemoteLoad(client: ClientLoad, rest: RestLoad | null): RemoteLoadResult {
-  if (!client.error) {
-    const fromClient = loadedFrom(client.row)
-    if (fromClient) return fromClient
-  }
-
-  const fromRest = rest?.ok && Array.isArray(rest.list) ? loadedFrom(rest.list[0]) : null
-  if (fromRest) return fromRest
-
-  // The client query ran without error and found no row: a new user
-  if (!client.error) return { kind: 'empty' }
-
-  // An empty REST answer only counts when it was asked as the user.
-  // With the anon key, row-level security hides the row and also returns [].
-  if (rest?.ok && Array.isArray(rest.list) && rest.list.length === 0 && rest.usedUserToken) {
-    return { kind: 'empty' }
-  }
-
-  return { kind: 'failed' }
+export function resolveRemoteLoad(client: ClientLoad): RemoteLoadResult {
+  if (client.error) return { kind: 'failed' }
+  const loaded = loadedFrom(client.row)
+  if (loaded) return loaded
+  // No row: a new user, but only if the database was asked as that user
+  return client.asUser ? { kind: 'empty' } : { kind: 'failed' }
 }

@@ -3,7 +3,7 @@ import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import type { SpendiaryData } from '../lib/types'
 import { seedData } from '../lib/seed'
-import { resolveRemoteLoad, type RestLoad } from './remoteLoad'
+import { resolveRemoteLoad } from './remoteLoad'
 import { interpretSave, lockHeaders, type SaveMode, type SaveOutcome } from './remoteSave'
 import { emptyData, justImportedFixedCosts, migrate } from './migrate'
 
@@ -87,54 +87,16 @@ export function useCloudSync(
     try {
       setSyncStatus('syncing')
 
-      const supabaseUrl = import.meta.env.VITE_API_URL || ''
-      const supabaseKey = import.meta.env.VITE_API_TOKEN || ''
-
-      // Attempt 1: Via supabase-js client
+      // Only an answer given to this user can say "no row yet"; signed out, the database hides the row
+      const { data: { session } } = await supabase.auth.getSession()
       const { data: row, error } = await supabase
         .from('user_data')
         .select('payload, updated_at')
         .eq('id', userId)
         .maybeSingle()
 
-
-      let rest: RestLoad | null = null
-      if (error || !row?.payload) {
-        // Attempt 2: Via direct REST call with Authorization Bearer header
-        // Retrieve token from Supabase localStorage or hash
-        const storageKey = `sb-dgxjifbsdpggoyyzhpeb-auth-token`
-        let token = supabaseKey
-        let usedUserToken = false
-        try {
-          const raw = localStorage.getItem(storageKey)
-          if (raw) {
-            const parsed = JSON.parse(raw)
-            if (parsed.access_token) {
-              token = parsed.access_token
-              usedUserToken = true
-            }
-          }
-        } catch {
-          // ignore: storage or JSON unavailable
-        }
-
-        try {
-          const restRes = await fetch(`${supabaseUrl}/rest/v1/user_data?id=eq.${encodeURIComponent(userId)}&select=payload,updated_at`, {
-            headers: {
-              'apikey': supabaseKey,
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            }
-          })
-          const list = restRes.ok ? await restRes.json() : null
-          rest = { ok: restRes.ok, list, usedUserToken }
-        } catch (restErr) {
-          console.warn('REST API fallback error:', restErr)
-        }
-      }
-
       if (isStale()) return
-      const result = resolveRemoteLoad({ error, row }, rest)
+      const result = resolveRemoteLoad({ error, row, asUser: session?.user.id === userId })
 
       if (result.kind === 'failed') {
         // We can't tell what is in the cloud. Keep saving off so empty data never overwrites the real row.
