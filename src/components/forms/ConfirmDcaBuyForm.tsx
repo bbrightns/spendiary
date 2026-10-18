@@ -7,6 +7,7 @@ import { useData } from '../../store/DataContext'
 import { useToast, type ResultDetail } from '../../store/ToastContext'
 import type { DcaPlan } from '../../lib/types'
 import { localDateStr, thb } from '../../lib/format'
+import { isValidRate } from '../../lib/fx'
 import { findMatchingHolding, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd, nextBuyDate } from '../../lib/calc'
 import { fetchStockPricesUsd } from '../../lib/prices'
 
@@ -81,7 +82,8 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   )
   const isGold  = !isCash && assetClass === 'gold'
   const isFund  = !isCash && assetClass === 'fund'
-  const rate = usdThb && usdThb > 0 ? usdThb : 33.40
+  // The real USD/THB rate, or 0 when none has loaded: then the FX field starts empty and must be filled in
+  const rate = isValidRate(usdThb) ? usdThb : 0
   const btcLocations = holding?.btcLocations ?? []
   const goldLocations = holding?.goldLocations ?? []
 
@@ -104,7 +106,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     setPayFromId(plan.payFromAccountId && data.cashAccounts.some((a) => a.id === plan.payFromAccountId) ? plan.payFromAccountId : '')
 
     // US Stock initialization
-    setFxRate(rate)
+    setFxRate(rate > 0 ? rate : '')
     setUnitsBought('')
     setLiveStockPrice(null)
     setShowFxEdit(false)
@@ -719,7 +721,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                   hint="Override if broker used different rate"
                   value={fxRate}
                   onChange={setFxRate}
-                  placeholder="33.40"
+                  placeholder="Your broker's rate"
                   error={showErrors && fxRateNum <= 0 ? 'Required (> 0)' : undefined}
                 />
               </div>
@@ -872,7 +874,11 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               <div className="pt-2 border-t border-line flex items-center justify-between text-sm">
                 <span className="font-medium text-ink-muted">New Avg Cost</span>
                 <span className={`tnum ${hasValidBtc ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
-                  {hasValidBtc ? `$${fmtNum(Math.round(rate > 0 ? btcNewAvgCostThb / rate : 0), 0)} / BTC (≈ ฿${fmtNum(Math.round(btcNewAvgCostThb), 0)})` : '$0 / BTC'}
+                  {hasValidBtc
+                    ? rate > 0
+                      ? `$${fmtNum(Math.round(btcNewAvgCostThb / rate), 0)} / BTC (≈ ฿${fmtNum(Math.round(btcNewAvgCostThb), 0)})`
+                      : `฿${fmtNum(Math.round(btcNewAvgCostThb), 0)} / BTC`
+                    : '$0 / BTC'}
                 </span>
               </div>
             </div>
@@ -1005,7 +1011,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-ink-muted">Price / Gram</span>
                 <span className={valueStyle(hasValidGold)}>
-                  {hasValidGold ? `฿${fmtNum(goldImpliedPricePerGram, 2)} / g (≈ ฿${fmtNum(goldImpliedPricePerGram * GRAMS_PER_BAHT_GOLD, 0)} / gold baht | $${fmtNum(goldThbPerGramToXauUsd(goldImpliedPricePerGram, rate), 0)}/oz)` : '฿0 / g'}
+                  {hasValidGold ? `฿${fmtNum(goldImpliedPricePerGram, 2)} / g (≈ ฿${fmtNum(goldImpliedPricePerGram * GRAMS_PER_BAHT_GOLD, 0)}${rate > 0 ? ` / gold baht | $${fmtNum(goldThbPerGramToXauUsd(goldImpliedPricePerGram, rate), 0)}/oz)` : ' / gold baht)'}` : '฿0 / g'}
                 </span>
               </div>
 
@@ -1028,7 +1034,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               <div className="pt-2 border-t border-line flex items-center justify-between text-sm">
                 <span className="font-medium text-ink-muted">New Avg Cost</span>
                 <span className={`tnum ${hasValidGold ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
-                  {hasValidGold ? `฿${fmtNum(goldNewAvgCostThb * GRAMS_PER_BAHT_GOLD, 0)}/gold baht (≈ $${fmtNum(goldThbPerGramToXauUsd(goldNewAvgCostThb, rate), 0)}/oz XAUUSD)` : '฿0 / gold baht'}
+                  {hasValidGold ? `฿${fmtNum(goldNewAvgCostThb * GRAMS_PER_BAHT_GOLD, 0)}/gold baht${rate > 0 ? ` (≈ $${fmtNum(goldThbPerGramToXauUsd(goldNewAvgCostThb, rate), 0)}/oz XAUUSD)` : ''}` : '฿0 / gold baht'}
                 </span>
               </div>
             </div>

@@ -6,6 +6,7 @@ import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { GRAMS_PER_BAHT_GOLD } from '../../lib/calc'
+import { isValidRate } from '../../lib/fx'
 import type { Holding } from '../../lib/types'
 
 interface Props {
@@ -61,7 +62,8 @@ export function MoveLocationModal({ open, holding, fromLocationId, onClose }: Pr
 
   if (!live || !from) return null
 
-  const rate = usdThb && usdThb > 0 ? usdThb : 33.4
+  // BTC cost shows in USD with the real rate; without one it stays in THB rather than use a guessed rate
+  const rate = isValidRate(usdThb) ? usdThb : 0
   const unitLabel = isBtc ? 'sats' : goldUnit === 'baht' ? 'gold baht' : 'g'
   // Gold can be typed in gold baht; everything below works in sats / grams
   const toBase = (v: number) => (isBtc ? Math.round(v) : goldUnit === 'baht' ? v * GRAMS_PER_BAHT_GOLD : v)
@@ -93,9 +95,12 @@ export function MoveLocationModal({ open, holding, fromLocationId, onClose }: Pr
   // Average cost: coins carry their cost; a fee shrinks the coins so the destination average rises a little
   const avgCost = (qty: number, thb: number) => {
     if (qty <= 0) return 0
-    return isBtc ? thb / (qty / 100_000_000) / rate : (thb / qty) * GRAMS_PER_BAHT_GOLD
+    if (!isBtc) return (thb / qty) * GRAMS_PER_BAHT_GOLD
+    const thbPerBtc = thb / (qty / 100_000_000)
+    return rate > 0 ? thbPerBtc / rate : thbPerBtc
   }
-  const avgLabel = (v: number) => (v <= 0 ? '–' : isBtc ? `$${Math.round(v).toLocaleString()}/BTC` : `฿${Math.round(v).toLocaleString()}/gold baht`)
+  const avgLabel = (v: number) =>
+    v <= 0 ? '–' : isBtc ? `${rate > 0 ? '$' : '฿'}${Math.round(v).toLocaleString()}/BTC` : `฿${Math.round(v).toLocaleString()}/gold baht`
   const showQty = (qty: number) => `${fmtNum(isBtc ? qty : fromBase(qty))} ${unitLabel}`
 
   const fromAfterQty = movesAll ? 0 : Math.max(0, round(from.qty - amountBase))

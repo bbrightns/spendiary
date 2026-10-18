@@ -936,9 +936,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const rawCost = Math.max(0, parseCleanNumber(r.avgCost ?? r.avgCostThb ?? r.avgCostUsd ?? r.price, 0))
             const rawPrice = parseCleanNumber(r.price, 0)
 
-            const fx = usdThb && usdThb > 0 ? usdThb : 35
             // If currency is explicitly USD, or if assetClass is 'stock' and currency is not explicitly 'THB'
             const isUsd = rawCurr === 'USD' || (assetClass === 'stock' && rawCurr !== 'THB')
+            // US stocks keep both a THB and a USD cost, so they need a real rate; never import with a guessed one
+            if ((isUsd || assetClass === 'stock') && !isValidRate(usdThb)) {
+              return {
+                ok: false,
+                error: `"${name}" needs a USD/THB exchange rate, and none has loaded yet. Check your internet connection, then try again.`,
+              }
+            }
+            const fx = usdThb ?? 0
 
             let avgCostThb: number
             let avgCostUsd: number | undefined

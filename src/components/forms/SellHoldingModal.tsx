@@ -9,6 +9,7 @@ import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, holdingMetrics } from '../../lib/calc'
 import type { BtcLocation, GoldLocation, Holding } from '../../lib/types'
 import { dateStrToTimestamp, thb, localDateStr } from '../../lib/format'
+import { isValidRate } from '../../lib/fx'
 import { TransactionDateField } from './TransactionDateField'
 import { LockClosedIcon } from '../icons'
 
@@ -31,7 +32,8 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
   const isBtc = holding?.assetClass === 'crypto'
   const isGold = holding?.assetClass === 'gold'
   const isStock = holding?.assetClass === 'stock'
-  const rate = usdThb && usdThb > 1 ? usdThb : 34
+  // The real USD/THB rate, or 0 when none has loaded: then the FX field starts empty and must be filled in
+  const rate = isValidRate(usdThb) ? usdThb : 0
 
   // Cash Account integration
   const [cashAccountId, setCashAccountId] = useState<string>('none')
@@ -99,7 +101,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
         setStockShares('')
         const defaultUsdPrice = rate > 0 ? Number((holding.price / rate).toFixed(2)) : 0
         setStockPriceUsd(defaultUsdPrice > 0 ? defaultUsdPrice : '')
-        setStockFxRate(rate)
+        setStockFxRate(rate > 0 ? rate : '')
       } else if (holding.assetClass === 'crypto') {
         setSatoshi('')
         setBtcThbProceeds('')
@@ -545,7 +547,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                 value={stockFxRate}
                 error={showErrors && (stockFxRate === '' || Number(stockFxRate) <= 0) ? 'Required' : undefined}
                 onChange={(val) => setStockFxRate(val === '' ? '' : Number(val))}
-                placeholder="34.00"
+                placeholder="Your broker's rate"
                 step={0.01}
               />
             </div>

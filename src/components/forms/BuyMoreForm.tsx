@@ -8,6 +8,7 @@ import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, applyBuy, goldThbPerGramToXauUsd, holdingMetrics, upsert } from '../../lib/calc'
 import type { AcquisitionSource, BtcLocation, GoldLocation, Holding } from '../../lib/types'
 import { dateStrToTimestamp, money, thb, localDateStr } from '../../lib/format'
+import { isValidRate } from '../../lib/fx'
 import { TransactionDateField } from './TransactionDateField'
 import { AcquisitionSourceField } from './AcquisitionSourceField'
 
@@ -751,7 +752,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
               <div className="flex items-center justify-between text-sm">
                 <span className="text-ink-soft">Implied price / BTC</span>
                 <span className="font-semibold tnum text-ink">
-                  {money(impliedPrice / (usdThb && usdThb > 0 ? usdThb : 35), 'USD')} (≈ {thb(impliedPrice)})
+                  {isValidRate(usdThb) ? <>{money(impliedPrice / usdThb, 'USD')} (≈ {thb(impliedPrice)})</> : thb(impliedPrice)}
                 </span>
               </div>
               <div className="mt-1 flex items-center justify-between text-sm">
@@ -917,7 +918,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
               error={showErrors && (fxRate === '' || Number(fxRate) <= 0) ? 'Required (> 0)' : undefined}
               onChange={handleFxRateChange}
               onBlur={handleFxRateBlur}
-              placeholder="e.g. 33.21"
+              placeholder="Your broker's rate"
               step={0.01}
               allowString
             />

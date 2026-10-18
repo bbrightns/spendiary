@@ -8,6 +8,7 @@ import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, goldThbPerGramToXauUsd, upsert } from '../../lib/calc'
 import type { AcquisitionSource, AssetClass, DividendPayoutSchedule, Holding, PlannedAsset } from '../../lib/types'
 import { dateStrToTimestamp, localDateStr, thb } from '../../lib/format'
+import { isValidRate } from '../../lib/fx'
 import { searchSecurities, type Security } from '../../lib/securities'
 import { fetchStockQuote, searchStocksRemote } from '../../lib/prices'
 import { ChevronDownIcon, PencilIcon, LockClosedIcon } from '../icons'
@@ -89,6 +90,10 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
 
   // Applied FX Rate for stocks
   const [fxRateInput, setFxRateInput] = useState<number | string | ''>('')
+  // The real live USD/THB rate, or 0 when none has loaded (never a guessed constant)
+  const liveFx = isValidRate(usdThb) ? usdThb : 0
+  // The rate typed into the form, else the live one; 0 means unknown, so USD amounts can't be converted yet
+  const fxNow = Number(fxRateInput) || liveFx
 
   // Manual THB Invested override for stocks
   const [thbInvestedInput, setThbInvestedInput] = useState<number | string | ''>('')
@@ -221,8 +226,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         price: loadedPrice,
       })
       if (editing.assetClass === 'stock') {
-        const impliedRate = editing.avgCostThb && editing.avgCostUsd ? editing.avgCostThb / editing.avgCostUsd : (usdThb || 35)
-        setFxRateInput(formatCostOrFx(impliedRate))
+        const impliedRate = editing.avgCostThb && editing.avgCostUsd ? editing.avgCostThb / editing.avgCostUsd : liveFx
+        setFxRateInput(impliedRate > 0 ? formatCostOrFx(impliedRate) : '')
 
         const histThb = editing.totalThbInvested ?? (editing.units * editing.avgCost)
         setThbInvestedInput(Number(histThb.toFixed(2)))
@@ -308,9 +313,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
     const shares = Number(newUnits) || 0
     const avgCost = Number(form.avgCost) || 0
     const totalUsd = Number((shares * avgCost).toFixed(4))
-    const fxRate = Number(fxRateInput) || usdThb || 35
-    const calculatedThb = Number((totalUsd * fxRate).toFixed(2))
-    setThbInvestedInput(calculatedThb)
+    if (fxNow > 0) setThbInvestedInput(Number((totalUsd * fxNow).toFixed(2)))
   }
 
   const handleAvgCostChange = (newAvgCost: number | string | '') => {
@@ -318,9 +321,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
     const shares = Number(form.units) || 0
     const avgCost = Number(newAvgCost) || 0
     const totalUsd = Number((shares * avgCost).toFixed(4))
-    const fxRate = Number(fxRateInput) || usdThb || 35
-    const calculatedThb = Number((totalUsd * fxRate).toFixed(2))
-    setThbInvestedInput(calculatedThb)
+    if (fxNow > 0) setThbInvestedInput(Number((totalUsd * fxNow).toFixed(2)))
   }
 
   const handleThbInvestedChange = (newThb: number | string | '') => {
@@ -369,9 +370,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       const shares = Number(formatted) || 0
       const avgCost = Number(form.avgCost) || 0
       const totalUsd = Number((shares * avgCost).toFixed(4))
-      const fxRate = Number(fxRateInput) || usdThb || 35
-      const calculatedThb = Number((totalUsd * fxRate).toFixed(2))
-      setThbInvestedInput(calculatedThb)
+      if (fxNow > 0) setThbInvestedInput(Number((totalUsd * fxNow).toFixed(2)))
     }
   }
 
@@ -383,9 +382,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       const shares = Number(form.units) || 0
       const avgCost = Number(formatted) || 0
       const totalUsd = Number((shares * avgCost).toFixed(4))
-      const fxRate = Number(fxRateInput) || usdThb || 35
-      const calculatedThb = Number((totalUsd * fxRate).toFixed(2))
-      setThbInvestedInput(calculatedThb)
+      if (fxNow > 0) setThbInvestedInput(Number((totalUsd * fxNow).toFixed(2)))
     }
   }
 
@@ -597,7 +594,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       form.name.trim() !== '' &&
       (isRealEstate || form.units !== '') &&
       form.avgCost !== '' &&
-      (useLivePrice || isUsd || form.price !== '')
+      (useLivePrice || isUsd || form.price !== '') &&
+      (!isUsd || fxNow > 0)
     if (!valid) { setShowErrors(true); return }
 
     const cleanTag = form.tag.trim() || undefined
@@ -623,7 +621,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
     }
 
     if (isUsd) {
-      const fxRateVal = Number(fxRateInput) || usdThb || 35
+      const fxRateVal = fxNow
       let totalThbInvested = parseFloat((Number(thbInvestedInput) || 0).toFixed(2))
       // Never silently save a zero cost basis for a position that has shares and a cost:
       // an emptied/stale THB field would otherwise wipe the real basis (e.g. from a DCA buy).
@@ -796,12 +794,16 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
   // Derived values for US Stock dual-currency cards
   const sharesInputVal = Number(form.units) || 0
   const avgCostUsdVal = Number(form.avgCost) || 0
-  const fxRateVal = Number(fxRateInput) || usdThb || 35
+  const fxRateVal = fxNow
 
   const totalThbInvestedVal = Number(Number(thbInvestedInput).toFixed(2)) || 0
 
-  const livePriceUsd = editing ? Number((editing.price / (usdThb || 35)).toFixed(4)) : (Number(form.price) || 0)
-  const currentMarketValueThb = Number((sharesInputVal * livePriceUsd * (usdThb || fxRateVal)).toFixed(2))
+  // The live price in USD needs a real rate; null shows a dash instead of a guess
+  const livePriceUsd = editing && liveFx > 0 ? Number((editing.price / liveFx).toFixed(4)) : null
+  // An existing holding's price is already in THB; a new one's is typed in USD
+  const currentMarketValueThb = editing
+    ? Number((sharesInputVal * editing.price).toFixed(2))
+    : Number((sharesInputVal * (Number(form.price) || 0) * (liveFx || fxRateVal)).toFixed(2))
   const netPnlThb = Number((currentMarketValueThb - totalThbInvestedVal).toFixed(2))
   const netReturnPct = totalThbInvestedVal > 0 ? Number(((netPnlThb / totalThbInvestedVal) * 100).toFixed(2)) : 0
 
@@ -1410,7 +1412,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                       step={0.01}
                       allowString
                     />
-                    {isThbInvestedManuallyEdited && (
+                    {isThbInvestedManuallyEdited && liveFx > 0 && (
                       <div className="text-right -mt-1.5">
                         <button
                           type="button"
@@ -1418,7 +1420,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                             setIsThbInvestedManuallyEdited(false)
                             const shares = Number(form.units) || 0
                             const avgCost = Number(form.avgCost) || 0
-                            const fxRate = usdThb || 35
+                            const fxRate = liveFx
                             const calculatedThb = Number((shares * avgCost * fxRate).toFixed(2))
                             setThbInvestedInput(calculatedThb)
                             setFxRateInput(formatCostOrFx(fxRate))
@@ -1426,7 +1428,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                           aria-label="Reset THB cost basis to calculate from USD shares and cost"
                           className="text-xs font-semibold text-brand hover:underline cursor-pointer"
                         >
-                          Reset to calculated (฿{Number((sharesInputVal * avgCostUsdVal * (usdThb || 35)).toFixed(2)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} @ {Number((usdThb || 35).toFixed(2))})
+                          Reset to calculated (฿{Number((sharesInputVal * avgCostUsdVal * liveFx).toFixed(2)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} @ {Number(liveFx.toFixed(2))})
                         </button>
                       </div>
                     )}
@@ -1495,7 +1497,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                     <p className="mb-1.5 text-sm font-medium text-ink-muted">Live Market Price per Share (USD)</p>
                     <div className="flex h-10 items-center gap-2 rounded-xl bg-surface-muted px-3">
                       <span className="text-sm font-semibold tnum text-ink">
-                        ${livePriceUsd.toFixed(2)}
+                        {livePriceUsd !== null ? `$${livePriceUsd.toFixed(2)}` : '—'}
                       </span>
                       <span className="ml-auto rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-bold text-brand">Live</span>
                     </div>
@@ -1518,7 +1520,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                   error={showErrors && fxRateInput === '' ? 'FX rate is required' : undefined}
                   onChange={handleFxRateChange}
                   onBlur={handleFxRateBlur}
-                  placeholder="e.g. 35.20"
+                  placeholder="Your broker's rate"
                   step={0.0001}
                   allowString
                 />
