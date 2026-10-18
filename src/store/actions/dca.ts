@@ -4,6 +4,7 @@ import { newId } from '../migrate'
 import { payFromAccount, upsert } from '../dataHelpers'
 import { findMatchingHolding } from '../../lib/calc'
 import { roundMoney } from '../../lib/money'
+import { undoHoldingLog } from './holdingLogs'
 
 /**
  * DCA plans and confirming or skipping their buys.
@@ -96,6 +97,14 @@ export function unskipDcaBuy(prev: SpendiaryData, ...[planId, date]: Parameters<
       (l) => !(l.dcaPlanId === planId && l.dcaDate === date && l.ticker === 'DCA' && l.note?.startsWith('Skipped')),
     ),
   }
+}
+
+export function undoDcaBuy(prev: SpendiaryData, ...[planId, date]: Parameters<DataContextValue['undoDcaBuy']>): SpendiaryData {
+  // Newest first, so this is the buy just logged; a skip is undone with unskipDcaBuy instead
+  const log = (prev.holdingLogs ?? []).find(
+    (l) => l.dcaPlanId === planId && l.dcaDate === date && (l.action === 'buy_more' || l.action === 'add'),
+  )
+  return log ? undoHoldingLog(prev, log.id) : prev
 }
 
 export function confirmDcaBuy(

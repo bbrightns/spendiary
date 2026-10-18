@@ -137,7 +137,7 @@ export function ResultOverlay() {
               <h2 className={`text-sm font-bold ${shown.status === 'success' ? 'text-gain' : 'text-ink-muted'}`}>{shown.title}</h2>
               <p className="mt-1 font-display text-4xl font-extrabold tracking-tight tnum text-ink">{shown.detail.amount}</p>
               <p className="mt-1.5 truncate text-base font-bold text-ink">{shown.detail.name}</p>
-              {shown.detail.meta && <p className="mt-0.5 truncate text-xs text-ink-muted">{shown.detail.meta}</p>}
+              {shown.detail.meta && <p className="mt-0.5 line-clamp-2 text-xs text-ink-muted [text-wrap:balance]">{shown.detail.meta}</p>}
               {shown.detail.footnote && (
                 <p className="mt-4 rounded-xl bg-surface-muted px-3 py-2 text-xs font-semibold text-ink-soft">{shown.detail.footnote}</p>
               )}

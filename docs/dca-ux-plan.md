@@ -50,7 +50,7 @@
 ### D. Feedback หลังบันทึก
 | # | งาน | สถานะ |
 |---|---|---|
-| D1 | Popup หลังบันทึก: `KBank Savings → Bitcoin` + ปุ่ม **Undo** | ⬜ |
+| D1 | Popup หลังบันทึก: `KBank Savings → Bitcoin` + ปุ่ม **Undo** | ✅ |
 
 ### F. ค่อยๆ เปิดเผย
 | # | งาน | สถานะ |

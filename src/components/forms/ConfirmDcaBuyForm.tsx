@@ -27,7 +27,7 @@ function fmtNum(val: number | undefined | null, maxDec = 4): string {
 }
 
 export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
-  const { data, confirmDcaBuy, usdThb } = useData()
+  const { data, confirmDcaBuy, undoDcaBuy, usdThb } = useData()
   const { showToast, showResult, hideResult } = useToast()
 
   // Target Holding state
@@ -323,7 +323,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     })
   }
 
-  /** The popup after a confirm: the amount leads, then what was bought, and when the next one is */
+  /** The popup after logging: the amount leads, then what it bought, where the money went, and the next one */
   function boughtDetail(p: DcaPlan): ResultDetail {
     const qty = isCash
       ? undefined
@@ -337,10 +337,13 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
       ? `${satsNum.toLocaleString()} sats`
       : `${fmtNum(cryptoUnitsToAdd)} ${holding?.ticker ?? p.ticker ?? 'units'}`
     const next = nextBuyDate(p).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+    const name = isCash ? (targetCashAccount?.name ?? p.name) : (holding?.name ?? p.name)
+    // Where the money went, so the Spend ↔ Invest link is visible: "KBank Savings → ColdCard"
+    const into = isBtc || isGold ? resolvedLocationName : name
     return {
       amount: thb(amountThbNum),
-      name: isCash ? (targetCashAccount?.name ?? p.name) : (holding?.name ?? p.name),
-      meta: [qty, isBtc || isGold ? resolvedLocationName : undefined, payFrom && `from ${payFrom.name}`].filter(Boolean).join(' · ') || undefined,
+      name: [name, qty].filter(Boolean).join(' · '),
+      meta: payFrom ? `${payFrom.name} → ${into}` : `into ${into}`,
       footnote: `${isCash ? 'Next deposit' : 'Next buy'} ${next}`,
     }
   }
@@ -352,6 +355,13 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     const payment = payFromId && amountThbNum > 0 ? { accountId: payFromId, amount: amountThbNum } : undefined
 
     const resolvedTargetId = targetHoldingId !== '__new__' ? (holding?.id ?? targetHoldingId) : undefined
+    const undo = {
+      label: 'Undo',
+      onClick: () => {
+        undoDcaBuy(p.id, today)
+        showToast(`Removed the ${thb(amountThbNum)} ${isCash ? 'deposit' : 'buy'}`, 'info')
+      },
+    }
 
     if (isCash) {
       confirmDcaBuy(
@@ -370,7 +380,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         undefined,
         payment,
       )
-      showToast(`Added ${thb(amountThbNum)} to ${targetCashAccount?.name || p.name}`, 'success', undefined, { celebrate: true, title: 'Deposited', detail: boughtDetail(p) })
+      showToast(`Added ${thb(amountThbNum)} to ${targetCashAccount?.name || p.name}`, 'success', undo, { celebrate: true, title: 'Logged', detail: boughtDetail(p) })
       onClose()
       return
     }
@@ -527,7 +537,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
       )
     }
 
-    showToast(`Your DCA buy for ${holding?.name ?? plan.name} is recorded.`, 'success', undefined, { celebrate: true, title: 'Bought', detail: boughtDetail(p) })
+    showToast(`Your DCA buy for ${holding?.name ?? plan.name} is logged.`, 'success', undo, { celebrate: true, title: 'Logged', detail: boughtDetail(p) })
     onClose()
   }
 
