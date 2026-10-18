@@ -29,4 +29,7 @@ export const STORAGE_KEYS = {
   lastUserId: 'spendiary.last_user_id',
   lastSyncedTime: 'spendiary.last_synced_time',
   testData: 'spendiary.test_data',
+
+  // One-time hints
+  todayDcaHintSeen: 'spendiary.hint_today_dca_seen',
 } as const

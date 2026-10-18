@@ -1,8 +1,8 @@
-import { useState, type ReactNode } from 'react'
+import { Fragment, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ConfirmDcaBuyForm } from '../../components/forms/ConfirmDcaBuyForm'
 import { ConfirmDividendModal } from '../../components/forms/ConfirmDividendModal'
-import { CreditCardIcon, DcaIcon, DebtIcon, ReceiptPercentIcon, WalletIcon } from '../../components/icons'
+import { CreditCardIcon, DcaIcon, DebtIcon, HelpCircleIcon, ReceiptPercentIcon, WalletIcon } from '../../components/icons'
 import {
   ASSET_META,
   buyDateThisPeriod,
@@ -14,6 +14,7 @@ import {
   shouldConfirmBuy,
 } from '../../lib/calc'
 import { localDateStr, thb } from '../../lib/format'
+import { STORAGE_KEYS } from '../../lib/storageKeys'
 import type { DcaPlan, Holding } from '../../lib/types'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
@@ -343,12 +344,51 @@ export function TodayStack() {
     <>
       {groups.length > 0 && (
         <div className="space-y-2" role="region" aria-label="To do today">
-          {groups.map((g) => (g.items.length === 1 ? <ItemCard key={g.id} item={g.items[0]} icon={g.icon} badge={g.badge} source={g.source} /> : <GroupCard key={g.id} group={g} />))}
+          {groups.map((g) => (
+            <Fragment key={g.id}>
+              {g.items.length === 1 ? <ItemCard item={g.items[0]} icon={g.icon} badge={g.badge} source={g.source} /> : <GroupCard group={g} />}
+              {g.id === 'dca' && <DcaHint />}
+            </Fragment>
+          ))}
         </div>
       )}
       <ConfirmDcaBuyForm open={!!confirmingPlan} plan={confirmingPlan} onClose={() => setConfirmingPlan(null)} />
       <ConfirmDividendModal open={!!dividendFor} holding={dividendFor?.holding} initialDps={dividendFor?.dps} onClose={() => setDividendFor(null)} />
     </>
+  )
+}
+
+function readHintSeen(): boolean {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.todayDcaHintSeen) === '1'
+  } catch {
+    return false
+  }
+}
+
+/** Shown once, the first time a DCA buy lands in the Today stack: what it is and that the app doesn't trade */
+function DcaHint() {
+  const [seen, setSeen] = useState(readHintSeen)
+  if (seen) return null
+  const dismiss = () => {
+    setSeen(true)
+    try {
+      localStorage.setItem(STORAGE_KEYS.todayDcaHintSeen, '1')
+    } catch {
+      // Private mode: the hint just shows again next time
+    }
+  }
+  return (
+    <div className="flex items-start gap-3 rounded-2xl border border-dashed border-line-strong px-4 py-3 text-xs leading-relaxed text-ink-muted animate-rise">
+      <HelpCircleIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+      <p className="min-w-0 flex-1">
+        <span className="font-semibold text-ink">Your DCA buys show up here on their buy day.</span> Spendiary doesn't buy for you: after you buy at
+        your broker, tap Log. Not buying this time? Tap Skip.
+      </p>
+      <button type="button" onClick={dismiss} className="shrink-0 rounded-full px-2 py-1 font-semibold text-brand hover:underline cursor-pointer min-h-8">
+        Got it
+      </button>
+    </div>
   )
 }
 
