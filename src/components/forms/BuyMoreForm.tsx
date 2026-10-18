@@ -9,6 +9,7 @@ import { ASSET_META, GRAMS_PER_BAHT_GOLD, applyBuy, goldThbPerGramToXauUsd, hasR
 import type { AcquisitionSource, BtcLocation, GoldLocation, Holding } from '../../lib/types'
 import { dateStrToTimestamp, money, thb, localDateStr } from '../../lib/format'
 import { isValidRate, rateOrZero } from '../../lib/fx'
+import { isValidPrice } from '../../lib/priceCache'
 import { TransactionDateField } from './TransactionDateField'
 import { AcquisitionSourceField } from './AcquisitionSourceField'
 
@@ -358,8 +359,13 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
   const toastTitle = isReceived ? 'Gift recorded!' : 'Buy recorded!'
   const modalTitle = `${isReceived ? 'Add gift' : 'Buy more'} · ${holding.name}`
 
-  /** Value of a received amount at today's price (THB) */
-  const marketValueOf = (amount: number) => Math.round(amount * holding.price * 100) / 100
+  // Only a real price can value a gift; a cost stand-in (no price yet) leaves the value for the user to type
+  const knowsPrice = hasRealPrice(holding) && isValidPrice(holding.price)
+  /** Fills in the value of a received amount at today's price (THB), when there is one */
+  const fillMarketValue = (set: (value: number) => void, amount: number) => {
+    if (knowsPrice) set(Math.round(amount * holding.price * 100) / 100)
+  }
+  const receivedHint = knowsPrice ? 'Today’s price · editable' : 'No price yet · type the value on the day'
 
   const sourceField = (
     <AcquisitionSourceField
@@ -368,8 +374,8 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         setSource(next)
         if (next !== 'received') return
         // Pre-fill the cost with today's market value; the user can still change it
-        if (isBtc && satoshi !== '' && Number(satoshi) > 0) setThbSpent(marketValueOf(Number(satoshi) / SATS_PER_BTC))
-        if (isGold && goldGrams !== '' && Number(goldGrams) > 0) setGoldThbSpent(marketValueOf(Number(goldGrams)))
+        if (isBtc && satoshi !== '' && Number(satoshi) > 0) fillMarketValue(setThbSpent, Number(satoshi) / SATS_PER_BTC)
+        if (isGold && goldGrams !== '' && Number(goldGrams) > 0) fillMarketValue(setGoldThbSpent, Number(goldGrams))
       }}
       receivedFrom={receivedFrom}
       onReceivedFromChange={setReceivedFrom}
@@ -535,7 +541,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
                   setGoldGrams(val)
                   if (val !== '' && Number(val) > 0) {
                     setGoldBaht(Number((Number(val) / GRAMS_PER_BAHT_GOLD).toFixed(6)))
-                    if (isReceived) setGoldThbSpent(marketValueOf(Number(val)))
+                    if (isReceived) fillMarketValue(setGoldThbSpent, Number(val))
                   } else {
                     setGoldBaht('')
                   }
@@ -552,7 +558,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
                   setGoldBaht(val)
                   if (val !== '' && Number(val) > 0) {
                     setGoldGrams(Number((Number(val) * GRAMS_PER_BAHT_GOLD).toFixed(6)))
-                    if (isReceived) setGoldThbSpent(marketValueOf(Number(val) * GRAMS_PER_BAHT_GOLD))
+                    if (isReceived) fillMarketValue(setGoldThbSpent, Number(val) * GRAMS_PER_BAHT_GOLD)
                   } else {
                     setGoldGrams('')
                   }
@@ -563,7 +569,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
             )}
             <NumberField
               label={isReceived ? 'Value when received (THB)' : 'THB spent'}
-              hint={isReceived ? 'Today’s price · editable' : undefined}
+              hint={isReceived ? receivedHint : undefined}
               prefix="฿"
               value={goldThbSpent}
               error={showErrors && (goldThbSpent === '' || Number(goldThbSpent) <= 0) ? 'Required (> 0)' : undefined}
@@ -734,14 +740,14 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
               error={showErrors && (satoshi === '' || Number(satoshi) <= 0) ? 'Required (> 0)' : undefined}
               onChange={(val) => {
                 setSatoshi(val)
-                if (isReceived && val !== '' && Number(val) > 0) setThbSpent(marketValueOf(Number(val) / SATS_PER_BTC))
+                if (isReceived && val !== '' && Number(val) > 0) fillMarketValue(setThbSpent, Number(val) / SATS_PER_BTC)
               }}
               placeholder="e.g. 500000"
               step={1}
             />
             <NumberField
               label={isReceived ? 'Value when received (THB)' : 'THB spent'}
-              hint={isReceived ? 'Today’s price · editable' : undefined}
+              hint={isReceived ? receivedHint : undefined}
               prefix="฿"
               value={thbSpent}
               error={showErrors && (thbSpent === '' || Number(thbSpent) <= 0) ? 'Required (> 0)' : undefined}
@@ -967,7 +973,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
             />
             <NumberField
               label={isReceived ? 'Price / unit on the day received' : 'Price / unit'}
-              hint={isReceived ? 'Today’s price · editable' : undefined}
+              hint={isReceived ? receivedHint : undefined}
               prefix="฿"
               value={price}
               error={showErrors && (price === '' || Number(price) <= 0) ? 'Required (> 0)' : undefined}
