@@ -20,11 +20,26 @@ export type SaveOutcome =
 
 /** Postgres "unique_violation": the row we tried to insert already exists */
 const UNIQUE_VIOLATION = '23505'
+/** Raised by the database's write lock (supabase/sql/user_data_write_lock.sql) when the row moved on */
+const STALE_WRITE = '40001'
+const errorCode = (error: unknown) => (error as { code?: unknown } | null)?.code
+
+/**
+ * Request headers the database's write lock reads: the stamp this device loaded, or that a restore
+ * replaces the data on purpose. A new row has nothing to check against. Headers belong to one
+ * request, and the database ignores them until its SQL is run.
+ */
+export function lockHeaders(mode: SaveMode, loadedStamp: string | null): Record<string, string> {
+  if (mode === 'force') return { 'x-spendiary-force': '1' }
+  if (mode === 'update' && loadedStamp) return { 'x-spendiary-base-updated-at': loadedStamp }
+  return {}
+}
 
 export function interpretSave(mode: SaveMode, res: { error: unknown; data?: unknown }): SaveOutcome {
   if (res.error) {
-    const code = (res.error as { code?: unknown }).code
+    const code = errorCode(res.error)
     if (mode === 'insert' && code === UNIQUE_VIOLATION) return { kind: 'conflict' }
+    if (mode !== 'force' && code === STALE_WRITE) return { kind: 'conflict' }
     return { kind: 'error', error: res.error }
   }
   const rows = Array.isArray(res.data) ? res.data : []

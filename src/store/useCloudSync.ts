@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import type { SpendiaryData } from '../lib/types'
 import { seedData } from '../lib/seed'
 import { resolveRemoteLoad, type RestLoad } from './remoteLoad'
-import { interpretSave, type SaveMode, type SaveOutcome } from './remoteSave'
+import { interpretSave, lockHeaders, type SaveMode, type SaveOutcome } from './remoteSave'
 import { emptyData, justImportedFixedCosts, migrate } from './migrate'
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
@@ -227,14 +227,17 @@ export function useCloudSync(
       const mode: SaveMode = force ? 'force' : exists ? 'update' : 'insert'
       const row = { payload, updated_at: new Date().toISOString() }
       const table = supabase.from('user_data')
-      const res =
+      const query =
         mode === 'force'
-          ? await table.upsert({ id: userId, ...row }).select('updated_at')
+          ? table.upsert({ id: userId, ...row }).select('updated_at')
           : mode === 'insert'
-          ? await table.insert({ id: userId, ...row }).select('updated_at')
+          ? table.insert({ id: userId, ...row }).select('updated_at')
           : updatedAt
-          ? await table.update(row).eq('id', userId).eq('updated_at', updatedAt).select('updated_at')
-          : await table.update(row).eq('id', userId).is('updated_at', null).select('updated_at')
+          ? table.update(row).eq('id', userId).eq('updated_at', updatedAt).select('updated_at')
+          : table.update(row).eq('id', userId).is('updated_at', null).select('updated_at')
+      // The database checks the same lock (supabase/sql/user_data_write_lock.sql)
+      for (const [name, value] of Object.entries(lockHeaders(mode, updatedAt))) query.setHeader(name, value)
+      const res = await query
       const outcome = interpretSave(mode, res)
       if (outcome.kind === 'saved') {
         remoteStamp.current = { exists: true, updatedAt: outcome.updatedAt ?? row.updated_at }

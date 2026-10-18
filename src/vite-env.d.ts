@@ -77,6 +77,7 @@ declare module '@supabase/supabase-js' {
     eq: (column: string, value: any) => WriteQuery
     is: (column: string, value: null) => WriteQuery
     select: (columns?: string) => WriteQuery
+    setHeader: (name: string, value: string) => WriteQuery
   }
 
   export function createClient(supabaseUrl: string, supabaseKey: string, options?: any): SupabaseClient

@@ -277,6 +277,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 payload: emptyData,
                 updated_at: new Date().toISOString()
               })
+              // Clearing replaces the data on purpose; the database's write lock lets it through
+              .setHeader('x-spendiary-force', '1')
           }
         } catch (err) {
           console.error('Error clearing remote user data:', err)
