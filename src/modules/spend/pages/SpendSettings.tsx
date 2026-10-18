@@ -6,7 +6,7 @@ import { DownloadIcon, TrashIcon, UploadIcon } from '../../../components/icons'
 import { DataAction, DataCard, DataRow } from '../../../components/ui/DataCard'
 import { SegmentedControl } from '../../../components/ui/SegmentedControl'
 import { useToast } from '../../../store/ToastContext'
-import { localDateStr, thb } from '../../../lib/format'
+import { localDateStr, thb, thbExact } from '../../../lib/format'
 import type { PayCycle, WeekendShift } from '../../../lib/types'
 import { DEFAULT_BILL_REMINDER_DAYS, isCalendar, periodFor, periodLabel, upcomingPaydays } from '../logic'
 import { useSpend } from '../useSpend'
@@ -301,7 +301,7 @@ export function SpendSettingsSections() {
             disabled={!budgetChanged}
             onClick={() => {
               updateSettings({ monthlyBudget: budget === '' || budgetNum === 0 ? undefined : budgetNum })
-              showToast(budget === '' ? 'Budget turned off' : `Budget set to ${thb(budgetNum)}`)
+              showToast(budget === '' ? 'Budget turned off' : `Budget set to ${thbExact(budgetNum)}`)
             }}
           >
             Save

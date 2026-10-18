@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { localDateStr, localDay } from './format'
+import { localDateStr, localDay, thbExact } from './format'
 import { isConfirmedForPeriod, isSkippedForPeriod } from './calc'
 import type { DcaPlan } from './types'
 
@@ -55,5 +55,18 @@ describe('DCA period checks with timestamps saved before 7am', () => {
   it('still reads plain dates the same way', () => {
     expect(isConfirmedForPeriod(plan({ confirmedDates: ['2026-10-18'] }, 'daily'), now)).toBe(true)
     expect(isConfirmedForPeriod(plan({ confirmedDates: ['2026-10-17'] }, 'daily'), now)).toBe(false)
+  })
+})
+
+describe('thbExact', () => {
+  it('keeps the satang when there are some', () => {
+    expect(thbExact(45.5)).toBe('฿\u202f45.50')
+    expect(thbExact(3333.33)).toBe('฿\u202f3,333.33')
+    expect(thbExact(0.05)).toBe('฿\u202f0.05')
+  })
+
+  it('leaves whole amounts without decimals', () => {
+    expect(thbExact(8500)).toBe('฿\u202f8,500')
+    expect(thbExact(120.001)).toBe('฿\u202f120')
   })
 })

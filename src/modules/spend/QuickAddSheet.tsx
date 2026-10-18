@@ -5,7 +5,7 @@ import { FormActions } from '../../components/forms/FormActions'
 import { TransactionDateField } from '../../components/forms/TransactionDateField'
 import { useToast } from '../../store/ToastContext'
 import { useData } from '../../store/DataContext'
-import { localDateStr, thb } from '../../lib/format'
+import { localDateStr, thb, thbExact } from '../../lib/format'
 import type { SpendSettings, SpendTransaction, SpendTxnType } from '../../lib/types'
 import { categoriesFor, getCategory } from './categories'
 import { noteTitle } from './logic'
@@ -232,7 +232,7 @@ export function QuickAddSheet() {
         updatedAt: today,
       },
     ])
-    showToast(`${thb(total)} split into ${months} × ${thb(perMonth, true)} on ${card.name}`, 'success', {
+    showToast(`${thbExact(total)} split into ${months} × ${thb(perMonth, true)} on ${card.name}`, 'success', {
       label: 'Undo',
       onClick: () => removeLiability(id),
     })
@@ -264,7 +264,7 @@ export function QuickAddSheet() {
       if (fromRecurring) {
         // Like marking it paid from the bills card: Undo puts the bill back as due
         showToast(
-          `${sign}${thb(input.amount)} · ${fromRecurring.name}`,
+          `${sign}${thbExact(input.amount)} · ${fromRecurring.name}`,
           'success',
           { label: 'Undo', onClick: () => removeTransaction(txn.id) },
           {
@@ -282,7 +282,7 @@ export function QuickAddSheet() {
             }),
           },
         )
-      } else showToast(`${sign}${thb(input.amount)} · ${label}`)
+      } else showToast(`${sign}${thbExact(input.amount)} · ${label}`)
     }
     setOpen(false)
   }

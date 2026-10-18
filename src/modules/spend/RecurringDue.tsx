@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Card } from '../../components/ui/Card'
 import { CheckIcon } from '../../components/icons'
 import { useToast } from '../../store/ToastContext'
-import { localDateStr, thb } from '../../lib/format'
+import { localDateStr, thb, thbExact } from '../../lib/format'
 import { RepeatIcon, getCategory } from './categories'
 import { nextOccurrence } from './logic'
 import { paidDetail } from './billPaid'
@@ -120,7 +120,7 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
                     const txn = confirmRecurring(rec, date)
                     // Undo deletes the logged transaction, which puts the bill back as due
                     showToast(
-                      `${rec.type === 'income' ? '+' : '−'}${thb(rec.amount)} · ${rec.name}`,
+                      `${rec.type === 'income' ? '+' : '−'}${thbExact(rec.amount)} · ${rec.name}`,
                       'success',
                       { label: 'Undo', onClick: () => removeTransaction(txn.id) },
                       {

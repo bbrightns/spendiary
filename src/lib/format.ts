@@ -19,6 +19,11 @@ export function thb(value: number, decimals = false): string {
   return `฿${NBSP}${n}`
 }
 
+/** The amount as entered: satang only when there are some, so ฿45.50 and ฿3,333.33 but ฿8,500 */
+export function thbExact(value: number): string {
+  return thb(value, !Number.isInteger(Math.round(value * 100) / 100))
+}
+
 /** Like thb, with a leading minus sign for negatives: −฿1,031.00 */
 export function thbSigned(value: number, decimals = false): string {
   return `${value < 0 ? '−' : ''}${thb(Math.abs(value), decimals)}`
