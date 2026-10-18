@@ -539,6 +539,21 @@ export function isBuyDayOverdue(plan: DcaPlan, now = new Date()): boolean {
   return targetDay < now.getDate()
 }
 
+/** The day this period's buy was due: today for daily plans, this week's buy day, or this month's. */
+export function buyDateThisPeriod(plan: DcaPlan, now = new Date()): Date {
+  const freq = plan.frequency ?? 'monthly'
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  if (freq === 'daily') return today
+  if (freq === 'weekly') {
+    // Monday-based week, like isConfirmedForPeriod
+    const toMonScale = (d: number) => (d + 6) % 7
+    const d = new Date(today)
+    d.setDate(today.getDate() - toMonScale(today.getDay()) + toMonScale(plan.dayOfMonth % 7))
+    return d
+  }
+  return new Date(now.getFullYear(), now.getMonth(), getEffectiveDayOfMonth(plan.dayOfMonth, now.getFullYear(), now.getMonth()))
+}
+
 /** Should the "Log buy" button be shown? Buy day passed THIS period + not yet confirmed/skipped. */
 export function shouldConfirmBuy(plan: DcaPlan, now = new Date()): boolean {
   return buyDayPassedThisPeriod(plan, now) && !isConfirmedForPeriod(plan, now)

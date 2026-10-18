@@ -18,7 +18,7 @@ import { AssetLogo } from '../components/ui/AssetLogo'
 import { fixedCostRecurring, inPeriod, perMonth, periodFor, periodLabel, totalsFor } from '../modules/spend/logic'
 import { useSpend } from '../modules/spend/useSpend'
 import {
-  ASSET_META, dcaThisMonth, getHoldingDpsForMonth, isBuyDayOverdue, isBuyDayToday, isConfirmedForPeriod, isDividendReceivedThisMonth, isSkippedForPeriod,
+  ASSET_META, buyDateThisPeriod, dcaThisMonth, getHoldingDpsForMonth, isBuyDayOverdue, isBuyDayToday, isConfirmedForPeriod, isDividendReceivedThisMonth, isSkippedForPeriod,
   hasRealPrice, nextBuyDate, shouldConfirmBuy, sortDcaPlans,
 } from '../lib/calc'
 import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
@@ -812,10 +812,13 @@ export function DcaPlanner() {
                                     </span>
                                   {showConfirmed && !skipped ? (
                                     <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-xs font-semibold text-gain">
-                                      <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Confirmed
+                                      <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Logged
                                     </span>
                                   ) : isOverdue ? (
-                                    <span className="inline-block shrink-0 text-xs font-bold text-loss">Overdue</span>
+                                    // A missed buy costs nothing, so it's a reminder, not red like an overdue bill
+                                    <span className="inline-block shrink-0 text-xs font-bold text-warn">
+                                      Missed {buyDateThisPeriod(p).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                    </span>
                                   ) : isToday || days <= 0 ? (
                                     <span className="inline-block shrink-0 text-xs font-bold text-warn">Today</span>
                                   ) : days < 3 ? (

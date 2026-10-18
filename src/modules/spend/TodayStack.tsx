@@ -5,6 +5,7 @@ import { ConfirmDividendModal } from '../../components/forms/ConfirmDividendModa
 import { CreditCardIcon, DcaIcon, DebtIcon, ReceiptPercentIcon, WalletIcon } from '../../components/icons'
 import {
   ASSET_META,
+  buyDateThisPeriod,
   getHoldingDpsForMonth,
   getLiabilityDueStatus,
   isBuyDayToday,
@@ -70,6 +71,10 @@ interface Group {
   /** Where these items live when they come from the other side, e.g. DCA plans in Invest */
   source?: { label: string; to: string; linkText: string }
 }
+
+const shortDate = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+/** Due today or already past: a bill due in 3 days or a dividend expected this month is not */
+const isDueNow = (i: Item) => i.days !== undefined && i.days <= 0
 
 const worst = (items: Item[]): Tone => items.reduce<Tone>((t, i) => (RANK[i.tone] < RANK[t] ? i.tone : t), 'gain')
 const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
@@ -142,7 +147,7 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
   // Overdue first, then soonest
   const payments = [...bills, ...loans].sort((a, b) => (a.days ?? 99) - (b.days ?? 99))
 
-  // Late first, then due today
+  // Missed first, then due today. A missed buy costs nothing, so it isn't red like an overdue bill
   const dca: Item[] = data.dcaPlans
     .filter((p) => shouldConfirmBuy(p, now))
     .sort((a, b) => Number(isBuyDayToday(a, now)) - Number(isBuyDayToday(b, now)))
@@ -152,10 +157,11 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
       return {
         id: p.id,
         ...planTitle(p),
-        detail: `${thb(p.monthlyAmount)} ${FREQ[p.frequency ?? 'monthly']} · ${today ? 'due today' : 'late'}${into ? ` · into ${into}` : ''}`,
-        // A late buy reads like an overdue bill
-        tone: today ? 'brand' : 'loss',
+        // When first, so a narrow phone cuts the frequency rather than the date
+        detail: `${today ? 'Due today' : `Missed ${shortDate(buyDateThisPeriod(p, now))}`} · ${thb(p.monthlyAmount)} ${FREQ[p.frequency ?? 'monthly']}${into ? ` · into ${into}` : ''}`,
+        tone: 'brand',
         amount: p.monthlyAmount,
+        days: today ? 0 : -1,
         color: ASSET_META[p.assetClass]?.color,
         action: 'Log',
         onAction: () => onConfirmDca(p),
@@ -210,7 +216,10 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
       icon: <DcaIcon className="h-4 w-4" />,
       badge: 'bg-brand text-white',
       title: (n) => `${count(n, 'DCA buy')} to log`,
-      summary: (items) => `${total(items)}${lateText(items, 'late')}`,
+      summary: (items) => {
+        const missed = items.filter((i) => (i.days ?? 0) < 0).length
+        return `${total(items)}${missed > 0 ? ` · ${missed} missed` : ''}`
+      },
       items: dca,
       source: { label: 'Invest', to: '/dca', linkText: 'Plans live in Invest → DCA' },
     },
@@ -354,9 +363,11 @@ export function TodayLink({ id }: { id?: string }) {
   if (groups.length === 0) return null
   const invest = groups.filter((g) => g.id !== 'pay')
   const spend = groups.filter((g) => g.id === 'pay')
+  // Same pages the bottom nav badges: DCA buys on the DCA page, dividends on Dividends
+  const investTo = invest.some((g) => g.id === 'dca') ? '/dca' : '/dividends'
   return (
     <div id={id} className="divide-y divide-line overflow-hidden rounded-2xl border border-line text-sm text-ink-muted">
-      {invest.length > 0 && <TodayLinkRow to="/dca" groups={invest} />}
+      {invest.length > 0 && <TodayLinkRow to={investTo} groups={invest} />}
       {spend.length > 0 && <TodayLinkRow to="/" groups={spend} where="on Spend Home" />}
     </div>
   )
@@ -364,12 +375,12 @@ export function TodayLink({ id }: { id?: string }) {
 
 function TodayLinkRow({ to, groups, where }: { to: string; groups: Group[]; where?: string }) {
   const items = groups.flatMap((g) => g.items)
-  const urgent = items.filter((i) => i.tone === 'loss' || i.tone === 'warn').length
+  const urgent = items.filter(isDueNow).length
   return (
     <Link to={to} className="flex items-center justify-between gap-3 px-4 py-2.5 transition-colors hover:bg-surface-muted/60">
       <span>
         <span className="font-semibold text-ink">{groups.map((g) => g.title(g.items.length)).join(' · ')}</span>
-        {urgent > 0 && <span className="font-semibold text-warn"> · {urgent} due or late</span>}
+        {urgent > 0 && <span className="font-semibold text-warn"> · {urgent} due now</span>}
         {where && ` · ${where}`}
       </span>
       <span aria-hidden="true">→</span>
