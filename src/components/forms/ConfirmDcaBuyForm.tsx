@@ -546,11 +546,15 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     <Modal
       open={open}
       onClose={onClose}
-      title={isCash ? `Confirm Deposit: ${targetCashAccount?.name ?? plan.name}` : `Confirm Buy: ${holding?.name ?? plan.name}`}
-      description={isCash ? `Record DCA savings deposit into ${targetSubtitleText}` : `Record DCA purchase into ${targetSubtitleText}`}
+      title={isCash ? `Log deposit: ${targetCashAccount?.name ?? plan.name}` : `Log buy: ${holding?.name ?? plan.name}`}
+      description={
+        isCash
+          ? `After you move the money, log it here. Goes into ${targetSubtitleText}.`
+          : `Spendiary doesn't trade for you. Log it after you buy at your broker. Goes into ${targetSubtitleText}.`
+      }
       footer={
         <Button data-modal-submit onClick={confirm} loading={submitting} className="w-full">
-          {submitting ? 'Saving…' : isCash ? '✓ Confirm deposit' : '✓ Confirm purchase'}
+          {submitting ? 'Saving…' : `✓ Log ${amountThbNum > 0 ? `${thb(amountThbNum)} ` : ''}${isCash ? 'deposit' : 'buy'}`}
         </Button>
       }
     >

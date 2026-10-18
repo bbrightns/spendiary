@@ -30,8 +30,8 @@
 ### A. คำ (ผู้ใช้ใหม่)
 | # | งาน | สถานะ |
 |---|---|---|
-| A1 | "Confirm Buy" → **"Log buy"** / "I bought it" ทุกที่ + บรรทัด *"Spendiary doesn't trade for you — log it after you buy at your broker."* | ⬜ |
-| A2 | หัวฟอร์ม `Log buy: Bitcoin` · ปุ่ม `Log ฿300 buy` | ⬜ |
+| A1 | "Confirm Buy" → **"Log buy"** / "I bought it" ทุกที่ + บรรทัด *"Spendiary doesn't trade for you — log it after you buy at your broker."* | ✅ |
+| A2 | หัวฟอร์ม `Log buy: Bitcoin` · ปุ่ม `Log ฿300 buy` | ✅ |
 
 ### C. หนึ่งบ้าน หลายประตู
 | # | งาน | สถานะ |

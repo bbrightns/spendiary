@@ -539,7 +539,7 @@ export function isBuyDayOverdue(plan: DcaPlan, now = new Date()): boolean {
   return targetDay < now.getDate()
 }
 
-/** Should the "Confirm buy" button be shown? Buy day passed THIS period + not yet confirmed/skipped. */
+/** Should the "Log buy" button be shown? Buy day passed THIS period + not yet confirmed/skipped. */
 export function shouldConfirmBuy(plan: DcaPlan, now = new Date()): boolean {
   return buyDayPassedThisPeriod(plan, now) && !isConfirmedForPeriod(plan, now)
 }

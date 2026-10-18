@@ -139,9 +139,9 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
       {
         targetId: 'guide-dca-confirm',
         badge: 'Saved for you',
-        title: 'Confirm a buy',
+        title: 'Log a buy',
         description:
-          'When a plan comes due, it is highlighted so you can confirm. The cash is taken and the units are worked out for you.',
+          "When a plan comes due, it is highlighted. Spendiary doesn't buy for you: after you buy at your broker, log it here and your units and cash are updated.",
         position: 'top',
       },
     ],

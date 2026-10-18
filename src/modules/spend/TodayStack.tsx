@@ -60,7 +60,7 @@ interface Group {
   icon: ReactNode
   /** Badge style when the colour isn't per item */
   badge: string
-  /** "3 DCA buys to confirm" */
+  /** "3 DCA buys to log" */
   title: (n: number) => string
   summary: (items: Item[]) => string
   items: Item[]
@@ -151,7 +151,7 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
         tone: today ? 'brand' : 'loss',
         amount: p.monthlyAmount,
         color: ASSET_META[p.assetClass]?.color,
-        action: 'Confirm',
+        action: 'Log',
         onAction: () => onConfirmDca(p),
       }
     })
@@ -195,7 +195,7 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
       id: 'dca',
       icon: <DcaIcon className="h-4 w-4" />,
       badge: 'bg-brand text-white',
-      title: (n) => `${count(n, 'DCA buy')} to confirm`,
+      title: (n) => `${count(n, 'DCA buy')} to log`,
       summary: (items) => `${total(items)}${lateText(items, 'late')}`,
       items: dca,
     },

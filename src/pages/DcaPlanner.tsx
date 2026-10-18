@@ -334,7 +334,7 @@ export function DcaPlanner() {
     }
   }, [searchParams, setSearchParams])
 
-  // Confirm buy form
+  // Log buy form
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [confirming, setConfirming] = useState<DcaPlan | null>(null)
 
@@ -830,11 +830,11 @@ export function DcaPlanner() {
                                     <div id="guide-dca-confirm" className="mt-1.5 flex items-center gap-2 sm:mt-2">
                                       <button
                                         onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
-                                        aria-label={`Confirm DCA buy for ${p.name}`}
+                                        aria-label={`Log DCA buy for ${p.name}`}
                                         className="inline-flex items-center gap-1.5 rounded-full bg-[#00de9b] hover:bg-[#00c58a] text-[#052e21] px-3.5 py-1.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
                                       >
                                         <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
-                                        <span>{p.assetClass === 'cash' ? 'Confirm Deposit' : 'Confirm Buy'}</span>
+                                        <span>{p.assetClass === 'cash' ? 'Log deposit' : 'Log buy'}</span>
                                       </button>
                                       <button
                                         onClick={(e) => {
