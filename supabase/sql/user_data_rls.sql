@@ -6,7 +6,7 @@
 -- id is their own user id.
 
 -- ── Step 1: check (read-only, safe to run any time) ──────────────────────────────────
--- Expect: rls_enabled = true, and four policies (SELECT, INSERT, UPDATE, DELETE)
+-- Expect: rls_enabled = true, and SELECT, INSERT, UPDATE and DELETE policies
 -- that all compare id with auth.uid().
 select relname as table_name,
        relrowsecurity as rls_enabled,
@@ -22,37 +22,16 @@ select column_name, data_type
 from information_schema.columns
 where table_schema = 'public' and table_name = 'user_data' and column_name = 'id';
 
--- ── Step 2: fix (run only if step 1 shows rls_enabled = false or policies are missing) ──
--- Everything below is in one transaction: if any line fails, nothing changes.
--- `id::text = auth.uid()::text` works whether id is a uuid or a text column.
--- If step 1 already lists policies with other names, send them over before running this.
-begin;
-
-alter table public.user_data enable row level security;
-
-drop policy if exists "user_data_select_own" on public.user_data;
-drop policy if exists "user_data_insert_own" on public.user_data;
-drop policy if exists "user_data_update_own" on public.user_data;
-drop policy if exists "user_data_delete_own" on public.user_data;
-
-create policy "user_data_select_own" on public.user_data
-  for select to authenticated
-  using (id::text = (select auth.uid())::text);
-
-create policy "user_data_insert_own" on public.user_data
-  for insert to authenticated
-  with check (id::text = (select auth.uid())::text);
-
-create policy "user_data_update_own" on public.user_data
-  for update to authenticated
-  using (id::text = (select auth.uid())::text)
-  with check (id::text = (select auth.uid())::text);
-
-create policy "user_data_delete_own" on public.user_data
+-- ── Step 2: add the missing DELETE policy ─────────────────────────────────────────────
+-- Checked on 2026-10-18: RLS is on, and SELECT, INSERT and UPDATE policies already limit
+-- each user to their own row (auth.uid() = id). There was no DELETE policy, so "Clear all
+-- data" deleted nothing: with RLS, a delete that matches no allowed row returns no error,
+-- the app never ran its fallback, and the data came back on the next sign-in.
+-- (An UPDATE policy without WITH CHECK reuses its USING rule, so a user can't move a row
+-- to someone else's id.)
+create policy "Users can delete their own data." on public.user_data
   for delete to authenticated
-  using (id::text = (select auth.uid())::text);
-
-commit;
+  using ((select auth.uid()) = id);
 
 -- ── Step 3: verify ───────────────────────────────────────────────────────────────────
 -- Re-run step 1. Then open the app, sign in, and check your data still loads and saves.
