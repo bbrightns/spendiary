@@ -196,9 +196,14 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
     }
   }
 
+  // New text clears the last import error
+  const changeJson = (text: string) => {
+    setJsonText(text)
+    setErrorMsg(null)
+  }
+
   // Parse JSON on the fly for preview & validation
   const parsedPreview = useMemo(() => {
-    setErrorMsg(null)
     const cleaned = cleanJsonString(jsonText)
     if (!cleaned) return null
 
@@ -268,7 +273,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
     reader.onload = (event) => {
       const content = event.target?.result as string
       if (content) {
-        setJsonText(content)
+        changeJson(content)
       }
     }
     reader.readAsText(file)
@@ -455,7 +460,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
             id="json-paste-area"
             rows={6}
             value={jsonText}
-            onChange={(e) => setJsonText(e.target.value)}
+            onChange={(e) => changeJson(e.target.value)}
             placeholder={`Paste the JSON code block from ChatGPT here, e.g.\n{\n  "holdings": [\n    { "ticker": "PTT", "units": 1000, "avgCost": 34.5, "assetClass": "fund", "currency": "THB" },\n    { "ticker": "AAPL", "units": 10, "avgCost": 180.5, "assetClass": "stock", "currency": "USD" }\n  ]\n}`}
             className="w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 font-mono text-xs text-ink placeholder:text-ink-soft/60 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/10 dark:bg-black/20"
           />

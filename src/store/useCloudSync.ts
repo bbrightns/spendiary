@@ -3,7 +3,7 @@ import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import type { SpendiaryData } from '../lib/types'
 import { seedData } from '../lib/seed'
-import { resolveRemoteLoad, type RestLoad } from './remoteLoad'
+import { resolveRemoteLoad } from './remoteLoad'
 import { interpretSave, lockHeaders, type SaveMode, type SaveOutcome } from './remoteSave'
 import { emptyData, justImportedFixedCosts, migrate } from './migrate'
 
@@ -87,54 +87,16 @@ export function useCloudSync(
     try {
       setSyncStatus('syncing')
 
-      const supabaseUrl = import.meta.env.VITE_API_URL || ''
-      const supabaseKey = import.meta.env.VITE_API_TOKEN || ''
-
-      // Attempt 1: Via supabase-js client
+      // Only an answer given to this user can say "no row yet"; signed out, the database hides the row
+      const { data: { session } } = await supabase.auth.getSession()
       const { data: row, error } = await supabase
         .from('user_data')
         .select('payload, updated_at')
         .eq('id', userId)
         .maybeSingle()
 
-
-      let rest: RestLoad | null = null
-      if (error || !row?.payload) {
-        // Attempt 2: Via direct REST call with Authorization Bearer header
-        // Retrieve token from Supabase localStorage or hash
-        const storageKey = `sb-dgxjifbsdpggoyyzhpeb-auth-token`
-        let token = supabaseKey
-        let usedUserToken = false
-        try {
-          const raw = localStorage.getItem(storageKey)
-          if (raw) {
-            const parsed = JSON.parse(raw)
-            if (parsed.access_token) {
-              token = parsed.access_token
-              usedUserToken = true
-            }
-          }
-        } catch {
-          // ignore: storage or JSON unavailable
-        }
-
-        try {
-          const restRes = await fetch(`${supabaseUrl}/rest/v1/user_data?id=eq.${encodeURIComponent(userId)}&select=payload,updated_at`, {
-            headers: {
-              'apikey': supabaseKey,
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            }
-          })
-          const list = restRes.ok ? await restRes.json() : null
-          rest = { ok: restRes.ok, list, usedUserToken }
-        } catch (restErr) {
-          console.warn('REST API fallback error:', restErr)
-        }
-      }
-
       if (isStale()) return
-      const result = resolveRemoteLoad({ error, row }, rest)
+      const result = resolveRemoteLoad({ error, row, asUser: session?.user.id === userId })
 
       if (result.kind === 'failed') {
         // We can't tell what is in the cloud. Keep saving off so empty data never overwrites the real row.
@@ -249,6 +211,29 @@ export function useCloudSync(
     return next
   }
 
+  /** A normal save under the lock; a conflict pauses saving instead of overwriting the other device */
+  const saveLocked = async (userId: string, payload: SpendiaryData, serialised: string) => {
+    try {
+      const outcome = await writeRemote(userId, payload)
+      if (outcome.kind === 'conflict') {
+        // Another tab or device saved first. Stop rather than overwrite their changes.
+        console.error('Cloud data changed elsewhere; saving is paused until the latest data is loaded')
+        syncReady.current = false
+        setSyncConflict(true)
+        setSyncStatus('error')
+        return
+      }
+      if (outcome.kind === 'error') throw outcome.error
+
+      lastSynced.current = serialised
+      setSyncStatus('synced')
+      updateLastSynced(new Date())
+    } catch (err) {
+      console.error('Error syncing to Supabase:', err)
+      setSyncStatus('error')
+    }
+  }
+
   // ── Debounced sync to Supabase (or localStorage for Guest) on data change ──────────────
   useEffect(() => {
     if (!user) return
@@ -273,26 +258,10 @@ export function useCloudSync(
     }
 
     setSyncStatus('syncing')
-    const timer = setTimeout(async () => {
-      try {
-        const outcome = await writeRemote(user.id, data)
-        if (outcome.kind === 'conflict') {
-          // Another tab or device saved first. Stop rather than overwrite their changes.
-          console.error('Cloud data changed elsewhere; saving is paused until the latest data is loaded')
-          syncReady.current = false
-          setSyncConflict(true)
-          setSyncStatus('error')
-          return
-        }
-        if (outcome.kind === 'error') throw outcome.error
-
-        lastSynced.current = serialised
-        setSyncStatus('synced')
-        updateLastSynced(new Date())
-      } catch (err) {
-        console.error('Error syncing to Supabase:', err)
-        setSyncStatus('error')
-      }
+    const timer = setTimeout(() => {
+      // Saved some other way while waiting (a backup restore saves at once with pushNow)
+      if (serialised === lastSynced.current) return
+      saveLocked(user.id, data, serialised)
     }, 2000)
     return () => clearTimeout(timer)
   }, [data, user])
@@ -300,18 +269,28 @@ export function useCloudSync(
   /** Saves now, skipping the 2-second wait and the lock: restoring a backup replaces the cloud data on purpose */
   const pushNow = (userId: string, stamped: SpendiaryData) => {
     const serialised = JSON.stringify(stamped)
+    // Claim it now, before the debounced save sees the same data and saves it a second time
+    const previous = lastSynced.current
+    lastSynced.current = serialised
+    const failed = () => {
+      // A newer save already went out and set the status itself
+      if (lastSynced.current !== serialised) return
+      lastSynced.current = previous
+      // Try once more as a normal save under the lock (the old double save did this by accident)
+      if (syncReady.current) saveLocked(userId, stamped, serialised)
+      else setSyncStatus('error')
+    }
     setSyncStatus('syncing')
     // Restoring a backup replaces the cloud data on purpose, so this write skips the lock
     writeRemote(userId, stamped, true)
       .then((outcome) => {
         if (outcome.kind === 'saved') {
-          lastSynced.current = serialised
           setSyncStatus('synced')
           updateLastSynced(new Date())
         } else {
-          setSyncStatus('error')
+          failed()
         }
-      }, () => setSyncStatus('error'))
+      }, failed)
   }
 
   return {

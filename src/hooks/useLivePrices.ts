@@ -2,34 +2,29 @@ import { useEffect, useRef, useState } from 'react'
 import { useData } from '../store/DataContext'
 import { fetchBtcThb, fetchStockPricesUsd, fetchUsdThb, fetchXauThbPricePerGram } from '../lib/prices'
 import { localDateStr } from '../lib/format'
+import { hasRealPrice } from '../lib/calc'
+import {
+  isValidPrice,
+  readCachedGoldThbPerGram,
+  readPricesUpdatedAt,
+  writeCachedGoldThbPerGram,
+  writePricesUpdatedAt,
+} from '../lib/priceCache'
 
 const REFRESH_MS = 60_000
-
-const CACHED_GOLD_PRICE_KEY = 'spendiary.cached_gold_thb_gram'
-const CACHED_LAST_UPDATED_KEY = 'spendiary.cached_prices_last_updated'
 
 export type PriceStatus = 'idle' | 'loading' | 'ok' | 'partial' | 'error'
 
 export function useLivePrices() {
   const { data, upsertHolding, usdThb, setUsdThb } = useData()
   const [status, setStatus] = useState<PriceStatus>('idle')
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(() => {
-    try {
-      const cached = localStorage.getItem(CACHED_LAST_UPDATED_KEY)
-      return cached ? new Date(cached) : null
-    } catch {
-      return null
-    }
-  })
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(readPricesUpdatedAt)
   const [goldThbPerGram, setGoldThbPerGram] = useState<number | null>(() => {
-    try {
-      const cached = localStorage.getItem(CACHED_GOLD_PRICE_KEY)
-      if (cached) return parseFloat(cached)
-      const gh = data.holdings.find((h) => h.assetClass === 'gold' && h.price > 0)
-      return gh ? gh.price : null
-    } catch {
-      return null
-    }
+    const cached = readCachedGoldThbPerGram()
+    if (cached !== null) return cached
+    // A cost stand-in is not a gold price
+    const gh = data.holdings.find((h) => h.assetClass === 'gold' && isValidPrice(h.price) && hasRealPrice(h))
+    return gh ? gh.price : null
   })
   const [errorMsg, setErrorMsg] = useState<string>('')
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -54,6 +49,7 @@ export function useLivePrices() {
     if (cryptoHoldings.length > 0) {
       try {
         const btcThb = await fetchBtcThb()
+        if (!isValidPrice(btcThb)) throw new Error('invalid price')
         for (const h of cryptoHoldings) {
           upsertHolding({ ...h, price: btcThb, updatedAt: today })
         }
@@ -78,7 +74,7 @@ export function useLivePrices() {
           const usdPrice = stockPricesUsd[stale.ticker.toUpperCase()]
           // Re-read the latest holding: units/cost may have changed (e.g. DCA confirm) while the fetch was in flight
           const h = dataRef.current.holdings.find((x) => x.id === stale.id)
-          if (h && usdPrice && usdRate > 0) {
+          if (h && isValidPrice(usdPrice) && isValidPrice(usdRate)) {
             upsertHolding({ ...h, price: usdPrice * usdRate, updatedAt: today })
           }
         }
@@ -94,12 +90,9 @@ export function useLivePrices() {
     if (goldHoldings.length > 0) {
       try {
         const goldPrice = await fetchXauThbPricePerGram()
+        if (!isValidPrice(goldPrice.pricePerGram)) throw new Error('invalid price')
         setGoldThbPerGram(goldPrice.pricePerGram)
-        try {
-          localStorage.setItem(CACHED_GOLD_PRICE_KEY, String(goldPrice.pricePerGram))
-        } catch {
-          // ignore
-        }
+        writeCachedGoldThbPerGram(goldPrice.pricePerGram)
         for (const h of goldHoldings) {
           upsertHolding({ ...h, price: goldPrice.pricePerGram, updatedAt: today })
         }
@@ -123,11 +116,7 @@ export function useLivePrices() {
     }
     const now = new Date()
     setLastUpdated(now)
-    try {
-      localStorage.setItem(CACHED_LAST_UPDATED_KEY, now.toISOString())
-    } catch {
-      // ignore
-    }
+    writePricesUpdatedAt(now)
   }
 
   useEffect(() => {

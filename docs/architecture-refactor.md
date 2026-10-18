@@ -171,14 +171,14 @@
 
 | # | งาน | วิธีแก้ (ร่าง) | ต้องรอ |
 |---|---|---|---|
-| **B1 · 8** | `src/vite-env.d.ts` ประกาศ type ปลอมของ `@supabase/supabase-js` ทำให้ type จริงถูกซ่อน | ลบ stub ทิ้ง ใช้ type จริงจาก package แล้วแก้ type error ที่โผล่ขึ้นมา (คาดว่าอยู่ใน `useCloudSync`, `DataContext`) | — |
-| **B2 · 7** | ระบบ login เขียนเอง: ถอด JWT จาก URL hash และ hardcode `sb-dgxjifbsdpggoyyzhpeb-auth-token` | ใช้ `supabase.auth.signInWithOAuth({ provider: 'google' })` + `detectSessionInUrl` ลบตัวถอด JWT และ REST fallback ที่อ่าน token จาก localStorage เอง | **B1** |
-| B3 · 14 | ราคาทองใน cache เสียแล้วกลายเป็น NaN (`useLivePrices.ts`) | ตรวจค่าตอนอ่าน cache ถ้าไม่ใช่ตัวเลขบวกให้ถือว่าไม่มีราคา (เข้าทาง "No price yet") | — |
-| B4 · 10 | side effect ระหว่าง render: `syncCategories()` ใน body ของ DataProvider และ `setErrorMsg` ใน `useMemo` ของ AiImportModal | ย้ายไปไว้ใน `useEffect` หรือคำนวณเป็นค่า derived | — |
-| B5 · 12 | เมนู ··· ใน Portfolio คลิกด้วยเมาส์ไม่ได้ตอนจอแคบ (แตะนิ้วได้) | ทดสอบด้วย mouse ที่จอ 768–1024px หาว่ามี handler ที่แยก pointer/touch ไว้หรือไม่ | — |
-| B6 · 13 | Restore backup แล้ว save ซ้ำ 2 รอบ (ไม่อันตราย) | ให้ `pushNow` ตั้ง `lastSynced` ก่อนที่ debounce effect จะทำงาน | — |
+| ~~B1 · 8~~ ✅ | `src/vite-env.d.ts` ประกาศ type ปลอมของ `@supabase/supabase-js` ทำให้ type จริงถูกซ่อน | **เสร็จแล้ว (`a881b12`):** ลบ stub แล้วโค้ดผ่าน type จริงได้เลย ไม่ต้องแก้อะไรเพิ่ม | — |
+| ~~B2 · 7~~ ✅ | ระบบ login เขียนเอง: ถอด JWT จาก URL hash และ hardcode `sb-dgxjifbsdpggoyyzhpeb-auth-token` | **เสร็จแล้ว (`a079a8b`):** ใช้ `signInWithOAuth` + `detectSessionInUrl` (implicit flow เหมือนเดิม) ลบตัวถอด JWT และ REST fallback "ไม่มีแถว" นับเป็นผู้ใช้ใหม่เฉพาะตอนถามด้วย session ของผู้ใช้ session เก่าใช้ต่อได้ (ทดสอบด้วย Playwright route() รวมกรณีหมดอายุแล้ว refresh) ยกเลิกที่ Google จะเห็น "Sign-in failed" | — |
+| ~~B3 · 14~~ ✅ | ราคาทองใน cache เสียแล้วกลายเป็น NaN (`useLivePrices.ts`) | **เสร็จแล้ว (`e36eaf3`):** อ่าน/เขียน cache ผ่าน `lib/priceCache.ts` รับแค่ตัวเลขบวกจำกัด ค่าเสียถูกลบทิ้ง และไม่เขียนค่าเสียลงไปอีก ราคา BTC/หุ้น/ทองที่ดึงมาก็ตรวจก่อนบันทึก ราคาทองสำรองไม่ใช้ราคาทุนที่ใส่แทน | — |
+| ~~B4 · 10~~ ✅ | side effect ระหว่าง render: `syncCategories()` ใน body ของ DataProvider และ `setErrorMsg` ใน `useMemo` ของ AiImportModal | **เสร็จแล้ว (`8f90aa3`):** AiImportModal ล้าง error ตอนข้อความเปลี่ยนแทน ส่วน `syncCategories` **คงไว้ใน render** เพราะลูกๆ อ่านหมวดระหว่าง render ถ้าย้ายไป effect จะเห็นรายการเก่า 1 รอบ (เป็น cache ที่ key ด้วย settings อยู่แล้ว) และเพิ่ม `useLayoutEffect` sync จากข้อมูลที่ commit แล้ว กัน render ที่ถูกทิ้ง | — |
+| B5 · 12 ⚠️ | เมนู ··· ใน Portfolio คลิกด้วยเมาส์ไม่ได้ตอนจอแคบ (แตะนิ้วได้) | **ยังทำซ้ำไม่ได้:** Playwright 390/768/900/1024/1280px × เมาส์/แตะ ทั้งเมนูรายการและเมนูที่เก็บ (BTC/ทอง) และแบบมี scrollbar เปิดได้และกดเมนูได้ทุกกรณี ต้องการข้อมูลเพิ่ม: เบราว์เซอร์/OS, ความกว้างจอ, เมนูไหน, กดแล้วเกิดอะไร | ข้อมูลจากคุณ |
+| ~~B6 · 13~~ ✅ | Restore backup แล้ว save ซ้ำ 2 รอบ (ไม่อันตราย) | **เสร็จแล้ว (`dc2dea8`):** `pushNow` ตั้ง `lastSynced` ทันที และ timer เช็กซ้ำก่อน save ถ้า save แบบ force ล้มเหลว จะลองอีกครั้งแบบปกติ (มี lock) เพราะ save ครั้งที่ 2 เดิมทำหน้าที่ retry โดยบังเอิญ | — |
 | B7 · 9 | โหมด Guest เป็นโค้ดที่ไม่มีใครเรียก (`loginAsGuest`) และ Sidebar เช็ก id ผิด (`guest-local`) | **ต้องตัดสินใจ:** ลบออก (แนะนำ เพราะมีโหมด Demo แล้ว) หรือทำให้ใช้ได้จริง | คุณตัดสินใจ |
-| B8 · 15b | ฟอร์มบันทึก gift (Buy more) คิดมูลค่าจาก `holding.price` แม้จะเป็นราคาทุนที่ใส่แทน | ถ้า `!hasRealPrice` ให้ผู้ใช้กรอกมูลค่าเอง | — |
+| ~~B8 · 15b~~ ✅ | ฟอร์มบันทึก gift (Buy more) คิดมูลค่าจาก `holding.price` แม้จะเป็นราคาทุนที่ใส่แทน | **เสร็จแล้ว (`0fe4ffa`):** เติมมูลค่าให้เฉพาะเมื่อมีราคาจริง ถ้าไม่มี ช่องว่างให้กรอกเอง และ hint บอก "No price yet" | — |
 
 ---
 

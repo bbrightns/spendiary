@@ -12,13 +12,14 @@ import { ConfirmDividendModal } from '../components/forms/ConfirmDividendModal'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { useLivePrices } from '../hooks/useLivePrices'
+import { isValidPrice } from '../lib/priceCache'
 import { CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, PencilIcon, PlusIcon } from '../components/icons'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { fixedCostRecurring, inPeriod, perMonth, periodFor, periodLabel, totalsFor } from '../modules/spend/logic'
 import { useSpend } from '../modules/spend/useSpend'
 import {
   ASSET_META, dcaThisMonth, getHoldingDpsForMonth, isBuyDayOverdue, isBuyDayToday, isConfirmedForPeriod, isDividendReceivedThisMonth, isSkippedForPeriod,
-  nextBuyDate, shouldConfirmBuy, sortDcaPlans,
+  hasRealPrice, nextBuyDate, shouldConfirmBuy, sortDcaPlans,
 } from '../lib/calc'
 import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
 import type { DcaPlan, Holding, SpendRecurring } from '../lib/types'
@@ -456,7 +457,7 @@ export function DcaPlanner() {
   }
 
   const { usdThb, goldThbPerGram } = useLivePrices()
-  const goldHolding = data.holdings?.find((h) => h.assetClass === 'gold' && h.price > 0)
+  const goldHolding = data.holdings?.find((h) => h.assetClass === 'gold' && isValidPrice(h.price) && hasRealPrice(h))
   const effectiveGoldThbPerGram = goldThbPerGram ?? goldHolding?.price ?? null
   const effectiveUsdThb = usdThb && usdThb > 0 ? usdThb : null
   const [copied, setCopied] = useState(false)
