@@ -37,7 +37,7 @@ export interface DataContextValue {
   loadSample: () => void
   clearAll: () => Promise<void>
   syncStatus: SyncStatus
-  /** False until the initial load (cloud / guest / test data) for the current user has finished. */
+  /** False until the initial load (cloud or test data) for the current user has finished. */
   dataReady: boolean
   /** True when the cloud load failed. Saving stays off so the real data is never overwritten. */
   loadError: boolean
@@ -47,7 +47,6 @@ export interface DataContextValue {
   retryLoad: () => void
   user: User | null
   loginWithGoogle: () => void
-  loginAsGuest: () => void
   loginAsTestMode: () => void
   authError: string | null
   logout: () => Promise<void>
@@ -215,7 +214,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Once per app load; useLivePrices keeps it fresh on the pages that show prices
     fetchUsdThb().then(setUsdThb, (err) => console.warn('USD/THB rate unavailable:', err))
   }, [])
-  const { user, setUser, authError, setAuthError, loginWithGoogle, loginAsGuest } = useAuth()
+  const { user, setUser, authError, setAuthError, loginWithGoogle } = useAuth()
   const {
     syncStatus, setSyncStatus, dataReady, loadError, syncConflict, lastSyncedAt, updateLastSynced,
     retryLoad, pushNow, syncReady, lastSynced,
@@ -245,7 +244,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = async () => {
-    if (user?.id !== 'guest-user-local' && user?.id !== 'test-user-local') {
+    if (user?.id !== 'test-user-local') {
       await supabase.auth.signOut()
     }
     localStorage.removeItem(STORAGE_KEYS.lastUserId)
@@ -260,9 +259,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const currentUser = user
 
     if (currentUser) {
-      if (currentUser.id === 'guest-user-local') {
-        localStorage.removeItem(STORAGE_KEYS.guestData)
-      } else if (currentUser.id === 'test-user-local') {
+      if (currentUser.id === 'test-user-local') {
         localStorage.removeItem(STORAGE_KEYS.testData)
       } else {
         // Cloud Supabase user: delete row from user_data table
@@ -339,7 +336,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       lastSyncedAt,
       user,
       loginWithGoogle,
-      loginAsGuest,
       loginAsTestMode,
       authError,
       logout,

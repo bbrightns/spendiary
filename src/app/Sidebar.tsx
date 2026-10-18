@@ -54,7 +54,7 @@ export function Sidebar() {
     setTheme(isDark ? 'light' : 'dark')
   }
 
-  const displayName = data.userName || (user?.id === 'guest-local' ? 'Guest' : 'User')
+  const displayName = data.userName || 'User'
   const userInitial = displayName.charAt(0).toUpperCase()
 
   return (
@@ -190,7 +190,7 @@ export function Sidebar() {
                 {displayName}
               </p>
               <p className="truncate text-xs text-ink-muted leading-tight">
-                {user?.id === 'guest-local' ? 'Local Mode' : 'Cloud Sync'}
+                Cloud Sync
               </p>
             </div>
           </div>

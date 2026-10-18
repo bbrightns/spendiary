@@ -11,7 +11,7 @@ import { STORAGE_KEYS } from '../lib/storageKeys'
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
 
 /**
- * Loads the signed-in user's data (cloud, guest or test) and saves every change back.
+ * Loads the signed-in user's data (cloud or test) and saves every change back.
  * Saving only turns on after a confirmed load, and cloud saves use an optimistic lock
  * (see remoteLoad.ts and remoteSave.ts), so a failed load or another device's newer save
  * is never overwritten.
@@ -54,25 +54,6 @@ export function useCloudSync(
   const fetchRemoteData = async (userId: string) => {
     const seq = ++loadSeq.current
     const isStale = () => seq !== loadSeq.current
-    if (userId === 'guest-user-local') {
-      const local = localStorage.getItem(STORAGE_KEYS.guestData)
-      if (local) {
-        try {
-          const parsed = JSON.parse(local)
-          const migrated = migrate(parsed)
-          lastSynced.current = justImportedFixedCosts(parsed, migrated) ? '' : JSON.stringify(migrated)
-          setDataState(migrated)
-        } catch {
-          setDataState(emptyData)
-        }
-      } else {
-        setDataState(emptyData)
-      }
-      setSyncStatus('synced')
-      syncReady.current = true
-      setDataReady(true)
-      return
-    }
 
     if (userId === 'test-user-local') {
       localStorage.removeItem(STORAGE_KEYS.testData)
@@ -235,20 +216,12 @@ export function useCloudSync(
     }
   }
 
-  // ── Debounced sync to Supabase (or localStorage for Guest) on data change ──────────────
+  // ── Debounced sync to Supabase on data change ──────────────
   useEffect(() => {
     if (!user) return
     if (!syncReady.current) return
     const serialised = JSON.stringify(data)
     if (serialised === lastSynced.current) return   // nothing changed
-
-    if (user.id === 'guest-user-local') {
-      localStorage.setItem(STORAGE_KEYS.guestData, serialised)
-      lastSynced.current = serialised
-      setSyncStatus('synced')
-      updateLastSynced(new Date())
-      return
-    }
 
     if (user.id === 'test-user-local') {
       // Test Mode is strictly in-memory — never persist to localStorage so mock data stays fresh

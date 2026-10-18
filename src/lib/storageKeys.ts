@@ -29,5 +29,4 @@ export const STORAGE_KEYS = {
   lastUserId: 'spendiary.last_user_id',
   lastSyncedTime: 'spendiary.last_synced_time',
   testData: 'spendiary.test_data',
-  guestData: 'spendiary.guest_data',
 } as const

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 
-/** Who is signed in: Google via Supabase, or the local guest user. */
+/** Who is signed in with Google via Supabase. */
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
   const [authError, setAuthError] = useState<string | null>(null)
@@ -51,19 +51,5 @@ export function useAuth() {
     if (error) setAuthError(`Sign-in failed: ${error.message}`)
   }
 
-  const loginAsGuest = () => {
-    setAuthError(null)
-    const guestUser: User = {
-      id: 'guest-user-local',
-      app_metadata: { provider: 'guest' },
-      user_metadata: { name: 'Guest User' },
-      aud: 'authenticated',
-      created_at: new Date().toISOString(),
-      email: 'guest@spendiary.local',
-      role: 'authenticated'
-    }
-    setUser(guestUser)
-  }
-
-  return { user, setUser, authError, setAuthError, loginWithGoogle, loginAsGuest }
+  return { user, setUser, authError, setAuthError, loginWithGoogle }
 }
