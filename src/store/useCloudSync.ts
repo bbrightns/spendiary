@@ -249,6 +249,29 @@ export function useCloudSync(
     return next
   }
 
+  /** A normal save under the lock; a conflict pauses saving instead of overwriting the other device */
+  const saveLocked = async (userId: string, payload: SpendiaryData, serialised: string) => {
+    try {
+      const outcome = await writeRemote(userId, payload)
+      if (outcome.kind === 'conflict') {
+        // Another tab or device saved first. Stop rather than overwrite their changes.
+        console.error('Cloud data changed elsewhere; saving is paused until the latest data is loaded')
+        syncReady.current = false
+        setSyncConflict(true)
+        setSyncStatus('error')
+        return
+      }
+      if (outcome.kind === 'error') throw outcome.error
+
+      lastSynced.current = serialised
+      setSyncStatus('synced')
+      updateLastSynced(new Date())
+    } catch (err) {
+      console.error('Error syncing to Supabase:', err)
+      setSyncStatus('error')
+    }
+  }
+
   // ── Debounced sync to Supabase (or localStorage for Guest) on data change ──────────────
   useEffect(() => {
     if (!user) return
@@ -273,26 +296,10 @@ export function useCloudSync(
     }
 
     setSyncStatus('syncing')
-    const timer = setTimeout(async () => {
-      try {
-        const outcome = await writeRemote(user.id, data)
-        if (outcome.kind === 'conflict') {
-          // Another tab or device saved first. Stop rather than overwrite their changes.
-          console.error('Cloud data changed elsewhere; saving is paused until the latest data is loaded')
-          syncReady.current = false
-          setSyncConflict(true)
-          setSyncStatus('error')
-          return
-        }
-        if (outcome.kind === 'error') throw outcome.error
-
-        lastSynced.current = serialised
-        setSyncStatus('synced')
-        updateLastSynced(new Date())
-      } catch (err) {
-        console.error('Error syncing to Supabase:', err)
-        setSyncStatus('error')
-      }
+    const timer = setTimeout(() => {
+      // Saved some other way while waiting (a backup restore saves at once with pushNow)
+      if (serialised === lastSynced.current) return
+      saveLocked(user.id, data, serialised)
     }, 2000)
     return () => clearTimeout(timer)
   }, [data, user])
@@ -300,18 +307,28 @@ export function useCloudSync(
   /** Saves now, skipping the 2-second wait and the lock: restoring a backup replaces the cloud data on purpose */
   const pushNow = (userId: string, stamped: SpendiaryData) => {
     const serialised = JSON.stringify(stamped)
+    // Claim it now, before the debounced save sees the same data and saves it a second time
+    const previous = lastSynced.current
+    lastSynced.current = serialised
+    const failed = () => {
+      // A newer save already went out and set the status itself
+      if (lastSynced.current !== serialised) return
+      lastSynced.current = previous
+      // Try once more as a normal save under the lock (the old double save did this by accident)
+      if (syncReady.current) saveLocked(userId, stamped, serialised)
+      else setSyncStatus('error')
+    }
     setSyncStatus('syncing')
     // Restoring a backup replaces the cloud data on purpose, so this write skips the lock
     writeRemote(userId, stamped, true)
       .then((outcome) => {
         if (outcome.kind === 'saved') {
-          lastSynced.current = serialised
           setSyncStatus('synced')
           updateLastSynced(new Date())
         } else {
-          setSyncStatus('error')
+          failed()
         }
-      }, () => setSyncStatus('error'))
+      }, failed)
   }
 
   return {
