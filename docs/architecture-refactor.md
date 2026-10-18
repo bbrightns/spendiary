@@ -173,7 +173,7 @@
 |---|---|---|---|
 | **B1 · 8** | `src/vite-env.d.ts` ประกาศ type ปลอมของ `@supabase/supabase-js` ทำให้ type จริงถูกซ่อน | ลบ stub ทิ้ง ใช้ type จริงจาก package แล้วแก้ type error ที่โผล่ขึ้นมา (คาดว่าอยู่ใน `useCloudSync`, `DataContext`) | — |
 | **B2 · 7** | ระบบ login เขียนเอง: ถอด JWT จาก URL hash และ hardcode `sb-dgxjifbsdpggoyyzhpeb-auth-token` | ใช้ `supabase.auth.signInWithOAuth({ provider: 'google' })` + `detectSessionInUrl` ลบตัวถอด JWT และ REST fallback ที่อ่าน token จาก localStorage เอง | **B1** |
-| B3 · 14 | ราคาทองใน cache เสียแล้วกลายเป็น NaN (`useLivePrices.ts`) | ตรวจค่าตอนอ่าน cache ถ้าไม่ใช่ตัวเลขบวกให้ถือว่าไม่มีราคา (เข้าทาง "No price yet") | — |
+| ~~B3 · 14~~ ✅ | ราคาทองใน cache เสียแล้วกลายเป็น NaN (`useLivePrices.ts`) | **เสร็จแล้ว (`e36eaf3`):** อ่าน/เขียน cache ผ่าน `lib/priceCache.ts` รับแค่ตัวเลขบวกจำกัด ค่าเสียถูกลบทิ้ง และไม่เขียนค่าเสียลงไปอีก ราคา BTC/หุ้น/ทองที่ดึงมาก็ตรวจก่อนบันทึก ราคาทองสำรองไม่ใช้ราคาทุนที่ใส่แทน | — |
 | B4 · 10 | side effect ระหว่าง render: `syncCategories()` ใน body ของ DataProvider และ `setErrorMsg` ใน `useMemo` ของ AiImportModal | ย้ายไปไว้ใน `useEffect` หรือคำนวณเป็นค่า derived | — |
 | B5 · 12 | เมนู ··· ใน Portfolio คลิกด้วยเมาส์ไม่ได้ตอนจอแคบ (แตะนิ้วได้) | ทดสอบด้วย mouse ที่จอ 768–1024px หาว่ามี handler ที่แยก pointer/touch ไว้หรือไม่ | — |
 | B6 · 13 | Restore backup แล้ว save ซ้ำ 2 รอบ (ไม่อันตราย) | ให้ `pushNow` ตั้ง `lastSynced` ก่อนที่ debounce effect จะทำงาน | — |
