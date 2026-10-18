@@ -5,7 +5,7 @@ import type { AcquisitionSource, BtcLocation, CashAccount, DcaPlan, DebtCategory
 import { localDateStr } from '../lib/format'
 import { isValidRate, readCachedUsdThb, writeCachedUsdThb, type UsdThbRate } from '../lib/fx'
 import { fetchUsdThb } from '../lib/prices'
-import { seedData } from '../lib/seed'
+import { seedData } from './seed'
 import { detectBankPreset, findMatchingHolding, inferCashCategory } from '../lib/calc'
 import { inferAssetClass } from '../lib/assetClass'
 import { syncCategories } from '../modules/spend/categories'

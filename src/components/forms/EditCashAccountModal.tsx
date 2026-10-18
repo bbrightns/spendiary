@@ -3,8 +3,8 @@ import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import type { CashAccount, CashAccountCategory, CashPayoutSchedule } from '../../lib/types'
 import { CASH_CATEGORIES, getCashCategory, inferCashCategory } from '../../lib/calc'
-import { ListBulletIcon } from '../../modules/spend/categories'
-import { SwitchVisual } from '../../modules/spend/AccountSheets'
+import { ListIcon } from '../icons'
+import { SwitchVisual } from '../ui/SwitchVisual'
 import { TrashIcon } from '../icons'
 
 const THAI_MONTHS_SHORT = [
@@ -125,7 +125,7 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
             onClick={onShowTxns}
             className="flex w-full items-center gap-2.5 rounded-xl border border-line px-3 py-2.5 text-left text-sm font-semibold text-ink transition-colors cursor-pointer hover:bg-surface-muted/60"
           >
-            <ListBulletIcon className="h-4 w-4 text-ink-muted" />
+            <ListIcon className="h-4 w-4 text-ink-muted" />
             <span className="flex-1">See transactions in Spend</span>
             <span className="text-ink-muted" aria-hidden>→</span>
           </button>

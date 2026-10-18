@@ -5,7 +5,7 @@ import { useData } from '../../store/DataContext'
 import { isDividendReceivedThisMonth, shouldConfirmBuy } from '../../lib/calc'
 import { Modal } from '../ui/Modal'
 import { NavSheetList } from './NavSheetList'
-import { SIDE_ACTIVE } from '../../modules/spend/tones'
+import { SIDE_ACTIVE } from '../tones'
 
 const ON = SIDE_ACTIVE.invest
 

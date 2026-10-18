@@ -1,7 +1,7 @@
 import React, { type ReactNode } from 'react'
 import { HelpCircleIcon } from '../icons'
-import { useSpendSide } from '../../modules/spend/side'
-import { INVEST_ACCENT_TEXT, SPEND_ACCENT_TEXT } from '../../modules/spend/tones'
+import { useSpendSide } from '../../hooks/side'
+import { INVEST_ACCENT_TEXT, SPEND_ACCENT_TEXT } from '../tones'
 
 interface PageHeaderProps {
   eyebrow?: string

@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useMemo, useCallback, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useData } from '../../store/DataContext'
-import { useTheme } from '../../hooks/useTheme'
-import { useToast } from '../../store/ToastContext'
-import { localDateStr, thb, thbSigned } from '../../lib/format'
+import { useData } from '../store/DataContext'
+import { useTheme } from '../hooks/useTheme'
+import { useToast } from '../store/ToastContext'
+import { localDateStr, thb, thbSigned } from '../lib/format'
 import {
   amountMatches,
   dateRangeLabel,
@@ -17,8 +17,8 @@ import {
   type AmountFilter,
   type DateRange,
   type Usage,
-} from '../../lib/paletteSearch'
-import type { HoldingLog, SpendTransaction } from '../../lib/types'
+} from '../lib/paletteSearch'
+import type { HoldingLog, SpendTransaction } from '../lib/types'
 import {
   SearchIcon,
   CommandIcon,
@@ -40,17 +40,17 @@ import {
   ArrowUpRightIcon,
   CreditCardIcon,
   CoinsIcon,
-} from '../icons'
-import { openQuickAdd } from '../../modules/spend/QuickAddSheet'
-import { openPayBill } from '../../modules/spend/PayBillSheet'
-import { openImport } from '../../modules/spend/ImportSheet'
-import { ListBulletIcon, RepeatIcon, TransferIcon, getCategory, guessCategory, manageableCategories } from '../../modules/spend/categories'
-import { frequencyLabel, goalProgress, noteTitle, periodFor } from '../../modules/spend/logic'
-import { useSpendSide } from '../../modules/spend/side'
-import { TONES } from '../../modules/spend/tones'
-import { useSpend } from '../../modules/spend/useSpend'
-import { IS_MAC, isSearchShortcut } from '../../lib/shortcut'
-import { STORAGE_KEYS } from '../../lib/storageKeys'
+} from '../components/icons'
+import { openQuickAdd } from '../modules/spend/QuickAddSheet'
+import { openPayBill } from '../modules/spend/PayBillSheet'
+import { openImport } from '../modules/spend/ImportSheet'
+import { ListBulletIcon, RepeatIcon, TransferIcon, getCategory, guessCategory, manageableCategories } from '../modules/spend/categories'
+import { frequencyLabel, goalProgress, noteTitle, periodFor } from '../modules/spend/logic'
+import { useSpendSide } from '../hooks/side'
+import { TONES } from '../components/tones'
+import { useSpend } from '../modules/spend/useSpend'
+import { IS_MAC, isSearchShortcut } from '../lib/shortcut'
+import { STORAGE_KEYS } from '../lib/storageKeys'
 
 export function openCommandPalette() {
   window.dispatchEvent(new CustomEvent('spendiary:open-command-palette'))

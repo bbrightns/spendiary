@@ -15,7 +15,7 @@ import { openImport } from '../ImportSheet'
 import { downloadCsv, toCsv } from '../exportCsv'
 import { TONES } from '../tones'
 import { CategoryManager } from '../CategorySheet'
-import { SwitchVisual } from '../AccountSheets'
+import { SwitchVisual } from '../../../components/ui/SwitchVisual'
 
 const fmtDay = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number)

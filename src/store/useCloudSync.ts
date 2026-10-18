@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import type { SpendiaryData } from '../lib/types'
-import { seedData } from '../lib/seed'
+import { seedData } from './seed'
 import { resolveRemoteLoad } from './remoteLoad'
 import { interpretSave, lockHeaders, type SaveMode, type SaveOutcome } from './remoteSave'
 import { emptyData, justImportedFixedCosts, migrate } from './migrate'

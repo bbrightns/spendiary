@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Modal } from '../../components/ui/Modal'
 import { Button } from '../../components/ui/Button'
 import { FormActions } from '../../components/forms/FormActions'
+import { SwitchVisual } from '../../components/ui/SwitchVisual'
 import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb } from '../../lib/format'
 import type { CashAccount, SpendCard } from '../../lib/types'
@@ -13,7 +14,6 @@ import { openQuickAdd } from './QuickAddSheet'
 import { EditAccountModal } from '../../components/forms/EditCashAccountModal'
 import { useData } from '../../store/DataContext'
 
-
 export function StarIcon({ filled, className = 'h-4 w-4' }: { filled?: boolean; className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={1.8} strokeLinejoin="round">
@@ -23,14 +23,6 @@ export function StarIcon({ filled, className = 'h-4 w-4' }: { filled?: boolean; 
 }
 
 /** The look of an on/off switch; the parent button carries role="switch". */
-export function SwitchVisual({ on }: { on: boolean }) {
-  return (
-    <span className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${on ? 'bg-brand' : 'bg-line-strong'}`}>
-      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-xs transition-all ${on ? 'left-[18px]' : 'left-0.5'}`} />
-    </span>
-  )
-}
-
 /** Favorite + default switches, shared by the card and wallet sheets. */
 function QuickAddPrefs({ id }: { id: string }) {
   const { settings, toggleFavorite, setDefaultAccount } = useSpend()

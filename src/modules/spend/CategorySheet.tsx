@@ -6,7 +6,7 @@ import { useToast } from '../../store/ToastContext'
 import { SearchIcon } from '../../components/icons'
 import { CATEGORY_ICON_GROUPS, pickableCategoryIcons } from '../../components/categoryIcons'
 import { CATEGORY_ICONS, CATEGORY_TONES, SPEND_CATEGORIES, manageableCategories, pickerTone, type SpendCategory } from './categories'
-import { SwitchVisual } from './AccountSheets'
+import { SwitchVisual } from '../../components/ui/SwitchVisual'
 import { TONES, TYPE_ACTIVE, type Tone } from './tones'
 import { useSpend } from './useSpend'
 

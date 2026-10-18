@@ -12,6 +12,7 @@ import {
   WalletIcon,
   PieChartIcon,
 } from '../icons'
+import { INVEST_HOME } from '../../lib/routes'
 
 export interface NavSubItem {
   to: string
@@ -95,8 +96,6 @@ export interface NavSection {
   items: NavSubItem[]
 }
 
-/** Invest Home; "/" is Spend Home, where the app opens */
-export const INVEST_HOME = '/invest'
 
 const dashboardItem: NavSubItem = {
   to: INVEST_HOME,

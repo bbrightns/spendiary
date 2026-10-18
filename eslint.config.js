@@ -26,6 +26,16 @@ export default tseslint.config(
     },
   },
   {
+    // Shared code sits below the feature modules: lib/, hooks/ and components/ never import
+    // from modules/ (the app shell in src/app/ is where Spend and Invest meet)
+    files: ['src/lib/**/*.{ts,tsx}', 'src/hooks/**/*.{ts,tsx}', 'src/components/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{ group: ['**/modules/**'], message: 'lib/, hooks/ and components/ must not import from modules/. Move the shared piece down, or put the code in src/app/.' }],
+      }],
+    },
+  },
+  {
     // Ambient declarations for third-party globals
     files: ['**/*.d.ts'],
     rules: { '@typescript-eslint/no-explicit-any': 'off' },

@@ -1,6 +1,6 @@
-import type { NetWorthSnapshot, PayCycle, SpendCard, SpendRecurring, SpendTransaction, SpendiaryData } from './types'
-import { localDateStr } from './format'
-import { netWorth, portfolioValue } from './calc'
+import type { NetWorthSnapshot, PayCycle, SpendCard, SpendRecurring, SpendTransaction, SpendiaryData } from '../lib/types'
+import { localDateStr } from '../lib/format'
+import { netWorth, portfolioValue } from '../lib/calc'
 import { cardCycle, occurrencesBetween, parseTags, periodFor, shiftPeriod } from '../modules/spend/logic'
 
 /** Build a local YYYY-MM-DD date N days from today, so demo data always looks fresh. */

@@ -1,15 +1,10 @@
 import type { NavSection, NavSubItem } from '../../components/layout/nav'
 import { DashboardIcon, DebtIcon, PieChartIcon, SettingsIcon, WalletIcon } from '../../components/icons'
 import { ListBulletIcon, RepeatIcon } from './categories'
+import { SPEND_HOME, SPEND_ROOT } from '../../lib/routes'
 
-/** Prefix of Spend's inner pages (/spend/txns, …) */
-export const SPEND_ROOT = '/spend'
-/** Spend Home is the app's home */
-export const SPEND_HOME = '/'
-
-export function isSpendPath(pathname: string): boolean {
-  return pathname === SPEND_HOME || pathname === SPEND_ROOT || pathname.startsWith(`${SPEND_ROOT}/`)
-}
+// The paths live in lib/routes so layout code can use them; re-exported for the Spend screens
+export { SPEND_HOME, SPEND_ROOT, isSpendPath } from '../../lib/routes'
 
 export const spendOverviewItem: NavSubItem = {
   to: SPEND_HOME,

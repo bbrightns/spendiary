@@ -13,7 +13,7 @@ import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { shortDay } from './RecurringDue'
 import { TYPE_ACTIVE } from './tones'
 import { useSpend } from './useSpend'
-import { SwitchVisual } from './AccountSheets'
+import { SwitchVisual } from '../../components/ui/SwitchVisual'
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 const MONTHS = Array.from({ length: 12 }, (_, i) => new Date(2000, i, 1).toLocaleDateString('en-GB', { month: 'long' }))
