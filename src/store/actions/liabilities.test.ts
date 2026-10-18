@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Liability, SpendiaryData } from '../../lib/types'
 import { emptyData } from '../migrate'
-import { payLiabilityInstallment, undoLiabilityPayment } from './liabilities'
+import { payLiabilityInstallment, removeLiability, setLiabilities, undoLiabilityPayment, upsertLiability } from './liabilities'
 
 const loan = (over: Partial<Liability> = {}): Liability => ({
   id: 'l1',
@@ -71,5 +71,32 @@ describe('undoLiabilityPayment', () => {
   it('changes nothing when nothing has been paid', () => {
     const before = state(loan())
     expect(undoLiabilityPayment(before, 'l1')).toBe(before)
+  })
+})
+
+describe('upsertLiability / removeLiability / setLiabilities', () => {
+  it('adds a debt with an update date and logs it', () => {
+    const out = upsertLiability(emptyData, { name: 'Car', category: 'auto_loan', balance: 300_000 })
+    expect(out.liabilities).toHaveLength(1)
+    expect(first(out).updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(out.holdingLogs?.[0]).toMatchObject({ action: 'add', ticker: 'DEBT', note: 'Added liability "Car" with balance ฿300,000' })
+  })
+
+  it('logs an edit of an existing debt', () => {
+    const out = upsertLiability(state(loan()), { ...loan(), balance: 9000 })
+    expect(first(out).balance).toBe(9000)
+    expect(out.holdingLogs?.[0]).toMatchObject({ action: 'edit', note: 'Updated liability "Phone" balance to ฿9,000' })
+  })
+
+  it('removes a debt and logs it, or changes nothing for an unknown one', () => {
+    const out = removeLiability(state(loan()), 'l1')
+    expect(out.liabilities).toEqual([])
+    expect(out.holdingLogs?.[0].action).toBe('sell')
+    const before = state(loan())
+    expect(removeLiability(before, 'nope')).toBe(before)
+  })
+
+  it('replaces the whole list', () => {
+    expect(setLiabilities(state(loan()), []).liabilities).toEqual([])
   })
 })
