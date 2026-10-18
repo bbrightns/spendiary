@@ -1,6 +1,6 @@
 # Spendiary: แผน Architecture & Refactor
 
-> สถานะ ณ 18 ต.ค. 2026 · main = **1.28.0** (`b2e4c66`)
+> สถานะ ณ 18 ต.ค. 2026 · main = **1.29.1** (`9c23cf9`) + งานเฟส B5–D ในเครื่อง (ยังไม่ push)
 > เอกสารนี้รวมงานที่เหลือทั้งหมด จัดเป็นเฟส เรียงตามลำดับที่แนะนำ และระบุว่าแต่ละงานต้องรออะไร
 
 ---
@@ -201,12 +201,14 @@
 | ~~D1~~ ✅ | 19 | รวม `newId` ที่ซ้ำอยู่ 6 ที่ให้เหลือที่เดียว, เพิ่ม `lib/money.ts`, รวม localStorage keys ไว้ใน `lib/storageKeys.ts` | **เสร็จแล้ว (`7b4e0d3`):** `lib/id.ts` (`store/migrate` ยัง export `newId` ชื่อเดิม), `roundMoney` ใช้แทนการปัดเศษใน store และ logic ของ Spend (ฟอร์มใหญ่ HoldingForm/BuyMoreForm/SellHoldingModal ยังใช้ `toFixed(2)` อยู่ จะเปลี่ยนตอนแตกไฟล์ใน D4) และ `STORAGE_KEYS` ครบทุก key โดยค่าเดิมไม่เปลี่ยน การตั้งค่าที่บันทึกไว้จึงยังอ่านได้ |
 | ~~D2~~ ✅ | 21 | แก้ทิศทาง import: `lib/` และ `components/` ห้าม import จาก `modules/spend` | **เสร็จแล้ว (`a49aa8f`):** ส่วนที่ประกอบ Spend กับ Invest เข้าด้วยกัน (Layout, Sidebar, CommandPalette) ย้ายไป `src/app/`, path ไป `lib/routes`, `useSpendSide` ไป `hooks/side`, tones ไป `components/tones` (`modules/spend/side` และ `tones` ยัง export ชื่อเดิม), `SwitchVisual` ไป `components/ui`, ข้อมูล Demo (`seed.ts`) ไป `store/` และมีกฎ eslint `no-restricted-imports` ครอบ `lib/`, `hooks/`, `components/` ตรวจในเบราว์เซอร์แล้ว: 1280px สว่าง, 375px มืด, Command palette, Quick add, Settings → Spend |
 | ~~D3~~ ✅ | 17 | ย้ายส่วนที่เหลือออกจาก `DataContext.tsx`: `confirmDcaBuy` (~365 บรรทัด), `recordDividend`, import/export | **เสร็จแล้ว (`2726edc`):** `confirmDcaBuy` → `actions/dca.ts`, `recordDividend` → `actions/dividends.ts`, AI/JSON import → `actions/importPortfolio.ts` (`prepareImport` + `applyImport`), ไฟล์ backup → `store/backup.ts` และ `useData()` เหมือนเดิม DataContext เหลือ 489 บรรทัด (จาก 1,190) differential: ใช้สคริปต์ยกโค้ดออกมาทั้งบรรทัด แล้วเทียบกับไฟล์เดิมว่าทุกบรรทัดตรงกัน ต่างแค่การเยื้อง (แทนการเทียบ JSON ที่ export เพราะเทียบ build เก่ากับใหม่ไม่ได้โดยไม่แตะข้อมูลจริง) มี test ใหม่ 22 ตัว และลองยืนยัน DCA ทองในโหมด Demo ผ่าน |
-| D4 | 20 | แตกไฟล์ใหญ่ (`HoldingLogs`, `Portfolio`, `HoldingForm`) และรวม CSV exporter 3 ตัวเป็นตัวเดียว | ทำทีละไฟล์ ทีละ PR |
-| D5 | 18 | แยก context เป็น data และ actions | **ทำเมื่อแอปช้าเท่านั้น** วัดด้วย React Profiler ก่อน |
+| ~~D4~~ ✅ | 20 | แตกไฟล์ใหญ่ (`HoldingLogs`, `Portfolio`, `HoldingForm`) และรวม CSV exporter 3 ตัวเป็นตัวเดียว | **เสร็จแล้ว:** CSV ใช้ `lib/csv.ts` ตัวเดียว (`21c779a`; ไฟล์ของ Spend ได้ byte เดิมทุกตัว ส่วนของ Invest ตอนนี้มีบรรทัดว่างท้ายไฟล์และไม่ตัดช่องว่างในค่า) · HoldingLogs 2,336 → 1,070 บรรทัด (`29ac145`: `holdingLogs/logMeta.ts`, `holdingLogs/logDetails.tsx`) · Portfolio 1,995 → 1,526 (`a74d706`: `portfolio/HoldingMenus.tsx`, `portfolio/portfolioCsv.ts`) · HoldingForm 1,798 → 1,554 (`8422909`: `holdingForm/DividendSection.tsx`) โค้ดที่ย้ายยกมาทั้งบรรทัด แต่ละไฟล์ทดสอบในเบราว์เซอร์แล้ว (สว่าง/มืด, จอคอม/390px) ทำทีละ commit ไม่ใช่ทีละ PR เพราะงานนี้ยังไม่ push<br>ยังแตกต่อได้ถ้าต้องการ: `renderHoldingRow` ใน Portfolio (~320 บรรทัด), ตาราง/timeline ใน HoldingLogs, ฟังก์ชัน save และฟอร์มแยกตามประเภทสินทรัพย์ใน HoldingForm (ต้องมี test ของ save ก่อน) |
+| D5 | 18 | แยก context เป็น data และ actions | **ทำเมื่อแอปช้าเท่านั้น** วัดด้วย React Profiler ก่อน<br>**⏸ ยังไม่ทำ (เงื่อนไขยังไม่เกิด):** ไม่มีรายงานว่าแอปช้า และตอนลองในโหมด Demo ทุกหน้าตอบสนองปกติ ถ้าวันหนึ่งรู้สึกช้า ให้วัดด้วย Profiler ก่อนแล้วค่อยทำ |
 
 ---
 
 ## 7. เฟส E: งานฝั่ง Supabase / Vercel (คุณทำเอง)
+
+> **⏸ ทุกข้อรอคุณทำเอง:** เป็นงานใน Supabase dashboard / Vercel ซึ่ง AI ไม่แตะ (AGENTS.md: SQL รันด้วยมือ และห้ามแตะ database จริง) ตอนนี้ main คือ 1.29.1 แล้ว เงื่อนไขของ E1 จึงอ่านเป็น "หลังเช็กว่าสถานะขึ้น Synced บนเวอร์ชันล่าสุด"
 
 | # | งาน | เมื่อไหร่ | วิธี |
 |---|---|---|---|
