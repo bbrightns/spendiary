@@ -5,27 +5,18 @@ import { localDateStr } from '../lib/format'
 
 const REFRESH_MS = 60_000
 
-const CACHED_USD_THB_KEY = 'spendiary.cached_usd_thb'
 const CACHED_GOLD_PRICE_KEY = 'spendiary.cached_gold_thb_gram'
 const CACHED_LAST_UPDATED_KEY = 'spendiary.cached_prices_last_updated'
 
 export type PriceStatus = 'idle' | 'loading' | 'ok' | 'partial' | 'error'
 
 export function useLivePrices() {
-  const { data, upsertHolding, setUsdThb } = useData()
+  const { data, upsertHolding, usdThb, setUsdThb } = useData()
   const [status, setStatus] = useState<PriceStatus>('idle')
   const [lastUpdated, setLastUpdated] = useState<Date | null>(() => {
     try {
       const cached = localStorage.getItem(CACHED_LAST_UPDATED_KEY)
       return cached ? new Date(cached) : null
-    } catch {
-      return null
-    }
-  })
-  const [usdThbLocal, setUsdThbLocal] = useState<number | null>(() => {
-    try {
-      const cached = localStorage.getItem(CACHED_USD_THB_KEY)
-      return cached ? parseFloat(cached) : null
     } catch {
       return null
     }
@@ -81,13 +72,8 @@ export function useLivePrices() {
           fetchUsdThb(),
           fetchStockPricesUsd(stockHoldings.map((h) => h.ticker)),
         ])
-        setUsdThbLocal(usdRate)
+        // Saves the rate for the next visit too (see lib/fx.ts)
         setUsdThb(usdRate)
-        try {
-          localStorage.setItem(CACHED_USD_THB_KEY, String(usdRate))
-        } catch {
-          // ignore
-        }
         for (const stale of stockHoldings) {
           const usdPrice = stockPricesUsd[stale.ticker.toUpperCase()]
           // Re-read the latest holding: units/cost may have changed (e.g. DCA confirm) while the fetch was in flight
@@ -145,12 +131,6 @@ export function useLivePrices() {
   }
 
   useEffect(() => {
-    if (usdThbLocal && usdThbLocal > 0) {
-      setUsdThb(usdThbLocal)
-    }
-  }, [setUsdThb])
-
-  useEffect(() => {
     refresh()
     timerRef.current = setInterval(refresh, REFRESH_MS)
     return () => {
@@ -158,5 +138,5 @@ export function useLivePrices() {
     }
   }, [])
 
-  return { status, lastUpdated, usdThb: usdThbLocal, goldThbPerGram, errorMsg, refresh }
+  return { status, lastUpdated, usdThb, goldThbPerGram, errorMsg, refresh }
 }

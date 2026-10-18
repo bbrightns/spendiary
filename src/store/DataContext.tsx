@@ -1,8 +1,10 @@
-import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import type { AcquisitionSource, BtcLocation, CashAccount, DcaPlan, DebtCategory, DividendRecord, GoldLocation, Holding, HoldingLog, InvestAssetClass, Liability, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryBackup, SpendiaryData, Transfer } from '../lib/types'
 import { localDateStr } from '../lib/format'
+import { isValidRate, readCachedUsdThb, writeCachedUsdThb, type UsdThbRate } from '../lib/fx'
+import { fetchUsdThb } from '../lib/prices'
 import { seedData } from '../lib/seed'
 import { detectBankPreset, findMatchingHolding, inferCashCategory } from '../lib/calc'
 import { inferAssetClass } from '../lib/assetClass'
@@ -59,8 +61,10 @@ export interface DataContextValue {
   /** Mark one payment made; `amount` defaults to the monthly payment (or the balance spread over what's left) */
   payLiabilityInstallment: (id: string, amount?: number) => void
   undoLiabilityPayment: (id: string) => void
-  /** Live USD/THB rate — set by useLivePrices, used by forms to convert USD inputs */
+  /** USD/THB: the latest real rate (fetched now or on an earlier visit). Null when none was ever fetched; never a guess. */
   usdThb: number | null
+  /** When usdThb was fetched, so screens can say how fresh it is */
+  usdThbAsOf: Date | null
   setUsdThb: (rate: number) => void
 
   upsertHolding: (holding: Omit<Holding, 'id'> & { id?: string }) => void
@@ -194,7 +198,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [data, setDataState] = useState<SpendiaryData>(emptyData)
   // Spend category lookups are plain functions; keep their user-made list in step with the data
   syncCategories(data.spendSettings)
-  const [usdThb, setUsdThb] = useState<number | null>(null)
+  // Start from the last real rate this device saw, then fetch a fresh one right away
+  const [fx, setFx] = useState<UsdThbRate | null>(() => readCachedUsdThb())
+  const usdThb = fx?.rate ?? null
+  const usdThbAsOf = fx?.asOf ?? null
+  const setUsdThb = (rate: number) => {
+    if (!isValidRate(rate)) return
+    const asOf = new Date()
+    setFx({ rate, asOf })
+    writeCachedUsdThb(rate, asOf)
+  }
+  useEffect(() => {
+    // Once per app load; useLivePrices keeps it fresh on the pages that show prices
+    fetchUsdThb().then(setUsdThb, (err) => console.warn('USD/THB rate unavailable:', err))
+  }, [])
   const { user, setUser, authError, setAuthError, loginWithGoogle, loginAsGuest } = useAuth()
   const {
     syncStatus, setSyncStatus, dataReady, loadError, syncConflict, lastSyncedAt, updateLastSynced,
@@ -322,6 +339,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       authError,
       logout,
       usdThb,
+      usdThbAsOf,
       setUsdThb,
       setCashAccounts: (cashAccounts) => updateData((prev) => cashActions.setCashAccounts(prev, cashAccounts)),
       setMonthlyIncome: (monthlyIncome) => updateData((prev) => cashActions.setMonthlyIncome(prev, monthlyIncome)),
@@ -1133,7 +1151,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       removeGoldLocation: (holdingId, locId) => updateData((prev) => holdingActions.removeGoldLocation(prev, holdingId, locId)),
     }),
-    [data, syncStatus, dataReady, loadError, syncConflict, lastSyncedAt, user],
+    [data, syncStatus, dataReady, loadError, syncConflict, lastSyncedAt, user, authError, usdThb, usdThbAsOf],
   )
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>
