@@ -101,9 +101,9 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
       {
         targetId: 'guide-portfolio-tabs',
         badge: 'Categories',
-        title: 'Asset tabs',
+        title: 'Filter & sort',
         description:
-          'Switch tabs to see just one group, like US stocks, funds, crypto or gold, along with each group share of the portfolio.',
+          'Pick an asset group, like US stocks, funds, crypto or gold, to see just those holdings, and sort by value, profit or type.',
         position: 'bottom',
       },
     ],
