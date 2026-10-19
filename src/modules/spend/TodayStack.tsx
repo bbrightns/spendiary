@@ -238,7 +238,7 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
 
 /** "Invest": where an item lives when it isn't a Spend thing */
 function SourceTag({ label }: { label: string }) {
-  return <span className="shrink-0 rounded-md bg-surface/70 px-1.5 py-0.5 text-[11px] font-bold text-ink-soft">{label}</span>
+  return <span className="shrink-0 rounded-md bg-surface/70 px-1.5 py-0.5 text-2xs font-bold text-ink-soft">{label}</span>
 }
 
 const SECONDARY = 'shrink-0 rounded-full px-2.5 py-1.5 text-xs font-semibold text-ink-muted hover:text-ink cursor-pointer min-h-8'
@@ -263,7 +263,7 @@ function ItemCard({ item, icon, badge, source }: { item: Item; icon: ReactNode; 
           <span className="flex min-w-0 items-center gap-1.5 text-sm font-bold text-ink">
             <span className="truncate">{item.title}</span>
             {/* Phones keep the room for the name; the ticker shows from sm up */}
-            {item.tag && <span className="hidden shrink-0 rounded-md bg-surface/70 px-1.5 py-0.5 text-[11px] font-bold text-ink-soft sm:inline">{item.tag}</span>}
+            {item.tag && <span className="hidden shrink-0 rounded-md bg-surface/70 px-1.5 py-0.5 text-2xs font-bold text-ink-soft sm:inline">{item.tag}</span>}
             {source && <SourceTag label={source.label} />}
           </span>
           <span className={`block truncate text-xs font-semibold tnum ${t.text}`}>{item.detail}</span>

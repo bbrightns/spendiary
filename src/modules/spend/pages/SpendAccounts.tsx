@@ -217,7 +217,7 @@ export function SpendAccounts() {
 
                     <div className="mt-auto min-w-0">
                       {/* Always two lines tall, so a one-line name gives the same tile as a long one */}
-                      <p className="line-clamp-2 min-h-[2lh] break-words text-[11px] font-semibold leading-tight @min-[8rem]:leading-snug text-ink-soft">
+                      <p className="line-clamp-2 min-h-[2lh] break-words text-2xs font-semibold leading-tight @min-[8rem]:leading-snug text-ink-soft">
                         {isDefault && <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-brand align-middle" aria-hidden />}
                         {w.name}
                       </p>
@@ -229,11 +229,11 @@ export function SpendAccounts() {
                         ) : (
                           <>
                             {thbSigned(w.balance, true).slice(0, -3)}
-                            <span className="text-[10px] min-[380px]:text-[11px] font-bold text-ink-muted">{thbSigned(w.balance, true).slice(-3)}</span>
+                            <span className="text-2xs font-bold text-ink-muted">{thbSigned(w.balance, true).slice(-3)}</span>
                           </>
                         )}
                       </p>
-                      <p className="truncate mt-[clamp(0px,calc((100cqw_-_90px)*0.12),4px)] text-[10px] leading-tight text-ink-muted tnum">
+                      <p className="truncate mt-[clamp(0px,calc((100cqw_-_90px)*0.12),4px)] text-2xs leading-tight text-ink-muted tnum">
                         {f ? (
                           <>
                             <span className="text-gain">+{compact(f.in)}</span> · −{compact(f.out)}

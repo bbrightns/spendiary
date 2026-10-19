@@ -682,7 +682,7 @@ export function HoldingLogs() {
                             <div className="logs-table-time tnum">{timeStr}</div>
                           </td>
                           <td className="logs-table-cell logs-table-action whitespace-nowrap">
-                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold tracking-[0.02em] ${actionMeta.style}`}>
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-2xs font-bold tracking-[0.02em] ${actionMeta.style}`}>
                               {actionMeta.label}
                             </span>
                           </td>
@@ -721,7 +721,7 @@ export function HoldingLogs() {
                           >
                             <div>{tx.sharesDisplay}</div>
                             {tx.sharesDisplaySecondary && (
-                              <div className="text-[11px] font-normal text-ink-faint tracking-tight mt-0.5">
+                              <div className="text-2xs font-normal text-ink-faint tracking-tight mt-0.5">
                                 {tx.sharesDisplaySecondary}
                               </div>
                             )}

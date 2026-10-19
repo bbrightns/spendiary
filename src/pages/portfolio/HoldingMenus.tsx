@@ -83,7 +83,7 @@ export function HoldingActionMenu({ holding, coords, direction, onClose, onBuy, 
               <PlusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
               <span>Buy more</span>
             </div>
-            <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+            <span className="text-2xs font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
               <LockClosedIcon className="h-3 w-3" /> Locked
             </span>
           </div>
@@ -111,7 +111,7 @@ export function HoldingActionMenu({ holding, coords, direction, onClose, onBuy, 
               <MinusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
               <span>Sell</span>
             </div>
-            <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+            <span className="text-2xs font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
               <LockClosedIcon className="h-3 w-3" /> Locked
             </span>
           </div>
@@ -140,7 +140,7 @@ export function HoldingActionMenu({ holding, coords, direction, onClose, onBuy, 
                 <DividendIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.2} />
                 <span>Record dividend</span>
               </div>
-              <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+              <span className="text-2xs font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
                 <LockClosedIcon className="h-3 w-3" /> Locked
               </span>
             </div>
@@ -169,7 +169,7 @@ export function HoldingActionMenu({ holding, coords, direction, onClose, onBuy, 
               <PencilIcon className="h-3.5 w-3.5 text-ink-muted/40 shrink-0" />
               <span>Edit</span>
             </div>
-            <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+            <span className="text-2xs font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
               <LockClosedIcon className="h-3 w-3" /> Locked
             </span>
           </div>
@@ -279,7 +279,7 @@ export function PocketActionMenu({ menu, coords, direction, onClose, onBuy, onSe
               <PlusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
               <span>Buy into this location</span>
             </div>
-            <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+            <span className="text-2xs font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
               <LockClosedIcon className="h-3 w-3" /> Locked
             </span>
           </div>
@@ -307,7 +307,7 @@ export function PocketActionMenu({ menu, coords, direction, onClose, onBuy, onSe
               <MinusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
               <span>Sell from this location</span>
             </div>
-            <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+            <span className="text-2xs font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
               <LockClosedIcon className="h-3 w-3" /> Locked
             </span>
           </div>
@@ -335,7 +335,7 @@ export function PocketActionMenu({ menu, coords, direction, onClose, onBuy, onSe
               <span className="w-4 text-center text-base leading-none text-ink-muted/40">⇄</span>
               <span>Move to another location</span>
             </div>
-            <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+            <span className="text-2xs font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
               <LockClosedIcon className="h-3 w-3" /> Locked
             </span>
           </div>
@@ -364,7 +364,7 @@ export function PocketActionMenu({ menu, coords, direction, onClose, onBuy, onSe
                 <PencilIcon className="h-3.5 w-3.5 text-ink-muted/40 shrink-0" />
                 <span>Edit location</span>
               </div>
-              <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+              <span className="text-2xs font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
                 <LockClosedIcon className="h-3 w-3" /> Locked
               </span>
             </div>
@@ -395,7 +395,7 @@ export function PocketActionMenu({ menu, coords, direction, onClose, onBuy, onSe
               <TrashIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.2} />
               <span>Remove location</span>
             </div>
-            <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+            <span className="text-2xs font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
               <LockClosedIcon className="h-3 w-3" /> Locked
             </span>
           </div>

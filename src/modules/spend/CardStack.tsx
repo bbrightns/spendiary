@@ -120,7 +120,7 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
               {c.last4 && <span className={`shrink-0 text-xs tnum ${k.soft}`}>•• {c.last4}</span>}
             </span>
             {t.tone && (
-              <span className={`shrink-0 rounded-full bg-white px-2 py-0.5 text-[11px] font-bold ${t.tone === 'loss' ? 'text-rose-600' : 'text-amber-700'}`}>
+              <span className={`shrink-0 rounded-full bg-white px-2 py-0.5 text-2xs font-bold ${t.tone === 'loss' ? 'text-rose-600' : 'text-amber-700'}`}>
                 {t.tone === 'loss' ? 'Overdue' : `Due ${shortDate(t.due.date)}`}
               </span>
             )}
@@ -150,7 +150,7 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
             <p className="flex min-w-0 items-center text-sm font-bold">
               <span className="truncate">{active.name}</span>
               {defaultId === active.id && (
-                <span className={`ml-1.5 shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-bold ${ink.light ? 'bg-white/20' : 'bg-slate-900/10'}`}>Default</span>
+                <span className={`ml-1.5 shrink-0 rounded-full px-1.5 py-0.5 text-2xs font-bold ${ink.light ? 'bg-white/20' : 'bg-slate-900/10'}`}>Default</span>
               )}
             </p>
             <p className={`text-xs tnum ${ink.soft}`}>{active.last4 ? `•••• ${active.last4}` : 'Credit card'}</p>
