@@ -87,7 +87,7 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         badge: 'How it is split',
         title: 'Asset allocation',
         description:
-          'A donut chart showing value and profit or loss for each asset group, with a shortcut to the Rebalance page.',
+          'A donut chart showing how your value is split across each holding or group, with a shortcut to the Rebalance page.',
         position: 'bottom',
       },
       {
