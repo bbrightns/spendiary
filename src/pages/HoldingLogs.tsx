@@ -8,7 +8,8 @@ import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { Modal } from '../components/ui/Modal'
-import { FilterChip } from '../components/ui/FilterChip'
+import { DropdownChip } from '../components/ui/DropdownChip'
+import { Popover, PopoverOption } from '../components/ui/Popover'
 import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
@@ -20,6 +21,7 @@ import { logTookCash, noteForSource, paidFromName } from '../lib/acquisition'
 import { AcquisitionSourceField } from '../components/forms/AcquisitionSourceField'
 import {
   ClockIcon,
+  DotsHorizontalIcon,
   DownloadIcon,
   ListIcon,
   PencilIcon,
@@ -37,6 +39,20 @@ import { getLogActionMeta, getDisplayNote, getDestinationLocation, ASSET_FILTERS
 import { renderLogDetails } from './holdingLogs/logDetails'
 
 
+
+const DATE_PRESETS = [
+  { key: 'all', label: 'All time' },
+  { key: 'month', label: 'This month' },
+  { key: '30d', label: 'Last 30 days' },
+  { key: 'year', label: 'This year' },
+  { key: 'custom', label: 'Custom range…' },
+] as const
+
+/** "2026-10-12" → "12 Oct" for the date chip */
+function shortDate(day: string): string {
+  const [y, m, d] = day.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+}
 
 export function HoldingLogs() {
   const {
@@ -182,6 +198,26 @@ export function HoldingLogs() {
     return { from: '', to: '' }
   })()
   const hasDateFilter = datePreset !== 'all' && (dateBounds.from !== '' || dateBounds.to !== '')
+  const dateChipLabel = datePreset !== 'custom'
+    ? (DATE_PRESETS.find((p) => p.key === datePreset)?.label ?? 'Date')
+    : dateFrom && dateTo
+      ? `${shortDate(dateFrom)} – ${shortDate(dateTo)}`
+      : dateFrom
+        ? `From ${shortDate(dateFrom)}`
+        : dateTo
+          ? `Until ${shortDate(dateTo)}`
+          : 'Custom range'
+  const anyFilter = Boolean(searchQuery || assetFilter !== 'all' || actionFilter !== 'all' || hasDateFilter)
+  const resetFilters = () => {
+    setSearchQuery('')
+    setAssetFilter('all')
+    setActionFilter('all')
+    setDatePreset('all')
+    setDateFrom('')
+    setDateTo('')
+  }
+  const [moreOpen, setMoreOpen] = useState(false)
+  const moreBtnRef = useRef<HTMLButtonElement>(null)
 
   const filtered = logs.filter((l) => {
     if (assetFilter !== 'all' && l.assetClass !== assetFilter) return false
@@ -297,10 +333,10 @@ export function HoldingLogs() {
         onStartGuide={startTour}
       />
 
-      {/* Toolbar: Search + View Switcher + Export */}
-      <div id="guide-logs-header" className="mb-5 space-y-3">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="relative flex-1 min-w-[220px]">
+      {/* Toolbar: Search + view switcher + ⋯ menu, then Date / Asset / Action dropdown chips */}
+      <div id="guide-logs-header" className="mb-5 space-y-2.5">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 min-w-0">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-ink-faint">
               <SearchIcon className="h-4 w-4" />
             </div>
@@ -308,7 +344,9 @@ export function HoldingLogs() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search ticker, asset, note, wallet..."
+              placeholder="Search logs…"
+              title="Search by ticker, asset, note or wallet"
+              aria-label="Search activity"
               className="h-10 w-full rounded-xl border border-line bg-surface pl-9 pr-8 text-sm text-ink placeholder:text-ink-faint outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15"
             />
             {searchQuery && (
@@ -325,164 +363,209 @@ export function HoldingLogs() {
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {/* Date range dropdown */}
-            <label className="sr-only" htmlFor="logs-date-filter">Date range</label>
-            <select
-              id="logs-date-filter"
-              value={datePreset}
-              onChange={(e) => setDatePreset(e.target.value as typeof datePreset)}
-              className={`h-9 cursor-pointer rounded-xl border bg-surface px-3 text-sm font-medium outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15 ${
-                datePreset === 'all' ? 'border-line text-ink-muted' : 'border-brand/40 text-brand-ink'
-              }`}
-            >
-              <option value="all">All time</option>
-              <option value="month">This month</option>
-              <option value="30d">Last 30 days</option>
-              <option value="year">This year</option>
-              <option value="custom">Custom range…</option>
-            </select>
+          {/* View Switcher */}
+          <SegmentedControl
+            shape="rounded"
+            size="sm"
+            fullWidth={false}
+            value={viewMode}
+            onChange={(v) => handleViewModeChange(v as 'table' | 'timeline')}
+            options={[
+              { value: 'table', label: <span className="sr-only">Table</span>, icon: <TableIcon className="h-4 w-4" />, title: 'Table statement view' },
+              { value: 'timeline', label: <span className="sr-only">Timeline</span>, icon: <ListIcon className="h-4 w-4" />, title: 'Timeline feed view' },
+            ]}
+            ariaLabel="Choose table or timeline view"
+            className="shrink-0"
+          />
 
-            {/* View Switcher */}
-            <SegmentedControl
-              shape="rounded"
-              size="sm"
-              fullWidth={false}
-              value={viewMode}
-              onChange={(v) => handleViewModeChange(v as 'table' | 'timeline')}
-              options={[
-                { value: 'table', label: 'Table', icon: <TableIcon className="h-3.5 w-3.5" />, title: 'Table statement view' },
-                { value: 'timeline', label: 'Timeline', icon: <ListIcon className="h-3.5 w-3.5" />, title: 'Timeline feed view' },
-              ]}
-              ariaLabel="Choose table or timeline view"
-            />
-
-            {/* Export CSV */}
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleExportCsv}
+          {/* ⋯ menu: Export CSV and Edit, used far less than the filters */}
+          <button
+            ref={moreBtnRef}
+            type="button"
+            onClick={() => setMoreOpen((v) => !v)}
+            aria-label="More actions"
+            title="More actions"
+            aria-haspopup="dialog"
+            aria-expanded={moreOpen}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-line bg-surface text-ink-muted transition-colors hover:text-ink hover:bg-surface-muted cursor-pointer"
+          >
+            <DotsHorizontalIcon className="h-[18px] w-[18px]" />
+          </button>
+          <Popover open={moreOpen} onClose={() => setMoreOpen(false)} anchorRef={moreBtnRef} title="Actions" align="right">
+            <PopoverOption
+              icon={<DownloadIcon className="h-4 w-4" />}
               disabled={filtered.length === 0}
-              title="Export activity logs to CSV"
-              className="cursor-pointer shrink-0 h-9"
+              hint={filtered.length === 0 ? 'No results' : `${filtered.length}`}
+              onClick={() => {
+                setMoreOpen(false)
+                handleExportCsv()
+              }}
             >
-              <DownloadIcon className="h-3.5 w-3.5" />
-              <span>Export CSV</span>
-            </Button>
-
-            {/* Edit mode: reveals select / re-date / undo controls */}
-            <Button
-              variant={editMode ? 'primary' : 'secondary'}
-              size="sm"
-              onClick={toggleEditMode}
-              aria-pressed={editMode}
-              title={editMode ? 'Finish editing' : 'Select, re-date or undo entries'}
-              className="cursor-pointer shrink-0 h-9"
+              Export CSV
+            </PopoverOption>
+            <PopoverOption
+              icon={<PencilIcon className="h-4 w-4" />}
+              onClick={() => {
+                setMoreOpen(false)
+                toggleEditMode()
+              }}
             >
-              <PencilIcon className="h-3.5 w-3.5" />
-              <span>{editMode ? 'Done' : 'Edit'}</span>
-            </Button>
-          </div>
+              {editMode ? 'Done editing' : 'Edit entries'}
+            </PopoverOption>
+          </Popover>
         </div>
 
-        {/* Row 2: Asset category pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-          {ASSET_FILTERS.map((f) => (
-            <FilterChip
-              key={f.key}
-              active={assetFilter === f.key}
-              onClick={() => setAssetFilter(f.key)}
-              aria-label={`Filter by ${f.label}`}
-            >
-              {f.label}
-            </FilterChip>
-          ))}
-        </div>
+        {/* Filter chips + result count */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <DropdownChip
+            title="Date range"
+            label={datePreset === 'all' ? 'Date' : dateChipLabel}
+            active={datePreset !== 'all'}
+            onClear={() => {
+              setDatePreset('all')
+              setDateFrom('')
+              setDateTo('')
+            }}
+          >
+            {(close) => (
+              <>
+                {DATE_PRESETS.map((p) => (
+                  <PopoverOption
+                    key={p.key}
+                    selected={datePreset === p.key}
+                    onClick={() => {
+                      setDatePreset(p.key)
+                      if (p.key !== 'custom') close()
+                    }}
+                  >
+                    {p.label}
+                  </PopoverOption>
+                ))}
+                {/* Custom range: the sheet stays open to pick the two dates */}
+                {datePreset === 'custom' && (
+                  <div className="mt-1 space-y-2 border-t border-line/60 px-3 pt-3 pb-1">
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="space-y-1 text-xs font-medium text-ink-faint">
+                        <span>From</span>
+                        <input
+                          type="date"
+                          value={dateFrom}
+                          max={dateTo || undefined}
+                          onChange={(e) => setDateFrom(e.target.value)}
+                          className="h-9 w-full rounded-lg border border-line bg-surface px-2 text-sm text-ink"
+                        />
+                      </label>
+                      <label className="space-y-1 text-xs font-medium text-ink-faint">
+                        <span>To</span>
+                        <input
+                          type="date"
+                          value={dateTo}
+                          min={dateFrom || undefined}
+                          onChange={(e) => setDateTo(e.target.value)}
+                          className="h-9 w-full rounded-lg border border-line bg-surface px-2 text-sm text-ink"
+                        />
+                      </label>
+                    </div>
+                    <Button variant="primary" size="sm" onClick={close} className="w-full cursor-pointer">
+                      Done
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </DropdownChip>
 
-        {/* Row 3: Action pills + result summary */}
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-            <span className="shrink-0 text-xs font-medium text-ink-faint mr-1">Action:</span>
-            {ACTION_FILTERS.map((f) => (
-              <FilterChip
-                key={f.key}
-                active={actionFilter === f.key}
-                onClick={() => setActionFilter(f.key)}
-                aria-label={`Filter by action ${f.label}`}
-              >
-                {f.label}
-              </FilterChip>
-            ))}
-          </div>
+          <DropdownChip
+            title="Asset type"
+            label={assetFilter === 'all' ? 'Asset' : (ASSET_FILTERS.find((f) => f.key === assetFilter)?.label ?? 'Asset')}
+            active={assetFilter !== 'all'}
+            onClear={() => setAssetFilter('all')}
+          >
+            {(close) =>
+              ASSET_FILTERS.map((f) => (
+                <PopoverOption
+                  key={f.key}
+                  selected={assetFilter === f.key}
+                  onClick={() => {
+                    setAssetFilter(f.key)
+                    close()
+                  }}
+                >
+                  {f.key === 'all' ? 'All assets' : f.label}
+                </PopoverOption>
+              ))
+            }
+          </DropdownChip>
 
-          <div className="flex items-center gap-3 text-xs text-ink-muted px-0.5">
+          <DropdownChip
+            title="Action"
+            label={actionFilter === 'all' ? 'Action' : (ACTION_FILTERS.find((f) => f.key === actionFilter)?.label ?? 'Action')}
+            active={actionFilter !== 'all'}
+            onClear={() => setActionFilter('all')}
+          >
+            {(close) =>
+              ACTION_FILTERS.map((f) => (
+                <PopoverOption
+                  key={f.key}
+                  selected={actionFilter === f.key}
+                  onClick={() => {
+                    setActionFilter(f.key)
+                    close()
+                  }}
+                >
+                  {f.key === 'all' ? 'All actions' : f.label}
+                </PopoverOption>
+              ))
+            }
+          </DropdownChip>
+
+          <div className="ml-auto flex items-center gap-2 pl-1 text-xs text-ink-muted">
             <span>
-              {filtered.length} {filtered.length === 1 ? 'transaction' : 'transactions'}
-              {(searchQuery || assetFilter !== 'all' || actionFilter !== 'all' || hasDateFilter) && (
-                <span className="text-ink-faint ml-1">(of {logs.length})</span>
-              )}
+              {filtered.length}
+              {anyFilter && <span className="text-ink-faint"> of {logs.length}</span>}
+              {' '}{filtered.length === 1 && !anyFilter ? 'transaction' : 'transactions'}
             </span>
-            {(searchQuery || assetFilter !== 'all' || actionFilter !== 'all' || hasDateFilter) && (
+            {anyFilter && (
               <button
                 type="button"
-                onClick={() => {
-                  setSearchQuery('')
-                  setAssetFilter('all')
-                  setActionFilter('all')
-                  setDatePreset('all')
-                  setDateFrom('')
-                  setDateTo('')
-                }}
-                className="text-brand hover:underline font-medium cursor-pointer"
+                onClick={resetFilters}
+                className="font-medium text-brand hover:underline cursor-pointer"
               >
-                Reset filters
+                Reset
               </button>
             )}
           </div>
         </div>
 
-        {/* Custom date range (only when "Custom" is chosen in the Date dropdown) */}
-        {datePreset === 'custom' && (
-          <div className="flex flex-wrap items-center gap-2 text-xs text-ink-muted">
-            <span className="font-medium text-ink-faint">Custom range:</span>
-            <input
-              type="date"
-              value={dateFrom}
-              max={dateTo || undefined}
-              onChange={(e) => setDateFrom(e.target.value)}
-              aria-label="From date"
-              className="h-8 rounded-lg border border-line bg-surface px-2 text-xs text-ink"
-            />
-            <span>to</span>
-            <input
-              type="date"
-              value={dateTo}
-              min={dateFrom || undefined}
-              onChange={(e) => setDateTo(e.target.value)}
-              aria-label="To date"
-              className="h-8 rounded-lg border border-line bg-surface px-2 text-xs text-ink"
-            />
-          </div>
-        )}
-        {selectedVisibleCount > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand/20 bg-brand/5 px-3 py-2.5 text-sm">
-            <span className="font-semibold text-brand">{selectedLogIds.size} selected</span>
+        {/* Edit mode bar: says the list is editable and holds bulk delete + Done */}
+        {editMode && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand/20 bg-brand/5 px-3 py-2 text-sm">
+            <span className="font-semibold text-brand">
+              {selectedVisibleCount > 0 ? `${selectedLogIds.size} selected` : 'Editing: select, re-date or undo'}
+            </span>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setSelectedLogIds(new Set())}
-                className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-ink-muted hover:bg-surface-muted hover:text-ink cursor-pointer"
-              >
-                Clear
-              </button>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => setShowBatchDeleteConfirm(true)}
-                className="cursor-pointer"
-              >
-                <TrashIcon className="h-3.5 w-3.5" />
-                Delete history
+              {selectedVisibleCount > 0 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedLogIds(new Set())}
+                    className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-ink-muted hover:bg-surface-muted hover:text-ink cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => setShowBatchDeleteConfirm(true)}
+                    className="cursor-pointer"
+                  >
+                    <TrashIcon className="h-3.5 w-3.5" />
+                    Delete
+                  </Button>
+                </>
+              )}
+              <Button variant="primary" size="sm" onClick={toggleEditMode} className="cursor-pointer">
+                Done
               </Button>
             </div>
           </div>
@@ -510,14 +593,7 @@ export function HoldingLogs() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => {
-                    setSearchQuery('')
-                    setAssetFilter('all')
-                    setActionFilter('all')
-                    setDatePreset('all')
-                    setDateFrom('')
-                    setDateTo('')
-                  }}
+                  onClick={resetFilters}
                   className="mt-2 cursor-pointer"
                 >
                   Clear all filters

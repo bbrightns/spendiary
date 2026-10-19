@@ -18,7 +18,8 @@ import { MoveLocationModal } from '../components/forms/MoveLocationModal'
 import { ConfirmDividendModal } from '../components/forms/ConfirmDividendModal'
 import { Modal } from '../components/ui/Modal'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
-import { FilterChip } from '../components/ui/FilterChip'
+import { DropdownChip } from '../components/ui/DropdownChip'
+import { PopoverOption } from '../components/ui/Popover'
 import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { IconButton } from '../components/ui/IconButton'
 import { NumberField, TextField } from '../components/ui/Field'
@@ -26,7 +27,7 @@ import { Button } from '../components/ui/Button'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import { PlusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon, DownloadIcon, DotsHorizontalIcon, ChevronDownIcon, LockClosedIcon } from '../components/icons'
+import { PlusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon, DownloadIcon, DotsHorizontalIcon, ChevronDownIcon, LockClosedIcon, ListIcon, GroupIcon } from '../components/icons'
 import {
   ASSET_META,
   GRAMS_PER_BAHT_GOLD,
@@ -54,6 +55,15 @@ const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'crypto', label: 'Crypto' },
   { key: 'gold', label: 'Gold' },
   { key: 'real_estate', label: 'Real Estate' },
+]
+
+/** Sort choices: one tap picks both the field and the direction */
+const SORT_OPTIONS: { by: 'value' | 'pnl' | 'type'; dir: 'asc' | 'desc'; label: string; chip: string }[] = [
+  { by: 'value', dir: 'desc', label: 'Value: high to low', chip: 'Value ↓' },
+  { by: 'value', dir: 'asc', label: 'Value: low to high', chip: 'Value ↑' },
+  { by: 'pnl', dir: 'desc', label: 'Profit %: high to low', chip: 'Profit % ↓' },
+  { by: 'pnl', dir: 'asc', label: 'Profit %: low to high', chip: 'Profit % ↑' },
+  { by: 'type', dir: 'desc', label: 'Asset type', chip: 'Type' },
 ]
 
 export function Portfolio() {
@@ -1054,8 +1064,8 @@ export function Portfolio() {
           <Card className="animate-rise card-bleed-mobile" padded={false}>
             <div className="pt-5">
               <div className="px-4 sm:px-5">
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <div>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
                     <h3 className="font-display text-lg font-bold text-ink">
                       Holdings & Assets
                     </h3>
@@ -1063,26 +1073,26 @@ export function Portfolio() {
                       {rows.length} of {data.holdings.length} positions shown
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex shrink-0 items-center gap-2">
                     {/* View Switcher: List vs Group */}
                     <SegmentedControl
-                      shape="pill"
-                      size="xs"
+                      shape="rounded"
+                      size="sm"
                       fullWidth={false}
                       value={viewMode}
                       onChange={setViewMode}
                       options={[
-                        { value: 'list', label: 'All Holdings' },
-                        { value: 'group', label: 'Grouped View' },
+                        { value: 'list', label: <span className="sr-only">All holdings</span>, icon: <ListIcon className="h-4 w-4" />, title: 'All holdings' },
+                        { value: 'group', label: <span className="sr-only">Grouped view</span>, icon: <GroupIcon className="h-4 w-4" />, title: 'Grouped by tag or asset type' },
                       ]}
                       ariaLabel="Choose how to list assets"
                     />
-                    <AddButton onClick={openAdd} label="Add holding" />
+                    <AddButton onClick={openAdd} label="Add holding" compact />
                   </div>
                 </div>
 
                 {/* Search */}
-                <div className="relative mb-3">
+                <div className="relative mb-2.5">
                   <svg
                     className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
                     viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8}
@@ -1110,70 +1120,65 @@ export function Portfolio() {
                   )}
                 </div>
 
-                {/* Filter pills & Sort controls */}
-                <div id="guide-portfolio-tabs" className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
-                  {/* Filter pills */}
-                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
-                    {FILTERS.map((f) => (
-                      <FilterChip
-                        key={f.key}
-                        active={filter === f.key}
-                        onClick={() => setFilter(f.key)}
-                        aria-label={`Filter holdings by ${f.label}`}
-                      >
-                        {f.label}
-                      </FilterChip>
-                    ))}
-                  </div>
-
-                  {/* Sort controls + PnL display toggle */}
-                  {/* Sort controls + PnL display toggle — full width when wrapped to its own line (mobile) so the toggle sits flush right */}
-                  <div className="flex w-full items-center justify-between gap-2 py-1.5 -my-1.5">
-                    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar min-w-0">
-                    <span className="shrink-0 text-xs font-medium text-ink-faint mr-1">Sort:</span>
-                    {([ ['value','Value'], ['pnl','Profit %'], ['type','Type'] ] as const).map(([key, label]) => {
-                      const active = sortBy === key
-                      const showDir = active && key !== 'type'
-                      return (
-                        <button
-                          key={key}
+                {/* Asset filter + sort dropdown chips, PnL display toggle on the right */}
+                <div id="guide-portfolio-tabs" className="mb-4 flex items-center gap-1.5">
+                  <DropdownChip
+                    title="Asset type"
+                    label={filter === 'all' ? 'Asset' : (FILTERS.find((f) => f.key === filter)?.label ?? 'Asset')}
+                    active={filter !== 'all'}
+                    onClear={() => setFilter('all')}
+                  >
+                    {(close) =>
+                      FILTERS.map((f) => (
+                        <PopoverOption
+                          key={f.key}
+                          selected={filter === f.key}
                           onClick={() => {
-                            if (active && key !== 'type') {
-                              setSortDir((d) => d === 'desc' ? 'asc' : 'desc')
-                            } else {
-                              setSortBy(key)
-                              setSortDir('desc')
-                            }
+                            setFilter(f.key)
+                            close()
                           }}
-                          aria-label={`Sort by ${label}${active && key !== 'type' ? ` (${sortDir === 'desc' ? 'descending' : 'ascending'})` : ''}`}
-                          aria-pressed={active}
-                          className={`flex shrink-0 items-center justify-center gap-0.5 rounded-full h-[30px] px-2.5 text-xs font-semibold transition-colors cursor-pointer select-none leading-none ${
-                            active
-                              ? 'bg-ink text-white dark:bg-[#4f46e5] shadow-xs'
-                              : 'bg-surface-muted text-ink-soft hover:text-ink'
-                          }`}
                         >
-                          {label}
-                          {showDir && (
-                            <span className="ml-0.5 text-xs">{sortDir === 'desc' ? '↓' : '↑'}</span>
-                          )}
-                        </button>
-                      )
-                    })}
-                    </div>
-                    <SegmentedControl
-                      shape="pill"
-                      size="xs"
-                      fullWidth={false}
-                      value={pnlDisplay}
-                      onChange={changePnlDisplay}
-                      options={[
-                        { value: 'pct', label: '%' },
-                        { value: 'thb', label: '฿' },
-                      ]}
-                      ariaLabel="Switch profit/loss display: % or ฿"
-                    />
-                  </div>
+                          {f.key === 'all' ? 'All assets' : f.label}
+                        </PopoverOption>
+                      ))
+                    }
+                  </DropdownChip>
+
+                  <DropdownChip
+                    title="Sort by"
+                    label={SORT_OPTIONS.find((o) => o.by === sortBy && (o.by === 'type' || o.dir === sortDir))?.chip ?? 'Sort'}
+                    active={false}
+                  >
+                    {(close) =>
+                      SORT_OPTIONS.map((o) => (
+                        <PopoverOption
+                          key={`${o.by}-${o.dir}`}
+                          selected={sortBy === o.by && (o.by === 'type' || sortDir === o.dir)}
+                          onClick={() => {
+                            setSortBy(o.by)
+                            setSortDir(o.dir)
+                            close()
+                          }}
+                        >
+                          {o.label}
+                        </PopoverOption>
+                      ))
+                    }
+                  </DropdownChip>
+
+                  <SegmentedControl
+                    shape="pill"
+                    size="xs"
+                    fullWidth={false}
+                    value={pnlDisplay}
+                    onChange={changePnlDisplay}
+                    options={[
+                      { value: 'pct', label: '%' },
+                      { value: 'thb', label: '฿' },
+                    ]}
+                    ariaLabel="Switch profit/loss display: % or ฿"
+                    className="ml-auto shrink-0"
+                  />
                 </div>
               </div>
 
