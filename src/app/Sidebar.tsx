@@ -6,7 +6,7 @@ import { PlusIcon, SearchIcon } from '../components/icons'
 import { openCommandPalette } from './CommandPalette'
 import { Button } from '../components/ui/Button'
 import { ModeSwitcher } from '../modules/spend/ModeSwitcher'
-import { useSpendSide } from '../hooks/side'
+import { isSettings, useSpendSide } from '../hooks/side'
 import { openQuickAdd } from '../modules/spend/QuickAddSheet'
 import { spendAccountsItem, spendLoansItem, spendNavSections, spendOverviewItem } from '../modules/spend/nav'
 import { useSpend } from '../modules/spend/useSpend'
@@ -168,7 +168,7 @@ export function Sidebar() {
           to={settingsTo}
           className={[
             'flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset',
-            pathname === '/settings'
+            isSettings(pathname)
               ? `${side.text} ${side.bg} shadow-xs font-bold`
               : 'text-ink-muted hover:bg-surface-muted hover:text-ink',
           ].join(' ')}

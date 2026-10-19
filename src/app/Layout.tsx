@@ -68,7 +68,7 @@ export function Layout({ children }: { children: ReactNode }) {
           >
             <SearchIcon className="h-[18.5px] w-[18.5px]" />
           </button>
-          {/* One Settings page for both sides; always opens at the top (General) */}
+          {/* One Settings page for both sides; always opens at its menu */}
           <NavLink
             to="/settings"
             aria-label="Settings"

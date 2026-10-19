@@ -3,11 +3,11 @@
  * weight; the names below stay the same, so screens import them as before.
  */
 import {
-  ArrowDownRight as LArrowDownRight, ArrowLeftRight, ArrowUpRight as LArrowUpRight, CalendarSync, Car, ChartPie, Check,
-  ChevronDown, ChevronRight, CircleCheck, CircleHelp, Clock, Coins, Command, Copy, CreditCard, Download, Ellipsis,
-  FlaskConical, HandCoins, House, Keyboard, Layers, LayoutGrid, List, Lock, LockOpen, LogOut, Minus, Pencil, Plus,
-  Receipt, ReceiptText, Scale, Search, Settings, ShoppingBag, Sparkle, Sparkles, Table, Trash2, TreePalm,
-  TrendingUp, TriangleAlert, Undo, Upload, Wallet, X,
+  ArrowDownRight as LArrowDownRight, ArrowLeftRight, ArrowUpRight as LArrowUpRight, Bell, Calendar, CalendarSync, Car,
+  ChartPie, Check, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, CircleHelp, Clock, Coins, Command, Copy,
+  CreditCard, Database, Download, Ellipsis, FlaskConical, HandCoins, House, Info, Keyboard, Layers, LayoutGrid, List,
+  Lock, LockOpen, LogOut, Minus, Pencil, Plus, Receipt, ReceiptText, Scale, Search, Settings, ShoppingBag, Sparkle,
+  Sparkles, Table, Tag, Target, Trash2, TreePalm, TrendingUp, TriangleAlert, Undo, Upload, Wallet, X,
 } from 'lucide-react'
 import { appIcon } from './appIcon'
 
@@ -50,6 +50,7 @@ export const LockOpenIcon = appIcon(LockOpen, 'LockOpenIcon')
 export const DotsHorizontalIcon = appIcon(Ellipsis, 'DotsHorizontalIcon')
 export const ChevronDownIcon = appIcon(ChevronDown, 'ChevronDownIcon')
 export const ChevronRightIcon = appIcon(ChevronRight, 'ChevronRightIcon')
+export const ChevronLeftIcon = appIcon(ChevronLeft, 'ChevronLeftIcon')
 
 // Status & misc
 export const ClockIcon = appIcon(Clock, 'ClockIcon')
@@ -65,6 +66,12 @@ export const ShoppingBagIcon = appIcon(ShoppingBag, 'ShoppingBagIcon')
 export const FlaskIcon = appIcon(FlaskConical, 'FlaskIcon')
 export const CommandIcon = appIcon(Command, 'CommandIcon')
 export const KeyboardIcon = appIcon(Keyboard, 'KeyboardIcon')
+export const CalendarIcon = appIcon(Calendar, 'CalendarIcon')
+export const TargetIcon = appIcon(Target, 'TargetIcon')
+export const TagIcon = appIcon(Tag, 'TagIcon')
+export const BellIcon = appIcon(Bell, 'BellIcon')
+export const DatabaseIcon = appIcon(Database, 'DatabaseIcon')
+export const InfoIcon = appIcon(Info, 'InfoIcon')
 /** The four-point star with a small cross (AI, highlights) */
 export const SparkleIcon = appIcon(Sparkles, 'SparkleIcon')
 /** A single four-point star */

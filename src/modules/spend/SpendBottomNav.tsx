@@ -6,7 +6,7 @@ import { Modal } from '../../components/ui/Modal'
 import { DotsHorizontalIcon, PlusIcon } from '../../components/icons'
 import { isLiabilityActionableThisMonth } from '../../lib/calc'
 import { useData } from '../../store/DataContext'
-import { spendAccountsItem, spendLoansItem, spendMoreItems, spendOverviewItem, spendRecurringItem, spendTxnsItem } from './nav'
+import { spendAccountsItem, spendLoansItem, spendMoreItems, spendOverviewItem, spendRecurringItem, spendSettingsItem, spendTxnsItem } from './nav'
 import { openQuickAdd } from './QuickAddSheet'
 import { SIDE_ACTIVE } from './tones'
 import { useSpend } from './useSpend'
@@ -45,8 +45,8 @@ export function SpendBottomNav() {
   const { reminders, dueRecurring } = useSpend()
   const [moreOpen, setMoreOpen] = useState(false)
   const loansDue = (useData().data.liabilities ?? []).filter((l) => isLiabilityActionableThisMonth(l)).length
-  // "More" lights up while on any page inside it
-  const moreActive = spendMoreItems.some((item) => isSubItemActive(item, pathname))
+  // "More" lights up while on any page inside it, except Settings: the header gear already shows that one
+  const moreActive = spendMoreItems.some((item) => item !== spendSettingsItem && isSubItemActive(item, pathname))
 
   useEffect(() => setMoreOpen(false), [pathname])
 

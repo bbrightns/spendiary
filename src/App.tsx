@@ -29,6 +29,7 @@ import { PageSkeleton } from './components/ui/PageSkeleton'
 import { Card } from './components/ui/Card'
 import { EmptyState } from './components/ui/EmptyState'
 import { Button } from './components/ui/Button'
+import { settingsPath } from './lib/settingsSections'
 
 function PageLoadingFallback() {
   return <PageSkeleton />
@@ -81,10 +82,10 @@ function LoansRedirect() {
   return <Navigate to={`/spend/loans${search}`} replace />
 }
 
-/** Spend's settings joined the one Settings page; old links (and their #section) still land */
+/** Spend's settings joined Settings; old links (and their #section) still land in the right section */
 function SpendSettingsRedirect() {
   const { hash } = useLocation()
-  return <Navigate to={`/settings${hash || '#spend'}`} replace />
+  return <Navigate to={settingsPath(hash || 'spend')} replace />
 }
 
 // 💡 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
@@ -331,6 +332,7 @@ function AppContent() {
           <Route path="/cashflow/debts" element={<LoansRedirect />} />
           <Route path="/retirement" element={<Retirement />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/:section" element={<Settings />} />
           <Route path="/logs" element={<HoldingLogs />} />
           <Route path="/logs/summary" element={<ActivitySummary />} />
           {/* Spend Home used to be /spend; old links and bookmarks still land */}

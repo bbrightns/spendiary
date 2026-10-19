@@ -25,6 +25,7 @@ import {
   KeyboardIcon,
   HelpCircleIcon,
   DashboardIcon,
+  HomeIcon,
   PortfolioIcon,
   DcaIcon,
   DebtIcon,
@@ -51,6 +52,7 @@ import { TONES } from '../components/tones'
 import { useSpend } from '../modules/spend/useSpend'
 import { IS_MAC, isSearchShortcut } from '../lib/shortcut'
 import { STORAGE_KEYS } from '../lib/storageKeys'
+import { settingsPath } from '../lib/settingsSections'
 
 export function openCommandPalette() {
   window.dispatchEvent(new CustomEvent('spendiary:open-command-palette'))
@@ -373,7 +375,7 @@ export function CommandPalette() {
       // ── Pages ──
       ...(
         [
-          ['nav-spend', 'Spend Home', "Today's allowance, bills due and today's spending", '/', ['spend', 'overview', 'budget', 'allowance', 'รายจ่าย', 'งบ', 'หน้าแรก'], DashboardIcon, true, undefined],
+          ['nav-spend', 'Spend Home', "Today's allowance, bills due and today's spending", '/', ['spend', 'overview', 'budget', 'allowance', 'รายจ่าย', 'งบ', 'หน้าแรก'], HomeIcon, true, undefined],
           ['nav-spend-txns', 'Transactions', 'Every income, expense and transfer', '/spend/txns', ['history', 'transactions', 'search', 'ประวัติ', 'รายการ'], ListBulletIcon, true, undefined],
           ['nav-spend-accounts', 'Accounts', 'Wallets and credit cards you pay with', '/spend/accounts', ['wallets', 'cards', 'credit', 'บัตร', 'กระเป๋า'], CreditCardIcon, true, undefined],
           ['nav-spend-analysis', 'Analysis', 'Spending by week, month or year', '/spend/analysis', ['analysis', 'report', 'chart', 'trend', 'วิเคราะห์', 'สรุป'], PieChartIcon, true, undefined],
@@ -421,7 +423,7 @@ export function CommandPalette() {
         group: 'Settings' as const,
         spend: true,
         icon: ic(SettingsIcon),
-        run: go(`/settings#${hash}`),
+        run: go(settingsPath(hash)),
       })),
       {
         id: 'set-ai-import',
@@ -430,7 +432,7 @@ export function CommandPalette() {
         keywords: ['import', 'ai', 'screenshot', 'portfolio', 'broker', 'scan', 'นำเข้า'],
         group: 'Settings',
         icon: ic(SettingsIcon),
-        run: go('/settings#ai-import'),
+        run: go(settingsPath('ai-import')),
       },
       {
         id: 'set-backup',
@@ -439,7 +441,7 @@ export function CommandPalette() {
         keywords: ['backup', 'import', 'export', 'restore', 'reset', 'สำรอง', 'นำเข้า'],
         group: 'Settings',
         icon: ic(SettingsIcon),
-        run: go('/settings#backup'),
+        run: go(settingsPath('backup')),
       },
       {
         id: 'set-sync',
@@ -448,7 +450,7 @@ export function CommandPalette() {
         keywords: ['sync', 'cloud', 'profile', 'account', 'name', 'login', 'ซิงค์', 'โปรไฟล์'],
         group: 'Settings',
         icon: ic(SettingsIcon),
-        run: go('/settings#general'),
+        run: go('/settings'),
       },
 
       // ── System ──
@@ -753,7 +755,7 @@ export function CommandPalette() {
           spend: true,
           icon: <c.icon className="h-4 w-4" />,
           iconBox: `border-transparent ${TONES[c.tone].chip}`,
-          run: go('/settings#category-budgets'),
+          run: go(settingsPath('category-budgets')),
           score: 2,
         })
       }
