@@ -58,7 +58,8 @@ colors:
   yellow-vivid: "#eab308"
 typography:
   scale:
-    xs: "12px (text-xs: badges, micro chips, captions, table metadata)"
+    2xs: "12px (text-2xs: the floor; tight badges, chart axis labels, tiny tiles only)"
+    xs: "13px (text-xs: labels, captions, chips, list metadata; Tailwind default raised from 12px)"
     sm: "14px (text-sm: secondary body, list subtext, button text)"
     base: "16px (text-base: primary body copy, standard input text)"
     lg: "18px (text-lg: subhead, card headers, medium metrics)"
@@ -227,6 +228,8 @@ Funds (#6366f1), Stocks (#0ea5e9), Crypto (#f59e0b), Cash (#10b981). Used as tin
 - **Title** (700, 17–22px, lh 1.3, ls −0.01em): Section headings, modal titles, medium card values (22–27px uses extrabold). Plus Jakarta Sans.
 - **Body** (400–600, 14–15px, lh 1.6): List row primary text, descriptions, form field values. Inter.
 - **Label** (500–600, 12–13px, lh 1.4): Captions, chip labels, metadata, nav labels. Inter. Never all-caps.
+- **Minimum size.** Nothing renders under 12px (`text-2xs`). Never use arbitrary sizes like `text-[10px]` or `text-[11px]`.
+- **Inputs on phones.** Text fields are 16px below 640px wide (a rule in `src/index.css`), or iPhone Safari zooms the page on focus.
 
 **The Tabular Rule.** Every number that might change — balances, percentages, counts, dates — uses `font-variant-numeric: tabular-nums` (via the `.tnum` utility class). No exceptions. Proportional figures on financial data cause layout jitter and break the instrument feel.
 
