@@ -25,6 +25,8 @@ const LABEL_PAD_Y = 22
 /** Smallest vertical distance between two callouts on the same side */
 const LABEL_GAP = 13
 const LABEL_MAX_CHARS = 7
+/** Slices below this share of the ring count as the small tail that gets turned to the left side */
+const SMALL_SLICE = 0.1
 
 interface Callout {
   key: number
@@ -77,6 +79,17 @@ export function DonutChart({
   const cx = width / 2
   const cy = height / 2
 
+  // With callouts, turn the ring so the run of small trailing slices centres on 9 o'clock:
+  // that's where a side has the most height, so their labels spread out instead of piling up at the top
+  let turn = 0
+  if (showLabels && total > 0) {
+    let tail = 0
+    for (let i = segments.length - 1; i >= 0 && segments[i].value / total < SMALL_SLICE; i--) {
+      tail += segments[i].value / total
+    }
+    if (tail > 0 && tail < 1) turn = tail / 2 - 0.25
+  }
+
   let offset = 0
   const callouts: Callout[] = []
   const arcs = segments.map((seg, i) => {
@@ -88,8 +101,8 @@ export function DonutChart({
       dashoffset: -offset,
     }
     if (showLabels && fraction * 100 >= labelMinPct) {
-      // Arcs start at 12 o'clock and run clockwise
-      const mid = -Math.PI / 2 + ((offset + (fraction * circumference) / 2) / circumference) * 2 * Math.PI
+      // Arcs start at 12 o'clock (plus the turn) and run clockwise
+      const mid = -Math.PI / 2 + ((offset + (fraction * circumference) / 2) / circumference + turn) * 2 * Math.PI
       const edge = radius + thickness / 2 + 2
       const ax = cx + edge * Math.cos(mid)
       const ay = cy + edge * Math.sin(mid)
@@ -111,8 +124,14 @@ export function DonutChart({
   const maxY = height - 6
   spread(callouts.filter((c) => c.right), minY, maxY)
   spread(callouts.filter((c) => !c.right), minY, maxY)
-  // Text starts just past the ring's widest point, so every callout on a side lines up
-  const textOffset = radius + thickness / 2 + 12
+  // Text hugs the ring: it starts on a circle just outside it, at the callout's height,
+  // so leader lines stay short and the text never runs back over the ring
+  const textRadius = radius + thickness / 2 + 12
+  const textX = (c: Callout) => {
+    const dy = c.y - cy
+    const dx = Math.sqrt(Math.max(textRadius * textRadius - dy * dy, 0))
+    return c.right ? cx + dx : cx - dx
+  }
 
   return (
     <div
@@ -130,7 +149,7 @@ export function DonutChart({
         }
         className="overflow-visible"
       >
-        <g transform={`rotate(-90 ${cx} ${cy})`}>
+        <g transform={`rotate(${-90 + turn * 360} ${cx} ${cy})`}>
           <circle
             cx={cx}
             cy={cy}
@@ -162,7 +181,7 @@ export function DonutChart({
           ))}
         </g>
         {callouts.map((c) => {
-          const tx = c.right ? cx + textOffset : cx - textOffset
+          const tx = textX(c)
           return (
             <g key={c.key} aria-hidden="true">
               <polyline

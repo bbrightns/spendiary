@@ -989,11 +989,9 @@ export function Portfolio() {
               <DonutChart
                 segments={segments}
                 size={donutMode === 'holding' ? 132 : 155}
-                thickness={donutMode === 'holding' ? 20 : 17}
+                thickness={donutMode === 'holding' ? 28 : 24}
                 showLabels={donutMode === 'holding'}
                 ariaLabel={`Holdings ${donutMode === 'holding' ? 'per position' : 'asset'} allocation, total value ${thb(summary.value)}`}
-                centerLabel="Total"
-                centerValue={thbCompact(summary.value)}
               />
 
               <div className="w-full space-y-2 pt-2 border-t border-line">
