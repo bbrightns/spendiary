@@ -48,8 +48,10 @@ export function GuideTour({
       const isTopVisible = initialRect.top >= 20 && initialRect.top <= window.innerHeight * 0.85
 
       if (!isTopVisible) {
-        // Only scroll if top is not in visible range, using 'nearest' to avoid jumping to middle of tall lists
-        targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+        // Only scroll if top is not in visible range. A short target goes to the middle, clear of the
+        // mobile bottom bar; a tall one uses 'nearest' to avoid jumping to the middle of a long list
+        const short = initialRect.height < window.innerHeight / 3
+        targetEl.scrollIntoView({ behavior: 'smooth', block: short ? 'center' : 'nearest', inline: 'nearest' })
       }
 
       const updateCoords = () => {

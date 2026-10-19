@@ -1,5 +1,5 @@
 import type { NavSection, NavSubItem } from '../../components/layout/nav'
-import { DashboardIcon, DebtIcon, PieChartIcon, SettingsIcon, WalletIcon } from '../../components/icons'
+import { DebtIcon, HomeIcon, PieChartIcon, SettingsIcon, WalletIcon } from '../../components/icons'
 import { ListBulletIcon, RepeatIcon } from './categories'
 import { SPEND_HOME, SPEND_ROOT } from '../../lib/routes'
 
@@ -11,7 +11,7 @@ export const spendOverviewItem: NavSubItem = {
   label: 'Home',
   short: 'Home',
   description: "Today's allowance, bills due and today's spending",
-  icon: DashboardIcon,
+  icon: HomeIcon,
   exact: true,
 }
 

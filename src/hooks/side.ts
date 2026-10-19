@@ -8,7 +8,7 @@ export const LAST_SIDE_KEY = STORAGE_KEYS.lastSide
 /** One Settings page serves both sides; it isn't a side of its own */
 export const SETTINGS_PATH = '/settings'
 
-export const isSettings = (path: string) => path === SETTINGS_PATH
+export const isSettings = (path: string) => path === SETTINGS_PATH || path.startsWith(`${SETTINGS_PATH}/`)
 
 export function read(key: string): string | null {
   try {
