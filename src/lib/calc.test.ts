@@ -16,6 +16,7 @@ import {
   goldCostPerBaht,
   goldThbPerBahtToXauUsd,
   gramsToBahtGold,
+  holdingAllocations,
   holdingMetrics,
   isBuyDayOverdue,
   isBuyDayToday,
@@ -114,6 +115,53 @@ describe('portfolioValue / portfolioCost / allocations', () => {
 
   it('returns no classes for an empty portfolio', () => {
     expect(allocations([])).toEqual([])
+  })
+})
+
+describe('holdingAllocations', () => {
+  it('lists positions largest first with their share and ticker label', () => {
+    const result = holdingAllocations([
+      holding({ id: 'a', ticker: 'MSFT', units: 1, price: 1000 }),
+      holding({ id: 'b', ticker: 'PINS', units: 3, price: 1000 }),
+    ])
+    expect(result.map((r) => [r.label, r.pct])).toEqual([['PINS', 75], ['MSFT', 25]])
+  })
+
+  it('falls back to the name when there is no ticker and skips empty positions', () => {
+    const result = holdingAllocations([
+      holding({ id: 'a', ticker: '', name: 'Condo' }),
+      holding({ id: 'b', units: 0 }),
+    ])
+    expect(result.map((r) => r.label)).toEqual(['Condo'])
+  })
+
+  it('folds the small tail into one Other slice', () => {
+    const result = holdingAllocations([
+      holding({ id: 'big', ticker: 'BIG', units: 96 }),
+      holding({ id: 's1', ticker: 'S1', units: 2 }),
+      holding({ id: 's2', ticker: 'S2', units: 1 }),
+      holding({ id: 's3', ticker: 'S3', units: 1 }),
+    ], { minPct: 3 })
+    expect(result.map((r) => [r.id, r.count, r.pct])).toEqual([['big', 1, 96], ['other', 3, 4]])
+  })
+
+  it('keeps a single leftover under its own name', () => {
+    const result = holdingAllocations([
+      holding({ id: 'a', ticker: 'A', units: 99 }),
+      holding({ id: 'b', ticker: 'B', units: 1 }),
+    ], { minPct: 2 })
+    expect(result.map((r) => r.label)).toEqual(['A', 'B'])
+  })
+
+  it('caps the number of named slices', () => {
+    const many = Array.from({ length: 5 }, (_, i) => holding({ id: `h${i}`, ticker: `T${i}` }))
+    const result = holdingAllocations(many, { maxSlices: 3 })
+    expect(result).toHaveLength(4)
+    expect(result[3]).toMatchObject({ id: 'other', count: 2 })
+  })
+
+  it('returns nothing for an empty portfolio', () => {
+    expect(holdingAllocations([])).toEqual([])
   })
 })
 

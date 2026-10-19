@@ -34,6 +34,7 @@ import {
   allocations,
   assetGroupAllocations,
   hasRealPrice,
+  holdingAllocations,
   holdingMetrics,
   portfolioSummary,
 } from '../lib/calc'
@@ -90,7 +91,7 @@ export function Portfolio() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<'list' | 'group'>('list')
-  const [donutMode, setDonutMode] = useState<'class' | 'group'>('class')
+  const [donutMode, setDonutMode] = useState<'class' | 'group' | 'holding'>('class')
   const [copied, setCopied] = useState(false)
   // How PnL is rendered on holding rows: percentage or absolute THB amount (persisted)
   const [pnlDisplay, setPnlDisplay] = useState<'pct' | 'thb'>(() => {
@@ -244,6 +245,7 @@ export function Portfolio() {
   const summary = portfolioSummary(data.holdings)
   const alloc = allocations(data.holdings)
   const groupAlloc = assetGroupAllocations(data.holdings)
+  const holdingAlloc = holdingAllocations(data.holdings)
 
   // Record today's portfolio value snapshot whenever it changes
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -442,11 +444,17 @@ export function Portfolio() {
         value: a.value,
         color: ASSET_META[a.assetClass]?.color ?? '#6366f1',
       }))
-    : groupAlloc.map((g) => ({
-        label: g.name,
-        value: g.value,
-        color: g.color,
-      }))
+    : donutMode === 'group'
+      ? groupAlloc.map((g) => ({
+          label: g.name,
+          value: g.value,
+          color: g.color,
+        }))
+      : holdingAlloc.map((h) => ({
+          label: h.label,
+          value: h.value,
+          color: h.color,
+        }))
 
   const handleExportCsv = () => {
     if (rows.length === 0) {
@@ -928,8 +936,9 @@ export function Portfolio() {
                 value={donutMode}
                 onChange={setDonutMode}
                 options={[
-                  { value: 'class', label: 'By Class' },
-                  { value: 'group', label: 'By Group / Tag' },
+                  { value: 'class', label: 'Class', title: 'By asset class' },
+                  { value: 'group', label: 'Group', title: 'By group / tag' },
+                  { value: 'holding', label: 'Holding', title: 'By individual holding' },
                 ]}
                 ariaLabel="Choose allocation view"
               />
@@ -979,9 +988,10 @@ export function Portfolio() {
             <div className="mt-4 flex flex-col items-center gap-4">
               <DonutChart
                 segments={segments}
-                size={155}
-                thickness={17}
-                ariaLabel={`Holdings asset allocation, total value ${thb(summary.value)}`}
+                size={donutMode === 'holding' ? 132 : 155}
+                thickness={donutMode === 'holding' ? 20 : 17}
+                showLabels={donutMode === 'holding'}
+                ariaLabel={`Holdings ${donutMode === 'holding' ? 'per position' : 'asset'} allocation, total value ${thb(summary.value)}`}
                 centerLabel="Total"
                 centerValue={thbCompact(summary.value)}
               />
@@ -1008,6 +1018,27 @@ export function Portfolio() {
                       </div>
                     )
                   })
+                ) : donutMode === 'holding' ? (
+                  holdingAlloc.map((h) => (
+                    <div key={h.id} className="flex items-center justify-between text-xs">
+                      <span className="flex min-w-0 items-center gap-2 font-medium text-ink mr-2">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full shrink-0"
+                          style={{ background: h.color }}
+                        />
+                        <span className="shrink-0 font-bold">{h.label}</span>
+                        {h.name !== h.label && (
+                          <span className="truncate text-ink-muted" title={h.name}>{h.name}</span>
+                        )}
+                      </span>
+                      <span className="font-bold tnum text-ink shrink-0">
+                        {thb(h.value)}{' '}
+                        <span className="font-normal text-ink-muted text-xs">
+                          ({h.pct.toFixed(1)}%)
+                        </span>
+                      </span>
+                    </div>
+                  ))
                 ) : (
                   groupAlloc.map((g) => {
                     return (
