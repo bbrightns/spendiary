@@ -273,6 +273,101 @@ export function assetGroupAllocations(holdings: Holding[]): AssetGroupAllocation
   return groups.sort((a, b) => b.value - a.value)
 }
 
+/** One slice of the per-holding allocation; `id` is "other" for the bucket of small positions */
+export interface HoldingAllocation {
+  id: string
+  label: string
+  name: string
+  assetClass?: AssetClass
+  value: number
+  pct: number
+  color: string
+  /** How many holdings this slice covers (more than 1 only for "Other") */
+  count: number
+}
+
+/** Mid-tone hues that stay readable on both light and dark surfaces, in slice order */
+const HOLDING_PALETTE = [
+  '#3b82f6', // Blue
+  '#22c55e', // Green
+  '#f97316', // Orange
+  '#8b5cf6', // Violet
+  '#ec4899', // Pink
+  '#eab308', // Yellow
+  '#14b8a6', // Teal
+  '#ef4444', // Red
+  '#06b6d4', // Cyan
+  '#a3a3a3', // Neutral (kept late so it never sits next to "Other")
+  '#84cc16', // Lime
+  '#6366f1', // Indigo
+]
+
+const OTHER_COLOR = '#94a3b8'
+
+/**
+ * Share of the portfolio held in each position, largest first.
+ * Positions under `minPct`, or past the first `maxSlices`, fold into one "Other" slice
+ * so a long tail of small holdings doesn't turn the donut into unreadable slivers.
+ */
+export function holdingAllocations(
+  holdings: Holding[],
+  { maxSlices = 10, minPct = 2 }: { maxSlices?: number; minPct?: number } = {},
+): HoldingAllocation[] {
+  const metrics = holdings.map(holdingMetrics).filter((m) => m.marketValue > 0)
+  const total = metrics.reduce((sum, m) => sum + m.marketValue, 0)
+  if (total <= 0) return []
+
+  const sorted = [...metrics].sort((a, b) => b.marketValue - a.marketValue)
+  const pctOf = (v: number) => (v / total) * 100
+
+  const shown: HoldingAllocation[] = []
+  const rest: HoldingMetrics[] = []
+  for (const m of sorted) {
+    if (shown.length < maxSlices && pctOf(m.marketValue) >= minPct) {
+      shown.push({
+        id: m.id,
+        label: m.ticker?.trim() || m.name,
+        name: m.name,
+        assetClass: m.assetClass,
+        value: m.marketValue,
+        pct: pctOf(m.marketValue),
+        color: HOLDING_PALETTE[shown.length % HOLDING_PALETTE.length],
+        count: 1,
+      })
+    } else {
+      rest.push(m)
+    }
+  }
+
+  // A lone leftover reads better under its own name than as "Other (1)"
+  if (rest.length === 1) {
+    const m = rest[0]
+    shown.push({
+      id: m.id,
+      label: m.ticker?.trim() || m.name,
+      name: m.name,
+      assetClass: m.assetClass,
+      value: m.marketValue,
+      pct: pctOf(m.marketValue),
+      color: OTHER_COLOR,
+      count: 1,
+    })
+  } else if (rest.length > 1) {
+    const value = rest.reduce((sum, m) => sum + m.marketValue, 0)
+    shown.push({
+      id: 'other',
+      label: 'Other',
+      name: `${rest.length} smaller holdings`,
+      value,
+      pct: pctOf(value),
+      color: OTHER_COLOR,
+      count: rest.length,
+    })
+  }
+
+  return shown
+}
+
 export interface PortfolioSummary {
   /** Every holding; one with no real price counts at cost */
   value: number
