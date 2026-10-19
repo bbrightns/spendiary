@@ -6,8 +6,8 @@
 -- id is their own user id.
 
 -- ── Step 1: check (read-only, safe to run any time) ──────────────────────────────────
--- Expect: rls_enabled = true, and SELECT, INSERT, UPDATE and DELETE policies
--- that all compare id with auth.uid().
+-- Expect: rls_enabled = true, and SELECT, INSERT, UPDATE and DELETE policies, all for the
+-- authenticated role, that all compare id with (select auth.uid()).
 select relname as table_name,
        relrowsecurity as rls_enabled,
        relforcerowsecurity as rls_forced
@@ -33,5 +33,23 @@ create policy "Users can delete their own data." on public.user_data
   for delete to authenticated
   using ((select auth.uid()) = id);
 
--- ── Step 3: verify ───────────────────────────────────────────────────────────────────
+-- ── Step 3: limit the other policies to signed-in users ──────────────────────────────
+-- Applied on 2026-10-19. SELECT, INSERT and UPDATE were for the public role (anon too).
+-- auth.uid() is null when signed out, so anon matched no row, but limiting them to
+-- authenticated keeps signed-out requests out even if a rule is ever loosened.
+-- (select auth.uid()) is worked out once per query instead of once per row.
+alter policy "Users can view their own data." on public.user_data
+  to authenticated
+  using ((select auth.uid()) = id);
+
+alter policy "Users can insert or update their own data." on public.user_data
+  to authenticated
+  with check ((select auth.uid()) = id);
+
+alter policy "Users can update their own data." on public.user_data
+  to authenticated
+  using ((select auth.uid()) = id)
+  with check ((select auth.uid()) = id);
+
+-- ── Step 4: verify ───────────────────────────────────────────────────────────────────
 -- Re-run step 1. Then open the app, sign in, and check your data still loads and saves.
