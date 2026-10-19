@@ -19,6 +19,7 @@ import { totalAvailable } from '../credit'
 import { useData } from '../../../store/DataContext'
 import { MethodIcon } from '../PayMethodPicker'
 import { ArrangeButton, ReorderSheet } from '../ReorderSheet'
+import { DEFAULT_CARD_FILTER, filterCards, isFiltering, readCardFilter, writeCardFilter, type CardFilter, type CardFilterMode } from '../cardFilter'
 import { useSpend, type PayMethod } from '../useSpend'
 
 /** 1234 → 1.2K, for the tiny in / out line on a wallet tile. */
@@ -38,6 +39,16 @@ export function SpendAccounts() {
   const period = useMemo(() => periodFor(localDateStr(), settings.cycle), [settings.cycle])
   const periodName = isCalendar(settings.cycle) ? 'This month' : 'This pay cycle'
   const favs = settings.favoriteAccountIds ?? []
+  const [filter, setFilterState] = useState<CardFilter>(readCardFilter)
+  const setFilter = (f: CardFilter) => {
+    setFilterState(f)
+    writeCardFilter(f)
+  }
+  const shownCards = filterCards(cards, filter, favs)
+  const hiddenCards = cards.filter((c) => !shownCards.includes(c))
+  // Hidden cards can still owe money or have a bill coming, so say so instead of just dropping them
+  const hiddenOwed = hiddenCards.reduce((s, c) => s + c.balance, 0)
+  const hiddenDue = bills.filter((b) => b.amountDue > 0 && (b.status === 'overdue' || b.status === 'due') && hiddenCards.some((c) => c.id === b.card.id)).length
 
   const wallets = methods.filter((m) => m.kind === 'cash')
   // Locked savings aren't for spending; the rest is ready to use
@@ -106,6 +117,48 @@ export function SpendAccounts() {
                 )}
               </p>
             )}
+            {cards.length > 1 && (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 px-1" role="group" aria-label="Filter credit cards">
+                {([['all', 'All'], ['starred', '★ Starred'], ['balance', 'Has balance']] as [CardFilterMode, string][]).map(([mode, label]) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    aria-pressed={filter.mode === mode}
+                    onClick={() => setFilter({ ...filter, mode })}
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                      filter.mode === mode ? 'border-brand bg-brand text-white' : 'border-line bg-surface text-ink-soft hover:bg-surface-muted'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  aria-pressed={filter.hideZero || filter.mode === 'balance'}
+                  disabled={filter.mode === 'balance'}
+                  onClick={() => setFilter({ ...filter, hideZero: !filter.hideZero })}
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors cursor-pointer disabled:cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                    filter.hideZero || filter.mode === 'balance' ? 'border-brand/50 bg-brand-soft text-brand-ink' : 'border-dashed border-line bg-surface text-ink-muted hover:bg-surface-muted'
+                  }`}
+                >
+                  Hide ฿0
+                </button>
+              </div>
+            )}
+            {hiddenCards.length > 0 && (
+              <div role="status" className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-warn/40 bg-warn-soft px-3 py-2 text-xs text-warn">
+                <span className="min-w-0">
+                  <span className="font-bold">
+                    {hiddenCards.length} of {cards.length} cards hidden
+                  </span>
+                  {hiddenOwed !== 0 && <span className="tnum"> · {thbSigned(hiddenOwed)} owed on them</span>}
+                  {hiddenDue > 0 && <span className="font-bold"> · {hiddenDue} bill{hiddenDue > 1 ? 's' : ''} due</span>}
+                </span>
+                <button type="button" onClick={() => setFilter(DEFAULT_CARD_FILTER)} className="shrink-0 rounded-full bg-warn px-3 py-1 font-bold text-white cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                  Show all
+                </button>
+              </div>
+            )}
           </div>
           {cards.length === 0 ? (
             <Card>
@@ -116,9 +169,18 @@ export function SpendAccounts() {
                 action={<AddButton onClick={() => setCardSheet({ open: true })} label="Add card" />}
               />
             </Card>
+          ) : shownCards.length === 0 ? (
+            <Card>
+              <EmptyState
+                icon={<CreditCardIcon className="h-7 w-7" />}
+                title="No cards match"
+                description={isFiltering(filter) ? 'Every card is hidden by the current filter.' : ''}
+                action={<Button onClick={() => setFilter(DEFAULT_CARD_FILTER)}>Show all cards</Button>}
+              />
+            </Card>
           ) : (
             <CardStack
-              cards={cards}
+              cards={shownCards}
               bills={bills}
               transactions={transactions}
               defaultId={settings.defaultAccountId}
