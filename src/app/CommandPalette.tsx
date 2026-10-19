@@ -25,6 +25,7 @@ import {
   KeyboardIcon,
   HelpCircleIcon,
   DashboardIcon,
+  HomeIcon,
   PortfolioIcon,
   DcaIcon,
   DebtIcon,
@@ -374,7 +375,7 @@ export function CommandPalette() {
       // ── Pages ──
       ...(
         [
-          ['nav-spend', 'Spend Home', "Today's allowance, bills due and today's spending", '/', ['spend', 'overview', 'budget', 'allowance', 'รายจ่าย', 'งบ', 'หน้าแรก'], DashboardIcon, true, undefined],
+          ['nav-spend', 'Spend Home', "Today's allowance, bills due and today's spending", '/', ['spend', 'overview', 'budget', 'allowance', 'รายจ่าย', 'งบ', 'หน้าแรก'], HomeIcon, true, undefined],
           ['nav-spend-txns', 'Transactions', 'Every income, expense and transfer', '/spend/txns', ['history', 'transactions', 'search', 'ประวัติ', 'รายการ'], ListBulletIcon, true, undefined],
           ['nav-spend-accounts', 'Accounts', 'Wallets and credit cards you pay with', '/spend/accounts', ['wallets', 'cards', 'credit', 'บัตร', 'กระเป๋า'], CreditCardIcon, true, undefined],
           ['nav-spend-analysis', 'Analysis', 'Spending by week, month or year', '/spend/analysis', ['analysis', 'report', 'chart', 'trend', 'วิเคราะห์', 'สรุป'], PieChartIcon, true, undefined],
