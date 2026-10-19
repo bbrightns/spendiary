@@ -51,6 +51,7 @@ import { TONES } from '../components/tones'
 import { useSpend } from '../modules/spend/useSpend'
 import { IS_MAC, isSearchShortcut } from '../lib/shortcut'
 import { STORAGE_KEYS } from '../lib/storageKeys'
+import { settingsPath } from '../lib/settingsSections'
 
 export function openCommandPalette() {
   window.dispatchEvent(new CustomEvent('spendiary:open-command-palette'))
@@ -421,7 +422,7 @@ export function CommandPalette() {
         group: 'Settings' as const,
         spend: true,
         icon: ic(SettingsIcon),
-        run: go(`/settings#${hash}`),
+        run: go(settingsPath(hash)),
       })),
       {
         id: 'set-ai-import',
@@ -430,7 +431,7 @@ export function CommandPalette() {
         keywords: ['import', 'ai', 'screenshot', 'portfolio', 'broker', 'scan', 'นำเข้า'],
         group: 'Settings',
         icon: ic(SettingsIcon),
-        run: go('/settings#ai-import'),
+        run: go(settingsPath('ai-import')),
       },
       {
         id: 'set-backup',
@@ -439,7 +440,7 @@ export function CommandPalette() {
         keywords: ['backup', 'import', 'export', 'restore', 'reset', 'สำรอง', 'นำเข้า'],
         group: 'Settings',
         icon: ic(SettingsIcon),
-        run: go('/settings#backup'),
+        run: go(settingsPath('backup')),
       },
       {
         id: 'set-sync',
@@ -448,7 +449,7 @@ export function CommandPalette() {
         keywords: ['sync', 'cloud', 'profile', 'account', 'name', 'login', 'ซิงค์', 'โปรไฟล์'],
         group: 'Settings',
         icon: ic(SettingsIcon),
-        run: go('/settings#general'),
+        run: go('/settings'),
       },
 
       // ── System ──
@@ -753,7 +754,7 @@ export function CommandPalette() {
           spend: true,
           icon: <c.icon className="h-4 w-4" />,
           iconBox: `border-transparent ${TONES[c.tone].chip}`,
-          run: go('/settings#category-budgets'),
+          run: go(settingsPath('category-budgets')),
           score: 2,
         })
       }

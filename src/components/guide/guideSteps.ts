@@ -280,10 +280,10 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
       },
       {
         targetId: 'guide-settings-profile',
-        badge: 'Profile',
-        title: 'Your profile',
+        badge: 'Sections',
+        title: 'Everything in sections',
         description:
-          'Set your name for the greeting on the Dashboard.',
+          'Each row opens one part of Settings. Start with General for the theme and your name for the greeting on Home.',
         position: 'bottom',
       },
       {
@@ -291,7 +291,7 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         badge: 'Keep it safe',
         title: 'Backup & restore',
         description:
-          'Download a JSON backup, or import an old one to move to a new device or restore your data at any time.',
+          'Open Data and backup to download a JSON backup, or import an old one to move to a new device or restore your data at any time.',
         position: 'bottom',
       },
     ],
