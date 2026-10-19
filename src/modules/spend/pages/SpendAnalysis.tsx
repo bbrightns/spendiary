@@ -126,7 +126,7 @@ function Bars({ data, unit }: { data: Bucket[]; unit: string }) {
       </div>
       <div className="mt-1 flex gap-[3px]">
         {data.map((b) => (
-          <span key={b.key} className="flex-1 text-center text-[11px] text-ink-muted">
+          <span key={b.key} className="flex-1 text-center text-2xs text-ink-muted">
             {b.label}
           </span>
         ))}

@@ -108,7 +108,7 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
 
       {/* Chart: one axis, gridlines with labels, a crosshair on hover */}
       <div className="mt-4 grid gap-x-2" style={{ gridTemplateColumns: '2.5rem minmax(0, 1fr)' }}>
-        <div className="relative h-40 text-right text-[11px] text-ink-muted tnum" aria-hidden="true">
+        <div className="relative h-40 text-right text-2xs text-ink-muted tnum" aria-hidden="true">
           {[1, 0.5, 0].map((f) => (
             <span key={f} className="absolute right-0 -translate-y-1/2" style={{ top: `${(1 - f) * 100}%` }}>
               {axisLabel(top * f)}
@@ -154,7 +154,7 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
           </div>
         </div>
         <span />
-        <div className="relative mt-1 h-4 text-[11px] text-ink-muted" aria-hidden="true">
+        <div className="relative mt-1 h-4 text-2xs text-ink-muted" aria-hidden="true">
           {months.map((m, i) => (
             <span
               key={m.period.start}
@@ -211,7 +211,7 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
         <div className="mt-6">
           <div className="mb-2 flex items-baseline justify-between gap-3">
             <p className="text-sm font-semibold text-ink-soft">Top categories {latest}</p>
-            <p className="w-24 shrink-0 text-center text-[11px] text-ink-muted">Last 6 months</p>
+            <p className="w-24 shrink-0 text-center text-2xs text-ink-muted">Last 6 months</p>
           </div>
           <ul className="divide-y divide-line">
             {cats.map((c) => {

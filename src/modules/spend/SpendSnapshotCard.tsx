@@ -64,7 +64,7 @@ export function SpendSnapshotCard() {
             <div className="min-w-0 @min-[34rem]:border-r @min-[34rem]:border-line @min-[34rem]:pr-6">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-medium text-ink-muted">You can spend today</p>
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${status.chip}`}>{status.label}</span>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-2xs font-semibold ${status.chip}`}>{status.label}</span>
               </div>
               <p className={`mt-1 font-display text-3xl font-extrabold tnum truncate ${day.leftToday < 0 ? 'text-loss' : 'text-ink'}`}>
                 {signed(day.leftToday, thb)}

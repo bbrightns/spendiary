@@ -127,7 +127,7 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
             {iconGroups.length === 0 && <p className="px-1 py-6 text-center text-sm text-ink-muted">No icons match "{iconQuery.trim()}"</p>}
             {iconGroups.map((g) => (
               <section key={g.id} aria-label={g.label}>
-                <p className="mb-1.5 px-0.5 text-[11px] font-bold uppercase tracking-wider text-ink-muted">{g.label}</p>
+                <p className="mb-1.5 px-0.5 text-2xs font-bold uppercase tracking-wider text-ink-muted">{g.label}</p>
                 <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
                   {g.icons.map(({ key, Icon: I }) => {
                     const on = form.icon === key
@@ -262,7 +262,7 @@ export function CategoryManager() {
             </span>
             <span className="min-w-0">
               <span className="block truncate text-sm font-semibold text-ink">{c.label}</span>
-              {c.hidden && <span className="block text-[11px] text-ink-muted">Hidden</span>}
+              {c.hidden && <span className="block text-2xs text-ink-muted">Hidden</span>}
             </span>
           </button>
         ))}

@@ -67,7 +67,7 @@ export function PayMethodPicker({ label, methods, value, onChange, favoriteIds, 
                 <span className={`block max-w-[9.5rem] truncate text-xs font-bold ${active ? 'text-brand-ink' : 'text-ink'}`}>
                   {m.name}
                 </span>
-                <span className="block text-[11px] font-medium text-ink-muted tnum">
+                <span className="block text-2xs font-medium text-ink-muted tnum">
                   {m.id === defaultId && <span className="font-bold text-brand-ink">Default · </span>}
                   {m.kind === 'card'
                     ? `${thb(m.available ?? Math.max(0, (m.creditLimit ?? 0) - m.balance), true)} left`

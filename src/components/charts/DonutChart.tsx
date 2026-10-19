@@ -23,7 +23,7 @@ interface DonutChartProps {
 const LABEL_PAD_X = 96
 const LABEL_PAD_Y = 22
 /** Smallest vertical distance between two callouts on the same side */
-const LABEL_GAP = 13
+const LABEL_GAP = 15
 const LABEL_MAX_CHARS = 7
 /** Slices below this share of the ring count as the small tail that gets turned to the left side */
 const SMALL_SLICE = 0.1
@@ -196,7 +196,7 @@ export function DonutChart({
                 y={c.y}
                 dominantBaseline="middle"
                 textAnchor={c.right ? 'start' : 'end'}
-                fontSize={10}
+                fontSize={12}
                 fontWeight={600}
                 fill="var(--color-ink-soft)"
                 className="tnum"

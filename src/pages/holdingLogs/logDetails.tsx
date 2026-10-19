@@ -450,7 +450,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                   {txDetails.sharesDisplay && txDetails.sharesDisplay !== '-' ? txDetails.sharesDisplay : (Math.abs(unitDiff) > 0 ? formatUnitDiff(unitDiff) : '-')}
                 </div>
                 {txDetails.sharesDisplaySecondary && (
-                  <div className="text-[11px] font-medium text-ink-faint tnum truncate">
+                  <div className="text-2xs font-medium text-ink-faint tnum truncate">
                     {txDetails.sharesDisplaySecondary}
                   </div>
                 )}
@@ -646,7 +646,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                   {txDetails.sharesDisplay && txDetails.sharesDisplay !== '-' ? txDetails.sharesDisplay : (unitDiff > 0 ? formatUnitDiff(unitDiff) : '-')}
                 </div>
                 {txDetails.sharesDisplaySecondary && (
-                  <div className="text-[11px] font-medium text-ink-faint tnum truncate">
+                  <div className="text-2xs font-medium text-ink-faint tnum truncate">
                     {txDetails.sharesDisplaySecondary}
                   </div>
                 )}

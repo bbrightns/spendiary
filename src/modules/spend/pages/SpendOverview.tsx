@@ -169,7 +169,7 @@ export function SpendOverview() {
                   on ? 'border-ink bg-ink text-white dark:border-[#4f46e5] dark:bg-[#4f46e5]' : 'border-line text-ink-muted hover:bg-surface-muted/60'
                 }`}
               >
-                <span className="text-[11px] font-semibold">{dt.toLocaleDateString('en-GB', { weekday: 'short' })}</span>
+                <span className="text-2xs font-semibold">{dt.toLocaleDateString('en-GB', { weekday: 'short' })}</span>
                 <span className={`text-base font-bold tnum ${on ? '' : 'text-ink'}`}>{dt.getDate()}</span>
                 <span className={`h-1 w-1 rounded-full ${d.spent > 0 ? (on ? 'bg-white' : 'bg-brand') : 'bg-transparent'}`} />
               </button>

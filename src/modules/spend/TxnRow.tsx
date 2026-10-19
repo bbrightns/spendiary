@@ -74,7 +74,7 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
           <span className="flex min-w-0 items-center gap-1.5">
             <span className="truncate text-sm font-semibold text-ink">{title}</span>
             {txn.source && (
-              <span className={`shrink-0 rounded-full px-1.5 py-px text-[10px] font-bold uppercase tracking-wide ${TONES.indigo.chip}`}>Invest</span>
+              <span className={`shrink-0 rounded-full px-1.5 py-px text-2xs font-bold uppercase tracking-wide ${TONES.indigo.chip}`}>Invest</span>
             )}
           </span>
           <span className="block truncate text-xs text-ink-muted">{meta}</span>

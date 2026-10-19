@@ -87,7 +87,7 @@ export function SpendLoansPage() {
                 <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-muted">
                   <span className="block h-full rounded-full bg-brand" style={{ width: `${progress * 100}%` }} />
                 </span>
-                {steps && <span className="shrink-0 text-[11px] font-semibold text-ink-muted tnum">{steps}</span>}
+                {steps && <span className="shrink-0 text-2xs font-semibold text-ink-muted tnum">{steps}</span>}
               </span>
             )}
           </span>

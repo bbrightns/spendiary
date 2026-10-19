@@ -121,7 +121,7 @@ export function Sidebar() {
               key={section.title}
               className={`flex flex-col gap-0.5 ${index > 0 ? 'mt-3 border-t border-line/60 pt-3' : ''}`}
             >
-              <span className="px-3 pb-1 text-[11px] font-bold uppercase tracking-wider text-brand/70">
+              <span className="px-3 pb-1 text-2xs font-bold uppercase tracking-wider text-brand/70">
                 {section.title}
               </span>
               {section.items.map((item) => {

@@ -319,7 +319,9 @@ export function CashLiquidity() {
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-ink-muted" />
               <input
                 type="text"
-                placeholder="Search account or bank..."
+                placeholder="Search…"
+                title="Search by account or bank name"
+                aria-label="Search accounts"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-9 w-full rounded-xl border border-line bg-surface-muted/40 pl-8 pr-3 text-xs font-medium text-ink outline-none placeholder:text-ink-muted/50 focus:border-brand focus:bg-surface"
@@ -418,11 +420,11 @@ export function CashLiquidity() {
                       {a.currency === 'USD' ? `$${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : thb(a.balance, true)}
                     </div>
                     {annualEarned > 0 || (a.currency === 'USD' && rate <= 0 && rateNum > 0 && eligibleBal > 0) ? (
-                      <div className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 tnum">
+                      <div className="text-2xs font-semibold text-emerald-600 dark:text-emerald-400 tnum">
                         +{yearlyInterest(a.currency, eligibleBal * (rateNum / 100), annualEarned)}/yr
                       </div>
                     ) : a.currency === 'USD' && a.balance > 0 && rate > 0 ? (
-                      <div className="text-[11px] text-ink-muted tnum">
+                      <div className="text-2xs text-ink-muted tnum">
                         ≈ {thb(a.balance * rate)}
                       </div>
                     ) : (

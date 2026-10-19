@@ -706,7 +706,7 @@ export function Portfolio() {
                                 {loc.isLocked && (
                                   <span
                                     title="Location is locked (protected from selling)"
-                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 shrink-0"
+                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-2xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 shrink-0"
                                   >
                                     <LockClosedIcon className="h-2.5 w-2.5" />
                                     <span>Lock</span>
@@ -761,7 +761,7 @@ export function Portfolio() {
                                 {loc.isLocked && (
                                   <span
                                     title="Location is locked (protected from selling)"
-                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 shrink-0"
+                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-2xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 shrink-0"
                                   >
                                     <LockClosedIcon className="h-2.5 w-2.5" />
                                     <span>Lock</span>

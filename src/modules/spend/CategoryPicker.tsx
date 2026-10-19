@@ -160,7 +160,7 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
                   aria-pressed={editing ? undefined : active}
                   aria-label={editing ? `Edit ${c.label}` : undefined}
                   onClick={() => (editing ? setSheet({ open: true, category: c }) : pick(c.id))}
-                  className={`flex min-h-[60px] w-full flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-1.5 text-[11px] transition-all cursor-pointer active:scale-95 ${
+                  className={`flex min-h-[60px] w-full flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-1.5 text-2xs transition-all cursor-pointer active:scale-95 ${
                     active ? `${TONES[c.tone].active} font-bold` : 'border-line bg-surface font-semibold text-ink-soft hover:bg-surface-muted/60'
                   } ${editing ? 'border-dashed' : ''}`}
                 >
@@ -187,7 +187,7 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
               type="button"
               aria-expanded={expanded}
               onClick={() => setExpanded((v) => !v)}
-              className="flex min-h-[60px] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-line-strong px-1 py-1.5 text-[11px] font-semibold text-ink-muted transition-all cursor-pointer hover:bg-surface-muted/60 hover:text-ink active:scale-95"
+              className="flex min-h-[60px] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-line-strong px-1 py-1.5 text-2xs font-semibold text-ink-muted transition-all cursor-pointer hover:bg-surface-muted/60 hover:text-ink active:scale-95"
             >
               <span className="grid h-7 w-7 place-items-center rounded-lg bg-surface-muted">
                 <ChevronDownIcon className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} strokeWidth={2} />
