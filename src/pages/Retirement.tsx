@@ -6,7 +6,7 @@ import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { NumberField, TextField } from '../components/ui/Field'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import { CheckIcon } from '../components/icons'
+import { CheckIcon, HourglassIcon } from '../components/icons'
 import { dcaPerMonth, portfolioSummary, totalCash } from '../lib/calc'
 import { thb, thbCompact } from '../lib/format'
 import { averageMonthlySpend } from '../modules/spend/logic'
@@ -641,8 +641,8 @@ export function Retirement() {
                     : 'Enter your monthly spending to calculate'}
                 </p>
               </div>
-              <div className="h-12 w-12 shrink-0 rounded-full bg-brand-soft text-brand flex items-center justify-center font-bold text-lg">
-                ⏳
+              <div className="h-12 w-12 shrink-0 rounded-full bg-brand-soft text-brand flex items-center justify-center">
+                <HourglassIcon className="h-5 w-5" />
               </div>
             </div>
 

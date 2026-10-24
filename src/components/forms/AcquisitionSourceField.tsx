@@ -23,7 +23,7 @@ export function AcquisitionSourceField({ source, onSourceChange, receivedFrom, o
           onChange={onSourceChange}
           options={[
             { value: 'bought', label: 'Bought' },
-            { value: 'received', label: '🎁 Gift / Inheritance' },
+            { value: 'received', label: 'Gift or inheritance' },
           ]}
         />
       </div>

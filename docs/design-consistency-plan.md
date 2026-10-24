@@ -118,7 +118,13 @@ Each disabled "Add" needs a reason in the body. For example, Quick add shows "En
 
 ---
 
-## Phase 3: No emoji
+## Phase 3: No emoji [done]
+- **Removed:** every emoji in the interface. Log action badges, the cash-category dots and section headers now use lucide icons.
+- **Kept on purpose:**
+  - the Markdown export
+  - two code comments that mention emoji
+  - typographic marks (→ ↗ ↵ ▲▼↕)
+- **Left for Phase 4:** the Cash table still sets money in a mono font.
 About 70 emoji in UI files. The Markdown export (`portfolioMarkdown.ts`) is out of scope (DESIGN.md §7), and the Thai code comments in `App.tsx` lose their 💡 too.
 
 | File | What |

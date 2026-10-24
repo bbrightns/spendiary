@@ -10,21 +10,7 @@ import { Button } from '../components/ui/Button'
 import { TextField } from '../components/ui/Field'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import {
-  BellIcon,
-  CalendarIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  DatabaseIcon,
-  DownloadIcon,
-  InfoIcon,
-  SettingsIcon,
-  SparkleIcon,
-  TagIcon,
-  TargetIcon,
-  TrashIcon,
-  UploadIcon,
-} from '../components/icons'
+import { BellIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon, DatabaseIcon, DownloadIcon, InfoIcon, LightbulbIcon, SettingsIcon, SparkleIcon, TagIcon, TargetIcon, TrashIcon, UploadIcon } from '../components/icons'
 import { DataAction, DataCard, DataRow } from '../components/ui/DataCard'
 import { AiImportModal } from '../components/forms/AiImportModal'
 import type { SpendiaryData } from '../lib/types'
@@ -554,8 +540,8 @@ export function Settings() {
           {/* The Story Behind Spendiary */}
           <div className="rounded-2xl bg-surface-muted p-4">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-base">💡</span>
-              <h3 className="text-sm font-bold text-ink">Why I Built Spendiary</h3>
+              <LightbulbIcon className="h-4 w-4 text-ink-muted" />
+              <h3 className="text-sm font-bold text-ink">Why I built Spendiary</h3>
             </div>
             <div className="space-y-2 text-xs text-ink-muted leading-relaxed">
               <p>

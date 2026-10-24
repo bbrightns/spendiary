@@ -205,8 +205,9 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
                     active ? 'border-brand bg-brand-soft' : 'border-line hover:bg-surface-muted/60'
                   }`}
                 >
-                  <span className={`block text-sm font-bold ${active ? 'text-brand-ink' : 'text-ink'}`}>
-                    {meta.icon} {meta.labelTh}
+                  <span className={`flex items-center gap-1.5 text-sm font-bold ${active ? 'text-brand-ink' : 'text-ink'}`}>
+                    <span aria-hidden className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: meta.color }} />
+                    {meta.labelTh}
                   </span>
                   <span className="mt-0.5 block text-xs leading-snug text-ink-muted">
                     {catKey === 'spending' ? 'Free to spend or invest' : 'Co-op, PVD, fixed deposits'}

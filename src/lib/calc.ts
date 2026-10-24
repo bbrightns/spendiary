@@ -786,20 +786,18 @@ export const FREQUENCY_LABEL: Record<Transfer['frequency'], string> = {
 
 export const CASH_CATEGORIES: Record<
   CashAccountCategory,
-  { label: string; labelTh: string; color: string; icon: string; desc: string }
+  { label: string; labelTh: string; color: string; desc: string }
 > = {
   spending: {
     label: 'Spending & Deployable',
     labelTh: 'Everyday',
     color: '#10b981',
-    icon: '🟢',
     desc: 'Cash you are free to use: spending, emergencies, or money waiting to be invested',
   },
   locked: {
     label: 'Committed / Locked',
     labelTh: 'Savings',
     color: '#8b5cf6',
-    icon: '🔒',
     desc: 'Savings you should leave alone, such as savings co-ops, provident fund (PVD) and fixed deposits',
   },
 }
@@ -1218,7 +1216,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
   if (isCompleted) {
     return {
       status: 'completed',
-      label: 'Fully paid 🎉',
+      label: 'Fully paid',
       badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
     }
   }
@@ -1226,7 +1224,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
   if (isPaidThisMonth) {
     return {
       status: 'paid',
-      label: 'Paid this month ✅',
+      label: 'Paid this month',
       badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
     }
   }

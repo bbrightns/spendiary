@@ -119,7 +119,7 @@ export function SpendAccounts() {
             )}
             {cards.length > 1 && (
               <div className="mt-2 flex flex-wrap items-center gap-1.5 px-1" role="group" aria-label="Filter credit cards">
-                {([['all', 'All'], ['starred', '★ Starred'], ['balance', 'Has balance']] as [CardFilterMode, string][]).map(([mode, label]) => (
+                {([['all', 'All'], ['starred', 'Starred'], ['balance', 'Has balance']] as [CardFilterMode, string][]).map(([mode, label]) => (
                   <button
                     key={mode}
                     type="button"

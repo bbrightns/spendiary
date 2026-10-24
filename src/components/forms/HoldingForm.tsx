@@ -11,7 +11,7 @@ import { isValidRate } from '../../lib/fx'
 import { newId } from '../../lib/id'
 import { searchSecurities, type Security } from '../../lib/securities'
 import { fetchStockQuote, searchStocksRemote } from '../../lib/prices'
-import { ChevronDownIcon, PencilIcon, LockClosedIcon } from '../icons'
+import { CheckIcon, ChevronDownIcon, PencilIcon, LockClosedIcon } from '../icons'
 import { TransactionDateField } from './TransactionDateField'
 import { AcquisitionSourceField } from './AcquisitionSourceField'
 import { DividendSection } from './holdingForm/DividendSection'
@@ -859,11 +859,10 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
           <button
             type="button"
             onClick={() => setIsGeneralExpanded((v) => !v)}
-            className="w-full flex items-center justify-between p-3.5 sm:p-4 text-left bg-brand-soft/70 transition-colors cursor-pointer select-none"
+            className="w-full flex items-center justify-between p-3.5 sm:p-4 text-left bg-surface-muted transition-colors cursor-pointer select-none"
             aria-expanded={isGeneralExpanded}
           >
             <div className="flex items-center gap-2 min-w-0 pr-2">
-              <span className="text-sm">📦</span>
               <span className="text-sm font-bold text-ink truncate">
                 General info
               </span>
@@ -988,7 +987,12 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 }`}
               >
                 {tickerCheck.state === 'checking' && 'Checking ticker…'}
-                {tickerCheck.state === 'ok' && `✓ ${tickerCheck.name ?? form.ticker} · $${tickerCheck.price.toFixed(2)}`}
+                {tickerCheck.state === 'ok' && (
+                  <span className="inline-flex items-center gap-1">
+                    <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
+                    {`${tickerCheck.name ?? form.ticker} · $${tickerCheck.price.toFixed(2)}`}
+                  </span>
+                )}
                 {tickerCheck.state === 'notfound' && 'Ticker not found — live price will not update for this holding'}
                 {tickerCheck.state === 'notusd' && `Quoted in ${tickerCheck.currency}, not USD — live price is disabled for this ticker`}
               </p>
@@ -1046,7 +1050,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                               : 'bg-surface-muted text-ink-soft hover:text-ink hover:bg-line/40'
                           }`}
                         >
-                          {isSelected ? '✓ ' : ''}{tag}
+                          {isSelected && <CheckIcon className="mr-1 inline h-3 w-3" strokeWidth={2.6} />}
+                          {tag}
                         </button>
                       )
                     })}

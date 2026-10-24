@@ -308,7 +308,7 @@ export function CashLiquidity() {
                       : 'bg-surface-muted text-ink-muted hover:text-ink'
                   }`}
                 >
-                  <span>{meta.icon}</span>
+                  <span aria-hidden className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: meta.color }} />
                   <span>{meta.labelTh}</span>
                   <span className="text-xs opacity-75">({count})</span>
                 </button>
@@ -407,7 +407,8 @@ export function CashLiquidity() {
                       )}
                     </div>
                     <div className="flex items-center gap-1 mt-0.5 text-xs text-ink-muted truncate">
-                      <span className="truncate">{catMeta?.icon} {catMeta?.labelTh}</span>
+                      {catMeta && <span aria-hidden className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: catMeta.color }} />}
+                      <span className="truncate">{catMeta?.labelTh}</span>
                       {rateNum > 0 && (
                         <>
                           <span className="opacity-40">·</span>
@@ -544,7 +545,7 @@ export function CashLiquidity() {
                       {/* 2. Category */}
                       <td className="py-2 px-3 whitespace-nowrap">
                         <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium bg-surface-muted border border-line/50">
-                          <span>{CASH_CATEGORIES[cat]?.icon}</span>
+                          <span aria-hidden className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: CASH_CATEGORIES[cat]?.color }} />
                           <span>{CASH_CATEGORIES[cat]?.labelTh}</span>
                         </span>
                       </td>
@@ -554,7 +555,7 @@ export function CashLiquidity() {
                         {rateNum > 0 ? (
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400 text-xs">
-                              <span>📈 {rateNum.toFixed(2)}%</span>
+                              <span>{rateNum.toFixed(2)}% a year</span>
                               {capNum && capNum > 0 && (
                                 <span className="text-xs opacity-75 font-normal">
                                   (up to {thb(capNum)})
@@ -647,7 +648,7 @@ export function CashLiquidity() {
                             <div className="p-2 rounded-lg bg-surface border border-line/40">
                               <span className="text-ink-muted block text-xs">Purpose:</span>
                               <span className="font-bold text-ink flex items-center gap-1 mt-0.5">
-                                <span>{CASH_CATEGORIES[cat]?.icon}</span>
+                                <span aria-hidden className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: CASH_CATEGORIES[cat]?.color }} />
                                 <span>{CASH_CATEGORIES[cat]?.labelTh}</span>
                               </span>
                             </div>

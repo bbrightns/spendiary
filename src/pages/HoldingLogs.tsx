@@ -20,19 +20,7 @@ import type { AcquisitionSource, AssetClass, HoldingLog } from '../lib/types'
 import { logTookCash, noteForSource, paidFromName } from '../lib/acquisition'
 import { AcquisitionSourceField } from '../components/forms/AcquisitionSourceField'
 import { FormActions } from '../components/forms/FormActions'
-import {
-  ClockIcon,
-  DotsHorizontalIcon,
-  DownloadIcon,
-  ListIcon,
-  PencilIcon,
-  SearchIcon,
-  TableIcon,
-  TrashIcon,
-  UndoIcon,
-  WalletIcon,
-  LockClosedIcon,
-} from '../components/icons'
+import { ClockIcon, CloseIcon, DotsHorizontalIcon, DownloadIcon, ListIcon, LockClosedIcon, PencilIcon, SearchIcon, TableIcon, TrashIcon, UndoIcon, WalletIcon } from '../components/icons'
 import { TransactionDateField } from '../components/forms/TransactionDateField'
 import { STORAGE_KEYS } from '../lib/storageKeys'
 import { buildCsv, downloadCsv } from '../lib/csv'
@@ -346,8 +334,8 @@ export function HoldingLogs() {
                 aria-label="Clear search"
                 className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-ink-faint hover:text-ink cursor-pointer"
               >
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-surface-muted text-xs font-bold">
-                  ✕
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-surface-muted">
+                  <CloseIcon className="h-3 w-3" strokeWidth={2.4} />
                 </span>
               </button>
             )}
@@ -841,7 +829,7 @@ export function HoldingLogs() {
                                 background: `color-mix(in srgb, ${ASSET_META[log.assetClass]?.color ?? '#6366f1'} 14%, transparent)`,
                               }}
                             >
-                              {actionMeta.icon}
+                              <actionMeta.icon className="h-4 w-4" />
                             </span>
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -983,7 +971,7 @@ export function HoldingLogs() {
                         background: `color-mix(in srgb, ${ASSET_META[undoTarget.assetClass]?.color ?? '#6366f1'} 14%, transparent)`,
                       }}
                     >
-                      {undoMeta.icon}
+                      <undoMeta.icon className="h-4 w-4" />
                     </span>
                     <span className="font-bold text-sm text-ink truncate">{undoTarget.holdingName}</span>
                     {undoTarget.ticker && undoTarget.ticker !== 'CASH' && undoTarget.ticker !== 'FIXED' && undoTarget.ticker !== 'DCA' && (
@@ -1044,7 +1032,7 @@ export function HoldingLogs() {
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-base font-bold text-ink"
                   aria-hidden
                 >
-                  {meta.icon}
+                  <meta.icon className="h-4 w-4" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">

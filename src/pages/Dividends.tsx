@@ -12,7 +12,7 @@ import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
 import { thb } from '../lib/format'
 import { getHoldingAnnualDividend, getHoldingDpsForMonth, isDividendReceivedThisMonth } from '../lib/calc'
-import { CheckCircleIcon, ChevronDownIcon, CoinsIcon, PlusIcon, TrashIcon } from '../components/icons'
+import { CalendarIcon, CheckCircleIcon, ChevronDownIcon, CoinsIcon, PlusIcon, TrashIcon } from '../components/icons'
 import type { DividendRecord, Holding } from '../lib/types'
 
 const MONTH_NAMES = [
@@ -225,7 +225,7 @@ export function Dividends() {
             className="flex w-full items-center justify-between p-3.5 sm:p-5 text-left transition-colors hover:bg-surface-muted/50 cursor-pointer select-none"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <span className="text-lg shrink-0">📅</span>
+              <CalendarIcon className="h-5 w-5 shrink-0 text-ink-muted" />
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="truncate font-display text-lg font-extrabold text-ink">
