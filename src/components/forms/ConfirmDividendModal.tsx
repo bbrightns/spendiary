@@ -135,7 +135,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
       'success',
       { label: 'Undo', onClick: () => removeDividendRecord(recordId) },
       {
-        celebrate: true,
+        popup: true,
         title: 'Received',
         // The amount that landed, then whose dividend it was, the tax and where it went
         detail: {

@@ -138,13 +138,16 @@ components:
 - **gain / loss / warn** mean money going up, money going down, and something due or at risk. Use the `-soft` tint for backgrounds and the full colour for text and icons.
 - The same three colours are also used for **result feedback** (success and error toasts, the result popup) and **due states** (due today, overdue).
 - They are **never button fills for a normal save**. A green "Add to holding" or "Confirm" button is wrong; use the primary button. The only coloured button is `danger`, and only for destructive actions.
+- **White text on a colour needs a non-flipping token.** `gain` and `loss` turn light in dark mode, so `bg-gain text-white` goes unreadable. Use `bg-danger` (delete buttons, nav count badges) and `bg-gain-strong` / `hover:bg-gain-strong-hover` (selected month chips, "Log buy", "Mark received", done markers).
+- **Spend's shared pastels** live in `tones.ts`: `STATUS_TONE` (the day's allowance: on track / careful / over), `ATTENTION_TONE` (Today stack: late, due soon), `TAG_CHIP` (#tags) and `SPENT_TONE` (money spent in Analysis, orange so it never reads as a loss). Reuse them; don't write the pastel again.
 
 ### Category tones and asset accents
 - **Category tones** (`TONES` in `src/components/tones.ts`) are pastel pairs for Spend categories. Use them for category icon tiles, selected category tiles, subcategory trays and chart bars, and nothing else.
+- **Categorical badges** on the Invest side (debt types, activity-log kinds) use `TINT` / `tintBadge()` from `tones.ts`. They tell kinds apart; they don't mean good or bad.
 - **Asset accents** (`--color-funds`, `-stocks`, `-crypto`, `-gold`, `-real-estate`, `-cash`, `-debt`) are for chart segments, legend dots and asset icon tiles only. They are never text colour, button colour or a section fill.
 
 ### What not to use
-- No raw Tailwind palette colours (`emerald-600`, `rose-500`, `amber-400`, …) in components. The only exceptions are the `tones.ts` definitions and the side accent, which live in one file so Tailwind can see them.
+- No raw Tailwind palette colours (`emerald-600`, `rose-500`, `amber-400`, …) in components. The only exceptions are `tones.ts` (which holds every pastel set, so Tailwind can see the full class names), the test-mode banner and sidebar TEST badge (bright amber in both themes on purpose), the landing page and `AssetLogo`. `npm run lint:design` enforces this.
 - No hex values in `className`. If a colour is missing, add a token in `src/index.css`. The only exception is third-party brand marks: bank and fund logos in `AssetLogo`, and social glyphs.
 - Solid action fills use `bg-primary hover:bg-primary-hover text-white`, never `bg-ink`. `ink` flips to near-white in dark, so `bg-ink text-white` turns unreadable.
 

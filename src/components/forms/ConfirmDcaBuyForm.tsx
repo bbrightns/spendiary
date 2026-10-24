@@ -381,7 +381,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         undefined,
         payment,
       )
-      showToast(`Added ${thb(amountThbNum)} to ${targetCashAccount?.name || p.name}`, 'success', undo, { celebrate: true, title: 'Logged', detail: boughtDetail(p) })
+      showToast(`Added ${thb(amountThbNum)} to ${targetCashAccount?.name || p.name}`, 'success', undo, { popup: true, title: 'Logged', detail: boughtDetail(p) })
       onClose()
       return
     }
@@ -538,7 +538,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
       )
     }
 
-    showToast(`Your DCA buy for ${holding?.name ?? plan.name} is logged.`, 'success', undo, { celebrate: true, title: 'Logged', detail: boughtDetail(p) })
+    showToast(`Your DCA buy for ${holding?.name ?? plan.name} is logged.`, 'success', undo, { popup: true, title: 'Logged', detail: boughtDetail(p) })
     onClose()
   }
 

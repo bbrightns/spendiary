@@ -454,7 +454,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         timestamp: dateStrToTimestamp(txDate),
         ...sourceParams,
       })
-      showToast(`${verb} ${g.toFixed(4)}g (${bahtAmount} gold baht) gold for ${holding!.name}`, 'success', undefined, { celebrate: true, title: toastTitle })
+      showToast(`${verb} ${g.toFixed(4)}g (${bahtAmount} gold baht) gold for ${holding!.name}`, 'success', undefined, { popup: true, title: toastTitle })
       onClose()
     }
 
@@ -666,7 +666,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         timestamp: dateStrToTimestamp(txDate),
         ...sourceParams,
       })
-      showToast(`${verb} ${sats.toLocaleString()} sats for ${holding!.name}`, 'success', undefined, { celebrate: true, title: toastTitle })
+      showToast(`${verb} ${sats.toLocaleString()} sats for ${holding!.name}`, 'success', undefined, { popup: true, title: toastTitle })
       onClose()
     }
 
@@ -822,7 +822,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         timestamp: dateStrToTimestamp(txDate),
         ...sourceParams,
       })
-      showToast(`${verb} ${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares of ${holding!.name}`, 'success', undefined, { celebrate: true, title: toastTitle })
+      showToast(`${verb} ${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares of ${holding!.name}`, 'success', undefined, { popup: true, title: toastTitle })
       onClose()
     } else {
       if (!valid) { setShowErrors(true); return }
@@ -847,7 +847,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         timestamp: dateStrToTimestamp(txDate),
         ...sourceParams,
       })
-      showToast(`${verb} ${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} units of ${holding!.name}`, 'success', undefined, { celebrate: true, title: toastTitle })
+      showToast(`${verb} ${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} units of ${holding!.name}`, 'success', undefined, { popup: true, title: toastTitle })
       onClose()
     }
   }

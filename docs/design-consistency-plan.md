@@ -159,7 +159,8 @@ About 70 emoji in UI files. The Markdown export (`portfolioMarkdown.ts`) is out 
 
 ---
 
-## Phase 5: Colour and dark-mode cleanup
+## Phase 5: Colour and dark-mode cleanup [done]
+Done: status colours use `gain` / `loss` / `warn` / `brand` tokens; three new tokens for fills that need white text in both themes (`danger`, `gain-strong`) and for the Spend side (`spend`, `spend-ink`, `spend-soft`). Spend's shared pastels (status chips, Today stack, #tags, spent bars) and Invest's categorical badges (`TINT`: debt types, log kinds) live in `tones.ts`. The DCA mint pills became `gain-strong`, matching "Mark received". `TestModeBanner` and the sidebar TEST badge keep their bright amber on purpose: the test-mode warning must look the same in both themes, which `warn` (amber-600 / amber-400) does not.
 | # | Change |
 |---|---|
 | 5.1 | **Raw palette colours become tokens:** `Dashboard` (43), `Dividends` (25), `AiImportModal` (25), `SellHoldingModal` (22), `DividendSection` (20), `SpendAnalysis` (16), `TestModeBanner` (15, which becomes `warn`), `NoteField` (14), `Portfolio`, `CashLiquidity`, `SpendOverview`, `TodayStack`, `SpendSnapshotCard` and others. `tones.ts` and the side accent stay as they are. |

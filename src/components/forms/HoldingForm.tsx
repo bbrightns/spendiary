@@ -778,7 +778,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       afterHoldingState: savedHolding,
       ...sourceLogFields,
     })
-    showToast(editing ? `Updated ${name}` : `${name} is now in your portfolio.`, 'success', undefined, { celebrate: !editing, title: 'Holding added!' })
+    showToast(editing ? `Updated ${name}` : `${name} is now in your portfolio.`, 'success', undefined, { popup: !editing, title: 'Holding added!' })
     onClose()
   }
 

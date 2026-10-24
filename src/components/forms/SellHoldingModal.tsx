@@ -437,7 +437,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     })
 
     const pnlBadge = `${realizedPnL >= 0 ? '+' : ''}฿${Math.round(realizedPnL).toLocaleString()}`
-    showToast(`${holding.name}: ${realizedPnL >= 0 ? 'profit' : 'loss'} of ${pnlBadge}`, realizedPnL >= 0 ? 'success' : 'info', undefined, { popup: true, celebrate: realizedPnL > 0, title: 'Sale recorded' })
+    showToast(`${holding.name}: ${realizedPnL >= 0 ? 'profit' : 'loss'} of ${pnlBadge}`, realizedPnL >= 0 ? 'success' : 'info', undefined, { popup: true, title: 'Sale recorded' })
     onClose()
   }
 

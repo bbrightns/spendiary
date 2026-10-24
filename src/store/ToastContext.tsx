@@ -43,7 +43,7 @@ export interface ResultDetail {
 }
 
 export interface ToastOptions {
-  /** Show the centered success popup with a confetti burst (use for milestones like a completed buy). */
+  /** Show the centered success popup with a confetti burst (milestones only: a loan paid off, a goal reached). */
   celebrate?: boolean
   /** Show the centered popup instead of a small toast (no confetti unless `celebrate`). */
   popup?: boolean
