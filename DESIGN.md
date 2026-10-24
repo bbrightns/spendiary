@@ -267,7 +267,8 @@ Footer rules:
 - **No Cancel button in A or B.** The ✕, Esc and the backdrop already cancel.
 - **The primary label says what happens:** "Add", "Save changes", "Pay ฿1,200", "Log ฿5,000 buy", "Import 12 transactions". For a destructive confirm, name the thing: "Delete account", not "Confirm".
 - **The primary button is `primary`**, never green and never a hand-built colour. Sell is not destructive; it uses `primary` with a clear label.
-- **A disabled primary must have a visible reason** in the body (a field error or a hint). Don't leave a grey button unexplained.
+- **A disabled primary must have a visible reason:** a field error, or `FormActions`' `hint` line above the button ("Enter an amount"). Don't leave a grey button unexplained.
+- **`FormActions` takes `submitLabel`** for anything more specific than "Add" / "Save changes".
 - **Enter submits:** every footer marks its main button `data-modal-submit`, so Enter in a text field submits.
 
 **Choosing how to confirm a delete**

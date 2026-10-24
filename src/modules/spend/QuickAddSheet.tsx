@@ -180,6 +180,7 @@ export function QuickAddSheet() {
   const transferValid =
     type !== 'transfer' || (loanPayment ? accountId !== NO_WALLET : accountId !== NO_WALLET && toAccountId !== NO_WALLET && accountId !== toAccountId)
   const canSave = amountValid && transferValid
+  const saveHint = !amountValid ? 'Enter an amount' : !transferValid ? (loanPayment ? 'Pick the account you pay from' : 'Pick two different accounts') : undefined
   // Installments: a new card expense of ฿1,000 or more (not editing, not a recurring bill)
   const card = cards.find((c) => c.id === accountId)
   const canSplit = !editId && !fromRecurring && type === 'expense' && !!card && amountValid && value >= 1000
@@ -323,7 +324,7 @@ export function QuickAddSheet() {
         title={editId ? 'Edit transaction' : fromRecurring ? fromRecurring.name : 'Quick add'}
         description={fromRecurring ? `Mark as ${type === 'income' ? 'received' : 'paid'}. Adjust the amount if this one was different.` : hint}
         size="md"
-        footer={<FormActions editing={!!editId} canSave={canSave} onSave={save} onDelete={remove} />}
+        footer={<FormActions editing={!!editId} canSave={canSave} onSave={save} onDelete={remove} hint={saveHint} />}
       >
         <div className="space-y-5">
           <SegmentedControl options={TYPE_OPTIONS} value={type} onChange={changeType} ariaLabel="Transaction type" />
