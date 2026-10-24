@@ -26,6 +26,17 @@ function formatWithCommas(value: string | number): string {
   return integerPart
 }
 
+/** Like formatWithCommas, but keeps a leading minus (a wallet can be overdrawn). */
+function formatSigned(value: string): string {
+  return (value.trimStart().startsWith('-') ? '-' : '') + formatWithCommas(value)
+}
+
+/** "-3,158.52" → -3158.52; blank → 0 */
+function parseSigned(value: string): number {
+  const n = Number(value.replace(/[^0-9.]/g, '')) || 0
+  return value.trimStart().startsWith('-') && n ? -n : n
+}
+
 /** Add or edit a cash account; shared by Cash & Liquidity and Spend's wallet sheet. */
 interface EditAccountModalProps {
   open: boolean
@@ -59,10 +70,13 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
   // Most accounts pay nothing, so the interest fields stay folded away until switched on
   const [earnsInterest, setEarnsInterest] = useState(Boolean(initialAccount.interestRate))
 
+  const negative = balance.trimStart().startsWith('-')
   const num = (v: string) => Number(v.replace(/[^0-9.]/g, '')) || 0
   const yearlyInterest = (() => {
     const cap = num(maxEligibleBalance)
-    const eligible = cap > 0 ? Math.min(num(balance), cap) : num(balance)
+    // Nothing earns interest while overdrawn
+    const bal = Math.max(0, parseSigned(balance))
+    const eligible = cap > 0 ? Math.min(bal, cap) : bal
     return (eligible * num(interestRate)) / 100
   })()
 
@@ -70,8 +84,7 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
     e.preventDefault()
     if (!name.trim()) return
 
-    const cleanBal = balance.replace(/[^0-9.]/g, '')
-    const balNum = cleanBal === '' ? 0 : Number(cleanBal)
+    const balNum = parseSigned(balance)
     const rateClean = interestRate.replace(/[^0-9.]/g, '')
     const rateNum = rateClean !== '' ? Number(rateClean) : undefined
     const capClean = maxEligibleBalance.replace(/[^0-9.]/g, '')
@@ -154,13 +167,26 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
             Balance
           </label>
           <div className={`${fieldCls} flex items-center focus-within:border-brand focus-within:bg-surface focus-within:ring-2 focus-within:ring-brand/15`}>
-            <span className="pl-3.5 text-base font-bold text-ink-muted">{currency === 'USD' ? '$' : '฿'}</span>
+            {/* Phone decimal keypads have no minus key, so the sign is a toggle */}
+            <button
+              type="button"
+              aria-label="Negative balance"
+              aria-pressed={negative}
+              title="Negative balance (overdrawn)"
+              onClick={() => setBalance((b) => (negative ? b.replace(/^\s*-/, '') : `-${b}`))}
+              className={`ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-base font-bold transition-colors cursor-pointer ${
+                negative ? 'bg-loss-soft text-loss' : 'text-ink-muted hover:bg-surface-muted'
+              }`}
+            >
+              ±
+            </button>
+            <span className={`text-base font-bold ${negative ? 'text-loss' : 'text-ink-muted'}`}>{currency === 'USD' ? '$' : '฿'}</span>
             <input
               id="account-balance"
               type="text"
               inputMode="decimal"
               placeholder="0.00"
-              value={formatWithCommas(balance)}
+              value={formatSigned(balance)}
               onChange={(e) => setBalance(e.target.value)}
               className="min-w-0 flex-1 bg-transparent px-2 text-base font-bold tnum text-ink outline-none"
             />
