@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type MouseEvent as ReactMouseEvent } from 'react'
+import { useState, useEffect, useCallback, useRef, type MouseEvent as ReactMouseEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
 import { useData } from '../store/DataContext'
@@ -6,7 +6,7 @@ import { useToast } from '../store/ToastContext'
 import { useLivePrices } from '../hooks/useLivePrices'
 import { isValidPrice } from '../lib/priceCache'
 import { PageHeader } from '../components/layout/PageHeader'
-import { Card } from '../components/ui/Card'
+import { Card, Inset } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { AddButton } from '../components/ui/AddButton'
 import { DonutChart } from '../components/charts/DonutChart'
@@ -17,6 +17,7 @@ import { SellHoldingModal } from '../components/forms/SellHoldingModal'
 import { MoveLocationModal } from '../components/forms/MoveLocationModal'
 import { ConfirmDividendModal } from '../components/forms/ConfirmDividendModal'
 import { Modal } from '../components/ui/Modal'
+import { FormActions } from '../components/forms/FormActions'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { DropdownChip } from '../components/ui/DropdownChip'
 import { PopoverOption } from '../components/ui/Popover'
@@ -169,13 +170,12 @@ export function Portfolio() {
   const [selling, setSelling] = useState<Holding | null>(null)
   const [activeMenuHoldingId, setActiveMenuHoldingId] = useState<string | null>(null)
   const [activeMenuHolding, setActiveMenuHolding] = useState<Holding | null>(null)
-  const [menuDirection, setMenuDirection] = useState<'down' | 'up'>('down')
-  const [menuCoords, setMenuCoords] = useState<{ top?: number; bottom?: number; right: number } | null>(null)
+  // The ⋯ button that opened a menu: the menu lines up with it and gives focus back to it
+  const menuAnchorRef = useRef<HTMLElement | null>(null)
 
   // Per-pocket (storage location) action menu state
   const [pocketMenu, setPocketMenu] = useState<{ holding: Holding; locId: string; locName: string; isBtc: boolean } | null>(null)
-  const [pocketMenuCoords, setPocketMenuCoords] = useState<{ top?: number; bottom?: number; right: number } | null>(null)
-  const [pocketMenuDirection, setPocketMenuDirection] = useState<'down' | 'up'>('down')
+  const pocketAnchorRef = useRef<HTMLElement | null>(null)
   const openPocketMenu = useCallback((e: ReactMouseEvent<HTMLButtonElement>, holding: Holding, locId: string) => {
     e.stopPropagation() // keep the same click from hitting the window close-handler
     const locs = holding.assetClass === 'crypto'
@@ -183,56 +183,13 @@ export function Portfolio() {
       : (holding.goldLocations ?? [])
     const loc = locs.find((l) => l.id === locId)
     if (!loc) return
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const spaceBelow = window.innerHeight - rect.bottom
-    const spaceAbove = rect.top
-    const openUp = spaceBelow < 170 && spaceAbove > spaceBelow
-    setPocketMenuDirection(openUp ? 'up' : 'down')
-    setPocketMenuCoords({
-      top: openUp ? undefined : rect.bottom + 6,
-      bottom: openUp ? window.innerHeight - rect.top + 6 : undefined,
-      right: Math.max(12, window.innerWidth - rect.right),
-    })
+    pocketAnchorRef.current = e.currentTarget
     setPocketMenu({ holding, locId, locName: loc.name, isBtc: holding.assetClass === 'crypto' })
   }, [])
 
-  // Close pocket menu on outside click, scroll, or resize
-  useEffect(() => {
-    if (!pocketMenu) return
-    const handleClose = () => setPocketMenu(null)
-    window.addEventListener('click', handleClose)
-    window.addEventListener('scroll', handleClose, { passive: true })
-    window.addEventListener('resize', handleClose)
-    return () => {
-      window.removeEventListener('click', handleClose)
-      window.removeEventListener('scroll', handleClose)
-      window.removeEventListener('resize', handleClose)
-    }
-  }, [pocketMenu])
-
   const [removeLocConfirmOpen, setRemoveLocConfirmOpen] = useState(false)
   const [removeLocTarget, setRemoveLocTarget] = useState<{ holdingId: string; locId: string; name: string; isBtc: boolean } | null>(null)
-  const closePocketMenu = useCallback(() => {
-    setPocketMenu(null)
-    setPocketMenuCoords(null)
-  }, [])
-
-  // Close action dropdown menu when clicking outside, scrolling, or resizing
-  useEffect(() => {
-    if (!activeMenuHoldingId) return
-    const handleClose = () => {
-      setActiveMenuHoldingId(null)
-      setActiveMenuHolding(null)
-    }
-    window.addEventListener('click', handleClose)
-    window.addEventListener('scroll', handleClose, { passive: true })
-    window.addEventListener('resize', handleClose)
-    return () => {
-      window.removeEventListener('click', handleClose)
-      window.removeEventListener('scroll', handleClose)
-      window.removeEventListener('resize', handleClose)
-    }
-  }, [activeMenuHoldingId])
+  const closePocketMenu = useCallback(() => setPocketMenu(null), [])
 
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false)
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null)
@@ -625,17 +582,7 @@ export function Portfolio() {
                   setActiveMenuHoldingId(null)
                   setActiveMenuHolding(null)
                 } else {
-                  const rect = e.currentTarget.getBoundingClientRect()
-                  const spaceBelow = window.innerHeight - rect.bottom
-                  const spaceAbove = rect.top
-                  const menuApproxHeight = (h.assetClass === 'fund' || h.assetClass === 'stock') ? 190 : 145
-                  const openUp = spaceBelow < menuApproxHeight && spaceAbove > spaceBelow
-                  setMenuDirection(openUp ? 'up' : 'down')
-                  setMenuCoords({
-                    top: openUp ? undefined : rect.bottom + 6,
-                    bottom: openUp ? window.innerHeight - rect.top + 6 : undefined,
-                    right: Math.max(12, window.innerWidth - rect.right),
-                  })
+                  menuAnchorRef.current = e.currentTarget
                   setActiveMenuHoldingId(h.id)
                   setActiveMenuHolding(h)
                 }
@@ -930,7 +877,7 @@ export function Portfolio() {
           {/* Asset Allocation card (Hero Overview & Allocation) */}
           <Card className="animate-rise card-bleed-mobile">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="font-display text-base font-bold text-ink">Port Allocation</h2>
+              <h2 className="font-display text-lg font-extrabold text-ink">Allocation</h2>
               <SegmentedControl
                 shape="rounded"
                 size="xs"
@@ -945,45 +892,29 @@ export function Portfolio() {
               />
             </div>
 
-            {/* Value & PnL Hero Summary */}
-            <div id="guide-portfolio-summary" className="@container mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
+            {/* Value and profit: the same Inset as the Dashboard's Allocation card */}
+            <Inset id="guide-portfolio-summary" className="@container mt-3">
               {/* Stacks when the card is narrow, sits side by side once there is room */}
-              <div className="flex flex-col gap-3 @min-[17rem]:flex-row @min-[17rem]:items-start @min-[17rem]:justify-between @min-[17rem]:gap-x-3">
-                {/* Portfolio value */}
-                <div className="min-w-0 space-y-1.5">
-                  <span className="block text-xs font-bold uppercase tracking-wider text-ink-muted whitespace-nowrap">Portfolio Value</span>
-                  <p
-                    title={thb(summary.value)}
-                    className="font-display text-[clamp(1.25rem,11cqw,1.875rem)] @min-[17rem]:text-[clamp(1.1rem,7cqw,1.875rem)] font-extrabold tracking-tight tnum text-ink leading-tight cursor-default"
-                  >
+              <div className="flex flex-col gap-3 @min-[17rem]:flex-row @min-[17rem]:items-start @min-[17rem]:justify-between">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-ink-muted">Portfolio value</p>
+                  <p title={thb(summary.value)} className="mt-1 font-display text-2xl font-extrabold tracking-tight tnum text-ink">
                     {thbCompact(summary.value)}
                   </p>
-                  <p className="text-xs text-ink-muted font-medium" title={thb(summary.cost)}>
-                    Cost:{' '}
-                    <span className="font-semibold tnum text-ink-soft">
-                      {thbCompact(summary.cost)}
-                    </span>
+                  <p className="text-xs text-ink-muted" title={thb(summary.cost)}>
+                    Cost <span className="font-semibold tnum text-ink-soft">{thbCompact(summary.cost)}</span>
                   </p>
                 </div>
-
-                {/* All-time profit / loss */}
-                <div className="min-w-0 space-y-1.5 @min-[17rem]:text-right">
-                  <span className="block text-xs font-bold uppercase tracking-wider text-ink-muted whitespace-nowrap">All-Time PnL</span>
-                  <div className="flex items-baseline @min-[17rem]:justify-end">
-                    <PnLText
-                      value={summary.pnl}
-                      compact
-                      className="font-display text-[clamp(1.25rem,11cqw,1.875rem)] @min-[17rem]:text-[clamp(1.1rem,7cqw,1.875rem)] !font-extrabold tracking-tight leading-tight"
-                    />
-                  </div>
-                  <div className="flex items-center gap-1.5 @min-[17rem]:justify-end">
+                <div className="min-w-0 @min-[17rem]:text-right">
+                  <p className="text-xs font-semibold text-ink-muted">All-time profit</p>
+                  <PnLText value={summary.pnl} compact className="mt-1 block font-display text-2xl !font-extrabold tracking-tight" />
+                  <div className="mt-0.5 flex items-center gap-1.5 @min-[17rem]:justify-end">
                     <PnLPill value={summary.pnlPct} asPct size="sm" />
-                    <span className="text-xs text-ink-muted font-medium whitespace-nowrap">all-time</span>
                   </div>
                   <UnpricedNote count={summary.unpricedCount} />
                 </div>
               </div>
-            </div>
+            </Inset>
 
             {/* Donut Chart & Breakdown */}
             <div className="mt-4 flex flex-col items-center gap-4">
@@ -1066,9 +997,7 @@ export function Portfolio() {
               <div className="px-4 sm:px-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <h3 className="font-display text-lg font-bold text-ink">
-                      Holdings & Assets
-                    </h3>
+                    <h3 className="font-display text-lg font-extrabold text-ink">Holdings</h3>
                     <p className="text-xs text-ink-muted">
                       {rows.length} of {data.holdings.length} positions shown
                     </p>
@@ -1260,7 +1189,7 @@ export function Portfolio() {
           ) : (
             <div className="p-8 text-center">
               <PortfolioIcon className="h-6 w-6 mx-auto text-brand mb-2" />
-              <h3 className="font-display font-bold text-ink">Portfolio Value Trend</h3>
+              <h3 className="font-display text-lg font-extrabold text-ink">Portfolio value over time</h3>
               <p className="text-sm text-ink-muted mt-1 max-w-md mx-auto">
                 Snapshot history will record daily as your holdings and prices update.
               </p>
@@ -1270,11 +1199,10 @@ export function Portfolio() {
       </div>
 
       {/* ── Action Dropdown Menu ── */}
-      {activeMenuHolding && menuCoords && (
+      {activeMenuHolding && (
         <HoldingActionMenu
           holding={activeMenuHolding}
-          coords={menuCoords}
-          direction={menuDirection}
+          anchorRef={menuAnchorRef}
           onClose={() => {
             setActiveMenuHoldingId(null)
             setActiveMenuHolding(null)
@@ -1287,11 +1215,10 @@ export function Portfolio() {
       )}
 
       {/* ── Per-pocket (storage location) Action Menu ── */}
-      {pocketMenu && pocketMenuCoords && (
+      {pocketMenu && (
         <PocketActionMenu
           menu={pocketMenu}
-          coords={pocketMenuCoords}
-          direction={pocketMenuDirection}
+          anchorRef={pocketAnchorRef}
           onClose={closePocketMenu}
           onBuy={openBuy}
           onSell={openSell}
@@ -1348,9 +1275,7 @@ export function Portfolio() {
         onClose={() => setLocEditOpen(false)}
         title="Edit location"
         description={locEditing && !('satoshi' in locEditing) ? "Update this location's name, grams, or THB spent." : "Update this location's name, satoshi amount, or THB spent."}
-        footer={
-          <Button onClick={saveLocEdit} className="w-full">Save changes</Button>
-        }
+        footer={<FormActions editing canSave onSave={saveLocEdit} />}
       >
         <div className="space-y-4 pb-2">
           <TextField
@@ -1428,7 +1353,7 @@ export function Portfolio() {
             />
           </div>
           {locEditing && 'satoshi' in locEditing && Number(locSatoshi) > 0 && Number(locThbSpent) > 0 && (
-            <div className="rounded-xl border border-line bg-surface-muted px-3.5 py-2.5 text-xs space-y-1">
+            <div className="rounded-2xl bg-surface-muted px-3.5 py-2.5 text-xs space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-ink-muted">BTC amount</span>
                 <span className="font-semibold text-ink tnum">{(Number(locSatoshi) / SATS_PER_BTC).toFixed(8)} BTC</span>
@@ -1442,7 +1367,7 @@ export function Portfolio() {
             </div>
           )}
           {locEditing && !('satoshi' in locEditing) && Number(locGrams) > 0 && Number(locThbSpent) > 0 && (
-            <div className="rounded-xl border border-line bg-surface-muted px-3.5 py-2.5 text-xs space-y-1">
+            <div className="rounded-2xl bg-surface-muted px-3.5 py-2.5 text-xs space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-ink-muted">Weight in gold baht</span>
                 <span className="font-semibold text-ink tnum">{(Number(locGrams) / GRAMS_PER_BAHT_GOLD).toFixed(4)} gold baht</span>

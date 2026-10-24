@@ -1,14 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { NumberField, SelectField, TextField } from '../ui/Field'
-import { Button } from '../ui/Button'
+import { FormActions } from './FormActions'
 import { AssetLogo } from '../ui/AssetLogo'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { ASSET_META, getHoldingDpsForMonth, nextPayoutMonth } from '../../lib/calc'
 import type { Holding } from '../../lib/types'
 import { localDateStr, thb } from '../../lib/format'
-import { CheckCircleIcon } from '../icons'
 
 interface Props {
   open: boolean
@@ -102,6 +101,10 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    submit()
+  }
+
+  const submit = () => {
     if (!isValid || !targetHolding) {
       setShowErrors(true)
       return
@@ -170,28 +173,18 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
       title="Record dividend"
       description="Record a dividend and add it to a cash account"
       footer={
-        <div className="flex items-center justify-end gap-3">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            form="confirm-dividend-form"
-            variant="primary"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
-          >
-            <CheckCircleIcon className="h-4 w-4 mr-1.5" strokeWidth={2.2} />
-            {netAmount > 0
-              ? `Confirm (${formatCur(netAmount)})`
-              : 'Confirm dividend'}
-          </Button>
-        </div>
+        <FormActions
+          editing={false}
+          canSave
+          onSave={submit}
+          submitLabel={netAmount > 0 ? `Record ${formatCur(netAmount)}` : 'Record dividend'}
+        />
       }
     >
       <form id="confirm-dividend-form" onSubmit={handleSubmit} className="space-y-4 pt-1">
         {/* Selected Holding Card or Selector */}
         {holding ? (
-          <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface-muted/50 p-3.5">
+          <div className="flex items-center gap-3 rounded-2xl bg-surface-muted p-4">
             <AssetLogo name={holding.name} assetClass={holding.assetClass} size="md" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">

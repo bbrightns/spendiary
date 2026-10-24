@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { NumberField, SelectField, TextField } from '../ui/Field'
-import { Button } from '../ui/Button'
+import { FormActions } from './FormActions'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { searchSecurities, type Security } from '../../lib/securities'
@@ -67,18 +67,9 @@ export function PlannedAssetModal({ open, onClose, onAdded }: Props) {
     <Modal
       open={open}
       onClose={onClose}
-      title="Add Target Asset"
+      title="Add target asset"
       description="Add a new position you plan to invest in to calculate target allocation and buy advice."
-      footer={
-        <div className="flex gap-2 w-full">
-          <Button variant="secondary" onClick={onClose} className="flex-1">
-            Cancel
-          </Button>
-          <Button onClick={handleSave} className="flex-1">
-            Add to Targets
-          </Button>
-        </div>
-      }
+      footer={<FormActions editing={false} canSave onSave={handleSave} submitLabel="Add to targets" />}
     >
       <div className="space-y-4">
         <SelectField
@@ -117,7 +108,7 @@ export function PlannedAssetModal({ open, onClose, onAdded }: Props) {
                 placeholder={form.assetClass === 'stock' ? 'e.g. Nvidia Corp, Tesla Inc' : 'e.g. Kasikorn Fund, SCBS&P500'}
               />
               {suggestions.length > 0 && (
-                <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-xl border border-line bg-surface shadow-lg">
+                <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-2xl border border-line bg-surface shadow-[var(--shadow-lift)] animate-pop-in origin-top">
                   {suggestions.map((s) => (
                     <li key={s.ticker}>
                       <button

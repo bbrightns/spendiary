@@ -84,13 +84,13 @@ export function SpendRecurringPage() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
-            <Card className="p-3 sm:p-5 animate-rise" padded={false}>
+            <Card compact className="animate-rise">
               <p className="text-xs font-medium text-ink-muted">Bills per month</p>
               <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate text-ink">≈ {thb(out)}</p>
               <p className="mt-0.5 text-xs text-ink-muted tnum">Fixed costs ≈ {thb(fixed)}</p>
               {dcaMonthly > 0 && <p className="text-xs text-ink-muted tnum">DCA ≈ {thb(dcaMonthly)}</p>}
             </Card>
-            <Card className="p-3 sm:p-5 animate-rise" padded={false}>
+            <Card compact className="animate-rise">
               <p className="text-xs font-medium text-ink-muted">Recurring income</p>
               <p className={`mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate ${inc > 0 ? 'text-gain' : 'text-ink'}`}>≈ {thb(inc)}</p>
             </Card>

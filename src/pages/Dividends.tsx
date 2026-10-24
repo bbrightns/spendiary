@@ -166,7 +166,7 @@ export function Dividends() {
         {/* ── KPI Stat Cards ── */}
         <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-3">
           {/* Card 1: expected dividends this year & yield */}
-          <Card className="p-3.5 sm:p-5 animate-rise flex flex-col justify-between col-span-2 lg:col-span-1 bg-gradient-to-br from-emerald-500/5 via-surface to-surface border-emerald-500/20" padded={false}>
+          <Card compact className="animate-rise flex flex-col justify-between col-span-2 lg:col-span-1">
             <div>
               <div className="flex items-center justify-between gap-1">
                 <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
@@ -190,7 +190,7 @@ export function Dividends() {
           </Card>
 
           {/* Card 2: received this year */}
-          <Card className="p-3.5 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+          <Card compact className="animate-rise flex flex-col justify-between">
             <div>
               <p className="text-xs font-medium text-ink-muted">Received ({currentYear})</p>
               <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-ink tnum truncate">
@@ -203,7 +203,7 @@ export function Dividends() {
           </Card>
 
           {/* Card 3: expected this month */}
-          <Card className="p-3.5 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+          <Card compact className="animate-rise flex flex-col justify-between">
             <div>
               <p className="text-xs font-medium text-ink-muted">Due this month ({MONTH_NAMES[currentMonth - 1]})</p>
               <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-brand-ink tnum truncate">
@@ -228,7 +228,7 @@ export function Dividends() {
               <span className="text-lg shrink-0">📅</span>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="font-display text-sm sm:text-base font-bold text-ink truncate">
+                  <h2 className="truncate font-display text-lg font-extrabold text-ink">
                     Dividends due this month
                   </h2>
                   <span className="rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-xs font-bold">
@@ -405,7 +405,7 @@ export function Dividends() {
         <Card className="animate-rise" padded={false}>
           <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-line">
             <div>
-              <h2 className="font-display text-base font-bold text-ink">Dividend history</h2>
+              <h2 className="font-display text-lg font-extrabold text-ink">Dividend history</h2>
               <p className="text-xs text-ink-muted mt-0.5">
                 Dividends you have recorded, with the tax withheld
               </p>
@@ -576,13 +576,13 @@ export function Dividends() {
         open={Boolean(deletingRecord)}
         onClose={() => setDeletingRecord(null)}
         onConfirm={handleDeleteConfirm}
-        title="Remove Dividend Record"
+        title="Remove this dividend?"
         description={
           deletingRecord
             ? `Are you sure you want to remove this ฿${deletingRecord.netAmount.toLocaleString()} dividend for ${deletingRecord.ticker}? If this was deposited to ${deletingRecord.cashAccountName || 'a cash account'}, the cash balance will be reduced.`
             : ''
         }
-        confirmText="Remove Record"
+        confirmText="Remove dividend"
       />
     </>
   )

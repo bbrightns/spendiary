@@ -48,8 +48,9 @@ export function GoalsSection() {
             return (
               <Card
                 key={g.id}
-                padded={false}
-                className="min-w-0 cursor-pointer p-4 transition-shadow hover:shadow-[var(--shadow-lift)] sm:p-5"
+                compact
+                hover
+                className="min-w-0 cursor-pointer"
                 onClick={() => setSheet({ open: true, goal: g })}
               >
                 <div className="flex items-start gap-3">
@@ -118,6 +119,7 @@ function GoalSheet({ open, goal, onClose }: { open: boolean; goal?: SpendGoal; o
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }))
   const savedOk = form.walletId !== '' || form.saved === '' || (Number.isFinite(num(form.saved)) && num(form.saved) >= 0)
   const canSave = form.name.trim() !== '' && num(form.target) > 0 && savedOk
+  const saveHint = !form.name.trim() ? 'Name the goal' : !(num(form.target) > 0) ? 'Enter a target amount' : 'Check the amount saved so far'
   const Icon = CATEGORY_ICONS[form.icon] ?? CATEGORY_ICONS.sparkles
 
   const save = () => {
@@ -144,6 +146,7 @@ function GoalSheet({ open, goal, onClose }: { open: boolean; goal?: SpendGoal; o
       size="md"
       footer={
         <FormActions
+          hint={saveHint}
           editing={!!goal}
           canSave={canSave}
           onSave={save}

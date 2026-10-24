@@ -129,7 +129,7 @@ export function SpendOverview() {
       {/* ── Month at a glance ── */}
       {budget > 0 && (
         <Link to="/spend/analysis" className="block">
-          <Card className="py-3.5 hover:shadow-[var(--shadow-lift)] transition-shadow">
+          <Card compact hover>
             <div className="flex justify-between text-sm">
               <span className="text-ink-muted">This month</span>
               <span className="font-bold text-ink tnum">

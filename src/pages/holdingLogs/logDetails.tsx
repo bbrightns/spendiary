@@ -19,7 +19,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
     const t = log.transfer
     const fmtQty = (n: number) => (t.unit === 'sats' ? `${n.toLocaleString()} sats` : `${n.toFixed(4)} g`)
     return (
-      <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-3 rounded-xl border border-line/60 bg-surface-muted/50 p-3.5 sm:grid-cols-3">
+      <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-3 rounded-2xl bg-surface-muted p-4 sm:grid-cols-3">
         <div className="min-w-0">
           <div className="text-xs font-semibold text-ink-muted">⇄ Moved</div>
           <div className="mt-1 text-base font-bold tnum text-ink">{fmtQty(t.amount)}</div>
@@ -52,7 +52,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
     const cashAccName = cashAccMatch ? cashAccMatch[1].trim() : (log.cashAccountId ? cashAccounts?.find((c) => c.id === log.cashAccountId)?.name : undefined)
 
     return (
-      <div className="rounded-2xl border border-line/70 bg-surface-muted/40 dark:bg-surface-muted/20 p-2.5 sm:p-3 space-y-2.5">
+      <div className="rounded-2xl bg-surface-muted p-4 space-y-2.5">
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {/* Col 1: net dividend */}
           <div className="flex flex-col min-w-0">
@@ -108,7 +108,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
     const cashItems = getCashDiffItems(log)
     if (cashItems.length > 0) {
       return (
-        <div className="rounded-2xl border border-line/70 bg-surface-muted/40 dark:bg-surface-muted/20 p-2.5 sm:p-3 text-xs space-y-2.5">
+        <div className="rounded-2xl bg-surface-muted p-4 text-xs space-y-2.5">
           {cashItems.map((item, idx) => {
             const sym = item.currencySymbol
             const hasNameChange = item.prevName && item.currName && item.prevName !== item.currName
@@ -382,7 +382,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
   const priceLabel = isFund ? 'NAV / Price' : 'Market Price'
 
   return (
-    <div className="rounded-2xl border border-line/70 bg-surface-muted/40 dark:bg-surface-muted/20 p-2.5 sm:p-3 text-xs space-y-2.5">
+    <div className="rounded-2xl bg-surface-muted p-4 text-xs space-y-2.5">
       {/* Holding Name Row (if renamed) */}
       {showNameRow && (
         <div>

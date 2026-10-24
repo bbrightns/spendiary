@@ -126,14 +126,14 @@ export function SpendLoansPage() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
-            <Card className="p-3 sm:p-5" padded={false}>
+            <Card compact>
               <p className="text-xs font-medium text-ink-muted">Still owed</p>
               <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate text-ink">{thb(owed)}</p>
               <p className="mt-0.5 text-xs text-ink-muted">
                 {active.length} {active.length === 1 ? 'loan' : 'loans'}
               </p>
             </Card>
-            <Card className="p-3 sm:p-5" padded={false}>
+            <Card compact>
               <p className="text-xs font-medium text-ink-muted">Each month</p>
               <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate text-ink">{thb(perMonth)}</p>
               <p className="mt-0.5 text-xs text-ink-muted">
@@ -143,7 +143,7 @@ export function SpendLoansPage() {
           </div>
 
           {active.length > 0 && (
-            <Card padded={false} className="px-4 sm:px-5">
+            <Card list>
               <ul className="divide-y divide-line">{active.map(row)}</ul>
             </Card>
           )}
@@ -160,7 +160,7 @@ export function SpendLoansPage() {
                 <ChevronDownIcon className={`h-4 w-4 transition-transform ${showDone ? 'rotate-180' : ''}`} strokeWidth={2} />
               </button>
               {showDone && (
-                <Card padded={false} className="px-4 sm:px-5 opacity-80">
+                <Card list className="opacity-80">
                   <ul className="divide-y divide-line">{done.map(row)}</ul>
                 </Card>
               )}

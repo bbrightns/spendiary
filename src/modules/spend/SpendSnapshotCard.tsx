@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Card } from '../../components/ui/Card'
+import { Card, CardHeader } from '../../components/ui/Card'
 import { WalletIcon } from '../../components/icons'
 import { localDateStr, thb, thbCompact } from '../../lib/format'
 import { dayAllowance, inPeriod, periodFor, periodLabel, totalsFor, type DayStatus } from './logic'
@@ -26,7 +26,7 @@ export function SpendSnapshotCard() {
   if (transactions.length === 0 && budget === 0) {
     return (
       <Link to="/" className="block">
-        <Card className="flex items-center justify-between gap-3 py-3.5 hover:shadow-[var(--shadow-lift)] transition-shadow">
+        <Card compact hover className="flex items-center justify-between gap-3">
           <span className="flex items-center gap-2.5 text-sm font-semibold text-ink">
             <WalletIcon className="h-5 w-5 text-brand" />
             Track day-to-day spending in Spend
@@ -46,18 +46,13 @@ export function SpendSnapshotCard() {
 
   return (
     <Link to="/" className="group block" aria-label="Open Spend">
-      <Card className="@container hover:shadow-[var(--shadow-lift)] transition-shadow">
-        {/* Same title row as the hub cards below (Port Allocation, Cash & Liquidity, Liabilities) */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-brand/10 text-brand">
-              <WalletIcon className="h-4 w-4" />
-            </div>
-            <h2 className="shrink-0 font-display text-base font-bold text-ink">Spending</h2>
-            <span className="truncate text-xs font-medium text-ink-muted">· {periodLabel(period, settings.cycle)}</span>
-          </div>
-          <span className="shrink-0 text-xs font-semibold text-brand group-hover:underline">Spend →</span>
-        </div>
+      <Card hover className="@container">
+        {/* The whole card is the link, so its "Spend →" is styled text rather than a second link */}
+        <CardHeader
+          title="Spending"
+          description={periodLabel(period, settings.cycle)}
+          action={<span className="text-sm font-semibold text-brand group-hover:underline">Spend →</span>}
+        />
 
         <div className={`mt-4 grid gap-4 ${hasBudget ? '@min-[34rem]:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] @min-[34rem]:gap-6' : ''}`}>
           {hasBudget && (

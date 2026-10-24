@@ -36,7 +36,7 @@ function Stat({ label, value, tone = 'neutral', hint }: {
 }) {
   const toneClass = tone === 'gain' ? 'text-gain' : tone === 'loss' ? 'text-loss' : 'text-ink'
   return (
-    <div className="rounded-xl border border-line/70 bg-surface-muted/40 px-3.5 py-3">
+    <div className="rounded-2xl bg-surface-muted px-3.5 py-3">
       <p className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-muted">{label}</p>
       <p className={`mt-1 font-display text-lg font-bold tnum leading-tight ${toneClass}`}>{value}</p>
       {hint && <p className="mt-0.5 text-xs text-ink-faint leading-snug">{hint}</p>}
@@ -261,7 +261,7 @@ export function ActivitySummary() {
           {/* ── Month by month ── */}
           {showMonthly && (
             <Card className="mb-4">
-              <h2 className="font-display text-base font-bold text-ink">By month</h2>
+              <h2 className="font-display text-lg font-extrabold text-ink">By month</h2>
               <p className="mt-0.5 text-xs text-ink-muted">
                 Sales profit and dividends for each month — green means a profit month
               </p>
@@ -304,7 +304,7 @@ export function ActivitySummary() {
           {/* ── Per-asset breakdown ── */}
           <Card id="guide-summary-assets" padded={false} className="mb-4 overflow-hidden">
             <div className="px-5 pt-5 pb-3">
-              <h2 className="font-display text-base font-bold text-ink">Where the profit came from</h2>
+              <h2 className="font-display text-lg font-extrabold text-ink">Where the profit came from</h2>
               <p className="mt-0.5 text-xs text-ink-muted">
                 Only showing assets with activity in {describePeriod(period)}
               </p>
@@ -383,7 +383,7 @@ export function ActivitySummary() {
           <Card className="mb-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <h2 className="font-display text-base font-bold text-ink">How much your portfolio value changed</h2>
+                <h2 className="font-display text-lg font-extrabold text-ink">How much your portfolio value changed</h2>
                 <p className="mt-0.5 text-xs text-ink-muted leading-relaxed max-w-xl">
                   Compares your total portfolio value at the start and end of the period. It includes market moves and money added or withdrawn, so it can differ from the net profit above.
                 </p>
@@ -416,7 +416,7 @@ export function ActivitySummary() {
           </Card>
 
           {/* ── How this is calculated ── */}
-          <div className="flex items-start gap-3 rounded-2xl border border-line/70 bg-surface-muted/40 px-4 py-3.5">
+          <div className="flex items-start gap-3 rounded-2xl bg-surface-muted px-4 py-3.5">
             <PieChartIcon className="mt-0.5 h-4 w-4 shrink-0 text-ink-faint" />
             <p className="text-xs text-ink-muted leading-relaxed">
               <span className="font-semibold text-ink-soft">Net profit = profit from sales + dividends received</span>{' '}

@@ -339,7 +339,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
 
         {/* ── EDIT mode: Header card ── */}
         {editing && (
-          <div className="flex items-center gap-3.5 rounded-2xl bg-surface-muted p-3.5 border border-line">
+          <div className="flex items-center gap-3.5 rounded-2xl bg-surface-muted p-4">
             <AssetLogo assetClass={editing.assetClass} ticker={editing.ticker} name={editing.name} size="md" />
             <div className="min-w-0 flex-1">
               <span
@@ -387,7 +387,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
                   }
                 })}
               />
-              <div className="rounded-xl bg-surface-muted/70 p-3.5 border border-line/50 text-xs text-ink-muted leading-relaxed">
+              <div className="rounded-2xl bg-surface-muted p-4 text-xs text-ink-muted leading-relaxed">
                 💡 <strong>Automatic Savings DCA</strong>: When you confirm this plan each period, Spendiary will directly increment the balance of{' '}
                 <span className="font-semibold text-ink">
                   {data.cashAccounts.find((a) => a.id === form.cashAccountId)?.name || 'the selected account'}
@@ -458,7 +458,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
                     placeholder={isStock ? 'e.g. Apple Inc.' : 'e.g. SCB S&P 500 Index'}
                   />
                   {suggestions.length > 0 && (
-                    <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-xl border border-line bg-surface shadow-lg">
+                    <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-2xl border border-line bg-surface shadow-[var(--shadow-lift)] animate-pop-in origin-top">
                       {suggestions.map((s) => (
                         <li key={s.ticker}>
                           <button
@@ -492,7 +492,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
 
             {isBtc && (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface-muted p-3.5">
+                <div className="flex items-center gap-3 rounded-2xl bg-surface-muted p-4">
                   <AssetLogo assetClass="crypto" ticker="BTC" size="md" />
                   <div>
                     <p className="text-sm font-bold text-ink">Bitcoin (BTC)</p>
@@ -505,7 +505,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
 
             {isGold && (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface-muted p-3.5">
+                <div className="flex items-center gap-3 rounded-2xl bg-surface-muted p-4">
                   <AssetLogo assetClass="gold" ticker="GOLD" size="md" />
                   <div>
                     <p className="text-sm font-bold text-ink">Gold (XAU)</p>

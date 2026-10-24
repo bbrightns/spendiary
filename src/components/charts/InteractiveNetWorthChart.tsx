@@ -11,7 +11,7 @@ export interface InteractiveNetWorthChartProps {
 export function InteractiveNetWorthChart({ history }: InteractiveNetWorthChartProps) {
   return (
     <InteractiveTrendChart
-      title="Net Worth Performance"
+      title="Net worth over time"
       history={history}
       accentColor="var(--color-cash)"
       gradientId="nwInteractiveGrad"

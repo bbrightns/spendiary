@@ -4,7 +4,6 @@ import { useData } from '../store/DataContext'
 import { useTheme, type Theme } from '../hooks/useTheme'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
-import { Modal } from '../components/ui/Modal'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { Button } from '../components/ui/Button'
@@ -233,8 +232,10 @@ export function Settings() {
         return
       }
 
-      // Build a human-readable summary of what's inside the file
-      const d = parsed as Record<string, unknown>
+      // Build a human-readable summary of what's inside the file.
+      // Backups wrap the data as { schemaVersion, data }; older files are the bare data object.
+      const top = parsed as Record<string, unknown>
+      const d = (top && typeof top.data === 'object' && top.data !== null ? top.data : top) as Record<string, unknown>
       const fileSummary = [
         Array.isArray(d.holdings) && d.holdings.length > 0
           ? `${(d.holdings as unknown[]).length} holdings`
@@ -349,7 +350,7 @@ export function Settings() {
       <>
         {/* ── Appearance ──────────────────────────────────────── */}
         <Card className="animate-rise">
-          <h2 className="font-display text-lg font-bold text-ink mb-1">Appearance</h2>
+          <h2 className="mb-1 font-display text-lg font-extrabold text-ink">Appearance</h2>
           <p className="text-sm text-ink-muted mb-4">
             Choose how Spendiary looks on this device.
           </p>
@@ -391,7 +392,7 @@ export function Settings() {
         </Card>
         {/* ── Profile ─────────────────────────────────────────── */}
         <Card className="animate-rise">
-          <h2 className="font-display text-lg font-bold text-ink mb-1">Profile</h2>
+          <h2 className="mb-1 font-display text-lg font-extrabold text-ink">Profile</h2>
           <p className="text-sm text-ink-muted mb-4">Used in the greeting on Spend Home.</p>
           <TextField
             label="Your name"
@@ -493,7 +494,7 @@ export function Settings() {
               <img src="/logo.png" alt="Spendiary Logo" className="w-full h-full object-contain" />
             </div>
             <div>
-              <h2 className="font-display text-lg font-bold text-ink">About Spendiary</h2>
+              <h2 className="font-display text-lg font-extrabold text-ink">About Spendiary</h2>
               <p className="text-xs text-ink-muted mt-0.5">
                 Designed & Built by bbrightns
               </p>
@@ -529,7 +530,7 @@ export function Settings() {
 
         {/* Why I built it */}
         <div className="pt-4 mt-4 border-t border-line/60 space-y-3">
-          <div className="rounded-2xl bg-surface-muted/60 p-4 border border-line/50">
+          <div className="rounded-2xl bg-surface-muted p-4">
             <div className="flex items-center gap-3.5 mb-3">
               <img
                 src="/bbrightns.jpg"
@@ -551,7 +552,7 @@ export function Settings() {
           </div>
 
           {/* The Story Behind Spendiary */}
-          <div className="rounded-2xl bg-surface-muted/40 p-4 border border-line/50">
+          <div className="rounded-2xl bg-surface-muted p-4">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-base">💡</span>
               <h3 className="text-sm font-bold text-ink">Why I Built Spendiary</h3>
@@ -616,47 +617,24 @@ export function Settings() {
 
       <AiImportModal open={aiImportOpen} onClose={() => setAiImportOpen(false)} />
 
-      {/* ── Import confirmation modal ──────────────────────────── */}
-      <Modal
+      {/* ── Import confirmation ──────────────────────────────────── */}
+      <ConfirmModal
         open={importConfirmOpen}
         onClose={() => {
           setImportConfirmOpen(false)
           setPendingImport(null)
         }}
+        onConfirm={() => pendingImport && commitImport(pendingImport)}
         title="Replace your current data?"
-        description={`Your current data has ${dataSummary(data)}. The file contains ${pendingImportSummary}. Importing will overwrite everything on this device and push to cloud immediately.`}
-        footer={
-          <div className="flex flex-col gap-2.5 w-full">
-            <Button
-              variant="primary"
-              onClick={() => pendingImport && commitImport(pendingImport)}
-              className="w-full cursor-pointer"
-            >
-              Yes, replace with imported data
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => exportData()}
-              className="w-full cursor-pointer gap-2"
-            >
-              <DownloadIcon className="h-4 w-4" />
-              <span>Export current data first</span>
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setImportConfirmOpen(false)
-                setPendingImport(null)
-              }}
-              className="w-full cursor-pointer text-ink-muted hover:text-ink"
-            >
-              Cancel
-            </Button>
-          </div>
-        }
+        description={`Your current data has ${dataSummary(data)}. The file contains ${pendingImportSummary}. Importing overwrites everything on this device and syncs to the cloud right away.`}
+        confirmText="Replace my data"
+        confirmVariant="danger"
       >
-        <div className="py-1" />
-      </Modal>
+        <Button variant="secondary" size="sm" onClick={() => exportData()} className="w-full">
+          <DownloadIcon className="h-4 w-4" />
+          Export current data first
+        </Button>
+      </ConfirmModal>
 
       {/* ── Reset confirmation modal ───────────────────────────── */}
       <ConfirmModal

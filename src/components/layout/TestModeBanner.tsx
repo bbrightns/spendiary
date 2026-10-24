@@ -10,7 +10,7 @@ export function TestModeBanner() {
   return (
     <aside
       aria-label="Test Mode Environment Warning"
-      className="fixed top-0 inset-x-0 z-50 h-9 bg-amber-400 dark:bg-amber-500 text-amber-950 px-3 sm:px-4 flex items-center justify-between shadow-xs select-none border-b border-amber-500/40 dark:border-amber-600/50 box-border"
+      className="fixed top-0 inset-x-0 z-40 h-9 bg-amber-400 dark:bg-amber-500 text-amber-950 px-3 sm:px-4 flex items-center justify-between shadow-xs select-none border-b border-amber-500/40 dark:border-amber-600/50 box-border"
     >
       <div className="flex items-center gap-2 min-w-0">
         <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-950/15 shrink-0 text-amber-950">

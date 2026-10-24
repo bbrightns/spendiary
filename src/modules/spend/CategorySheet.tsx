@@ -70,6 +70,7 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
       size="md"
       footer={
         <FormActions
+          hint="Give the category a name"
           editing={!!category}
           canSave={canSave}
           onSave={save}
@@ -86,7 +87,7 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
       }
     >
       <div className="space-y-5">
-        <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface-muted/40 px-4 py-3">
+        <div className="flex items-center gap-3 rounded-2xl bg-surface-muted px-4 py-3">
           <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${TONES[form.tone].chip}`}>
             <Icon className="h-5 w-5" />
           </span>

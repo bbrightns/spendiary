@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { SegmentedControl, type SegmentOption } from '../ui/SegmentedControl'
 import { NumberField, TextField, SelectField } from '../ui/Field'
-import { Button } from '../ui/Button'
+import { FormActions } from './FormActions'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, applyBuy, goldThbPerGramToXauUsd, hasRealPrice, holdingMetrics, upsert } from '../../lib/calc'
@@ -357,7 +357,8 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
   const sourceParams = isReceived ? { source: 'received' as const, receivedFrom: fromName || undefined } : {}
   const verb = isReceived ? 'Received' : 'Bought'
   const toastTitle = isReceived ? 'Gift recorded!' : 'Buy recorded!'
-  const modalTitle = `${isReceived ? 'Add gift' : 'Buy more'} · ${holding.name}`
+  // Short verb title; which holding (and where it goes) is in the description
+  const modalTitle = isReceived ? 'Add gift' : 'Buy more'
 
   // Only a real price can value a gift; a cost stand-in (no price yet) leaves the value for the user to type
   const knowsPrice = hasRealPrice(holding) && isValidPrice(holding.price)
@@ -461,15 +462,11 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
       <Modal
         open={open}
         onClose={onClose}
-        title={lockedGoldLocName ? `${modalTitle} — ${lockedGoldLocName}` : modalTitle}
+        title={modalTitle}
         description={lockedGoldLocName
-          ? `This ${isReceived ? 'gold' : 'purchase'} goes into "${lockedGoldLocName}".`
-          : "Log a purchase in grams or gold baht (1 gold baht = 15.244 g). Choose or create a location."}
-        footer={
-          <Button variant="success" onClick={saveGold} className="w-full">
-            Add to holding
-          </Button>
-        }
+          ? `${holding.name} · goes into "${lockedGoldLocName}".`
+          : `${holding.name} · in grams or gold baht (1 gold baht = 15.244 g). Choose or create a location.`}
+        footer={<FormActions editing={false} canSave onSave={saveGold} submitLabel="Add to holding" />}
       >
         <div className="space-y-4">
           {onSwitchToSell && (
@@ -677,15 +674,11 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
       <Modal
         open={open}
         onClose={onClose}
-        title={lockedBtcLocName ? `${modalTitle} — ${lockedBtcLocName}` : modalTitle}
+        title={modalTitle}
         description={lockedBtcLocName
-          ? `This ${isReceived ? 'BTC' : 'purchase'} goes into "${lockedBtcLocName}".`
-          : `Log ${isReceived ? 'the BTC you received' : 'a purchase'} in Satoshi. Choose or create a location.`}
-        footer={
-          <Button variant="success" onClick={saveBtc} className="w-full">
-            Add to holding
-          </Button>
-        }
+          ? `${holding.name} · goes into "${lockedBtcLocName}".`
+          : `${holding.name} · ${isReceived ? 'the BTC you received' : 'a purchase'} in Satoshi. Choose or create a location.`}
+        footer={<FormActions editing={false} canSave onSave={saveBtc} submitLabel="Add to holding" />}
       >
         <div className="space-y-4">
           {onSwitchToSell && (
@@ -864,17 +857,21 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
       open={open}
       onClose={onClose}
       title={modalTitle}
-      description={
+      description={`${holding.name} · ${
         isStock
           ? usdThb
-            ? `Price in USD, converted at ฿${rate.toFixed(2)}/USD.`
+            ? `price in USD, converted at ฿${rate.toFixed(2)}/USD.`
             : 'USD/THB rate loading…'
-          : `Log ${isReceived ? 'what you received' : 'a purchase'}. Units grow and your average cost is recalculated.`
-      }
+          : `${isReceived ? 'what you received' : 'a purchase'}. Units grow and your average cost is recalculated.`
+      }`}
       footer={
-        <Button variant="success" onClick={save} className="w-full" disabled={isStock ? !validStock : !valid}>
-          Add to holding
-        </Button>
+        <FormActions
+          editing={false}
+          canSave={isStock ? validStock : valid}
+          onSave={save}
+          submitLabel="Add to holding"
+          hint={isStock ? 'Fill in the amount, rate, price and shares' : 'Enter the units and price'}
+        />
       }
     >
       <div className="space-y-4">

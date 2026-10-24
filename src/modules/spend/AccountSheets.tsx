@@ -131,6 +131,14 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
     dayOk(form.statementDay) &&
     dayOk(form.dueDay) &&
     pctOk
+  // What's still missing, shown above a disabled save button
+  const saveHint = !form.name.trim()
+    ? 'Name the card'
+    : !main && !(num(form.limit) > 0)
+      ? 'Enter the credit limit'
+      : !dayOk(form.statementDay) || !dayOk(form.dueDay)
+        ? 'Pick statement and due days from 1 to 31'
+        : 'Check the amounts'
 
   const save = () => {
     upsertCard({
@@ -160,6 +168,7 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
       size="md"
       footer={
         <FormActions
+          hint={saveHint}
           editing={!!card}
           canSave={canSave}
           onSave={save}
@@ -226,7 +235,7 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
 
         {/* Split what's owed: the billed part is due on the last statement; the rest waits for the next one */}
         {owedNum > 0 && (
-          <div className="rounded-2xl border border-line bg-surface-muted/40 p-3">
+          <div className="rounded-2xl bg-surface-muted p-4">
             <FieldWrap label="Not billed yet" hint="this cycle · ยังไม่ตัดรอบ">
               <input className={inputClass} inputMode="decimal" value={form.unbilled} onChange={(e) => set('unbilled')(digits(e.target.value))} placeholder="0" />
             </FieldWrap>

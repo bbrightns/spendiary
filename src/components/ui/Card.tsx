@@ -9,16 +9,18 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
   padded?: boolean
   /** Stat tiles in a grid: p-4 instead of p-5 */
   compact?: boolean
+  /** A list of divided rows: side padding only, the rows set the vertical rhythm */
+  list?: boolean
   hover?: boolean
 }
 
-export function Card({ children, padded = true, compact = false, hover = false, className, ...rest }: CardProps) {
+export function Card({ children, padded = true, compact = false, list = false, hover = false, className, ...rest }: CardProps) {
   return (
     <div
       className={cx(
         'rounded-[var(--radius-card)] bg-surface border border-line shadow-[var(--shadow-soft)]',
         hover && 'transition-shadow duration-300 hover:shadow-[var(--shadow-lift)]',
-        padded && (compact ? 'p-4' : 'p-5'),
+        padded && (list ? 'px-4 sm:px-5' : compact ? 'p-4' : 'p-5'),
         className,
       )}
       {...rest}

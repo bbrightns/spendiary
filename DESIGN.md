@@ -207,13 +207,19 @@ There is one card: `Card` (`src/components/ui/Card.tsx`, along with `CardHeader`
 2. **Body**: a hero figure, a list (`divide-y divide-line`), a chart, or a form.
 3. **Footer line** (optional): one `text-xs text-ink-muted` line, or a "Coming up" style sub-list above a `border-t border-line`.
 
-**Padding:** `p-5`. The only other size is `<Card compact>` (`p-4`), for stat tiles in a grid. No per-page padding overrides.
+**Padding:** `p-5`. The only other sizes are:
+- `<Card compact>` (`p-4`): stat tiles in a grid, and one-line link cards.
+- `<Card list>` (`px-4 sm:px-5`, no vertical padding): a card that is just divided rows, which set their own rhythm.
+
+No per-page padding overrides. A card whose inside is a full-bleed chart or table uses `padded={false}` and pads its own sections.
 
 **Interactive cards:** if the whole card is a link or button, add `hover:shadow-[var(--shadow-lift)] transition-shadow`. Otherwise it never lifts.
 
 **Inside a card, never nest another card.** For grouped content, use one of two inner surfaces:
 - **Inset** (`<Inset>`): `rounded-2xl bg-surface-muted p-4`, with no border and no shadow. Use it for a group of figures inside a card, such as portfolio value plus all-time PnL.
 - **Dashed prompt:** `rounded-2xl border border-dashed border-line-strong p-3`. Use it for empty or setup prompts ("Set up bills that repeat").
+
+**Picture tiles are the one exception:** the credit-card stack (`CardStack`) and the wallet tiles on Spend → Accounts draw the object itself (a card face, a wallet), so they keep their own shape and accent ring.
 
 **Stat tiles** are a grid of `Card compact`. Each tile has a label (`text-xs font-semibold text-ink-muted`), a value (stat value style), and an optional one-line note. Long values must fit or be shortened (`฿140.0K`). A chip must never overflow its tile.
 
@@ -261,7 +267,7 @@ Every dialog in the app is a `Modal`, including confirmations, pickers on phones
 | Pattern | Use for | Layout |
 |---|---|---|
 | **A. Form** (`FormActions`) | Add or edit something | When editing: a 2-tap delete bin on the left. Then a full-width primary button. |
-| **B. Action** | One-shot actions (pay, log, move, import, apply search) | One full-width primary button (`data-modal-submit`). |
+| **B. Action** | One-shot actions (pay, log, move, import, apply search) | One full-width primary button: `FormActions` with `submitLabel`, or a full-width `Button data-modal-submit`. |
 | **C. Confirm** (`ConfirmModal`) | Destructive or irreversible actions | A stacked full-width confirm (`danger` or `primary`) over a `ghost` Cancel. |
 
 Footer rules:
@@ -282,6 +288,8 @@ Footer rules:
 - **Phone:** they open in the same bottom-sheet shell and header as `Modal`.
 - **Desktop:** they open as a dropdown under the button: `rounded-2xl border-line bg-surface p-1.5 shadow-[var(--shadow-lift)]`. Options are `PopoverOption`.
 - **Row "⋯" menus** (holding and location menus) are `Popover` lists too, with neutral item colours. "Sell" is not red and "Buy more" is not green: the icon carries the meaning.
+- Group options with `PopoverDivider`. An action that can't run right now is a disabled `PopoverOption` with a short `hint` ("Locked"), not a hidden item.
+- Desktop dropdowns open below their button, or above it when that fits better.
 
 **Command palette:** the one placement exception. It is anchored near the top so the phone keyboard doesn't cover the results, and it has no header. It shares the modal surface, 28px radius, backdrop and `sheetUp` motion. The keyboard-shortcuts screen opens as a normal `Modal` (`sm`).
 

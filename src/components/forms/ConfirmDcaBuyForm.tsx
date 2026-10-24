@@ -166,6 +166,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     ? newLocName.trim() || 'New Location'
     : (isBtc ? selectedBtcLoc?.name : selectedGoldLoc?.name) ?? holding?.name ?? plan.name
 
+  const logName = isCash ? (targetCashAccount?.name ?? plan.name) : (holding?.name ?? plan.name)
   const targetSubtitleText = isCash
     ? (targetCashAccount?.name ?? plan.name)
     : (isBtc || isGold)
@@ -556,15 +557,13 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     <Modal
       open={open}
       onClose={onClose}
-      title={isCash ? `Log deposit: ${targetCashAccount?.name ?? plan.name}` : `Log buy: ${holding?.name ?? plan.name}`}
-      description={
-        isCash
-          ? `After you move the money, log it here. Goes into ${targetSubtitleText}.`
-          : `Spendiary doesn't trade for you. Log it after you buy at your broker. Goes into ${targetSubtitleText}.`
-      }
+      title={isCash ? 'Log deposit' : 'Log buy'}
+      description={`${logName}${targetSubtitleText !== logName ? ` · into "${targetSubtitleText}"` : ''} · ${
+        isCash ? 'log it after you move the money.' : "Spendiary doesn't trade for you; log it after you buy at your broker."
+      }`}
       footer={
         <Button data-modal-submit onClick={confirm} loading={submitting} className="w-full">
-          {submitting ? 'Saving…' : `✓ Log ${amountThbNum > 0 ? `${thb(amountThbNum)} ` : ''}${isCash ? 'deposit' : 'buy'}`}
+          {submitting ? 'Saving…' : `Log ${amountThbNum > 0 ? `${thb(amountThbNum)} ` : ''}${isCash ? 'deposit' : 'buy'}`}
         </Button>
       }
     >
@@ -588,7 +587,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         {/* ------------------------------------------------------------------ */}
         {isCash && (
           <div className="space-y-4">
-            <div className="rounded-2xl bg-surface-muted p-4 border border-line/50 space-y-2.5">
+            <div className="rounded-2xl bg-surface-muted p-4 space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-ink-muted">Destination Account</span>
                 <span className="text-sm font-bold text-ink">{targetCashAccount?.name || plan.name}</span>
@@ -664,7 +663,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
           <div className="space-y-4">
             {/* Live Market Price Banner if fetched */}
             {liveStockPrice !== null && liveStockPrice > 0 && (
-              <div className="flex items-center justify-between rounded-xl border border-line bg-surface-muted px-4 py-2.5">
+              <div className="flex items-center justify-between rounded-2xl bg-surface-muted px-4 py-2.5">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-ink-soft">Market Price</span>
                   <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-bold text-brand">Live</span>
@@ -713,7 +712,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
 
             {/* Optional Collapsible FX Rate editor */}
             {showFxEdit && (
-              <div className="rounded-xl border border-line bg-surface-muted p-3 transition-all">
+              <div className="rounded-2xl bg-surface-muted p-4 transition-all">
                 <NumberField
                   label="Custom FX Rate (USD/THB)"
                   hint="Override if broker used different rate"

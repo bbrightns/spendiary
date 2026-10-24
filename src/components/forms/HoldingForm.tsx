@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { NumberField, SelectField, TextField } from '../ui/Field'
 import { FormActions } from './FormActions'
-import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC, goldThbPerGramToXauUsd, upsert } from '../../lib/calc'
@@ -837,13 +836,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       description={modalDescription}
       footer={
         isBtc && !editing ? (
-          <Button onClick={saveBtc} className="w-full">
-            Add holding
-          </Button>
+          <FormActions editing={false} canSave onSave={saveBtc} submitLabel="Add holding" />
         ) : isGold && !editing ? (
-          <Button onClick={saveGold} className="w-full">
-            Add holding
-          </Button>
+          <FormActions editing={false} canSave onSave={saveGold} submitLabel="Add holding" />
         ) : (
           <FormActions
             editing={!!editing}
@@ -957,7 +952,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 placeholder={isBtc ? 'e.g. My Bitcoin' : isUsd ? 'e.g. Apple Inc.' : isGold ? 'e.g. My Gold' : isRealEstate ? 'e.g. Sukhumvit Condo, Modern House' : 'e.g. Kasikorn Fund'}
               />
               {suggestions.length > 0 && (
-                <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-xl border border-line bg-surface shadow-lg">
+                <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-2xl border border-line bg-surface shadow-[var(--shadow-lift)] animate-pop-in origin-top">
                   {suggestions.map((s) => (
                     <li key={s.ticker}>
                       <button
@@ -1320,7 +1315,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
           isUsd ? (
             <>
               {/* Card A: THB Investment Summary (Total THB Invested has a subtle edit option, rest read-only) */}
-              <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-4 shadow-sm">
+              <div className="rounded-2xl bg-surface-muted p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold uppercase tracking-wider text-brand">THB Investment Summary</p>
                   {!isEditingThb && (

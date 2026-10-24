@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { openPayLoan, useUndoLoanPayment } from '../modules/spend/PayLoanSheet'
 import { PageHeader } from '../components/layout/PageHeader'
-import { Card } from '../components/ui/Card'
+import { Card, CardHeader, Inset } from '../components/ui/Card'
+import { TextLink } from '../components/ui/TextLink'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { DonutChart } from '../components/charts/DonutChart'
@@ -15,13 +16,7 @@ import { AiImportModal } from '../components/forms/AiImportModal'
 import { TodayLink } from '../modules/spend/TodayStack'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import {
-  CheckIcon,
-  DebtIcon,
-  PortfolioIcon,
-  SparkleIcon,
-  WalletIcon,
-} from '../components/icons'
+import { CheckIcon, ClockIcon, SparkleIcon } from '../components/icons'
 import {
   ASSET_META,
   DEBT_CATEGORIES,
@@ -49,6 +44,16 @@ const CASH_COLORS = [
   '#f97316', // orange
   '#64748b', // slate
 ]
+
+/** A small link chip under the net worth (debt ratio, runway) */
+const CHIP =
+  'inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold text-ink-soft transition-colors hover:text-ink whitespace-nowrap'
+/** A dashed "set this up" row inside a card */
+const PROMPT =
+  'flex items-center gap-3 rounded-2xl border border-dashed border-line-strong p-3 transition-colors hover:bg-surface-muted/60'
+
+/** A cash account's colour: its bank's, else one from the cycle */
+const cashColor = (name: string, i: number) => detectBankPreset(name)?.color ?? CASH_COLORS[i % CASH_COLORS.length]
 
 export function Dashboard() {
   const { data, recordNetWorthSnapshot, usdThb } = useData()
@@ -144,181 +149,80 @@ export function Dashboard() {
       {/* ── Today: DCA buys and dividends open the DCA page; bills and loans open Spend Home ── */}
       <TodayLink id="guide-dashboard-dca" />
 
-      {/* ── ROW 1: Net Worth Master Hero (Full Width Bento) ── */}
+      {/* ── Net worth: the one big number, then what it's made of ── */}
       <div id="guide-dashboard-networth">
-        <Card
-          padded={false}
-          className="relative overflow-hidden bg-gradient-to-br from-white via-white to-brand-soft/40 dark:from-canvas dark:via-canvas dark:to-surface-muted/50 border border-line dark:border-white/10 shadow-[var(--shadow-soft)] animate-rise h-full flex flex-col justify-between"
-        >
-          {/* Ambient subtle glow inside card */}
-          <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand/5 dark:bg-brand/15 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-emerald-500/5 dark:bg-emerald-500/10 blur-3xl" />
-
-          {/* Top Main Stats Area */}
-          <div className="relative flex flex-col justify-between gap-5 sm:flex-row sm:items-start p-6 sm:p-7">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-ink-muted dark:text-white/70">
-                <WalletIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-sm font-semibold uppercase tracking-wider">Total Net Worth</span>
-              </div>
-              <p className="font-display text-4xl sm:text-5xl font-extrabold leading-tight tracking-tight tnum text-ink dark:text-white">
-                {thb(nw)}
-              </p>
-
-              <div className="pt-1 flex flex-wrap items-center gap-2.5">
+        <Card padded={false} className="animate-rise">
+          <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
+            <div className="min-w-0">
+              <p className="text-sm text-ink-muted">Total net worth</p>
+              <p className="mt-1 font-display text-4xl font-extrabold leading-none tracking-tight tnum text-ink sm:text-5xl">{thb(nw)}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
                 <PnLPill value={portfolio.pnl} size="md" />
-                <span className="text-xs text-ink-muted dark:text-white/70 font-medium">unrealised</span>
+                <span className="text-xs text-ink-muted">unrealised</span>
                 {debts > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => navigate('/spend/loans')}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted dark:bg-white/12 px-3 py-1 text-xs font-semibold text-ink-soft dark:text-white/90 shadow-xs border border-line dark:border-white/10 transition-colors hover:bg-line/70 dark:hover:bg-white/20 hover:text-ink dark:hover:text-white cursor-pointer whitespace-nowrap"
-                    aria-label="Manage liabilities"
-                  >
-                    📉 {debtRatio.toFixed(1)}% Debt Ratio ({thbCompact(-debts)})
-                  </button>
+                  <Link to="/spend/loans" className={CHIP} aria-label="Manage debts">
+                    Debt ratio <span className="tnum">{debtRatio.toFixed(1)}%</span>
+                  </Link>
                 )}
                 {data.retirement?.monthlySpend && data.retirement.monthlySpend > 0 ? (
-                  <Link
-                    to="/retirement"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted dark:bg-white/12 px-3 py-1 text-xs font-semibold text-ink-soft dark:text-white/90 shadow-xs border border-line dark:border-white/10 transition-colors hover:bg-line/70 dark:hover:bg-white/20 hover:text-ink dark:hover:text-white"
-                    aria-label="View wealth runway details on retirement page"
-                  >
-                    ⏳ {Math.max(0, nw / (data.retirement.monthlySpend * 12)).toFixed(1)}y runway
+                  <Link to="/retirement" className={CHIP} aria-label="View runway on the retirement page">
+                    <ClockIcon className="h-3.5 w-3.5" />
+                    <span className="tnum">{Math.max(0, nw / (data.retirement.monthlySpend * 12)).toFixed(1)}</span> years of runway
                   </Link>
                 ) : (
-                  <Link
-                    to="/retirement"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted/60 dark:bg-white/10 px-3 py-1 text-xs font-semibold text-ink-faint dark:text-white/60 transition-colors hover:bg-surface-muted dark:hover:bg-white/20 hover:text-ink dark:hover:text-white"
-                    aria-label="Set up retirement spend to see runway"
-                  >
-                    ⏳ Set runway target
+                  <Link to="/retirement" className={CHIP}>
+                    <ClockIcon className="h-3.5 w-3.5" />
+                    Set a runway target
                   </Link>
                 )}
               </div>
             </div>
 
-            {/* Quick ratio box */}
-            <div className={`rounded-2xl bg-surface-muted/80 dark:bg-white/10 p-3 sm:p-3.5 px-3.5 sm:px-4.5 border border-line/80 dark:border-white/15 backdrop-blur-md ${debts > 0 ? 'sm:min-w-[270px]' : 'sm:min-w-[210px]'}`}>
-              <div className={`grid ${debts > 0 ? 'grid-cols-3 gap-2 sm:gap-3' : 'grid-cols-2 gap-3.5'}`}>
-                <div>
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-brand whitespace-nowrap">
-                    <span className="h-2 w-2 rounded-full bg-brand shrink-0" />
-                    <span>Invested</span>
-                  </div>
-                  <p className="mt-1 font-display text-base sm:text-lg font-extrabold tnum text-ink dark:text-white whitespace-nowrap">
-                    {thbCompact(portfolio.value)}
-                  </p>
-                  <p className="mt-0.5 text-xs font-semibold text-brand/80 tnum whitespace-nowrap">
-                    {grossAssets > 0 ? `${((portfolio.value / grossAssets) * 100).toFixed(1)}%` : '0%'}
-                  </p>
-                </div>
-
-                <div className="pl-2.5 sm:pl-3 border-l border-line dark:border-white/10">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-gain whitespace-nowrap">
-                    <span className="h-2 w-2 rounded-full bg-gain shrink-0" />
-                    <span>Cash</span>
-                  </div>
-                  <p className="mt-1 font-display text-base sm:text-lg font-extrabold tnum text-ink dark:text-white whitespace-nowrap">
-                    {thbCompact(cash)}
-                  </p>
-                  <p className="mt-0.5 text-xs font-semibold text-gain/80 tnum whitespace-nowrap">
-                    {grossAssets > 0 ? `${((cash / grossAssets) * 100).toFixed(1)}%` : '0%'}
-                  </p>
-                </div>
-
-                {debts > 0 && (
-                  <div className="pl-2.5 sm:pl-3 border-l border-line dark:border-white/10 text-left">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-rose-500 whitespace-nowrap">
-                      <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0" />
-                      <span>Debts</span>
-                    </div>
-                    <p className="mt-1 font-display text-base sm:text-lg font-extrabold tnum text-ink dark:text-white whitespace-nowrap">
-                      {thbCompact(-debts)}
+            {/* What the net worth is made of */}
+            <Inset className={`shrink-0 ${debts > 0 ? 'sm:min-w-[270px]' : 'sm:min-w-[210px]'}`}>
+              <div className={`grid ${debts > 0 ? 'grid-cols-3' : 'grid-cols-2'} gap-3`}>
+                {[
+                  { label: 'Invested', value: portfolio.value, pct: grossAssets > 0 ? (portfolio.value / grossAssets) * 100 : 0, dot: 'bg-invest' },
+                  { label: 'Cash', value: cash, pct: grossAssets > 0 ? (cash / grossAssets) * 100 : 0, dot: 'bg-cash' },
+                  ...(debts > 0 ? [{ label: 'Debts', value: -debts, pct: debtRatio, dot: 'bg-debt' }] : []),
+                ].map((part) => (
+                  <div key={part.label} className="min-w-0">
+                    <p className="flex items-center gap-1.5 text-xs font-semibold text-ink-muted">
+                      <span className={`h-2 w-2 shrink-0 rounded-full ${part.dot}`} />
+                      {part.label}
                     </p>
-                    <p className="mt-0.5 text-xs font-semibold text-rose-500/80 tnum whitespace-nowrap">
-                      {grossAssets > 0 ? `${debtRatio.toFixed(1)}%` : '0%'}
-                    </p>
+                    <p className="mt-1 whitespace-nowrap font-display text-lg font-extrabold tnum text-ink">{thbCompact(part.value)}</p>
+                    <p className="text-xs text-ink-muted tnum">{part.pct.toFixed(1)}%</p>
                   </div>
-                )}
+                ))}
               </div>
-
-              {/* Mini ratio split bar */}
-              {(grossAssets > 0 || debts > 0) && (
-                <div className="mt-2.5 flex h-1.5 w-full overflow-hidden rounded-full bg-line dark:bg-white/10">
-                  <div
-                    className="bg-brand transition-all duration-500"
-                    style={{
-                      width: `${debts > 0
-                        ? (nw > 0 && grossAssets > 0 ? (portfolio.value / grossAssets) * (nw / grossAssets) * 100 : 0)
-                        : (grossAssets > 0 ? (portfolio.value / grossAssets) * 100 : 0)}%`,
-                    }}
-                    title={`Invested: ${thb(portfolio.value)} (${grossAssets > 0 ? ((portfolio.value / grossAssets) * 100).toFixed(1) : 0}% of assets)`}
-                  />
-                  <div
-                    className="bg-gain transition-all duration-500"
-                    style={{
-                      width: `${debts > 0
-                        ? (nw > 0 && grossAssets > 0 ? (cash / grossAssets) * (nw / grossAssets) * 100 : 0)
-                        : (grossAssets > 0 ? (cash / grossAssets) * 100 : 0)}%`,
-                    }}
-                    title={`Cash: ${thb(cash)} (${grossAssets > 0 ? ((cash / grossAssets) * 100).toFixed(1) : 0}% of assets)`}
-                  />
-                  {debts > 0 && (
-                    <div
-                      className="bg-rose-500 transition-all duration-500"
-                      style={{
-                        width: `${grossAssets > 0 ? Math.min(100, (debts / grossAssets) * 100) : 100}%`,
-                      }}
-                      title={`Debts: -${thb(debts)} (${debtRatio.toFixed(1)}% Debt Ratio)`}
-                    />
-                  )}
-                </div>
-              )}
-            </div>
+            </Inset>
           </div>
 
-          {/* Asset Distribution Bar & Legend */}
+          {/* Asset mix bar and legend */}
           {grossAssets > 0 && (
-            <div className="relative mt-auto px-6 sm:px-7 pb-5 pt-3.5 border-t border-line dark:border-white/10 space-y-2.5">
-              <div className="flex h-2 overflow-hidden rounded-full bg-surface-muted dark:bg-white/10 border border-line/40 dark:border-transparent">
+            <div className="space-y-2.5 border-t border-line px-5 pb-5 pt-4 sm:px-6">
+              <div className="flex h-2 overflow-hidden rounded-full bg-surface-muted">
                 {alloc.map((a) => (
                   <div
                     key={a.assetClass}
-                    style={{
-                      width: `${(a.value / grossAssets) * 100}%`,
-                      background: ASSET_META[a.assetClass].cssVar,
-                    }}
+                    style={{ width: `${(a.value / grossAssets) * 100}%`, background: ASSET_META[a.assetClass].cssVar }}
                     title={`${ASSET_META[a.assetClass].label}: ${thb(a.value)}`}
                   />
                 ))}
-                {cash > 0 && (
-                  <div
-                    style={{
-                      width: `${(cash / grossAssets) * 100}%`,
-                      background: 'var(--color-cash)',
-                    }}
-                    title={`Cash: ${thb(cash)}`}
-                  />
-                )}
+                {cash > 0 && <div style={{ width: `${(cash / grossAssets) * 100}%`, background: 'var(--color-cash)' }} title={`Cash: ${thb(cash)}`} />}
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1.5">
                 {alloc.map((a) => (
-                  <span
-                    key={a.assetClass}
-                    className="flex items-center gap-1.5 text-xs text-ink-soft dark:text-white/85 font-semibold"
-                  >
-                    <span
-                      className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ background: ASSET_META[a.assetClass].cssVar }}
-                    />
-                    {ASSET_META[a.assetClass].label} {Math.round((a.value / grossAssets) * 100)}%
+                  <span key={a.assetClass} className="flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
+                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: ASSET_META[a.assetClass].cssVar }} />
+                    {ASSET_META[a.assetClass].label} <span className="tnum">{Math.round((a.value / grossAssets) * 100)}%</span>
                   </span>
                 ))}
                 {cash > 0 && (
-                  <span className="flex items-center gap-1.5 text-xs text-ink-soft dark:text-white/85 font-semibold">
+                  <span className="flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
                     <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--color-cash)' }} />
-                    Cash {Math.round((cash / grossAssets) * 100)}%
+                    Cash <span className="tnum">{Math.round((cash / grossAssets) * 100)}%</span>
                   </span>
                 )}
               </div>
@@ -330,509 +234,284 @@ export function Dashboard() {
       {/* ── Spend cash flow (this spending month) ── */}
       <SpendSnapshotCard />
 
-      {/* ── ROW 2: Holdings Donut Breakdown & Cash Hub & Liabilities Hub ── */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 items-stretch">
-        {/* Portfolio asset breakdown card */}
+      {/* ── Allocation, cash and debts ── */}
+      <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-12">
+        {/* Allocation */}
         <div id="guide-dashboard-alloc" className="lg:col-span-5 xl:col-span-4">
-          <Card className="animate-rise h-full flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-500/10 text-indigo-500">
-                    <PortfolioIcon className="h-4 w-4" />
-                  </div>
-                  <h2 className="font-display text-base font-bold text-ink">Port Allocation</h2>
+          <Card className="h-full animate-rise">
+            <CardHeader title="Allocation" action={<TextLink to="/portfolio">Portfolio →</TextLink>} />
+
+            <Inset id="guide-portfolio-summary" className="@container mt-3">
+              {/* Stacks when the card is narrow, sits side by side once there is room */}
+              <div className="flex flex-col gap-3 @min-[17rem]:flex-row @min-[17rem]:items-start @min-[17rem]:justify-between">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-ink-muted">Portfolio value</p>
+                  <p title={thb(portfolio.value)} className="mt-1 font-display text-2xl font-extrabold tracking-tight tnum text-ink">
+                    {thbCompact(portfolio.value)}
+                  </p>
+                  <p className="text-xs text-ink-muted" title={thb(portfolio.cost)}>
+                    Cost <span className="font-semibold tnum text-ink-soft">{thbCompact(portfolio.cost)}</span>
+                  </p>
                 </div>
-                <Link
-                  to="/portfolio"
-                  className="text-xs font-semibold text-brand hover:underline"
-                  aria-label="View portfolio details"
-                >
-                  Portfolio →
-                </Link>
-              </div>
-
-              {/* Value & PnL Hero Summary */}
-              <div id="guide-portfolio-summary" className="@container mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
-                {/* Stacks when the card is narrow, sits side by side once there is room */}
-                <div className="flex flex-col gap-3 @min-[17rem]:flex-row @min-[17rem]:items-start @min-[17rem]:justify-between @min-[17rem]:gap-x-3">
-                  <div className="min-w-0 space-y-1.5">
-                    <span className="block text-xs font-bold uppercase tracking-wider text-ink-muted whitespace-nowrap">Port Value</span>
-                    <p
-                      title={thb(portfolio.value)}
-                      className="font-display text-[clamp(1.25rem,11cqw,1.5rem)] @min-[17rem]:text-[clamp(1.1rem,7cqw,1.5rem)] font-extrabold tracking-tight tnum text-ink leading-tight cursor-default"
-                    >
-                      {thbCompact(portfolio.value)}
-                    </p>
-                    <p className="text-xs text-ink-muted font-medium" title={thb(portfolio.cost)}>
-                      Cost: <span className="font-semibold tnum text-ink-soft">{thbCompact(portfolio.cost)}</span>
-                    </p>
+                <div className="min-w-0 @min-[17rem]:text-right">
+                  <p className="text-xs font-semibold text-ink-muted">All-time profit</p>
+                  <PnLText value={portfolio.pnl} compact className="mt-1 block font-display text-2xl !font-extrabold tracking-tight" />
+                  <div className="mt-0.5 flex items-center gap-1.5 @min-[17rem]:justify-end">
+                    <PnLPill value={portfolio.pnlPct} asPct size="sm" />
                   </div>
-
-                  <div className="min-w-0 space-y-1.5 @min-[17rem]:text-right">
-                    <span className="block text-xs font-bold uppercase tracking-wider text-ink-muted whitespace-nowrap">All-Time PnL</span>
-                    <div className="flex items-baseline @min-[17rem]:justify-end">
-                      <PnLText
-                        value={portfolio.pnl}
-                        compact
-                        className="font-display text-[clamp(1.25rem,11cqw,1.5rem)] @min-[17rem]:text-[clamp(1.1rem,7cqw,1.5rem)] !font-extrabold tracking-tight leading-tight"
-                      />
-                    </div>
-                    <div className="flex items-center gap-1.5 @min-[17rem]:justify-end">
-                      <PnLPill value={portfolio.pnlPct} asPct size="sm" />
-                      <span className="text-xs text-ink-muted font-medium whitespace-nowrap">all-time</span>
-                    </div>
-                    <UnpricedNote count={portfolio.unpricedCount} />
-                  </div>
+                  <UnpricedNote count={portfolio.unpricedCount} />
                 </div>
               </div>
+            </Inset>
 
-              {/* Donut Chart & Breakdown */}
-              <div className="mt-4 flex flex-col items-center gap-4">
-                <DonutChart
-                  segments={allocSegments}
-                  size={155}
-                  thickness={17}
-                  ariaLabel={`Holdings asset allocation, total value ${thb(portfolio.value)}`}
-                  centerLabel="Total"
-                  centerValue={thbCompact(portfolio.value)}
-                />
+            <div className="mt-4 flex flex-col items-center gap-4">
+              <DonutChart
+                segments={allocSegments}
+                size={155}
+                thickness={17}
+                ariaLabel={`Holdings asset allocation, total value ${thb(portfolio.value)}`}
+                centerLabel="Total"
+                centerValue={thbCompact(portfolio.value)}
+              />
+              <div className="w-full divide-y divide-line border-t border-line">
+                {alloc.map((a) => {
+                  const pctVal = portfolio.value > 0 ? (a.value / portfolio.value) * 100 : 0
+                  return (
+                    <div key={a.assetClass} className="flex items-center justify-between gap-3 py-2 text-sm">
+                      <span className="flex min-w-0 items-center gap-2 text-ink">
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: ASSET_META[a.assetClass].color }} />
+                        <span className="truncate">{ASSET_META[a.assetClass].plural}</span>
+                      </span>
+                      <span className="shrink-0 font-semibold tnum text-ink">
+                        {thb(a.value)} <span className="text-xs font-normal text-ink-muted">{pctVal.toFixed(1)}%</span>
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </Card>
+        </div>
 
-                <div className="w-full space-y-2 pt-2 border-t border-line">
-                  {alloc.map((a) => {
-                    const pctVal = portfolio.value > 0 ? (a.value / portfolio.value) * 100 : 0
+        {/* Cash */}
+        <div id="guide-dashboard-cash" className="lg:col-span-7 xl:col-span-4">
+          <Card className="h-full animate-rise">
+            <CardHeader title="Cash" action={<TextLink to="/cash">Manage</TextLink>} />
+
+            <Inset id="guide-cash-summary" className="mt-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-ink-muted">Available</p>
+                  <p title={thb(cash)} className="mt-1 truncate font-display text-2xl font-extrabold tracking-tight tnum text-ink">{thbCompact(cash)}</p>
+                  <p className="text-xs text-ink-muted tnum">
+                    {data.cashAccounts.length} {data.cashAccounts.length === 1 ? 'account' : 'accounts'}
+                  </p>
+                </div>
+                <div className="min-w-0 text-right">
+                  <p className="text-xs font-semibold text-ink-muted">Interest a year</p>
+                  <p
+                    title={cashInterest > 0 ? `~${thb(cashInterest)} a year` : undefined}
+                    className={`mt-1 truncate font-display text-2xl font-extrabold tracking-tight tnum ${cashInterest > 0 ? 'text-gain' : 'text-ink-muted'}`}
+                  >
+                    {cashInterest > 0 ? `~${thbCompact(cashInterest)}` : '฿0'}
+                  </p>
+                  <p className="text-xs text-ink-muted tnum">{cashYieldRate > 0 ? `~${cashYieldRate.toFixed(2)}% average` : 'No interest set'}</p>
+                </div>
+              </div>
+            </Inset>
+
+            {data.cashAccounts.length > 0 ? (
+              <>
+                <div className="mt-4 flex h-2 overflow-hidden rounded-full bg-surface-muted">
+                  {data.cashAccounts.map((a, i) => {
+                    // Without a real rate a USD account has no THB width (the Layout notice explains)
+                    const thbVal = a.currency === 'USD' ? a.balance * rateOrZero(usdThb) : a.balance
                     return (
-                      <div key={a.assetClass} className="flex items-center justify-between text-xs">
-                        <span className="flex items-center gap-2 font-medium text-ink">
-                          <span
-                            className="h-2.5 w-2.5 rounded-full shrink-0"
-                            style={{ background: ASSET_META[a.assetClass].color }}
-                          />
-                          {ASSET_META[a.assetClass].plural}
-                        </span>
-                        <span className="font-bold tnum text-ink">
-                          {thb(a.value)}{' '}
-                          <span className="font-normal text-ink-muted text-xs">
-                            ({pctVal.toFixed(1)}%)
-                          </span>
-                        </span>
+                      <div
+                        key={a.id}
+                        style={{ width: `${cash > 0 ? (thbVal / cash) * 100 : 0}%`, background: cashColor(a.name, i) }}
+                        title={`${a.name}: ${moneyCompact(a.balance, a.currency)}`}
+                      />
+                    )
+                  })}
+                </div>
+                <div className="mt-2 divide-y divide-line">
+                  {data.cashAccounts.map((a, i) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => navigate('/cash')}
+                      aria-label={`View ${a.name} in Cash`}
+                      className="flex w-full items-center gap-2.5 py-2.5 text-left text-sm cursor-pointer"
+                    >
+                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: cashColor(a.name, i) }} />
+                      <span className="min-w-0 flex-1 truncate text-ink">{a.name}</span>
+                      {a.interestRate !== undefined && a.interestRate > 0 && (
+                        <span className="shrink-0 text-xs font-semibold text-gain tnum">{a.interestRate}%</span>
+                      )}
+                      <span className="shrink-0 font-semibold tnum text-ink">{moneyCompact(a.balance, a.currency)}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <Link to="/cash" className={`mt-3 ${PROMPT}`}>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-bold text-ink">Add your cash accounts</span>
+                  <span className="block text-xs text-ink-muted">Bank accounts, savings and wallets, with the interest they earn.</span>
+                </span>
+                <span className="shrink-0 text-sm font-semibold text-brand">Add →</span>
+              </Link>
+            )}
+          </Card>
+        </div>
+
+        {/* Debts */}
+        <div id="guide-dashboard-debts" className="lg:col-span-12 xl:col-span-4">
+          <Card className="h-full animate-rise">
+            <CardHeader title="Debts" action={<TextLink to="/spend/loans">Manage</TextLink>} />
+
+            <Inset id="guide-debt-summary" className="mt-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-ink-muted">Owed</p>
+                  <p title={debts > 0 ? `-${thb(debts)}` : '฿0'} className="mt-1 truncate font-display text-2xl font-extrabold tracking-tight tnum text-ink">
+                    {debts > 0 ? `-${thbCompact(debts)}` : '฿0'}
+                  </p>
+                  <p className="text-xs text-ink-muted tnum">{debts > 0 ? `${debtRatio.toFixed(1)}% of assets` : 'Debt free'}</p>
+                </div>
+                <div className="min-w-0 text-right">
+                  <p className="text-xs font-semibold text-ink-muted">Paid a month</p>
+                  <p title={`~${thb(monthlyDebt)} a month`} className="mt-1 truncate font-display text-2xl font-extrabold tracking-tight tnum text-ink">
+                    {monthlyDebt > 0 ? `~${thbCompact(monthlyDebt)}` : '฿0'}
+                  </p>
+                  <p className="text-xs text-ink-muted tnum">
+                    {[
+                      (data.liabilities?.length ?? 0) > 0 && `${data.liabilities?.length} ${data.liabilities?.length === 1 ? 'loan' : 'loans'}`,
+                      countedCards.length > 0 && `${countedCards.length} ${countedCards.length === 1 ? 'card' : 'cards'}`,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') || 'Nothing owed'}
+                  </p>
+                </div>
+              </div>
+              {cardsOwed > 0 && (
+                <Link to="/spend/accounts" className="mt-2 block truncate text-xs text-ink-muted hover:text-ink">
+                  Includes <b className="font-semibold text-ink tnum">{thb(cardsOwed)}</b> on Spend credit cards →
+                </Link>
+              )}
+            </Inset>
+
+            {(data.liabilities?.length ?? 0) > 0 ? (
+              <>
+                <div className="mt-4 flex h-2 overflow-hidden rounded-full bg-surface-muted">
+                  {data.liabilities!.map((l) => (
+                    <div
+                      key={l.id}
+                      style={{ width: `${debts > 0 ? (l.balance / debts) * 100 : 0}%`, background: (DEBT_CATEGORIES[l.category] ?? DEBT_CATEGORIES.other).color }}
+                      title={`${l.name}: ${thb(l.balance)}`}
+                    />
+                  ))}
+                </div>
+                <div className="mt-1 divide-y divide-line">
+                  {data.liabilities!.map((l) => {
+                    const meta = DEBT_CATEGORIES[l.category] ?? DEBT_CATEGORIES.other
+                    const isInst = l.isInstallment || l.category === 'installment'
+                    const totalInst = l.totalInstallments ?? 0
+                    const paidInst = l.paidInstallments ?? 0
+                    const percent = totalInst > 0 ? Math.min(100, Math.round((paidInst / totalInst) * 100)) : 0
+                    const dueInfo = getLiabilityDueStatus(l)
+                    const openLoan = () => {
+                      setSelectedLiabilityId(l.id)
+                      setLiabilitiesOpen(true)
+                    }
+
+                    return (
+                      <div key={l.id} className="py-3">
+                        <button type="button" onClick={openLoan} className="flex w-full items-center gap-2 text-left cursor-pointer">
+                          <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: meta.color }} />
+                          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{l.name}</span>
+                          {l.interestRate !== undefined && l.interestRate > 0 && (
+                            <span className="shrink-0 text-xs font-semibold text-ink-muted tnum">{l.interestRate}%</span>
+                          )}
+                          <span className="shrink-0 text-sm font-bold tnum text-ink">{l.balance > 0 ? `-${thb(l.balance)}` : '฿0'}</span>
+                        </button>
+
+                        <div className="mt-1.5 flex items-center justify-between gap-2 pl-4">
+                          <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-ink-muted">
+                            <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${dueInfo.badgeClass}`}>{dueInfo.label}</span>
+                            {l.monthlyPayment && l.monthlyPayment > 0 && l.balance > 0 && <span className="tnum">~{thb(l.monthlyPayment)}/mo</span>}
+                            {isInst && totalInst > 0 && <span className="tnum">{paidInst}/{totalInst} terms</span>}
+                          </div>
+
+                          {(l.monthlyPayment || isInst) && (
+                            <div className="shrink-0">
+                              {dueInfo.status === 'completed' ? (
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-gain">
+                                  <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.5} />
+                                  Paid off
+                                </span>
+                              ) : dueInfo.status === 'paid' ? (
+                                <span className="inline-flex items-center gap-2 text-xs">
+                                  <span className="inline-flex items-center gap-1 font-semibold text-gain">
+                                    <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.5} />
+                                    Paid
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => undoLoanPayment(l.id)}
+                                    aria-label={`Undo payment for ${l.name}`}
+                                    className="relative font-semibold text-ink-muted hover:text-ink hover:underline cursor-pointer after:absolute after:-inset-2 after:content-['']"
+                                  >
+                                    Undo
+                                  </button>
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => openPayLoan(l.id)}
+                                  aria-label={`Pay ${l.name}`}
+                                  className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-primary-hover cursor-pointer"
+                                >
+                                  <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.6} />
+                                  Pay
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {isInst && totalInst > 0 && (
+                          <div
+                            role="progressbar"
+                            aria-valuenow={percent}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-label={`${l.name}: ${percent}% repaid`}
+                            className="ml-4 mt-2 h-1.5 overflow-hidden rounded-full bg-surface-muted"
+                          >
+                            <div className={`h-full rounded-full ${percent >= 100 ? 'bg-gain' : 'bg-brand'}`} style={{ width: `${percent}%` }} />
+                          </div>
+                        )}
                       </div>
                     )
                   })}
                 </div>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Cash & Liquidity Hub */}
-        <div id="guide-dashboard-cash" className="lg:col-span-7 xl:col-span-4">
-          <Card className="animate-rise h-full flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                    <WalletIcon className="h-4 w-4" />
-                  </div>
-                  <h2 className="font-display text-base font-bold text-ink">Cash & Liquidity Hub</h2>
-                </div>
-
-                <Link
-                  to="/cash"
-                  aria-label="Open Cash & Liquidity"
-                  className="text-xs font-semibold text-brand hover:underline"
-                >
-                  Cash →
-                </Link>
-              </div>
-
-              {/* Cash & Liquidity Hero Summary */}
-              <div id="guide-cash-summary" className="@container mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1.5">
-                  {/* Row 1: Labels */}
-                  <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">Available Cash</span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-ink-muted text-right">Est. Yield</span>
-
-                  {/* Row 2: Values */}
-                  <div className="flex items-baseline min-w-0">
-                    <p
-                      title={thb(cash)}
-                      className="font-display text-[clamp(1.1rem,7cqw,1.5rem)] font-extrabold tracking-tight tnum text-ink leading-tight truncate cursor-default"
-                    >
-                      {thbCompact(cash)}
-                    </p>
-                  </div>
-                  <div className="flex items-baseline justify-end min-w-0">
-                    {cashInterest > 0 ? (
-                      <span
-                        title={`~${thb(cashInterest)}/yr`}
-                        className="font-display text-[clamp(1.1rem,7cqw,1.5rem)] font-extrabold tracking-tight tnum text-emerald-600 dark:text-emerald-400 leading-tight truncate cursor-default"
-                      >
-                        ~{thbCompact(cashInterest)}<span className="text-xs font-semibold text-ink-muted">/yr</span>
-                      </span>
-                    ) : (
-                      <span className="font-display text-[clamp(1.1rem,7cqw,1.5rem)] font-extrabold tracking-tight text-ink-muted leading-tight truncate cursor-default">
-                        No yield
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Row 3: Subtext / Details */}
-                  <div className="flex items-center min-w-0 h-6">
-                    <p className="text-xs text-ink-muted font-medium truncate">
-                      {cashYieldRate > 0 ? (
-                        <>
-                          Avg Yield: <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">~{cashYieldRate.toFixed(2)}%</strong>
-                        </>
-                      ) : (
-                        <span>Liquid Reserves</span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-end gap-1.5 min-w-0 h-6">
-                    <span className="text-xs font-bold text-ink-muted bg-surface px-2 py-0.5 rounded-md border border-line/60">
-                      {data.cashAccounts.length} {data.cashAccounts.length === 1 ? 'Account' : 'Accounts'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Cash accounts visual bar & account pills */}
-              {data.cashAccounts.length > 0 ? (
-                <div className="mt-4 space-y-3">
-                  <div className="flex h-2 overflow-hidden rounded-full bg-surface-muted">
-                    {data.cashAccounts.map((a, i) => {
-                      // Without a real rate a USD account has no THB width (the Layout notice explains)
-                      const rate = rateOrZero(usdThb)
-                      const thbVal = a.currency === 'USD' ? a.balance * rate : a.balance
-                      const preset = detectBankPreset(a.name)
-                      const color = preset?.color ?? CASH_COLORS[i % CASH_COLORS.length]
-                      return (
-                        <div
-                          key={a.id}
-                          onClick={() => navigate('/cash')}
-                          style={{
-                            width: `${cash > 0 ? (thbVal / cash) * 100 : 0}%`,
-                            background: color,
-                          }}
-                          title={`${a.name}: ${moneyCompact(a.balance, a.currency)} (Go to Cash Hub)`}
-                          className="cursor-pointer hover:opacity-80 transition-opacity"
-                        />
-                      )
-                    })}
-                  </div>
-
-                  {/* Cash accounts list grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
-                    {data.cashAccounts.map((a, i) => {
-                      const preset = detectBankPreset(a.name)
-                      const color = preset?.color ?? CASH_COLORS[i % CASH_COLORS.length]
-                      return (
-                        <button
-                          key={a.id}
-                          type="button"
-                          onClick={() => navigate('/cash')}
-                          aria-label={`View ${a.name} in Cash Hub`}
-                          className="flex flex-col text-left p-2.5 rounded-xl bg-surface-muted/50 border border-line/40 hover:bg-surface-muted hover:border-brand/40 hover:shadow-xs group transition-all cursor-pointer active:scale-[0.98]"
-                          title={`View in Cash Hub: ${a.name}`}
-                        >
-                          <span className="flex items-center gap-1.5 text-xs font-medium text-ink-muted w-full min-w-0">
-                            <span
-                              className="h-2 w-2 shrink-0 rounded-full"
-                              style={{ background: color }}
-                            />
-                            <span className="truncate group-hover:text-ink transition-colors">{a.name}</span>
-                          </span>
-                          <span className="mt-1 flex items-baseline justify-between gap-1.5">
-                            <span className="font-display font-bold tnum text-sm text-ink">
-                              {moneyCompact(a.balance, a.currency)}
-                            </span>
-                            {a.interestRate !== undefined && a.interestRate > 0 && (
-                              <span className="shrink-0 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded font-mono">
-                                {a.interestRate}%
-                              </span>
-                            )}
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <div className="py-6 text-center">
-                  <p className="text-xs text-ink-muted">No cash accounts added yet.</p>
-                  <Link
-                    to="/cash"
-                    className="inline-block mt-2 text-xs font-semibold text-brand hover:underline cursor-pointer"
-                  >
-                    + Open Cash Hub to add accounts
-                  </Link>
-                </div>
-              )}
-            </div>
-          </Card>
-        </div>
-
-        {/* Liabilities & Debts Hub */}
-        <div id="guide-dashboard-debts" className="lg:col-span-12 xl:col-span-4">
-          <Card className="animate-rise h-full flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="grid h-7 w-7 place-items-center rounded-lg bg-rose-500/10 text-rose-500 dark:bg-rose-500/20 dark:text-rose-400">
-                    <DebtIcon className="h-4 w-4" />
-                  </div>
-                  <h2 className="font-display text-base font-bold text-ink">Liabilities & Debts</h2>
-                </div>
-
-                <Link
-                  to="/spend/loans"
-                  aria-label="Open Loans in Spend"
-                  className="text-xs font-semibold text-brand hover:underline"
-                >
-                  Loans →
-                </Link>
-              </div>
-
-              {/* Liabilities & Debts Hero Summary */}
-              <div id="guide-debt-summary" className="@container mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1.5">
-                  {/* Row 1: Labels */}
-                  <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">Total Outstanding</span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-ink-muted text-right">Monthly Payment</span>
-
-                  {/* Row 2: Values */}
-                  <div className="flex items-baseline min-w-0">
-                    <p
-                      className="font-display text-[clamp(1.1rem,7cqw,1.5rem)] font-extrabold tracking-tight tnum leading-tight truncate cursor-default text-ink dark:text-white"
-                      title={debts > 0 ? `-${thb(debts)}` : '฿0'}
-                    >
-                      {debts > 0 ? `-${thbCompact(debts)}` : '฿0'}
-                    </p>
-                  </div>
-                  <div className="flex items-baseline justify-end min-w-0">
-                    {monthlyDebt > 0 ? (
-                      <span
-                        title={`~${thb(monthlyDebt)}/mo`}
-                        className="font-display text-[clamp(1.1rem,7cqw,1.5rem)] font-extrabold tracking-tight tnum text-rose-600 dark:text-rose-400 leading-tight truncate cursor-default"
-                      >
-                        ~{thbCompact(monthlyDebt)}<span className="text-xs font-semibold text-ink-muted">/mo</span>
-                      </span>
-                    ) : (
-                      <span className="font-display text-[clamp(1.1rem,7cqw,1.5rem)] font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400 leading-tight truncate cursor-default">
-                        ฿0<span className="text-xs font-semibold text-ink-muted">/mo</span>
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Row 3: Subtext / Details */}
-                  <div className="flex items-center min-w-0 h-6">
-                    <p className="text-xs text-ink-muted font-medium truncate">
-                      {debts > 0 ? (
-                        <>
-                          D/A Ratio: <strong className="text-rose-600 dark:text-rose-400 font-semibold">{debtRatio.toFixed(1)}%</strong>
-                        </>
-                      ) : (
-                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">🎉 100% Solvency</span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-end gap-1.5 min-w-0 h-6">
-                    <span className="text-xs font-bold text-ink-muted bg-surface px-2 py-0.5 rounded-md border border-line/60">
-                      {(data.liabilities?.length ?? 0) === 0 && countedCards.length === 0
-                        ? 'Debt Free'
-                        : [
-                            (data.liabilities?.length ?? 0) > 0 && `${data.liabilities?.length} ${data.liabilities?.length === 1 ? 'Debt' : 'Debts'}`,
-                            countedCards.length > 0 && `${countedCards.length} ${countedCards.length === 1 ? 'Card' : 'Cards'}`,
-                          ]
-                            .filter(Boolean)
-                            .join(' · ')}
-                    </span>
-                  </div>
-                </div>
-                {cardsOwed > 0 && (
-                  <Link to="/spend/accounts" className="mt-2 block truncate text-xs text-ink-muted hover:text-ink">
-                    Includes <b className="font-semibold text-ink tnum">{thb(cardsOwed)}</b> on Spend credit cards →
-                  </Link>
-                )}
-              </div>
-
-              {/* Debt distribution bar & items */}
-              {(data.liabilities?.length ?? 0) > 0 ? (
-                <div className="mt-4 space-y-3">
-                  <div className="flex h-2 overflow-hidden rounded-full bg-surface-muted">
-                    {data.liabilities!.map((l) => {
-                      const meta = DEBT_CATEGORIES[l.category] ?? DEBT_CATEGORIES.other
-                      return (
-                        <div
-                          key={l.id}
-                          onClick={() => {
-                            setSelectedLiabilityId(l.id)
-                            setLiabilitiesOpen(true)
-                          }}
-                          style={{
-                            width: `${debts > 0 ? (l.balance / debts) * 100 : 0}%`,
-                            background: meta.color,
-                          }}
-                          title={`${l.name}: ${thb(l.balance)} (Click to edit)`}
-                          className="cursor-pointer hover:opacity-80 transition-opacity"
-                        />
-                      )
-                    })}
-                  </div>
-
-                  {/* Liabilities list compact rows */}
-                  <div className="space-y-2 pt-1">
-                    {data.liabilities!.map((l) => {
-                      const meta = DEBT_CATEGORIES[l.category] ?? DEBT_CATEGORIES.other
-                      const isInst = l.isInstallment || l.category === 'installment'
-                      const totalInst = l.totalInstallments ?? 0
-                      const paidInst = l.paidInstallments ?? 0
-                      const percent = totalInst > 0 ? Math.min(100, Math.round((paidInst / totalInst) * 100)) : 0
-                      const remainingInst = Math.max(0, totalInst - paidInst)
-                      const dueInfo = getLiabilityDueStatus(l)
-
-                      return (
-                        <div
-                          key={l.id}
-                          onClick={() => {
-                            setSelectedLiabilityId(l.id)
-                            setLiabilitiesOpen(true)
-                          }}
-                          className="p-3 rounded-2xl bg-surface-muted/50 border border-line/40 hover:bg-surface-muted/90 hover:border-brand/40 hover:shadow-xs group transition-all cursor-pointer relative"
-                        >
-                          {/* Row 1: Left (Color dot + Name + Interest rate) | Right (Balance) */}
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                              <span
-                                className="h-2 w-2 shrink-0 rounded-full"
-                                style={{ background: meta.color }}
-                              />
-                              <span className="truncate font-semibold text-sm text-ink group-hover:text-brand transition-colors">
-                                {l.name}
-                              </span>
-                              {l.interestRate !== undefined && l.interestRate > 0 && (
-                                <span className="shrink-0 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded font-mono">
-                                  {l.interestRate}%
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="shrink-0 text-right">
-                              <span className={`font-display font-extrabold tnum text-sm ${l.balance > 0 ? 'text-ink dark:text-white' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                                {l.balance > 0 ? `-${thb(l.balance)}` : '฿0 (Paid Off)'}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Row 2: Left (Due badge, Monthly/Installment info) | Right (Quick Action or Status) */}
-                          <div className="mt-2 flex items-center justify-between gap-2 text-xs">
-                            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${dueInfo.badgeClass}`}>
-                                {dueInfo.label}
-                              </span>
-                              {l.monthlyPayment && l.monthlyPayment > 0 && l.balance > 0 && (
-                                <span className="text-ink-muted font-medium shrink-0">
-                                  ~{thb(l.monthlyPayment)}/mo
-                                </span>
-                              )}
-                              {isInst && totalInst > 0 && (
-                                <span className="text-xs font-semibold text-ink-muted dark:text-white/70 bg-surface dark:bg-white/10 border border-line dark:border-white/10 px-1.5 py-0.5 rounded shrink-0">
-                                  {paidInst}/{totalInst} terms
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Quick Action / Status */}
-                            {(l.monthlyPayment || isInst) && (
-                              <div className="shrink-0">
-                                {dueInfo.status === 'completed' ? (
-                                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-                                    🎉 Paid Off
-                                  </span>
-                                ) : dueInfo.status === 'paid' ? (
-                                  <div className="flex items-center gap-1.5 text-xs">
-                                    <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
-                                      <CheckIcon className="h-3 w-3" strokeWidth={2.5} />
-                                      <span>Paid this period</span>
-                                    </span>
-                                     <button
-                                       type="button"
-                                       onClick={(e) => {
-                                         e.stopPropagation()
-                                         undoLoanPayment(l.id)
-                                       }}
-                                       aria-label={`Undo payment for ${l.name}`}
-                                       className="relative inline-flex items-center px-2 py-1 min-h-[36px] sm:min-h-0 sm:py-0.5 after:absolute after:-inset-2 after:content-[''] font-semibold text-ink-faint hover:text-rose-600 hover:underline cursor-pointer"
-                                       title="Undo payment for this period"
-                                     >
-                                       Undo
-                                     </button>
-                                   </div>
-                                 ) : (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        openPayLoan(l.id)
-                                      }}
-                                      aria-label={`Pay installment for ${l.name}`}
-                                      className="relative inline-flex items-center gap-1.5 rounded-lg bg-primary text-white hover:bg-primary-hover px-3 py-1.5 sm:px-2.5 sm:py-1 min-h-[36px] sm:min-h-0 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer after:absolute after:-inset-1 after:content-[''] sm:after:hidden"
-                                    >
-                                      <CheckIcon className="h-3 w-3" strokeWidth={2.5} />
-                                      <span>Pay Term</span>
-                                    </button>
-                                 )}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Progress bar for installment plans */}
-                          {isInst && totalInst > 0 && (
-                            <div className="mt-2 pt-1.5 border-t border-line/30 dark:border-white/5">
-                              <div className="flex items-center justify-between text-xs font-semibold text-ink-faint mb-1">
-                                <span>Progress ({percent}%)</span>
-                                <span>{remainingInst === 0 ? 'Completed 🎉' : `${remainingInst} ${remainingInst === 1 ? 'term' : 'terms'} left`}</span>
-                              </div>
-                              <div
-                                role="progressbar"
-                                aria-valuenow={percent}
-                                aria-valuemin={0}
-                                aria-valuemax={100}
-                                aria-label={`Repayment progress: ${percent}%`}
-                                className="w-full h-1.5 rounded-full bg-surface-muted dark:bg-white/10 overflow-hidden"
-                              >
-                                <div
-                                  className={`h-full rounded-full transition-all duration-500 ${
-                                    percent >= 100 ? 'bg-emerald-500' : 'bg-brand'
-                                  }`}
-                                  style={{ width: `${percent}%` }}
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <div className="py-6 text-center">
-                  <p className="text-xs text-ink-muted">No debts recorded or completely debt-free.</p>
-                  <Link
-                    to="/spend/loans"
-                    className="inline-block mt-2 text-xs font-semibold text-brand hover:underline cursor-pointer"
-                  >
-                    + Open Debts Hub to manage liabilities
-                  </Link>
-                </div>
-              )}
-            </div>
+              </>
+            ) : (
+              <Link to="/spend/loans" className={`mt-3 ${PROMPT}`}>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-bold text-ink">No loans recorded</span>
+                  <span className="block text-xs text-ink-muted">Add a loan or installment to see what's left to pay.</span>
+                </span>
+                <span className="shrink-0 text-sm font-semibold text-brand">Add →</span>
+              </Link>
+            )}
           </Card>
         </div>
       </div>
 
-      {/* ── ROW 3: Net Worth Performance Graph (Full Width at Bottom) ── */}
+      {/* ── Net worth over time (full width) ── */}
       <div id="guide-dashboard-chart">
         <Card className="animate-rise overflow-hidden" padded={false}>
           {(data.netWorthHistory?.length ?? 0) >= 2 ? (
@@ -840,7 +519,7 @@ export function Dashboard() {
           ) : (
             <div className="p-8 text-center">
               <SparkleIcon className="h-6 w-6 mx-auto text-brand mb-2" />
-              <h3 className="font-display font-bold text-ink">Net Worth Performance Chart</h3>
+              <h3 className="font-display text-lg font-extrabold text-ink">Net worth over time</h3>
               <p className="text-sm text-ink-muted mt-1 max-w-md mx-auto">
                 Snapshot history will record daily as your balances and holdings update.
               </p>

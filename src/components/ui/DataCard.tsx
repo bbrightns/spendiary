@@ -8,7 +8,7 @@ import { Card } from './Card'
 export function DataCard({ id, title, summary, children }: { id?: string; title: string; summary?: string; children: ReactNode }) {
   return (
     <Card id={id} className="animate-rise scroll-mt-24">
-      <h2 className="font-display text-lg font-bold text-ink">{title}</h2>
+      <h2 className="font-display text-lg font-extrabold text-ink">{title}</h2>
       {summary && <p className="mt-0.5 text-sm text-ink-muted [text-wrap:pretty]">{summary}</p>}
       <div className="mt-3 divide-y divide-line">{children}</div>
     </Card>

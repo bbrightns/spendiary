@@ -1,21 +1,18 @@
-import { createPortal } from 'react-dom'
+import type { RefObject } from 'react'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import type { BtcLocation, GoldLocation, Holding } from '../../lib/types'
-import { DividendIcon, LockClosedIcon, LockOpenIcon, MinusIcon, PencilIcon, PlusIcon, TrashIcon } from '../../components/icons'
+import { Popover, PopoverDivider, PopoverOption } from '../../components/ui/Popover'
+import { CashflowIcon, DividendIcon, LockClosedIcon, LockOpenIcon, MinusIcon, PencilIcon, PlusIcon, TrashIcon } from '../../components/icons'
 
-/** Where a dropdown opens: below or above its ⋯ button, lined up with its right edge */
-export interface MenuCoords {
-  top?: number
-  bottom?: number
-  right: number
-}
+const ICON = 'h-4 w-4'
+/** Shown on an action while its holding or location is locked */
+const LOCKED = 'Locked'
 
 /** The ⋯ menu of a holding row: lock, buy, sell, record a dividend, edit. */
-export function HoldingActionMenu({ holding, coords, direction, onClose, onBuy, onSell, onDividend, onEdit }: {
+export function HoldingActionMenu({ holding, anchorRef, onClose, onBuy, onSell, onDividend, onEdit }: {
   holding: Holding
-  coords: MenuCoords
-  direction: 'up' | 'down'
+  anchorRef: RefObject<HTMLElement | null>
   onClose: () => void
   onBuy: (h: Holding) => void
   onSell: (h: Holding) => void
@@ -24,172 +21,42 @@ export function HoldingActionMenu({ holding, coords, direction, onClose, onBuy, 
 }) {
   const { toggleHoldingLock } = useData()
   const { showToast } = useToast()
-  if (typeof document === 'undefined') return null
-  return createPortal(
-    <>
-      <div
-        className="fixed inset-0 z-40"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <div
-        style={{
-          position: 'fixed',
-          top: coords.top !== undefined ? `${coords.top}px` : undefined,
-          bottom: coords.bottom !== undefined ? `${coords.bottom}px` : undefined,
-          right: `${coords.right}px`,
-        }}
-        className={`z-50 min-w-[170px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-2xl backdrop-blur-md animate-pop-in ${
-          direction === 'up' ? 'origin-bottom-right' : 'origin-top-right'
-        }`}
-        onClick={(e) => e.stopPropagation()}
+  const locked = !!holding.isLocked
+  // Close first, then act, so the next sheet opens on a clean stack
+  const run = (fn: (h: Holding) => void) => () => {
+    onClose()
+    fn(holding)
+  }
+  const paysDividend = (holding.assetClass === 'fund' || holding.assetClass === 'stock') && holding.paysDividend
+
+  return (
+    <Popover open onClose={onClose} anchorRef={anchorRef} title={holding.name} align="right">
+      <PopoverOption
+        icon={locked ? <LockOpenIcon className={ICON} /> : <LockClosedIcon className={ICON} />}
+        onClick={run((h) => {
+          toggleHoldingLock(h.id)
+          showToast(h.isLocked ? `"${h.name}" unlocked` : `"${h.name}" locked (protected from selling or deleting)`, 'info')
+        })}
       >
-        {/* Safe-Haven Lock / Unlock Toggle */}
-        <button
-          type="button"
-          onClick={() => {
-            const target = holding
-            onClose()
-            toggleHoldingLock(target.id)
-            showToast(
-              target.isLocked
-                ? `"${target.name}" unlocked`
-                : `"${target.name}" locked (protected from selling or deleting)`,
-              'info'
-            )
-          }}
-          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink hover:bg-surface-muted transition-colors cursor-pointer text-left"
-        >
-          {holding.isLocked ? (
-            <>
-              <LockOpenIcon className="h-4 w-4 text-amber-500 shrink-0" strokeWidth={2} />
-              <span>Unlock</span>
-            </>
-          ) : (
-            <>
-              <LockClosedIcon className="h-4 w-4 text-amber-500 shrink-0" strokeWidth={2} />
-              <span>Lock (protect from selling)</span>
-            </>
-          )}
-        </button>
-        <div className="my-1 border-t border-line/60" />
-
-        {holding.isLocked ? (
-          <div
-            title="This asset is locked. Unlock it first to make changes."
-            className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
-          >
-            <div className="flex items-center gap-2.5">
-              <PlusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
-              <span>Buy more</span>
-            </div>
-            <span className="text-2xs font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-              <LockClosedIcon className="h-3 w-3" /> Locked
-            </span>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              const target = holding
-              onClose()
-              onBuy(target)
-            }}
-            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
-          >
-            <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
-            <span>Buy more</span>
-          </button>
-        )}
-
-        {holding.isLocked ? (
-          <div
-            title="This asset is locked. Unlock it first to sell."
-            className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
-          >
-            <div className="flex items-center gap-2.5">
-              <MinusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
-              <span>Sell</span>
-            </div>
-            <span className="text-2xs font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-              <LockClosedIcon className="h-3 w-3" /> Locked
-            </span>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              const target = holding
-              onClose()
-              onSell(target)
-            }}
-            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
-          >
-            <MinusIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.4} />
-            <span>Sell</span>
-          </button>
-        )}
-
-        {(holding.assetClass === 'fund' || holding.assetClass === 'stock') && holding.paysDividend && (
-          holding.isLocked ? (
-            <div
-              title="This asset is locked. Unlock it first to record a dividend."
-              className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
-            >
-              <div className="flex items-center gap-2.5">
-                <DividendIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.2} />
-                <span>Record dividend</span>
-              </div>
-              <span className="text-2xs font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                <LockClosedIcon className="h-3 w-3" /> Locked
-              </span>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                const target = holding
-                onClose()
-                onDividend(target)
-              }}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer text-left"
-            >
-              <DividendIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={2.2} />
-              <span>Record dividend</span>
-            </button>
-          )
-        )}
-        <div className="my-1 border-t border-line/60" />
-        {holding.isLocked ? (
-          <div
-            title="This asset is locked. Unlock it first to edit."
-            className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
-          >
-            <div className="flex items-center gap-2.5">
-              <PencilIcon className="h-3.5 w-3.5 text-ink-muted/40 shrink-0" />
-              <span>Edit</span>
-            </div>
-            <span className="text-2xs font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-              <LockClosedIcon className="h-3 w-3" /> Locked
-            </span>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              const target = holding
-              onClose()
-              onEdit(target)
-            }}
-            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer text-left"
-          >
-            <PencilIcon className="h-3.5 w-3.5 shrink-0" />
-            <span>Edit</span>
-          </button>
-        )}
-      </div>
-    </>,
-    document.body
+        {locked ? 'Unlock' : 'Lock (protect from selling)'}
+      </PopoverOption>
+      <PopoverDivider />
+      <PopoverOption icon={<PlusIcon className={ICON} />} disabled={locked} hint={locked ? LOCKED : undefined} onClick={run(onBuy)}>
+        Buy more
+      </PopoverOption>
+      <PopoverOption icon={<MinusIcon className={ICON} />} disabled={locked} hint={locked ? LOCKED : undefined} onClick={run(onSell)}>
+        Sell
+      </PopoverOption>
+      {paysDividend && (
+        <PopoverOption icon={<DividendIcon className={ICON} />} disabled={locked} hint={locked ? LOCKED : undefined} onClick={run(onDividend)}>
+          Record dividend
+        </PopoverOption>
+      )}
+      <PopoverDivider />
+      <PopoverOption icon={<PencilIcon className={ICON} />} disabled={locked} hint={locked ? LOCKED : undefined} onClick={run(onEdit)}>
+        Edit
+      </PopoverOption>
+    </Popover>
   )
 }
 
@@ -201,10 +68,9 @@ export interface PocketMenuTarget {
 }
 
 /** The ⋯ menu of one BTC / gold storage location: lock, buy, sell, move, edit, remove. */
-export function PocketActionMenu({ menu, coords, direction, onClose, onBuy, onSell, onMove, onEditLocation, onRemoveLocation }: {
+export function PocketActionMenu({ menu, anchorRef, onClose, onBuy, onSell, onMove, onEditLocation, onRemoveLocation }: {
   menu: PocketMenuTarget
-  coords: MenuCoords
-  direction: 'up' | 'down'
+  anchorRef: RefObject<HTMLElement | null>
   onClose: () => void
   onBuy: (h: Holding, locId: string) => void
   onSell: (h: Holding, locId: string) => void
@@ -214,207 +80,50 @@ export function PocketActionMenu({ menu, coords, direction, onClose, onBuy, onSe
 }) {
   const { toggleLocationLock } = useData()
   const { showToast } = useToast()
-  if (typeof document === 'undefined') return null
-  const locs = menu.isBtc
-    ? (menu.holding.btcLocations ?? [])
-    : (menu.holding.goldLocations ?? [])
+  const locs = menu.isBtc ? (menu.holding.btcLocations ?? []) : (menu.holding.goldLocations ?? [])
   const loc = locs.find((l) => l.id === menu.locId)
-  const isLocLocked = !!loc?.isLocked
+  const locked = !!loc?.isLocked
+  const hint = locked ? LOCKED : undefined
+  const run = (fn: () => void) => () => {
+    onClose()
+    fn()
+  }
 
-  return createPortal(
-    <>
-      <div
-        className="fixed inset-0 z-40"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <div
-        style={{
-          position: 'fixed',
-          top: coords.top !== undefined ? `${coords.top}px` : undefined,
-          bottom: coords.bottom !== undefined ? `${coords.bottom}px` : undefined,
-          right: `${coords.right}px`,
-        }}
-        className={`z-50 min-w-[190px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-2xl backdrop-blur-md animate-pop-in ${
-          direction === 'up' ? 'origin-bottom-right' : 'origin-top-right'
-        }`}
-        onClick={(e) => e.stopPropagation()}
+  return (
+    <Popover open onClose={onClose} anchorRef={anchorRef} title={menu.locName} align="right">
+      <PopoverOption
+        icon={locked ? <LockOpenIcon className={ICON} /> : <LockClosedIcon className={ICON} />}
+        onClick={run(() => {
+          toggleLocationLock(menu.holding.id, menu.locId, menu.isBtc)
+          showToast(locked ? `"${menu.locName}" unlocked` : `"${menu.locName}" locked (protected from selling or deleting)`, 'info')
+        })}
       >
-        {/* Cold-Storage Lock / Unlock Toggle */}
-        <button
-          type="button"
-          onClick={() => {
-            const t = menu
-            onClose()
-            toggleLocationLock(t.holding.id, t.locId, t.isBtc)
-            showToast(
-              isLocLocked
-                ? `"${t.locName}" unlocked`
-                : `"${t.locName}" locked (protected from selling or deleting)`,
-              'info'
-            )
-          }}
-          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink hover:bg-surface-muted transition-colors cursor-pointer text-left"
-        >
-          {isLocLocked ? (
-            <>
-              <LockOpenIcon className="h-4 w-4 text-amber-500 shrink-0" strokeWidth={2} />
-              <span>Unlock location</span>
-            </>
-          ) : (
-            <>
-              <LockClosedIcon className="h-4 w-4 text-amber-500 shrink-0" strokeWidth={2} />
-              <span>Lock location</span>
-            </>
-          )}
-        </button>
-        <div className="my-1 border-t border-line/60" />
-
-        {isLocLocked ? (
-          <div
-            title="This location is locked. Unlock it first to make changes."
-            className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
-          >
-            <div className="flex items-center gap-2.5">
-              <PlusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
-              <span>Buy into this location</span>
-            </div>
-            <span className="text-2xs font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-              <LockClosedIcon className="h-3 w-3" /> Locked
-            </span>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              const t = menu
-              onClose()
-              onBuy(t.holding, t.locId)
-            }}
-            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-gain hover:bg-gain/10 transition-colors cursor-pointer text-left"
-          >
-            <PlusIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.4} />
-            <span>Buy into this location</span>
-          </button>
-        )}
-
-        {isLocLocked ? (
-          <div
-            title="This location is locked. Unlock it first to sell."
-            className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
-          >
-            <div className="flex items-center gap-2.5">
-              <MinusIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.4} />
-              <span>Sell from this location</span>
-            </div>
-            <span className="text-2xs font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-              <LockClosedIcon className="h-3 w-3" /> Locked
-            </span>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              const t = menu
-              onClose()
-              onSell(t.holding, t.locId)
-            }}
-            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
-          >
-            <MinusIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.4} />
-            <span>Sell from this location</span>
-          </button>
-        )}
-
-        {isLocLocked ? (
-          <div
-            title="This location is locked. Unlock it first to move coins out."
-            className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
-          >
-            <div className="flex items-center gap-2.5">
-              <span className="w-4 text-center text-base leading-none text-ink-muted/40">⇄</span>
-              <span>Move to another location</span>
-            </div>
-            <span className="text-2xs font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-              <LockClosedIcon className="h-3 w-3" /> Locked
-            </span>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              const t = menu
-              onClose()
-              onMove(t.holding, t.locId)
-            }}
-            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-sky-600 dark:text-sky-400 hover:bg-sky-500/10 transition-colors cursor-pointer text-left"
-          >
-            <span className="w-4 text-center text-base leading-none">⇄</span>
-            <span>Move to another location</span>
-          </button>
-        )}
-
-        {loc && (
-          isLocLocked ? (
-            <div
-              title="This location is locked. Unlock it first to edit."
-              className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
-            >
-              <div className="flex items-center gap-2.5">
-                <PencilIcon className="h-3.5 w-3.5 text-ink-muted/40 shrink-0" />
-                <span>Edit location</span>
-              </div>
-              <span className="text-2xs font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                <LockClosedIcon className="h-3 w-3" /> Locked
-              </span>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                const t = menu
-                onClose()
-                onEditLocation(t.holding.id, loc)
-              }}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer text-left"
-            >
-              <PencilIcon className="h-3.5 w-3.5 shrink-0" />
-              <span>Edit location</span>
-            </button>
-          )
-        )}
-
-        <div className="my-1 border-t border-line/60" />
-
-        {isLocLocked ? (
-          <div
-            title="A locked location can't be removed. Unlock it first."
-            className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted/50 bg-surface-muted/40 cursor-not-allowed select-none"
-          >
-            <div className="flex items-center gap-2.5">
-              <TrashIcon className="h-4 w-4 text-ink-muted/40 shrink-0" strokeWidth={2.2} />
-              <span>Remove location</span>
-            </div>
-            <span className="text-2xs font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-              <LockClosedIcon className="h-3 w-3" /> Locked
-            </span>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              const t = menu
-              onClose()
-              onRemoveLocation({ holdingId: t.holding.id, locId: t.locId, name: t.locName, isBtc: t.isBtc })
-            }}
-            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer text-left"
-          >
-            <TrashIcon className="h-4 w-4 text-rose-500 shrink-0" strokeWidth={2.2} />
-            <span>Remove location</span>
-          </button>
-        )}
-      </div>
-    </>,
-    document.body
+        {locked ? 'Unlock location' : 'Lock location'}
+      </PopoverOption>
+      <PopoverDivider />
+      <PopoverOption icon={<PlusIcon className={ICON} />} disabled={locked} hint={hint} onClick={run(() => onBuy(menu.holding, menu.locId))}>
+        Buy into this location
+      </PopoverOption>
+      <PopoverOption icon={<MinusIcon className={ICON} />} disabled={locked} hint={hint} onClick={run(() => onSell(menu.holding, menu.locId))}>
+        Sell from this location
+      </PopoverOption>
+      <PopoverOption icon={<CashflowIcon className={ICON} />} disabled={locked} hint={hint} onClick={run(() => onMove(menu.holding, menu.locId))}>
+        Move to another location
+      </PopoverOption>
+      {loc && (
+        <PopoverOption icon={<PencilIcon className={ICON} />} disabled={locked} hint={hint} onClick={run(() => onEditLocation(menu.holding.id, loc))}>
+          Edit location
+        </PopoverOption>
+      )}
+      <PopoverDivider />
+      <PopoverOption
+        icon={<TrashIcon className={ICON} />}
+        disabled={locked}
+        hint={hint}
+        onClick={run(() => onRemoveLocation({ holdingId: menu.holding.id, locId: menu.locId, name: menu.locName, isBtc: menu.isBtc }))}
+      >
+        Remove location
+      </PopoverOption>
+    </Popover>
   )
 }
