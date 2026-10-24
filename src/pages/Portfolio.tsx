@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type MouseEvent as ReactMouseEvent } from 'react'
+import { useState, useEffect, useCallback, useRef, type MouseEvent as ReactMouseEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
 import { useData } from '../store/DataContext'
@@ -170,13 +170,12 @@ export function Portfolio() {
   const [selling, setSelling] = useState<Holding | null>(null)
   const [activeMenuHoldingId, setActiveMenuHoldingId] = useState<string | null>(null)
   const [activeMenuHolding, setActiveMenuHolding] = useState<Holding | null>(null)
-  const [menuDirection, setMenuDirection] = useState<'down' | 'up'>('down')
-  const [menuCoords, setMenuCoords] = useState<{ top?: number; bottom?: number; right: number } | null>(null)
+  // The ⋯ button that opened a menu: the menu lines up with it and gives focus back to it
+  const menuAnchorRef = useRef<HTMLElement | null>(null)
 
   // Per-pocket (storage location) action menu state
   const [pocketMenu, setPocketMenu] = useState<{ holding: Holding; locId: string; locName: string; isBtc: boolean } | null>(null)
-  const [pocketMenuCoords, setPocketMenuCoords] = useState<{ top?: number; bottom?: number; right: number } | null>(null)
-  const [pocketMenuDirection, setPocketMenuDirection] = useState<'down' | 'up'>('down')
+  const pocketAnchorRef = useRef<HTMLElement | null>(null)
   const openPocketMenu = useCallback((e: ReactMouseEvent<HTMLButtonElement>, holding: Holding, locId: string) => {
     e.stopPropagation() // keep the same click from hitting the window close-handler
     const locs = holding.assetClass === 'crypto'
@@ -184,56 +183,13 @@ export function Portfolio() {
       : (holding.goldLocations ?? [])
     const loc = locs.find((l) => l.id === locId)
     if (!loc) return
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const spaceBelow = window.innerHeight - rect.bottom
-    const spaceAbove = rect.top
-    const openUp = spaceBelow < 170 && spaceAbove > spaceBelow
-    setPocketMenuDirection(openUp ? 'up' : 'down')
-    setPocketMenuCoords({
-      top: openUp ? undefined : rect.bottom + 6,
-      bottom: openUp ? window.innerHeight - rect.top + 6 : undefined,
-      right: Math.max(12, window.innerWidth - rect.right),
-    })
+    pocketAnchorRef.current = e.currentTarget
     setPocketMenu({ holding, locId, locName: loc.name, isBtc: holding.assetClass === 'crypto' })
   }, [])
 
-  // Close pocket menu on outside click, scroll, or resize
-  useEffect(() => {
-    if (!pocketMenu) return
-    const handleClose = () => setPocketMenu(null)
-    window.addEventListener('click', handleClose)
-    window.addEventListener('scroll', handleClose, { passive: true })
-    window.addEventListener('resize', handleClose)
-    return () => {
-      window.removeEventListener('click', handleClose)
-      window.removeEventListener('scroll', handleClose)
-      window.removeEventListener('resize', handleClose)
-    }
-  }, [pocketMenu])
-
   const [removeLocConfirmOpen, setRemoveLocConfirmOpen] = useState(false)
   const [removeLocTarget, setRemoveLocTarget] = useState<{ holdingId: string; locId: string; name: string; isBtc: boolean } | null>(null)
-  const closePocketMenu = useCallback(() => {
-    setPocketMenu(null)
-    setPocketMenuCoords(null)
-  }, [])
-
-  // Close action dropdown menu when clicking outside, scrolling, or resizing
-  useEffect(() => {
-    if (!activeMenuHoldingId) return
-    const handleClose = () => {
-      setActiveMenuHoldingId(null)
-      setActiveMenuHolding(null)
-    }
-    window.addEventListener('click', handleClose)
-    window.addEventListener('scroll', handleClose, { passive: true })
-    window.addEventListener('resize', handleClose)
-    return () => {
-      window.removeEventListener('click', handleClose)
-      window.removeEventListener('scroll', handleClose)
-      window.removeEventListener('resize', handleClose)
-    }
-  }, [activeMenuHoldingId])
+  const closePocketMenu = useCallback(() => setPocketMenu(null), [])
 
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false)
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null)
@@ -626,17 +582,7 @@ export function Portfolio() {
                   setActiveMenuHoldingId(null)
                   setActiveMenuHolding(null)
                 } else {
-                  const rect = e.currentTarget.getBoundingClientRect()
-                  const spaceBelow = window.innerHeight - rect.bottom
-                  const spaceAbove = rect.top
-                  const menuApproxHeight = (h.assetClass === 'fund' || h.assetClass === 'stock') ? 190 : 145
-                  const openUp = spaceBelow < menuApproxHeight && spaceAbove > spaceBelow
-                  setMenuDirection(openUp ? 'up' : 'down')
-                  setMenuCoords({
-                    top: openUp ? undefined : rect.bottom + 6,
-                    bottom: openUp ? window.innerHeight - rect.top + 6 : undefined,
-                    right: Math.max(12, window.innerWidth - rect.right),
-                  })
+                  menuAnchorRef.current = e.currentTarget
                   setActiveMenuHoldingId(h.id)
                   setActiveMenuHolding(h)
                 }
@@ -1271,11 +1217,10 @@ export function Portfolio() {
       </div>
 
       {/* ── Action Dropdown Menu ── */}
-      {activeMenuHolding && menuCoords && (
+      {activeMenuHolding && (
         <HoldingActionMenu
           holding={activeMenuHolding}
-          coords={menuCoords}
-          direction={menuDirection}
+          anchorRef={menuAnchorRef}
           onClose={() => {
             setActiveMenuHoldingId(null)
             setActiveMenuHolding(null)
@@ -1288,11 +1233,10 @@ export function Portfolio() {
       )}
 
       {/* ── Per-pocket (storage location) Action Menu ── */}
-      {pocketMenu && pocketMenuCoords && (
+      {pocketMenu && (
         <PocketActionMenu
           menu={pocketMenu}
-          coords={pocketMenuCoords}
-          direction={pocketMenuDirection}
+          anchorRef={pocketAnchorRef}
           onClose={closePocketMenu}
           onBuy={openBuy}
           onSell={openSell}

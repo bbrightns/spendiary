@@ -28,7 +28,7 @@ export function Popover({ open, onClose, anchorRef, title, align = 'left', child
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== 'undefined' && window.matchMedia(MOBILE_QUERY).matches,
   )
-  const [pos, setPos] = useState<{ top: number; left?: number; right?: number } | null>(null)
+  const [pos, setPos] = useState<{ top?: number; bottom?: number; left?: number; right?: number } | null>(null)
   const onCloseRef = useRef(onClose)
   useEffect(() => {
     onCloseRef.current = onClose
@@ -41,15 +41,19 @@ export function Popover({ open, onClose, anchorRef, title, align = 'left', child
     return () => mq.removeEventListener('change', update)
   }, [])
 
-  // Place the desktop dropdown under its button
+  // Place the desktop dropdown under its button, or above it when it wouldn't fit below
   useLayoutEffect(() => {
     if (!open || isMobile) return
     const rect = anchorRef.current?.getBoundingClientRect()
     if (!rect) return
+    const height = panelRef.current?.offsetHeight ?? 0
+    const below = window.innerHeight - rect.bottom - GAP - EDGE
+    const above = rect.top - GAP - EDGE
+    const vertical = height > below && above > below ? { bottom: window.innerHeight - rect.top + GAP } : { top: rect.bottom + GAP }
     setPos(
       align === 'right'
-        ? { top: rect.bottom + GAP, right: Math.max(EDGE, window.innerWidth - rect.right) }
-        : { top: rect.bottom + GAP, left: Math.max(EDGE, rect.left) },
+        ? { ...vertical, right: Math.max(EDGE, window.innerWidth - rect.right) }
+        : { ...vertical, left: Math.max(EDGE, rect.left) },
     )
   }, [open, isMobile, align, anchorRef])
 
@@ -107,9 +111,11 @@ export function Popover({ open, onClose, anchorRef, title, align = 'left', child
         ref={panelRef}
         role="dialog"
         aria-label={title}
-        style={{ position: 'fixed', top: pos?.top, left: pos?.left, right: pos?.right, visibility: pos ? 'visible' : 'hidden' }}
+        style={{ position: 'fixed', top: pos?.top, bottom: pos?.bottom, left: pos?.left, right: pos?.right, visibility: pos ? 'visible' : 'hidden' }}
         className={`z-50 min-w-[200px] max-w-[calc(100vw-24px)] max-h-[70vh] overflow-y-auto rounded-2xl border border-line bg-surface p-1.5 shadow-[var(--shadow-lift)] animate-pop-in ${
-          align === 'right' ? 'origin-top-right' : 'origin-top-left'
+          pos?.bottom !== undefined
+            ? align === 'right' ? 'origin-bottom-right' : 'origin-bottom-left'
+            : align === 'right' ? 'origin-top-right' : 'origin-top-left'
         }`}
       >
         {children}
@@ -159,4 +165,9 @@ export function PopoverOption({
       )}
     </button>
   )
+}
+
+/** A hairline between groups of options in a Popover list */
+export function PopoverDivider() {
+  return <div role="separator" className="my-1 border-t border-line" />
 }
