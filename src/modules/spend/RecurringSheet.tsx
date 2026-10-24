@@ -94,6 +94,7 @@ export function RecurringSheet({ open, rec, onClose }: { open: boolean; rec?: Sp
   const day = Number(form.day)
   const dayOk = form.frequency === 'weekly' || (Number.isInteger(day) && day >= 1 && day <= 31)
   const canSave = Number.isFinite(amount) && amount > 0 && dayOk && form.startDate !== ''
+  const saveHint = !(Number.isFinite(amount) && amount > 0) ? 'Enter an amount' : !dayOk ? 'Pick a day from 1 to 31' : 'Pick a start date'
   const categoryLabel = getCategory(form.categoryId)?.label ?? 'Other'
 
   const draft: Omit<SpendRecurring, 'id'> = {
@@ -131,6 +132,7 @@ export function RecurringSheet({ open, rec, onClose }: { open: boolean; rec?: Sp
       size="md"
       footer={
         <FormActions
+          hint={saveHint}
           editing={!!rec}
           canSave={canSave}
           onSave={save}

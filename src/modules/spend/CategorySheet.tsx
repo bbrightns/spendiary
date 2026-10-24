@@ -70,6 +70,7 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
       size="md"
       footer={
         <FormActions
+          hint="Give the category a name"
           editing={!!category}
           canSave={canSave}
           onSave={save}

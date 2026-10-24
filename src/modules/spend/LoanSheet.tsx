@@ -132,6 +132,7 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
   // What a payment comes to when no monthly amount is set: the balance over the payments left
   const suggested = owed > 0 && num(form.total) > 0 ? Math.round(owed / left) : 0
   const canSave = form.name.trim() !== '' && owed > 0
+  const saveHint = !form.name.trim() ? 'Name the loan' : 'Enter how much is still owed'
 
   const changeKind = (k: Kind) =>
     setForm((f) => {
@@ -198,7 +199,7 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
       onClose={onClose}
       title={existing ? 'Edit loan' : 'Add loan'}
       size="md"
-      footer={<FormActions editing={!!existing} canSave={canSave} onSave={save} onDelete={existing ? remove : undefined} />}
+      footer={<FormActions editing={!!existing} canSave={canSave} onSave={save} onDelete={existing ? remove : undefined} hint={saveHint} />}
     >
       <div className="space-y-5">
         <div>
