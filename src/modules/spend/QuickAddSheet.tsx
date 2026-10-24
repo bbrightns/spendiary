@@ -108,6 +108,8 @@ export function QuickAddSheet() {
   const [alreadyIn, setAlreadyIn] = useState(false)
   // A one-off kept out of the daily budget (offered only for big expenses)
   const [outside, setOutside] = useState(false)
+  // Income that is someone paying you back: it lowers an expense category instead of counting as income
+  const [paidBack, setPaidBack] = useState(false)
   // Card purchase paid off in monthly installments (off unless picked)
   const [split, setSplit] = useState(false)
   const [months, setMonths] = useState(10)
@@ -144,6 +146,7 @@ export function QuickAddSheet() {
         setNote(source.note ?? '')
         setAlreadyIn(!!existing?.alreadyInBalance)
         setOutside(!!existing?.outsideBudget)
+        setPaidBack(!!existing?.paidBack)
         setSplit(false)
       } else {
         const draft = detail.draft ?? {}
@@ -164,6 +167,7 @@ export function QuickAddSheet() {
         setNote(draft.note ?? '')
         setAlreadyIn(false)
         setOutside(false)
+        setPaidBack(false)
         setSplit(false)
         setMonths(10)
       }
@@ -217,9 +221,21 @@ export function QuickAddSheet() {
   const offerOutside = type === 'expense' && !splitting && (big || wasOutside)
   // Hidden again (amount lowered, type changed): it doesn't apply
   const keepOut = offerOutside && outside
+  const isPaidBack = type === 'income' && paidBack
+  // Paid back money comes off a spending category, so it picks from those
+  const togglePaidBack = () => {
+    const next = !paidBack
+    setPaidBack(next)
+    const kind = next ? 'expense' : 'income'
+    if (getCategory(categoryId)?.type !== kind) {
+      setCategoryId(categoriesFor(kind)[0]?.id ?? '')
+      setSubcategory('')
+    }
+  }
 
   const changeType = (t: SpendTxnType) => {
     setType(t)
+    setPaidBack(false)
     if (t !== 'transfer' && getCategory(categoryId)?.type !== t) {
       setCategoryId(categoriesFor(t)[0]?.id ?? '')
       setSubcategory('')
@@ -283,13 +299,14 @@ export function QuickAddSheet() {
       alreadyInBalance: backdated && touchesBalance && alreadyIn ? true : undefined,
       // Always set, so an edit can clear it
       outsideBudget: keepOut ? true : undefined,
+      paidBack: isPaidBack ? true : undefined,
     }
     if (editId) {
       updateTransaction(editId, input)
       showToast('Transaction updated')
     } else {
       const txn = addTransaction(input, fromRecurring ? { id: fromRecurring.id, date: fromRecurring.date } : undefined)
-      const label = type === 'transfer' ? 'Transfer' : getCategory(categoryId)?.label ?? ''
+      const label = type === 'transfer' ? 'Transfer' : `${getCategory(categoryId)?.label ?? ''}${isPaidBack ? ' paid back' : ''}`
       const sign = type === 'income' ? '+' : type === 'expense' ? '−' : ''
       if (fromRecurring) {
         // Like marking it paid from the bills card: Undo puts the bill back as due
@@ -394,10 +411,32 @@ export function QuickAddSheet() {
             </button>
           )}
 
+          {type === 'income' && (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={paidBack}
+              onClick={togglePaidBack}
+              className={`-mt-2 flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition-colors cursor-pointer ${
+                paidBack ? 'border-brand/40 bg-brand-soft/40' : 'border-line hover:bg-surface-muted/50'
+              }`}
+            >
+              <span>
+                <span className="block text-sm font-bold text-ink">Paid back, not income</span>
+                <span className="block text-xs text-ink-muted">
+                  {paidBack
+                    ? `Takes ${thb(amountValid ? value : 0)} off ${getCategory(categoryId)?.label ?? 'the category'} spending`
+                    : 'Someone paid you back their share, or a shop refunded you'}
+                </span>
+              </span>
+              <SwitchVisual on={paidBack} />
+            </button>
+          )}
+
           {/* Category */}
           {type !== 'transfer' && (
             <CategoryPicker
-              type={type}
+              type={isPaidBack ? 'expense' : type}
               value={categoryId}
               onChange={setCategoryId}
               subcategory={subcategory}
@@ -406,7 +445,11 @@ export function QuickAddSheet() {
           )}
 
           {/* Note right after the category: it's filled in almost every time, so it sits before the account and date */}
-          <NoteField value={note} onChange={setNote} fallbackTitle={type === 'transfer' ? 'Transfer' : getCategory(categoryId)?.label ?? 'Other'} />
+          <NoteField
+            value={note}
+            onChange={setNote}
+            fallbackTitle={type === 'transfer' ? 'Transfer' : isPaidBack ? 'Paid back' : getCategory(categoryId)?.label ?? 'Other'}
+          />
 
           {/* Pay with / into */}
           {type === 'transfer' ? (

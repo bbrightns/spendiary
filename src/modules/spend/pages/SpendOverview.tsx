@@ -9,7 +9,7 @@ import { Modal } from '../../../components/ui/Modal'
 import { PencilIcon, WalletIcon } from '../../../components/icons'
 import { getRandomGreeting, localDateStr, thb } from '../../../lib/format'
 import { useData } from '../../../store/DataContext'
-import { countsInBudget, dayAllowance, inPeriod, periodFor, shiftDate, type DayStatus } from '../logic'
+import { countsInBudget, dayAllowance, inPeriod, periodFor, shiftDate, spendOf, type DayStatus } from '../logic'
 import { RecurringDue } from '../RecurringDue'
 import { openQuickAdd } from '../QuickAddSheet'
 import { TodayStack } from '../TodayStack'
@@ -67,11 +67,12 @@ export function SpendOverview() {
     let spent = 0
     let outside = 0
     for (const t of transactions) {
-      if (t.type !== 'expense' || !inPeriod(period, t.date)) continue
-      if (countsInBudget(t)) spent += t.amount
-      else outside += t.amount
+      if (!inPeriod(period, t.date)) continue
+      // Money paid back (a split bill) counts as a minus
+      if (countsInBudget(t)) spent += spendOf(t)
+      else if (t.type === 'expense') outside += t.amount
     }
-    return { spentPeriod: spent, outsidePeriod: outside }
+    return { spentPeriod: Math.max(0, spent), outsidePeriod: outside }
   }, [transactions, period])
 
   // Last 7 days ending today, with what was spent each day
@@ -79,7 +80,7 @@ export function SpendOverview() {
     () =>
       Array.from({ length: 7 }, (_, i) => {
         const date = shiftDate(today, i - 6)
-        const spent = transactions.filter((t) => t.date === date && t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+        const spent = Math.max(0, transactions.filter((t) => t.date === date).reduce((s, t) => s + spendOf(t), 0))
         return { date, spent }
       }),
     [transactions, today],

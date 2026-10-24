@@ -352,6 +352,11 @@ export interface SpendTransaction {
    * Analysis and category budgets, but not in "left today" or the month's budget bar. Expenses only.
    */
   outsideBudget?: boolean
+  /**
+   * Income that is someone paying you back (your half of a shared meal, a shop's refund): it lowers
+   * `categoryId`'s spending (an expense category) instead of counting as income. Wallets still go up.
+   */
+  paidBack?: boolean
   /** Lowercase hashtags parsed from the note, without the leading # */
   tags?: string[]
   /** ISO timestamp */

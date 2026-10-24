@@ -23,6 +23,8 @@ import {
   unbilledOpening,
   cardCycle,
   dayAllowance,
+  spendOf,
+  totalsFor,
   isBigExpense,
   usualDay,
   dueRecurring,
@@ -314,6 +316,39 @@ describe('dayAllowance', () => {
     const a = dayAllowance(0, { start: '2026-10-01', end: '2026-10-31' }, [txn({ amount: 10, date: '2026-10-05' })], '2026-10-22')
     expect(a.soft).toBe(false)
     expect(a.allowance).toBe(0)
+  })
+})
+
+describe('money paid back', () => {
+  const p = { start: '2026-10-01', end: '2026-10-31' }
+  const meal = txn({ amount: 1000, categoryId: 'food', date: '2026-10-10' })
+  const half = txn({ type: 'income', amount: 500, categoryId: 'food', date: '2026-10-11', paidBack: true })
+  const salary = txn({ type: 'income', amount: 30000, categoryId: 'salary', date: '2026-10-01' })
+
+  it('comes off spending, not onto income', () => {
+    expect(spendOf(meal)).toBe(1000)
+    expect(spendOf(half)).toBe(-500)
+    expect(spendOf(salary)).toBe(0)
+    const t = totalsFor([meal, half, salary])
+    expect(t.expense).toBe(500)
+    expect(t.income).toBe(30000)
+    expect(t.byCategory).toEqual([{ categoryId: 'food', amount: 500 }])
+    // What's left is the same either way: the wallet really got the money
+    expect(t.net).toBe(29500)
+  })
+
+  it("drops a category it fully covers, e.g. a pay-back that lands in the next period", () => {
+    expect(totalsFor([half]).byCategory).toEqual([])
+  })
+
+  it('lowers what was spent before today, so the daily allowance goes up', () => {
+    const a = dayAllowance(3100, p, [meal, half], '2026-10-22')
+    // (3100 − 500) ÷ 10 days left
+    expect(a.allowance).toBe(260)
+  })
+
+  it('never makes a day negative', () => {
+    expect(dayAllowance(3100, p, [txn({ ...half, date: '2026-10-22' })], '2026-10-22').spentToday).toBe(0)
   })
 })
 

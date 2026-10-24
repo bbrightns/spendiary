@@ -29,7 +29,7 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
   const Icon = invested ? PortfolioIcon : txn.type === 'transfer' ? TransferIcon : cat?.icon ?? TransferIcon
   const walletName = (id?: string) => methods.find((m) => m.id === id)?.name
   const from = walletName(txn.accountId)
-  const title = noteTitle(txn.note) || (txn.type === 'transfer' ? 'Transfer' : cat?.label ?? 'Other')
+  const title = noteTitle(txn.note) || (txn.type === 'transfer' ? 'Transfer' : txn.paidBack ? 'Paid back' : cat?.label ?? 'Other')
   // Invest rows say where the money came from, or that no account was picked
   const paidFrom = from ? `from ${from}` : 'no account set'
   const meta = invested
@@ -43,6 +43,7 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
           cat?.label && txn.subcategory ? `${cat.label} › ${txn.subcategory}` : cat?.label,
           // Early in the line, so it's never the part a long wallet name cuts off
           txn.outsideBudget && 'outside budget',
+          txn.paidBack && 'paid back',
           // A bill paid on another day than it was due says when it was due (early, so a long wallet name can't cut it off)
           txn.recurring && txn.recurring.date !== txn.date && `(due ${shortDate(txn.recurring.date)})`,
           txn.time,
