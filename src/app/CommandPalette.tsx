@@ -1085,7 +1085,7 @@ export function CommandPalette() {
               return (
                 <div key={item.id}>
                   {showHeader && (
-                    <div className="flex items-center justify-between px-3 pt-3 pb-1 text-xs font-extrabold uppercase tracking-wider text-ink-muted">
+                    <div className="flex items-center justify-between px-3 pt-3 pb-1 text-xs font-extrabold text-ink-muted">
                       <span>{item.group}</span>
                       {query.trim() && count > 0 && (
                         <span className="font-semibold normal-case tracking-normal tnum">

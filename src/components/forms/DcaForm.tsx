@@ -343,7 +343,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
             <AssetLogo assetClass={editing.assetClass} ticker={editing.ticker} name={editing.name} size="md" />
             <div className="min-w-0 flex-1">
               <span
-                className="inline-block rounded px-1.5 py-0.5 text-xs font-extrabold uppercase tracking-wider mb-0.5"
+                className="inline-block rounded px-1.5 py-0.5 text-xs font-extrabold mb-0.5"
                 style={{
                   color: ASSET_META[editing.assetClass]?.color ?? '#6366f1',
                   background: `color-mix(in srgb, ${ASSET_META[editing.assetClass]?.color ?? '#6366f1'} 15%, transparent)`,

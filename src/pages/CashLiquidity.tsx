@@ -447,7 +447,7 @@ export function CashLiquidity() {
         <div className="hidden md:block overflow-x-auto -mx-4 sm:mx-0">
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
-              <tr className="border-b border-line/60 text-xs font-bold uppercase tracking-wider text-ink-muted select-none">
+              <tr className="border-b border-line/60 text-xs font-bold text-ink-muted select-none">
                 {/* Column 1: Account */}
                 <th
                   onClick={() => handleSortToggle('name')}

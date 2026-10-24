@@ -478,7 +478,7 @@ export function Dividends() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-surface-muted/50 border-b border-line text-xs font-bold uppercase tracking-wider text-ink-muted">
+                <thead className="bg-surface-muted/50 border-b border-line text-xs font-bold text-ink-muted">
                   <tr>
                     <th className="px-5 py-3">Date received</th>
                     <th className="px-5 py-3">Stock / asset</th>

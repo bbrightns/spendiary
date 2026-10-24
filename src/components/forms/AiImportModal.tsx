@@ -349,7 +349,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
       <div className="space-y-5 pt-1">
         {/* Step-by-Step Instructions */}
         <div className="rounded-2xl bg-surface-muted p-4 space-y-3">
-          <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-brand">
+          <div className="flex items-center gap-2 text-sm font-bold text-brand">
             <SparkleIcon className="h-4 w-4" />
             <span>How it works in 3 easy steps</span>
           </div>

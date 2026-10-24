@@ -128,7 +128,7 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
             {iconGroups.length === 0 && <p className="px-1 py-6 text-center text-sm text-ink-muted">No icons match "{iconQuery.trim()}"</p>}
             {iconGroups.map((g) => (
               <section key={g.id} aria-label={g.label}>
-                <p className="mb-1.5 px-0.5 text-2xs font-bold uppercase tracking-wider text-ink-muted">{g.label}</p>
+                <p className="mb-1.5 px-0.5 text-2xs font-bold text-ink-muted">{g.label}</p>
                 <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
                   {g.icons.map(({ key, Icon: I }) => {
                     const on = form.icon === key

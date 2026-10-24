@@ -584,7 +584,7 @@ export function HoldingLogs() {
             <div className="logs-table-shell overflow-x-auto">
               <table className="logs-table w-full text-left text-sm min-w-[980px]">
                 <thead>
-                  <tr className="logs-table-head text-xs font-bold text-ink-muted uppercase tracking-[0.12em]">
+                  <tr className="logs-table-head text-xs font-bold text-ink-muted">
                     {editMode && (
                     <th className="logs-table-cell logs-table-check text-center">
                       <input
@@ -782,7 +782,7 @@ export function HoldingLogs() {
                           <tr className="bg-surface-muted/20 border-b border-line">
                             <td colSpan={editMode ? 10 : 8} className="p-4 pl-8 sm:pl-12">
                               <div className="max-w-xl">
-                                <p className="text-xs font-bold uppercase tracking-wider text-ink-muted mb-1">
+                                <p className="text-xs font-bold text-ink-muted mb-1">
                                   State comparison (before → after)
                                 </p>
                                 {renderLogDetails(log, { cashAccounts: data.cashAccounts, usdThb, detailsOpen: expandedDetails.has(log.id), onToggleDetails: () => toggleDetails(log.id) })}

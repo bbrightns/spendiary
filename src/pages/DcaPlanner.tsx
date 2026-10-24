@@ -278,7 +278,7 @@ function SectionHeader({ label, total, open, onToggle, action }: {
         className="flex items-center gap-2 group cursor-pointer"
       >
         <div className="text-left">
-          <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">{label}</p>
+          <p className="text-xs font-semibold text-ink-faint">{label}</p>
           <p className="mt-0.5 font-display text-xl font-extrabold tnum text-ink leading-none">
             {thb(total)}
           </p>
@@ -899,7 +899,7 @@ export function DcaPlanner() {
               <div className="p-5 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">
+                    <p className="text-xs font-semibold text-ink-faint">
                       Dividend income
                     </p>
                     <span className="rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-xs font-bold">

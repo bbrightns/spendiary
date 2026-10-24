@@ -163,7 +163,7 @@ export function SpendRecurringPage() {
                 <span className="min-w-0 flex-1">
                   <span className="flex min-w-0 items-center gap-1.5">
                     <span className="truncate text-sm font-semibold text-ink">{p.name}</span>
-                    <span className={`shrink-0 rounded-full px-1.5 py-px text-2xs font-bold uppercase tracking-wide ${TONES.indigo.chip}`}>Invest</span>
+                    <span className={`shrink-0 rounded-full px-1.5 py-px text-2xs font-bold ${TONES.indigo.chip}`}>Invest</span>
                   </span>
                   <span className="block truncate text-xs text-ink-muted">
                     Next {shortDay(localDateStr(nextBuyDate(p)))} · {dcaFrequency(p)} · from {methods.find((m) => m.id === p.payFromAccountId)?.name}

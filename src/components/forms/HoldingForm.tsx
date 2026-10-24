@@ -1322,13 +1322,13 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
               {/* Card A: THB Investment Summary (Total THB Invested has a subtle edit option, rest read-only) */}
               <div className="rounded-2xl bg-surface-muted p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-brand">THB investment summary</p>
+                  <p className="text-xs font-bold text-brand">THB investment summary</p>
                   {!isEditingThb && (
                     <button
                       type="button"
                       onClick={() => setIsEditingThb(true)}
                       aria-label="Edit THB cost basis manually"
-                      className="inline-flex items-center gap-1 rounded-md bg-brand/15 px-2 py-0.5 text-xs font-bold text-brand hover:bg-brand/25 active:scale-95 transition-all cursor-pointer uppercase tracking-wider"
+                      className="inline-flex items-center gap-1 rounded-md bg-brand/15 px-2 py-0.5 text-xs font-bold text-brand hover:bg-brand/25 active:scale-95 transition-all cursor-pointer"
                     >
                       <PencilIcon className="h-3 w-3" />
                       EDIT THB
@@ -1344,7 +1344,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                         type="button"
                         onClick={() => setIsEditingThb(false)}
                         aria-label="Keep manually adjusted THB value"
-                        className="text-xs font-bold text-brand hover:underline cursor-pointer uppercase tracking-wider"
+                        className="text-xs font-bold text-brand hover:underline cursor-pointer"
                       >
                         Keep value
                       </button>
@@ -1414,7 +1414,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
 
               {/* Card B: USD Position Details (USD Focus - Editable) */}
               <div className="rounded-2xl border border-line p-4 space-y-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-brand">USD position details</p>
+                <p className="text-xs font-bold text-brand">USD position details</p>
                 
                 <NumberField
                   label="Total shares held"

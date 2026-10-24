@@ -530,14 +530,14 @@ export function Rebalance() {
             <div className="space-y-4">
               {/* Mode Switcher */}
               <div id="guide-rebalance-mode" className="space-y-1.5">
-                <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">
+                <span className="text-xs font-bold text-ink-muted">
                   Allocation mode
                 </span>
                 <SegmentedControl
                   value={mode}
                   onChange={(v) => setRebalanceMode(v as RebalanceMode)}
                   options={[
-                    { value: 'class', label: 'Asset class (macro)' },
+                    { value: 'class', label: 'Asset types' },
                     { value: 'holding', label: `Holdings (${holdingRows.length})` },
                   ]}
                 />
@@ -789,7 +789,7 @@ export function Rebalance() {
                           {/* Middle: Current vs Projected Stats Grid */}
                           <div className="grid grid-cols-2 gap-2 my-3 rounded-xl bg-surface p-3 border border-line/50">
                             <div>
-                              <span className="text-xs font-bold uppercase tracking-wider text-ink-muted block">
+                              <span className="text-xs font-bold text-ink-muted block">
                                 Current value
                               </span>
                               <p className="font-bold text-ink text-sm mt-0.5 tnum">
@@ -800,7 +800,7 @@ export function Rebalance() {
                               </p>
                             </div>
                             <div className="text-right">
-                              <span className="text-xs font-bold uppercase tracking-wider text-ink-muted block">
+                              <span className="text-xs font-bold text-ink-muted block">
                                 Projected value
                               </span>
                               <p className="font-bold text-ink-soft text-sm mt-0.5 tnum">
@@ -976,7 +976,7 @@ export function Rebalance() {
                                     {row.ticker || row.name}
                                   </p>
                                   {row.isPlanned && (
-                                    <span className="shrink-0 rounded bg-brand/15 px-1.5 py-0.2 text-xs font-extrabold text-brand uppercase">
+                                    <span className="shrink-0 rounded bg-brand/15 px-1.5 py-0.2 text-xs font-extrabold text-brand">
                                       Planned
                                     </span>
                                   )}
@@ -1027,7 +1027,7 @@ export function Rebalance() {
                           {/* Middle: Current vs Projected Stats */}
                           <div className="grid grid-cols-2 gap-2 my-2.5 rounded-xl bg-surface p-3 border border-line/50">
                             <div>
-                              <span className="text-xs font-bold uppercase tracking-wider text-ink-muted block">
+                              <span className="text-xs font-bold text-ink-muted block">
                                 Current value
                               </span>
                               <p className="font-bold text-ink text-sm mt-0.5 tnum">
@@ -1038,7 +1038,7 @@ export function Rebalance() {
                               </p>
                             </div>
                             <div className="text-right">
-                              <span className="text-xs font-bold uppercase tracking-wider text-ink-muted block">
+                              <span className="text-xs font-bold text-ink-muted block">
                                 Projected value
                               </span>
                               <p className="font-bold text-ink-soft text-sm mt-0.5 tnum">{thb(row.targetVal)}</p>
@@ -1154,7 +1154,7 @@ export function Rebalance() {
                                     <div className="flex items-center gap-1.5 mt-0.5">
                                       <span className="truncate text-xs text-ink-muted">{row.name}</span>
                                       {row.isPlanned && (
-                                        <span className="shrink-0 rounded bg-brand/15 px-1.5 py-0.2 text-xs font-extrabold text-brand uppercase">
+                                        <span className="shrink-0 rounded bg-brand/15 px-1.5 py-0.2 text-xs font-extrabold text-brand">
                                           Planned
                                         </span>
                                       )}
