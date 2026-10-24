@@ -236,7 +236,8 @@ This is the Spend row (`TxnRow`, `RecurringDue`), used on both sides:
 ### 6.5 Inputs (`src/components/ui/Field.tsx`)
 - **Field:** 44px high, `rounded-xl`, `border-line-strong`, `bg-surface`. On focus the border turns `brand` with a 2px `brand/15` ring.
 - **Label:** above the field, `text-sm font-semibold text-ink-soft`, with a 6px gap. An optional hint sits on the right of the label row.
-- **Every input uses `Field`'s classes.** Don't copy `inputClass` into each file, and don't give one field a grey fill.
+- **Every input uses the shared look:** the `TextField` / `NumberField` / `SelectField` components, or `FieldWrap` (the label row) around a plain control styled with `fieldClass` from `src/components/ui/fieldClasses.ts`. Don't copy the class string, and don't give one field a grey fill.
+- **Optional fields** show `hint="optional"` on the label row, not "(optional)" in the label.
 - **Option groups:** `SegmentedControl` for 2–4 options; a select or `Popover` list for more.
 
 ### 6.6 Modals: one shell (`src/components/ui/Modal.tsx`)

@@ -10,11 +10,11 @@ import { CATEGORY_ICONS, CATEGORY_TONES, pickerTone } from './categories'
 import { goalProgress } from './logic'
 import { TONES, type Tone } from './tones'
 import { useSpend } from './useSpend'
+import { FieldWrap } from '../../components/ui/Field'
+import { fieldClass } from '../../components/ui/fieldClasses'
 
 const GOAL_ICONS = ['plane', 'home', 'car', 'gift', 'grad', 'heart', 'phone', 'shield', 'sparkles', 'coins', 'wallet', 'tag']
 
-const inputClass =
-  'h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15'
 
 const toneOf = (t?: string): Tone => (t && t in TONES ? (t as Tone) : 'emerald')
 const num = (v: string) => Number(v.replace(/,/g, ''))
@@ -161,26 +161,22 @@ function GoalSheet({ open, goal, onClose }: { open: boolean; goal?: SpendGoal; o
           <span className={`grid h-11 w-11 place-items-center rounded-xl ${TONES[form.tone].chip}`}>
             <Icon className="h-5 w-5" />
           </span>
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-semibold text-ink-soft">Name</span>
-            <input className={inputClass} value={form.name} maxLength={40} onChange={(e) => set('name', e.target.value)} placeholder="Japan trip" />
-          </label>
+          <FieldWrap label="Name">
+            <input className={fieldClass} value={form.name} maxLength={40} onChange={(e) => set('name', e.target.value)} placeholder="Japan trip" />
+          </FieldWrap>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-semibold text-ink-soft">Target</span>
-            <input className={`${inputClass} tnum`} inputMode="decimal" value={form.target} onChange={(e) => set('target', e.target.value.replace(/[^\d.,]/g, ''))} placeholder="60,000" />
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-semibold text-ink-soft">By (optional)</span>
-            <input className={inputClass} type="date" min={localDateStr()} value={form.deadline} onChange={(e) => set('deadline', e.target.value)} />
-          </label>
+          <FieldWrap label="Target">
+            <input className={`${fieldClass} tnum`} inputMode="decimal" value={form.target} onChange={(e) => set('target', e.target.value.replace(/[^\d.,]/g, ''))} placeholder="60,000" />
+          </FieldWrap>
+          <FieldWrap label="By" hint="optional">
+            <input className={fieldClass} type="date" min={localDateStr()} value={form.deadline} onChange={(e) => set('deadline', e.target.value)} />
+          </FieldWrap>
         </div>
 
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-semibold text-ink-soft">Saved in</span>
-          <select className={inputClass} value={form.walletId} onChange={(e) => set('walletId', e.target.value)}>
+        <FieldWrap label="Saved in">
+          <select className={fieldClass} value={form.walletId} onChange={(e) => set('walletId', e.target.value)}>
             <option value="">No wallet — I'll type how much is saved</option>
             {wallets.map((w) => (
               <option key={w.id} value={w.id}>
@@ -189,13 +185,12 @@ function GoalSheet({ open, goal, onClose }: { open: boolean; goal?: SpendGoal; o
             ))}
           </select>
           <span className="mt-1 block text-xs text-ink-muted">A linked wallet's balance counts as saved and updates by itself.</span>
-        </label>
+        </FieldWrap>
 
         {form.walletId === '' && (
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-semibold text-ink-soft">Saved so far</span>
-            <input className={`${inputClass} tnum`} inputMode="decimal" value={form.saved} onChange={(e) => set('saved', e.target.value.replace(/[^\d.,]/g, ''))} placeholder="0" />
-          </label>
+          <FieldWrap label="Saved so far">
+            <input className={`${fieldClass} tnum`} inputMode="decimal" value={form.saved} onChange={(e) => set('saved', e.target.value.replace(/[^\d.,]/g, ''))} placeholder="0" />
+          </FieldWrap>
         )}
 
         <div>

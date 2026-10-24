@@ -1,26 +1,17 @@
 import { useState, useId, type ReactNode, type SelectHTMLAttributes } from 'react'
+import { getFieldClass } from './fieldClasses'
 
-const fieldBase =
-  'h-11 w-full rounded-xl border bg-surface px-3.5 text-base text-ink outline-none transition-colors placeholder:text-ink-faint'
-
-function getFieldClass(hasError: boolean) {
-  return `${fieldBase} ${
-    hasError
-      ? 'border-loss/60 focus:border-loss focus:ring-2 focus:ring-loss/15'
-      : 'border-line-strong focus:border-brand focus:ring-2 focus:ring-brand/15'
-  }`
-}
-
-interface LabelWrapProps {
+interface FieldWrapProps {
   label: string
   htmlFor?: string
   errorId?: string
-  hint?: string
+  hint?: ReactNode
   error?: string
   children: ReactNode
 }
 
-function LabelWrap({ label, htmlFor, errorId, hint, error, children }: LabelWrapProps) {
+/** Label above a control, with a hint (or the error) on the right. Wrap any input with it. */
+export function FieldWrap({ label, htmlFor, errorId, hint, error, children }: FieldWrapProps) {
   return (
     <label htmlFor={htmlFor} className="block">
       <div className="mb-1.5 flex items-center justify-between gap-3">
@@ -51,7 +42,7 @@ export function TextField({ label, hint, error, value, onChange, onBlur, placeho
   const id = useId()
   const errorId = `${id}-error`
   return (
-    <LabelWrap label={label} htmlFor={id} errorId={errorId} hint={hint} error={error}>
+    <FieldWrap label={label} htmlFor={id} errorId={errorId} hint={hint} error={error}>
       <input
         id={id}
         type={type}
@@ -63,7 +54,7 @@ export function TextField({ label, hint, error, value, onChange, onBlur, placeho
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
       />
-    </LabelWrap>
+    </FieldWrap>
   )
 }
 
@@ -196,7 +187,7 @@ export function NumberField({
   const errorId = `${id}-error`
 
   return (
-    <LabelWrap label={label} htmlFor={id} errorId={errorId} hint={hint} error={error}>
+    <FieldWrap label={label} htmlFor={id} errorId={errorId} hint={hint} error={error}>
       <div className="relative">
         {prefix && (
           <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-base font-medium text-ink-muted">
@@ -242,7 +233,7 @@ export function NumberField({
           }}
         />
       </div>
-    </LabelWrap>
+    </FieldWrap>
   )
 }
 
@@ -258,7 +249,7 @@ export function SelectField({ label, value, error, onChange, options }: SelectFi
   const id = useId()
   const errorId = `${id}-error`
   return (
-    <LabelWrap label={label} htmlFor={id} errorId={errorId} error={error}>
+    <FieldWrap label={label} htmlFor={id} errorId={errorId} error={error}>
       <div className="relative">
         <select
           id={id}
@@ -286,6 +277,6 @@ export function SelectField({ label, value, error, onChange, options }: SelectFi
           <path d="m6 9 6 6 6-6" />
         </svg>
       </div>
-    </LabelWrap>
+    </FieldWrap>
   )
 }
