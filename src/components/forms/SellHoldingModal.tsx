@@ -532,7 +532,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
               placeholder="0"
               step={0.0001}
             />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid items-end grid-cols-2 gap-3">
               <NumberField
                 label="Sell price (USD)"
                 prefix="$"
@@ -809,7 +809,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                     <span>Sale value at market price: <strong className="text-ink font-semibold tnum">{thb(grossProceedsThb)}</strong></span>
                     <span className="text-xs text-ink-soft">Enter the amount received or the fee</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid items-end grid-cols-2 gap-2">
                     <NumberField
                       label="Amount actually received (฿)"
                       prefix="฿"

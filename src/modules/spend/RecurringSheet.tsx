@@ -207,7 +207,7 @@ export function RecurringSheet({ open, rec, onClose }: { open: boolean; rec?: Sp
               { value: 'yearly', label: 'Yearly' },
             ]}
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid items-end grid-cols-2 gap-3">
             {form.frequency === 'weekly' ? (
               <FieldWrap label="On">
                 <select className={fieldClass} value={form.weekday} onChange={(e) => set('weekday', Number(e.target.value))}>

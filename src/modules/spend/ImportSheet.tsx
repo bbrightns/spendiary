@@ -318,7 +318,7 @@ export function ImportSheet() {
         {parsed && (
           <div>
             <p className="mb-2 text-sm font-semibold text-ink-soft">Columns</p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="grid items-end grid-cols-2 gap-2 sm:grid-cols-4">
               {colSelect('Date', 'date', false)}
               {colSelect('Description', 'description')}
               {colSelect('Money out (or amount)', columns?.amount !== undefined ? 'amount' : 'out')}
