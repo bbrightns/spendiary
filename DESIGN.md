@@ -207,7 +207,11 @@ There is one card: `Card` (`src/components/ui/Card.tsx`, along with `CardHeader`
 2. **Body**: a hero figure, a list (`divide-y divide-line`), a chart, or a form.
 3. **Footer line** (optional): one `text-xs text-ink-muted` line, or a "Coming up" style sub-list above a `border-t border-line`.
 
-**Padding:** `p-5`. The only other size is `<Card compact>` (`p-4`), for stat tiles in a grid. No per-page padding overrides.
+**Padding:** `p-5`. The only other sizes are:
+- `<Card compact>` (`p-4`): stat tiles in a grid, and one-line link cards.
+- `<Card list>` (`px-4 sm:px-5`, no vertical padding): a card that is just divided rows, which set their own rhythm.
+
+No per-page padding overrides. A card whose inside is a full-bleed chart or table uses `padded={false}` and pads its own sections.
 
 **Interactive cards:** if the whole card is a link or button, add `hover:shadow-[var(--shadow-lift)] transition-shadow`. Otherwise it never lifts.
 

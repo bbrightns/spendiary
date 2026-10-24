@@ -208,7 +208,7 @@ export function SpendAnalysis() {
       </div>
 
       {/* ── Summary: what went out, against what came in, and how this compares to last time ── */}
-      <Card className="p-4 sm:p-6 animate-rise" padded={false}>
+      <Card className="animate-rise">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
             <p className="text-sm font-medium text-ink-muted">{isCurrent ? `Spent this ${rangeName}` : `Spent that ${rangeName}`}</p>
@@ -267,23 +267,23 @@ export function SpendAnalysis() {
 
       {/* ── Quick stats ── */}
       <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
-        <Card className="p-3 sm:p-4" padded={false}>
+        <Card compact>
           <p className="text-xs text-ink-muted">Daily average</p>
           <p className="mt-1 font-display text-lg font-extrabold tnum text-ink">{thb(totals.expense / elapsedDays)}</p>
         </Card>
-        <Card className="p-3 sm:p-4" padded={false}>
+        <Card compact>
           <p className="text-xs text-ink-muted">Top category</p>
           <p className="mt-1 truncate font-display text-lg font-extrabold text-orange-600 dark:text-orange-300">
             {topCat ? getCategory(topCat.categoryId)?.label ?? 'Other' : '—'}
           </p>
           {topCat && <p className="text-xs text-ink-muted tnum">{thb(topCat.amount)}</p>}
         </Card>
-        <Card className="p-3 sm:p-4" padded={false}>
+        <Card compact>
           <p className="text-xs text-ink-muted">Biggest expense</p>
           <p className="mt-1 font-display text-lg font-extrabold tnum text-ink">{biggest ? thbCompact(biggest.amount) : '—'}</p>
           {biggest && <p className="truncate text-xs text-ink-muted">{noteTitle(biggest.note) || getCategory(biggest.categoryId)?.label}</p>}
         </Card>
-        <Card className="p-3 sm:p-4" padded={false}>
+        <Card compact>
           <p className="text-xs text-ink-muted">Saved of income</p>
           <p className="mt-1 font-display text-lg font-extrabold tnum text-ink">{savingsRate === null ? '—' : `${Math.round(savingsRate)}%`}</p>
         </Card>

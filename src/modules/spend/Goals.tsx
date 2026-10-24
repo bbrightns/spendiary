@@ -48,8 +48,9 @@ export function GoalsSection() {
             return (
               <Card
                 key={g.id}
-                padded={false}
-                className="min-w-0 cursor-pointer p-4 transition-shadow hover:shadow-[var(--shadow-lift)] sm:p-5"
+                compact
+                hover
+                className="min-w-0 cursor-pointer"
                 onClick={() => setSheet({ open: true, goal: g })}
               >
                 <div className="flex items-start gap-3">

@@ -26,7 +26,7 @@ export function SpendSnapshotCard() {
   if (transactions.length === 0 && budget === 0) {
     return (
       <Link to="/" className="block">
-        <Card className="flex items-center justify-between gap-3 py-3.5 hover:shadow-[var(--shadow-lift)] transition-shadow">
+        <Card compact hover className="flex items-center justify-between gap-3">
           <span className="flex items-center gap-2.5 text-sm font-semibold text-ink">
             <WalletIcon className="h-5 w-5 text-brand" />
             Track day-to-day spending in Spend

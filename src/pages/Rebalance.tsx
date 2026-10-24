@@ -458,7 +458,7 @@ export function Rebalance() {
 
       {/* ── KPI Stat Cards (2x2 on Mobile, 4x1 on Desktop - Dividends Style) ── */}
       <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4 mb-6">
-        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+        <Card compact className="animate-rise flex flex-col justify-between">
           <div>
             <p className="text-xs font-medium text-ink-muted">Current Value</p>
             <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-ink tnum truncate">
@@ -470,7 +470,7 @@ export function Rebalance() {
           </p>
         </Card>
 
-        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+        <Card compact className="animate-rise flex flex-col justify-between">
           <div>
             <p className="text-xs font-medium text-ink-muted">Available Liquid</p>
             <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tnum truncate">
@@ -482,7 +482,7 @@ export function Rebalance() {
           </p>
         </Card>
 
-        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+        <Card compact className="animate-rise flex flex-col justify-between">
           <div>
             <p className="text-xs font-medium text-ink-muted">Cash to Deploy</p>
             <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-brand-ink tnum truncate">
@@ -494,7 +494,7 @@ export function Rebalance() {
           </p>
         </Card>
 
-        <Card className="p-3 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+        <Card compact className="animate-rise flex flex-col justify-between">
           <div>
             <p className="text-xs font-medium text-ink-muted">Projected Total</p>
             <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-ink tnum truncate">

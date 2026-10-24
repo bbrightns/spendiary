@@ -166,7 +166,7 @@ export function Dividends() {
         {/* ── KPI Stat Cards ── */}
         <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-3">
           {/* Card 1: expected dividends this year & yield */}
-          <Card className="p-3.5 sm:p-5 animate-rise flex flex-col justify-between col-span-2 lg:col-span-1 bg-gradient-to-br from-emerald-500/5 via-surface to-surface border-emerald-500/20" padded={false}>
+          <Card compact className="animate-rise flex flex-col justify-between col-span-2 lg:col-span-1">
             <div>
               <div className="flex items-center justify-between gap-1">
                 <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
@@ -190,7 +190,7 @@ export function Dividends() {
           </Card>
 
           {/* Card 2: received this year */}
-          <Card className="p-3.5 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+          <Card compact className="animate-rise flex flex-col justify-between">
             <div>
               <p className="text-xs font-medium text-ink-muted">Received ({currentYear})</p>
               <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-ink tnum truncate">
@@ -203,7 +203,7 @@ export function Dividends() {
           </Card>
 
           {/* Card 3: expected this month */}
-          <Card className="p-3.5 sm:p-5 animate-rise flex flex-col justify-between" padded={false}>
+          <Card compact className="animate-rise flex flex-col justify-between">
             <div>
               <p className="text-xs font-medium text-ink-muted">Due this month ({MONTH_NAMES[currentMonth - 1]})</p>
               <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-brand-ink tnum truncate">

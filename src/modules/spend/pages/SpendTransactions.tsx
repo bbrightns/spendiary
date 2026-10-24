@@ -287,7 +287,7 @@ export function SpendTransactions() {
           {groups.map(([date, txns]) => {
             const dayNet = txns.reduce((s, t) => s + (t.type === 'income' ? t.amount : t.type === 'expense' ? -t.amount : 0), 0)
             return (
-              <Card key={date} padded={false} className="px-4 sm:px-5 pt-3 pb-1">
+              <Card key={date} list className="pt-3 pb-1">
                 <div className="flex items-center justify-between border-b border-line pb-2 text-xs font-semibold text-ink-muted">
                   <span>{dayLabel(date, showYear)}</span>
                   <span className="tnum">

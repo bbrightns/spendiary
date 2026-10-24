@@ -218,7 +218,7 @@ export function CashLiquidity() {
       />
 
       {/* ── Summary: one total, how it splits (each half filters the list), and what it earns ── */}
-      <Card className="p-4 sm:p-6 animate-rise" padded={false}>
+      <Card className="animate-rise">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
             <p className="text-sm font-medium text-ink-muted">Total cash</p>
@@ -278,7 +278,7 @@ export function CashLiquidity() {
       </Card>
 
       {/* ── Cash Accounts Matrix & Filter Controls ── */}
-      <Card className="p-4 sm:p-5 border-line/60 space-y-4">
+      <Card className="space-y-4">
         {/* Controls: Search & Category Tabs */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-line/40">
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
