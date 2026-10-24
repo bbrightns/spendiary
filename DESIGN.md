@@ -261,7 +261,7 @@ Every dialog in the app is a `Modal`, including confirmations, pickers on phones
 | Pattern | Use for | Layout |
 |---|---|---|
 | **A. Form** (`FormActions`) | Add or edit something | When editing: a 2-tap delete bin on the left. Then a full-width primary button. |
-| **B. Action** | One-shot actions (pay, log, move, import, apply search) | One full-width primary button (`data-modal-submit`). |
+| **B. Action** | One-shot actions (pay, log, move, import, apply search) | One full-width primary button: `FormActions` with `submitLabel`, or a full-width `Button data-modal-submit`. |
 | **C. Confirm** (`ConfirmModal`) | Destructive or irreversible actions | A stacked full-width confirm (`danger` or `primary`) over a `ghost` Cancel. |
 
 Footer rules:
@@ -282,6 +282,8 @@ Footer rules:
 - **Phone:** they open in the same bottom-sheet shell and header as `Modal`.
 - **Desktop:** they open as a dropdown under the button: `rounded-2xl border-line bg-surface p-1.5 shadow-[var(--shadow-lift)]`. Options are `PopoverOption`.
 - **Row "⋯" menus** (holding and location menus) are `Popover` lists too, with neutral item colours. "Sell" is not red and "Buy more" is not green: the icon carries the meaning.
+- Group options with `PopoverDivider`. An action that can't run right now is a disabled `PopoverOption` with a short `hint` ("Locked"), not a hidden item.
+- Desktop dropdowns open below their button, or above it when that fits better.
 
 **Command palette:** the one placement exception. It is anchored near the top so the phone keyboard doesn't cover the results, and it has no header. It shares the modal surface, 28px radius, backdrop and `sheetUp` motion. The keyboard-shortcuts screen opens as a normal `Modal` (`sm`).
 

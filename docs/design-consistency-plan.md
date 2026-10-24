@@ -41,7 +41,12 @@ Each later phase uses these, so they go first.
 
 ---
 
-## Phase 1: One modal design (the top ask)
+## Phase 1: One modal design (the top ask) [done]
+Done on branch `ccr-46167c22-mu2vvk` after v1.34.0.
+- Every footer is pattern A, B or C, and every overlay is a `Modal`, `ConfirmModal` or `Popover` (plus the palette shell).
+- Disabled save buttons explain themselves.
+- Deleting from inside the cash-account form no longer opens a second dialog.
+- Fixed along the way: the restore dialog said every backup file held "no records", because it didn't read the `{ schemaVersion, data }` wrapper.
 
 ### 1.1 Footers: down to the three patterns
 DESIGN.md §6.6 allows three footers: A = Form, B = Action, C = Confirm.
