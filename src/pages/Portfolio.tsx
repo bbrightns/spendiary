@@ -17,6 +17,7 @@ import { SellHoldingModal } from '../components/forms/SellHoldingModal'
 import { MoveLocationModal } from '../components/forms/MoveLocationModal'
 import { ConfirmDividendModal } from '../components/forms/ConfirmDividendModal'
 import { Modal } from '../components/ui/Modal'
+import { FormActions } from '../components/forms/FormActions'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { DropdownChip } from '../components/ui/DropdownChip'
 import { PopoverOption } from '../components/ui/Popover'
@@ -1348,9 +1349,7 @@ export function Portfolio() {
         onClose={() => setLocEditOpen(false)}
         title="Edit location"
         description={locEditing && !('satoshi' in locEditing) ? "Update this location's name, grams, or THB spent." : "Update this location's name, satoshi amount, or THB spent."}
-        footer={
-          <Button onClick={saveLocEdit} className="w-full">Save changes</Button>
-        }
+        footer={<FormActions editing canSave onSave={saveLocEdit} />}
       >
         <div className="space-y-4 pb-2">
           <TextField

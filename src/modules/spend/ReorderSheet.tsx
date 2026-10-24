@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Modal } from '../../components/ui/Modal'
-import { Button } from '../../components/ui/Button'
+import { FormActions } from '../../components/forms/FormActions'
 import { ChevronDownIcon } from '../../components/icons'
 
 /** Two stacked bars with arrows: the "arrange" button. */
@@ -36,7 +36,7 @@ interface Props {
   /** In their current order */
   items: { id: string; label: string; leading?: ReactNode }[]
   onMove: (id: string, delta: -1 | 1) => void
-  /** Back to the default order; the Reset button is off when nothing has moved */
+  /** Back to the default order; the Reset link shows once something has moved */
   onReset: () => void
   canReset: boolean
   onClose: () => void
@@ -53,17 +53,15 @@ export function ReorderSheet({ open, title, description, items, onMove, onReset,
       title={title}
       description={description}
       size="sm"
-      footer={
-        <div className="flex w-full items-center justify-between gap-3">
-          <Button variant="secondary" size="sm" disabled={!canReset} onClick={onReset}>
-            Reset
-          </Button>
-          <Button data-modal-submit size="sm" onClick={onClose}>
-            Done
-          </Button>
-        </div>
-      }
+      footer={<FormActions editing={false} canSave onSave={onClose} submitLabel="Done" />}
     >
+      {canReset && (
+        <div className="-mt-1 mb-2 flex justify-end">
+          <button type="button" onClick={onReset} className="text-sm font-semibold text-brand hover:underline cursor-pointer">
+            Reset to default order
+          </button>
+        </div>
+      )}
       <ol className="space-y-2">
         {items.map(({ id, label, leading }, i) => (
           <li key={id} className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-3 py-2">

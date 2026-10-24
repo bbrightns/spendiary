@@ -4,7 +4,6 @@ import { useData } from '../store/DataContext'
 import { useTheme, type Theme } from '../hooks/useTheme'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
-import { Modal } from '../components/ui/Modal'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { Button } from '../components/ui/Button'
@@ -616,47 +615,24 @@ export function Settings() {
 
       <AiImportModal open={aiImportOpen} onClose={() => setAiImportOpen(false)} />
 
-      {/* ── Import confirmation modal ──────────────────────────── */}
-      <Modal
+      {/* ── Import confirmation ──────────────────────────────────── */}
+      <ConfirmModal
         open={importConfirmOpen}
         onClose={() => {
           setImportConfirmOpen(false)
           setPendingImport(null)
         }}
+        onConfirm={() => pendingImport && commitImport(pendingImport)}
         title="Replace your current data?"
-        description={`Your current data has ${dataSummary(data)}. The file contains ${pendingImportSummary}. Importing will overwrite everything on this device and push to cloud immediately.`}
-        footer={
-          <div className="flex flex-col gap-2.5 w-full">
-            <Button
-              variant="primary"
-              onClick={() => pendingImport && commitImport(pendingImport)}
-              className="w-full cursor-pointer"
-            >
-              Yes, replace with imported data
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => exportData()}
-              className="w-full cursor-pointer gap-2"
-            >
-              <DownloadIcon className="h-4 w-4" />
-              <span>Export current data first</span>
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setImportConfirmOpen(false)
-                setPendingImport(null)
-              }}
-              className="w-full cursor-pointer text-ink-muted hover:text-ink"
-            >
-              Cancel
-            </Button>
-          </div>
-        }
+        description={`Your current data has ${dataSummary(data)}. The file contains ${pendingImportSummary}. Importing overwrites everything on this device and syncs to the cloud right away.`}
+        confirmText="Replace my data"
+        confirmVariant="danger"
       >
-        <div className="py-1" />
-      </Modal>
+        <Button variant="secondary" size="sm" onClick={() => exportData()} className="w-full">
+          <DownloadIcon className="h-4 w-4" />
+          Export current data first
+        </Button>
+      </ConfirmModal>
 
       {/* ── Reset confirmation modal ───────────────────────────── */}
       <ConfirmModal

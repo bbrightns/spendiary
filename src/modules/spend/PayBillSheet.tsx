@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Modal } from '../../components/ui/Modal'
-import { Button } from '../../components/ui/Button'
+import { FormActions } from '../../components/forms/FormActions'
 import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb, thbSigned } from '../../lib/format'
 import { getCategory } from './categories'
@@ -127,16 +127,16 @@ export function PayBillSheet() {
       }
       size="md"
       footer={
+        // Nothing owed: the body says so, and the close button is enough
         bill && owed > 0 ? (
-          <Button data-modal-submit className="w-full" disabled={!canPay} onClick={pay}>
-            {outside ? 'Mark' : 'Pay'} {thb(amount > 0 ? amount : 0, true)}
-            {outside ? ' as paid' : ''}
-          </Button>
-        ) : (
-          <Button variant="secondary" className="w-full" onClick={close}>
-            Close
-          </Button>
-        )
+          <FormActions
+            editing={false}
+            canSave={canPay}
+            onSave={pay}
+            submitLabel={`${outside ? 'Mark' : 'Pay'} ${thb(amount > 0 ? amount : 0, true)}${outside ? ' as paid' : ''}`}
+            hint="Enter an amount"
+          />
+        ) : undefined
       }
     >
       {bill && (

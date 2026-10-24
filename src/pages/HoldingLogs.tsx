@@ -19,6 +19,7 @@ import { dateStrToTimestamp, localDateStr, thb } from '../lib/format'
 import type { AcquisitionSource, AssetClass, HoldingLog } from '../lib/types'
 import { logTookCash, noteForSource, paidFromName } from '../lib/acquisition'
 import { AcquisitionSourceField } from '../components/forms/AcquisitionSourceField'
+import { FormActions } from '../components/forms/FormActions'
 import {
   ClockIcon,
   DotsHorizontalIcon,
@@ -78,18 +79,8 @@ export function HoldingLogs() {
   const [editTimeValue, setEditTimeValue] = useState<string>('')
   const [editSource, setEditSource] = useState<AcquisitionSource>('bought')
   const [editReceivedFrom, setEditReceivedFrom] = useState('')
-  const [confirmDeleteLog, setConfirmDeleteLog] = useState(false)
-  const deleteTimerRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    return () => {
-      if (deleteTimerRef.current) window.clearTimeout(deleteTimerRef.current)
-    }
-  }, [])
-
   function startEditDate(log: HoldingLog) {
     setEditingDateLog(log)
-    setConfirmDeleteLog(false)
     const dt = new Date(log.timestamp)
     setEditDateValue(localDateStr(dt))
     setEditTimeValue(dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
@@ -99,7 +90,6 @@ export function HoldingLogs() {
 
   function closeEdit() {
     setEditingDateLog(null)
-    setConfirmDeleteLog(false)
   }
 
   function saveEdit() {
@@ -1034,42 +1024,17 @@ export function HoldingLogs() {
             title="Edit transaction"
             description={canChangeSource ? 'Change when it happened or how you got it.' : 'Change when it happened.'}
             footer={
-              <div className="flex w-full items-center justify-between gap-3">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    if (confirmDeleteLog) {
-                      if (deleteTimerRef.current) window.clearTimeout(deleteTimerRef.current)
-                      removeHoldingLog(log.id)
-                      showToast(`Deleted "${log.holdingName}"`, 'success')
-                      closeEdit()
-                    } else {
-                      setConfirmDeleteLog(true)
-                      deleteTimerRef.current = window.setTimeout(() => {
-                        setConfirmDeleteLog(false)
-                      }, 3000)
-                    }
-                  }}
-                  className={[
-                    'inline-flex h-11 shrink-0 items-center justify-center rounded-full transition-all duration-200 border text-sm font-semibold',
-                    confirmDeleteLog
-                      ? 'px-4 bg-loss border-loss text-white dark:bg-rose-600 dark:border-rose-600 dark:text-white hover:opacity-90'
-                      : 'w-11 border-loss/25 bg-loss-soft text-loss hover:bg-loss/15',
-                  ].join(' ')}
-                  aria-label={confirmDeleteLog ? 'Confirm Delete' : 'Delete'}
-                >
-                  {confirmDeleteLog ? 'Confirm Delete' : <TrashIcon className="h-[18px] w-[18px]" />}
-                </button>
-                <div className="flex items-center gap-2">
-                  <Button variant="secondary" onClick={closeEdit}>
-                    Cancel
-                  </Button>
-                  <Button variant="primary" onClick={saveEdit} disabled={!editDateValue}>
-                    Save
-                  </Button>
-                </div>
-              </div>
+              <FormActions
+                editing
+                canSave={Boolean(editDateValue)}
+                onSave={saveEdit}
+                onDelete={() => {
+                  removeHoldingLog(log.id)
+                  showToast(`Deleted "${log.holdingName}"`, 'success')
+                  closeEdit()
+                }}
+                hint="Pick a date"
+              />
             }
           >
             <div className="space-y-5">
