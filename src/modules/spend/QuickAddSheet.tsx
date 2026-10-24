@@ -5,10 +5,10 @@ import { FormActions } from '../../components/forms/FormActions'
 import { TransactionDateField } from '../../components/forms/TransactionDateField'
 import { useToast } from '../../store/ToastContext'
 import { useData } from '../../store/DataContext'
-import { localDateStr, thb, thbExact } from '../../lib/format'
+import { localDateStr, thb, thbExact, thbSigned } from '../../lib/format'
 import type { SpendSettings, SpendTransaction, SpendTxnType } from '../../lib/types'
 import { categoriesFor, getCategory } from './categories'
-import { noteTitle } from './logic'
+import { noteTitle, walletOverdraw } from './logic'
 import { TYPE_ACTIVE } from './tones'
 import { useSpend, type PayMethod, type SpendTxnInput } from './useSpend'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
@@ -189,6 +189,21 @@ export function QuickAddSheet() {
   // A past date may already be in the balance the wallet / card shows today
   const backdated = date < localDateStr()
   const touchesBalance = accountId !== NO_WALLET || (type === 'transfer' && toAccountId !== NO_WALLET)
+  // Picked the wrong wallet? Say so before saving, but never block: the app's balance can lag the bank's
+  const overdraw = amountValid && !splitting
+    ? walletOverdraw(
+        methods.filter((m) => m.kind === 'cash'),
+        {
+          type,
+          amount: value,
+          accountId: accountId || undefined,
+          toAccountId: type === 'transfer' ? toAccountId || undefined : undefined,
+          alreadyInBalance: backdated && touchesBalance && alreadyIn,
+        },
+        editId ? transactions.find((t) => t.id === editId) : undefined,
+      )
+    : undefined
+  const overdrawName = overdraw && methods.find((m) => m.id === overdraw.accountId)?.name
 
   const changeType = (t: SpendTxnType) => {
     setType(t)
@@ -330,6 +345,17 @@ export function QuickAddSheet() {
               />
             </div>
           </label>
+
+          {overdraw && (
+            <p role="status" className="-mt-2 flex gap-2 rounded-xl border border-warn/30 bg-warn-soft px-3 py-2 text-xs leading-snug text-ink-soft">
+              <span aria-hidden className="text-warn">⚠</span>
+              <span>
+                {overdraw.before >= 0
+                  ? <>More than <b>{overdrawName}</b> has ({thbSigned(overdraw.before, true)}). It would go to {thbSigned(overdraw.after, true)}. Right wallet?</>
+                  : <><b>{overdrawName}</b> is already below zero ({thbSigned(overdraw.before, true)}). Right wallet?</>}
+              </span>
+            </p>
+          )}
 
           {/* Category */}
           {type !== 'transfer' && (
