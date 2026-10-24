@@ -20,19 +20,7 @@ import type { AcquisitionSource, AssetClass, HoldingLog } from '../lib/types'
 import { logTookCash, noteForSource, paidFromName } from '../lib/acquisition'
 import { AcquisitionSourceField } from '../components/forms/AcquisitionSourceField'
 import { FormActions } from '../components/forms/FormActions'
-import {
-  ClockIcon,
-  DotsHorizontalIcon,
-  DownloadIcon,
-  ListIcon,
-  PencilIcon,
-  SearchIcon,
-  TableIcon,
-  TrashIcon,
-  UndoIcon,
-  WalletIcon,
-  LockClosedIcon,
-} from '../components/icons'
+import { ClockIcon, CloseIcon, DotsHorizontalIcon, DownloadIcon, ListIcon, LockClosedIcon, PencilIcon, SearchIcon, TableIcon, TrashIcon, UndoIcon, WalletIcon } from '../components/icons'
 import { TransactionDateField } from '../components/forms/TransactionDateField'
 import { STORAGE_KEYS } from '../lib/storageKeys'
 import { buildCsv, downloadCsv } from '../lib/csv'
@@ -346,8 +334,8 @@ export function HoldingLogs() {
                 aria-label="Clear search"
                 className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-ink-faint hover:text-ink cursor-pointer"
               >
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-surface-muted text-xs font-bold">
-                  ✕
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-surface-muted">
+                  <CloseIcon className="h-3 w-3" strokeWidth={2.4} />
                 </span>
               </button>
             )}

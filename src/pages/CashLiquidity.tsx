@@ -555,7 +555,7 @@ export function CashLiquidity() {
                         {rateNum > 0 ? (
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400 text-xs">
-                              <span>📈 {rateNum.toFixed(2)}%</span>
+                              <span>{rateNum.toFixed(2)}% a year</span>
                               {capNum && capNum > 0 && (
                                 <span className="text-xs opacity-75 font-normal">
                                   (up to {thb(capNum)})

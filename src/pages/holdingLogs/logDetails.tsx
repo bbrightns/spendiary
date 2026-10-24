@@ -21,17 +21,17 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
     return (
       <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-3 rounded-2xl bg-surface-muted p-4 sm:grid-cols-3">
         <div className="min-w-0">
-          <div className="text-xs font-semibold text-ink-muted">⇄ Moved</div>
+          <div className="text-xs font-semibold text-ink-muted">Moved</div>
           <div className="mt-1 text-base font-bold tnum text-ink">{fmtQty(t.amount)}</div>
           <div className="mt-0.5 truncate text-xs text-ink-faint">{t.fromName} → {t.toName}</div>
         </div>
         <div className="min-w-0">
-          <div className="text-xs font-semibold text-ink-muted">📥 Arrived</div>
+          <div className="text-xs font-semibold text-ink-muted">Arrived</div>
           <div className="mt-1 text-base font-bold tnum text-ink">{fmtQty(t.received)}</div>
           <div className="mt-0.5 truncate text-xs text-ink-faint">{t.destCreated ? 'New location' : 'Existing location'}</div>
         </div>
         <div className="min-w-0">
-          <div className="text-xs font-semibold text-ink-muted">🪙 Network fee</div>
+          <div className="text-xs font-semibold text-ink-muted">Network fee</div>
           <div className="mt-1 text-base font-bold tnum text-ink">{t.fee > 0 ? fmtQty(t.fee) : 'None'}</div>
           <div className="mt-0.5 truncate text-xs text-ink-faint">Cost carried over: {thb(t.costMoved)}</div>
         </div>
@@ -57,7 +57,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
           {/* Col 1: net dividend */}
           <div className="flex flex-col min-w-0">
             <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-              <span>💰</span> <span className="truncate">Net dividend</span>
+              <span className="truncate">Net dividend</span>
             </span>
             <div className="text-sm sm:text-base font-black tracking-tight text-emerald-600 dark:text-emerald-400 truncate mt-0.5">
               {netDiv !== null ? `฿${netDiv.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
@@ -70,7 +70,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
           {/* Col 2: tax withheld */}
           <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
             <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-              <span>🏛️</span> <span className="truncate">Tax withheld (10%)</span>
+              <span className="truncate">Tax withheld (10%)</span>
             </span>
             <div className="text-sm sm:text-base font-extrabold tracking-tight text-loss/90 truncate mt-0.5">
               {tax !== null ? `-฿${tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
@@ -85,7 +85,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
           {/* Col 3: dividend per share */}
           <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
             <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-              <span>🏷️</span> <span className="truncate">Dividend per share</span>
+              <span className="truncate">Dividend per share</span>
             </span>
             <div className="text-sm sm:text-base font-extrabold tracking-tight text-ink truncate mt-0.5">
               {dps !== null ? `฿${dps.toLocaleString()}/share` : '-'}
@@ -431,7 +431,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
               {/* Col 1: amount received */}
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                  <span>💵</span> <span className="truncate">Money received</span>
+                  <span className="truncate">Money received</span>
                 </span>
                 <div className="text-sm sm:text-base font-black tracking-tight text-ink truncate mt-0.5">
                   {txDetails.amountThbDisplay && txDetails.amountThbDisplay !== '-' ? txDetails.amountThbDisplay : (log.proceeds ? thb(log.proceeds) : '-')}
@@ -444,7 +444,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
               {/* Col 2: sold */}
               <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                  <span>📦</span> <span className="truncate">Sold</span>
+                  <span className="truncate">Sold</span>
                 </span>
                 <div className="text-sm sm:text-base font-extrabold tracking-tight text-ink-muted truncate mt-0.5">
                   {txDetails.sharesDisplay && txDetails.sharesDisplay !== '-' ? txDetails.sharesDisplay : (Math.abs(unitDiff) > 0 ? formatUnitDiff(unitDiff) : '-')}
@@ -462,7 +462,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
               {/* Col 3: profit / loss */}
               <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                  <span>{isGain ? '💚' : '🔴'}</span> <span className="truncate">{isGain ? 'Net profit' : 'Loss'}</span>
+                  <span className="truncate">{isGain ? 'Net profit' : 'Loss'}</span>
                 </span>
                 <div className={`text-sm sm:text-base font-black tracking-tight truncate mt-0.5 ${isGain ? 'text-gain' : 'text-loss'}`}>
                   {pnl !== null ? `${isGain ? '+' : ''}${thb(pnl)}` : '-'}
@@ -483,10 +483,9 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                   return (
                     <div key={idx} className="flex flex-wrap items-center justify-between text-xs text-ink-muted">
                       <span className="font-semibold text-ink-soft flex items-center gap-1">
-                        <span>{item.diff && item.diff < 0 ? '💸' : '💵'}</span>
                         <span>{item.diff && item.diff < 0 ? 'Paid from' : 'Received into'}: {item.accountName}</span>
                       </span>
-                      <div className="flex items-center gap-1 font-mono text-xs">
+                      <div className="flex items-center gap-1 tnum text-xs">
                         {item.prevBalance !== undefined && (
                           <>
                             <span>{sym}{item.prevBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -579,7 +578,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
 
                     {(log.assetClass === 'gold' || log.assetClass === 'crypto') && (
                       <div className="pt-1.5 border-t border-line/40 text-xs text-ink-muted">
-                        💡 <span className="font-medium text-ink-soft">Profit or loss is worked out from the actual cost of the location you sold from.</span>
+                        <span className="font-medium text-ink-soft">Profit or loss is worked out from the actual cost of the location you sold from.</span>
                       </div>
                     )}
                   </div>
@@ -627,7 +626,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
               {/* Col 1: amount bought */}
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                  <span>{isReceived ? '🎁' : '💳'}</span> <span className="truncate">{isReceived ? 'Value received' : 'Amount bought'}</span>
+                  <span className="truncate">{isReceived ? 'Value received' : 'Amount bought'}</span>
                 </span>
                 <div className="text-sm sm:text-base font-black tracking-tight text-sky-700 dark:text-sky-300 truncate mt-0.5">
                   {txDetails.amountThbDisplay && txDetails.amountThbDisplay !== '-' ? txDetails.amountThbDisplay : (txDetails.sharesDisplay || '-')}
@@ -640,7 +639,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
               {/* Col 2: units received */}
               <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                  <span>📦</span> <span className="truncate">Units received</span>
+                  <span className="truncate">Units received</span>
                 </span>
                 <div className="text-sm sm:text-base font-extrabold tracking-tight text-gain truncate mt-0.5">
                   {txDetails.sharesDisplay && txDetails.sharesDisplay !== '-' ? txDetails.sharesDisplay : (unitDiff > 0 ? formatUnitDiff(unitDiff) : '-')}
@@ -658,7 +657,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
               {/* Col 3: purchase price */}
               <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                  <span>🏷️</span> <span className="truncate">{isReceived ? 'Price that day' : 'Buy price'}</span>
+                  <span className="truncate">{isReceived ? 'Price that day' : 'Buy price'}</span>
                 </span>
                 <div className="text-sm sm:text-base font-extrabold tracking-tight text-ink truncate mt-0.5">
                   {buyPriceDisplay || '-'}
@@ -677,10 +676,9 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                   return (
                     <div key={idx} className="flex flex-wrap items-center justify-between text-xs text-ink-muted">
                       <span className="font-semibold text-ink-soft flex items-center gap-1">
-                        <span>{item.diff && item.diff < 0 ? '💸' : '💵'}</span>
                         <span>{item.diff && item.diff < 0 ? 'Paid from' : 'Received into'}: {item.accountName}</span>
                       </span>
-                      <div className="flex items-center gap-1 font-mono text-xs">
+                      <div className="flex items-center gap-1 tnum text-xs">
                         {item.prevBalance !== undefined && (
                           <>
                             <span>{sym}{item.prevBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -779,7 +777,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
               {/* Col 1: old price */}
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                  <span>🏷️</span> <span className="truncate">Old price</span>
+                  <span className="truncate">Old price</span>
                 </span>
                 <div className="text-sm sm:text-base font-extrabold tracking-tight text-ink-muted truncate mt-0.5">
                   {prevPriceDisplay}
@@ -792,7 +790,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
               {/* Col 2: new price */}
               <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                  <span>🏷️</span> <span className="truncate">New price</span>
+                  <span className="truncate">New price</span>
                 </span>
                 <div className="text-sm sm:text-base font-black tracking-tight text-brand truncate mt-0.5">
                   {currPriceDisplay}
@@ -805,7 +803,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
               {/* Col 3: change */}
               <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
-                  <span>{priceDeltaBadge?.positive ? '📈' : '📉'}</span> <span className="truncate">Change</span>
+                  <span className="truncate">Change</span>
                 </span>
                 <div className={`text-sm sm:text-base font-black tracking-tight truncate mt-0.5 ${priceDeltaBadge?.positive ? 'text-gain' : 'text-loss'}`}>
                   {priceDeltaBadge ? priceDeltaBadge.text.split(' ')[0] : '-'}

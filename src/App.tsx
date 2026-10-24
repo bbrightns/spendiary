@@ -30,6 +30,7 @@ import { Card } from './components/ui/Card'
 import { EmptyState } from './components/ui/EmptyState'
 import { Button } from './components/ui/Button'
 import { settingsPath } from './lib/settingsSections'
+import { SparkleIcon } from './components/icons'
 
 function PageLoadingFallback() {
   return <PageSkeleton />
@@ -88,7 +89,7 @@ function SpendSettingsRedirect() {
   return <Navigate to={settingsPath(hash || 'spend')} replace />
 }
 
-// 💡 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
+// 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
 function AppContent() {
   const { user, loginWithGoogle, loginAsTestMode, authError, dataReady, loadError, syncConflict, retryLoad } = useData()
 
@@ -107,7 +108,7 @@ function AppContent() {
     retryLoad()
   }
 
-  // 💡 ถ้ายังไม่ได้ล็อกอิน ให้แสดงหน้าจอ Sign In ธีม Fastwork.com
+  // ถ้ายังไม่ได้ล็อกอิน ให้แสดงหน้าจอ Sign In ธีม Fastwork.com
   if (!user) {
     return (
       <div className="relative min-h-screen flex flex-col justify-between overflow-x-hidden font-sans select-none text-landing-ink bg-landing-canvas">
@@ -146,7 +147,7 @@ function AppContent() {
         <main className="relative z-10 w-full max-w-4xl mx-auto px-6 sm:px-8 pt-2 sm:pt-4 pb-12 sm:pb-16 flex flex-col items-center">
           {/* Center Announcement Pill */}
           <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 py-1 sm:px-4 sm:py-1.5 rounded-full bg-landing-surface-soft border border-landing-line shadow-xs text-xs font-medium text-landing-ink-soft mb-4 sm:mb-6 text-center">
-            <span className="text-brand font-bold">✦</span>
+            <SparkleIcon className="h-3.5 w-3.5 text-brand" />
             <span>The intelligent personal wealth cockpit</span>
           </div>
 
@@ -304,7 +305,7 @@ function AppContent() {
     )
   }
 
-  // 💡 ถ้าล็อกอินผ่านแล้ว ให้แสดงผลหน้าตาแอปและ Router ปกติ
+  // ถ้าล็อกอินผ่านแล้ว ให้แสดงผลหน้าตาแอปและ Router ปกติ
   return (
     <Layout>
       <ScrollToTop />
@@ -353,7 +354,7 @@ function AppContent() {
   )
 }
 
-// 💡 2. Component หลัก ทำหน้าที่หุ้มตัวแอปด้วย DataProvider
+// 2. Component หลัก ทำหน้าที่หุ้มตัวแอปด้วย DataProvider
 export default function App() {
   useTheme() // initializes + syncs theme to <html> class
 

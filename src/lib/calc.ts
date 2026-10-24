@@ -1216,7 +1216,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
   if (isCompleted) {
     return {
       status: 'completed',
-      label: 'Fully paid 🎉',
+      label: 'Fully paid',
       badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
     }
   }
@@ -1224,7 +1224,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
   if (isPaidThisMonth) {
     return {
       status: 'paid',
-      label: 'Paid this month ✅',
+      label: 'Paid this month',
       badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
     }
   }

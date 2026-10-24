@@ -13,7 +13,7 @@ import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { useLivePrices } from '../hooks/useLivePrices'
 import { isValidPrice } from '../lib/priceCache'
-import { CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, PencilIcon, PlusIcon } from '../components/icons'
+import { AlertIcon, CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, LightbulbIcon, PencilIcon, PlusIcon } from '../components/icons'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { fixedCostRecurring, inPeriod, perMonth, periodFor, periodLabel, totalsFor } from '../modules/spend/logic'
 import { useSpend } from '../modules/spend/useSpend'
@@ -188,7 +188,7 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
       {isOverflow && (
         <div className="mt-3 rounded-xl bg-surface-muted px-3 py-2.5 text-xs text-ink-muted">
           <div className="flex items-center gap-2">
-            <span className="text-sm">💡</span>
+            <LightbulbIcon className="h-4 w-4 shrink-0 text-ink-muted" />
             <span className="font-semibold text-ink">Total planned: {thb(totalAllocated)}</span>
           </div>
           <div className="ml-6 mt-1 flex flex-col gap-0.5">
@@ -692,7 +692,7 @@ export function DcaPlanner() {
             {savingsOpen && isPercentNot100 && (
               <div className="border-t border-line bg-warn-soft/40 px-5 py-2.5 flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2 text-warn font-medium">
-                  <span>⚠️</span>
+                  <AlertIcon className="h-4 w-4 shrink-0" />
                   <span>
                     Total planned weight is <strong>{totalPercentSum.toFixed(1)}%</strong> (difference of{' '}
                     <strong>{Math.abs(100 - totalPercentSum).toFixed(1)}%</strong> {totalPercentSum > 100 ? 'over' : 'under'} 100%).

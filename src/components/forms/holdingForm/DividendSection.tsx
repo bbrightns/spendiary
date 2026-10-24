@@ -86,11 +86,10 @@ export function DividendSection({
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between p-3.5 sm:p-4 text-left bg-brand-soft/70 transition-colors cursor-pointer select-none"
+        className="w-full flex items-center justify-between p-3.5 sm:p-4 text-left bg-surface-muted transition-colors cursor-pointer select-none"
         aria-expanded={expanded}
       >
         <div className="flex items-center gap-2 min-w-0 pr-2">
-          <span className="text-sm">💰</span>
           <span className="text-sm font-bold text-ink truncate">
             Dividends & payouts
           </span>
@@ -177,7 +176,7 @@ export function DividendSection({
             </div>
             {dividendMonths.length > 0 && (
               <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium pt-0.5">
-                📅 Dividend reminders in: {dividendMonths.slice().sort((a, b) => a - b).map((m) => THAI_MONTHS_SHORT[m - 1]).join(', ')}
+                Dividend reminders in: {dividendMonths.slice().sort((a, b) => a - b).map((m) => THAI_MONTHS_SHORT[m - 1]).join(', ')}
               </p>
             )}
           </div>
@@ -186,7 +185,7 @@ export function DividendSection({
           {dividendMonths.length === 0 ? (
             <div className="rounded-xl border border-dashed border-line bg-surface/40 p-3 text-center">
               <p className="text-xs text-ink-muted">
-                👆 Tap the months above that it pays a dividend
+                Tap the months above that it pays a dividend
               </p>
             </div>
           ) : (
@@ -194,7 +193,7 @@ export function DividendSection({
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div>
                   <span className="text-xs font-bold text-ink flex items-center gap-1.5">
-                    💵 Dividend per share for each payout
+                    Dividend per share for each payout
                   </span>
                   <p className="text-xs text-ink-muted">
                     Enter the dividend per share for each payout
@@ -206,7 +205,7 @@ export function DividendSection({
                     onClick={handleApplyDpsToAll}
                     className="inline-flex items-center text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
                   >
-                    ⚡ Use the same amount every time
+                    Use the same amount every time
                   </button>
                 )}
               </div>

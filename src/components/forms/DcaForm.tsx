@@ -388,7 +388,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
                 })}
               />
               <div className="rounded-2xl bg-surface-muted p-4 text-xs text-ink-muted leading-relaxed">
-                💡 <strong>Automatic Savings DCA</strong>: When you confirm this plan each period, Spendiary will directly increment the balance of{' '}
+                <strong>Automatic savings DCA</strong>: When you confirm this plan each period, Spendiary will directly increment the balance of{' '}
                 <span className="font-semibold text-ink">
                   {data.cashAccounts.find((a) => a.id === form.cashAccountId)?.name || 'the selected account'}
                 </span>.
@@ -568,7 +568,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
                   step={1}
                 />
                 <p className="mt-1.5 text-xs text-ink-muted leading-relaxed">
-                  💡 Note: Entering 31 means the last day of each month (e.g. 28/29 Feb, or 30 in 30-day months).
+                  Entering 31 means the last day of each month (e.g. 28/29 Feb, or 30 in 30-day months).
                 </p>
               </div>
             )}

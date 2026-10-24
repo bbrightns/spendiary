@@ -75,7 +75,7 @@ export function GoalsSection() {
                   </span>
                   <span className={p.overdue ? 'font-semibold text-loss' : p.done ? 'font-semibold text-gain' : 'text-ink-muted'}>
                     {p.done
-                      ? 'Reached 🎉'
+                      ? 'Reached'
                       : p.overdue
                         ? `${thb(p.left, true)} short, past the date`
                         : p.perMonth !== undefined

@@ -28,7 +28,7 @@ import { Button } from '../components/ui/Button'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import { PlusIcon, PortfolioIcon, TrashIcon, PencilIcon, CopyIcon, CheckIcon, DownloadIcon, DotsHorizontalIcon, ChevronDownIcon, LockClosedIcon, ListIcon, GroupIcon } from '../components/icons'
+import { BanknoteIcon, CheckIcon, ChevronDownIcon, CoinsIcon, CopyIcon, DotsHorizontalIcon, DownloadIcon, GroupIcon, ListIcon, LockClosedIcon, PencilIcon, PlusIcon, PortfolioIcon, TrashIcon } from '../components/icons'
 import {
   ASSET_META,
   GRAMS_PER_BAHT_GOLD,
@@ -807,7 +807,7 @@ export function Portfolio() {
                 title="Exchange Rate USD to THB"
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface border border-line/70 text-ink shadow-2xs"
               >
-                <span className="text-xs opacity-80">💵</span>
+                <BanknoteIcon className="h-3.5 w-3.5 text-ink-muted" />
                 <span className="text-xs font-medium text-ink-muted">USD/THB</span>
                 <span className="tnum text-xs font-bold text-ink tracking-tight">
                   {effectiveUsdThb.toFixed(2)}
@@ -821,7 +821,7 @@ export function Portfolio() {
                 title="Gold bar price (96.5%) per gold baht"
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface border border-line/70 text-ink shadow-2xs"
               >
-                <span className="text-xs">🪙</span>
+                <CoinsIcon className="h-3.5 w-3.5 text-ink-muted" />
                 <span className="text-xs font-medium text-ink-muted">Gold 96.5%</span>
                 <span className="tnum text-xs font-bold text-amber-600 dark:text-amber-400 tracking-tight">
                   ฿{effectiveGoldPerBaht.toLocaleString()}

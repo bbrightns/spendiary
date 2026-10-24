@@ -11,7 +11,7 @@ import type { BtcLocation, GoldLocation, Holding } from '../../lib/types'
 import { dateStrToTimestamp, thb, localDateStr } from '../../lib/format'
 import { isValidRate } from '../../lib/fx'
 import { TransactionDateField } from './TransactionDateField'
-import { LockClosedIcon } from '../icons'
+import { LockClosedIcon, PencilIcon, UndoIcon } from '../icons'
 import { STORAGE_KEYS } from '../../lib/storageKeys'
 
 interface Props {
@@ -563,7 +563,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                     onChange={handleBtcLocationChange}
                     options={(holding.btcLocations ?? []).map((l) => ({
                       value: l.id,
-                      label: `${l.isLocked ? '🔒 ' : ''}${l.name} (${l.satoshi.toLocaleString()} sats · ฿${l.thbSpent.toLocaleString()})`,
+                      label: `${l.name}${l.isLocked ? ' (locked)' : ''} (${l.satoshi.toLocaleString()} sats · ฿${l.thbSpent.toLocaleString()})`,
                       disabled: l.isLocked,
                     }))}
                   />
@@ -627,7 +627,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                     onChange={handleGoldLocationChange}
                     options={(holding.goldLocations ?? []).map((l) => ({
                       value: l.id,
-                      label: `${l.isLocked ? '🔒 ' : ''}${l.name} (${l.grams.toFixed(4)}g · ${(l.grams / GRAMS_PER_BAHT_GOLD).toFixed(2)} gold baht · ฿${l.thbSpent.toLocaleString()})`,
+                      label: `${l.name}${l.isLocked ? ' (locked)' : ''} (${l.grams.toFixed(4)}g · ${(l.grams / GRAMS_PER_BAHT_GOLD).toFixed(2)} gold baht · ฿${l.thbSpent.toLocaleString()})`,
                       disabled: l.isLocked,
                     }))}
                   />
@@ -781,7 +781,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                       className="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium text-sky-700 bg-sky-100 hover:bg-sky-200 dark:text-sky-200 dark:bg-sky-950 dark:hover:bg-sky-900 border border-sky-300 dark:border-sky-800 transition-colors cursor-pointer shrink-0 shadow-2xs"
                       title="Enter the exact amount you received if there were fees or discounts"
                     >
-                      <span className="text-xs">✏️</span>
+                      <PencilIcon className="h-3 w-3" />
                       <span>Adjust</span>
                     </button>
                   ) : (
@@ -795,7 +795,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                       className="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium text-ink-muted hover:text-ink bg-surface border border-line hover:border-line-strong transition-colors cursor-pointer shrink-0 shadow-2xs"
                       title="Go back to the automatic amount"
                     >
-                      <span>↺</span>
+                      <UndoIcon className="h-3 w-3" />
                       <span>Auto</span>
                     </button>
                   )}
