@@ -23,6 +23,8 @@ import {
   unbilledOpening,
   cardCycle,
   dayAllowance,
+  isBigExpense,
+  usualDay,
   dueRecurring,
   occurrencesBetween,
   parseTags,
@@ -277,6 +279,55 @@ describe('dayAllowance', () => {
     expect(a.daysLeft).toBe(10)
     expect(a.allowance).toBe(210)
     expect(a.leftToday).toBe(160)
+    expect(a.soft).toBe(false)
+    expect(a.overBy).toBe(0)
+  })
+
+  it('leaves one-offs kept outside the budget out, before and during today', () => {
+    const p = { start: '2026-10-01', end: '2026-10-31' }
+    const a = dayAllowance(
+      3100,
+      p,
+      [
+        txn({ amount: 1000, date: '2026-10-05' }),
+        txn({ amount: 20000, date: '2026-10-06', outsideBudget: true }),
+        txn({ amount: 50, date: '2026-10-22' }),
+        txn({ amount: 5000, date: '2026-10-22', outsideBudget: true }),
+      ],
+      '2026-10-22',
+    )
+    expect(a.allowance).toBe(210)
+    expect(a.spentToday).toBe(50)
+  })
+
+  it("once the budget is used up, aims for the budget's usual day instead of ฿0", () => {
+    const p = { start: '2026-10-01', end: '2026-10-31' }
+    const a = dayAllowance(3100, p, [txn({ amount: 4000, date: '2026-10-05' }), txn({ amount: 150, date: '2026-10-22' })], '2026-10-22')
+    expect(a.soft).toBe(true)
+    expect(a.overBy).toBe(900)
+    expect(a.allowance).toBe(100)
+    expect(a.leftToday).toBe(-50)
+    expect(a.status).toBe('over')
+  })
+
+  it('is not soft without a budget', () => {
+    const a = dayAllowance(0, { start: '2026-10-01', end: '2026-10-31' }, [txn({ amount: 10, date: '2026-10-05' })], '2026-10-22')
+    expect(a.soft).toBe(false)
+    expect(a.allowance).toBe(0)
+  })
+})
+
+describe('big one-off expenses', () => {
+  const p = { start: '2026-10-01', end: '2026-10-31' }
+
+  it("spreads the budget evenly over the period for the usual day", () => {
+    expect(usualDay(3100, p)).toBe(100)
+  })
+
+  it('calls an expense of five usual days or more big, and nothing big without a budget', () => {
+    expect(isBigExpense(499, 3100, p)).toBe(false)
+    expect(isBigExpense(500, 3100, p)).toBe(true)
+    expect(isBigExpense(1_000_000, 0, p)).toBe(false)
   })
 })
 

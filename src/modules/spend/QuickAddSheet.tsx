@@ -8,7 +8,7 @@ import { useData } from '../../store/DataContext'
 import { localDateStr, thb, thbExact, thbSigned } from '../../lib/format'
 import type { SpendSettings, SpendTransaction, SpendTxnType } from '../../lib/types'
 import { categoriesFor, getCategory } from './categories'
-import { noteTitle, walletOverdraw } from './logic'
+import { isBigExpense, noteTitle, periodFor, walletOverdraw } from './logic'
 import { TYPE_ACTIVE } from './tones'
 import { useSpend, type PayMethod, type SpendTxnInput } from './useSpend'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
@@ -106,6 +106,8 @@ export function QuickAddSheet() {
   const [subcategory, setSubcategory] = useState('')
   const [note, setNote] = useState('')
   const [alreadyIn, setAlreadyIn] = useState(false)
+  // A one-off kept out of the daily budget (offered only for big expenses)
+  const [outside, setOutside] = useState(false)
   // Card purchase paid off in monthly installments (off unless picked)
   const [split, setSplit] = useState(false)
   const [months, setMonths] = useState(10)
@@ -141,6 +143,7 @@ export function QuickAddSheet() {
         setSubcategory(source.subcategory ?? '')
         setNote(source.note ?? '')
         setAlreadyIn(!!existing?.alreadyInBalance)
+        setOutside(!!existing?.outsideBudget)
         setSplit(false)
       } else {
         const draft = detail.draft ?? {}
@@ -160,6 +163,7 @@ export function QuickAddSheet() {
         setSubcategory('')
         setNote(draft.note ?? '')
         setAlreadyIn(false)
+        setOutside(false)
         setSplit(false)
         setMonths(10)
       }
@@ -206,6 +210,13 @@ export function QuickAddSheet() {
       )
     : undefined
   const overdrawName = overdraw && methods.find((m) => m.id === overdraw.accountId)?.name
+  // A big one-off (five of the budget's usual days) asks whether it belongs in the daily budget.
+  // An entry already kept out keeps the switch, so it can be put back.
+  const big = amountValid && isBigExpense(value, settings.monthlyBudget ?? 0, periodFor(date, settings.cycle))
+  const wasOutside = !!editId && !!transactions.find((t) => t.id === editId)?.outsideBudget
+  const offerOutside = type === 'expense' && !splitting && (big || wasOutside)
+  // Hidden again (amount lowered, type changed): it doesn't apply
+  const keepOut = offerOutside && outside
 
   const changeType = (t: SpendTxnType) => {
     setType(t)
@@ -270,6 +281,8 @@ export function QuickAddSheet() {
       subcategory: type === 'transfer' ? undefined : subcategory || undefined,
       note: note.trim() || undefined,
       alreadyInBalance: backdated && touchesBalance && alreadyIn ? true : undefined,
+      // Always set, so an edit can clear it
+      outsideBudget: keepOut ? true : undefined,
     }
     if (editId) {
       updateTransaction(editId, input)
@@ -357,6 +370,28 @@ export function QuickAddSheet() {
                   : <><b>{overdrawName}</b> is already below zero ({thbSigned(overdraw.before, true)}). Right wallet?</>}
               </span>
             </p>
+          )}
+
+          {offerOutside && (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={outside}
+              onClick={() => setOutside((v) => !v)}
+              className={`-mt-2 flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition-colors cursor-pointer ${
+                outside ? 'border-brand/40 bg-brand-soft/40' : 'border-line hover:bg-surface-muted/50'
+              }`}
+            >
+              <span>
+                <span className="block text-sm font-bold text-ink">Keep out of the daily budget</span>
+                <span className="block text-xs text-ink-muted">
+                  {outside
+                    ? "Counts in totals and Analysis, not in what's left each day"
+                    : 'A one-off, like a trip or a big buy? Today and the rest of the month stay usable'}
+                </span>
+              </span>
+              <SwitchVisual on={outside} />
+            </button>
           )}
 
           {/* Category */}

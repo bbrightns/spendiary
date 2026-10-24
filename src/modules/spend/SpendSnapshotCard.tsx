@@ -66,7 +66,9 @@ export function SpendSnapshotCard() {
                 {signed(day.leftToday, thb)}
               </p>
               <p className="mt-0.5 text-xs text-ink-muted">
-                of {thb(day.allowance)} for today · {day.daysLeft} {day.daysLeft === 1 ? 'day' : 'days'} left
+                {day.soft
+                  ? `of ${thb(day.allowance)}, a usual day · month ${thb(day.overBy)} over`
+                  : `of ${thb(day.allowance)} for today · ${day.daysLeft} ${day.daysLeft === 1 ? 'day' : 'days'} left`}
               </p>
             </div>
           )}
