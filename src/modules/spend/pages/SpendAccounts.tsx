@@ -197,7 +197,7 @@ export function SpendAccounts() {
             <div className="flex items-center justify-between px-1">
               <h2 className="font-display text-lg font-extrabold text-ink">Wallets</h2>
               <div className="flex items-center gap-3">
-                <button type="button" onClick={() => navigate('/cash')} className="text-sm font-semibold text-brand hover:underline cursor-pointer">
+                <button type="button" onClick={() => navigate('/cash')} className="text-sm font-semibold text-link hover:underline cursor-pointer">
                   Manage in Cash
                 </button>
                 {wallets.length > 1 && <ArrangeButton label="Arrange wallets" onClick={() => setArrange('wallets')} />}

@@ -553,7 +553,7 @@ export function Portfolio() {
                   </span>
                 )}
                 {h.tag && (
-                  <span className="hidden sm:inline-flex items-center rounded-md bg-brand/10 dark:bg-brand/20 px-1.5 py-0.5 text-xs font-semibold text-brand tracking-tight shrink-0">
+                  <span className="hidden sm:inline-flex items-center rounded-md bg-brand/10 dark:bg-brand/20 px-1.5 py-0.5 text-xs font-semibold text-link tracking-tight shrink-0">
                     #{h.tag}
                   </span>
                 )}
@@ -565,7 +565,7 @@ export function Portfolio() {
             <div className="mt-0.5 flex items-center justify-between gap-2">
               <p className="truncate text-xs text-ink-muted">
                 {unitsLabel}
-                {h.tag && <span className="sm:hidden text-brand font-medium"> · #{h.tag}</span>}
+                {h.tag && <span className="sm:hidden text-link font-medium"> · #{h.tag}</span>}
               </p>
               {h.priced
                 ? <PnLPill value={pnlDisplay === 'thb' ? h.pnl : h.pnlPct} asPct={pnlDisplay !== 'thb'} size="sm" />
@@ -613,7 +613,7 @@ export function Portfolio() {
                 <button
                   type="button"
                   onClick={() => openBuy(h)}
-                  className="inline-flex items-center gap-1 rounded-md bg-brand-soft px-2 py-1 text-xs font-semibold text-brand transition-colors hover:bg-brand hover:text-white cursor-pointer active:scale-95"
+                  className="inline-flex items-center gap-1 rounded-md bg-brand-soft px-2 py-1 text-xs font-semibold text-link transition-colors hover:bg-brand hover:text-white cursor-pointer active:scale-95"
                   title="Buy more / add a new location"
                 >
                   <PlusIcon className="h-3 w-3" strokeWidth={2.5} />
@@ -635,7 +635,7 @@ export function Portfolio() {
                   <button
                     type="button"
                     onClick={() => openBuy(h)}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong py-2.5 text-sm font-semibold text-brand transition-colors hover:bg-brand-soft cursor-pointer active:scale-[0.99]"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong py-2.5 text-sm font-semibold text-link transition-colors hover:bg-brand-soft cursor-pointer active:scale-[0.99]"
                   >
                     <PlusIcon className="h-4 w-4" strokeWidth={2.4} />
                     Add first location (buy)
@@ -689,7 +689,7 @@ export function Portfolio() {
                   <button
                     type="button"
                     onClick={() => openBuy(h)}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong py-2.5 text-sm font-semibold text-brand transition-colors hover:bg-brand-soft cursor-pointer active:scale-[0.99]"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong py-2.5 text-sm font-semibold text-link transition-colors hover:bg-brand-soft cursor-pointer active:scale-[0.99]"
                   >
                     <PlusIcon className="h-4 w-4" strokeWidth={2.4} />
                     Add first location (buy)
@@ -789,7 +789,7 @@ export function Portfolio() {
                 <>
                   <span className="inline-block h-2 w-2 rounded-full bg-loss shrink-0" />
                   <span className="text-xs font-medium text-loss">Fetch failed</span>
-                  <button onClick={refreshPrices} className="text-xs underline text-brand hover:text-brand-ink cursor-pointer ml-0.5">
+                  <button onClick={refreshPrices} className="text-xs underline text-link hover:text-brand-ink cursor-pointer ml-0.5">
                     retry
                   </button>
                 </>
@@ -960,7 +960,7 @@ export function Portfolio() {
                           />
                           <span className="truncate">{g.name}</span>
                           {g.isTag && (
-                            <span className="rounded bg-brand/10 px-1 py-0.2 text-xs font-bold text-brand shrink-0">
+                            <span className="rounded bg-brand/10 px-1 py-0.2 text-xs font-bold text-link shrink-0">
                               Tag
                             </span>
                           )}
@@ -1183,7 +1183,7 @@ export function Portfolio() {
             <InteractivePortfolioChart history={data.portfolioHistory!} />
           ) : (
             <div className="p-8 text-center">
-              <PortfolioIcon className="h-6 w-6 mx-auto text-brand mb-2" />
+              <PortfolioIcon className="h-6 w-6 mx-auto text-link mb-2" />
               <h3 className="font-display text-lg font-extrabold text-ink">Portfolio value over time</h3>
               <p className="text-sm text-ink-muted mt-1 max-w-md mx-auto">
                 Snapshot history will record daily as your holdings and prices update.
@@ -1355,7 +1355,7 @@ export function Portfolio() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-ink-muted">Avg cost / BTC</span>
-                <span className="font-semibold text-brand tnum">
+                <span className="font-semibold text-link tnum">
                   {isValidRate(usdThb) ? <>{btcPerCoin((Number(locThbSpent) / Number(locSatoshi)) * SATS_PER_BTC)} (≈ {thb((Number(locThbSpent) / Number(locSatoshi)) * SATS_PER_BTC)})</> : btcPerCoin((Number(locThbSpent) / Number(locSatoshi)) * SATS_PER_BTC)}
                 </span>
               </div>
@@ -1369,7 +1369,7 @@ export function Portfolio() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-ink-muted">Avg cost / gold baht</span>
-                <span className="font-semibold text-brand tnum">
+                <span className="font-semibold text-link tnum">
                   {thb((Number(locThbSpent) / Number(locGrams)) * GRAMS_PER_BAHT_GOLD)}
                 </span>
               </div>
@@ -1382,7 +1382,7 @@ export function Portfolio() {
               type="checkbox"
               checked={locIsLocked}
               onChange={(e) => setLocIsLocked(e.target.checked)}
-              className="h-4 w-4 rounded border-line text-brand focus:ring-brand accent-brand cursor-pointer"
+              className="h-4 w-4 rounded border-line text-link focus:ring-brand accent-brand cursor-pointer"
             />
             <div className="flex-1 text-xs">
               <span className="font-semibold text-ink flex items-center gap-1.5">

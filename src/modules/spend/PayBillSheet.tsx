@@ -221,7 +221,7 @@ export function PayBillSheet() {
                 })}
               </ul>
               {bill.items.length > 5 && (
-                <button type="button" onClick={() => setShowAll((v) => !v)} className="mt-1 text-sm font-semibold text-brand cursor-pointer">
+                <button type="button" onClick={() => setShowAll((v) => !v)} className="mt-1 text-sm font-semibold text-link cursor-pointer">
                   {showAll ? 'Show less' : `Show all ${bill.items.length}`}
                 </button>
               )}

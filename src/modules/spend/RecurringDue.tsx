@@ -60,7 +60,7 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
             <span className="block text-sm font-bold text-ink">Set up bills that repeat</span>
             <span className="block text-xs text-ink-muted">Rent, phone, subscriptions, salary. Log each one with one tap when it's due.</span>
           </span>
-          <span className="shrink-0 text-sm font-semibold text-brand">Add →</span>
+          <span className="shrink-0 text-sm font-semibold text-link">Add →</span>
         </Link>
       </Card>
     )

@@ -106,7 +106,7 @@ export function Sidebar() {
           className="mb-3 flex items-center justify-between w-full rounded-xl border border-line bg-surface-muted/60 hover:bg-surface-muted dark:hover:bg-surface-muted/80 px-3 py-2 text-left text-xs font-medium text-ink-muted hover:text-ink transition-all shadow-2xs group cursor-pointer"
         >
           <div className="flex items-center gap-2">
-            <SearchIcon className="h-4 w-4 text-ink-faint group-hover:text-brand transition-colors" />
+            <SearchIcon className="h-4 w-4 text-ink-faint group-hover:text-link transition-colors" />
             <span className="font-semibold text-ink-soft">Search / Actions...</span>
           </div>
           <kbd className="inline-flex items-center gap-0.5 rounded-md bg-surface border border-line px-1.5 py-0.5 font-mono text-xs text-ink-muted shadow-2xs">
@@ -121,7 +121,7 @@ export function Sidebar() {
               key={section.title}
               className={`flex flex-col gap-0.5 ${index > 0 ? 'mt-3 border-t border-line/60 pt-3' : ''}`}
             >
-              <span className="px-3 pb-1 text-2xs font-bold uppercase tracking-wider text-brand/70">
+              <span className="px-3 pb-1 text-2xs font-bold uppercase tracking-wider text-link/70">
                 {section.title}
               </span>
               {section.items.map((item) => {
@@ -182,7 +182,7 @@ export function Sidebar() {
         {/* User Card + Theme Switch */}
         <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-surface-muted/50 border border-line/40">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-ink text-white font-bold text-xs dark:bg-brand-soft dark:text-brand">
+            <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-ink text-white font-bold text-xs dark:bg-brand-soft dark:text-link">
               {userInitial}
             </div>
             <div className="min-w-0 flex-1">

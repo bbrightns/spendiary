@@ -295,7 +295,7 @@ export function SpendAnalysis() {
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-display text-lg font-extrabold text-ink">By category</h2>
             {range === 'month' && (
-              <Link to={settingsPath('category-budgets')} className="text-sm font-semibold text-brand hover:underline">
+              <Link to={settingsPath('category-budgets')} className="text-sm font-semibold text-link hover:underline">
                 Budgets
               </Link>
             )}

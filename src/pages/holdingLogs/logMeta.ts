@@ -87,7 +87,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
   if (log.action === 'buy_more') {
     return {
       label: log.dcaPlanId ? 'DCA buy' : 'Bought more',
-      style: 'bg-brand/10 text-brand',
+      style: 'bg-brand/10 text-link',
       icon: ArrowUpIcon,
       isPriceUpdate: false,
     }

@@ -35,6 +35,9 @@
   --color-brand: #0066ff;
   --color-brand-soft: #eef4ff;
   --color-brand-ink: #0052cc;
+  /* Brand-coloured text (links, selected labels, small accents). Not brand itself: indigo text on
+     the dark surface reads at 2.7:1. Both values keep 5:1 or better on every surface. */
+  --color-link: #005ce8;
 
   /* Primary action fill (Button primary, active chips, the "+" button): ink in light, indigo in dark */
   --color-primary: #090d16;
@@ -121,6 +124,7 @@
   --color-brand: #4f46e5;
   --color-brand-soft: #1e2245;
   --color-brand-ink: #c7d2fe;
+  --color-link: #818cf8;
 
   /* Primary action fill: Precision Indigo, white text stays 7.4:1 */
   --color-primary: #4f46e5;

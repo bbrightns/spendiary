@@ -29,10 +29,10 @@ export function SpendSnapshotCard() {
       <Link to="/" className="block">
         <Card compact hover className="flex items-center justify-between gap-3">
           <span className="flex items-center gap-2.5 text-sm font-semibold text-ink">
-            <WalletIcon className="h-5 w-5 text-brand" />
+            <WalletIcon className="h-5 w-5 text-link" />
             Track day-to-day spending in Spend
           </span>
-          <span className="text-sm font-semibold text-brand">Open →</span>
+          <span className="text-sm font-semibold text-link">Open →</span>
         </Card>
       </Link>
     )
@@ -52,7 +52,7 @@ export function SpendSnapshotCard() {
         <CardHeader
           title="Spending"
           description={periodLabel(period, settings.cycle)}
-          action={<span className="text-sm font-semibold text-brand group-hover:underline">Spend →</span>}
+          action={<span className="text-sm font-semibold text-link group-hover:underline">Spend →</span>}
         />
 
         <div className={`mt-4 grid gap-4 ${hasBudget ? '@min-[34rem]:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] @min-[34rem]:gap-6' : ''}`}>

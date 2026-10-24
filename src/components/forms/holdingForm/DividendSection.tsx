@@ -105,7 +105,7 @@ export function DividendSection({
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {!expanded && (
-            <span className="text-xs text-brand font-medium">Tap to view / edit</span>
+            <span className="text-xs text-link font-medium">Tap to view / edit</span>
           )}
           <ChevronDownIcon
             className={`h-4 w-4 text-ink-muted transition-transform duration-200 ${

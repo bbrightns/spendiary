@@ -360,7 +360,7 @@ export function Dashboard() {
                   <span className="block text-sm font-bold text-ink">Add your cash accounts</span>
                   <span className="block text-xs text-ink-muted">Bank accounts, savings and wallets, with the interest they earn.</span>
                 </span>
-                <span className="shrink-0 text-sm font-semibold text-brand">Add →</span>
+                <span className="shrink-0 text-sm font-semibold text-link">Add →</span>
               </Link>
             )}
           </Card>
@@ -504,7 +504,7 @@ export function Dashboard() {
                   <span className="block text-sm font-bold text-ink">No loans recorded</span>
                   <span className="block text-xs text-ink-muted">Add a loan or installment to see what's left to pay.</span>
                 </span>
-                <span className="shrink-0 text-sm font-semibold text-brand">Add →</span>
+                <span className="shrink-0 text-sm font-semibold text-link">Add →</span>
               </Link>
             )}
           </Card>
@@ -518,7 +518,7 @@ export function Dashboard() {
             <InteractiveNetWorthChart history={data.netWorthHistory!} />
           ) : (
             <div className="p-8 text-center">
-              <SparkleIcon className="h-6 w-6 mx-auto text-brand mb-2" />
+              <SparkleIcon className="h-6 w-6 mx-auto text-link mb-2" />
               <h3 className="font-display text-lg font-extrabold text-ink">Net worth over time</h3>
               <p className="text-sm text-ink-muted mt-1 max-w-md mx-auto">
                 Snapshot history will record daily as your balances and holdings update.

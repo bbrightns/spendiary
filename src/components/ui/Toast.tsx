@@ -19,7 +19,7 @@ const TYPE_CONFIG = {
     badge: 'bg-warn-soft text-warn',
   },
   info: {
-    icon: <SparkleIcon className="h-4 w-4 shrink-0 text-brand" strokeWidth={2} />,
+    icon: <SparkleIcon className="h-4 w-4 shrink-0 text-link" strokeWidth={2} />,
     style: 'border-brand/30 bg-surface text-ink',
     badge: 'bg-brand-soft text-brand-ink',
   },

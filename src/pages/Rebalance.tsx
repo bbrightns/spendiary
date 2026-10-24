@@ -184,7 +184,7 @@ export function Rebalance() {
         const allocated = totalDeficit > 0 ? cashToDeploy * (def.deficit / totalDeficit) : 0
         if (allocated > 5) {
           row.actionLabel = `Add ${thb(allocated)}`
-          row.actionCls = 'text-brand font-semibold'
+          row.actionCls = 'text-link font-semibold'
         } else {
           row.actionLabel = 'Balanced'
           row.actionCls = 'text-ink-muted font-medium'
@@ -326,7 +326,7 @@ export function Rebalance() {
         const allocated = totalDeficit > 0 ? cashToDeploy * (def.deficit / totalDeficit) : 0
         if (allocated > 5) {
           row.actionLabel = `Add ${thb(allocated)}`
-          row.actionCls = 'text-brand font-semibold'
+          row.actionCls = 'text-link font-semibold'
         } else {
           row.actionLabel = 'Balanced'
           row.actionCls = 'text-ink-muted font-medium'
@@ -573,7 +573,7 @@ export function Rebalance() {
                     type="checkbox"
                     checked={smartRebalance}
                     onChange={(e) => setSmartRebalance(e.target.checked)}
-                    className="rounded border-line-strong text-brand focus:ring-brand/15 h-4 w-4"
+                    className="rounded border-line-strong text-link focus:ring-brand/15 h-4 w-4"
                   />
                   <span>Smart rebalance (buy only)</span>
                 </label>
@@ -589,7 +589,7 @@ export function Rebalance() {
                     type="checkbox"
                     checked={excludeSafeHaven}
                     onChange={(e) => handleToggleExcludeSafeHaven(e.target.checked)}
-                    className="rounded border-line-strong text-brand focus:ring-brand/15 h-4 w-4"
+                    className="rounded border-line-strong text-link focus:ring-brand/15 h-4 w-4"
                   />
                   <span className="flex items-center gap-1.5">
                     <LockClosedIcon className="h-4 w-4 text-warn" />
@@ -644,7 +644,7 @@ export function Rebalance() {
               </div>
 
               <div className="flex flex-col items-center">
-                <span className="text-xs font-bold text-brand mb-2">Target</span>
+                <span className="text-xs font-bold text-link mb-2">Target</span>
                 <DonutChart
                   segments={targetSegments}
                   size={120}
@@ -671,7 +671,7 @@ export function Rebalance() {
                       {ASSET_META[key].plural}
                     </span>
                     <span className="font-semibold tnum text-ink">
-                      {actualPct.toFixed(0)}% <span className="text-ink-muted font-normal">→</span> <span className="text-brand font-bold">{targetPct}%</span>
+                      {actualPct.toFixed(0)}% <span className="text-ink-muted font-normal">→</span> <span className="text-link font-bold">{targetPct}%</span>
                     </span>
                   </div>
                 )
@@ -773,8 +773,8 @@ export function Rebalance() {
                                       ? 'bg-gain-soft text-gain'
                                       : row.actionCls.includes('text-loss')
                                       ? 'bg-loss-soft text-loss'
-                                      : row.actionCls.includes('text-brand')
-                                      ? 'bg-brand-soft text-brand'
+                                      : row.actionCls.includes('text-link')
+                                      ? 'bg-brand-soft text-link'
                                       : 'bg-surface-muted text-ink-muted'
                                   }`}
                                 >
@@ -806,7 +806,7 @@ export function Rebalance() {
                               <p className="font-bold text-ink-soft text-sm mt-0.5 tnum">
                                 {thb(row.targetVal)}
                               </p>
-                              <p className="text-xs text-brand mt-0.5 tnum font-bold">
+                              <p className="text-xs text-link mt-0.5 tnum font-bold">
                                 {row.targetPct}% target
                               </p>
                             </div>
@@ -927,8 +927,8 @@ export function Rebalance() {
                                       ? 'bg-gain-soft text-gain'
                                       : row.actionCls.includes('text-loss')
                                       ? 'bg-loss-soft text-loss'
-                                      : row.actionCls.includes('text-brand')
-                                      ? 'bg-brand-soft text-brand'
+                                      : row.actionCls.includes('text-link')
+                                      ? 'bg-brand-soft text-link'
                                       : 'bg-surface-muted text-ink-muted'
                                   }`}>
                                     {row.actionLabel}
@@ -976,7 +976,7 @@ export function Rebalance() {
                                     {row.ticker || row.name}
                                   </p>
                                   {row.isPlanned && (
-                                    <span className="shrink-0 rounded bg-brand/15 px-1.5 py-0.2 text-xs font-extrabold text-brand">
+                                    <span className="shrink-0 rounded bg-brand/15 px-1.5 py-0.2 text-xs font-extrabold text-link">
                                       Planned
                                     </span>
                                   )}
@@ -1042,7 +1042,7 @@ export function Rebalance() {
                                 Projected value
                               </span>
                               <p className="font-bold text-ink-soft text-sm mt-0.5 tnum">{thb(row.targetVal)}</p>
-                              <p className="text-xs text-brand mt-0.5 tnum font-bold">
+                              <p className="text-xs text-link mt-0.5 tnum font-bold">
                                 {row.targetPct}% target
                               </p>
                             </div>
@@ -1096,8 +1096,8 @@ export function Rebalance() {
                                       ? 'bg-gain-soft text-gain'
                                       : row.actionCls.includes('text-loss')
                                       ? 'bg-loss-soft text-loss'
-                                      : row.actionCls.includes('text-brand')
-                                      ? 'bg-brand-soft text-brand'
+                                      : row.actionCls.includes('text-link')
+                                      ? 'bg-brand-soft text-link'
                                       : 'bg-surface-muted text-ink-muted'
                                   }`}
                                 >
@@ -1154,7 +1154,7 @@ export function Rebalance() {
                                     <div className="flex items-center gap-1.5 mt-0.5">
                                       <span className="truncate text-xs text-ink-muted">{row.name}</span>
                                       {row.isPlanned && (
-                                        <span className="shrink-0 rounded bg-brand/15 px-1.5 py-0.2 text-xs font-extrabold text-brand">
+                                        <span className="shrink-0 rounded bg-brand/15 px-1.5 py-0.2 text-xs font-extrabold text-link">
                                           Planned
                                         </span>
                                       )}
@@ -1202,8 +1202,8 @@ export function Rebalance() {
                                       ? 'bg-gain-soft text-gain'
                                       : row.actionCls.includes('text-loss')
                                       ? 'bg-loss-soft text-loss'
-                                      : row.actionCls.includes('text-brand')
-                                      ? 'bg-brand-soft text-brand'
+                                      : row.actionCls.includes('text-link')
+                                      ? 'bg-brand-soft text-link'
                                       : 'bg-surface-muted text-ink-muted'
                                   }`}>
                                     {row.actionLabel}

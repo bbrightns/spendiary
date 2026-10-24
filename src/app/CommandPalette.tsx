@@ -308,7 +308,7 @@ export function CommandPalette() {
         keywords: ['spend', 'expense', 'income', 'transaction', 'quick add', 'จด', 'รายจ่าย', 'รายรับ', 'ใช้เงิน', 'บันทึก'],
         group: 'Actions',
         spend: true,
-        icon: ic(PlusIcon, 'text-brand'),
+        icon: ic(PlusIcon, 'text-link'),
         run: () => openQuickAdd(),
       },
       {
@@ -330,7 +330,7 @@ export function CommandPalette() {
         keywords: ['import', 'csv', 'statement', 'bank', 'upload', 'นำเข้า', 'สเตทเมนต์', 'ไฟล์'],
         group: 'Actions',
         spend: true,
-        icon: ic(DownloadIcon, 'text-brand'),
+        icon: ic(DownloadIcon, 'text-link'),
         run: () => openImport(),
       },
       {
@@ -340,7 +340,7 @@ export function CommandPalette() {
         badge: 'Action',
         keywords: ['add', 'holding', 'buy', 'stock', 'fund', 'crypto', 'gold', 'เพิ่ม', 'ซื้อ', 'หุ้น', 'สินทรัพย์', 'ทอง'],
         group: 'Actions',
-        icon: ic(PlusIcon, 'text-brand'),
+        icon: ic(PlusIcon, 'text-link'),
         run: go('/portfolio?action=new'),
       },
       {
@@ -463,7 +463,7 @@ export function CommandPalette() {
         badge: 'Theme',
         keywords: ['theme', 'dark', 'light', 'mode', 'color', 'สว่าง', 'มืด', 'ธีม'],
         group: 'System',
-        icon: ic(SparkleIcon, 'text-brand'),
+        icon: ic(SparkleIcon, 'text-link'),
         run: () => {
           const nextTheme = theme === 'dark' ? 'light' : 'dark'
           setTheme(nextTheme)
@@ -577,7 +577,7 @@ export function CommandPalette() {
         badge: h.assetClass,
         keywords: [h.ticker, h.name, h.assetClass, 'holding', 'asset', 'หุ้น'],
         group: 'Holdings',
-        icon: <span className="text-xs font-bold text-brand">{h.ticker.slice(0, 2).toUpperCase()}</span>,
+        icon: <span className="text-xs font-bold text-link">{h.ticker.slice(0, 2).toUpperCase()}</span>,
         run: go(`/portfolio?search=${encodeURIComponent(h.ticker)}`),
       })
     }
@@ -625,7 +625,7 @@ export function CommandPalette() {
       subtitle: t.what,
       keywords: [],
       group: 'Search tips',
-      icon: ic(SearchIcon, 'text-brand'),
+      icon: ic(SearchIcon, 'text-link'),
       stay: true,
       run: () => {
         setQuery(t.example)
@@ -715,7 +715,7 @@ export function CommandPalette() {
         keywords: [],
         group: 'Do it',
         spend: true,
-        icon: ic(PlusIcon, 'text-brand'),
+        icon: ic(PlusIcon, 'text-link'),
         run: () => openQuickAdd({ draft: { type: intent.type, amount: intent.amount, note: intent.note, categoryId: cat?.id } }),
         score: 2,
       })
@@ -737,7 +737,7 @@ export function CommandPalette() {
           keywords: [],
           group: 'Do it',
           spend: true,
-          icon: ic(CreditCardIcon, 'text-brand'),
+          icon: ic(CreditCardIcon, 'text-link'),
           run: () => openPayBill(c.id),
           score: 2,
         })
@@ -826,7 +826,7 @@ export function CommandPalette() {
         keywords: [],
         group: 'Transactions',
         spend: true,
-        icon: ic(ListBulletIcon, 'text-brand'),
+        icon: ic(ListBulletIcon, 'text-link'),
         // The page takes the same words and days
         run: go(`/spend/txns?${new URLSearchParams({ ...(textTerms.length ? { q: textTerms.join(' ') } : {}), ...(range ?? {}) })}`),
         score: -1,
@@ -854,7 +854,7 @@ export function CommandPalette() {
         subtitle: [shortDate(date), amount !== undefined && thb(amount, true), l.note].filter(Boolean).join(' · '),
         keywords: [],
         group: 'Invest history',
-        icon: <span className="text-xs font-bold text-brand">{l.ticker.slice(0, 2).toUpperCase()}</span>,
+        icon: <span className="text-xs font-bold text-link">{l.ticker.slice(0, 2).toUpperCase()}</span>,
         run: go(`/logs?search=${encodeURIComponent(l.ticker)}`),
         score: s - 0.1 + (inSpend ? 0 : 0.2),
       })
@@ -1102,7 +1102,7 @@ export function CommandPalette() {
                     onClick={() => pick(item)}
                     onMouseEnter={() => setSelectedIndex(idx)}
                     className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${
-                      isSelected ? 'bg-brand/10 text-brand-ink dark:bg-brand/20 dark:text-brand-ink' : 'hover:bg-surface-muted text-ink'
+                      isSelected ? 'bg-brand/10 text-brand-ink dark:bg-brand/20' : 'hover:bg-surface-muted text-ink'
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
@@ -1121,7 +1121,7 @@ export function CommandPalette() {
                           {item.badge}
                         </span>
                       )}
-                      <ArrowUpRightIcon className={`h-4 w-4 opacity-40 ${isSelected ? 'opacity-100 text-brand' : ''}`} />
+                      <ArrowUpRightIcon className={`h-4 w-4 opacity-40 ${isSelected ? 'opacity-100 text-link' : ''}`} />
                     </div>
                   </div>
                 </div>

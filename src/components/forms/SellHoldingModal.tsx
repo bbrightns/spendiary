@@ -177,7 +177,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     <button
       type="button"
       onClick={handleSellAll}
-      className="rounded-md bg-surface-muted hover:bg-brand/15 hover:text-brand border border-line hover:border-brand/30 px-2 py-0.5 text-xs font-bold text-ink-muted active:scale-95 transition-all cursor-pointer shadow-2xs"
+      className="rounded-md bg-surface-muted hover:bg-brand/15 hover:text-link border border-line hover:border-brand/30 px-2 py-0.5 text-xs font-bold text-ink-muted active:scale-95 transition-all cursor-pointer shadow-2xs"
       title="Sell everything (100%)"
     >
       100%
@@ -608,7 +608,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                   <button
                     type="button"
                     onClick={() => setBtcThbProceeds(estBtcProceeds)}
-                    className="text-brand hover:underline font-medium cursor-pointer"
+                    className="text-link hover:underline font-medium cursor-pointer"
                   >
                     Use this
                   </button>
@@ -711,7 +711,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                   <button
                     type="button"
                     onClick={() => setGoldThbProceeds(estGoldProceeds)}
-                    className="text-brand hover:underline font-medium cursor-pointer"
+                    className="text-link hover:underline font-medium cursor-pointer"
                   >
                     Use this
                   </button>

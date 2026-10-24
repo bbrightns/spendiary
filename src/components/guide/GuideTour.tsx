@@ -216,7 +216,7 @@ export function GuideTour({
         {/* Header Bar */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand/10 text-brand border border-brand/20 dark:bg-brand/20 dark:text-brand-ink dark:border-brand/30">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand/10 text-link border border-brand/20 dark:bg-brand/20 dark:border-brand/30">
               {currentStep.badge || 'Guide'}
             </span>
             <span className="text-xs font-medium text-ink-muted">

@@ -527,7 +527,7 @@ export function Settings() {
                 <span className="text-sm font-bold text-ink leading-tight">
                   Praween Piyaprapaphan (Bright)
                 </span>
-                <span className="text-xs font-mono text-brand font-semibold leading-normal mt-0.5">
+                <span className="text-xs font-mono text-link font-semibold leading-normal mt-0.5">
                   Alias: bbrightns
                 </span>
               </div>
@@ -576,7 +576,7 @@ export function Settings() {
         <header className="mb-5 xl:hidden">
           <Link
             to="/settings"
-            className="-ml-2 inline-flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-semibold text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="-ml-2 inline-flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-semibold text-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <ChevronLeftIcon className="h-4 w-4" />
             Settings

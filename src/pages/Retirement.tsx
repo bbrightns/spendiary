@@ -641,7 +641,7 @@ export function Retirement() {
                     : 'Enter your monthly spending to calculate'}
                 </p>
               </div>
-              <div className="h-12 w-12 shrink-0 rounded-full bg-brand-soft text-brand flex items-center justify-center">
+              <div className="h-12 w-12 shrink-0 rounded-full bg-brand-soft text-link flex items-center justify-center">
                 <HourglassIcon className="h-5 w-5" />
               </div>
             </div>

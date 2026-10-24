@@ -391,7 +391,7 @@ export function ImportSheet() {
                 </p>
               )}
               {count.same > 0 && (
-                <button type="button" onClick={() => setShowSame((v) => !v)} className="mt-1 text-xs font-semibold text-brand hover:underline cursor-pointer">
+                <button type="button" onClick={() => setShowSame((v) => !v)} className="mt-1 text-xs font-semibold text-link hover:underline cursor-pointer">
                   {showSame ? 'Hide' : 'Show'} the {plural(count.same, 'matching row')}
                 </button>
               )}
@@ -406,10 +406,10 @@ export function ImportSheet() {
                     {(result?.skipped ?? 0) > 0 && ` · ${plural(result!.skipped, 'row')} unreadable`}
                   </span>
                   <span className="flex items-center gap-3">
-                    <button type="button" onClick={tickAll} className="font-semibold text-brand hover:underline cursor-pointer">
+                    <button type="button" onClick={tickAll} className="font-semibold text-link hover:underline cursor-pointer">
                       Tick all
                     </button>
-                    <button type="button" onClick={untickAll} className="font-semibold text-brand hover:underline cursor-pointer">
+                    <button type="button" onClick={untickAll} className="font-semibold text-link hover:underline cursor-pointer">
                       None
                     </button>
                   </span>
@@ -441,7 +441,7 @@ export function ImportSheet() {
                               {short(r.date)}
                               {r.time ? ` ${r.time}` : ''} ·{' '}
                               {r.status === 'update' ? (
-                                <span className={r.overwrite ? 'font-semibold text-warn' : 'font-semibold text-brand'}>
+                                <span className={r.overwrite ? 'font-semibold text-warn' : 'font-semibold text-link'}>
                                   {r.overwrite ? 'Replaces ' : ''}
                                   {r.change}
                                 </span>

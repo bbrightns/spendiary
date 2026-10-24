@@ -194,7 +194,7 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
           </div>
           <div className="ml-6 mt-1 flex flex-col gap-0.5">
             <span>From salary: <span className="font-semibold text-gain">{thb(savingsFromSalary)}</span></span>
-            <span>From cash reserve: <span className="font-semibold text-brand dark:text-brand-ink">+{thb(cashDrawdown)}</span></span>
+            <span>From cash reserve: <span className="font-semibold text-link">+{thb(cashDrawdown)}</span></span>
           </div>
         </div>
       )}
@@ -549,7 +549,7 @@ export function DcaPlanner() {
                       {thb(fixedTotal + savingsTotal)}
                     </p>
                     <div className="flex flex-col items-start gap-0.5 @min-[19rem]:items-end">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-bold text-brand dark:text-brand-ink">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-bold text-link">
                         +{thb(requiredCashInjection)} from Cash
                       </span>
                     </div>
@@ -577,7 +577,7 @@ export function DcaPlanner() {
                 </Link>
               )}
               {salary <= 0 && (
-                <button onClick={openSalaryEdit} className="mt-4 text-sm font-semibold text-brand hover:underline cursor-pointer">
+                <button onClick={openSalaryEdit} className="mt-4 text-sm font-semibold text-link hover:underline cursor-pointer">
                   + Add monthly salary to see breakdown
                 </button>
               )}
@@ -609,7 +609,7 @@ export function DcaPlanner() {
                 {fixedItems.length === 0 ? (
                   <p className="text-sm text-ink-muted">
                     No fixed costs yet. Add rent, bills or family support as{' '}
-                    <Link to="/spend/recurring" className="font-semibold text-brand hover:underline">
+                    <Link to="/spend/recurring" className="font-semibold text-link hover:underline">
                       recurring bills in Spend
                     </Link>
                     .

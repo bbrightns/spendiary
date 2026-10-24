@@ -591,7 +591,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-ink-soft">Implied cost / gold baht</span>
-                <span className="font-semibold tnum text-brand">
+                <span className="font-semibold tnum text-link">
                   {thb(impliedPrice * GRAMS_PER_BAHT_GOLD)}
                   {rate > 1 && ` ($${Math.round(goldThbPerGramToXauUsd(impliedPrice, rate)).toLocaleString()}/oz XAUUSD)`}
                 </span>

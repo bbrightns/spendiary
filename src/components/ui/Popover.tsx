@@ -161,7 +161,7 @@ export function PopoverOption({
       <span className="flex-1 min-w-0 truncate">{children}</span>
       {hint && <span className="shrink-0 text-xs font-normal text-ink-faint">{hint}</span>}
       {selected && (
-        <CheckIcon className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
+        <CheckIcon className="h-4 w-4 shrink-0 text-link" aria-hidden="true" />
       )}
     </button>
   )

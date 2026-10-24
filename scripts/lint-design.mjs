@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
  * Design guardrails (DESIGN.md). Fails CI when a change brings back what the design
- * clean-up removed: emoji in the UI (.tsx; the Markdown export in lib/ may use them), hex colours or raw Tailwind palette colours in
- * components, animation classes that don't exist, hand-rolled full-screen overlays and
- * the old "success" button variant.
+ * clean-up removed: emoji in the UI (.tsx; the Markdown export in lib/ may use them),
+ * hex colours or raw Tailwind palette colours in components, text-brand (unreadable in
+ * dark), animation classes that don't exist, hand-rolled full-screen overlays and the
+ * old "success" button variant.
  *
  *   npm run lint:design
  */
@@ -89,6 +90,9 @@ for (const file of walk(SRC)) {
     }
     if (/\bfixed inset-0\b/.test(line) && !rel.startsWith('src/components/ui/') && !OVERLAY_ALLOW.includes(rel)) {
       problems.push(`${at}  "fixed inset-0" overlay: use Modal, ConfirmModal or Popover (DESIGN.md §6.6)`)
+    }
+    if (/(?<![\w-])(?:[a-z-]+:)*text-brand(?![\w-])/.test(line)) {
+      problems.push(`${at}  "text-brand": brand text uses text-link, which stays readable in dark mode (DESIGN.md §3)`)
     }
     if (/variant=["']success["']/.test(line)) {
       problems.push(`${at}  variant="success": save buttons use primary (DESIGN.md §6.1)`)

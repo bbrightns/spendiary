@@ -128,7 +128,7 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
     if (current && !shown.some((c) => c.id === value) && list.some((c) => c.id === value)) shown = [...shown.slice(0, -1), current]
   }
 
-  const link = '-my-1 rounded-full px-2.5 py-1 text-xs font-semibold text-brand cursor-pointer hover:bg-brand-soft'
+  const link = '-my-1 rounded-full px-2.5 py-1 text-xs font-semibold text-link cursor-pointer hover:bg-brand-soft'
 
   return (
     <div>

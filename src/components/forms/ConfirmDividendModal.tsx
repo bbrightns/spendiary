@@ -268,7 +268,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
                 type="checkbox"
                 checked={deductTax}
                 onChange={(e) => setDeductTax(e.target.checked)}
-                className="h-4 w-4 rounded-md border-line text-brand focus:ring-brand/30"
+                className="h-4 w-4 rounded-md border-line text-link focus:ring-brand/30"
               />
               <span className="text-xs font-medium text-ink">
                 Tax withheld (10%)
