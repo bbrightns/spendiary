@@ -666,7 +666,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               <div className="flex items-center justify-between rounded-2xl bg-surface-muted px-4 py-2.5">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-ink-soft">Market price</span>
-                  <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-bold text-brand">Live</span>
+                  <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-bold text-link">Live</span>
                 </div>
                 <span className="text-sm font-bold tnum text-ink">
                   ${liveStockPrice.toFixed(2)} <span className="text-xs font-normal text-ink-muted">/ share</span>
@@ -694,7 +694,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                   <button
                     type="button"
                     onClick={() => setShowFxEdit(true)}
-                    className="font-semibold text-brand hover:underline cursor-pointer"
+                    className="font-semibold text-link hover:underline cursor-pointer"
                   >
                     Adjust FX rate
                   </button>
@@ -744,7 +744,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                     <button
                       type="button"
                       onClick={() => setUnitsBought(Number(((amountThbNum / fxRateNum) / liveStockPrice).toFixed(4)))}
-                      className="text-xs font-bold text-brand hover:underline cursor-pointer"
+                      className="text-xs font-bold text-link hover:underline cursor-pointer"
                     >
                       Fill estimated
                     </button>

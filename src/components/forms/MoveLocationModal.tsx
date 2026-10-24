@@ -200,7 +200,7 @@ export function MoveLocationModal({ open, holding, fromLocationId, onClose }: Pr
                 key={pct}
                 type="button"
                 onClick={() => setPercent(pct)}
-                className="rounded-full border border-line bg-surface-muted px-3 py-1 text-xs font-semibold text-ink-soft transition-colors hover:border-brand/40 hover:text-brand cursor-pointer"
+                className="rounded-full border border-line bg-surface-muted px-3 py-1 text-xs font-semibold text-ink-soft transition-colors hover:border-brand/40 hover:text-link cursor-pointer"
               >
                 {pct === 100 ? 'Max' : `${pct}%`}
               </button>
@@ -221,7 +221,7 @@ export function MoveLocationModal({ open, holding, fromLocationId, onClose }: Pr
         {/* Before → after preview */}
         <div className="rounded-2xl bg-surface-muted p-4 space-y-3">
           <div className="flex items-center justify-between border-b border-line pb-2">
-            <p className="text-xs font-bold text-brand">Move preview (before → after)</p>
+            <p className="text-xs font-bold text-link">Move preview (before → after)</p>
           </div>
 
           {amountBase > 0 && (
@@ -233,12 +233,12 @@ export function MoveLocationModal({ open, holding, fromLocationId, onClose }: Pr
               {feeBase > 0 && (
                 <div className="flex items-center justify-between">
                   <span className="text-ink-muted">Network fee</span>
-                  <span className="tnum text-loss">−{showQty(feeBase)}</span>
+                  <span className="tnum text-loss-ink">−{showQty(feeBase)}</span>
                 </div>
               )}
               <div className="flex items-center justify-between border-t border-line pt-1.5">
                 <span className="font-semibold text-ink">{destName || 'Destination'} receives</span>
-                <span className="tnum font-bold text-gain">{showQty(received)}</span>
+                <span className="tnum font-bold text-gain-ink">{showQty(received)}</span>
               </div>
             </div>
           )}

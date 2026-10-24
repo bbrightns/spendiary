@@ -37,7 +37,7 @@ function QuickAddPrefs({ id }: { id: string }) {
       <button type="button" role="switch" aria-checked={fav} onClick={() => toggleFavorite(id)} className={row}>
         <span>
           <span className="flex items-center gap-1.5 text-sm font-bold text-ink">
-            <StarIcon filled={fav} className="h-4 w-4 text-warn" /> Favorite
+            <StarIcon filled={fav} className="h-4 w-4 text-warn-ink" /> Favorite
           </span>
           <span className="block text-xs text-ink-muted">Show as a one-tap choice</span>
         </span>
@@ -240,14 +240,14 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
               <input className={inputClass} inputMode="decimal" value={form.unbilled} onChange={(e) => set('unbilled')(digits(e.target.value))} placeholder="0" />
             </FieldWrap>
             {!unbilledOk ? (
-              <p className="mt-2 text-xs font-semibold text-loss">Can't be more than what's owed ({thb(owedNum, true)}).</p>
+              <p className="mt-2 text-xs font-semibold text-loss-ink">Can't be more than what's owed ({thb(owedNum, true)}).</p>
             ) : (
               cyc && (
                 <ul className="mt-2 space-y-0.5 text-xs text-ink-muted tnum">
                   <li>
                     Billed <span className="font-semibold text-ink-soft">{thb(owedNum - unbilledNum, true)}</span> · on the {shortDay(cyc.lastStatement)} statement, due{' '}
                     {shortDay(cyc.lastStatementDue)}
-                    {owedNum - unbilledNum > 0 && cyc.lastStatementDue < localDateStr() && <span className="font-semibold text-loss"> · already past, shows as overdue</span>}
+                    {owedNum - unbilledNum > 0 && cyc.lastStatementDue < localDateStr() && <span className="font-semibold text-loss-ink"> · already past, shows as overdue</span>}
                   </li>
                   <li>
                     This cycle <span className="font-semibold text-ink-soft">{thb(unbilledNum, true)}</span> · on the {shortDay(cyc.nextStatement)} statement, due{' '}
@@ -267,7 +267,7 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
             <input className={inputClass} inputMode="numeric" maxLength={2} value={form.dueDay} onChange={(e) => set('dueDay')(e.target.value.replace(/\D/g, ''))} />
           </FieldWrap>
         </div>
-        {(!dayOk(form.statementDay) || !dayOk(form.dueDay)) && <p className="text-xs font-semibold text-loss">Days go from 1 to 31.</p>}
+        {(!dayOk(form.statementDay) || !dayOk(form.dueDay)) && <p className="text-xs font-semibold text-loss-ink">Days go from 1 to 31.</p>}
 
         <FieldWrap label="Minimum payment" hint="% of the bill · ขั้นต่ำ">
           <div className="relative">
@@ -445,11 +445,11 @@ function AccountHistory({ id, name, card }: { id: string; name: string; card?: b
         </div>
         <div className={tile}>
           <p className="text-ink-muted">{card ? 'Refunds' : 'Income'}</p>
-          <p className="truncate font-bold text-gain tnum">{thb(t.income, true)}</p>
+          <p className="truncate font-bold text-gain-ink tnum">{thb(t.income, true)}</p>
         </div>
         <div className={tile}>
           <p className="text-ink-muted">Net</p>
-          <p className={`truncate font-bold tnum ${t.net < 0 ? 'text-loss' : 'text-ink'}`}>
+          <p className={`truncate font-bold tnum ${t.net < 0 ? 'text-loss-ink' : 'text-ink'}`}>
             {t.net < 0 ? '−' : t.net > 0 ? '+' : ''}
             {thb(Math.abs(t.net), true)}
           </p>
@@ -458,7 +458,7 @@ function AccountHistory({ id, name, card }: { id: string; name: string; card?: b
       {t.transferIn + t.transferOut > 0 && (
         <p className="mt-2 text-xs text-ink-muted tnum">
           {card ? 'Bill payments' : 'Transfers'}
-          {t.transferIn > 0 && <span className="text-gain"> +{thb(t.transferIn, true)}</span>}
+          {t.transferIn > 0 && <span className="text-gain-ink"> +{thb(t.transferIn, true)}</span>}
           {t.transferIn > 0 && t.transferOut > 0 && ' ·'}
           {t.transferOut > 0 && <> −{thb(t.transferOut, true)}</>}
         </p>

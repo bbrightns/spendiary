@@ -349,7 +349,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
       <div className="space-y-5 pt-1">
         {/* Step-by-Step Instructions */}
         <div className="rounded-2xl bg-surface-muted p-4 space-y-3">
-          <div className="flex items-center gap-2 text-sm font-bold text-brand">
+          <div className="flex items-center gap-2 text-sm font-bold text-link">
             <SparkleIcon className="h-4 w-4" />
             <span>How it works in 3 easy steps</span>
           </div>
@@ -357,7 +357,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
             <div className="flex flex-col gap-1 p-2.5 rounded-xl bg-surface border border-line/60">
               <span className="font-bold text-ink flex items-center gap-1.5">
-                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand/15 text-xs text-brand">1</span>
+                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand/15 text-xs text-link">1</span>
                 Copy prompt
               </span>
               <p className="text-ink-muted leading-relaxed">
@@ -367,7 +367,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
 
             <div className="flex flex-col gap-1 p-2.5 rounded-xl bg-surface border border-line/60">
               <span className="font-bold text-ink flex items-center gap-1.5">
-                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand/15 text-xs text-brand">2</span>
+                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand/15 text-xs text-link">2</span>
                 Ask ChatGPT / AI
               </span>
               <p className="text-ink-muted leading-relaxed">
@@ -377,7 +377,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
 
             <div className="flex flex-col gap-1 p-2.5 rounded-xl bg-surface border border-line/60">
               <span className="font-bold text-ink flex items-center gap-1.5">
-                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand/15 text-xs text-brand">3</span>
+                <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand/15 text-xs text-link">3</span>
                 Paste & import
               </span>
               <p className="text-ink-muted leading-relaxed">
@@ -405,7 +405,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
             >
               {copied ? (
                 <>
-                  <CheckIcon className="h-3.5 w-3.5 text-gain mr-1.5" />
+                  <CheckIcon className="h-3.5 w-3.5 text-gain-ink mr-1.5" />
                   Prompt copied to clipboard!
                 </>
               ) : (
@@ -442,7 +442,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline cursor-pointer"
+                className="inline-flex items-center gap-1 text-xs font-medium text-link hover:underline cursor-pointer"
               >
                 <UploadIcon className="h-3.5 w-3.5" />
                 Upload .json file
@@ -461,7 +461,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
 
           {/* Validation Feedback & Preview Badges */}
           {jsonText.trim().length > 0 && !parsedPreview && (
-            <div className="flex items-center gap-2 rounded-xl bg-loss/10 border border-loss/20 px-3 py-2 text-xs text-loss">
+            <div className="flex items-center gap-2 rounded-xl bg-loss/10 border border-loss/20 px-3 py-2 text-xs text-loss-ink">
               <AlertIcon className="h-4 w-4 shrink-0" />
               <span>Invalid JSON format. Make sure you pasted the entire JSON code block from AI.</span>
             </div>
@@ -470,7 +470,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
           {parsedPreview && (
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <span className="text-xs font-medium text-ink-muted">Detected:</span>
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-gain/10 border border-gain/25 px-2.5 py-0.5 text-xs font-semibold text-gain">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-gain/10 border border-gain/25 px-2.5 py-0.5 text-xs font-semibold text-gain-ink">
                 <PortfolioIcon className="h-3.5 w-3.5" />
                 {parsedPreview.holdingsCount} {parsedPreview.holdingsCount === 1 ? 'Holding' : 'Holdings'}
               </div>
@@ -479,7 +479,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
                 {parsedPreview.cashCount} {parsedPreview.cashCount === 1 ? 'Cash Account' : 'Cash Accounts'}
               </div>
               {parsedPreview.liabilitiesCount > 0 && (
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-loss/10 border border-loss/25 px-2.5 py-0.5 text-xs font-semibold text-loss">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-loss/10 border border-loss/25 px-2.5 py-0.5 text-xs font-semibold text-loss-ink">
                   <CreditCardIcon className="h-3.5 w-3.5" />
                   {parsedPreview.liabilitiesCount} {parsedPreview.liabilitiesCount === 1 ? 'Debt / Liability' : 'Debts / Liabilities'}
                 </div>
@@ -488,14 +488,14 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
           )}
 
           {errorMsg && (
-            <div className="flex items-center gap-2 rounded-xl bg-loss/10 border border-loss/20 px-3 py-2 text-xs text-loss">
+            <div className="flex items-center gap-2 rounded-xl bg-loss/10 border border-loss/20 px-3 py-2 text-xs text-loss-ink">
               <AlertIcon className="h-4 w-4 shrink-0" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {successMsg && (
-            <div className="flex items-center gap-2 rounded-xl bg-gain/10 border border-gain/20 px-3 py-2 text-xs text-gain">
+            <div className="flex items-center gap-2 rounded-xl bg-gain/10 border border-gain/20 px-3 py-2 text-xs text-gain-ink">
               <CheckIcon className="h-4 w-4 shrink-0" />
               <span>{successMsg}</span>
             </div>

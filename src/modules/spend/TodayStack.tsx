@@ -31,7 +31,7 @@ const TONE: Record<Tone, { card: string; text: string }> = {
   loss: ATTENTION_TONE.loss,
   warn: ATTENTION_TONE.warn,
   brand: { card: 'border-brand/30 bg-brand-soft/70', text: 'text-brand-ink' },
-  gain: { card: 'border-gain/30 bg-gain-soft', text: 'text-gain' },
+  gain: { card: 'border-gain/30 bg-gain-soft', text: 'text-gain-ink' },
 }
 // Most urgent first, both for groups and for the colour of a folded group
 const RANK: Record<Tone, number> = { loss: 0, warn: 1, brand: 2, gain: 3 }
@@ -381,12 +381,12 @@ function DcaHint() {
   }
   return (
     <div className="flex items-start gap-3 rounded-2xl border border-dashed border-line-strong px-4 py-3 text-xs leading-relaxed text-ink-muted animate-rise">
-      <HelpCircleIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+      <HelpCircleIcon className="mt-0.5 h-4 w-4 shrink-0 text-link" />
       <p className="min-w-0 flex-1">
         <span className="font-semibold text-ink">Your DCA buys show up here on their buy day.</span> Spendiary doesn't buy for you: after you buy at
         your broker, tap Log. Not buying this time? Tap Skip.
       </p>
-      <button type="button" onClick={dismiss} className="shrink-0 rounded-full px-2 py-1 font-semibold text-brand hover:underline cursor-pointer min-h-8">
+      <button type="button" onClick={dismiss} className="shrink-0 rounded-full px-2 py-1 font-semibold text-link hover:underline cursor-pointer min-h-8">
         Got it
       </button>
     </div>

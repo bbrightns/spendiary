@@ -128,14 +128,15 @@ components:
 ## 3. Colour
 
 ### Brand and sides
-- **Brand** (`--color-brand`): electric blue `#0066ff` in light, indigo `#4f46e5` in dark. Use it for focus rings, text links, selected states and progress bars. Never as a card or section fill.
+- **Brand** (`--color-brand`): electric blue `#0066ff` in light, indigo `#4f46e5` in dark. Use it for focus rings, selected states, progress bars and solid fills with white text. Never as a card or section fill.
+- **Brand-coloured text is `text-link`** (`--color-link`: `#005ce8` light, `#818cf8` dark), never `text-brand`: indigo text on the dark surface reads at 2.7:1. `link` keeps 5:1 or better on every surface in both themes. `lint:design` rejects `text-brand`.
 - **Two sides, two accents.** Spend is emerald (`SPEND_ACCENT_TEXT` in `src/components/tones.ts`); Invest is blue (`--color-invest`, the same in both themes). Side colour appears only in the Spend/Invest switch, the page eyebrow and the active nav item. It is not used to style cards or buttons.
 
 ### Neutrals
 `ink` carries most text. Use `ink-soft` for field labels and row values, `ink-muted` for captions and metadata, and `ink-faint` for placeholders and disabled text. Use `line` for card borders and dividers, and `line-strong` for input borders.
 
 ### Semantic colours
-- **gain / loss / warn** mean money going up, money going down, and something due or at risk. Use the `-soft` tint for backgrounds and the full colour for text and icons.
+- **gain / loss / warn** mean money going up, money going down, and something due or at risk. Use the `-soft` tint for backgrounds, the full colour for bars, fills, dots and chart strokes, and the **`-ink` colour for text and icons** (`text-gain-ink`, `text-loss-ink`, `text-warn-ink`). The full colours read at only 2.9–3.8:1 as text on white; the `-ink` ones (the 700 shades in light, unchanged in dark) keep 4.5:1 or better. `lint:design` rejects bare `text-gain` / `text-loss` / `text-warn`.
 - The same three colours are also used for **result feedback** (success and error toasts, the result popup) and **due states** (due today, overdue).
 - They are **never button fills for a normal save**. A green "Add to holding" or "Confirm" button is wrong; use the primary button. The only coloured button is `danger`, and only for destructive actions.
 - **White text on a colour needs a non-flipping token.** `gain` and `loss` turn light in dark mode, so `bg-gain text-white` goes unreadable. Use `bg-danger` (delete buttons, nav count badges) and `bg-gain-strong` / `hover:bg-gain-strong-hover` (selected month chips, "Log buy", "Mark received", done markers).
@@ -198,7 +199,7 @@ Rules:
 | ~~`success`~~ | Deprecated. Use `primary`. |
 
 - **Shape:** always a pill. Sizes are `md` (44px, the default for footers) and `sm` (36px, inside cards and headers).
-- **Text links:** `TextLink` (`text-sm font-semibold text-brand hover:underline`), like the "Manage" link on Spend Home. Use an arrow (`→`) only when the link leaves the page. Name the destination: "See analysis →", "Portfolio →".
+- **Text links:** `TextLink` (`text-sm font-semibold text-link hover:underline`), like the "Manage" link on Spend Home. Use an arrow (`→`) only when the link leaves the page. Name the destination: "See analysis →", "Portfolio →".
 - **Row actions:** `IconButton` (ghost, or brand for "buy more"). A small row confirm such as "Paid" is a `sm` pill in primary.
 - **Don't build buttons by hand.** A raw `<button>` with `bg-ink text-white` means `Button` is missing a feature; add it there instead.
 

@@ -874,7 +874,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {!isGeneralExpanded && (
-                <span className="text-xs text-brand font-medium">Tap to view / edit</span>
+                <span className="text-xs text-link font-medium">Tap to view / edit</span>
               )}
               <ChevronDownIcon
                 className={`h-4 w-4 text-ink-muted transition-transform duration-200 ${
@@ -983,7 +983,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
             {isUsd && tickerCheck.state !== 'idle' && (
               <p
                 className={`-mt-2 text-xs ${
-                  tickerCheck.state === 'ok' ? 'text-gain' : tickerCheck.state === 'checking' ? 'text-ink-muted' : 'text-loss'
+                  tickerCheck.state === 'ok' ? 'text-gain-ink' : tickerCheck.state === 'checking' ? 'text-ink-muted' : 'text-loss-ink'
                 }`}
               >
                 {tickerCheck.state === 'checking' && 'Checking ticker…'}
@@ -1144,7 +1144,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                   <span className="text-sm font-semibold tnum text-ink">
                     ฿{editing.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </span>
-                  <span className="ml-auto rounded-full bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">Live</span>
+                  <span className="ml-auto rounded-full bg-brand/10 px-2 py-0.5 text-xs font-semibold text-link">Live</span>
                 </div>
               </div>
             </div>
@@ -1248,7 +1248,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-ink-soft">Implied cost / gold baht</span>
-                  <span className="font-semibold tnum text-brand">
+                  <span className="font-semibold tnum text-link">
                     {thb(goldImpliedPrice * GRAMS_PER_BAHT_GOLD)}
                     {liveFx > 0 && ` ($${Math.round(goldThbPerGramToXauUsd(goldImpliedPrice, liveFx)).toLocaleString()}/oz XAUUSD)`}
                   </span>
@@ -1322,13 +1322,13 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
               {/* Card A: THB Investment Summary (Total THB Invested has a subtle edit option, rest read-only) */}
               <div className="rounded-2xl bg-surface-muted p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold text-brand">THB investment summary</p>
+                  <p className="text-xs font-bold text-link">THB investment summary</p>
                   {!isEditingThb && (
                     <button
                       type="button"
                       onClick={() => setIsEditingThb(true)}
                       aria-label="Edit THB cost basis manually"
-                      className="inline-flex items-center gap-1 rounded-md bg-brand/15 px-2 py-0.5 text-xs font-bold text-brand hover:bg-brand/25 active:scale-95 transition-all cursor-pointer"
+                      className="inline-flex items-center gap-1 rounded-md bg-brand/15 px-2 py-0.5 text-xs font-bold text-link hover:bg-brand/25 active:scale-95 transition-all cursor-pointer"
                     >
                       <PencilIcon className="h-3 w-3" />
                       EDIT THB
@@ -1344,7 +1344,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                         type="button"
                         onClick={() => setIsEditingThb(false)}
                         aria-label="Keep manually adjusted THB value"
-                        className="text-xs font-bold text-brand hover:underline cursor-pointer"
+                        className="text-xs font-bold text-link hover:underline cursor-pointer"
                       >
                         Keep value
                       </button>
@@ -1374,7 +1374,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                             setFxRateInput(formatCostOrFx(fxRate))
                           }}
                           aria-label="Reset THB cost basis to calculate from USD shares and cost"
-                          className="text-xs font-semibold text-brand hover:underline cursor-pointer"
+                          className="text-xs font-semibold text-link hover:underline cursor-pointer"
                         >
                           Reset to calculated (฿{Number((sharesInputVal * avgCostUsdVal * liveFx).toFixed(2)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} @ {Number(liveFx.toFixed(2))})
                         </button>
@@ -1399,14 +1399,14 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
 
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-ink-soft">Net profit / loss (THB)</span>
-                  <span className={`font-bold tnum ${netPnlThb >= 0 ? 'text-gain' : 'text-loss'}`}>
+                  <span className={`font-bold tnum ${netPnlThb >= 0 ? 'text-gain-ink' : 'text-loss-ink'}`}>
                     {formattedNetPnlThb}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-ink-soft">Net return (%)</span>
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${netPnlThb >= 0 ? 'bg-gain-soft text-gain' : 'bg-loss-soft text-loss'}`}>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${netPnlThb >= 0 ? 'bg-gain-soft text-gain-ink' : 'bg-loss-soft text-loss-ink'}`}>
                     {netPnlThb >= 0 ? '+' : ''}{netReturnPct.toFixed(2)}%
                   </span>
                 </div>
@@ -1414,7 +1414,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
 
               {/* Card B: USD Position Details (USD Focus - Editable) */}
               <div className="rounded-2xl border border-line p-4 space-y-4">
-                <p className="text-xs font-bold text-brand">USD position details</p>
+                <p className="text-xs font-bold text-link">USD position details</p>
                 
                 <NumberField
                   label="Total shares held"
@@ -1447,7 +1447,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                       <span className="text-sm font-semibold tnum text-ink">
                         {livePriceUsd !== null ? `$${livePriceUsd.toFixed(2)}` : '—'}
                       </span>
-                      <span className="ml-auto rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-bold text-brand">Live</span>
+                      <span className="ml-auto rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-bold text-link">Live</span>
                     </div>
                   </div>
                 ) : (
@@ -1536,11 +1536,11 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
             type="checkbox"
             checked={isLocked}
             onChange={(e) => setIsLocked(e.target.checked)}
-            className="h-4 w-4 rounded border-line text-brand focus:ring-brand accent-brand cursor-pointer"
+            className="h-4 w-4 rounded border-line text-link focus:ring-brand accent-brand cursor-pointer"
           />
           <div className="flex-1 text-xs">
             <span className="font-semibold text-ink flex items-center gap-1.5 text-sm">
-              <LockClosedIcon className="h-4 w-4 text-warn" />
+              <LockClosedIcon className="h-4 w-4 text-warn-ink" />
               Lock this asset
             </span>
             <p className="text-ink-muted mt-0.5">

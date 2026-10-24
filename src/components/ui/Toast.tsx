@@ -4,22 +4,22 @@ import { CheckIcon, AlertIcon, SparkleIcon, CloseIcon } from '../icons'
 
 const TYPE_CONFIG = {
   success: {
-    icon: <CheckIcon className="h-4 w-4 shrink-0 text-gain" strokeWidth={2.4} />,
+    icon: <CheckIcon className="h-4 w-4 shrink-0 text-gain-ink" strokeWidth={2.4} />,
     style: 'border-gain/30 bg-surface text-ink',
-    badge: 'bg-gain-soft text-gain',
+    badge: 'bg-gain-soft text-gain-ink',
   },
   error: {
-    icon: <AlertIcon className="h-4 w-4 shrink-0 text-loss" />,
+    icon: <AlertIcon className="h-4 w-4 shrink-0 text-loss-ink" />,
     style: 'border-loss/30 bg-surface text-ink',
-    badge: 'bg-loss-soft text-loss',
+    badge: 'bg-loss-soft text-loss-ink',
   },
   warn: {
-    icon: <AlertIcon className="h-4 w-4 shrink-0 text-warn" />,
+    icon: <AlertIcon className="h-4 w-4 shrink-0 text-warn-ink" />,
     style: 'border-warn/30 bg-surface text-ink',
-    badge: 'bg-warn-soft text-warn',
+    badge: 'bg-warn-soft text-warn-ink',
   },
   info: {
-    icon: <SparkleIcon className="h-4 w-4 shrink-0 text-brand" strokeWidth={2} />,
+    icon: <SparkleIcon className="h-4 w-4 shrink-0 text-link" strokeWidth={2} />,
     style: 'border-brand/30 bg-surface text-ink',
     badge: 'bg-brand-soft text-brand-ink',
   },

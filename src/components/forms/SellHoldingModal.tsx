@@ -177,7 +177,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     <button
       type="button"
       onClick={handleSellAll}
-      className="rounded-md bg-surface-muted hover:bg-brand/15 hover:text-brand border border-line hover:border-brand/30 px-2 py-0.5 text-xs font-bold text-ink-muted active:scale-95 transition-all cursor-pointer shadow-2xs"
+      className="rounded-md bg-surface-muted hover:bg-brand/15 hover:text-link border border-line hover:border-brand/30 px-2 py-0.5 text-xs font-bold text-ink-muted active:scale-95 transition-all cursor-pointer shadow-2xs"
       title="Sell everything (100%)"
     >
       100%
@@ -459,7 +459,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     >
       <div className="space-y-4">
         {holding.isLocked && (
-          <div className="rounded-2xl border border-warn/30 bg-warn/10 p-3.5 flex items-start gap-2.5 text-xs text-warn">
+          <div className="rounded-2xl border border-warn/30 bg-warn/10 p-3.5 flex items-start gap-2.5 text-xs text-warn-ink">
             <LockClosedIcon className="h-4 w-4 shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-sm">This asset is locked</p>
@@ -468,7 +468,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
           </div>
         )}
         {!holding.isLocked && isCurrentLocLocked && (
-          <div className="rounded-2xl border border-warn/30 bg-warn/10 p-3.5 flex items-start gap-2.5 text-xs text-warn">
+          <div className="rounded-2xl border border-warn/30 bg-warn/10 p-3.5 flex items-start gap-2.5 text-xs text-warn-ink">
             <LockClosedIcon className="h-4 w-4 shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-sm">This location is locked</p>
@@ -608,7 +608,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                   <button
                     type="button"
                     onClick={() => setBtcThbProceeds(estBtcProceeds)}
-                    className="text-brand hover:underline font-medium cursor-pointer"
+                    className="text-link hover:underline font-medium cursor-pointer"
                   >
                     Use this
                   </button>
@@ -711,7 +711,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                   <button
                     type="button"
                     onClick={() => setGoldThbProceeds(estGoldProceeds)}
-                    className="text-brand hover:underline font-medium cursor-pointer"
+                    className="text-link hover:underline font-medium cursor-pointer"
                   >
                     Use this
                   </button>
@@ -845,7 +845,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                     />
                   </div>
                   {effectiveFee > 0 && (
-                    <div className="flex items-center justify-between text-xs text-loss bg-loss/10 border border-loss/20 rounded-lg px-2.5 py-1">
+                    <div className="flex items-center justify-between text-xs text-loss-ink bg-loss/10 border border-loss/20 rounded-lg px-2.5 py-1">
                       <span>Fee taken:</span>
                       <span className="font-bold tnum">
                         -฿{effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({grossProceedsThb > 0 ? ((effectiveFee / grossProceedsThb) * 100).toFixed(2) : '0'}%)
@@ -866,8 +866,8 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
               <span
                 className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold tnum ${
                   realizedPnL >= 0
-                    ? 'bg-gain/15 text-gain border border-gain/20'
-                    : 'bg-loss/15 text-loss border border-loss/20'
+                    ? 'bg-gain/15 text-gain-ink border border-gain/20'
+                    : 'bg-loss/15 text-loss-ink border border-loss/20'
                 }`}
               >
                 {realizedPnL >= 0 ? '+' : ''}
@@ -879,7 +879,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
               <span>Left after sale</span>
               <span className="font-medium tnum">
                 {isFullSell ? (
-                  <span className="text-loss font-semibold">
+                  <span className="text-loss-ink font-semibold">
                     0 {label} (sold everything)
                   </span>
                 ) : (

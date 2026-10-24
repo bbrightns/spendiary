@@ -166,7 +166,7 @@ function HeroStat({ label, value, sub, color }: {
     <div className="min-w-0">
       <p className="text-xs font-medium text-ink-muted truncate">{label}</p>
       <p className={`mt-0.5 font-display text-base font-extrabold tnum leading-none truncate ${
-        color === 'gain' ? 'text-gain' : color === 'loss' ? 'text-loss' : 'text-ink'
+        color === 'gain' ? 'text-gain-ink' : color === 'loss' ? 'text-loss-ink' : 'text-ink'
       }`}>{value}</p>
       {sub && <p className="mt-0.5 text-xs text-ink-faint truncate">{sub}</p>}
     </div>
@@ -227,8 +227,8 @@ function Row({ label, value, bold, highlight, hint }: {
       <span className="text-ink-muted min-w-0 flex-1 leading-snug">{label}</span>
       <div className="text-right shrink-0">
         <span className={`tnum font-semibold ${
-          highlight === 'gain' ? 'text-gain' :
-          highlight === 'loss' ? 'text-loss' :
+          highlight === 'gain' ? 'text-gain-ink' :
+          highlight === 'loss' ? 'text-loss-ink' :
           bold ? 'font-bold text-ink' : 'text-ink-soft'
         } leading-none`}>{value}</span>
         {hint && <p className="mt-0.5 text-xs text-ink-faint">{hint}</p>}
@@ -641,7 +641,7 @@ export function Retirement() {
                     : 'Enter your monthly spending to calculate'}
                 </p>
               </div>
-              <div className="h-12 w-12 shrink-0 rounded-full bg-brand-soft text-brand flex items-center justify-center">
+              <div className="h-12 w-12 shrink-0 rounded-full bg-brand-soft text-link flex items-center justify-center">
                 <HourglassIcon className="h-5 w-5" />
               </div>
             </div>
@@ -698,7 +698,7 @@ export function Retirement() {
                   role="status"
                   aria-live="polite"
                   className={`rounded-full px-3.5 py-1.5 text-sm font-bold flex items-center gap-1.5 shrink-0 ${
-                    onTrack ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'
+                    onTrack ? 'bg-gain/10 text-gain-ink' : 'bg-loss/10 text-loss-ink'
                   }`}
                 >
                   {onTrack ? (
@@ -751,41 +751,41 @@ export function Retirement() {
                 <div className="mt-3 rounded-2xl border border-loss/20 bg-loss-soft px-4 py-4 space-y-1">
                   {/* Header */}
                   <div className="flex items-center gap-2 mb-3">
-                    <svg className="h-4 w-4 shrink-0 text-loss" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                    <svg className="h-4 w-4 shrink-0 text-loss-ink" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8}>
                       <path d="M8 6v3M8 11.5v.5" strokeLinecap="round" />
                       <circle cx={8} cy={8} r={6.5} />
                     </svg>
-                    <p className="text-sm font-bold text-loss">Ways to reach your goal:</p>
+                    <p className="text-sm font-bold text-loss-ink">Ways to reach your goal:</p>
                   </div>
                   {/* Path items */}
                   <div className="space-y-3">
                     {monthlyGap !== null && monthlyGap > 0 && (
                       <div className="flex items-start gap-3">
-                        <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/20 text-xs font-bold text-loss">1</span>
+                        <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/20 text-xs font-bold text-loss-ink">1</span>
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-loss leading-snug">
+                          <p className="text-sm font-semibold text-loss-ink leading-snug">
                             Invest an extra <span className="font-bold">{thbCompact(monthlyGap)}</span> per month
                           </p>
-                          <p className="text-xs text-loss/60 mt-0.5">That makes {thbCompact(investMonthly + monthlyGap)} per month</p>
+                          <p className="text-xs text-loss-ink/60 mt-0.5">That makes {thbCompact(investMonthly + monthlyGap)} per month</p>
                         </div>
                       </div>
                     )}
                     {earliestViableAge !== null && earliestViableAge > plannedAge ? (
                       <div className="flex items-start gap-3">
-                        <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/20 text-xs font-bold text-loss">2</span>
+                        <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/20 text-xs font-bold text-loss-ink">2</span>
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-loss leading-snug">
+                          <p className="text-sm font-semibold text-loss-ink leading-snug">
                             Retire at age <span className="font-bold">{earliestViableAge}</span> instead of {Number(retireAge) || 40}
                           </p>
-                          <p className="text-xs text-loss/60 mt-0.5">
+                          <p className="text-xs text-loss-ink/60 mt-0.5">
                             That gives your money {earliestViableAge - (Number(retireAge) || 40)} more years to grow
                           </p>
                         </div>
                       </div>
                     ) : (
                       <div className="flex items-start gap-3">
-                        <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/10 text-xs font-bold text-loss/40">2</span>
-                        <p className="text-xs text-loss/50 leading-snug">Retiring later is still not enough within the age range you set</p>
+                        <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-loss/10 text-xs font-bold text-loss-ink/40">2</span>
+                        <p className="text-xs text-loss-ink/50 leading-snug">Retiring later is still not enough within the age range you set</p>
                       </div>
                     )}
                   </div>

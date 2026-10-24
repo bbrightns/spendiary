@@ -146,7 +146,7 @@ export function SpendAccounts() {
               </div>
             )}
             {hiddenCards.length > 0 && (
-              <div role="status" className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-warn/40 bg-warn-soft px-3 py-2 text-xs text-warn">
+              <div role="status" className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-warn/40 bg-warn-soft px-3 py-2 text-xs text-warn-ink">
                 <span className="min-w-0">
                   <span className="font-bold">
                     {hiddenCards.length} of {cards.length} cards hidden
@@ -197,7 +197,7 @@ export function SpendAccounts() {
             <div className="flex items-center justify-between px-1">
               <h2 className="font-display text-lg font-extrabold text-ink">Wallets</h2>
               <div className="flex items-center gap-3">
-                <button type="button" onClick={() => navigate('/cash')} className="text-sm font-semibold text-brand hover:underline cursor-pointer">
+                <button type="button" onClick={() => navigate('/cash')} className="text-sm font-semibold text-link hover:underline cursor-pointer">
                   Manage in Cash
                 </button>
                 {wallets.length > 1 && <ArrangeButton label="Arrange wallets" onClick={() => setArrange('wallets')} />}
@@ -273,7 +273,7 @@ export function SpendAccounts() {
                         }}
                         aria-pressed={on}
                         aria-label={on ? `Unfavorite ${w.name}` : `Favorite ${w.name}`}
-                        className={`-mr-1.5 -mt-1.5 grid h-8 w-8 place-items-center rounded-full transition-colors cursor-pointer hover:bg-surface-muted ${on ? 'text-warn' : 'text-ink-faint'}`}
+                        className={`-mr-1.5 -mt-1.5 grid h-8 w-8 place-items-center rounded-full transition-colors cursor-pointer hover:bg-surface-muted ${on ? 'text-warn-ink' : 'text-ink-faint'}`}
                       >
                         <StarIcon filled={on} className="h-3.5 w-3.5" />
                       </button>
@@ -287,22 +287,22 @@ export function SpendAccounts() {
                       </p>
                       {/* Satang in small type so it still fits a third of a phone; millions go compact.
                           The gaps grow with the tile: none on a small phone, where the tile is full */}
-                      <p className={`truncate mt-[clamp(0px,calc((100cqw_-_90px)*0.2),6px)] font-display text-[14px] min-[380px]:text-[15px] font-extrabold leading-tight tracking-tight tnum ${overdrawn ? 'text-loss' : 'text-ink'}`}>
+                      <p className={`truncate mt-[clamp(0px,calc((100cqw_-_90px)*0.2),6px)] font-display text-[14px] min-[380px]:text-[15px] font-extrabold leading-tight tracking-tight tnum ${overdrawn ? 'text-loss-ink' : 'text-ink'}`}>
                         {Math.abs(w.balance) >= 1_000_000 ? (
                           thbCompact(w.balance)
                         ) : (
                           <>
                             {thbSigned(w.balance, true).slice(0, -3)}
-                            <span className={`text-2xs font-bold ${overdrawn ? 'text-loss/70' : 'text-ink-muted'}`}>{thbSigned(w.balance, true).slice(-3)}</span>
+                            <span className={`text-2xs font-bold ${overdrawn ? 'text-loss-ink/70' : 'text-ink-muted'}`}>{thbSigned(w.balance, true).slice(-3)}</span>
                           </>
                         )}
                       </p>
                       <p className="truncate mt-[clamp(0px,calc((100cqw_-_90px)*0.12),4px)] text-2xs leading-tight text-ink-muted tnum">
                         {overdrawn ? (
-                          <span className="font-bold text-loss">Overdrawn</span>
+                          <span className="font-bold text-loss-ink">Overdrawn</span>
                         ) : f ? (
                           <>
-                            <span className="text-gain">+{compact(f.in)}</span> · −{compact(f.out)}
+                            <span className="text-gain-ink">+{compact(f.in)}</span> · −{compact(f.out)}
                           </>
                         ) : (
                           'No activity'

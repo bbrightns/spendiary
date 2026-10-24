@@ -193,8 +193,8 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
             <span className="font-semibold text-ink">Total planned: {thb(totalAllocated)}</span>
           </div>
           <div className="ml-6 mt-1 flex flex-col gap-0.5">
-            <span>From salary: <span className="font-semibold text-gain">{thb(savingsFromSalary)}</span></span>
-            <span>From cash reserve: <span className="font-semibold text-brand dark:text-brand-ink">+{thb(cashDrawdown)}</span></span>
+            <span>From salary: <span className="font-semibold text-gain-ink">{thb(savingsFromSalary)}</span></span>
+            <span>From cash reserve: <span className="font-semibold text-link">+{thb(cashDrawdown)}</span></span>
           </div>
         </div>
       )}
@@ -509,8 +509,8 @@ export function DcaPlanner() {
           >
             {copied ? (
               <>
-                <CheckIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.2} />
-                <span className="text-gain">Copied MD!</span>
+                <CheckIcon className="h-4 w-4 text-gain-ink shrink-0" strokeWidth={2.2} />
+                <span className="text-gain-ink">Copied MD!</span>
               </>
             ) : (
               <>
@@ -549,7 +549,7 @@ export function DcaPlanner() {
                       {thb(fixedTotal + savingsTotal)}
                     </p>
                     <div className="flex flex-col items-start gap-0.5 @min-[19rem]:items-end">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-bold text-brand dark:text-brand-ink">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-bold text-link">
                         +{thb(requiredCashInjection)} from Cash
                       </span>
                     </div>
@@ -565,19 +565,19 @@ export function DcaPlanner() {
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-xs text-ink-muted">Spend · {periodLabel(spendPeriod, spend.settings.cycle)}</span>
-                    <span className={`block font-display text-base font-extrabold tnum ${spendMonth.net < 0 ? 'text-loss' : 'text-ink'}`}>
+                    <span className={`block font-display text-base font-extrabold tnum ${spendMonth.net < 0 ? 'text-loss-ink' : 'text-ink'}`}>
                       {spendMonth.net < 0 ? '−' : ''}
                       {thb(Math.abs(spendMonth.net))} left
                     </span>
                     <span className="block truncate text-xs text-ink-muted tnum">
-                      In <span className="text-gain">{thb(spendMonth.income)}</span> · out {thb(spendMonth.expense)}
+                      In <span className="text-gain-ink">{thb(spendMonth.income)}</span> · out {thb(spendMonth.expense)}
                     </span>
                   </span>
                   <span className="shrink-0 text-sm font-semibold text-brand-ink">Details →</span>
                 </Link>
               )}
               {salary <= 0 && (
-                <button onClick={openSalaryEdit} className="mt-4 text-sm font-semibold text-brand hover:underline cursor-pointer">
+                <button onClick={openSalaryEdit} className="mt-4 text-sm font-semibold text-link hover:underline cursor-pointer">
                   + Add monthly salary to see breakdown
                 </button>
               )}
@@ -609,7 +609,7 @@ export function DcaPlanner() {
                 {fixedItems.length === 0 ? (
                   <p className="text-sm text-ink-muted">
                     No fixed costs yet. Add rent, bills or family support as{' '}
-                    <Link to="/spend/recurring" className="font-semibold text-brand hover:underline">
+                    <Link to="/spend/recurring" className="font-semibold text-link hover:underline">
                       recurring bills in Spend
                     </Link>
                     .
@@ -692,7 +692,7 @@ export function DcaPlanner() {
             {/* Notice when sum of plan percentages does not equal 100% */}
             {savingsOpen && isPercentNot100 && (
               <div className="border-t border-line bg-warn-soft/40 px-5 py-2.5 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 text-warn font-medium">
+                <div className="flex items-center gap-2 text-warn-ink font-medium">
                   <AlertIcon className="h-4 w-4 shrink-0" />
                   <span>
                     Total planned weight is <strong>{totalPercentSum.toFixed(1)}%</strong> (difference of{' '}
@@ -812,18 +812,18 @@ export function DcaPlanner() {
                                       <span className="tnum"> · {planPct.toFixed(1)}%</span>
                                     </span>
                                   {showConfirmed && !skipped ? (
-                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-xs font-semibold text-gain">
+                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gain-soft px-2 py-0.5 text-xs font-semibold text-gain-ink">
                                       <CheckIcon className="h-3 w-3" strokeWidth={2.4} /> Logged
                                     </span>
                                   ) : isOverdue ? (
                                     // A missed buy costs nothing, so it's a reminder, not red like an overdue bill
-                                    <span className="inline-block shrink-0 text-xs font-bold text-warn">
+                                    <span className="inline-block shrink-0 text-xs font-bold text-warn-ink">
                                       Missed {buyDateThisPeriod(p).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                                     </span>
                                   ) : isToday || days <= 0 ? (
-                                    <span className="inline-block shrink-0 text-xs font-bold text-warn">Today</span>
+                                    <span className="inline-block shrink-0 text-xs font-bold text-warn-ink">Today</span>
                                   ) : days < 3 ? (
-                                    <span className="inline-block shrink-0 text-xs font-semibold text-warn">
+                                    <span className="inline-block shrink-0 text-xs font-semibold text-warn-ink">
                                       {days === 1 ? 'Tomorrow' : `in ${days} days`}
                                     </span>
                                   ) : (
@@ -870,7 +870,7 @@ export function DcaPlanner() {
                         <p className="font-display text-lg font-extrabold tnum leading-tight mt-0.5">
                           {salary > 0 ? (
                             <>
-                              <span className="text-gain">{Math.round((savingsTotal / salary) * 100)}%</span>
+                              <span className="text-gain-ink">{Math.round((savingsTotal / salary) * 100)}%</span>
                               <span className="text-sm font-medium text-ink dark:text-white ml-1.5">
                                 of Monthly Income
                               </span>
@@ -885,7 +885,7 @@ export function DcaPlanner() {
 
                       <div className="text-right">
                         <p className="text-xs text-ink-muted">Total DCA allocation</p>
-                        <p className={`font-display text-base font-extrabold tnum mt-0.5 ${isPercentNot100 ? 'text-warn' : 'text-gain'}`}>
+                        <p className={`font-display text-base font-extrabold tnum mt-0.5 ${isPercentNot100 ? 'text-warn-ink' : 'text-gain-ink'}`}>
                           {totalPercentSum.toFixed(1)}%
                         </p>
                       </div>
@@ -903,7 +903,7 @@ export function DcaPlanner() {
                     <p className="text-xs font-semibold text-ink-faint">
                       Dividend income
                     </p>
-                    <span className="rounded-full bg-gain/15 text-gain px-2 py-0.5 text-xs font-bold">
+                    <span className="rounded-full bg-gain/15 text-gain-ink px-2 py-0.5 text-xs font-bold">
                       {MONTH_NAMES[currentMonth - 1]}
                     </span>
                   </div>
@@ -952,7 +952,7 @@ export function DcaPlanner() {
                             <div className="flex items-center gap-3 shrink-0">
                               {estNet > 0 && (
                                 <div className="text-right hidden sm:block">
-                                  <span className="font-display text-sm font-bold text-gain tnum">
+                                  <span className="font-display text-sm font-bold text-gain-ink tnum">
                                     ~{thb(estNet)}
                                   </span>
                                   <p className="text-xs text-ink-muted">Est. Net</p>
@@ -960,7 +960,7 @@ export function DcaPlanner() {
                               )}
 
                               {isReceived ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-3 py-1.5 text-xs font-semibold text-gain">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-3 py-1.5 text-xs font-semibold text-gain-ink">
                                   <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.4} /> Confirmed
                                 </span>
                               ) : (

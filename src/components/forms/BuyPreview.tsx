@@ -38,7 +38,7 @@ export function BuyPreview({ paid, got, total, totalSub, warning, details = [] }
       </dl>
 
       {warning && (
-        <p role="status" className="mt-3 flex items-start gap-2 rounded-xl bg-warn-soft px-3 py-2 text-xs font-medium text-warn">
+        <p role="status" className="mt-3 flex items-start gap-2 rounded-xl bg-warn-soft px-3 py-2 text-xs font-medium text-warn-ink">
           <AlertIcon className="mt-px h-3.5 w-3.5 shrink-0" />
           <span>{warning}</span>
         </p>

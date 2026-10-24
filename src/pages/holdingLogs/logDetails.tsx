@@ -59,7 +59,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
             <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
               <span className="truncate">Net dividend</span>
             </span>
-            <div className="text-sm sm:text-base font-black tracking-tight text-gain truncate mt-0.5">
+            <div className="text-sm sm:text-base font-black tracking-tight text-gain-ink truncate mt-0.5">
               {netDiv !== null ? `฿${netDiv.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
             </div>
             <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={cashAccName ? `Into ${cashAccName}` : 'Received into wallet'}>
@@ -72,7 +72,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
             <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
               <span className="truncate">Tax withheld (10%)</span>
             </span>
-            <div className="text-sm sm:text-base font-extrabold tracking-tight text-loss/90 truncate mt-0.5">
+            <div className="text-sm sm:text-base font-extrabold tracking-tight text-loss-ink/90 truncate mt-0.5">
               {tax !== null ? `-฿${tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
             </div>
             {gross !== null && (
@@ -124,7 +124,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                       <span className="whitespace-nowrap">{item.prevName}</span>
                       <span className="text-ink-faint text-xs">→</span>
-                      <span className="font-semibold text-brand whitespace-nowrap">{item.currName}</span>
+                      <span className="font-semibold text-link whitespace-nowrap">{item.currName}</span>
                     </div>
                   </div>
                 )}
@@ -139,10 +139,10 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                       <>
                         <span className="text-ink-muted text-xs">(New Account)</span>
                         <span className="text-ink-faint text-xs">→</span>
-                        <span className="font-bold text-gain whitespace-nowrap">
+                        <span className="font-bold text-gain-ink whitespace-nowrap">
                           {sym}{item.currBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
-                        <span className="rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap bg-gain/10 text-gain">
+                        <span className="rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap bg-gain/10 text-gain-ink">
                           +{sym}{item.currBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </>
@@ -152,7 +152,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                           {sym}{item.prevBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                         <span className="text-ink-faint text-xs">→</span>
-                        <span className="font-bold text-loss whitespace-nowrap">(Removed)</span>
+                        <span className="font-bold text-loss-ink whitespace-nowrap">(Removed)</span>
                       </>
                     ) : (
                       <>
@@ -164,13 +164,13 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                             <span className="text-ink-faint text-xs">→</span>
                           </>
                         )}
-                        <span className="font-bold text-brand whitespace-nowrap">
+                        <span className="font-bold text-link whitespace-nowrap">
                           {sym}{item.currBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                         {item.diff !== undefined && Math.abs(item.diff) > 0.001 && (
                           <span
                             className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${
-                              item.diff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'
+                              item.diff > 0 ? 'bg-gain/10 text-gain-ink' : 'bg-loss/10 text-loss-ink'
                             }`}
                           >
                             {item.diff > 0 ? '+' : ''}{sym}{Math.abs(item.diff).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -390,7 +390,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
             <span className="whitespace-nowrap">{prev.name}</span>
             <span className="text-ink-faint text-xs">→</span>
-            <span className="font-semibold text-brand whitespace-nowrap">{curr.name}</span>
+            <span className="font-semibold text-link whitespace-nowrap">{curr.name}</span>
           </div>
         </div>
       )}
@@ -402,7 +402,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
             <span className="rounded-md bg-surface px-1.5 py-0.5 tnum text-xs font-medium text-ink-muted border border-line">{prev.ticker}</span>
             <span className="text-ink-faint text-xs">→</span>
-            <span className="rounded-md bg-brand/10 border border-brand/20 px-1.5 py-0.5 tnum text-xs font-bold text-brand">{curr.ticker}</span>
+            <span className="rounded-md bg-brand/10 border border-brand/20 px-1.5 py-0.5 tnum text-xs font-bold text-link">{curr.ticker}</span>
           </div>
         </div>
       )}
@@ -464,11 +464,11 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                   <span className="truncate">{isGain ? 'Net profit' : 'Loss'}</span>
                 </span>
-                <div className={`text-sm sm:text-base font-black tracking-tight truncate mt-0.5 ${isGain ? 'text-gain' : 'text-loss'}`}>
+                <div className={`text-sm sm:text-base font-black tracking-tight truncate mt-0.5 ${isGain ? 'text-gain-ink' : 'text-loss-ink'}`}>
                   {pnl !== null ? `${isGain ? '+' : ''}${thb(pnl)}` : '-'}
                 </div>
                 {pct !== null && (
-                  <span className={`text-xs font-bold truncate mt-0.5 ${isGain ? 'text-gain' : 'text-loss'}`}>
+                  <span className={`text-xs font-bold truncate mt-0.5 ${isGain ? 'text-gain-ink' : 'text-loss-ink'}`}>
                     {isGain ? '+' : ''}{pct.toFixed(1)}%
                   </span>
                 )}
@@ -494,7 +494,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                         )}
                         <span className="font-bold text-ink">{sym}{item.currBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         {item.diff !== undefined && (
-                          <span className={`rounded px-1 text-xs font-bold ${item.diff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                          <span className={`rounded px-1 text-xs font-bold ${item.diff > 0 ? 'bg-gain/10 text-gain-ink' : 'bg-loss/10 text-loss-ink'}`}>
                             {item.diff > 0 ? '+' : ''}{sym}{Math.abs(item.diff).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         )}
@@ -526,9 +526,9 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                           <span className="whitespace-nowrap">{prevPriceDisplay}</span>
                           <span className="text-ink-faint text-xs">→</span>
-                          <span className="font-semibold text-brand whitespace-nowrap">{currPriceDisplay}</span>
+                          <span className="font-semibold text-link whitespace-nowrap">{currPriceDisplay}</span>
                           {priceDeltaBadge && (
-                            <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${priceDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                            <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${priceDeltaBadge.positive ? 'bg-gain/10 text-gain-ink' : 'bg-loss/10 text-loss-ink'}`}>
                               {priceDeltaBadge.text}
                             </span>
                           )}
@@ -543,12 +543,12 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                           <span className="whitespace-nowrap">{formatUnit(prevUnits)}</span>
                           <span className="text-ink-faint text-xs">→</span>
                           {currUnits === 0 ? (
-                            <span className="font-bold text-loss whitespace-nowrap">0 (all sold)</span>
+                            <span className="font-bold text-loss-ink whitespace-nowrap">0 (all sold)</span>
                           ) : (
-                            <span className="font-semibold text-brand whitespace-nowrap">{formatUnit(currUnits)}</span>
+                            <span className="font-semibold text-link whitespace-nowrap">{formatUnit(currUnits)}</span>
                           )}
                           {Math.abs(unitDiff) > 0.0001 && (
-                            <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${unitDiff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                            <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${unitDiff > 0 ? 'bg-gain/10 text-gain-ink' : 'bg-loss/10 text-loss-ink'}`}>
                               {formatUnitDiff(unitDiff)}
                             </span>
                           )}
@@ -566,9 +566,9 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                           <span className="whitespace-nowrap">{prevAvgCostDisplay}</span>
                           <span className="text-ink-faint text-xs">→</span>
-                          <span className="font-semibold text-brand whitespace-nowrap">{currAvgCostDisplay}</span>
+                          <span className="font-semibold text-link whitespace-nowrap">{currAvgCostDisplay}</span>
                           {avgCostDeltaBadge && (
-                            <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${avgCostDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-surface-muted text-ink-muted'}`}>
+                            <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${avgCostDeltaBadge.positive ? 'bg-gain/10 text-gain-ink' : 'bg-surface-muted text-ink-muted'}`}>
                               {avgCostDeltaBadge.text}
                             </span>
                           )}
@@ -641,7 +641,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                   <span className="truncate">Units received</span>
                 </span>
-                <div className="text-sm sm:text-base font-extrabold tracking-tight text-gain truncate mt-0.5">
+                <div className="text-sm sm:text-base font-extrabold tracking-tight text-gain-ink truncate mt-0.5">
                   {txDetails.sharesDisplay && txDetails.sharesDisplay !== '-' ? txDetails.sharesDisplay : (unitDiff > 0 ? formatUnitDiff(unitDiff) : '-')}
                 </div>
                 {txDetails.sharesDisplaySecondary && (
@@ -687,7 +687,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                         )}
                         <span className="font-bold text-ink">{sym}{item.currBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         {item.diff !== undefined && (
-                          <span className={`rounded px-1 text-xs font-bold ${item.diff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                          <span className={`rounded px-1 text-xs font-bold ${item.diff > 0 ? 'bg-gain/10 text-gain-ink' : 'bg-loss/10 text-loss-ink'}`}>
                             {item.diff > 0 ? '+' : ''}{sym}{Math.abs(item.diff).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         )}
@@ -719,9 +719,9 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                           <span className="whitespace-nowrap">{prevPriceDisplay}</span>
                           <span className="text-ink-faint text-xs">→</span>
-                          <span className="font-semibold text-brand whitespace-nowrap">{currPriceDisplay}</span>
+                          <span className="font-semibold text-link whitespace-nowrap">{currPriceDisplay}</span>
                           {priceDeltaBadge && (
-                            <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${priceDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                            <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${priceDeltaBadge.positive ? 'bg-gain/10 text-gain-ink' : 'bg-loss/10 text-loss-ink'}`}>
                               {priceDeltaBadge.text}
                             </span>
                           )}
@@ -735,9 +735,9 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                           <span className="whitespace-nowrap">{formatUnit(prevUnits)}</span>
                           <span className="text-ink-faint text-xs">→</span>
-                          <span className="font-semibold text-brand whitespace-nowrap">{formatUnit(currUnits)}</span>
+                          <span className="font-semibold text-link whitespace-nowrap">{formatUnit(currUnits)}</span>
                           {Math.abs(unitDiff) > 0.0001 && (
-                            <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${unitDiff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                            <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${unitDiff > 0 ? 'bg-gain/10 text-gain-ink' : 'bg-loss/10 text-loss-ink'}`}>
                               {formatUnitDiff(unitDiff)}
                             </span>
                           )}
@@ -753,9 +753,9 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                           <span className="whitespace-nowrap">{prevAvgCostDisplay}</span>
                           <span className="text-ink-faint text-xs">→</span>
-                          <span className="font-semibold text-brand whitespace-nowrap">{currAvgCostDisplay}</span>
+                          <span className="font-semibold text-link whitespace-nowrap">{currAvgCostDisplay}</span>
                           {avgCostDeltaBadge && (
-                            <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${avgCostDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-surface-muted text-ink-muted'}`}>
+                            <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${avgCostDeltaBadge.positive ? 'bg-gain/10 text-gain-ink' : 'bg-surface-muted text-ink-muted'}`}>
                               {avgCostDeltaBadge.text}
                             </span>
                           )}
@@ -792,7 +792,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                   <span className="truncate">New price</span>
                 </span>
-                <div className="text-sm sm:text-base font-black tracking-tight text-brand truncate mt-0.5">
+                <div className="text-sm sm:text-base font-black tracking-tight text-link truncate mt-0.5">
                   {currPriceDisplay}
                 </div>
                 <span className="text-xs font-medium text-ink-faint truncate mt-0.5">
@@ -805,11 +805,11 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                   <span className="truncate">Change</span>
                 </span>
-                <div className={`text-sm sm:text-base font-black tracking-tight truncate mt-0.5 ${priceDeltaBadge?.positive ? 'text-gain' : 'text-loss'}`}>
+                <div className={`text-sm sm:text-base font-black tracking-tight truncate mt-0.5 ${priceDeltaBadge?.positive ? 'text-gain-ink' : 'text-loss-ink'}`}>
                   {priceDeltaBadge ? priceDeltaBadge.text.split(' ')[0] : '-'}
                 </div>
                 {priceDeltaBadge && priceDeltaBadge.text.includes('(') && (
-                  <span className={`text-xs font-bold truncate mt-0.5 ${priceDeltaBadge?.positive ? 'text-gain' : 'text-loss'}`}>
+                  <span className={`text-xs font-bold truncate mt-0.5 ${priceDeltaBadge?.positive ? 'text-gain-ink' : 'text-loss-ink'}`}>
                     {priceDeltaBadge.text.substring(priceDeltaBadge.text.indexOf('(')).replace(/[()]/g, '')}
                   </span>
                 )}
@@ -829,9 +829,9 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                   <span className="whitespace-nowrap">{prevPriceDisplay}</span>
                   <span className="text-ink-faint text-xs">→</span>
-                  <span className="font-semibold text-brand whitespace-nowrap">{currPriceDisplay}</span>
+                  <span className="font-semibold text-link whitespace-nowrap">{currPriceDisplay}</span>
                   {priceDeltaBadge && (
-                    <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${priceDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                    <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${priceDeltaBadge.positive ? 'bg-gain/10 text-gain-ink' : 'bg-loss/10 text-loss-ink'}`}>
                       {priceDeltaBadge.text}
                     </span>
                   )}
@@ -845,9 +845,9 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                   <span className="whitespace-nowrap">{formatUnit(prevUnits)}</span>
                   <span className="text-ink-faint text-xs">→</span>
-                  <span className="font-semibold text-brand whitespace-nowrap">{formatUnit(currUnits)}</span>
+                  <span className="font-semibold text-link whitespace-nowrap">{formatUnit(currUnits)}</span>
                   {Math.abs(unitDiff) > 0.0001 && (
-                    <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${unitDiff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                    <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${unitDiff > 0 ? 'bg-gain/10 text-gain-ink' : 'bg-loss/10 text-loss-ink'}`}>
                       {formatUnitDiff(unitDiff)}
                     </span>
                   )}
@@ -861,9 +861,9 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                   <span className="whitespace-nowrap">{prevAvgCostDisplay}</span>
                   <span className="text-ink-faint text-xs">→</span>
-                  <span className="font-semibold text-brand whitespace-nowrap">{currAvgCostDisplay}</span>
+                  <span className="font-semibold text-link whitespace-nowrap">{currAvgCostDisplay}</span>
                   {avgCostDeltaBadge && (
-                    <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${avgCostDeltaBadge.positive ? 'bg-gain/10 text-gain' : 'bg-surface-muted text-ink-muted'}`}>
+                    <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${avgCostDeltaBadge.positive ? 'bg-gain/10 text-gain-ink' : 'bg-surface-muted text-ink-muted'}`}>
                       {avgCostDeltaBadge.text}
                     </span>
                   )}
@@ -891,9 +891,9 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                               <span className="text-ink-faint text-xs">→</span>
                             </>
                           )}
-                          <span className="font-bold text-brand whitespace-nowrap">{sym}{item.currBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          <span className="font-bold text-link whitespace-nowrap">{sym}{item.currBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           {item.diff !== undefined && (
-                            <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${item.diff > 0 ? 'bg-gain/10 text-gain' : 'bg-loss/10 text-loss'}`}>
+                            <span className={`rounded-md px-1.5 py-0.5 text-xs font-bold whitespace-nowrap ${item.diff > 0 ? 'bg-gain/10 text-gain-ink' : 'bg-loss/10 text-loss-ink'}`}>
                               {item.diff > 0 ? '+' : ''}{sym}{Math.abs(item.diff).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           )}

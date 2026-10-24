@@ -68,7 +68,7 @@ export function FormActions({ editing, canSave, onSave, onDelete, submitLabel, h
               'inline-flex h-11 shrink-0 items-center justify-center rounded-full transition-all duration-200 border text-sm font-semibold',
               confirm
                 ? 'px-4 bg-danger border-danger text-white hover:bg-danger-hover'
-                : 'w-11 border-loss/25 bg-loss-soft text-loss hover:bg-loss/15',
+                : 'w-11 border-loss/25 bg-loss-soft text-loss-ink hover:bg-loss/15',
             ].join(' ')}
             aria-label={confirm ? 'Confirm delete' : 'Delete'}
           >

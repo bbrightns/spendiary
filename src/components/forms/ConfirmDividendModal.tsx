@@ -268,13 +268,13 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
                 type="checkbox"
                 checked={deductTax}
                 onChange={(e) => setDeductTax(e.target.checked)}
-                className="h-4 w-4 rounded-md border-line text-brand focus:ring-brand/30"
+                className="h-4 w-4 rounded-md border-line text-link focus:ring-brand/30"
               />
               <span className="text-xs font-medium text-ink">
                 Tax withheld (10%)
               </span>
             </label>
-            <span className="text-xs font-semibold text-loss tnum">
+            <span className="text-xs font-semibold text-loss-ink tnum">
               {taxAmount > 0 ? `-${formatCur(taxAmount)}` : `${currencyPrefix}0.00`}
             </span>
           </div>
@@ -286,7 +286,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
               <p className="text-xs text-ink-muted">What actually lands in your account</p>
             </div>
             <div className="text-right">
-              <span className="font-display text-xl font-extrabold text-gain tnum">
+              <span className="font-display text-xl font-extrabold text-gain-ink tnum">
                 {netAmount > 0 ? formatCur(netAmount) : `${currencyPrefix}0.00`}
               </span>
             </div>

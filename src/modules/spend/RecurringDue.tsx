@@ -60,7 +60,7 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
             <span className="block text-sm font-bold text-ink">Set up bills that repeat</span>
             <span className="block text-xs text-ink-muted">Rent, phone, subscriptions, salary. Log each one with one tap when it's due.</span>
           </span>
-          <span className="shrink-0 text-sm font-semibold text-brand">Add →</span>
+          <span className="shrink-0 text-sm font-semibold text-link">Add →</span>
         </Link>
       </Card>
     )
@@ -93,7 +93,7 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
                   </span>
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-ink">{rec.name}</span>
-                    <span className="block text-xs font-semibold text-warn">
+                    <span className="block text-xs font-semibold text-warn-ink">
                       {late === 0 ? 'Due today' : `Due ${shortDay(date)}`} · {thb(rec.amount)}
                     </span>
                   </span>
@@ -153,7 +153,7 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
                 <span className="min-w-0 truncate text-ink-soft">
                   <span className="font-semibold text-ink">{shortDay(date)}</span> · {rec.name}
                 </span>
-                <span className={`shrink-0 font-semibold tnum ${rec.type === 'income' ? 'text-gain' : 'text-ink'}`}>
+                <span className={`shrink-0 font-semibold tnum ${rec.type === 'income' ? 'text-gain-ink' : 'text-ink'}`}>
                   {rec.type === 'income' ? '+' : ''}
                   {thb(rec.amount)}
                 </span>

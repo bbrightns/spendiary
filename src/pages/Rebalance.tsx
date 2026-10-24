@@ -147,10 +147,10 @@ export function Rebalance() {
     if (classTargetsSum === 100) {
       if (diff > 5) {
         actionLabel = `Buy ${thb(diff)}`
-        actionCls = 'text-gain font-semibold'
+        actionCls = 'text-gain-ink font-semibold'
       } else if (diff < -5) {
         actionLabel = `Sell ${thb(Math.abs(diff))}`
-        actionCls = 'text-loss font-semibold'
+        actionCls = 'text-loss-ink font-semibold'
       } else {
         actionLabel = 'Balanced'
         actionCls = 'text-ink-muted font-medium'
@@ -184,7 +184,7 @@ export function Rebalance() {
         const allocated = totalDeficit > 0 ? cashToDeploy * (def.deficit / totalDeficit) : 0
         if (allocated > 5) {
           row.actionLabel = `Add ${thb(allocated)}`
-          row.actionCls = 'text-brand font-semibold'
+          row.actionCls = 'text-link font-semibold'
         } else {
           row.actionLabel = 'Balanced'
           row.actionCls = 'text-ink-muted font-medium'
@@ -248,10 +248,10 @@ export function Rebalance() {
     if (holdingTargetsSum === 100) {
       if (diff > 5) {
         actionLabel = `Buy ${thb(diff)}`
-        actionCls = 'text-gain font-semibold'
+        actionCls = 'text-gain-ink font-semibold'
       } else if (diff < -5) {
         actionLabel = `Sell ${thb(Math.abs(diff))}`
-        actionCls = 'text-loss font-semibold'
+        actionCls = 'text-loss-ink font-semibold'
       } else {
         actionLabel = 'Balanced'
         actionCls = 'text-ink-muted font-medium'
@@ -288,7 +288,7 @@ export function Rebalance() {
     if (holdingTargetsSum === 100) {
       if (diff > 5) {
         actionLabel = `Buy ${thb(diff)}`
-        actionCls = 'text-gain font-semibold'
+        actionCls = 'text-gain-ink font-semibold'
       } else {
         actionLabel = 'Balanced'
         actionCls = 'text-ink-muted font-medium'
@@ -326,7 +326,7 @@ export function Rebalance() {
         const allocated = totalDeficit > 0 ? cashToDeploy * (def.deficit / totalDeficit) : 0
         if (allocated > 5) {
           row.actionLabel = `Add ${thb(allocated)}`
-          row.actionCls = 'text-brand font-semibold'
+          row.actionCls = 'text-link font-semibold'
         } else {
           row.actionLabel = 'Balanced'
           row.actionCls = 'text-ink-muted font-medium'
@@ -443,8 +443,8 @@ export function Rebalance() {
           >
             {copied ? (
               <>
-                <CheckIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.2} />
-                <span className="text-gain">Copied plan!</span>
+                <CheckIcon className="h-4 w-4 text-gain-ink shrink-0" strokeWidth={2.2} />
+                <span className="text-gain-ink">Copied plan!</span>
               </>
             ) : (
               <>
@@ -473,7 +473,7 @@ export function Rebalance() {
         <Card compact className="animate-rise flex flex-col justify-between">
           <div>
             <p className="text-xs font-medium text-ink-muted">Available liquid</p>
-            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-gain tnum truncate">
+            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-gain-ink tnum truncate">
               {thb(availCash)}
             </p>
           </div>
@@ -509,7 +509,7 @@ export function Rebalance() {
             />
             <span
               className={`text-xs font-semibold truncate ${
-                currentTargetsSum === 100 ? 'text-gain' : 'text-warn'
+                currentTargetsSum === 100 ? 'text-gain-ink' : 'text-warn-ink'
               }`}
             >
               {currentTargetsSum === 100 ? 'Targets add up to 100%' : `Targets add up to ${currentTargetsSum}%`}
@@ -558,7 +558,7 @@ export function Rebalance() {
                     <button
                       type="button"
                       onClick={() => setNewCash(Math.round(availCash))}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-gain/10 px-3 py-1 text-xs font-semibold text-gain hover:bg-gain/20 active:scale-95 transition-all cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-gain/10 px-3 py-1 text-xs font-semibold text-gain-ink hover:bg-gain/20 active:scale-95 transition-all cursor-pointer"
                     >
                       <span>Use available cash: {thb(availCash)}</span>
                     </button>
@@ -573,7 +573,7 @@ export function Rebalance() {
                     type="checkbox"
                     checked={smartRebalance}
                     onChange={(e) => setSmartRebalance(e.target.checked)}
-                    className="rounded border-line-strong text-brand focus:ring-brand/15 h-4 w-4"
+                    className="rounded border-line-strong text-link focus:ring-brand/15 h-4 w-4"
                   />
                   <span>Smart rebalance (buy only)</span>
                 </label>
@@ -589,10 +589,10 @@ export function Rebalance() {
                     type="checkbox"
                     checked={excludeSafeHaven}
                     onChange={(e) => handleToggleExcludeSafeHaven(e.target.checked)}
-                    className="rounded border-line-strong text-brand focus:ring-brand/15 h-4 w-4"
+                    className="rounded border-line-strong text-link focus:ring-brand/15 h-4 w-4"
                   />
                   <span className="flex items-center gap-1.5">
-                    <LockClosedIcon className="h-4 w-4 text-warn" />
+                    <LockClosedIcon className="h-4 w-4 text-warn-ink" />
                     <span>Exclude safe-haven and locked assets</span>
                   </span>
                 </label>
@@ -603,7 +603,7 @@ export function Rebalance() {
 
               {/* Targets Sum Warning */}
               {currentTargetsSum !== 100 && (
-                <div className="rounded-xl border border-warn/25 bg-warn-soft px-3.5 py-2.5 text-xs text-warn font-semibold flex items-center justify-between gap-2">
+                <div className="rounded-xl border border-warn/25 bg-warn-soft px-3.5 py-2.5 text-xs text-warn-ink font-semibold flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <svg className="h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.8}>
                       <path d="M8 5v4M8 11.5v.5" strokeLinecap="round" />
@@ -644,7 +644,7 @@ export function Rebalance() {
               </div>
 
               <div className="flex flex-col items-center">
-                <span className="text-xs font-bold text-brand mb-2">Target</span>
+                <span className="text-xs font-bold text-link mb-2">Target</span>
                 <DonutChart
                   segments={targetSegments}
                   size={120}
@@ -671,7 +671,7 @@ export function Rebalance() {
                       {ASSET_META[key].plural}
                     </span>
                     <span className="font-semibold tnum text-ink">
-                      {actualPct.toFixed(0)}% <span className="text-ink-muted font-normal">→</span> <span className="text-brand font-bold">{targetPct}%</span>
+                      {actualPct.toFixed(0)}% <span className="text-ink-muted font-normal">→</span> <span className="text-link font-bold">{targetPct}%</span>
                     </span>
                   </div>
                 )
@@ -769,12 +769,12 @@ export function Rebalance() {
                               {classTargetsSum === 100 ? (
                                 <span
                                   className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
-                                    row.actionCls.includes('text-gain')
-                                      ? 'bg-gain-soft text-gain'
-                                      : row.actionCls.includes('text-loss')
-                                      ? 'bg-loss-soft text-loss'
-                                      : row.actionCls.includes('text-brand')
-                                      ? 'bg-brand-soft text-brand'
+                                    row.actionCls.includes('text-gain-ink')
+                                      ? 'bg-gain-soft text-gain-ink'
+                                      : row.actionCls.includes('text-loss-ink')
+                                      ? 'bg-loss-soft text-loss-ink'
+                                      : row.actionCls.includes('text-link')
+                                      ? 'bg-brand-soft text-link'
                                       : 'bg-surface-muted text-ink-muted'
                                   }`}
                                 >
@@ -806,7 +806,7 @@ export function Rebalance() {
                               <p className="font-bold text-ink-soft text-sm mt-0.5 tnum">
                                 {thb(row.targetVal)}
                               </p>
-                              <p className="text-xs text-brand mt-0.5 tnum font-bold">
+                              <p className="text-xs text-link mt-0.5 tnum font-bold">
                                 {row.targetPct}% target
                               </p>
                             </div>
@@ -923,12 +923,12 @@ export function Rebalance() {
                               <td className="py-3 pl-3 text-right tnum font-bold text-xs">
                                 {classTargetsSum === 100 ? (
                                   <span className={`inline-block px-2.5 py-1 rounded-full text-xs ${
-                                    row.actionCls.includes('text-gain')
-                                      ? 'bg-gain-soft text-gain'
-                                      : row.actionCls.includes('text-loss')
-                                      ? 'bg-loss-soft text-loss'
-                                      : row.actionCls.includes('text-brand')
-                                      ? 'bg-brand-soft text-brand'
+                                    row.actionCls.includes('text-gain-ink')
+                                      ? 'bg-gain-soft text-gain-ink'
+                                      : row.actionCls.includes('text-loss-ink')
+                                      ? 'bg-loss-soft text-loss-ink'
+                                      : row.actionCls.includes('text-link')
+                                      ? 'bg-brand-soft text-link'
                                       : 'bg-surface-muted text-ink-muted'
                                   }`}>
                                     {row.actionLabel}
@@ -976,7 +976,7 @@ export function Rebalance() {
                                     {row.ticker || row.name}
                                   </p>
                                   {row.isPlanned && (
-                                    <span className="shrink-0 rounded bg-brand/15 px-1.5 py-0.2 text-xs font-extrabold text-brand">
+                                    <span className="shrink-0 rounded bg-brand/15 px-1.5 py-0.2 text-xs font-extrabold text-link">
                                       Planned
                                     </span>
                                   )}
@@ -1016,7 +1016,7 @@ export function Rebalance() {
                                   }}
                                   title="Remove planned asset"
                                   aria-label={`Remove planned asset ${row.name}`}
-                                  className="p-1.5 rounded-full text-ink-muted hover:text-loss hover:bg-loss-soft/30 transition-colors cursor-pointer"
+                                  className="p-1.5 rounded-full text-ink-muted hover:text-loss-ink hover:bg-loss-soft/30 transition-colors cursor-pointer"
                                 >
                                   <TrashIcon className="h-4 w-4" />
                                 </button>
@@ -1042,7 +1042,7 @@ export function Rebalance() {
                                 Projected value
                               </span>
                               <p className="font-bold text-ink-soft text-sm mt-0.5 tnum">{thb(row.targetVal)}</p>
-                              <p className="text-xs text-brand mt-0.5 tnum font-bold">
+                              <p className="text-xs text-link mt-0.5 tnum font-bold">
                                 {row.targetPct}% target
                               </p>
                             </div>
@@ -1092,12 +1092,12 @@ export function Rebalance() {
                               {holdingTargetsSum === 100 ? (
                                 <span
                                   className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
-                                    row.actionCls.includes('text-gain')
-                                      ? 'bg-gain-soft text-gain'
-                                      : row.actionCls.includes('text-loss')
-                                      ? 'bg-loss-soft text-loss'
-                                      : row.actionCls.includes('text-brand')
-                                      ? 'bg-brand-soft text-brand'
+                                    row.actionCls.includes('text-gain-ink')
+                                      ? 'bg-gain-soft text-gain-ink'
+                                      : row.actionCls.includes('text-loss-ink')
+                                      ? 'bg-loss-soft text-loss-ink'
+                                      : row.actionCls.includes('text-link')
+                                      ? 'bg-brand-soft text-link'
                                       : 'bg-surface-muted text-ink-muted'
                                   }`}
                                 >
@@ -1154,7 +1154,7 @@ export function Rebalance() {
                                     <div className="flex items-center gap-1.5 mt-0.5">
                                       <span className="truncate text-xs text-ink-muted">{row.name}</span>
                                       {row.isPlanned && (
-                                        <span className="shrink-0 rounded bg-brand/15 px-1.5 py-0.2 text-xs font-extrabold text-brand">
+                                        <span className="shrink-0 rounded bg-brand/15 px-1.5 py-0.2 text-xs font-extrabold text-link">
                                           Planned
                                         </span>
                                       )}
@@ -1198,12 +1198,12 @@ export function Rebalance() {
                               <td className="py-3 px-3 text-right tnum font-bold text-xs">
                                 {holdingTargetsSum === 100 ? (
                                   <span className={`inline-block px-2.5 py-1 rounded-full text-xs ${
-                                    row.actionCls.includes('text-gain')
-                                      ? 'bg-gain-soft text-gain'
-                                      : row.actionCls.includes('text-loss')
-                                      ? 'bg-loss-soft text-loss'
-                                      : row.actionCls.includes('text-brand')
-                                      ? 'bg-brand-soft text-brand'
+                                    row.actionCls.includes('text-gain-ink')
+                                      ? 'bg-gain-soft text-gain-ink'
+                                      : row.actionCls.includes('text-loss-ink')
+                                      ? 'bg-loss-soft text-loss-ink'
+                                      : row.actionCls.includes('text-link')
+                                      ? 'bg-brand-soft text-link'
                                       : 'bg-surface-muted text-ink-muted'
                                   }`}>
                                     {row.actionLabel}
@@ -1243,7 +1243,7 @@ export function Rebalance() {
                                         })
                                       }}
                                       title="Remove planned asset"
-                                      className="p-1.5 rounded-full text-ink-muted hover:text-loss hover:bg-loss-soft/30 transition-colors cursor-pointer"
+                                      className="p-1.5 rounded-full text-ink-muted hover:text-loss-ink hover:bg-loss-soft/30 transition-colors cursor-pointer"
                                     >
                                       <TrashIcon className="h-4 w-4" />
                                     </button>

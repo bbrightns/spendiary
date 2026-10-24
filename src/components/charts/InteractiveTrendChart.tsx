@@ -207,7 +207,7 @@ export function InteractiveTrendChart({
         <div className="flex flex-wrap items-center gap-2.5">
           <div
             className={`flex items-baseline gap-1 rounded-full px-3 py-1 text-sm font-bold ${
-              isUp ? 'bg-gain-soft text-gain' : 'bg-loss-soft text-loss'
+              isUp ? 'bg-gain-soft text-gain-ink' : 'bg-loss-soft text-loss-ink'
             }`}
           >
             <span>{isUp ? '▲' : '▼'} {Math.abs(activeChangePct).toFixed(1)}%</span>

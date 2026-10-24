@@ -57,7 +57,7 @@ export function ReorderSheet({ open, title, description, items, onMove, onReset,
     >
       {canReset && (
         <div className="-mt-1 mb-2 flex justify-end">
-          <button type="button" onClick={onReset} className="text-sm font-semibold text-brand hover:underline cursor-pointer">
+          <button type="button" onClick={onReset} className="text-sm font-semibold text-link hover:underline cursor-pointer">
             Reset to default order
           </button>
         </div>

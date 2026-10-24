@@ -231,7 +231,7 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
               showToast(`Reset to ${shipped!.label}`, 'info')
               onClose()
             }}
-            className="text-sm font-semibold text-brand hover:underline cursor-pointer"
+            className="text-sm font-semibold text-link hover:underline cursor-pointer"
           >
             Reset to default ({shipped!.label})
           </button>

@@ -34,7 +34,7 @@ function Stat({ label, value, tone = 'neutral', hint }: {
   tone?: 'neutral' | 'gain' | 'loss'
   hint?: string
 }) {
-  const toneClass = tone === 'gain' ? 'text-gain' : tone === 'loss' ? 'text-loss' : 'text-ink'
+  const toneClass = tone === 'gain' ? 'text-gain-ink' : tone === 'loss' ? 'text-loss-ink' : 'text-ink'
   return (
     <div className="rounded-2xl bg-surface-muted px-3.5 py-3">
       <p className="text-xs font-semibold text-ink-muted">{label}</p>
@@ -213,7 +213,7 @@ export function ActivitySummary() {
                 </p>
                 <p
                   className={`mt-1.5 font-display text-4xl font-extrabold tnum leading-none ${
-                    netProfit > 0 ? 'text-gain' : netProfit < 0 ? 'text-loss' : 'text-ink'
+                    netProfit > 0 ? 'text-gain-ink' : netProfit < 0 ? 'text-loss-ink' : 'text-ink'
                   }`}
                 >
                   {signedThb(netProfit)}

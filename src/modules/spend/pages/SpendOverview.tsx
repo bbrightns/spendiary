@@ -90,7 +90,7 @@ export function SpendOverview() {
           <>
             <Gauge pct={allowance.allowance > 0 ? allowance.spentToday / allowance.allowance : 1} strokeClass={st.stroke} />
             <div className="-mt-12">
-              <p className={`font-display text-4xl font-extrabold tracking-tight tnum ${allowance.leftToday < 0 ? 'text-loss' : 'text-ink'}`}>
+              <p className={`font-display text-4xl font-extrabold tracking-tight tnum ${allowance.leftToday < 0 ? 'text-loss-ink' : 'text-ink'}`}>
                 {allowance.leftToday < 0 ? '−' : ''}
                 {thb(Math.abs(allowance.leftToday))}
               </p>

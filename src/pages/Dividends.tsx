@@ -169,16 +169,16 @@ export function Dividends() {
           <Card compact className="animate-rise flex flex-col justify-between col-span-2 lg:col-span-1">
             <div>
               <div className="flex items-center justify-between gap-1">
-                <p className="text-xs font-semibold text-gain">
+                <p className="text-xs font-semibold text-gain-ink">
                   Expected this year
                 </p>
                 {annualDividendYieldPct > 0 && (
-                  <span className="inline-flex items-center rounded-full bg-gain/15 border border-gain/30 px-2 py-0.5 text-xs font-bold text-gain">
+                  <span className="inline-flex items-center rounded-full bg-gain/15 border border-gain/30 px-2 py-0.5 text-xs font-bold text-gain-ink">
                     ~{annualDividendYieldPct.toFixed(1)}% per year
                   </span>
                 )}
               </div>
-              <p className="mt-1 font-display text-xl sm:text-2xl font-extrabold text-gain tnum truncate">
+              <p className="mt-1 font-display text-xl sm:text-2xl font-extrabold text-gain-ink tnum truncate">
                 ~{thb(totalAnnualDividendNet)}
               </p>
             </div>
@@ -231,7 +231,7 @@ export function Dividends() {
                   <h2 className="truncate font-display text-lg font-extrabold text-ink">
                     Dividends due this month
                   </h2>
-                  <span className="rounded-full bg-gain/15 text-gain px-2 py-0.5 text-xs font-bold">
+                  <span className="rounded-full bg-gain/15 text-gain-ink px-2 py-0.5 text-xs font-bold">
                     {MONTH_NAMES[currentMonth - 1]}
                   </span>
                   {upcomingHoldings.length > 0 && (
@@ -317,7 +317,7 @@ export function Dividends() {
                                 {/* Line 1.2: yield | [edit button] */}
                                 <div className="flex items-center gap-2 mt-1 text-xs">
                                   {assetYieldPct > 0 ? (
-                                    <span className="inline-flex items-center rounded bg-gain/10 text-gain px-1.5 py-0.5 font-bold">
+                                    <span className="inline-flex items-center rounded bg-gain/10 text-gain-ink px-1.5 py-0.5 font-bold">
                                       ~{assetYieldPct.toFixed(1)}% per year
                                     </span>
                                   ) : (
@@ -327,7 +327,7 @@ export function Dividends() {
                                   <button
                                     type="button"
                                     onClick={() => setEditingHolding(h)}
-                                    className="inline-flex items-center text-brand hover:text-brand-ink font-semibold hover:underline cursor-pointer transition-colors"
+                                    className="inline-flex items-center text-link hover:text-brand-ink font-semibold hover:underline cursor-pointer transition-colors"
                                   >
                                     Edit dividend
                                   </button>
@@ -338,7 +338,7 @@ export function Dividends() {
                             {/* Right: amount to receive */}
                             {estNet > 0 && (
                               <div className="text-right shrink-0">
-                                <span className="font-display text-base sm:text-lg font-extrabold text-gain tnum">
+                                <span className="font-display text-base sm:text-lg font-extrabold text-gain-ink tnum">
                                   ~{thb(estNet)}
                                 </span>
                                 <p className="text-xs text-ink-muted">About (after tax)</p>
@@ -367,7 +367,7 @@ export function Dividends() {
                             <div className="shrink-0">
                               {isReceived ? (
                                 <div className="flex items-center gap-1.5">
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-3 py-1 text-xs font-bold text-gain">
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-gain-soft px-3 py-1 text-xs font-bold text-gain-ink">
                                     <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} /> Received
                                   </span>
                                   <button
@@ -517,10 +517,10 @@ export function Dividends() {
                       <td className="px-5 py-3.5 text-right font-medium text-ink tnum whitespace-nowrap">
                         {thb(r.grossAmount)}
                       </td>
-                      <td className="px-5 py-3.5 text-right font-medium text-loss tnum whitespace-nowrap">
+                      <td className="px-5 py-3.5 text-right font-medium text-loss-ink tnum whitespace-nowrap">
                         {r.taxAmount > 0 ? `-฿${r.taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '฿0.00'}
                       </td>
-                      <td className="px-5 py-3.5 text-right font-display font-extrabold text-gain tnum whitespace-nowrap">
+                      <td className="px-5 py-3.5 text-right font-display font-extrabold text-gain-ink tnum whitespace-nowrap">
                         {thb(r.netAmount)}
                       </td>
                       <td className="px-5 py-3.5 whitespace-nowrap text-ink-muted text-xs">
@@ -537,7 +537,7 @@ export function Dividends() {
                           type="button"
                           onClick={() => setDeletingRecord(r)}
                           aria-label={`Delete dividend for ${r.ticker}`}
-                          className="rounded-lg p-1 text-ink-muted hover:bg-loss/10 hover:text-loss transition-colors cursor-pointer"
+                          className="rounded-lg p-1 text-ink-muted hover:bg-loss/10 hover:text-loss-ink transition-colors cursor-pointer"
                         >
                           <TrashIcon className="h-4 w-4" />
                         </button>

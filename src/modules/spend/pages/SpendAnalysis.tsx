@@ -214,7 +214,7 @@ export function SpendAnalysis() {
             <p className="text-sm font-medium text-ink-muted">{isCurrent ? `Spent this ${rangeName}` : `Spent that ${rangeName}`}</p>
             <p className="mt-1 font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ink tnum truncate">{thb(totals.expense)}</p>
             {compare !== null && (
-              <p className={`mt-1 text-xs font-semibold tnum ${compare <= 0 ? 'text-gain' : SPENT_TONE.text}`}>
+              <p className={`mt-1 text-xs font-semibold tnum ${compare <= 0 ? 'text-gain-ink' : SPENT_TONE.text}`}>
                 {compare <= 0 ? `${thb(-compare)} less` : `${thb(compare)} more`}
                 <span className="font-normal text-ink-muted"> than last {rangeName} at this point</span>
               </p>
@@ -249,7 +249,7 @@ export function SpendAnalysis() {
                   <span className={`h-2 w-2 shrink-0 rounded-full ${over ? 'bg-loss' : 'bg-gain'}`} />
                   {over ? 'Over by' : 'Left'}
                 </span>
-                <span className={`mt-1 block truncate font-display text-base sm:text-lg font-extrabold tnum ${over ? 'text-loss' : 'text-ink'}`}>
+                <span className={`mt-1 block truncate font-display text-base sm:text-lg font-extrabold tnum ${over ? 'text-loss-ink' : 'text-ink'}`}>
                   {thb(Math.abs(totals.net))}
                 </span>
               </p>
@@ -295,7 +295,7 @@ export function SpendAnalysis() {
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-display text-lg font-extrabold text-ink">By category</h2>
             {range === 'month' && (
-              <Link to={settingsPath('category-budgets')} className="text-sm font-semibold text-brand hover:underline">
+              <Link to={settingsPath('category-budgets')} className="text-sm font-semibold text-link hover:underline">
                 Budgets
               </Link>
             )}
@@ -353,7 +353,7 @@ export function SpendAnalysis() {
                         </p>
                       )}
                       {b && (
-                        <p className={`mt-1 text-xs tnum ${state === 'over' ? 'font-semibold text-loss' : state === 'near' ? 'font-semibold text-warn' : 'text-ink-muted'}`}>
+                        <p className={`mt-1 text-xs tnum ${state === 'over' ? 'font-semibold text-loss-ink' : state === 'near' ? 'font-semibold text-warn-ink' : 'text-ink-muted'}`}>
                           {state === 'over' ? `Over by ${thb(amount - b)}` : `${thb(b - amount)} left`}
                         </p>
                       )}

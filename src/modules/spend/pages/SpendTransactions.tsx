@@ -267,7 +267,7 @@ export function SpendTransactions() {
           )}
           {earned > 0 && (
             <span>
-              Earned <b className="font-bold text-gain">{thb(earned, true)}</b>
+              Earned <b className="font-bold text-gain-ink">{thb(earned, true)}</b>
             </span>
           )}
         </div>

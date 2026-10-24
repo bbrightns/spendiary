@@ -507,7 +507,7 @@ export function HoldingLogs() {
               <button
                 type="button"
                 onClick={resetFilters}
-                className="font-medium text-brand hover:underline cursor-pointer"
+                className="font-medium text-link hover:underline cursor-pointer"
               >
                 Reset
               </button>
@@ -518,7 +518,7 @@ export function HoldingLogs() {
         {/* Edit mode bar: says the list is editable and holds bulk delete + Done */}
         {editMode && (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand/20 bg-brand/5 px-3 py-2 text-sm">
-            <span className="font-semibold text-brand">
+            <span className="font-semibold text-link">
               {selectedVisibleCount > 0 ? `${selectedLogIds.size} selected` : 'Editing: select, re-date or undo'}
             </span>
             <div className="flex items-center gap-2">
@@ -655,7 +655,7 @@ export function HoldingLogs() {
                           >
                             <div className="logs-table-date-main tnum flex items-center gap-1.5">
                               <span>{dateStr}</span>
-                              {editMode && <PencilIcon className="h-2.5 w-2.5 opacity-70 text-brand" />}
+                              {editMode && <PencilIcon className="h-2.5 w-2.5 opacity-70 text-link" />}
                             </div>
                             <div className="logs-table-time tnum">{timeStr}</div>
                           </td>
@@ -691,10 +691,10 @@ export function HoldingLogs() {
                           <td
                             className={`logs-table-cell logs-table-metric text-right whitespace-nowrap tnum font-bold ${
                               tx.sharesDisplay.startsWith('+')
-                                ? 'text-gain'
+                                ? 'text-gain-ink'
                                 : tx.sharesDisplay.startsWith('-')
-                                ? 'text-loss'
-                                : 'text-brand'
+                                ? 'text-loss-ink'
+                                : 'text-link'
                             }`}
                           >
                             <div>{tx.sharesDisplay}</div>
@@ -711,7 +711,7 @@ export function HoldingLogs() {
                             {log.action === 'sell' && log.realizedPnL !== undefined && (
                               <div
                                 className={`logs-table-delta text-xs font-bold mt-1 ${
-                                  log.realizedPnL >= 0 ? 'text-gain' : 'text-loss'
+                                  log.realizedPnL >= 0 ? 'text-gain-ink' : 'text-loss-ink'
                                 }`}
                               >
                                 {log.realizedPnL >= 0 ? '+' : ''}{thb(log.realizedPnL)}
@@ -770,7 +770,7 @@ export function HoldingLogs() {
                                   setUndoTarget(log)
                                 }}
                                 aria-label={`Undo activity for ${log.holdingName}`}
-                                className="rounded-lg px-2 py-1 text-xs font-bold text-loss hover:bg-loss/10 transition-colors cursor-pointer"
+                                className="rounded-lg px-2 py-1 text-xs font-bold text-loss-ink hover:bg-loss/10 transition-colors cursor-pointer"
                               >
                                 Undo
                               </button>
@@ -843,7 +843,7 @@ export function HoldingLogs() {
                                   {actionMeta.label}
                                 </span>
                                 {locName && (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 border border-brand/20 px-2 py-0.5 text-xs font-semibold text-brand">
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 border border-brand/20 px-2 py-0.5 text-xs font-semibold text-link">
                                     <WalletIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                     {locName}
                                   </span>
@@ -863,7 +863,7 @@ export function HoldingLogs() {
                               <button
                                 type="button"
                                 onClick={() => startEditDate(log)}
-                                className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-medium text-ink-faint hover:text-brand hover:bg-brand/5 transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-medium text-ink-faint hover:text-link hover:bg-brand/5 transition-colors cursor-pointer"
                                 title="Edit transaction"
                               >
                                 <time>
@@ -881,7 +881,7 @@ export function HoldingLogs() {
                                 type="button"
                                 onClick={() => setUndoTarget(log)}
                                 aria-label={`Undo activity for ${log.holdingName}`}
-                                className="rounded-lg px-2 py-1 text-xs font-bold text-loss/85 hover:text-loss hover:bg-loss/10 transition-colors cursor-pointer"
+                                className="rounded-lg px-2 py-1 text-xs font-bold text-loss-ink/85 hover:text-loss-ink hover:bg-loss/10 transition-colors cursor-pointer"
                               >
                                 Undo
                               </button>
@@ -950,7 +950,7 @@ export function HoldingLogs() {
           return (
             <div className="space-y-3">
               {isHoldingLocked && (
-                <div className="rounded-xl border border-warn/30 bg-warn/10 p-3 flex items-start gap-2.5 text-xs text-warn">
+                <div className="rounded-xl border border-warn/30 bg-warn/10 p-3 flex items-start gap-2.5 text-xs text-warn-ink">
                   <LockClosedIcon className="h-4 w-4 shrink-0 mt-0.5" />
                   <div>
                     <span className="font-semibold block text-sm">This asset is locked</span>

@@ -311,7 +311,7 @@ export function Dashboard() {
                   <p className="text-xs font-semibold text-ink-muted">Interest a year</p>
                   <p
                     title={cashInterest > 0 ? `~${thb(cashInterest)} a year` : undefined}
-                    className={`mt-1 truncate font-display text-2xl font-extrabold tracking-tight tnum ${cashInterest > 0 ? 'text-gain' : 'text-ink-muted'}`}
+                    className={`mt-1 truncate font-display text-2xl font-extrabold tracking-tight tnum ${cashInterest > 0 ? 'text-gain-ink' : 'text-ink-muted'}`}
                   >
                     {cashInterest > 0 ? `~${thbCompact(cashInterest)}` : '฿0'}
                   </p>
@@ -347,7 +347,7 @@ export function Dashboard() {
                       <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: cashColor(a.name, i) }} />
                       <span className="min-w-0 flex-1 truncate text-ink">{a.name}</span>
                       {a.interestRate !== undefined && a.interestRate > 0 && (
-                        <span className="shrink-0 text-xs font-semibold text-gain tnum">{a.interestRate}%</span>
+                        <span className="shrink-0 text-xs font-semibold text-gain-ink tnum">{a.interestRate}%</span>
                       )}
                       <span className="shrink-0 font-semibold tnum text-ink">{moneyCompact(a.balance, a.currency)}</span>
                     </button>
@@ -360,7 +360,7 @@ export function Dashboard() {
                   <span className="block text-sm font-bold text-ink">Add your cash accounts</span>
                   <span className="block text-xs text-ink-muted">Bank accounts, savings and wallets, with the interest they earn.</span>
                 </span>
-                <span className="shrink-0 text-sm font-semibold text-brand">Add →</span>
+                <span className="shrink-0 text-sm font-semibold text-link">Add →</span>
               </Link>
             )}
           </Card>
@@ -447,13 +447,13 @@ export function Dashboard() {
                           {(l.monthlyPayment || isInst) && (
                             <div className="shrink-0">
                               {dueInfo.status === 'completed' ? (
-                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-gain">
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-gain-ink">
                                   <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.5} />
                                   Paid off
                                 </span>
                               ) : dueInfo.status === 'paid' ? (
                                 <span className="inline-flex items-center gap-2 text-xs">
-                                  <span className="inline-flex items-center gap-1 font-semibold text-gain">
+                                  <span className="inline-flex items-center gap-1 font-semibold text-gain-ink">
                                     <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.5} />
                                     Paid
                                   </span>
@@ -504,7 +504,7 @@ export function Dashboard() {
                   <span className="block text-sm font-bold text-ink">No loans recorded</span>
                   <span className="block text-xs text-ink-muted">Add a loan or installment to see what's left to pay.</span>
                 </span>
-                <span className="shrink-0 text-sm font-semibold text-brand">Add →</span>
+                <span className="shrink-0 text-sm font-semibold text-link">Add →</span>
               </Link>
             )}
           </Card>
@@ -518,7 +518,7 @@ export function Dashboard() {
             <InteractiveNetWorthChart history={data.netWorthHistory!} />
           ) : (
             <div className="p-8 text-center">
-              <SparkleIcon className="h-6 w-6 mx-auto text-brand mb-2" />
+              <SparkleIcon className="h-6 w-6 mx-auto text-link mb-2" />
               <h3 className="font-display text-lg font-extrabold text-ink">Net worth over time</h3>
               <p className="text-sm text-ink-muted mt-1 max-w-md mx-auto">
                 Snapshot history will record daily as your balances and holdings update.
