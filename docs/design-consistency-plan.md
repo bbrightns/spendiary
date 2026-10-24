@@ -171,7 +171,9 @@ Done: status colours use `gain` / `loss` / `warn` / `brand` tokens; three new to
 
 ---
 
-## Phase 6: Guardrails (so the next agent can't undo this)
+## Phase 6: Guardrails (so the next agent can't undo this) [done]
+Done: `scripts/lint-design.mjs` runs as `npm run lint:design` and in CI after `lint`. Beyond the list below it also fails on raw Tailwind palette colours outside `tones.ts` and the allowlisted files, and reads defined animations from `src/index.css` rather than a fixed list. Emoji are checked in `.tsx` only (the portfolio Markdown export keeps its emoji).
+
 - **Add `npm run lint:design`** (a small Node script in `scripts/`) and run it in CI after `lint`. It fails on:
   - emoji in `src/**/*.tsx`
   - `[#` hex values in a `className` (landing page allowlisted)

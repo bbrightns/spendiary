@@ -329,7 +329,7 @@ export function Dividends() {
                                     onClick={() => setEditingHolding(h)}
                                     className="inline-flex items-center text-brand hover:text-brand-ink font-semibold hover:underline cursor-pointer transition-colors"
                                   >
-                                    Edit dividend ↗
+                                    Edit dividend
                                   </button>
                                 </div>
                               </div>

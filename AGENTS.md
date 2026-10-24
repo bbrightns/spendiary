@@ -23,7 +23,7 @@
 ## Ship Command
 When the user says **"ship"** (or "ship it", "ขึ้น vercel", "ปล่อยเลย"), that is the explicit command to push AND merge to `main`. Run every step without asking in between:
 1. Commit anything left over; review `git diff origin/main..HEAD`.
-2. Run "Bug Check Before Push" (`npm run build`, `npm run lint`, `npm test`), and the visual check if UI changed. Fix what fails.
+2. Run "Bug Check Before Push" (`npm run build`, `npm run lint`, `npm run lint:design`, `npm test`), and the visual check if UI changed. Fix what fails.
 3. Bump the version **once for the whole PR** (patch/minor per the rules above), only if `package.json` still equals the version on `origin/main`. Commit it.
 4. Push the branch, then open a PR into `main` (reuse it if one is already open).
 5. Wait for the `check` CI to go green. If it is red, fix, push and wait again.
@@ -33,6 +33,7 @@ When the user says **"ship"** (or "ship it", "ขึ้น vercel", "ปล่�
 Stop and ask before merging if: the change needs SQL run by hand in Supabase, a merge conflict means choosing between two behaviours, or CI keeps failing for a reason outside this change.
 
 ## Quality & Pre-Commit Verification Rules
+0. **Design**: Read `DESIGN.md` before any UI change; reuse the components it names. `npm run lint:design` (also in CI) fails on emoji, hex or raw palette colours, undefined animations, hand-rolled overlays and `variant="success"`.
 1. **Strict TypeScript & Unused Import Checking**:
    - Whenever code is replaced, refactored, or deleted, immediately inspect all imports and declared variables in the file.
    - Any unused import or variable (`TS6133`) MUST be removed before committing.
@@ -50,7 +51,7 @@ Stop and ask before merging if: the change needs SQL run by hand in Supabase, a 
 
 ## Bug Check Before Push
 1. **Review all unpushed changes**: Inspect the full diff of every unpushed commit (`git diff origin/main..HEAD`) and look for logic errors, broken edge cases, missing null/undefined handling, and stale state or data-migration issues in the saved data (the Supabase `user_data.payload`, migrated on load by `src/store/migrate.ts`).
-2. **Run the checks**: Run `npm run build` and fix any TypeScript errors, `npm run lint` and fix every error (warnings are reported but don't block), and `npm test` (Vitest unit tests for pure logic such as `src/modules/spend/logic.ts`), which must pass.
+2. **Run the checks**: Run `npm run build` and fix any TypeScript errors, `npm run lint` and fix every error (warnings are reported but don't block), `npm run lint:design` (must pass), and `npm test` (Vitest unit tests for pure logic such as `src/modules/spend/logic.ts`), which must pass.
 3. **Verify affected features**: Exercise every feature touched by the unpushed commits in the dev server or browser preview, and check the browser console for runtime errors and warnings.
 4. **Fix before pushing**: Any bug found MUST be fixed and committed before running `git push`. If a bug is out of scope, report it to the user and ask whether to fix it first.
 5. **Report the result**: State in the response what was checked and the outcome. If a check could not be run, say so explicitly.
@@ -64,4 +65,4 @@ Stop and ask before merging if: the change needs SQL run by hand in Supabase, a 
 - **Storage**: Supabase. One row per user in `public.user_data` (`id`, `payload` jsonb with the whole app data, `updated_at`), protected by Row Level Security (`supabase/sql/user_data_rls.sql`). `localStorage` only keeps per-device settings and caches.
 - **Database changes**: SQL is run by hand in the Supabase dashboard; never touch the real database from tests. Simulate Supabase with Playwright `route()` instead.
 - **Deploy**: Vercel builds `main`. `VITE_API_URL` / `VITE_API_TOKEN` come from Vercel's environment variables, not from git (`.env` is ignored).
-- **CI**: `.github/workflows/ci.yml` runs lint, test and build on every pull request and push to `main`.
+- **CI**: `.github/workflows/ci.yml` runs lint, lint:design, test and build on every pull request and push to `main`.
