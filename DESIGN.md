@@ -67,7 +67,7 @@ typography:
     base: "16px. Body copy, input text"
     lg: "18px. Card titles"
     xl: "20px. Modal titles"
-    3xl: "30px. Page titles"
+    3xl: "30px. Page titles (24px on phones)"
     4xl: "36px. Hero figures inside a card"
 rounded:
   chip: "9999px"
@@ -152,7 +152,7 @@ components:
 
 | Role | Class | Used for |
 |---|---|---|
-| Page title | `font-display text-3xl font-extrabold tracking-tight` | `PageHeader` only |
+| Page title | `font-display text-2xl sm:text-3xl font-extrabold tracking-tight` | `PageHeader` only |
 | Hero figure | `font-display text-4xl font-extrabold tracking-tight tnum` | The one big number in a card (Today, Total net worth) |
 | Modal title | `font-display text-xl font-extrabold tracking-tight` | `Modal` only |
 | Card title | `font-display text-lg font-extrabold` | The heading row of every card |

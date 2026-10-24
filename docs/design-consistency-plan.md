@@ -140,7 +140,14 @@ About 70 emoji in UI files. The Markdown export (`portfolioMarkdown.ts`) is out 
 
 ---
 
-## Phase 4: Page structure and type
+## Phase 4: Page structure and type [done]
+- **One name per page, sentence case**, in the nav, the page title and the palette.
+- **Labels:** about 120 Title Case labels, plus the shared asset, debt and filter labels, are sentence case.
+- **No all-caps labels** inside cards.
+- **Spend Home** uses `PageHeader`.
+- **Links:** one text-link style.
+- **Date quick-picks** use the chip style.
+- **Money** is set in tabular figures.
 | # | Change |
 |---|---|
 | 4.1 | `PageHeader` on Spend Home (date as eyebrow, greeting as title) and on the Spend settings sections. |
