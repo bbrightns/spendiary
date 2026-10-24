@@ -877,7 +877,7 @@ export function Portfolio() {
           {/* Asset Allocation card (Hero Overview & Allocation) */}
           <Card className="animate-rise card-bleed-mobile">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="font-display text-base font-bold text-ink">Port Allocation</h2>
+              <h2 className="font-display text-lg font-extrabold text-ink">Allocation</h2>
               <SegmentedControl
                 shape="rounded"
                 size="xs"
@@ -1013,9 +1013,7 @@ export function Portfolio() {
               <div className="px-4 sm:px-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <h3 className="font-display text-lg font-bold text-ink">
-                      Holdings & Assets
-                    </h3>
+                    <h3 className="font-display text-lg font-extrabold text-ink">Holdings</h3>
                     <p className="text-xs text-ink-muted">
                       {rows.length} of {data.holdings.length} positions shown
                     </p>
@@ -1207,7 +1205,7 @@ export function Portfolio() {
           ) : (
             <div className="p-8 text-center">
               <PortfolioIcon className="h-6 w-6 mx-auto text-brand mb-2" />
-              <h3 className="font-display font-bold text-ink">Portfolio Value Trend</h3>
+              <h3 className="font-display text-lg font-extrabold text-ink">Portfolio value over time</h3>
               <p className="text-sm text-ink-muted mt-1 max-w-md mx-auto">
                 Snapshot history will record daily as your holdings and prices update.
               </p>

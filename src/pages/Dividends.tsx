@@ -228,7 +228,7 @@ export function Dividends() {
               <span className="text-lg shrink-0">📅</span>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="font-display text-sm sm:text-base font-bold text-ink truncate">
+                  <h2 className="truncate font-display text-lg font-extrabold text-ink">
                     Dividends due this month
                   </h2>
                   <span className="rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-xs font-bold">
@@ -405,7 +405,7 @@ export function Dividends() {
         <Card className="animate-rise" padded={false}>
           <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-line">
             <div>
-              <h2 className="font-display text-base font-bold text-ink">Dividend history</h2>
+              <h2 className="font-display text-lg font-extrabold text-ink">Dividend history</h2>
               <p className="text-xs text-ink-muted mt-0.5">
                 Dividends you have recorded, with the tax withheld
               </p>

@@ -89,7 +89,7 @@ export function InteractiveTrendChart({
         <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-5">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="font-display text-base font-bold text-ink">{title}</h2>
+              <h2 className="font-display text-lg font-extrabold text-ink">{title}</h2>
               <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs font-semibold text-ink-muted">
                 1 snapshot
               </span>
@@ -187,7 +187,7 @@ export function InteractiveTrendChart({
       <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-5">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="font-display text-base font-bold text-ink">{title}</h2>
+            <h2 className="font-display text-lg font-extrabold text-ink">{title}</h2>
             <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs font-semibold text-ink-muted">
               {filteredHistory.length} snapshots
             </span>
@@ -370,7 +370,7 @@ export function InteractiveTrendChart({
 export function InteractivePortfolioChart({ history }: { history: NetWorthSnapshot[] }) {
   return (
     <InteractiveTrendChart
-      title="Portfolio Value Trend"
+      title="Portfolio value over time"
       history={history}
       accentColor="var(--color-funds)"
       gradientId="pfInteractiveGrad"

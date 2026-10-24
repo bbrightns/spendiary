@@ -483,7 +483,7 @@ export function Retirement() {
           {/* ── Left: Inputs ── */}
           <div id="guide-retirement-settings">
             <Card className="animate-rise">
-            <h2 className="font-display text-lg font-bold text-ink mb-5">Your retirement plan</h2>
+            <h2 className="mb-5 font-display text-lg font-extrabold text-ink">Your retirement plan</h2>
             <div className="space-y-4">
               <TextField
                 label="Date of birth"
@@ -622,7 +622,7 @@ export function Retirement() {
         {/* ── Wealth Runway & Milestones ── */}
         <div id="guide-retirement-freedom">
           <Card className="animate-rise">
-            <h2 className="font-display text-lg font-bold text-ink mb-1">Safety net & milestones</h2>
+            <h2 className="mb-1 font-display text-lg font-extrabold text-ink">Safety net & milestones</h2>
             <p className="text-sm text-ink-muted mb-4">
               How long your savings could last and how close you are to financial freedom
             </p>

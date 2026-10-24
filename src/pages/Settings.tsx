@@ -350,7 +350,7 @@ export function Settings() {
       <>
         {/* ── Appearance ──────────────────────────────────────── */}
         <Card className="animate-rise">
-          <h2 className="font-display text-lg font-bold text-ink mb-1">Appearance</h2>
+          <h2 className="mb-1 font-display text-lg font-extrabold text-ink">Appearance</h2>
           <p className="text-sm text-ink-muted mb-4">
             Choose how Spendiary looks on this device.
           </p>
@@ -392,7 +392,7 @@ export function Settings() {
         </Card>
         {/* ── Profile ─────────────────────────────────────────── */}
         <Card className="animate-rise">
-          <h2 className="font-display text-lg font-bold text-ink mb-1">Profile</h2>
+          <h2 className="mb-1 font-display text-lg font-extrabold text-ink">Profile</h2>
           <p className="text-sm text-ink-muted mb-4">Used in the greeting on Spend Home.</p>
           <TextField
             label="Your name"
@@ -494,7 +494,7 @@ export function Settings() {
               <img src="/logo.png" alt="Spendiary Logo" className="w-full h-full object-contain" />
             </div>
             <div>
-              <h2 className="font-display text-lg font-bold text-ink">About Spendiary</h2>
+              <h2 className="font-display text-lg font-extrabold text-ink">About Spendiary</h2>
               <p className="text-xs text-ink-muted mt-0.5">
                 Designed & Built by bbrightns
               </p>

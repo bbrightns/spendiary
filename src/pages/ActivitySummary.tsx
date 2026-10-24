@@ -261,7 +261,7 @@ export function ActivitySummary() {
           {/* ── Month by month ── */}
           {showMonthly && (
             <Card className="mb-4">
-              <h2 className="font-display text-base font-bold text-ink">By month</h2>
+              <h2 className="font-display text-lg font-extrabold text-ink">By month</h2>
               <p className="mt-0.5 text-xs text-ink-muted">
                 Sales profit and dividends for each month — green means a profit month
               </p>
@@ -304,7 +304,7 @@ export function ActivitySummary() {
           {/* ── Per-asset breakdown ── */}
           <Card id="guide-summary-assets" padded={false} className="mb-4 overflow-hidden">
             <div className="px-5 pt-5 pb-3">
-              <h2 className="font-display text-base font-bold text-ink">Where the profit came from</h2>
+              <h2 className="font-display text-lg font-extrabold text-ink">Where the profit came from</h2>
               <p className="mt-0.5 text-xs text-ink-muted">
                 Only showing assets with activity in {describePeriod(period)}
               </p>
@@ -383,7 +383,7 @@ export function ActivitySummary() {
           <Card className="mb-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <h2 className="font-display text-base font-bold text-ink">How much your portfolio value changed</h2>
+                <h2 className="font-display text-lg font-extrabold text-ink">How much your portfolio value changed</h2>
                 <p className="mt-0.5 text-xs text-ink-muted leading-relaxed max-w-xl">
                   Compares your total portfolio value at the start and end of the period. It includes market moves and money added or withdrawn, so it can differ from the net profit above.
                 </p>

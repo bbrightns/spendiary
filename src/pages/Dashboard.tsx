@@ -511,7 +511,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* ── ROW 3: Net Worth Performance Graph (Full Width at Bottom) ── */}
+      {/* ── Net worth over time (full width) ── */}
       <div id="guide-dashboard-chart">
         <Card className="animate-rise overflow-hidden" padded={false}>
           {(data.netWorthHistory?.length ?? 0) >= 2 ? (
@@ -519,7 +519,7 @@ export function Dashboard() {
           ) : (
             <div className="p-8 text-center">
               <SparkleIcon className="h-6 w-6 mx-auto text-brand mb-2" />
-              <h3 className="font-display font-bold text-ink">Net Worth Performance Chart</h3>
+              <h3 className="font-display text-lg font-extrabold text-ink">Net worth over time</h3>
               <p className="text-sm text-ink-muted mt-1 max-w-md mx-auto">
                 Snapshot history will record daily as your balances and holdings update.
               </p>

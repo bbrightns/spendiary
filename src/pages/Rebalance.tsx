@@ -524,7 +524,7 @@ export function Rebalance() {
         <div className="2xl:col-span-4 space-y-6">
           {/* Strategy & Deployment Card */}
           <Card className="animate-rise">
-            <h2 className="font-display text-base font-bold text-ink">Rebalance Setup</h2>
+            <h2 className="font-display text-lg font-extrabold text-ink">Rebalance setup</h2>
             <p className="text-xs text-ink-muted mb-4">Configure allocation mode & capital</p>
 
             <div className="space-y-4">
@@ -627,7 +627,7 @@ export function Rebalance() {
 
           {/* Side-by-Side Allocation Visualizer */}
           <Card className="animate-rise">
-            <h2 className="font-display text-base font-bold text-ink">Allocation Comparison</h2>
+            <h2 className="font-display text-lg font-extrabold text-ink">Allocation comparison</h2>
             <p className="text-xs text-ink-muted mb-4">Current vs Target Distribution</p>
 
             <div className="grid grid-cols-2 gap-4 items-center justify-items-center pt-2">
@@ -686,8 +686,8 @@ export function Rebalance() {
             <div className="p-4 sm:p-5">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h3 className="font-display text-lg font-bold text-ink">
-                    {mode === 'class' ? 'Macro Asset Allocation Targets' : 'Specific Holding Targets'}
+                  <h3 className="font-display text-lg font-extrabold text-ink">
+                    {mode === 'class' ? 'Targets by asset type' : 'Targets by holding'}
                   </h3>
                   <p className="text-xs text-ink-muted">
                     {mode === 'class'
