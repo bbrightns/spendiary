@@ -124,7 +124,7 @@ export function Popover({ open, onClose, anchorRef, title, align = 'left', child
         role="dialog"
         aria-label={title}
         style={{ position: 'fixed', top: pos?.top, left: pos?.left, right: pos?.right, visibility: pos ? 'visible' : 'hidden' }}
-        className={`z-50 min-w-[200px] max-w-[calc(100vw-24px)] max-h-[70vh] overflow-y-auto rounded-2xl border border-line bg-surface p-1.5 shadow-2xl animate-in fade-in zoom-in-95 duration-100 ${
+        className={`z-50 min-w-[200px] max-w-[calc(100vw-24px)] max-h-[70vh] overflow-y-auto rounded-2xl border border-line bg-surface p-1.5 shadow-2xl animate-pop-in ${
           align === 'right' ? 'origin-top-right' : 'origin-top-left'
         }`}
       >

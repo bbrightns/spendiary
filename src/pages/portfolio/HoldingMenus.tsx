@@ -39,7 +39,7 @@ export function HoldingActionMenu({ holding, coords, direction, onClose, onBuy, 
           bottom: coords.bottom !== undefined ? `${coords.bottom}px` : undefined,
           right: `${coords.right}px`,
         }}
-        className={`z-50 min-w-[170px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 ${
+        className={`z-50 min-w-[170px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-2xl backdrop-blur-md animate-pop-in ${
           direction === 'up' ? 'origin-bottom-right' : 'origin-top-right'
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -235,7 +235,7 @@ export function PocketActionMenu({ menu, coords, direction, onClose, onBuy, onSe
           bottom: coords.bottom !== undefined ? `${coords.bottom}px` : undefined,
           right: `${coords.right}px`,
         }}
-        className={`z-50 min-w-[190px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 ${
+        className={`z-50 min-w-[190px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-2xl backdrop-blur-md animate-pop-in ${
           direction === 'up' ? 'origin-bottom-right' : 'origin-top-right'
         }`}
         onClick={(e) => e.stopPropagation()}

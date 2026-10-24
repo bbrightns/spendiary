@@ -180,7 +180,8 @@ Rules:
   - `fadeIn` (200ms) for backdrops
   - `rise` (`.animate-rise`) for content appearing
   - `pop` and `result-card-in` for the result popup
-- Only use animation names that exist in `src/index.css`. `animate-fadeIn`, `animate-sheetUp` and `animate-in`/`zoom-in-95` are **not defined** and do nothing.
+- **Utilities:** `animate-fade-in` (backdrops, inline errors), `animate-sheet-up` (dialogs and sheets) and `animate-pop-in` (desktop dropdowns and menus), defined in `@theme`.
+- Only use animation names that exist in `src/index.css`. Class names from other libraries (`animate-in`, `zoom-in-95`, `animate-fadeIn`) do nothing here.
 
 ## 6. Components
 

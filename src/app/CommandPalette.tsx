@@ -975,12 +975,12 @@ export function CommandPalette() {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
-          className="fixed inset-0 bg-ink/40 dark:bg-black/60 backdrop-blur-sm transition-opacity animate-fadeIn"
+          className="fixed inset-0 bg-ink/40 dark:bg-black/60 backdrop-blur-sm transition-opacity animate-fade-in"
           onClick={closePalette}
           aria-hidden="true"
         />
 
-        <div className="relative w-full max-w-lg rounded-3xl border border-line bg-surface p-6 shadow-[var(--shadow-lift)] animate-sheetUp z-10">
+        <div className="relative w-full max-w-lg rounded-3xl border border-line bg-surface p-6 shadow-[var(--shadow-lift)] animate-sheet-up z-10">
           <div className="flex items-center justify-between border-b border-line pb-4">
             <div className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-soft text-brand-ink">
@@ -1029,13 +1029,13 @@ export function CommandPalette() {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 p-4">
       <div
-        className="fixed inset-0 bg-ink/40 dark:bg-black/60 backdrop-blur-sm transition-opacity animate-fadeIn"
+        className="fixed inset-0 bg-ink/40 dark:bg-black/60 backdrop-blur-sm transition-opacity animate-fade-in"
         onClick={closePalette}
         aria-hidden="true"
       />
 
       <div
-        className="relative w-full max-w-xl rounded-2xl sm:rounded-3xl border border-line bg-surface shadow-[var(--shadow-lift)] overflow-hidden flex flex-col max-h-[75vh] animate-sheetUp z-10"
+        className="relative w-full max-w-xl rounded-2xl sm:rounded-3xl border border-line bg-surface shadow-[var(--shadow-lift)] overflow-hidden flex flex-col max-h-[75vh] animate-sheet-up z-10"
         onKeyDown={handlePaletteKeyDown}
       >
         {/* Search Header */}
