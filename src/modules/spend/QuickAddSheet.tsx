@@ -445,11 +445,7 @@ export function QuickAddSheet() {
           )}
 
           {/* Note right after the category: it's filled in almost every time, so it sits before the account and date */}
-          <NoteField
-            value={note}
-            onChange={setNote}
-            fallbackTitle={type === 'transfer' ? 'Transfer' : isPaidBack ? 'Paid back' : getCategory(categoryId)?.label ?? 'Other'}
-          />
+          <NoteField value={note} onChange={setNote} />
 
           {/* Pay with / into */}
           {type === 'transfer' ? (

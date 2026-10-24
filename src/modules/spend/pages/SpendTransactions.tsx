@@ -430,7 +430,7 @@ function SearchSheet({
             autoFocus
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Notes, categories, wallets or #tags"
+            placeholder="Notes, categories or wallets"
             aria-label="Search transactions"
             className="w-full bg-transparent text-base text-ink outline-none placeholder:text-ink-faint"
           />

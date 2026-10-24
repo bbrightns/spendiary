@@ -1026,7 +1026,7 @@ export function CommandPalette() {
               setQuery(e.target.value)
               setSelectedIndex(0)
             }}
-            placeholder={inSpend ? 'Search or type "65 coffee #tag", "pay ktc", ">1000"' : 'Search pages, holdings, spending… or "65 coffee"'}
+            placeholder={inSpend ? 'Search or type "65 coffee", "pay ktc", ">1000"' : 'Search pages, holdings, spending… or "65 coffee"'}
             aria-label="Search commands"
             className="w-full bg-transparent text-sm sm:text-base font-medium text-ink placeholder:text-ink-faint outline-none"
           />
@@ -1072,7 +1072,7 @@ export function CommandPalette() {
             <div className="py-12 text-center">
               <CommandIcon className="h-8 w-8 mx-auto text-ink-faint mb-2 opacity-50" />
               <p className="text-sm font-semibold text-ink">Nothing matches</p>
-              <p className="text-xs text-ink-muted mt-1">Try a note, #tag, amount like &quot;&gt;500&quot;, a page or a holding</p>
+              <p className="text-xs text-ink-muted mt-1">Try a note, an amount like &quot;&gt;500&quot;, a page or a holding</p>
             </div>
           ) : (
             rows.map((item, idx) => {
