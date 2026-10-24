@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Modal } from '../components/ui/Modal'
+import { FormActions } from '../components/forms/FormActions'
 import { useData } from '../store/DataContext'
 import { useTheme } from '../hooks/useTheme'
 import { useToast } from '../store/ToastContext'
@@ -300,7 +302,7 @@ export function CommandPalette() {
       // ── Actions ──
       {
         id: 'action-spend-add',
-        title: 'Add Transaction',
+        title: 'Add transaction',
         subtitle: 'Log an expense, income or transfer · or type "65 coffee"',
         badge: 'Action',
         keywords: ['spend', 'expense', 'income', 'transaction', 'quick add', 'จด', 'รายจ่าย', 'รายรับ', 'ใช้เงิน', 'บันทึก'],
@@ -311,7 +313,7 @@ export function CommandPalette() {
       },
       {
         id: 'action-spend-transfer',
-        title: 'Transfer or Pay a Card',
+        title: 'Transfer or pay a card',
         subtitle: 'Move money between wallets, or pay a card bill',
         badge: 'Action',
         keywords: ['transfer', 'move', 'pay', 'card', 'bill', 'โอน', 'จ่ายบัตร'],
@@ -322,7 +324,7 @@ export function CommandPalette() {
       },
       {
         id: 'action-spend-import',
-        title: 'Import Bank Statement (CSV)',
+        title: 'Import bank statement (CSV)',
         subtitle: 'Bring past transactions in from a bank or card CSV',
         badge: 'Action',
         keywords: ['import', 'csv', 'statement', 'bank', 'upload', 'นำเข้า', 'สเตทเมนต์', 'ไฟล์'],
@@ -333,7 +335,7 @@ export function CommandPalette() {
       },
       {
         id: 'action-new-holding',
-        title: 'Record New Holding',
+        title: 'Record new holding',
         subtitle: 'Add a stock, fund, crypto or gold holding',
         badge: 'Action',
         keywords: ['add', 'holding', 'buy', 'stock', 'fund', 'crypto', 'gold', 'เพิ่ม', 'ซื้อ', 'หุ้น', 'สินทรัพย์', 'ทอง'],
@@ -343,7 +345,7 @@ export function CommandPalette() {
       },
       {
         id: 'action-new-debt',
-        title: 'Record Debt / Liability',
+        title: 'Record a debt or liability',
         subtitle: 'Add a debt, installment or loan',
         badge: 'Action',
         keywords: ['add', 'debt', 'loan', 'liability', 'installment', 'บัตรเครดิต', 'ผ่อน', 'หนี้', 'กู้', 'เพิ่มหนี้'],
@@ -353,7 +355,7 @@ export function CommandPalette() {
       },
       {
         id: 'action-new-dca',
-        title: 'Create DCA Plan',
+        title: 'Create DCA plan',
         subtitle: 'Set up a recurring monthly buy',
         badge: 'Action',
         keywords: ['dca', 'plan', 'recurring', 'monthly', 'แผน', 'ออม', 'ซื้อถัว'],
@@ -363,7 +365,7 @@ export function CommandPalette() {
       },
       {
         id: 'action-new-account',
-        title: 'Add Cash Account',
+        title: 'Add cash account',
         subtitle: 'Add a bank account or cash wallet',
         badge: 'Action',
         keywords: ['bank', 'cash', 'account', 'saving', 'wallet', 'ธนาคาร', 'เงินสด', 'บัญชี', 'เงินฝาก'],
@@ -470,7 +472,7 @@ export function CommandPalette() {
       },
       {
         id: 'sys-export-backup',
-        title: 'Export Backup Data (JSON)',
+        title: 'Export backup (JSON)',
         subtitle: 'Download a backup of all your data',
         badge: 'Backup',
         keywords: ['export', 'backup', 'download', 'json', 'ส่งออก', 'สำรองข้อมูล'],
@@ -483,7 +485,7 @@ export function CommandPalette() {
       },
       {
         id: 'sys-shortcuts',
-        title: 'View Keyboard Shortcuts',
+        title: 'View keyboard shortcuts',
         subtitle: 'See every keyboard shortcut',
         badge: '?',
         keywords: ['shortcut', 'shortcuts', 'keyboard', 'hotkey', 'คีย์ลัด', 'ปุ่ม'],
@@ -973,54 +975,25 @@ export function CommandPalette() {
     ]
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div
-          className="fixed inset-0 bg-ink/40 dark:bg-black/60 backdrop-blur-sm transition-opacity animate-fade-in"
-          onClick={closePalette}
-          aria-hidden="true"
-        />
-
-        <div className="relative w-full max-w-lg rounded-3xl border border-line bg-surface p-6 shadow-[var(--shadow-lift)] animate-sheet-up z-10">
-          <div className="flex items-center justify-between border-b border-line pb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-soft text-brand-ink">
-                <KeyboardIcon className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-display text-lg font-bold text-ink">Keyboard Shortcuts</h3>
-                <p className="text-xs text-ink-muted">Get around Spendiary quickly with your keyboard</p>
-              </div>
+      <Modal
+        open
+        onClose={() => setShowShortcuts(false)}
+        title="Keyboard shortcuts"
+        description="Get around Spendiary quickly with your keyboard."
+        size="sm"
+        footer={<FormActions editing={false} canSave onSave={() => setShowShortcuts(false)} submitLabel="Back to command palette" />}
+      >
+        <div className="divide-y divide-line">
+          {shortcutsList.map((s) => (
+            <div key={s.key} className="flex items-center justify-between py-2.5">
+              <span className="text-sm text-ink-soft">{s.desc}</span>
+              <kbd className="inline-flex items-center rounded-lg border border-line-strong bg-surface-muted px-2 py-1 font-mono text-xs font-bold text-ink">
+                {s.key}
+              </kbd>
             </div>
-            <button
-              onClick={() => setShowShortcuts(false)}
-              className="grid h-8 w-8 place-items-center rounded-xl text-ink-muted hover:bg-surface-muted hover:text-ink cursor-pointer"
-            >
-              <CloseIcon className="h-4 w-4" />
-            </button>
-          </div>
-
-          <div className="divide-y divide-line/60 py-2">
-            {shortcutsList.map((s) => (
-              <div key={s.key} className="flex items-center justify-between py-2.5">
-                <span className="text-sm font-medium text-ink-soft">{s.desc}</span>
-                <kbd className="inline-flex items-center rounded-lg bg-surface-muted border border-line-strong px-2 py-1 text-xs font-bold font-mono text-ink shadow-2xs">
-                  {s.key}
-                </kbd>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-line flex justify-end">
-            <button
-              type="button"
-              onClick={() => setShowShortcuts(false)}
-              className="rounded-full bg-primary hover:bg-primary-hover text-white px-5 py-2 text-xs font-bold transition-all shadow-xs cursor-pointer"
-            >
-              Back to Command Palette
-            </button>
-          </div>
+          ))}
         </div>
-      </div>
+      </Modal>
     )
   }
 
@@ -1028,14 +1001,18 @@ export function CommandPalette() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 p-4">
+      {/* Same surface, radius, backdrop and motion as Modal; it sits near the top so the phone keyboard can't cover results */}
       <div
-        className="fixed inset-0 bg-ink/40 dark:bg-black/60 backdrop-blur-sm transition-opacity animate-fade-in"
+        className="fixed inset-0 bg-ink/35 dark:bg-black/60 backdrop-blur-sm animate-fade-in"
         onClick={closePalette}
         aria-hidden="true"
       />
 
       <div
-        className="relative w-full max-w-xl rounded-2xl sm:rounded-3xl border border-line bg-surface shadow-[var(--shadow-lift)] overflow-hidden flex flex-col max-h-[75vh] animate-sheet-up z-10"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
+        className="relative z-10 flex max-h-[75vh] w-full max-w-xl flex-col overflow-hidden rounded-[28px] bg-surface shadow-[var(--shadow-lift)] animate-sheet-up"
         onKeyDown={handlePaletteKeyDown}
       >
         {/* Search Header */}
