@@ -245,7 +245,7 @@ Every dialog in the app is a `Modal`, including confirmations, pickers on phones
 **Shell**
 - **Phone (below sm):** a bottom sheet. Corners are 28px at the top only, and there is **no grab handle**: the sheet can't be dragged, so a handle would promise something it doesn't do.
 - **Desktop:** a centred dialog with 28px corners.
-- **Widths:** `sm` 400px for confirms and single-field dialogs; `md` 460px, the default for forms; `lg` 620px only for tables and previews (CSV import, AI import). `xl` is not used.
+- **Widths:** `sm` 400px for confirms and single-field dialogs; `md` 460px, the default for forms; `lg` 620px only for tables and previews (CSV import, AI import). There is no larger size.
 - **Backdrop and motion:** `bg-ink/35` with `backdrop-blur-sm`; `fadeIn` on the backdrop and `sheetUp` on the panel. Tapping the backdrop or pressing Esc closes the dialog.
 - **Focus:** focus is trapped inside, the page behind doesn't scroll, and focus returns to the opener on close. You get all of this for free by using `Modal`.
 

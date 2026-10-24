@@ -8,7 +8,7 @@ interface ModalProps {
   description?: string
   children: ReactNode
   footer?: ReactNode
-  size?: 'sm' | 'md' | 'lg' | 'xl'
+  size?: 'sm' | 'md' | 'lg'
   /**
    * Pressing Enter in a text field presses the footer's primary action
    * (the button marked `data-modal-submit`, else the last enabled footer button).
@@ -23,7 +23,6 @@ const SIZE_CLASSES = {
   sm: 'sm:max-w-[400px]',
   md: 'sm:max-w-[460px]',
   lg: 'sm:max-w-[620px]',
-  xl: 'sm:max-w-[760px]',
 }
 
 export function Modal({ open, onClose, title, description, children, footer, size = 'md', enterToSubmit = true }: ModalProps) {
@@ -53,6 +52,12 @@ export function Modal({ open, onClose, title, description, children, footer, siz
     ].join(',')
 
     const focusFirstElement = () => {
+      // A control can ask for first focus (e.g. the picked option in a picker sheet)
+      const preferred = dialogRef.current?.querySelector<HTMLElement>('[data-autofocus]')
+      if (preferred) {
+        preferred.focus()
+        return
+      }
       const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(focusableSelector)
       if (focusable && focusable.length > 0) {
         focusable[0].focus()
@@ -128,8 +133,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
       <div
-        className="absolute inset-0 bg-ink/35 dark:bg-black/60 backdrop-blur-sm"
-        style={{ animation: 'fadeIn 0.2s ease both' }}
+        className="absolute inset-0 bg-ink/35 dark:bg-black/60 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -140,8 +144,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
         tabIndex={-1}
-        className={`relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-[var(--shadow-lift)] sm:rounded-[28px] sm:max-h-[85dvh] ${SIZE_CLASSES[size]}`}
-        style={{ animation: 'sheetUp 0.32s cubic-bezier(0.16,1,0.3,1) both' }}
+        className={`relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-[var(--shadow-lift)] sm:rounded-[28px] sm:max-h-[85dvh] animate-sheet-up ${SIZE_CLASSES[size]}`}
       >
         <div className="flex shrink-0 items-start justify-between gap-4 px-6 pb-2.5 pt-6">
           <div>
@@ -158,7 +161,8 @@ export function Modal({ open, onClose, title, description, children, footer, siz
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-1 pb-3">
           {children}
-          {!footer && <div className="h-8" />}
+          {/* No footer: leave room above the home indicator instead */}
+          {!footer && <div aria-hidden style={{ height: 'max(2rem, calc(0.75rem + env(safe-area-inset-bottom, 0px)))' }} />}
         </div>
         {footer && (
           <div
