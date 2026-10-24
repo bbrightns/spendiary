@@ -366,12 +366,10 @@ export function SpendAnalysis() {
           )}
         </Card>
 
-        {/* ── Top tags ── */}
-        <Card>
-          <h2 className="font-display text-lg font-extrabold text-ink">Top tags</h2>
-          {tagTotals.length === 0 ? (
-            <p className="mt-3 text-sm text-ink-muted">Add #tags to notes to see where they add up.</p>
-          ) : (
+        {/* ── Top tags: only for notes that use #tags; the app no longer asks for them ── */}
+        {tagTotals.length > 0 && (
+          <Card>
+            <h2 className="font-display text-lg font-extrabold text-ink">Top tags</h2>
             <ul className="mt-3 divide-y divide-line">
               {tagTotals.map(([tag, amount]) => (
                 <li key={tag} className="flex items-center justify-between py-2.5">
@@ -382,8 +380,8 @@ export function SpendAnalysis() {
                 </li>
               ))}
             </ul>
-          )}
-        </Card>
+          </Card>
+        )}
       </div>
     </div>
   )

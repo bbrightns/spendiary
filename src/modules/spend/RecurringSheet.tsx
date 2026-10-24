@@ -35,7 +35,7 @@ interface Form {
   weekday: number
   month: number
   startDate: string
-  /** Name first, then #tags */
+  /** The note; its first words are the title */
   note: string
   paused: boolean
   fixedCost: boolean
@@ -207,7 +207,7 @@ export function RecurringSheet({ open, rec, onClose }: { open: boolean; rec?: Sp
               { value: 'yearly', label: 'Yearly' },
             ]}
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid items-end grid-cols-2 gap-3">
             {form.frequency === 'weekly' ? (
               <FieldWrap label="On">
                 <select className={fieldClass} value={form.weekday} onChange={(e) => set('weekday', Number(e.target.value))}>
@@ -256,7 +256,7 @@ export function RecurringSheet({ open, rec, onClose }: { open: boolean; rec?: Sp
           </p>
         </div>
 
-        <NoteField value={form.note} onChange={(note) => set('note', note)} fallbackTitle={categoryLabel} placeholder="Netflix #subscription" />
+        <NoteField value={form.note} onChange={(note) => set('note', note)} placeholder="Netflix" />
 
         {form.type === 'expense' && (
           <button

@@ -218,7 +218,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
         )}
 
         {/* Date, DPS, Shares & Account Inputs (Single unified grid for perfect 2x2 horizontal alignment) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid items-end grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <TextField
             label="Date received"
             type="date"

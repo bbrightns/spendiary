@@ -169,7 +169,7 @@ function GoalSheet({ open, goal, onClose }: { open: boolean; goal?: SpendGoal; o
           </FieldWrap>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid items-end grid-cols-2 gap-3">
           <FieldWrap label="Target">
             <input className={`${fieldClass} tnum`} inputMode="decimal" value={form.target} onChange={(e) => set('target', e.target.value.replace(/[^\d.,]/g, ''))} placeholder="60,000" />
           </FieldWrap>

@@ -218,7 +218,8 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
           )
         )}
 
-        <div className="grid grid-cols-2 gap-3">
+        {/* Bottom-aligned: a label whose hint wraps can't push its input out of line */}
+        <div className="grid grid-cols-2 items-end gap-3">
           {main ? (
             <FieldWrap label="Credit limit" hint="shared">
               <div className={`${inputClass} flex items-center truncate bg-surface-muted/60 text-ink-muted`}>{thb(main.creditLimit)}</div>
@@ -259,7 +260,8 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
+        {/* Bottom-aligned: a label whose hint wraps can't push its input out of line */}
+        <div className="grid grid-cols-2 items-end gap-3">
           <FieldWrap label="Statement day" hint="วันตัดรอบ">
             <input className={inputClass} inputMode="numeric" maxLength={2} value={form.statementDay} onChange={(e) => set('statementDay')(e.target.value.replace(/\D/g, ''))} />
           </FieldWrap>

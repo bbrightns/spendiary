@@ -248,6 +248,7 @@ This is the Spend row (`TxnRow`, `RecurringDue`), used on both sides:
 - **Label:** above the field, `text-sm font-semibold text-ink-soft`, with a 6px gap. An optional hint sits on the right of the label row.
 - **Every input uses the shared look:** the `TextField` / `NumberField` / `SelectField` components, or `FieldWrap` (the label row) around a plain control styled with `fieldClass` from `src/components/ui/fieldClasses.ts`. Don't copy the class string, and don't give one field a grey fill.
 - **Optional fields** show `hint="optional"` on the label row, not "(optional)" in the label.
+- **Fields side by side** (`grid grid-cols-2`) use `items-end`, so a label that wraps to two lines on a phone can't push its input out of line. A hint that doesn't fit drops to its own line whole; keep notes that go under an input out of side-by-side rows, or bottom alignment lines those up instead.
 - **Option groups:** `SegmentedControl` for 2–4 options; a select or `Popover` list for more.
 
 ### 6.6 Modals: one shell (`src/components/ui/Modal.tsx`)

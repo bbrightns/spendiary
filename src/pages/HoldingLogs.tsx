@@ -422,7 +422,7 @@ export function HoldingLogs() {
                 {/* Custom range: the sheet stays open to pick the two dates */}
                 {datePreset === 'custom' && (
                   <div className="mt-1 space-y-2 border-t border-line/60 px-3 pt-3 pb-1">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid items-end grid-cols-2 gap-2">
                       <label className="space-y-1 text-xs font-medium text-ink-faint">
                         <span>From</span>
                         <input

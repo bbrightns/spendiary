@@ -242,7 +242,7 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
 
           {earnsInterest && (
             <div className="space-y-3 border-t border-line px-3.5 pb-3.5 pt-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid items-end grid-cols-2 gap-3">
                 <label className="block">
                   <span className={labelCls}>Rate</span>
                   <div className={`${fieldCls} flex items-center focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15`}>

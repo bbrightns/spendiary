@@ -240,7 +240,7 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
           />
         </FieldWrap>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid items-end grid-cols-2 gap-3">
           <FieldWrap label="Still owed">
             <input inputMode="decimal" value={form.owed} onChange={(e) => set('owed')(digits(e.target.value))} placeholder="0" className={inputClass} />
           </FieldWrap>
@@ -255,7 +255,7 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
           </FieldWrap>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid items-end grid-cols-2 gap-3">
           {installment ? (
             <FieldWrap label="Payments made">
               <PaymentsInput paid={form.paid} total={form.total} onPaid={set('paid')} onTotal={set('total')} />
@@ -313,7 +313,7 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
           </button>
           {more && (
             <div className="space-y-4 border-t border-line px-4 pb-4 pt-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid items-end grid-cols-2 gap-3">
                 <FieldWrap label="Lender">
                   <input value={form.lender} onChange={(e) => set('lender')(e.target.value)} placeholder={installment ? 'Apple, SPayLater' : 'SCB, KBank'} className={inputClass} />
                 </FieldWrap>

@@ -550,7 +550,7 @@ export function Retirement() {
                     : 'Withdraw a little each year while the rest stays invested and keeps growing'}
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid items-end grid-cols-2 gap-3">
                 <NumberField
                   label="Retire at age"
                   value={retireAge}
@@ -568,7 +568,7 @@ export function Retirement() {
                   max={120}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid items-end grid-cols-2 gap-3">
                 <NumberField
                   label="Invest each month"
                   prefix="฿"
@@ -585,7 +585,7 @@ export function Retirement() {
                   min={0}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid items-end grid-cols-2 gap-3">
                 <NumberField
                   label="Expected yearly return"
                   suffix="%"
