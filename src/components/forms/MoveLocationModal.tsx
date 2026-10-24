@@ -233,12 +233,12 @@ export function MoveLocationModal({ open, holding, fromLocationId, onClose }: Pr
               {feeBase > 0 && (
                 <div className="flex items-center justify-between">
                   <span className="text-ink-muted">Network fee</span>
-                  <span className="tnum text-loss">−{showQty(feeBase)}</span>
+                  <span className="tnum text-loss-ink">−{showQty(feeBase)}</span>
                 </div>
               )}
               <div className="flex items-center justify-between border-t border-line pt-1.5">
                 <span className="font-semibold text-ink">{destName || 'Destination'} receives</span>
-                <span className="tnum font-bold text-gain">{showQty(received)}</span>
+                <span className="tnum font-bold text-gain-ink">{showQty(received)}</span>
               </div>
             </div>
           )}

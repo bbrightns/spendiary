@@ -223,7 +223,7 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
                     type="button"
                     aria-label={`Remove ${c.label}`}
                     onClick={() => remove(c)}
-                    className="mr-0.5 grid h-6 w-6 place-items-center rounded-full text-sm leading-none text-ink-muted cursor-pointer hover:bg-loss/15 hover:text-loss"
+                    className="mr-0.5 grid h-6 w-6 place-items-center rounded-full text-sm leading-none text-ink-muted cursor-pointer hover:bg-loss/15 hover:text-loss-ink"
                   >
                     ×
                   </button>
@@ -291,7 +291,7 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
                       type="button"
                       aria-label={`Remove subcategory ${s}`}
                       onClick={() => removeSub(s)}
-                      className="mr-0.5 grid h-6 w-6 place-items-center rounded-full text-sm leading-none cursor-pointer hover:bg-loss/15 hover:text-loss"
+                      className="mr-0.5 grid h-6 w-6 place-items-center rounded-full text-sm leading-none cursor-pointer hover:bg-loss/15 hover:text-loss-ink"
                     >
                       ×
                     </button>

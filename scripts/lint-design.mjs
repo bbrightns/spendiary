@@ -2,9 +2,10 @@
 /**
  * Design guardrails (DESIGN.md). Fails CI when a change brings back what the design
  * clean-up removed: emoji in the UI (.tsx; the Markdown export in lib/ may use them),
- * hex colours or raw Tailwind palette colours in components, text-brand (unreadable in
- * dark), animation classes that don't exist, hand-rolled full-screen overlays and the
- * old "success" button variant.
+ * hex colours or raw Tailwind palette colours in components, text-brand and
+ * text-gain / -loss / -warn (too faint as text; use text-link and the -ink tokens),
+ * animation classes that don't exist, hand-rolled full-screen overlays and the old
+ * "success" button variant.
  *
  *   npm run lint:design
  */
@@ -93,6 +94,10 @@ for (const file of walk(SRC)) {
     }
     if (/(?<![\w-])(?:[a-z-]+:)*text-brand(?![\w-])/.test(line)) {
       problems.push(`${at}  "text-brand": brand text uses text-link, which stays readable in dark mode (DESIGN.md §3)`)
+    }
+    const status = line.match(/(?<![\w-])(?:[a-z-]+:)*text-(gain|loss|warn)(?![\w-])/)
+    if (status) {
+      problems.push(`${at}  "${status[0]}": status text uses text-${status[1]}-ink, readable on white (DESIGN.md §3)`)
     }
     if (/variant=["']success["']/.test(line)) {
       problems.push(`${at}  variant="success": save buttons use primary (DESIGN.md §6.1)`)

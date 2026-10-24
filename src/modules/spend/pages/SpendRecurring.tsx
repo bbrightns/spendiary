@@ -92,7 +92,7 @@ export function SpendRecurringPage() {
             </Card>
             <Card compact className="animate-rise">
               <p className="text-xs font-medium text-ink-muted">Recurring income</p>
-              <p className={`mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate ${inc > 0 ? 'text-gain' : 'text-ink'}`}>≈ {thb(inc)}</p>
+              <p className={`mt-1 font-display text-lg sm:text-2xl font-extrabold tnum truncate ${inc > 0 ? 'text-gain-ink' : 'text-ink'}`}>≈ {thb(inc)}</p>
             </Card>
           </div>
 
@@ -131,7 +131,7 @@ export function SpendRecurringPage() {
                       </span>
                     )}
                   </span>
-                  <span className={`shrink-0 text-sm font-bold tnum ${r.type === 'income' ? 'text-gain' : 'text-ink'}`}>
+                  <span className={`shrink-0 text-sm font-bold tnum ${r.type === 'income' ? 'text-gain-ink' : 'text-ink'}`}>
                     {r.type === 'income' ? '+' : ''}
                     {thb(r.amount)}
                   </span>

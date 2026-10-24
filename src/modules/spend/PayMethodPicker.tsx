@@ -73,7 +73,7 @@ export function PayMethodPicker({ label, methods, value, onChange, favoriteIds, 
                     `${thb(m.available ?? Math.max(0, (m.creditLimit ?? 0) - m.balance), true)} left`
                   ) : (
                     // A wallet below zero stands out, so it's not picked by habit
-                    <span className={m.balance < 0 ? 'font-bold text-loss' : undefined}>{thbSigned(m.balance, true)}</span>
+                    <span className={m.balance < 0 ? 'font-bold text-loss-ink' : undefined}>{thbSigned(m.balance, true)}</span>
                   )}
                 </span>
               </span>

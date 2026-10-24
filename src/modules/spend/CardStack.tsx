@@ -120,7 +120,7 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
               {c.last4 && <span className={`shrink-0 text-xs tnum ${k.soft}`}>•• {c.last4}</span>}
             </span>
             {t.tone && (
-              <span className={`shrink-0 rounded-full bg-white px-2 py-0.5 text-2xs font-bold ${t.tone === 'loss' ? 'text-loss' : 'text-warn'}`}>
+              <span className={`shrink-0 rounded-full bg-white px-2 py-0.5 text-2xs font-bold ${t.tone === 'loss' ? 'text-loss-ink' : 'text-warn-ink'}`}>
                 {t.tone === 'loss' ? 'Overdue' : `Due ${shortDate(t.due.date)}`}
               </span>
             )}
@@ -195,10 +195,10 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
               <p className="font-bold text-ink">{shortDate(a.cyc.nextStatement)}</p>
             </div>
             <div className={`rounded-xl px-2.5 py-2 ${a.tone === 'loss' ? 'bg-loss-soft' : a.tone === 'warn' ? 'bg-warn-soft' : 'bg-surface-muted/70'}`}>
-              <p className={a.tone === 'loss' ? 'text-loss' : a.tone === 'warn' ? 'text-warn' : 'text-ink-muted'}>
+              <p className={a.tone === 'loss' ? 'text-loss-ink' : a.tone === 'warn' ? 'text-warn-ink' : 'text-ink-muted'}>
                 {a.tone === 'loss' ? 'Overdue' : `Due ${shortDate(a.due.date)}`}
               </p>
-              <p className={`font-bold tnum ${a.tone === 'loss' ? 'text-loss' : a.tone === 'warn' ? 'text-warn' : 'text-ink'}`}>{thb(a.due.amount, true)}</p>
+              <p className={`font-bold tnum ${a.tone === 'loss' ? 'text-loss-ink' : a.tone === 'warn' ? 'text-warn-ink' : 'text-ink'}`}>{thb(a.due.amount, true)}</p>
             </div>
           </div>
 

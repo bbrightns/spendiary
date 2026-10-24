@@ -412,7 +412,7 @@ export function CashLiquidity() {
                       {rateNum > 0 && (
                         <>
                           <span className="opacity-40">·</span>
-                          <span className="font-semibold text-gain tnum shrink-0">
+                          <span className="font-semibold text-gain-ink tnum shrink-0">
                             {rateNum}%
                           </span>
                         </>
@@ -424,7 +424,7 @@ export function CashLiquidity() {
                       {a.currency === 'USD' ? `$${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : thb(a.balance, true)}
                     </div>
                     {annualEarned > 0 || (a.currency === 'USD' && rate <= 0 && rateNum > 0 && eligibleBal > 0) ? (
-                      <div className="text-2xs font-semibold text-gain tnum">
+                      <div className="text-2xs font-semibold text-gain-ink tnum">
                         +{yearlyInterest(a.currency, eligibleBal * (rateNum / 100), annualEarned)}/yr
                       </div>
                     ) : a.currency === 'USD' && a.balance > 0 && rate > 0 ? (
@@ -554,7 +554,7 @@ export function CashLiquidity() {
                       <td className="py-2 px-3">
                         {rateNum > 0 ? (
                           <div className="space-y-0.5">
-                            <div className="flex items-center gap-1.5 font-bold text-gain text-xs">
+                            <div className="flex items-center gap-1.5 font-bold text-gain-ink text-xs">
                               <span>{rateNum.toFixed(2)}% a year</span>
                               {capNum && capNum > 0 && (
                                 <span className="text-xs opacity-75 font-normal">
@@ -613,7 +613,7 @@ export function CashLiquidity() {
                           <button
                             type="button"
                             onClick={() => setAccountToDelete(a)}
-                            className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted hover:bg-loss-soft hover:text-loss transition-colors cursor-pointer"
+                            className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted hover:bg-loss-soft hover:text-loss-ink transition-colors cursor-pointer"
                             title="Delete this account"
                           >
                             <TrashIcon className="h-3.5 w-3.5" />
@@ -666,7 +666,7 @@ export function CashLiquidity() {
                             </div>
                             <div className="p-2 rounded-lg bg-surface border border-line/40">
                               <span className="text-ink-muted block text-xs">Estimated interest:</span>
-                              <span className="font-bold text-gain tnum mt-0.5 block">
+                              <span className="font-bold text-gain-ink tnum mt-0.5 block">
                                 {thb(annualEarned)} / year
                               </span>
                             </div>

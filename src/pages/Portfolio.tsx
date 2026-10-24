@@ -546,7 +546,7 @@ export function Portfolio() {
                 {h.isLocked && (
                   <span
                     title="Locked (protected from selling or deleting)"
-                    className="inline-flex items-center gap-1 rounded-md bg-warn/10 text-warn px-1.5 py-0.5 text-xs font-semibold tracking-tight shrink-0"
+                    className="inline-flex items-center gap-1 rounded-md bg-warn/10 text-warn-ink px-1.5 py-0.5 text-xs font-semibold tracking-tight shrink-0"
                   >
                     <LockClosedIcon className="h-3 w-3" />
                     <span>Safe-Haven</span>
@@ -654,7 +654,7 @@ export function Portfolio() {
                                 {loc.isLocked && (
                                   <span
                                     title="Location is locked (protected from selling)"
-                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-2xs font-semibold bg-warn/10 text-warn shrink-0"
+                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-2xs font-semibold bg-warn/10 text-warn-ink shrink-0"
                                   >
                                     <LockClosedIcon className="h-2.5 w-2.5" />
                                     <span>Lock</span>
@@ -664,7 +664,7 @@ export function Portfolio() {
                               {(() => {
                                 const { pnl, pnlPct } = pocketPnl(loc)
                                 return (
-                                  <span className={`shrink-0 text-xs font-bold tnum ${pnl >= 0 ? 'text-gain' : 'text-loss'}`}>
+                                  <span className={`shrink-0 text-xs font-bold tnum ${pnl >= 0 ? 'text-gain-ink' : 'text-loss-ink'}`}>
                                     {pnl >= 0 ? '+' : '−'}{thb(Math.abs(pnl))}
                                     <span className="ml-1 font-semibold opacity-70">({pct(pnlPct)})</span>
                                   </span>
@@ -709,7 +709,7 @@ export function Portfolio() {
                                 {loc.isLocked && (
                                   <span
                                     title="Location is locked (protected from selling)"
-                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-2xs font-semibold bg-warn/10 text-warn shrink-0"
+                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-2xs font-semibold bg-warn/10 text-warn-ink shrink-0"
                                   >
                                     <LockClosedIcon className="h-2.5 w-2.5" />
                                     <span>Lock</span>
@@ -719,7 +719,7 @@ export function Portfolio() {
                               {(() => {
                                 const { pnl, pnlPct } = pocketPnl(loc)
                                 return (
-                                  <span className={`shrink-0 text-xs font-bold tnum ${pnl >= 0 ? 'text-gain' : 'text-loss'}`}>
+                                  <span className={`shrink-0 text-xs font-bold tnum ${pnl >= 0 ? 'text-gain-ink' : 'text-loss-ink'}`}>
                                     {pnl >= 0 ? '+' : '−'}{thb(Math.abs(pnl))}
                                     <span className="ml-1 font-semibold opacity-70">({pct(pnlPct)})</span>
                                   </span>
@@ -782,13 +782,13 @@ export function Portfolio() {
                       · {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   )}
-                  {errorMsg && <span className="text-loss text-xs">({errorMsg})</span>}
+                  {errorMsg && <span className="text-loss-ink text-xs">({errorMsg})</span>}
                 </>
               )}
               {priceStatus === 'error' && (
                 <>
                   <span className="inline-block h-2 w-2 rounded-full bg-loss shrink-0" />
-                  <span className="text-xs font-medium text-loss">Fetch failed</span>
+                  <span className="text-xs font-medium text-loss-ink">Fetch failed</span>
                   <button onClick={refreshPrices} className="text-xs underline text-link hover:text-brand-ink cursor-pointer ml-0.5">
                     retry
                   </button>
@@ -824,7 +824,7 @@ export function Portfolio() {
               >
                 <CoinsIcon className="h-3.5 w-3.5 text-ink-muted" />
                 <span className="text-xs font-medium text-ink-muted">Gold 96.5%</span>
-                <span className="tnum text-xs font-bold text-warn tracking-tight">
+                <span className="tnum text-xs font-bold text-warn-ink tracking-tight">
                   ฿{effectiveGoldPerBaht.toLocaleString()}
                 </span>
                 <span className="hidden sm:inline text-xs text-ink-muted">/gold baht</span>
@@ -857,8 +857,8 @@ export function Portfolio() {
             >
               {copied ? (
                 <>
-                  <CheckIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.2} />
-                  <span className="text-gain hidden sm:inline">Copied MD!</span>
+                  <CheckIcon className="h-4 w-4 text-gain-ink shrink-0" strokeWidth={2.2} />
+                  <span className="text-gain-ink hidden sm:inline">Copied MD!</span>
                 </>
               ) : (
                 <>
@@ -1386,7 +1386,7 @@ export function Portfolio() {
             />
             <div className="flex-1 text-xs">
               <span className="font-semibold text-ink flex items-center gap-1.5">
-                <LockClosedIcon className="h-3.5 w-3.5 text-warn" />
+                <LockClosedIcon className="h-3.5 w-3.5 text-warn-ink" />
                 Lock this location
               </span>
               <p className="text-ink-muted mt-0.5">Protects it from being sold or removed by accident.</p>

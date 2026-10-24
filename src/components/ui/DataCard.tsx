@@ -33,7 +33,7 @@ const ACTION_BASE =
   'inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors active:scale-95 cursor-pointer disabled:pointer-events-none disabled:opacity-50'
 const ACTION_TONE = {
   default: 'bg-surface-muted text-ink-soft hover:bg-primary hover:text-white',
-  danger: 'bg-loss-soft text-loss hover:bg-loss hover:text-white',
+  danger: 'bg-loss-soft text-loss-ink hover:bg-loss hover:text-white',
 }
 
 /** The pill button on a DataRow (or the account line); `danger` for deleting things. */

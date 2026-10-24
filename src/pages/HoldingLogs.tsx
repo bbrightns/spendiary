@@ -691,9 +691,9 @@ export function HoldingLogs() {
                           <td
                             className={`logs-table-cell logs-table-metric text-right whitespace-nowrap tnum font-bold ${
                               tx.sharesDisplay.startsWith('+')
-                                ? 'text-gain'
+                                ? 'text-gain-ink'
                                 : tx.sharesDisplay.startsWith('-')
-                                ? 'text-loss'
+                                ? 'text-loss-ink'
                                 : 'text-link'
                             }`}
                           >
@@ -711,7 +711,7 @@ export function HoldingLogs() {
                             {log.action === 'sell' && log.realizedPnL !== undefined && (
                               <div
                                 className={`logs-table-delta text-xs font-bold mt-1 ${
-                                  log.realizedPnL >= 0 ? 'text-gain' : 'text-loss'
+                                  log.realizedPnL >= 0 ? 'text-gain-ink' : 'text-loss-ink'
                                 }`}
                               >
                                 {log.realizedPnL >= 0 ? '+' : ''}{thb(log.realizedPnL)}
@@ -770,7 +770,7 @@ export function HoldingLogs() {
                                   setUndoTarget(log)
                                 }}
                                 aria-label={`Undo activity for ${log.holdingName}`}
-                                className="rounded-lg px-2 py-1 text-xs font-bold text-loss hover:bg-loss/10 transition-colors cursor-pointer"
+                                className="rounded-lg px-2 py-1 text-xs font-bold text-loss-ink hover:bg-loss/10 transition-colors cursor-pointer"
                               >
                                 Undo
                               </button>
@@ -881,7 +881,7 @@ export function HoldingLogs() {
                                 type="button"
                                 onClick={() => setUndoTarget(log)}
                                 aria-label={`Undo activity for ${log.holdingName}`}
-                                className="rounded-lg px-2 py-1 text-xs font-bold text-loss/85 hover:text-loss hover:bg-loss/10 transition-colors cursor-pointer"
+                                className="rounded-lg px-2 py-1 text-xs font-bold text-loss-ink/85 hover:text-loss-ink hover:bg-loss/10 transition-colors cursor-pointer"
                               >
                                 Undo
                               </button>
@@ -950,7 +950,7 @@ export function HoldingLogs() {
           return (
             <div className="space-y-3">
               {isHoldingLocked && (
-                <div className="rounded-xl border border-warn/30 bg-warn/10 p-3 flex items-start gap-2.5 text-xs text-warn">
+                <div className="rounded-xl border border-warn/30 bg-warn/10 p-3 flex items-start gap-2.5 text-xs text-warn-ink">
                   <LockClosedIcon className="h-4 w-4 shrink-0 mt-0.5" />
                   <div>
                     <span className="font-semibold block text-sm">This asset is locked</span>

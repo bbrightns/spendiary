@@ -1218,7 +1218,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
     return {
       status: 'completed',
       label: 'Fully paid',
-      badgeClass: 'bg-gain/10 text-gain border border-gain/20',
+      badgeClass: 'bg-gain/10 text-gain-ink border border-gain/20',
     }
   }
 
@@ -1226,7 +1226,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
     return {
       status: 'paid',
       label: 'Paid this month',
-      badgeClass: 'bg-gain/10 text-gain border border-gain/20',
+      badgeClass: 'bg-gain/10 text-gain-ink border border-gain/20',
     }
   }
 
@@ -1244,7 +1244,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
     return {
       status: 'due_today',
       label: 'Due today',
-      badgeClass: 'bg-warn/15 text-warn border border-warn/30 animate-pulse',
+      badgeClass: 'bg-warn/15 text-warn-ink border border-warn/30 animate-pulse',
       daysLeft: 0,
     }
   }
@@ -1269,7 +1269,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
     return {
       status: 'overdue',
       label: `Overdue (due on the ${l.dueDay})`,
-      badgeClass: 'bg-loss/15 text-loss border border-loss/30',
+      badgeClass: 'bg-loss/15 text-loss-ink border border-loss/30',
     }
   }
 
@@ -1278,7 +1278,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
     return {
       status: 'due_soon',
       label: `In ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} (on the ${l.dueDay})`,
-      badgeClass: 'bg-warn/15 text-warn border border-warn/25',
+      badgeClass: 'bg-warn/15 text-warn-ink border border-warn/25',
       daysLeft,
     }
   }

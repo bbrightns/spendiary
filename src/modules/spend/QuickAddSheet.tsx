@@ -49,7 +49,7 @@ const TYPE_OPTIONS = [
 
 const AMOUNT_COLOR: Record<SpendTxnType, string> = {
   expense: 'text-ink',
-  income: 'text-gain',
+  income: 'text-gain-ink',
   transfer: 'text-brand-ink',
 }
 
@@ -350,7 +350,7 @@ export function QuickAddSheet() {
 
           {overdraw && (
             <p role="status" className="-mt-2 flex gap-2 rounded-xl border border-warn/30 bg-warn-soft px-3 py-2 text-xs leading-snug text-ink-soft">
-              <AlertIcon aria-hidden className="mt-px h-4 w-4 shrink-0 text-warn" />
+              <AlertIcon aria-hidden className="mt-px h-4 w-4 shrink-0 text-warn-ink" />
               <span>
                 {overdraw.before >= 0
                   ? <>More than <b>{overdrawName}</b> has ({thbSigned(overdraw.before, true)}). It would go to {thbSigned(overdraw.after, true)}. Right wallet?</>

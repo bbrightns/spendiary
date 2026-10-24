@@ -62,7 +62,7 @@ export function SpendSnapshotCard() {
                 <p className="text-xs font-medium text-ink-muted">You can spend today</p>
                 <span className={`shrink-0 rounded-full px-2 py-0.5 text-2xs font-semibold ${status.chip}`}>{status.label}</span>
               </div>
-              <p className={`mt-1 font-display text-3xl font-extrabold tnum truncate ${day.leftToday < 0 ? 'text-loss' : 'text-ink'}`}>
+              <p className={`mt-1 font-display text-3xl font-extrabold tnum truncate ${day.leftToday < 0 ? 'text-loss-ink' : 'text-ink'}`}>
                 {signed(day.leftToday, thb)}
               </p>
               <p className="mt-0.5 text-xs text-ink-muted">
@@ -74,7 +74,7 @@ export function SpendSnapshotCard() {
           <div className={`min-w-0 ${hasBudget ? 'border-t border-line pt-4 @min-[34rem]:border-t-0 @min-[34rem]:pt-0' : ''}`}>
             <div className="flex items-baseline justify-between gap-2">
               <p className="text-xs font-medium text-ink-muted">Left from this cycle's income</p>
-              <p className={`font-display text-lg font-extrabold tnum ${overspent ? 'text-loss' : 'text-ink'}`}>{signed(totals.net, thbCompact)}</p>
+              <p className={`font-display text-lg font-extrabold tnum ${overspent ? 'text-loss-ink' : 'text-ink'}`}>{signed(totals.net, thbCompact)}</p>
             </div>
             <div
               className="mt-2 h-2.5 overflow-hidden rounded-full bg-surface-muted"
@@ -89,7 +89,7 @@ export function SpendSnapshotCard() {
                 Spent <span className="font-semibold text-ink tnum">{thbCompact(totals.expense)}</span>
               </span>
               <span className="flex items-center gap-1.5 text-ink-muted">
-                Received <span className="font-semibold text-gain tnum">{thbCompact(totals.income)}</span>
+                Received <span className="font-semibold text-gain-ink tnum">{thbCompact(totals.income)}</span>
               </span>
             </div>
           </div>

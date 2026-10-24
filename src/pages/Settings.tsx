@@ -303,11 +303,11 @@ export function Settings() {
   // ── Sync badge ─────────────────────────────────────────────────
   const syncBadge =
     syncStatus === 'syncing'
-      ? { text: 'Syncing…', cls: 'text-warn' }
+      ? { text: 'Syncing…', cls: 'text-warn-ink' }
       : syncStatus === 'synced'
-      ? { text: 'Synced', cls: 'text-gain' }
+      ? { text: 'Synced', cls: 'text-gain-ink' }
       : syncStatus === 'error'
-      ? { text: 'Sync error', cls: 'text-loss' }
+      ? { text: 'Sync error', cls: 'text-loss-ink' }
       : null
 
   const accountCard = (
@@ -420,7 +420,7 @@ export function Settings() {
             description="Everything in Invest and Spend in one JSON file. Keep it somewhere safe."
             status={
               exportToast.kind !== 'idle' && (
-                <p role="status" aria-live="polite" className={`mt-1.5 text-xs font-medium ${exportToast.kind === 'success' ? 'text-gain' : 'text-loss'}`}>
+                <p role="status" aria-live="polite" className={`mt-1.5 text-xs font-medium ${exportToast.kind === 'success' ? 'text-gain-ink' : 'text-loss-ink'}`}>
                   {exportToast.msg}
                 </p>
               )
@@ -436,7 +436,7 @@ export function Settings() {
                   role="status"
                   aria-live="polite"
                   className={`mt-1.5 flex items-center gap-1.5 text-xs font-medium ${
-                    importToast.kind === 'success' ? 'text-gain' : importToast.kind === 'error' ? 'text-loss' : 'text-ink-muted'
+                    importToast.kind === 'success' ? 'text-gain-ink' : importToast.kind === 'error' ? 'text-loss-ink' : 'text-ink-muted'
                   }`}
                 >
                   {importToast.kind === 'loading' && (

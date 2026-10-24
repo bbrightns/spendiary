@@ -330,7 +330,7 @@ export function ImportSheet() {
               {colSelect('Account', 'account')}
               {colSelect('To account', 'toAccount')}
             </div>
-            {!columns && <p className="mt-2 text-xs font-semibold text-warn">Pick the date and amount columns.</p>}
+            {!columns && <p className="mt-2 text-xs font-semibold text-warn-ink">Pick the date and amount columns.</p>}
           </div>
         )}
 
@@ -401,7 +401,7 @@ export function ImportSheet() {
               <div>
                 <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 text-xs text-ink-muted tnum">
                   <span>
-                    <b className="font-bold text-ink">{chosen.length}</b> ticked · out {thb(spent, true)} · in <span className="text-gain">{thb(earned, true)}</span>
+                    <b className="font-bold text-ink">{chosen.length}</b> ticked · out {thb(spent, true)} · in <span className="text-gain-ink">{thb(earned, true)}</span>
                     {moved > 0 && ` · moved ${thb(moved, true)}`}
                     {(result?.skipped ?? 0) > 0 && ` · ${plural(result!.skipped, 'row')} unreadable`}
                   </span>
@@ -441,7 +441,7 @@ export function ImportSheet() {
                               {short(r.date)}
                               {r.time ? ` ${r.time}` : ''} ·{' '}
                               {r.status === 'update' ? (
-                                <span className={r.overwrite ? 'font-semibold text-warn' : 'font-semibold text-link'}>
+                                <span className={r.overwrite ? 'font-semibold text-warn-ink' : 'font-semibold text-link'}>
                                   {r.overwrite ? 'Replaces ' : ''}
                                   {r.change}
                                 </span>
@@ -454,7 +454,7 @@ export function ImportSheet() {
                               )}
                             </span>
                           </span>
-                          <span className={`shrink-0 text-sm font-bold tnum ${r.type === 'income' ? 'text-gain' : r.type === 'transfer' ? 'text-ink-muted' : 'text-ink'}`}>
+                          <span className={`shrink-0 text-sm font-bold tnum ${r.type === 'income' ? 'text-gain-ink' : r.type === 'transfer' ? 'text-ink-muted' : 'text-ink'}`}>
                             {r.type === 'income' ? '+' : r.type === 'transfer' ? '' : '−'}
                             {thb(r.amount, true)}
                           </span>

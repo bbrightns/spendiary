@@ -110,7 +110,7 @@ export function PayBillSheet() {
   }
 
   const statusClass =
-    bill?.status === 'overdue' ? 'text-loss' : bill?.status === 'due' ? 'text-warn' : 'text-ink-muted'
+    bill?.status === 'overdue' ? 'text-loss-ink' : bill?.status === 'due' ? 'text-warn-ink' : 'text-ink-muted'
   const items = bill ? (showAll ? bill.items : bill.items.slice(0, 5)) : []
 
   return (
@@ -173,13 +173,13 @@ export function PayBillSheet() {
               {bill.paidEarly > 0 && (
                 <div className="flex justify-between gap-3 py-0.5">
                   <span className="text-ink-muted">Paid before statement</span>
-                  <span className="font-semibold text-gain tnum">−{thb(bill.paidEarly, true)}</span>
+                  <span className="font-semibold text-gain-ink tnum">−{thb(bill.paidEarly, true)}</span>
                 </div>
               )}
               {bill.paidSoFar > 0 && (
                 <div className="flex justify-between gap-3 py-0.5">
                   <span className="text-ink-muted">Paid since statement</span>
-                  <span className="font-semibold text-gain tnum">−{thb(bill.paidSoFar, true)}</span>
+                  <span className="font-semibold text-gain-ink tnum">−{thb(bill.paidSoFar, true)}</span>
                 </div>
               )}
               <div className="mt-1.5 flex justify-between gap-3 border-t border-line pt-1.5">
@@ -212,7 +212,7 @@ export function PayBillSheet() {
                         <span className="block truncate text-sm font-semibold text-ink">{noteTitle(t.note) || cat?.label}</span>
                         <span className="block text-xs text-ink-muted">{short(t.date)}</span>
                       </span>
-                      <span className={`shrink-0 text-sm font-bold tnum ${t.type === 'income' ? 'text-gain' : 'text-ink'}`}>
+                      <span className={`shrink-0 text-sm font-bold tnum ${t.type === 'income' ? 'text-gain-ink' : 'text-ink'}`}>
                         {t.type === 'income' ? '−' : ''}
                         {thb(t.amount, true)}
                       </span>

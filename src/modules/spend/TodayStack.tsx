@@ -31,7 +31,7 @@ const TONE: Record<Tone, { card: string; text: string }> = {
   loss: ATTENTION_TONE.loss,
   warn: ATTENTION_TONE.warn,
   brand: { card: 'border-brand/30 bg-brand-soft/70', text: 'text-brand-ink' },
-  gain: { card: 'border-gain/30 bg-gain-soft', text: 'text-gain' },
+  gain: { card: 'border-gain/30 bg-gain-soft', text: 'text-gain-ink' },
 }
 // Most urgent first, both for groups and for the colour of a folded group
 const RANK: Record<Tone, number> = { loss: 0, warn: 1, brand: 2, gain: 3 }

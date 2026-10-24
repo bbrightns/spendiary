@@ -18,13 +18,13 @@ export const BUY_SELL_SEGMENT_OPTIONS: SegmentOption<'buy' | 'sell'>[] = [
     value: 'buy',
     label: '+ Buy more',
     activeClassName: 'bg-gain-strong text-white shadow-sm',
-    inactiveClassName: 'text-gain hover:bg-gain/10',
+    inactiveClassName: 'text-gain-ink hover:bg-gain/10',
   },
   {
     value: 'sell',
     label: '− Sell',
     activeClassName: 'bg-danger text-white shadow-sm',
-    inactiveClassName: 'text-loss hover:bg-loss/10',
+    inactiveClassName: 'text-loss-ink hover:bg-loss/10',
   },
 ]
 
@@ -893,7 +893,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         {sourceField}
 
         {isStock && !usdThb && (
-          <div className="rounded-xl bg-warn-soft px-4 py-3 text-sm font-medium text-warn">
+          <div className="rounded-xl bg-warn-soft px-4 py-3 text-sm font-medium text-warn-ink">
             USD/THB rate is loading. Please wait before saving to avoid wrong values.
           </div>
         )}

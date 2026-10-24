@@ -51,7 +51,7 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
           .join(' · ')
 
   const sign = txn.type === 'income' ? '+' : txn.type === 'expense' ? '−' : ''
-  const amountClass = txn.type === 'income' ? 'text-gain' : txn.type === 'transfer' ? 'text-ink-muted' : 'text-ink'
+  const amountClass = txn.type === 'income' ? 'text-gain-ink' : txn.type === 'transfer' ? 'text-ink-muted' : 'text-ink'
   // Rows from Invest are edited where they came from: its history
   const sourcePage = txn.source ? '/logs' : null
 

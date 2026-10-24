@@ -136,7 +136,7 @@ components:
 `ink` carries most text. Use `ink-soft` for field labels and row values, `ink-muted` for captions and metadata, and `ink-faint` for placeholders and disabled text. Use `line` for card borders and dividers, and `line-strong` for input borders.
 
 ### Semantic colours
-- **gain / loss / warn** mean money going up, money going down, and something due or at risk. Use the `-soft` tint for backgrounds and the full colour for text and icons.
+- **gain / loss / warn** mean money going up, money going down, and something due or at risk. Use the `-soft` tint for backgrounds, the full colour for bars, fills, dots and chart strokes, and the **`-ink` colour for text and icons** (`text-gain-ink`, `text-loss-ink`, `text-warn-ink`). The full colours read at only 2.9–3.8:1 as text on white; the `-ink` ones (the 700 shades in light, unchanged in dark) keep 4.5:1 or better. `lint:design` rejects bare `text-gain` / `text-loss` / `text-warn`.
 - The same three colours are also used for **result feedback** (success and error toasts, the result popup) and **due states** (due today, overdue).
 - They are **never button fills for a normal save**. A green "Add to holding" or "Confirm" button is wrong; use the primary button. The only coloured button is `danger`, and only for destructive actions.
 - **White text on a colour needs a non-flipping token.** `gain` and `loss` turn light in dark mode, so `bg-gain text-white` goes unreadable. Use `bg-danger` (delete buttons, nav count badges) and `bg-gain-strong` / `hover:bg-gain-strong-hover` (selected month chips, "Log buy", "Mark received", done markers).

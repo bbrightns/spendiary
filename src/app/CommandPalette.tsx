@@ -350,7 +350,7 @@ export function CommandPalette() {
         badge: 'Action',
         keywords: ['add', 'debt', 'loan', 'liability', 'installment', 'บัตรเครดิต', 'ผ่อน', 'หนี้', 'กู้', 'เพิ่มหนี้'],
         group: 'Actions',
-        icon: ic(DebtIcon, 'text-loss'),
+        icon: ic(DebtIcon, 'text-loss-ink'),
         run: go('/spend/loans?action=new'),
       },
       {
@@ -360,7 +360,7 @@ export function CommandPalette() {
         badge: 'Action',
         keywords: ['dca', 'plan', 'recurring', 'monthly', 'แผน', 'ออม', 'ซื้อถัว'],
         group: 'Actions',
-        icon: ic(DcaIcon, 'text-warn'),
+        icon: ic(DcaIcon, 'text-warn-ink'),
         run: go('/dca?action=new'),
       },
       {
@@ -370,7 +370,7 @@ export function CommandPalette() {
         badge: 'Action',
         keywords: ['bank', 'cash', 'account', 'saving', 'wallet', 'ธนาคาร', 'เงินสด', 'บัญชี', 'เงินฝาก'],
         group: 'Actions',
-        icon: ic(WalletIcon, 'text-gain'),
+        icon: ic(WalletIcon, 'text-gain-ink'),
         run: go('/cash?action=new'),
       },
 
@@ -562,7 +562,7 @@ export function CommandPalette() {
         keywords: ['goal', 'saving', 'save', 'เป้าหมาย', 'ออมเงิน'],
         group: 'Accounts',
         spend: true,
-        icon: ic(SparkleIcon, 'text-gain'),
+        icon: ic(SparkleIcon, 'text-gain-ink'),
         run: go('/spend/accounts'),
       })
     }
@@ -590,7 +590,7 @@ export function CommandPalette() {
         subtitle: `DCA · ${thb(p.monthlyAmount)} ${p.frequency === 'weekly' ? 'a week' : p.frequency === 'daily' ? 'a day' : 'a month'}`,
         keywords: [p.ticker ?? '', 'dca', 'plan', 'ออม'],
         group: 'DCA plans',
-        icon: ic(DcaIcon, 'text-warn'),
+        icon: ic(DcaIcon, 'text-warn-ink'),
         run: go('/dca'),
       })
     }
@@ -603,7 +603,7 @@ export function CommandPalette() {
         subtitle: `Debt · ${thb(l.balance)} left${l.monthlyPayment ? ` · ${thb(l.monthlyPayment)}/mo` : ''}`,
         keywords: ['debt', 'loan', 'installment', 'หนี้', 'ผ่อน'],
         group: 'Debts',
-        icon: ic(DebtIcon, 'text-loss'),
+        icon: ic(DebtIcon, 'text-loss-ink'),
         run: go('/spend/loans'),
       })
     }
@@ -875,7 +875,7 @@ export function CommandPalette() {
         subtitle: [shortDate(r.paymentDate), `+${thb(r.netAmount, true)}`, r.holdingName, r.cashAccountName && `into ${r.cashAccountName}`].filter(Boolean).join(' · '),
         keywords: [],
         group: 'Dividends',
-        icon: ic(CoinsIcon, 'text-gain'),
+        icon: ic(CoinsIcon, 'text-gain-ink'),
         run: go('/dividends'),
         score: s - 0.1 + (inSpend ? 0 : 0.2),
       })
@@ -1059,7 +1059,7 @@ export function CommandPalette() {
               {summary.earned > 0 && (
                 <>
                   <span className="text-ink-muted">in </span>
-                  <b className="font-bold text-gain">{thb(summary.earned, true)}</b>
+                  <b className="font-bold text-gain-ink">{thb(summary.earned, true)}</b>
                 </>
               )}
             </p>

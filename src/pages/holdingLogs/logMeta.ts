@@ -62,7 +62,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
   if (log.action === 'add') {
     return {
       label: 'Added',
-      style: 'bg-gain/10 text-gain',
+      style: 'bg-gain/10 text-gain-ink',
       icon: PlusIcon,
       isPriceUpdate: false,
     }
@@ -78,7 +78,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
   ) {
     return {
       label: 'Added',
-      style: 'bg-gain/10 text-gain',
+      style: 'bg-gain/10 text-gain-ink',
       icon: PlusIcon,
       isPriceUpdate: false,
     }

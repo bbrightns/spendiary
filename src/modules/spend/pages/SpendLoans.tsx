@@ -18,18 +18,18 @@ const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 =
 
 /** Short status for a row: the Invest side's labels are written for a wide table. */
 function shortStatus(l: Liability): { text: string; tone: string } {
-  if (isLoanDone(l)) return { text: 'Paid off', tone: 'text-gain' }
+  if (isLoanDone(l)) return { text: 'Paid off', tone: 'text-gain-ink' }
   const s = getLiabilityDueStatus(l)
   const day = l.dueDay ? ordinal(l.dueDay) : ''
   switch (s.status) {
     case 'paid':
-      return { text: 'Paid this month', tone: 'text-gain' }
+      return { text: 'Paid this month', tone: 'text-gain-ink' }
     case 'overdue':
-      return { text: `Overdue · due ${day}`, tone: 'text-loss' }
+      return { text: `Overdue · due ${day}`, tone: 'text-loss-ink' }
     case 'due_today':
-      return { text: 'Due today', tone: 'text-warn' }
+      return { text: 'Due today', tone: 'text-warn-ink' }
     case 'due_soon':
-      return { text: `Due in ${s.daysLeft} ${s.daysLeft === 1 ? 'day' : 'days'}`, tone: 'text-warn' }
+      return { text: `Due in ${s.daysLeft} ${s.daysLeft === 1 ? 'day' : 'days'}`, tone: 'text-warn-ink' }
     default:
       return { text: day ? `Due ${day}` : 'No due day', tone: 'text-ink-muted' }
   }

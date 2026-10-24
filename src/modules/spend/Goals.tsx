@@ -73,7 +73,7 @@ export function GoalsSection() {
                   <span className="text-ink-muted">
                     <b className="font-bold text-ink">{thb(p.saved, true)}</b> of {thb(g.target, true)}
                   </span>
-                  <span className={p.overdue ? 'font-semibold text-loss' : p.done ? 'font-semibold text-gain' : 'text-ink-muted'}>
+                  <span className={p.overdue ? 'font-semibold text-loss-ink' : p.done ? 'font-semibold text-gain-ink' : 'text-ink-muted'}>
                     {p.done
                       ? 'Reached'
                       : p.overdue

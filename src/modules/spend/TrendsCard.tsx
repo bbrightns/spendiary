@@ -181,7 +181,7 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
           </div>
           <div className="min-w-0">
             <dt className="text-xs text-ink-muted">{kept < 0 ? 'Overspent' : 'Kept'}</dt>
-            <dd className={`truncate text-sm font-bold ${kept < 0 ? 'text-loss' : 'text-gain'}`}>{thb(Math.abs(kept))}</dd>
+            <dd className={`truncate text-sm font-bold ${kept < 0 ? 'text-loss-ink' : 'text-gain-ink'}`}>{thb(Math.abs(kept))}</dd>
           </div>
         </dl>
       </div>
@@ -230,7 +230,7 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
                         <>
                           {' · '}
                           {/* Against the average of the earlier months, shown so the % has a base */}
-                          <span className={c.change > 15 ? 'font-semibold text-warn' : ''}>
+                          <span className={c.change > 15 ? 'font-semibold text-warn-ink' : ''}>
                             {c.change > 0 ? '↑' : '↓'} {Math.abs(Math.round(c.change))}% vs {thb(c.avg)} avg
                           </span>
                         </>

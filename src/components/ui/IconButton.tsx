@@ -17,7 +17,7 @@ export function IconButton({
 }: IconButtonProps) {
   const variantClasses = {
     ghost: 'text-ink-muted hover:bg-surface-muted hover:text-ink',
-    danger: 'text-ink-muted hover:bg-loss-soft hover:text-loss',
+    danger: 'text-ink-muted hover:bg-loss-soft hover:text-loss-ink',
     brand: 'bg-brand-soft text-link hover:bg-brand hover:text-white',
   }
 

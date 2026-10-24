@@ -168,7 +168,7 @@ export function RecurringSheet({ open, rec, onClose }: { open: boolean; rec?: Sp
               value={form.amount}
               onChange={(e) => set('amount', e.target.value.replace(/[^\d.,]/g, ''))}
               className={`w-full max-w-[14ch] bg-transparent text-center font-display text-5xl font-extrabold tracking-tight tnum outline-none placeholder:text-ink-faint/50 ${
-                form.type === 'income' ? 'text-gain' : 'text-ink'
+                form.type === 'income' ? 'text-gain-ink' : 'text-ink'
               }`}
               style={{ width: `${Math.max(2, form.amount.length + 1)}ch` }}
             />
@@ -250,7 +250,7 @@ export function RecurringSheet({ open, rec, onClose }: { open: boolean; rec?: Sp
               <input type="date" className={fieldClass} value={form.startDate} onChange={(e) => set('startDate', e.target.value)} />
             </FieldWrap>
           )}
-          {!dayOk && <p className="text-xs font-semibold text-loss">Pick a day from 1 to 31.</p>}
+          {!dayOk && <p className="text-xs font-semibold text-loss-ink">Pick a day from 1 to 31.</p>}
           <p className="text-xs text-ink-muted">
             {canSave ? `${frequencyLabel(draft)}${next ? ` · next ${shortDay(next)}` : ''}` : 'Days past the end of a short month land on its last day.'}
           </p>

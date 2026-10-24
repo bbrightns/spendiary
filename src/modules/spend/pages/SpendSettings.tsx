@@ -268,7 +268,7 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
               )}
             </div>
           ) : (
-            <p className="text-sm font-semibold text-loss">
+            <p className="text-sm font-semibold text-loss-ink">
               {draft.ruleKind === 'day' ? 'Pick a day from 1 to 31.' : 'Use a number from 0 to 27.'}
             </p>
           )}
@@ -349,7 +349,7 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
               ))}
             </ul>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className={`text-xs tnum ${catOverMonthly ? 'font-semibold text-warn' : 'text-ink-muted'}`}>
+              <p className={`text-xs tnum ${catOverMonthly ? 'font-semibold text-warn-ink' : 'text-ink-muted'}`}>
                 Total {thb(catTotal)}
                 {settings.monthlyBudget ? ` of ${thb(settings.monthlyBudget)} monthly budget` : ''}
                 {catOverMonthly ? ' — more than the monthly budget' : ''}

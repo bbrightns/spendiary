@@ -17,7 +17,7 @@ export function FieldWrap({ label, htmlFor, errorId, hint, error, children }: Fi
       <div className="mb-1.5 flex items-center justify-between gap-3">
         <span className="text-sm font-semibold text-ink-soft">{label}</span>
         {error ? (
-          <span id={errorId} role="alert" className="text-xs font-semibold text-loss animate-fade-in">{error}</span>
+          <span id={errorId} role="alert" className="text-xs font-semibold text-loss-ink animate-fade-in">{error}</span>
         ) : (
           hint && <span className="text-xs text-ink-muted">{hint}</span>
         )}

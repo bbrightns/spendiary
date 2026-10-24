@@ -23,7 +23,7 @@ export function PnLPill({ value, asPct = false, size = 'sm' }: PnLPillProps) {
         // sibling truncate text absorbs the squeeze instead.
         'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full font-semibold tnum',
         size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm',
-        up ? 'bg-gain-soft text-gain' : 'bg-loss-soft text-loss',
+        up ? 'bg-gain-soft text-gain-ink' : 'bg-loss-soft text-loss-ink',
       )}
     >
       <Arrow className={size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} strokeWidth={2} />
@@ -44,7 +44,7 @@ export function PnLText({ value, className, compact = false }: PnLTextProps) {
   return (
     <span
       title={signedThb(value)}
-      className={cx('tnum font-semibold cursor-default', up ? 'text-gain' : 'text-loss', className)}
+      className={cx('tnum font-semibold cursor-default', up ? 'text-gain-ink' : 'text-loss-ink', className)}
     >
       {compact ? signedThbCompact(value) : signedThb(value)}
     </span>
@@ -60,7 +60,7 @@ export function NoPricePill({ size = 'sm' }: { size?: 'sm' | 'md' }) {
     <span
       title="No price yet: counted at cost, so there is no profit or loss to show"
       className={cx(
-        'inline-flex shrink-0 items-center whitespace-nowrap rounded-full font-semibold bg-warn-soft text-warn',
+        'inline-flex shrink-0 items-center whitespace-nowrap rounded-full font-semibold bg-warn-soft text-warn-ink',
         size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm',
       )}
     >
@@ -73,7 +73,7 @@ export function NoPricePill({ size = 'sm' }: { size?: 'sm' | 'md' }) {
 export function UnpricedNote({ count, className }: { count: number; className?: string }) {
   if (count <= 0) return null
   return (
-    <p className={cx('text-xs font-medium text-warn', className)}>
+    <p className={cx('text-xs font-medium text-warn-ink', className)}>
       Leaves out {count} {count === 1 ? 'holding' : 'holdings'} with no price yet
     </p>
   )

@@ -16,7 +16,7 @@ export function FxMissingNotice() {
 
   return (
     <div role="status" className="mb-5 flex items-start gap-2.5 rounded-2xl border border-warn/30 bg-warn-soft px-4 py-3 text-sm">
-      <AlertIcon className="mt-0.5 h-4 w-4 shrink-0 text-warn" />
+      <AlertIcon className="mt-0.5 h-4 w-4 shrink-0 text-warn-ink" />
       <p className="text-ink-soft">
         <span className="font-semibold text-ink">No USD/THB exchange rate yet.</span>{' '}
         Amounts in US dollars aren't converted or added to baht totals until a rate loads. Check your internet connection.

@@ -68,6 +68,11 @@
   --color-loss-soft: #fff1f2;
   --color-warn: #d97706;
   --color-warn-soft: #fffbeb;
+  /* Text in the semantic colours: the 600s read at 2.9-3.8:1 on white, these keep 4.5:1 or
+     better on every light surface. Bars, fills and strokes keep gain / loss / warn. */
+  --color-gain-ink: #047857;
+  --color-loss-ink: #be123c;
+  --color-warn-ink: #b45309;
 
   /* Asset accents */
   --color-funds: #2563eb;
@@ -143,6 +148,9 @@
   --color-gain: #34d399;
   --color-loss: #fb7185;
   --color-warn: #fbbf24;
+  --color-gain-ink: #34d399;
+  --color-loss-ink: #fb7185;
+  --color-warn-ink: #fbbf24;
 
   /* Semantic soft backgrounds: deep tinted */
   --color-gain-soft: #0c2e21;

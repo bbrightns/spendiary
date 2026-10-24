@@ -983,7 +983,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
             {isUsd && tickerCheck.state !== 'idle' && (
               <p
                 className={`-mt-2 text-xs ${
-                  tickerCheck.state === 'ok' ? 'text-gain' : tickerCheck.state === 'checking' ? 'text-ink-muted' : 'text-loss'
+                  tickerCheck.state === 'ok' ? 'text-gain-ink' : tickerCheck.state === 'checking' ? 'text-ink-muted' : 'text-loss-ink'
                 }`}
               >
                 {tickerCheck.state === 'checking' && 'Checking ticker…'}
@@ -1399,14 +1399,14 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
 
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-ink-soft">Net profit / loss (THB)</span>
-                  <span className={`font-bold tnum ${netPnlThb >= 0 ? 'text-gain' : 'text-loss'}`}>
+                  <span className={`font-bold tnum ${netPnlThb >= 0 ? 'text-gain-ink' : 'text-loss-ink'}`}>
                     {formattedNetPnlThb}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-ink-soft">Net return (%)</span>
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${netPnlThb >= 0 ? 'bg-gain-soft text-gain' : 'bg-loss-soft text-loss'}`}>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${netPnlThb >= 0 ? 'bg-gain-soft text-gain-ink' : 'bg-loss-soft text-loss-ink'}`}>
                     {netPnlThb >= 0 ? '+' : ''}{netReturnPct.toFixed(2)}%
                   </span>
                 </div>
@@ -1540,7 +1540,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
           />
           <div className="flex-1 text-xs">
             <span className="font-semibold text-ink flex items-center gap-1.5 text-sm">
-              <LockClosedIcon className="h-4 w-4 text-warn" />
+              <LockClosedIcon className="h-4 w-4 text-warn-ink" />
               Lock this asset
             </span>
             <p className="text-ink-muted mt-0.5">

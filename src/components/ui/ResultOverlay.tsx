@@ -20,9 +20,9 @@ function StatusIcon({ status, small = false }: { status: ResultState['status']; 
   }
 
   const tone = {
-    success: 'bg-gain-soft text-gain',
-    error: 'bg-loss-soft text-loss',
-    warn: 'bg-warn-soft text-warn',
+    success: 'bg-gain-soft text-gain-ink',
+    error: 'bg-loss-soft text-loss-ink',
+    warn: 'bg-warn-soft text-warn-ink',
     info: 'bg-brand-soft text-brand-ink',
   }[status]
 
@@ -134,7 +134,7 @@ export function ResultOverlay() {
               <div className="mb-2 flex justify-center">
                 <StatusIcon status={shown.status} small />
               </div>
-              <h2 className={`text-sm font-bold ${shown.status === 'success' ? 'text-gain' : 'text-ink-muted'}`}>{shown.title}</h2>
+              <h2 className={`text-sm font-bold ${shown.status === 'success' ? 'text-gain-ink' : 'text-ink-muted'}`}>{shown.title}</h2>
               <p className="mt-1 font-display text-4xl font-extrabold tracking-tight tnum text-ink">{shown.detail.amount}</p>
               <p className="mt-1.5 truncate text-base font-bold text-ink">{shown.detail.name}</p>
               {shown.detail.meta && <p className="mt-0.5 line-clamp-2 text-xs text-ink-muted [text-wrap:balance]">{shown.detail.meta}</p>}

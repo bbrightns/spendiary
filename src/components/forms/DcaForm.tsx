@@ -218,7 +218,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
         <div className="space-y-2">
           <p className="text-sm font-semibold text-ink-soft">Buy into location</p>
           {btcLocations.length === 0 ? (
-            <p className="rounded-xl bg-warn-soft px-4 py-3 text-xs text-warn">
+            <p className="rounded-xl bg-warn-soft px-4 py-3 text-xs text-warn-ink">
               No BTC locations set up yet. You can choose or create a location when confirming a buy.
             </p>
           ) : (
@@ -258,7 +258,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
         <div className="space-y-2">
           <p className="text-sm font-semibold text-ink-soft">Buy into location</p>
           {goldLocations.length === 0 ? (
-            <p className="rounded-xl bg-warn-soft px-4 py-3 text-xs text-warn">
+            <p className="rounded-xl bg-warn-soft px-4 py-3 text-xs text-warn-ink">
               No Gold locations set up yet. You can choose or create a location when confirming a buy.
             </p>
           ) : (
@@ -360,7 +360,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
         {/* ── Section A (Cash / Savings Account): Destination ── */}
         {!editing && form.source === 'cash' && (
           data.cashAccounts.length === 0 ? (
-            <div className="rounded-xl bg-warn-soft p-4 text-sm text-warn space-y-2">
+            <div className="rounded-xl bg-warn-soft p-4 text-sm text-warn-ink space-y-2">
               <p className="font-semibold">No cash accounts added yet.</p>
               <p className="text-xs opacity-90">Please add a cash account in the Cash Accounts Hub first.</p>
             </div>
@@ -400,7 +400,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
         {/* ── Section A: Portfolio selection ── */}
         {!editing && form.source === 'portfolio' && (
           holdingOptions.length === 0 ? (
-            <div className="rounded-xl bg-warn-soft p-4 text-sm text-warn space-y-2">
+            <div className="rounded-xl bg-warn-soft p-4 text-sm text-warn-ink space-y-2">
               <p className="font-semibold">No holdings in your portfolio yet.</p>
               <p className="text-xs opacity-90">Switch to <strong>New asset</strong> or <strong>Cash / savings</strong> above to start DCAing.</p>
             </div>

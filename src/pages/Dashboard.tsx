@@ -311,7 +311,7 @@ export function Dashboard() {
                   <p className="text-xs font-semibold text-ink-muted">Interest a year</p>
                   <p
                     title={cashInterest > 0 ? `~${thb(cashInterest)} a year` : undefined}
-                    className={`mt-1 truncate font-display text-2xl font-extrabold tracking-tight tnum ${cashInterest > 0 ? 'text-gain' : 'text-ink-muted'}`}
+                    className={`mt-1 truncate font-display text-2xl font-extrabold tracking-tight tnum ${cashInterest > 0 ? 'text-gain-ink' : 'text-ink-muted'}`}
                   >
                     {cashInterest > 0 ? `~${thbCompact(cashInterest)}` : '฿0'}
                   </p>
@@ -347,7 +347,7 @@ export function Dashboard() {
                       <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: cashColor(a.name, i) }} />
                       <span className="min-w-0 flex-1 truncate text-ink">{a.name}</span>
                       {a.interestRate !== undefined && a.interestRate > 0 && (
-                        <span className="shrink-0 text-xs font-semibold text-gain tnum">{a.interestRate}%</span>
+                        <span className="shrink-0 text-xs font-semibold text-gain-ink tnum">{a.interestRate}%</span>
                       )}
                       <span className="shrink-0 font-semibold tnum text-ink">{moneyCompact(a.balance, a.currency)}</span>
                     </button>
@@ -447,13 +447,13 @@ export function Dashboard() {
                           {(l.monthlyPayment || isInst) && (
                             <div className="shrink-0">
                               {dueInfo.status === 'completed' ? (
-                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-gain">
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-gain-ink">
                                   <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.5} />
                                   Paid off
                                 </span>
                               ) : dueInfo.status === 'paid' ? (
                                 <span className="inline-flex items-center gap-2 text-xs">
-                                  <span className="inline-flex items-center gap-1 font-semibold text-gain">
+                                  <span className="inline-flex items-center gap-1 font-semibold text-gain-ink">
                                     <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.5} />
                                     Paid
                                   </span>
