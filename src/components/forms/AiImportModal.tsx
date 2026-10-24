@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo } from 'react'
 import { Modal } from '../ui/Modal'
+import { FormActions } from './FormActions'
 import { Button } from '../ui/Button'
 import { SegmentedControl } from '../ui/SegmentedControl'
 import {
@@ -326,30 +327,23 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
     onClose()
   }
 
+  const importCount = parsedPreview ? parsedPreview.holdingsCount + parsedPreview.cashCount + parsedPreview.liabilitiesCount : 0
+
   return (
     <Modal
       open={open}
       onClose={handleClose}
-      title="Import with AI (Excel / JSON)"
-      description="Quickly import your assets from Excel or notes using ChatGPT, Claude, or Gemini."
+      title="Import with AI"
+      description="Bring in your assets from Excel or notes using ChatGPT, Claude or Gemini."
       size="lg"
       footer={
-        <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
-          <Button variant="secondary" onClick={handleClose} className="w-full sm:w-auto">
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleImport}
-            disabled={!parsedPreview || (parsedPreview.holdingsCount === 0 && parsedPreview.cashCount === 0 && parsedPreview.liabilitiesCount === 0)}
-            className="w-full sm:w-auto"
-          >
-            <SparkleIcon className="h-4 w-4 mr-1.5" />
-            Import {parsedPreview && (parsedPreview.holdingsCount > 0 || parsedPreview.cashCount > 0 || parsedPreview.liabilitiesCount > 0)
-              ? `(${parsedPreview.holdingsCount + parsedPreview.cashCount + parsedPreview.liabilitiesCount} items)`
-              : ''}
-          </Button>
-        </div>
+        <FormActions
+          editing={false}
+          canSave={importCount > 0}
+          onSave={handleImport}
+          submitLabel={importCount > 0 ? `Import ${importCount} ${importCount === 1 ? 'item' : 'items'}` : 'Import'}
+          hint="Paste the AI's answer above to see what will be imported"
+        />
       }
     >
       <div className="space-y-5 pt-1">

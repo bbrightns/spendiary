@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { NumberField, SelectField, TextField } from '../ui/Field'
 import { FormActions } from './FormActions'
-import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC, goldThbPerGramToXauUsd, upsert } from '../../lib/calc'
@@ -837,13 +836,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       description={modalDescription}
       footer={
         isBtc && !editing ? (
-          <Button onClick={saveBtc} className="w-full">
-            Add holding
-          </Button>
+          <FormActions editing={false} canSave onSave={saveBtc} submitLabel="Add holding" />
         ) : isGold && !editing ? (
-          <Button onClick={saveGold} className="w-full">
-            Add holding
-          </Button>
+          <FormActions editing={false} canSave onSave={saveGold} submitLabel="Add holding" />
         ) : (
           <FormActions
             editing={!!editing}

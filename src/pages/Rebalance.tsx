@@ -704,7 +704,7 @@ export function Rebalance() {
                     className="gap-1.5 text-xs cursor-pointer"
                   >
                     <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
-                    <span>Add Target Asset</span>
+                    <span>Add target asset</span>
                   </Button>
                 )}
               </div>

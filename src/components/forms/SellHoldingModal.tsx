@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { SegmentedControl } from '../ui/SegmentedControl'
 import { NumberField, SelectField } from '../ui/Field'
-import { Button } from '../ui/Button'
+import { FormActions } from './FormActions'
 import { BUY_SELL_SEGMENT_OPTIONS } from './BuyMoreForm'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
@@ -445,18 +445,16 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     <Modal
       open={open}
       onClose={onClose}
-      title={lockedSellLocName ? `Sell · ${holding.name} — ${lockedSellLocName}` : `Sell · ${holding.name}`}
-      description="Record a sale, see your profit or loss, and move the money into a cash account"
+      title="Sell"
+      description={`${holding.name}${lockedSellLocName ? ` · from "${lockedSellLocName}"` : ''} · see your profit or loss and move the money into a cash account.`}
       footer={
-        <Button
-          variant="danger"
-          data-modal-submit
-          onClick={handleSave}
-          className="w-full"
-          disabled={!isValid}
-        >
-          {isFullSell ? 'Confirm sell all' : 'Confirm sale'}
-        </Button>
+        <FormActions
+          editing={false}
+          canSave={isValid}
+          onSave={handleSave}
+          submitLabel={isFullSell ? 'Sell all' : 'Record sale'}
+          hint="Enter an amount up to what you hold, and the price"
+        />
       }
     >
       <div className="space-y-4">

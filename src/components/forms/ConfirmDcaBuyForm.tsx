@@ -166,6 +166,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     ? newLocName.trim() || 'New Location'
     : (isBtc ? selectedBtcLoc?.name : selectedGoldLoc?.name) ?? holding?.name ?? plan.name
 
+  const logName = isCash ? (targetCashAccount?.name ?? plan.name) : (holding?.name ?? plan.name)
   const targetSubtitleText = isCash
     ? (targetCashAccount?.name ?? plan.name)
     : (isBtc || isGold)
@@ -556,15 +557,13 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     <Modal
       open={open}
       onClose={onClose}
-      title={isCash ? `Log deposit: ${targetCashAccount?.name ?? plan.name}` : `Log buy: ${holding?.name ?? plan.name}`}
-      description={
-        isCash
-          ? `After you move the money, log it here. Goes into ${targetSubtitleText}.`
-          : `Spendiary doesn't trade for you. Log it after you buy at your broker. Goes into ${targetSubtitleText}.`
-      }
+      title={isCash ? 'Log deposit' : 'Log buy'}
+      description={`${logName}${targetSubtitleText !== logName ? ` · into "${targetSubtitleText}"` : ''} · ${
+        isCash ? 'log it after you move the money.' : "Spendiary doesn't trade for you; log it after you buy at your broker."
+      }`}
       footer={
         <Button data-modal-submit onClick={confirm} loading={submitting} className="w-full">
-          {submitting ? 'Saving…' : `✓ Log ${amountThbNum > 0 ? `${thb(amountThbNum)} ` : ''}${isCash ? 'deposit' : 'buy'}`}
+          {submitting ? 'Saving…' : `Log ${amountThbNum > 0 ? `${thb(amountThbNum)} ` : ''}${isCash ? 'deposit' : 'buy'}`}
         </Button>
       }
     >
