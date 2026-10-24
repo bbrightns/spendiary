@@ -417,7 +417,7 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
                   { value: 'chips', label: 'Chips' },
                 ]}
               />
-              <p className="mt-1.5 text-xs text-ink-muted">Tiles have an icon each and fold to two rows; chips are more compact. Used in Quick add and recurring.</p>
+              <p className="mt-1.5 text-xs text-ink-muted">Tiles have an icon each and show your first five (Edit, then Arrange, sets which); chips are more compact. Used in Quick add and recurring.</p>
             </div>
           </Section>
         </>

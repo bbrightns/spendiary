@@ -370,6 +370,9 @@ export function QuickAddSheet() {
             />
           )}
 
+          {/* Note right after the category: it's filled in almost every time, so it sits before the account and date */}
+          <NoteField value={note} onChange={setNote} fallbackTitle={type === 'transfer' ? 'Transfer' : getCategory(categoryId)?.label ?? 'Other'} />
+
           {/* Pay with / into */}
           {type === 'transfer' ? (
             <>
@@ -458,9 +461,6 @@ export function QuickAddSheet() {
               <SwitchVisual on={alreadyIn} />
             </button>
           )}
-
-          {/* Note + hashtags */}
-          <NoteField value={note} onChange={setNote} fallbackTitle={type === 'transfer' ? 'Transfer' : getCategory(categoryId)?.label ?? 'Other'} />
         </div>
       </Modal>
     </>
