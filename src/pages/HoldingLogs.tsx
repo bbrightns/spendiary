@@ -973,7 +973,7 @@ export function HoldingLogs() {
                 </div>
               )}
 
-              <div className="rounded-2xl border border-line bg-surface-muted p-4 space-y-2.5">
+              <div className="rounded-2xl bg-surface-muted p-4 space-y-2.5">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <span
@@ -1039,7 +1039,7 @@ export function HoldingLogs() {
           >
             <div className="space-y-5">
               {/* What this entry is */}
-              <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface-muted px-3.5 py-3">
+              <div className="flex items-center gap-3 rounded-2xl bg-surface-muted px-3.5 py-3">
                 <span
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-base font-bold text-ink"
                   aria-hidden

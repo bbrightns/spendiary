@@ -367,7 +367,7 @@ export function ImportSheet() {
             )}
 
             {/* What the file holds compared with what's already in the app */}
-            <div className="rounded-2xl border border-line bg-surface-muted/40 px-4 py-3">
+            <div className="rounded-2xl bg-surface-muted px-4 py-3">
               <p className="text-sm font-bold text-ink">
                 {count.same === rows.length
                   ? `All ${plural(rows.length, 'row')} are already in the app, nothing differs`

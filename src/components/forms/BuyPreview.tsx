@@ -25,7 +25,7 @@ interface Props {
 export function BuyPreview({ paid, got, total, totalSub, warning, details = [] }: Props) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="rounded-2xl border border-line bg-surface-muted p-4 text-sm">
+    <div className="rounded-2xl bg-surface-muted p-4 text-sm">
       <dl className="space-y-3">
         <Row label="This buy">
           <span className="text-ink-muted">{paid} → </span>

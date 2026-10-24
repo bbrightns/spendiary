@@ -46,7 +46,7 @@ export function SpendSnapshotCard() {
 
   return (
     <Link to="/" className="group block" aria-label="Open Spend">
-      <Card className="@container hover:shadow-[var(--shadow-lift)] transition-shadow">
+      <Card hover className="@container">
         {/* The whole card is the link, so its "Spend →" is styled text rather than a second link */}
         <CardHeader
           title="Spending"

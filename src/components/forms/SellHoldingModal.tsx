@@ -804,7 +804,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
 
               {/* Custom Net Proceeds & Fee Input Drawer */}
               {isCustomProceeds && (
-                <div className="rounded-xl bg-surface border border-line p-3 space-y-2.5 text-left shadow-xs">
+                <div className="rounded-2xl bg-surface-muted p-4 space-y-2.5 text-left">
                   <div className="flex items-center justify-between text-xs text-ink-muted">
                     <span>Sale value at market price: <strong className="text-ink font-semibold tnum">{thb(grossProceedsThb)}</strong></span>
                     <span className="text-xs text-ink-soft">Enter the amount received or the fee</span>

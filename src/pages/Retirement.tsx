@@ -6,6 +6,7 @@ import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { NumberField, TextField } from '../components/ui/Field'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
+import { CheckIcon } from '../components/icons'
 import { dcaPerMonth, portfolioSummary, totalCash } from '../lib/calc'
 import { thb, thbCompact } from '../lib/format'
 import { averageMonthlySpend } from '../modules/spend/logic'
@@ -647,14 +648,14 @@ export function Retirement() {
 
             {/* Milestones list */}
             <div className="space-y-3.5">
-              <h3 className="text-sm font-bold text-ink">Milestones</h3>
-              <div className="space-y-2">
+              <h3 className="text-xs font-semibold text-ink-muted">Milestones</h3>
+              <div className="divide-y divide-line">
                 {milestoneList.map((m) => (
-                  <div key={m.id} className="flex items-start gap-3 rounded-xl border border-line bg-surface p-3 transition-shadow hover:shadow-[var(--shadow-soft)]">
+                  <div key={m.id} className="flex items-start gap-3 py-3">
                     <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                       m.completed ? 'bg-gain text-white' : 'bg-surface-muted text-ink-faint border border-line-strong'
                     }`}>
-                      {m.completed ? '✓' : '•'}
+                      {m.completed ? <CheckIcon className="h-3 w-3" strokeWidth={3} /> : <span className="h-1.5 w-1.5 rounded-full bg-current" />}
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">

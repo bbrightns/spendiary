@@ -6,7 +6,7 @@ import { useToast } from '../store/ToastContext'
 import { useLivePrices } from '../hooks/useLivePrices'
 import { isValidPrice } from '../lib/priceCache'
 import { PageHeader } from '../components/layout/PageHeader'
-import { Card } from '../components/ui/Card'
+import { Card, Inset } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { AddButton } from '../components/ui/AddButton'
 import { DonutChart } from '../components/charts/DonutChart'
@@ -892,45 +892,29 @@ export function Portfolio() {
               />
             </div>
 
-            {/* Value & PnL Hero Summary */}
-            <div id="guide-portfolio-summary" className="@container mt-3.5 p-3.5 rounded-2xl bg-surface-muted/60 border border-line/60">
+            {/* Value and profit: the same Inset as the Dashboard's Allocation card */}
+            <Inset id="guide-portfolio-summary" className="@container mt-3">
               {/* Stacks when the card is narrow, sits side by side once there is room */}
-              <div className="flex flex-col gap-3 @min-[17rem]:flex-row @min-[17rem]:items-start @min-[17rem]:justify-between @min-[17rem]:gap-x-3">
-                {/* Portfolio value */}
-                <div className="min-w-0 space-y-1.5">
-                  <span className="block text-xs font-bold uppercase tracking-wider text-ink-muted whitespace-nowrap">Portfolio Value</span>
-                  <p
-                    title={thb(summary.value)}
-                    className="font-display text-[clamp(1.25rem,11cqw,1.875rem)] @min-[17rem]:text-[clamp(1.1rem,7cqw,1.875rem)] font-extrabold tracking-tight tnum text-ink leading-tight cursor-default"
-                  >
+              <div className="flex flex-col gap-3 @min-[17rem]:flex-row @min-[17rem]:items-start @min-[17rem]:justify-between">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-ink-muted">Portfolio value</p>
+                  <p title={thb(summary.value)} className="mt-1 font-display text-2xl font-extrabold tracking-tight tnum text-ink">
                     {thbCompact(summary.value)}
                   </p>
-                  <p className="text-xs text-ink-muted font-medium" title={thb(summary.cost)}>
-                    Cost:{' '}
-                    <span className="font-semibold tnum text-ink-soft">
-                      {thbCompact(summary.cost)}
-                    </span>
+                  <p className="text-xs text-ink-muted" title={thb(summary.cost)}>
+                    Cost <span className="font-semibold tnum text-ink-soft">{thbCompact(summary.cost)}</span>
                   </p>
                 </div>
-
-                {/* All-time profit / loss */}
-                <div className="min-w-0 space-y-1.5 @min-[17rem]:text-right">
-                  <span className="block text-xs font-bold uppercase tracking-wider text-ink-muted whitespace-nowrap">All-Time PnL</span>
-                  <div className="flex items-baseline @min-[17rem]:justify-end">
-                    <PnLText
-                      value={summary.pnl}
-                      compact
-                      className="font-display text-[clamp(1.25rem,11cqw,1.875rem)] @min-[17rem]:text-[clamp(1.1rem,7cqw,1.875rem)] !font-extrabold tracking-tight leading-tight"
-                    />
-                  </div>
-                  <div className="flex items-center gap-1.5 @min-[17rem]:justify-end">
+                <div className="min-w-0 @min-[17rem]:text-right">
+                  <p className="text-xs font-semibold text-ink-muted">All-time profit</p>
+                  <PnLText value={summary.pnl} compact className="mt-1 block font-display text-2xl !font-extrabold tracking-tight" />
+                  <div className="mt-0.5 flex items-center gap-1.5 @min-[17rem]:justify-end">
                     <PnLPill value={summary.pnlPct} asPct size="sm" />
-                    <span className="text-xs text-ink-muted font-medium whitespace-nowrap">all-time</span>
                   </div>
                   <UnpricedNote count={summary.unpricedCount} />
                 </div>
               </div>
-            </div>
+            </Inset>
 
             {/* Donut Chart & Breakdown */}
             <div className="mt-4 flex flex-col items-center gap-4">
@@ -1369,7 +1353,7 @@ export function Portfolio() {
             />
           </div>
           {locEditing && 'satoshi' in locEditing && Number(locSatoshi) > 0 && Number(locThbSpent) > 0 && (
-            <div className="rounded-xl border border-line bg-surface-muted px-3.5 py-2.5 text-xs space-y-1">
+            <div className="rounded-2xl bg-surface-muted px-3.5 py-2.5 text-xs space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-ink-muted">BTC amount</span>
                 <span className="font-semibold text-ink tnum">{(Number(locSatoshi) / SATS_PER_BTC).toFixed(8)} BTC</span>
@@ -1383,7 +1367,7 @@ export function Portfolio() {
             </div>
           )}
           {locEditing && !('satoshi' in locEditing) && Number(locGrams) > 0 && Number(locThbSpent) > 0 && (
-            <div className="rounded-xl border border-line bg-surface-muted px-3.5 py-2.5 text-xs space-y-1">
+            <div className="rounded-2xl bg-surface-muted px-3.5 py-2.5 text-xs space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-ink-muted">Weight in gold baht</span>
                 <span className="font-semibold text-ink tnum">{(Number(locGrams) / GRAMS_PER_BAHT_GOLD).toFixed(4)} gold baht</span>

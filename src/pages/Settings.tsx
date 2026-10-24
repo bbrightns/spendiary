@@ -530,7 +530,7 @@ export function Settings() {
 
         {/* Why I built it */}
         <div className="pt-4 mt-4 border-t border-line/60 space-y-3">
-          <div className="rounded-2xl bg-surface-muted/60 p-4 border border-line/50">
+          <div className="rounded-2xl bg-surface-muted p-4">
             <div className="flex items-center gap-3.5 mb-3">
               <img
                 src="/bbrightns.jpg"
@@ -552,7 +552,7 @@ export function Settings() {
           </div>
 
           {/* The Story Behind Spendiary */}
-          <div className="rounded-2xl bg-surface-muted/40 p-4 border border-line/50">
+          <div className="rounded-2xl bg-surface-muted p-4">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-base">💡</span>
               <h3 className="text-sm font-bold text-ink">Why I Built Spendiary</h3>

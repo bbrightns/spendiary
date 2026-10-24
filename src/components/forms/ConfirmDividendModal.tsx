@@ -184,7 +184,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
       <form id="confirm-dividend-form" onSubmit={handleSubmit} className="space-y-4 pt-1">
         {/* Selected Holding Card or Selector */}
         {holding ? (
-          <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface-muted/50 p-3.5">
+          <div className="flex items-center gap-3 rounded-2xl bg-surface-muted p-4">
             <AssetLogo name={holding.name} assetClass={holding.assetClass} size="md" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">

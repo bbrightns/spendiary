@@ -752,7 +752,7 @@ export function Rebalance() {
                       return (
                         <div
                           key={row.key}
-                          className="rounded-2xl border border-line bg-surface-muted/20 p-4 transition-all"
+                          className="rounded-2xl bg-surface-muted p-4 transition-all"
                         >
                           {/* Top Row: Name with Color Dot + Action Advice Badge */}
                           <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-line/60">
@@ -959,7 +959,7 @@ export function Rebalance() {
                       return (
                         <div
                           key={row.id}
-                          className="rounded-2xl border border-line bg-surface-muted/20 p-4 transition-all"
+                          className="rounded-2xl bg-surface-muted p-4 transition-all"
                         >
                           {/* Top: AssetLogo + Name + Ticker + Planned Badge + Action / Delete */}
                           <div className="flex items-start justify-between gap-2 pb-2">

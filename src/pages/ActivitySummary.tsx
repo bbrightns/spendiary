@@ -36,7 +36,7 @@ function Stat({ label, value, tone = 'neutral', hint }: {
 }) {
   const toneClass = tone === 'gain' ? 'text-gain' : tone === 'loss' ? 'text-loss' : 'text-ink'
   return (
-    <div className="rounded-xl border border-line/70 bg-surface-muted/40 px-3.5 py-3">
+    <div className="rounded-2xl bg-surface-muted px-3.5 py-3">
       <p className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-muted">{label}</p>
       <p className={`mt-1 font-display text-lg font-bold tnum leading-tight ${toneClass}`}>{value}</p>
       {hint && <p className="mt-0.5 text-xs text-ink-faint leading-snug">{hint}</p>}
@@ -416,7 +416,7 @@ export function ActivitySummary() {
           </Card>
 
           {/* ── How this is calculated ── */}
-          <div className="flex items-start gap-3 rounded-2xl border border-line/70 bg-surface-muted/40 px-4 py-3.5">
+          <div className="flex items-start gap-3 rounded-2xl bg-surface-muted px-4 py-3.5">
             <PieChartIcon className="mt-0.5 h-4 w-4 shrink-0 text-ink-faint" />
             <p className="text-xs text-ink-muted leading-relaxed">
               <span className="font-semibold text-ink-soft">Net profit = profit from sales + dividends received</span>{' '}

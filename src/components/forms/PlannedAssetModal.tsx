@@ -108,7 +108,7 @@ export function PlannedAssetModal({ open, onClose, onAdded }: Props) {
                 placeholder={form.assetClass === 'stock' ? 'e.g. Nvidia Corp, Tesla Inc' : 'e.g. Kasikorn Fund, SCBS&P500'}
               />
               {suggestions.length > 0 && (
-                <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-xl border border-line bg-surface shadow-lg">
+                <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-2xl border border-line bg-surface shadow-[var(--shadow-lift)] animate-pop-in origin-top">
                   {suggestions.map((s) => (
                     <li key={s.ticker}>
                       <button

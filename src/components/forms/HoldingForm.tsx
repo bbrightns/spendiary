@@ -952,7 +952,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 placeholder={isBtc ? 'e.g. My Bitcoin' : isUsd ? 'e.g. Apple Inc.' : isGold ? 'e.g. My Gold' : isRealEstate ? 'e.g. Sukhumvit Condo, Modern House' : 'e.g. Kasikorn Fund'}
               />
               {suggestions.length > 0 && (
-                <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-xl border border-line bg-surface shadow-lg">
+                <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-2xl border border-line bg-surface shadow-[var(--shadow-lift)] animate-pop-in origin-top">
                   {suggestions.map((s) => (
                     <li key={s.ticker}>
                       <button
@@ -1315,7 +1315,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
           isUsd ? (
             <>
               {/* Card A: THB Investment Summary (Total THB Invested has a subtle edit option, rest read-only) */}
-              <div className="rounded-2xl border border-line-strong bg-surface-muted p-4 space-y-4 shadow-sm">
+              <div className="rounded-2xl bg-surface-muted p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold uppercase tracking-wider text-brand">THB Investment Summary</p>
                   {!isEditingThb && (
