@@ -576,13 +576,13 @@ export function Dividends() {
         open={Boolean(deletingRecord)}
         onClose={() => setDeletingRecord(null)}
         onConfirm={handleDeleteConfirm}
-        title="Remove Dividend Record"
+        title="Remove this dividend?"
         description={
           deletingRecord
             ? `Are you sure you want to remove this ฿${deletingRecord.netAmount.toLocaleString()} dividend for ${deletingRecord.ticker}? If this was deposited to ${deletingRecord.cashAccountName || 'a cash account'}, the cash balance will be reduced.`
             : ''
         }
-        confirmText="Remove Record"
+        confirmText="Remove dividend"
       />
     </>
   )
