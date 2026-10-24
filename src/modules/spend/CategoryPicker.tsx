@@ -12,8 +12,8 @@ import { useToast } from '../../store/ToastContext'
 
 export type CategoryLayout = 'chips' | 'tiles'
 
-/** Tiles shown before "more": two rows of five, the last slot being the "more" tile */
-const COLLAPSED = 9
+/** Tiles shown before "more": one row, the user's first five (Edit → Arrange sets the order) */
+const COLLAPSED = 5
 
 interface Props {
   type: 'expense' | 'income'
@@ -119,8 +119,8 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
   const tone = current?.tone ?? 'slate'
   const arrangeable = categoriesFor(type).filter((c) => !KEEP_CATEGORY.has(c.id))
 
-  // Tiles fold to two rows; a pick from further down takes the last slot so it's always in view
-  const foldable = tiles && list.length > COLLAPSED + 1
+  // Tiles fold to one row; a pick from further down takes the last slot so it's always in view
+  const foldable = tiles && list.length > COLLAPSED
   const folded = foldable && !expanded && !editing
   let shown = list
   if (folded) {
@@ -150,52 +150,53 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
       </div>
 
       {tiles ? (
-        <div className="grid grid-cols-5 gap-1.5">
-          {shown.map((c) => {
-            const active = c.id === value
-            return (
-              <div key={c.id} className="relative">
-                <button
-                  type="button"
-                  aria-pressed={editing ? undefined : active}
-                  aria-label={editing ? `Edit ${c.label}` : undefined}
-                  onClick={() => (editing ? setSheet({ open: true, category: c }) : pick(c.id))}
-                  className={`flex min-h-[60px] w-full flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-1.5 text-2xs transition-all cursor-pointer active:scale-95 ${
-                    active ? `${TONES[c.tone].active} font-bold` : 'border-line bg-surface font-semibold text-ink-soft hover:bg-surface-muted/60'
-                  } ${editing ? 'border-dashed' : ''}`}
-                >
-                  <span className={`grid h-7 w-7 place-items-center rounded-lg transition-colors ${active ? 'bg-white/70 dark:bg-white/10' : TONES[c.tone].chip}`}>
-                    <c.icon className="h-4 w-4" strokeWidth={active ? 2.1 : 1.7} />
-                  </span>
-                  <span className="w-full truncate text-center leading-tight">{c.label}</span>
-                </button>
-                {editing && !KEEP_CATEGORY.has(c.id) && (
+        <>
+          <div className="grid grid-cols-5 gap-1.5">
+            {shown.map((c) => {
+              const active = c.id === value
+              return (
+                <div key={c.id} className="relative">
                   <button
                     type="button"
-                    aria-label={`Remove ${c.label}`}
-                    onClick={() => remove(c)}
-                    className="absolute -right-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full bg-loss text-sm font-bold leading-none text-white shadow-sm cursor-pointer hover:brightness-110"
+                    aria-pressed={editing ? undefined : active}
+                    aria-label={editing ? `Edit ${c.label}` : undefined}
+                    onClick={() => (editing ? setSheet({ open: true, category: c }) : pick(c.id))}
+                    className={`flex min-h-[60px] w-full flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-1.5 text-2xs transition-all cursor-pointer active:scale-95 ${
+                      active ? `${TONES[c.tone].active} font-bold` : 'border-line bg-surface font-semibold text-ink-soft hover:bg-surface-muted/60'
+                    } ${editing ? 'border-dashed' : ''}`}
                   >
-                    ×
+                    <span className={`grid h-7 w-7 place-items-center rounded-lg transition-colors ${active ? 'bg-white/70 dark:bg-white/10' : TONES[c.tone].chip}`}>
+                      <c.icon className="h-4 w-4" strokeWidth={active ? 2.1 : 1.7} />
+                    </span>
+                    <span className="w-full truncate text-center leading-tight">{c.label}</span>
                   </button>
-                )}
-              </div>
-            )
-          })}
+                  {editing && !KEEP_CATEGORY.has(c.id) && (
+                    <button
+                      type="button"
+                      aria-label={`Remove ${c.label}`}
+                      onClick={() => remove(c)}
+                      className="absolute -right-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full bg-loss text-sm font-bold leading-none text-white shadow-sm cursor-pointer hover:brightness-110"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          {/* A slim bar rather than a sixth tile, so folded stays one row */}
           {foldable && !editing && (
             <button
               type="button"
               aria-expanded={expanded}
               onClick={() => setExpanded((v) => !v)}
-              className="flex min-h-[60px] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-line-strong px-1 py-1.5 text-2xs font-semibold text-ink-muted transition-all cursor-pointer hover:bg-surface-muted/60 hover:text-ink active:scale-95"
+              className="mt-1.5 flex min-h-9 w-full items-center justify-center gap-1 rounded-xl border border-dashed border-line-strong text-xs font-semibold text-ink-muted transition-colors cursor-pointer hover:bg-surface-muted/60 hover:text-ink"
             >
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-surface-muted">
-                <ChevronDownIcon className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} strokeWidth={2} />
-              </span>
-              <span>{expanded ? 'Less' : `+${list.length - shown.length} more`}</span>
+              {expanded ? 'Show less' : `Show ${list.length - shown.length} more`}
+              <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} strokeWidth={2} aria-hidden="true" />
             </button>
           )}
-        </div>
+        </>
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {list.map((c) => {
