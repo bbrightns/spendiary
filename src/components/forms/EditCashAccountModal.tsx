@@ -70,7 +70,6 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
   // Most accounts pay nothing, so the interest fields stay folded away until switched on
   const [earnsInterest, setEarnsInterest] = useState(Boolean(initialAccount.interestRate))
 
-  const negative = balance.trimStart().startsWith('-')
   const num = (v: string) => Number(v.replace(/[^0-9.]/g, '')) || 0
   const yearlyInterest = (() => {
     const cap = num(maxEligibleBalance)
@@ -167,20 +166,7 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
             Balance
           </label>
           <div className={`${fieldCls} flex items-center focus-within:border-brand focus-within:bg-surface focus-within:ring-2 focus-within:ring-brand/15`}>
-            {/* Phone decimal keypads have no minus key, so the sign is a toggle */}
-            <button
-              type="button"
-              aria-label="Negative balance"
-              aria-pressed={negative}
-              title="Negative balance (overdrawn)"
-              onClick={() => setBalance((b) => (negative ? b.replace(/^\s*-/, '') : `-${b}`))}
-              className={`ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-base font-bold transition-colors cursor-pointer ${
-                negative ? 'bg-loss-soft text-loss' : 'text-ink-muted hover:bg-surface-muted'
-              }`}
-            >
-              ±
-            </button>
-            <span className={`text-base font-bold ${negative ? 'text-loss' : 'text-ink-muted'}`}>{currency === 'USD' ? '$' : '฿'}</span>
+            <span className="pl-3.5 text-base font-bold text-ink-muted">{currency === 'USD' ? '$' : '฿'}</span>
             <input
               id="account-balance"
               type="text"
