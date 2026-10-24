@@ -94,7 +94,15 @@ Each disabled "Add" needs a reason in the body. For example, Quick add shows "En
 
 ---
 
-## Phase 2: One card design (Invest moves to Spend's style)
+## Phase 2: One card design (Invest moves to Spend's style) [done]
+- **Dashboard:**
+  - The net worth card, Allocation, Cash and Debts are plain cards with `CardHeader` and `Inset`.
+  - Cash accounts and loans are divided rows, which fixed the overflowing chips.
+- **Invest's "to do" lines** use Spend Home's attention cards.
+- **One title style** for every card.
+- **Padding:** `compact` and `list` replace the per-page padding.
+- **Inner panels:** 33 bordered inner boxes are now borderless insets.
+- **Hover:** only clickable cards lift.
 
 | # | Change | Where |
 |---|---|---|

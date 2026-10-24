@@ -219,6 +219,8 @@ No per-page padding overrides. A card whose inside is a full-bleed chart or tabl
 - **Inset** (`<Inset>`): `rounded-2xl bg-surface-muted p-4`, with no border and no shadow. Use it for a group of figures inside a card, such as portfolio value plus all-time PnL.
 - **Dashed prompt:** `rounded-2xl border border-dashed border-line-strong p-3`. Use it for empty or setup prompts ("Set up bills that repeat").
 
+**Picture tiles are the one exception:** the credit-card stack (`CardStack`) and the wallet tiles on Spend → Accounts draw the object itself (a card face, a wallet), so they keep their own shape and accent ring.
+
 **Stat tiles** are a grid of `Card compact`. Each tile has a label (`text-xs font-semibold text-ink-muted`), a value (stat value style), and an optional one-line note. Long values must fit or be shortened (`฿140.0K`). A chip must never overflow its tile.
 
 **Attention cards** (Spend Home's "3 payments due"): `TodayStack` is the only pattern for "something needs you". It is a tinted `rounded-2xl` row with an icon tile, a title, a meta line and a `Review` pill. Invest uses the same component.
