@@ -232,8 +232,10 @@ export function Settings() {
         return
       }
 
-      // Build a human-readable summary of what's inside the file
-      const d = parsed as Record<string, unknown>
+      // Build a human-readable summary of what's inside the file.
+      // Backups wrap the data as { schemaVersion, data }; older files are the bare data object.
+      const top = parsed as Record<string, unknown>
+      const d = (top && typeof top.data === 'object' && top.data !== null ? top.data : top) as Record<string, unknown>
       const fileSummary = [
         Array.isArray(d.holdings) && d.holdings.length > 0
           ? `${(d.holdings as unknown[]).length} holdings`
