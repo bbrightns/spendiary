@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { Modal } from '../../components/ui/Modal'
 import { SegmentedControl } from '../../components/ui/SegmentedControl'
 import { FormActions } from '../../components/forms/FormActions'
@@ -14,23 +14,15 @@ import { shortDay } from './RecurringDue'
 import { TYPE_ACTIVE } from './tones'
 import { useSpend } from './useSpend'
 import { SwitchVisual } from '../../components/ui/SwitchVisual'
+import { FieldWrap } from '../../components/ui/Field'
+import { fieldClass } from '../../components/ui/fieldClasses'
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 const MONTHS = Array.from({ length: 12 }, (_, i) => new Date(2000, i, 1).toLocaleDateString('en-GB', { month: 'long' }))
 /** Recurring expenses are mostly bills; recurring income is mostly salary */
 const USUAL_CATEGORY = { expense: 'bills', income: 'salary' } as const
 
-const inputClass =
-  'h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15'
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-1.5 block text-sm font-semibold text-ink-soft">{label}</span>
-      {children}
-    </label>
-  )
-}
 
 interface Form {
   type: 'expense' | 'income'
@@ -215,46 +207,46 @@ export function RecurringSheet({ open, rec, onClose }: { open: boolean; rec?: Sp
           />
           <div className="grid grid-cols-2 gap-3">
             {form.frequency === 'weekly' ? (
-              <Field label="On">
-                <select className={inputClass} value={form.weekday} onChange={(e) => set('weekday', Number(e.target.value))}>
+              <FieldWrap label="On">
+                <select className={fieldClass} value={form.weekday} onChange={(e) => set('weekday', Number(e.target.value))}>
                   {WEEKDAYS.map((w, i) => (
                     <option key={w} value={i + 1}>
                       {w}
                     </option>
                   ))}
                 </select>
-              </Field>
+              </FieldWrap>
             ) : (
-              <Field label="Day of month">
+              <FieldWrap label="Day of month">
                 <input
-                  className={`${inputClass} tnum`}
+                  className={`${fieldClass} tnum`}
                   inputMode="numeric"
                   maxLength={2}
                   value={form.day}
                   onChange={(e) => set('day', e.target.value.replace(/\D/g, ''))}
                 />
-              </Field>
+              </FieldWrap>
             )}
             {form.frequency === 'yearly' ? (
-              <Field label="Month">
-                <select className={inputClass} value={form.month} onChange={(e) => set('month', Number(e.target.value))}>
+              <FieldWrap label="Month">
+                <select className={fieldClass} value={form.month} onChange={(e) => set('month', Number(e.target.value))}>
                   {MONTHS.map((m, i) => (
                     <option key={m} value={i + 1}>
                       {m}
                     </option>
                   ))}
                 </select>
-              </Field>
+              </FieldWrap>
             ) : (
-              <Field label="Starts">
-                <input type="date" className={inputClass} value={form.startDate} onChange={(e) => set('startDate', e.target.value)} />
-              </Field>
+              <FieldWrap label="Starts">
+                <input type="date" className={fieldClass} value={form.startDate} onChange={(e) => set('startDate', e.target.value)} />
+              </FieldWrap>
             )}
           </div>
           {form.frequency === 'yearly' && (
-            <Field label="Starts">
-              <input type="date" className={inputClass} value={form.startDate} onChange={(e) => set('startDate', e.target.value)} />
-            </Field>
+            <FieldWrap label="Starts">
+              <input type="date" className={fieldClass} value={form.startDate} onChange={(e) => set('startDate', e.target.value)} />
+            </FieldWrap>
           )}
           {!dayOk && <p className="text-xs font-semibold text-loss">Pick a day from 1 to 31.</p>}
           <p className="text-xs text-ink-muted">

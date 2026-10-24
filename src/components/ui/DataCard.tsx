@@ -32,7 +32,7 @@ export function DataRow({ title, description, status, action }: { title: string;
 const ACTION_BASE =
   'inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors active:scale-95 cursor-pointer disabled:pointer-events-none disabled:opacity-50'
 const ACTION_TONE = {
-  default: 'bg-surface-muted text-ink-soft hover:bg-ink hover:text-white dark:hover:bg-[#4f46e5]',
+  default: 'bg-surface-muted text-ink-soft hover:bg-primary hover:text-white',
   danger: 'bg-loss-soft text-loss hover:bg-loss hover:text-white',
 }
 

@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { CheckIcon } from '../icons'
+import { Modal } from './Modal'
 
 interface PopoverProps {
   open: boolean
@@ -19,7 +20,7 @@ const GAP = 6
 const EDGE = 12
 
 /**
- * A small floating panel: a dropdown under its button on desktop, a bottom sheet on phones.
+ * A small floating panel: a dropdown under its button on desktop, the standard Modal sheet on phones.
  * Closes on Escape, on a tap outside and on scroll/resize (desktop), and gives focus back to its button.
  */
 export function Popover({ open, onClose, anchorRef, title, align = 'left', children }: PopoverProps) {
@@ -55,6 +56,14 @@ export function Popover({ open, onClose, anchorRef, title, align = 'left', child
   useEffect(() => {
     if (!open) return
     const anchor = anchorRef.current
+    // On phones the sheet is a Modal: it owns Escape, scroll lock, the focus trap and first focus
+    if (isMobile) return () => anchor?.focus()
+
+    // Start on the picked option
+    window.requestAnimationFrame(() => {
+      panelRef.current?.querySelector<HTMLElement>('[aria-checked="true"], button, input')?.focus()
+    })
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation()
@@ -67,20 +76,12 @@ export function Popover({ open, onClose, anchorRef, title, align = 'left', child
       onCloseRef.current()
     }
     document.addEventListener('keydown', onKey)
-    if (isMobile) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      window.addEventListener('scroll', onScroll, true)
-      window.addEventListener('resize', onScroll)
-    }
-    window.requestAnimationFrame(() => {
-      panelRef.current?.querySelector<HTMLElement>('[aria-checked="true"], button, input')?.focus()
-    })
+    window.addEventListener('scroll', onScroll, true)
+    window.addEventListener('resize', onScroll)
     return () => {
       document.removeEventListener('keydown', onKey)
       window.removeEventListener('scroll', onScroll, true)
       window.removeEventListener('resize', onScroll)
-      if (isMobile) document.body.style.overflow = ''
       anchor?.focus()
     }
   }, [open, isMobile, anchorRef])
@@ -88,30 +89,13 @@ export function Popover({ open, onClose, anchorRef, title, align = 'left', child
   if (!open || typeof document === 'undefined') return null
 
   if (isMobile) {
+    // Same sheet, header and close button as every other dialog
     return createPortal(
-      <div className="fixed inset-0 z-50 flex items-end">
-        <div
-          className="absolute inset-0 bg-ink/35 dark:bg-black/60 backdrop-blur-sm"
-          style={{ animation: 'fadeIn 0.2s ease both' }}
-          onClick={onClose}
-          aria-hidden="true"
-        />
-        <div
-          ref={panelRef}
-          role="dialog"
-          aria-modal="true"
-          aria-label={title}
-          className="relative w-full max-h-[80dvh] overflow-y-auto rounded-t-[24px] bg-surface px-3 pt-2 shadow-[var(--shadow-lift)]"
-          style={{
-            animation: 'sheetUp 0.32s cubic-bezier(0.16,1,0.3,1) both',
-            paddingBottom: 'max(1rem, calc(0.5rem + env(safe-area-inset-bottom, 0px)))',
-          }}
-        >
-          <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-line-strong" aria-hidden="true" />
-          <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wide text-ink-faint">{title}</p>
+      <Modal open onClose={onClose} title={title} size="sm" enterToSubmit={false}>
+        <div ref={panelRef} className="-mx-3">
           {children}
         </div>
-      </div>,
+      </Modal>,
       document.body,
     )
   }
@@ -124,7 +108,7 @@ export function Popover({ open, onClose, anchorRef, title, align = 'left', child
         role="dialog"
         aria-label={title}
         style={{ position: 'fixed', top: pos?.top, left: pos?.left, right: pos?.right, visibility: pos ? 'visible' : 'hidden' }}
-        className={`z-50 min-w-[200px] max-w-[calc(100vw-24px)] max-h-[70vh] overflow-y-auto rounded-2xl border border-line bg-surface p-1.5 shadow-2xl animate-in fade-in zoom-in-95 duration-100 ${
+        className={`z-50 min-w-[200px] max-w-[calc(100vw-24px)] max-h-[70vh] overflow-y-auto rounded-2xl border border-line bg-surface p-1.5 shadow-[var(--shadow-lift)] animate-pop-in ${
           align === 'right' ? 'origin-top-right' : 'origin-top-left'
         }`}
       >
@@ -156,6 +140,7 @@ export function PopoverOption({
       type="button"
       role={selected === undefined ? undefined : 'menuitemradio'}
       aria-checked={selected === undefined ? undefined : selected}
+      data-autofocus={selected || undefined}
       onClick={onClick}
       disabled={disabled}
       className={`flex w-full min-h-[44px] sm:min-h-[36px] items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm transition-colors ${

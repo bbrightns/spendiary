@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { Modal } from '../../components/ui/Modal'
 import { SegmentedControl } from '../../components/ui/SegmentedControl'
 import { FormActions } from '../../components/forms/FormActions'
@@ -11,6 +11,8 @@ import { DebtCategoryIcon } from './DebtCategoryIcon'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { useSpend } from './useSpend'
 import { firstInstallmentDue } from './loans'
+import { FieldWrap } from '../../components/ui/Field'
+import { fieldClass } from '../../components/ui/fieldClasses'
 
 type Kind = 'installment' | 'loan'
 
@@ -28,24 +30,12 @@ const LOAN_TYPES: { value: DebtCategory; label: string }[] = [
   { value: 'other', label: 'Other' },
 ]
 
-const inputClass =
-  'h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15 tnum'
+const inputClass = `${fieldClass} tnum`
 
 const digits = (v: string) => v.replace(/[^\d.,]/g, '')
 const num = (v: string) => Number(v.replace(/,/g, '')) || 0
 const str = (n?: number) => (n !== undefined && n > 0 ? String(n) : '')
 
-function Field({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
-  return (
-    <label className="block">
-      <div className="mb-1.5 flex items-center justify-between gap-3">
-        <span className="text-sm font-semibold text-ink-soft">{label}</span>
-        {hint && <span className="text-xs text-ink-muted">{hint}</span>}
-      </div>
-      {children}
-    </label>
-  )
-}
 
 /** "3 of 10" payments, as two small number inputs in one field. */
 function PaymentsInput({ paid, total, onPaid, onTotal }: { paid: string; total: string; onPaid: (v: string) => void; onTotal: (v: string) => void }) {
@@ -240,20 +230,20 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
           </div>
         )}
 
-        <Field label="Name">
+        <FieldWrap label="Name">
           <input
             value={form.name}
             onChange={(e) => set('name')(e.target.value)}
             placeholder={installment ? 'iPhone 16 Pro' : 'Condo loan'}
             className={inputClass}
           />
-        </Field>
+        </FieldWrap>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Still owed">
+          <FieldWrap label="Still owed">
             <input inputMode="decimal" value={form.owed} onChange={(e) => set('owed')(digits(e.target.value))} placeholder="0" className={inputClass} />
-          </Field>
-          <Field label="Each month" hint={suggested > 0 && !form.monthly ? `≈ ${thb(suggested)}` : undefined}>
+          </FieldWrap>
+          <FieldWrap label="Each month" hint={suggested > 0 && !form.monthly ? `≈ ${thb(suggested)}` : undefined}>
             <input
               inputMode="decimal"
               value={form.monthly}
@@ -261,16 +251,16 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
               placeholder={suggested > 0 ? String(suggested) : '0'}
               className={inputClass}
             />
-          </Field>
+          </FieldWrap>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           {installment ? (
-            <Field label="Payments made">
+            <FieldWrap label="Payments made">
               <PaymentsInput paid={form.paid} total={form.total} onPaid={set('paid')} onTotal={set('total')} />
-            </Field>
+            </FieldWrap>
           ) : (
-            <Field label="Interest" hint="optional">
+            <FieldWrap label="Interest" hint="optional">
               <div className="flex h-11 items-center rounded-xl border border-line-strong bg-surface px-3.5 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
                 <input
                   inputMode="decimal"
@@ -281,9 +271,9 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
                 />
                 <span className="shrink-0 text-xs font-semibold text-ink-muted">% / yr</span>
               </div>
-            </Field>
+            </FieldWrap>
           )}
-          <Field label="Due day" hint="1–31">
+          <FieldWrap label="Due day" hint="1–31">
             <input
               inputMode="numeric"
               value={form.dueDay}
@@ -291,7 +281,7 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
               placeholder="25"
               className={inputClass}
             />
-          </Field>
+          </FieldWrap>
         </div>
 
         <PayMethodPicker
@@ -323,32 +313,32 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
           {more && (
             <div className="space-y-4 border-t border-line px-4 pb-4 pt-3">
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Lender">
+                <FieldWrap label="Lender">
                   <input value={form.lender} onChange={(e) => set('lender')(e.target.value)} placeholder={installment ? 'Apple, SPayLater' : 'SCB, KBank'} className={inputClass} />
-                </Field>
+                </FieldWrap>
                 {installment ? (
-                  <Field label="Interest" hint="% / yr">
+                  <FieldWrap label="Interest" hint="% / yr">
                     <input inputMode="decimal" value={form.rate} onChange={(e) => set('rate')(digits(e.target.value))} placeholder="0" className={inputClass} />
-                  </Field>
+                  </FieldWrap>
                 ) : (
-                  <Field label="Borrowed">
+                  <FieldWrap label="Borrowed">
                     <input inputMode="decimal" value={form.original} onChange={(e) => set('original')(digits(e.target.value))} placeholder={form.owed || '0'} className={inputClass} />
-                  </Field>
+                  </FieldWrap>
                 )}
               </div>
               {!installment && (
-                <Field label="Payments made" hint="optional, e.g. 14 of 60">
+                <FieldWrap label="Payments made" hint="optional, e.g. 14 of 60">
                   <PaymentsInput paid={form.paid} total={form.total} onPaid={set('paid')} onTotal={set('total')} />
-                </Field>
+                </FieldWrap>
               )}
               {installment && (
-                <Field label="Full price">
+                <FieldWrap label="Full price">
                   <input inputMode="decimal" value={form.original} onChange={(e) => set('original')(digits(e.target.value))} placeholder={form.owed || '0'} className={inputClass} />
-                </Field>
+                </FieldWrap>
               )}
-              <Field label="Note">
+              <FieldWrap label="Note">
                 <input value={form.note} onChange={(e) => set('note')(e.target.value)} placeholder="Optional" className={inputClass} />
-              </Field>
+              </FieldWrap>
             </div>
           )}
         </div>

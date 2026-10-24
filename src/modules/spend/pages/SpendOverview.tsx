@@ -166,7 +166,7 @@ export function SpendOverview() {
                 aria-selected={on}
                 onClick={() => setDay(d.date)}
                 className={`flex flex-col items-center rounded-xl border py-1.5 transition-colors cursor-pointer ${
-                  on ? 'border-ink bg-ink text-white dark:border-[#4f46e5] dark:bg-[#4f46e5]' : 'border-line text-ink-muted hover:bg-surface-muted/60'
+                  on ? 'border-primary bg-primary text-white' : 'border-line text-ink-muted hover:bg-surface-muted/60'
                 }`}
               >
                 <span className="text-2xs font-semibold">{dt.toLocaleDateString('en-GB', { weekday: 'short' })}</span>

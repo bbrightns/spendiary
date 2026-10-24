@@ -668,7 +668,7 @@ export function DcaPlanner() {
                           <button
                             onClick={saveEditingPlans}
                             aria-label="Save DCA plans changes"
-                            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-brand hover:bg-brand-ink text-white dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] px-3.5 text-xs font-bold shadow-xs transition-colors active:scale-95 cursor-pointer"
+                            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-brand hover:bg-brand/90 text-white px-3.5 text-xs font-bold shadow-xs transition-colors active:scale-95 cursor-pointer"
                           >
                             <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
                             <span>Save</span>

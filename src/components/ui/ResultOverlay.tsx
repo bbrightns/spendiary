@@ -170,7 +170,7 @@ export function ResultOverlay() {
               ref={closeButtonRef}
               type="button"
               onClick={() => hideResult()}
-              className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-full bg-ink px-5 text-sm font-semibold text-white shadow-[var(--shadow-soft)] transition-all hover:bg-ink-hover active:scale-[0.98] dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] cursor-pointer"
+              className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-white shadow-[var(--shadow-soft)] transition-all hover:bg-primary-hover active:scale-[0.98] cursor-pointer"
             >
               Got it
             </button>

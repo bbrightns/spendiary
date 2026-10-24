@@ -36,6 +36,10 @@
   --color-brand-soft: #eef4ff;
   --color-brand-ink: #0052cc;
 
+  /* Primary action fill (Button primary, active chips, the "+" button): ink in light, indigo in dark */
+  --color-primary: #090d16;
+  --color-primary-hover: #1a202c;
+
   /* Invest side: the same electric blue in both themes, so the side keeps its colour when
      dark mode turns the brand indigo (Spend's side colour is emerald) */
   --color-invest: #0066ff;
@@ -73,6 +77,11 @@
 
   --radius-card: 1.5rem;
 
+  /* Motion vocabulary: backdrops fade in, sheets/dialogs rise, dropdowns pop. Keyframes are below. */
+  --animate-fade-in: fadeIn 0.2s ease both;
+  --animate-sheet-up: sheetUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-pop-in: popIn 0.12s ease-out both;
+
   --shadow-soft: 0 1px 3px rgba(15, 23, 42, 0.03), 0 10px 30px -10px rgba(15, 23, 42, 0.07);
   --shadow-lift: 0 3px 6px rgba(15, 23, 42, 0.04), 0 20px 40px -15px rgba(15, 23, 42, 0.12);
 }
@@ -100,6 +109,10 @@
   --color-brand: #4f46e5;
   --color-brand-soft: #1e2245;
   --color-brand-ink: #c7d2fe;
+
+  /* Primary action fill: Precision Indigo, white text stays 7.4:1 */
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
 
   /* Invest side: same blue; small text a lighter shade so it stays readable on dark */
   --color-invest: #0066ff;
@@ -645,6 +658,17 @@
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 

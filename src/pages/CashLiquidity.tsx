@@ -284,7 +284,7 @@ export function CashLiquidity() {
               onClick={() => setActiveCategoryFilter('all')}
               className={`px-3 py-1.5 rounded-full font-semibold transition-colors cursor-pointer shrink-0 ${
                 activeCategoryFilter === 'all'
-                  ? 'bg-ink text-surface shadow-xs'
+                  ? 'bg-primary text-white shadow-xs'
                   : 'bg-surface-muted text-ink-muted hover:text-ink'
               }`}
             >

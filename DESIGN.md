@@ -1,360 +1,343 @@
 ---
 name: Spendiary
-description: A private financial cockpit for tracking investments, DCA plans, and bank transfer schedules in Thai Baht.
+description: A private money app for one person in Thai Baht. Spend tracks daily money; Invest tracks holdings, DCA plans, dividends and cash.
+source-of-truth: "The code. Token values live in src/index.css; this file describes them and the rules for using them. When the two disagree, fix this file."
+reference-module: "Spend (src/modules/spend). When Spend and Invest do the same job differently, Spend's way is the standard."
+primary-theme: "Light. Design and review every screen in light first; dark must follow from tokens alone."
 colors:
-  canvas: "#f6f7f9"
+  # Light theme (default). Dark values are listed under colors-dark.
+  canvas: "#faf9f5"            # under the ambient gradient (body, .app-canvas-bg)
   surface: "#ffffff"
-  surface-muted: "#f3f4f6"
-  ink: "#0b0d12"
-  ink-hover: "#1d2230"
-  ink-soft: "#3d424d"
+  surface-muted: "#f4f6fa"
+  ink: "#090d16"
+  ink-hover: "#1a202c"
+  ink-soft: "#334155"
   ink-muted: "#555b6a"
   ink-faint: "#6b7280"
-  ink-deep: "#23283a"
-  line: "#ecedf1"
-  line-strong: "#e2e4ea"
-  brand: "#4f46e5"
-  brand-soft: "#eef0ff"
-  brand-ink: "#3730a3"
-  gain: "#0a9d68"
-  gain-soft: "#e4f7ef"
-  loss: "#e0506a"
-  loss-soft: "#fdebef"
-  warn: "#c9821a"
-  warn-soft: "#fdf3e2"
-  funds: "#6366f1"
-  stocks: "#0ea5e9"
-  crypto: "#f59e0b"
+  ink-deep: "#1e293b"
+  line: "#eaedf3"
+  line-strong: "#dbe2ec"
+  brand: "#0066ff"
+  brand-soft: "#eef4ff"
+  brand-ink: "#0052cc"
+  invest: "#0066ff"
+  invest-soft: "#eef4ff"
+  invest-ink: "#0052cc"
+  spend-accent: "emerald-700 (text) / emerald-600 (fill)"
+  gain: "#059669"
+  gain-soft: "#ecfdf5"
+  loss: "#e11d48"
+  loss-soft: "#fff1f2"
+  warn: "#d97706"
+  warn-soft: "#fffbeb"
+  funds: "#2563eb"
+  stocks: "#0284c7"
+  crypto: "#f97316"
+  gold: "#eab308"
+  real-estate: "#a855f7"
   cash: "#10b981"
-  bank-kbank: "#137f46"
-  bank-scb: "#4e2a84"
-  bank-bbl: "#1e3a8a"
-  bank-ktb: "#00a5e5"
-  bank-bay: "#fec400"
-  bank-ttb: "#002d63"
-  bank-gsb: "#eb1985"
-  asset-btc: "#f7931a"
-  asset-btc-accent: "#ffab40"
-  asset-eth: "#627eea"
-  asset-eth-accent: "#8c9eff"
-  asset-gold: "#e6a100"
-  asset-gold-accent: "#ffd54f"
-  asset-gold-deep: "#b27b00"
-  asset-estate: "#8b5cf6"
-  asset-estate-deep: "#6d28d9"
-  canvas-tint: "#efe5e8"
-  slate-muted: "#64748b"
-  emerald-vivid: "#16a34a"
-  purple-vivid: "#7c3aed"
-  blue-vivid: "#2563eb"
-  blue-standard: "#3b82f6"
-  sky-vivid: "#0284c7"
-  cyan-vivid: "#06b6d4"
-  orange-vivid: "#ea580c"
-  orange-bright: "#f97316"
-  purple-bright: "#a855f7"
-  pink-vivid: "#ec4899"
-  rose-vivid: "#f43f5e"
-  yellow-vivid: "#eab308"
+  debt: "#f43f5e"
+colors-dark:
+  canvas: "#0f1117"
+  surface: "#181b26"
+  surface-muted: "#1f2235"
+  ink: "#eef0f8"
+  ink-soft: "#b0b8d0"
+  ink-muted: "#8390a8"
+  ink-faint: "#8a93a8"
+  line: "#242839"
+  line-strong: "#2c3048"
+  brand: "#4f46e5"
+  brand-soft: "#1e2245"
+  brand-ink: "#c7d2fe"
+  invest: "#0066ff"
+  invest-ink: "#4d94ff"
+  gain: "#34d399"
+  loss: "#fb7185"
+  warn: "#fbbf24"
 typography:
+  families:
+    display: "'Plus Jakarta Sans', Inter, ui-sans-serif, system-ui, sans-serif"
+    body: "'Inter', ui-sans-serif, system-ui, sans-serif"
+    mono: "ui-monospace only for <kbd> keys and the build hash in the footer"
   scale:
-    2xs: "12px (text-2xs: the floor; tight badges, chart axis labels, tiny tiles only)"
-    xs: "13px (text-xs: labels, captions, chips, list metadata; Tailwind default raised from 12px)"
-    sm: "14px (text-sm: secondary body, list subtext, button text)"
-    base: "16px (text-base: primary body copy, standard input text)"
-    lg: "18px (text-lg: subhead, card headers, medium metrics)"
-    xl: "20px (text-xl: section titles, modal headers)"
-    2xl: "24px (text-2xl: prominent metric values, large titles)"
-    3xl: "30px (text-3xl: major section displays)"
-    4xl: "36px (text-4xl: stat card displays)"
-    5xl: "48px (text-5xl: hero financial readouts, net worth display)"
-  display:
-    fontFamily: "'Plus Jakarta Sans', Inter, ui-sans-serif, system-ui, sans-serif"
-    fontWeight: 800
-    fontSize: "48px"
-    lineHeight: 1
-    letterSpacing: "-0.025em"
-    fontFeature: "'cv11', 'ss01', 'tnum'"
-  headline:
-    fontFamily: "'Plus Jakarta Sans', Inter, ui-sans-serif, system-ui, sans-serif"
-    fontWeight: 800
-    fontSize: "36px"
-    lineHeight: 1
-    letterSpacing: "-0.02em"
-  title:
-    fontFamily: "'Plus Jakarta Sans', Inter, ui-sans-serif, system-ui, sans-serif"
-    fontWeight: 700
-    fontSize: "18px"
-    lineHeight: 1.3
-    letterSpacing: "-0.01em"
-  body:
-    fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif"
-    fontWeight: 400
-    fontSize: "14px"
-    lineHeight: 1.6
-  label:
-    fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif"
-    fontWeight: 600
-    fontSize: "12px"
-    lineHeight: 1.4
+    2xs: "12px. The floor: tight badges, chart axis labels"
+    xs: "13px. Captions, chips, list metadata, field hints"
+    sm: "14px. List row titles, buttons, field labels, secondary body"
+    base: "16px. Body copy, input text"
+    lg: "18px. Card titles"
+    xl: "20px. Modal titles"
+    3xl: "30px. Page titles"
+    4xl: "36px. Hero figures inside a card"
 rounded:
-  xs: "8px"
-  sm: "12px"
-  md: "16px"
-  card: "24px"
-  full: "9999px"
+  chip: "9999px"
+  button: "9999px"
+  input: "12px (rounded-xl)"
+  icon-tile: "12px (rounded-xl)"
+  inset: "16px (rounded-2xl)"
+  card: "24px (--radius-card)"
+  modal: "28px"
 spacing:
-  xs: "4px"
-  sm: "8px"
-  md: "16px"
-  lg: "20px"
-  xl: "24px"
+  card-padding: "20px (p-5)"
+  card-padding-compact: "16px (p-4), stat tiles in a grid only"
+  modal-gutter: "24px (px-6)"
+  page-gutter: "20px phone / 32px sm / 40px lg"
 components:
   button-primary:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.surface}"
-    darkBackgroundColor: "#4f46e5"
-    darkTextColor: "#ffffff"
-    rounded: "{rounded.full}"
-    padding: "0 16px"
-    height: "40px"
-  button-primary-hover:
-    backgroundColor: "{colors.ink-hover}"
-    darkBackgroundColor: "#4338ca"
-  button-brand-icon:
-    backgroundColor: "{colors.brand-soft}"
-    textColor: "{colors.brand}"
-    rounded: "{rounded.full}"
-    size: "36px"
-  button-brand-icon-hover:
-    backgroundColor: "{colors.brand}"
-    textColor: "{colors.surface}"
-  chip-filter:
-    backgroundColor: "{colors.surface-muted}"
-    textColor: "{colors.ink-soft}"
-    rounded: "{rounded.full}"
-    padding: "6px 14px"
-  chip-filter-active:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.surface}"
-    darkBackgroundColor: "#4f46e5"
-    darkTextColor: "#ffffff"
-    rounded: "{rounded.full}"
-    padding: "6px 14px"
-  chip-gain:
-    backgroundColor: "{colors.gain-soft}"
-    textColor: "{colors.gain}"
-    rounded: "{rounded.full}"
-    padding: "2px 8px"
-  chip-loss:
-    backgroundColor: "{colors.loss-soft}"
-    textColor: "{colors.loss}"
-    rounded: "{rounded.full}"
-    padding: "2px 8px"
+    background: "{colors.ink}"
+    darkBackground: "{colors-dark.brand}"
+    text: "#ffffff"
+    rounded: "{rounded.button}"
+    height: "44px (md) / 36px (sm)"
   field:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.sm}"
+    background: "{colors.surface}"
+    border: "{colors.line-strong}"
+    rounded: "{rounded.input}"
     height: "44px"
-  field-focus:
-    textColor: "{colors.brand}"
+  card:
+    background: "{colors.surface}"
+    border: "{colors.line}"
+    shadow: "--shadow-soft"
+    rounded: "{rounded.card}"
+    padding: "{spacing.card-padding}"
+  modal:
+    background: "{colors.surface}"
+    rounded: "{rounded.modal}"
+    widths: "sm 400px / md 460px / lg 620px"
 ---
 
 # Design System: Spendiary
 
-## 1. Overview
+## 1. Ground rules
 
-**Creative North Star: "The Control Room"**
+1. **The code is the source of truth.** Token values live in `src/index.css`. This file explains them and sets the rules for using them. If you change a token, update this file in the same commit.
+2. **Light theme comes first.** Every screen is designed and reviewed in light. Dark mode is still supported, but it must come from tokens alone: no hex values and no hand-written `dark:` colours in components (section 8).
+3. **Spend is the reference.** The Spend module was built to this system. Invest is being brought in line with it. When the two do the same job differently, copy Spend.
+4. **One way to do each thing.** One modal, one card, one button set, one list row, one way to confirm a delete. If a screen needs something new, add it to the shared component and to this file. Don't build a one-off.
+5. **No emoji in the interface.** Icons come from `src/components/icons` (lucide). This covers labels, titles, buttons, select options, toasts, empty states and section headers. Use the text characters `·`, `→`, `−` and `฿` as punctuation; they are not emoji.
 
-Spendiary is a one-user, private financial cockpit. The interface speaks with quiet authority: every readout is calibrated, every element earns its presence. There is no decoration for its own sake. The design feels less like a consumer app and more like a well-engineered instrument — the kind that rewards repeated use and never demands attention it hasn't earned.
+## 2. Overview
 
-The density is deliberate but not punishing. The system surfaces real financial data — portfolio values, DCA progress, transfer schedules — on a calm, light-toned surface without the Bloomberg wall-of-numbers assault. Color is reserved exclusively for signal: emerald for gain, rose for loss, amber for expiring, indigo for "act here." When those colors appear they carry weight precisely because they're absent everywhere else.
+**North star: "The Control Room."** Spendiary is a private money app for one person. It is calm, exact and quiet. Numbers carry the screen, and colour only appears when it means something.
 
-This is not a social product and not a motivational tool. No sharing affordances, no streak counters, no animated celebrations. The emotional register is composed, not congratulatory. It exists for one person who already understands their finances — and does not need the interface to explain money to them.
+- Warm off-white canvas with a soft ambient gradient (light); flat `canvas` in dark.
+- White cards with a hairline border and a soft shadow. Every block of content lives in a card.
+- Plus Jakarta Sans for titles and big numbers; Inter for everything else.
+- Phones get a bottom nav and bottom-sheet modals. Desktop (lg and up) gets a fixed sidebar and centred modals. The structure of a page never changes between the two, only the chrome around it.
 
-**Key Characteristics:**
-- Ink-on-white surfaces with a cool barely-tinted canvas; card-first page composition
-- Plus Jakarta Sans extrabold for all financial figures and section titles; Inter for everything else
-- Semantic-only color — the neutral ink family carries 90% of the text surface; accents appear only when they carry financial meaning
-- Ambient two-layer shadow separates surfaces from canvas; cards combine a hairline border with a soft diffuse shadow as the base register
-- Mobile-first: frosted-glass bottom nav; fixed sidebar on desktop (lg+); layout never changes in structure between modes, only in nav chrome
+## 3. Colour
 
-## 2. Colors: The Precision Palette
+### Brand and sides
+- **Brand** (`--color-brand`): electric blue `#0066ff` in light, indigo `#4f46e5` in dark. Use it for focus rings, text links, selected states and progress bars. Never as a card or section fill.
+- **Two sides, two accents.** Spend is emerald (`SPEND_ACCENT_TEXT` in `src/components/tones.ts`); Invest is blue (`--color-invest`, the same in both themes). Side colour appears only in the Spend/Invest switch, the page eyebrow and the active nav item. It is not used to style cards or buttons.
 
-A restrained neutral base with a single indigo accent and a tight vocabulary of financial-semantic signals. The neutrals dominate; every non-neutral color is a datum, not decoration.
+### Neutrals
+`ink` carries most text. Use `ink-soft` for field labels and row values, `ink-muted` for captions and metadata, and `ink-faint` for placeholders and disabled text. Use `line` for card borders and dividers, and `line-strong` for input borders.
 
-### Primary
-- **Precision Indigo** (#4f46e5, `--color-brand`): The one active-state color. Active nav states, focus rings, brand CTAs, and data indicators for the brand. Appears when the interface is saying "act here." Reserved. Never floods a surface.
-- **Brand Tint** (#eef0ff, `--color-brand-soft`): Soft indigo for icon container backgrounds and interactive element resting states. Used at ~11% opacity via `color-mix`.
-- **Brand Dark** (#3730a3, `--color-brand-ink`): Hover and active text states for brand-colored elements. Active nav label color on mobile.
+### Semantic colours
+- **gain / loss / warn** mean money going up, money going down, and something due or at risk. Use the `-soft` tint for backgrounds and the full colour for text and icons.
+- The same three colours are also used for **result feedback** (success and error toasts, the result popup) and **due states** (due today, overdue).
+- They are **never button fills for a normal save**. A green "Add to holding" or "Confirm" button is wrong; use the primary button. The only coloured button is `danger`, and only for destructive actions.
 
-### Tertiary (financial semantics)
-- **Gain Emerald** (#0a9d68, `--color-gain`) with Soft (#e4f7ef, `--color-gain-soft`): Positive returns, "Bought" status. Use soft as chip background, full color as text/icon.
-- **Loss Rose** (#e0506a, `--color-loss`) with Soft (#fdebef, `--color-loss-soft`): Negative returns, overdue states.
-- **Warn Amber** (#c9821a, `--color-warn`) with Soft (#fdf3e2, `--color-warn-soft`): Expiring transfers, caution states.
+### Category tones and asset accents
+- **Category tones** (`TONES` in `src/components/tones.ts`) are pastel pairs for Spend categories. Use them for category icon tiles, selected category tiles, subcategory trays and chart bars, and nothing else.
+- **Asset accents** (`--color-funds`, `-stocks`, `-crypto`, `-gold`, `-real-estate`, `-cash`, `-debt`) are for chart segments, legend dots and asset icon tiles only. They are never text colour, button colour or a section fill.
 
-### Neutral
-- **Deep Slate** (#0b0d12, `--color-ink`): Primary text. Near-black with a cool blue-grey undertone. Also the primary button background.
-- **Ink Soft** (#3d424d, `--color-ink-soft`): Secondary text, row values, field labels.
-- **Ink Muted** (#555b6a, `--color-ink-muted`): Labels, captions, metadata. The dominant label color across the interface. Darkened from #6b7280 to meet WCAG AA 4.5:1 on surface-muted.
-- **Ink Faint** (#6b7280, `--color-ink-faint`): Placeholder text only. Darkened from #8e939e to meet WCAG AA 4.5:1 on white.
-- **Ink Deep** (#23283a, `--color-ink-deep`): The dark endpoint of the hero gradient (Dashboard net-worth card). Not used as text.
-- **Canvas** (#f6f7f9, `--color-canvas`): Page background. Cool barely-tinted near-white — not warm, not paper.
-- **Surface** (#ffffff, `--color-surface`): Card and modal fill. Pure white.
-- **Surface Muted** (#f3f4f6, `--color-surface-muted`): Pressed states, secondary surfaces, inactive filter chip backgrounds.
-- **Line** (#ecedf1, `--color-line`): Default borders and dividers. Extremely subtle; only visible as a hairline.
-- **Line Strong** (#e2e4ea, `--color-line-strong`): Input field borders, heavier dividers.
+### What not to use
+- No raw Tailwind palette colours (`emerald-600`, `rose-500`, `amber-400`, …) in components. The only exceptions are the `tones.ts` definitions and the side accent, which live in one file so Tailwind can see them.
+- No hex values in `className`. If a colour is missing, add a token in `src/index.css`. The only exception is third-party brand marks: bank and fund logos in `AssetLogo`, and social glyphs.
+- Solid action fills use `bg-primary hover:bg-primary-hover text-white`, never `bg-ink`. `ink` flips to near-white in dark, so `bg-ink text-white` turns unreadable.
 
-### Asset Accents (chart and icon use only)
-Funds (#6366f1), Stocks (#0ea5e9), Crypto (#f59e0b), Cash (#10b981). Used as tinted icon backgrounds (`color-mix(in srgb, accent 11%, white)`) and donut chart segment fills. Never as text color, button color, or full surface fill.
+## 4. Typography
 
-**The One Voice Rule.** Precision Indigo (#4f46e5) appears on ≤10% of any given screen. Its scarcity is the signal. No indigo surface fills, no indigo gradients, no indigo used as a general "positive action" color outside of its role as the system's primary interactive accent.
+| Role | Class | Used for |
+|---|---|---|
+| Page title | `font-display text-3xl font-extrabold tracking-tight` | `PageHeader` only |
+| Hero figure | `font-display text-4xl font-extrabold tracking-tight tnum` | The one big number in a card (Today, Total net worth) |
+| Modal title | `font-display text-xl font-extrabold tracking-tight` | `Modal` only |
+| Card title | `font-display text-lg font-extrabold` | The heading row of every card |
+| Stat value | `font-display text-2xl font-extrabold tnum` | Values in stat tiles |
+| Row title | `text-sm font-semibold text-ink` | List rows |
+| Body | `text-sm text-ink-muted` | Descriptions, empty-state copy |
+| Label / meta | `text-xs font-semibold text-ink-muted` | Small section labels inside a card, row metadata |
+| Field label | `text-sm font-semibold text-ink-soft` | Above every input (`Field`) |
 
-**The Earned Color Rule.** Gain, loss, and warn are financial semantics, not UI semantics. Do not use `--color-gain` for a generic "saved" confirmation or `--color-warn` for a form validation hint. The vocabulary is financial and must stay that way.
+Rules:
+- **Sentence case everywhere.** Write "Add holding", not "Add Holding"; "Remove dividend record", not "Remove Dividend Record". This covers titles, buttons, labels, menu items and command palette entries. Proper nouns and tickers keep their case.
+- **All caps is only for the page eyebrow** in `PageHeader` (`text-xs font-semibold uppercase tracking-[0.08em]`) and the date eyebrow on Spend Home. Never use uppercase labels inside cards: write "Portfolio value", not "PORT VALUE".
+- **`.tnum` on every number that can change**: money, percentages, counts, dates.
+- **Nothing under 12px.** No arbitrary sizes like `text-[11px]`.
+- **Inputs are 16px on phones** (the rule in `src/index.css`), or iPhone Safari zooms in.
+- **Mono** is used only for `<kbd>` keys and the build hash.
 
-**The Asset Accent Rule.** Asset accent colors are chart and icon colors only. If a new screen needs an asset category represented, use its accent for the icon/chip only — never as the dominant color of a section or card background.
+## 5. Elevation and motion
 
-## 3. Typography
+- **`--shadow-soft`**: every card at rest.
+- **`--shadow-lift`**: modals and popovers, and the hover state of a card that is a link or button. Nothing else lifts.
+- Cards are a hairline `border-line` plus `--shadow-soft`. Don't add a second shadow, a tinted background or a coloured border on top.
+- **Motion vocabulary** (all defined in `src/index.css`, all covered by `prefers-reduced-motion`):
+  - `sheetUp` (320ms) for modals and sheets
+  - `fadeIn` (200ms) for backdrops
+  - `rise` (`.animate-rise`) for content appearing
+  - `pop` and `result-card-in` for the result popup
+- **Utilities:** `animate-fade-in` (backdrops, inline errors), `animate-sheet-up` (dialogs and sheets) and `animate-pop-in` (desktop dropdowns and menus), defined in `@theme`.
+- Only use animation names that exist in `src/index.css`. Class names from other libraries (`animate-in`, `zoom-in-95`, `animate-fadeIn`) do nothing here.
 
-**Display Font:** Plus Jakarta Sans (extrabold 800, bold 700), with Inter and system sans-serif fallbacks
-**Body Font:** Inter (regular 400 through semibold 600), system sans-serif fallback
-**No third family.** Mono, serif, and script fonts are not part of this system.
+## 6. Components
 
-**Character:** Plus Jakarta Sans carries a slight geometric warmth at display scale that fits the instrument register without tipping cold or technocratic. Its extrabold weight gives financial figures authoritative presence. Inter disappears at body size — the reader sees only the data.
+### 6.1 Buttons (`src/components/ui/Button.tsx`)
+| Variant | Use |
+|---|---|
+| `primary` | The one main action. Ink in light, `brand` in dark. |
+| `secondary` | Second choices beside a primary ("Export current data first", "Set budget"). |
+| `ghost` | Cancel in a confirm dialog; quiet inline actions. |
+| `danger` | The confirm button of a destructive action. |
+| ~~`success`~~ | Deprecated. Use `primary`. |
 
-### Hierarchy
-- **Display** (800, 40px mobile / 52px desktop, lh 1, ls −0.025em): Hero financial figures — net worth, DCA monthly total. Plus Jakarta Sans only. Always tabular-nums. Color: `--color-ink`.
-- **Headline** (800, 34px mobile / 40px desktop, lh 1, ls −0.02em): Section-level totals. Plus Jakarta Sans.
-- **Title** (700, 17–22px, lh 1.3, ls −0.01em): Section headings, modal titles, medium card values (22–27px uses extrabold). Plus Jakarta Sans.
-- **Body** (400–600, 14–15px, lh 1.6): List row primary text, descriptions, form field values. Inter.
-- **Label** (500–600, 12–13px, lh 1.4): Captions, chip labels, metadata, nav labels. Inter. Never all-caps.
-- **Minimum size.** Nothing renders under 12px (`text-2xs`). Never use arbitrary sizes like `text-[10px]` or `text-[11px]`.
-- **Inputs on phones.** Text fields are 16px below 640px wide (a rule in `src/index.css`), or iPhone Safari zooms the page on focus.
+- **Shape:** always a pill. Sizes are `md` (44px, the default for footers) and `sm` (36px, inside cards and headers).
+- **Text links:** `TextLink` (`text-sm font-semibold text-brand hover:underline`), like the "Manage" link on Spend Home. Use an arrow (`→`) only when the link leaves the page. Name the destination: "See analysis →", "Portfolio →".
+- **Row actions:** `IconButton` (ghost, or brand for "buy more"). A small row confirm such as "Paid" is a `sm` pill in primary.
+- **Don't build buttons by hand.** A raw `<button>` with `bg-ink text-white` means `Button` is missing a feature; add it there instead.
 
-**The Tabular Rule.** Every number that might change — balances, percentages, counts, dates — uses `font-variant-numeric: tabular-nums` (via the `.tnum` utility class). No exceptions. Proportional figures on financial data cause layout jitter and break the instrument feel.
+### 6.2 Cards (`src/components/ui/Card.tsx`)
+There is one card: `Card` (`src/components/ui/Card.tsx`, along with `CardHeader` and `Inset`). Don't build card-like boxes by hand.
 
-**The Two-Family Rule.** Plus Jakarta Sans is for scale — display numbers, headlines, modal and section titles. Inter is for everything else. Never use Plus Jakarta Sans for body copy, captions, or chip labels. Never use Inter as a heading font.
+**Anatomy, top to bottom:**
+1. **Header row** (optional): `CardHeader`. The card title is on the left (`font-display text-lg font-extrabold`), with an optional one-line description below it; one `TextLink` or one `sm` button sits on the right. No icon tile before the title.
+2. **Body**: a hero figure, a list (`divide-y divide-line`), a chart, or a form.
+3. **Footer line** (optional): one `text-xs text-ink-muted` line, or a "Coming up" style sub-list above a `border-t border-line`.
 
-## 4. Elevation
+**Padding:** `p-5`. The only other size is `<Card compact>` (`p-4`), for stat tiles in a grid. No per-page padding overrides.
 
-The system uses ambient diffuse shadows, not structural lift. Cards float above the canvas via two-layer shadows: a tight 2px micro-shadow for edge crispness and a wide, negatively-spread diffuse halo for atmospheric separation. Shadow values use `rgba(16, 18, 27, ...)` — an ink-tinted dark, so shadows read as part of the surface rather than foreign black drops.
+**Interactive cards:** if the whole card is a link or button, add `hover:shadow-[var(--shadow-lift)] transition-shadow`. Otherwise it never lifts.
 
-**The Contained Lift Rule.** Shadow lift (`--shadow-lift`) is an affordance signal, not decoration. Interactive cards respond to hover with the heavier shadow. Non-interactive surfaces — the net-worth hero card, stat cards — stay at `--shadow-soft` and never lift. Motion (the lift transition) belongs only on elements that respond to interaction.
+**Inside a card, never nest another card.** For grouped content, use one of two inner surfaces:
+- **Inset** (`<Inset>`): `rounded-2xl bg-surface-muted p-4`, with no border and no shadow. Use it for a group of figures inside a card, such as portfolio value plus all-time PnL.
+- **Dashed prompt:** `rounded-2xl border border-dashed border-line-strong p-3`. Use it for empty or setup prompts ("Set up bills that repeat").
 
-### Shadow Vocabulary
-- **Soft** (`--shadow-soft: 0 1px 2px rgba(16,18,27,0.04), 0 8px 24px -12px rgba(16,18,27,0.12)`): Default card resting state. The card is present but not demanding. The tight negative spread on the second layer keeps the halo from bleeding onto adjacent cards.
-- **Lift** (`--shadow-lift: 0 2px 4px rgba(16,18,27,0.04), 0 18px 40px -20px rgba(16,18,27,0.22)`): Interactive card hover, open modal panel. Announces interactivity or elevation.
+**Stat tiles** are a grid of `Card compact`. Each tile has a label (`text-xs font-semibold text-ink-muted`), a value (stat value style), and an optional one-line note. Long values must fit or be shortened (`฿140.0K`). A chip must never overflow its tile.
 
-Cards combine `border: 1px solid {colors.line}` with `--shadow-soft`. This is the system's base surface register. The hairline border provides structure at zero offset; the shadow provides atmospheric depth. Do not add a third layer — a second shadow, a background tint, or a colored border — on top of this combination.
+**Attention cards** (Spend Home's "3 payments due"): `TodayStack` is the only pattern for "something needs you". It is a tinted `rounded-2xl` row with an icon tile, a title, a meta line and a `Review` pill. Invest uses the same component.
 
-## 5. Components
+### 6.3 List rows
+This is the Spend row (`TxnRow`, `RecurringDue`), used on both sides:
+- **Left:** a 40px icon tile (`h-10 w-10 rounded-xl`), tinted with the category tone or the asset accent at about 11%.
+- **Middle:** the title (row title style, truncates) over a meta line (`text-xs text-ink-muted`; warn or loss colour only for a due state).
+- **Right:** the amount (`text-sm font-bold tnum`) and/or one action.
+- **Spacing:** rows are `py-3` inside `divide-y divide-line`. No borders around single rows.
 
-### Buttons
-Refined and restrained. The primary action uses deep ink in light mode and Precision Indigo (#4f46e5) in dark mode to ensure authoritative presence and high contrast.
+### 6.4 Chips
+- **Filter chip** (`FilterChip`, `DropdownChip`): 30px pill; `surface-muted` when off; `ink` (light) or `brand` (dark) when on.
+- **Status chip:** `rounded-full px-2.5 py-0.5 text-xs font-bold` in a semantic soft tint ("On track", "Due today").
+- **PnL chip** (`PnL`): gain or loss soft tint, `tnum`, with a `+` on positive values. Use it for money only.
+- **Tag chip** (`#nosetea`): `brand-soft` background, `brand` text.
+- **Quick-pick chips** above a field (Today / Yesterday) are filter chips, not brand-filled pills.
 
-- **Shape:** Full pill (`border-radius: 9999px`)
-- **Primary (dark pill / CTA):** 
-  - **Light Mode:** `background: {colors.ink}` (#0b0d12), `color: {colors.surface}` (#ffffff), `height: 40px`, `padding: 0 16px`, 14px semibold, `--shadow-soft`. Hover: `#1d2230`. Active: `scale(0.95)`. Focus: `2px solid {colors.brand}` outline at 2px offset.
-  - **Dark Mode:** `dark:bg-[#4f46e5]` (Precision Indigo-600), `dark:hover:bg-[#4338ca]` (Indigo-700), `color: #ffffff`. Contrast ratio: **7.4:1 (WCAG AAA)**.
-  - **Rule:** Never use light pastel lavender (`#818cf8` / Indigo-400) as a button fill with white text. Light lavender with white text only has a 2.4:1 contrast ratio, which fails accessibility standards.
-- **Brand icon button:** Circle 36×36px. Resting: `background: {colors.brand-soft}`, `color: {colors.brand}`. Hover: fills to `{colors.brand}` with white icon (`dark:hover:bg-[#4f46e5]`). Used for per-row actions (Buy More on holdings).
-- **Ghost icon button:** Transparent resting, `color: {colors.ink-muted}`. Hover: `background: {colors.surface-muted}`, `color: {colors.ink}`. Used for destructive/secondary row actions (trash, edit pencil).
+### 6.5 Inputs (`src/components/ui/Field.tsx`)
+- **Field:** 44px high, `rounded-xl`, `border-line-strong`, `bg-surface`. On focus the border turns `brand` with a 2px `brand/15` ring.
+- **Label:** above the field, `text-sm font-semibold text-ink-soft`, with a 6px gap. An optional hint sits on the right of the label row.
+- **Every input uses the shared look:** the `TextField` / `NumberField` / `SelectField` components, or `FieldWrap` (the label row) around a plain control styled with `fieldClass` from `src/components/ui/fieldClasses.ts`. Don't copy the class string, and don't give one field a grey fill.
+- **Optional fields** show `hint="optional"` on the label row, not "(optional)" in the label.
+- **Option groups:** `SegmentedControl` for 2–4 options; a select or `Popover` list for more.
 
-### Filter Chips
-Segment filter controls for asset class filtering, tab-like but non-destructive.
-- **Inactive:** `background: {colors.surface-muted}`, `color: {colors.ink-soft}`, `border-radius: {rounded.full}`, `padding: 6px 14px`, 13px semibold.
-- **Active:** 
-  - **Light Mode:** `background: {colors.ink}`, `color: {colors.surface}` (#ffffff).
-  - **Dark Mode:** `dark:bg-[#4f46e5]`, `color: #ffffff`.
-  - Same shape and padding (`rounded-full px-3.5 py-1.5`).
-- **Transition:** `background` and `color` only, 150ms.
+### 6.6 Modals: one shell (`src/components/ui/Modal.tsx`)
+Every dialog in the app is a `Modal`, including confirmations, pickers on phones and the keyboard-shortcuts screen. Users learn one shape and see it everywhere.
 
-### Cards / Containers
-The primary page composition unit. Every section, metric, and list lives inside a card. No content floats directly on the canvas.
-- **Corner style:** 24px radius (`--radius-card`)
-- **Background:** `{colors.surface}` (pure white)
-- **Elevation:** `border: 1px solid {colors.line}` + `--shadow-soft` at rest; hover interactive cards add `--shadow-lift` via `transition-shadow duration-300`
-- **Padding:** 20px / 24px on `sm+` breakpoint
-- **Rule:** Never nest a card inside another card.
+**Shell**
+- **Phone (below sm):** a bottom sheet. Corners are 28px at the top only, and there is **no grab handle**: the sheet can't be dragged, so a handle would promise something it doesn't do.
+- **Desktop:** a centred dialog with 28px corners.
+- **Widths:** `sm` 400px for confirms and single-field dialogs; `md` 460px, the default for forms; `lg` 620px only for tables and previews (CSV import, AI import). There is no larger size.
+- **Backdrop and motion:** `bg-ink/35` with `backdrop-blur-sm`; `fadeIn` on the backdrop and `sheetUp` on the panel. Tapping the backdrop or pressing Esc closes the dialog.
+- **Focus:** focus is trapped inside, the page behind doesn't scroll, and focus returns to the opener on close. You get all of this for free by using `Modal`.
 
-### Stat Cards
-Metric tile pattern used in the Dashboard grid: icon + label + display value + optional footer.
-- **Icon container:** 36×36px, `border-radius: {rounded.sm}` (12px), `background: color-mix(in srgb, accent 11%, white)`, `color: accent`. Accent is the asset or semantic color for that metric.
-- **Value scale:** Title or Display depending on context — stat cards use 24–27px; the hero net-worth uses Display.
-- **Editable affordance:** Pencil icon at `opacity: 0`, transitions to `opacity: 1` on group hover. No visible edit chrome at rest.
+**Header**
+- **Title:** sentence case, a verb and an object, ideally 30 characters or fewer. "Pay KTC", "Edit loan", "Delete this account?".
+  - Put context (which location, which holding) in the description, not after a dash in the title. Write "Buy more" with the description "Goes into Vault A", not "Buy more — Vault A".
+- **Description** (optional): one or two sentences in `text-sm text-ink-muted`. Use it only when it tells the user something the form doesn't.
+- **Close:** the 44px round ✕, on every modal.
 
-### Inputs / Fields
-- **Style:** `height: 44px`, `border-radius: {rounded.sm}` (12px), `border: 1px solid {colors.line-strong}`, `background: {colors.surface}`, 15px body text
-- **Focus:** `border-color: {colors.brand}`, `box-shadow: 0 0 0 2px color-mix(in srgb, {colors.brand} 15%, transparent)`
-- **Placeholder:** `color: {colors.ink-faint}`
-- **Label:** 13px semibold in `{colors.ink-soft}`, 6px gap above the field
-- **Number prefix (฿):** Absolute-positioned at left-3.5, same size as field text, `{colors.ink-muted}`
+**Footer: exactly three patterns**
 
-### Navigation
-Two modes sharing identical route structure and icons; only chrome changes.
-- **Bottom bar (< lg):** Frosted glass — `background: rgba(255,255,255,0.85)`, `backdrop-filter: blur(24px)`, `border-top: 1px solid {colors.line}`. Active tab: icon and label in `{colors.brand-ink}`, icon sits inside a 48×32px `{colors.brand-soft}` pill. Inactive: `{colors.ink-muted}` label and icon.
-- **Sidebar (≥ lg):** Clean white left rail with `border-right: 1px solid {colors.line}`. Same active/inactive color logic, no pill background.
+| Pattern | Use for | Layout |
+|---|---|---|
+| **A. Form** (`FormActions`) | Add or edit something | When editing: a 2-tap delete bin on the left. Then a full-width primary button. |
+| **B. Action** | One-shot actions (pay, log, move, import, apply search) | One full-width primary button (`data-modal-submit`). |
+| **C. Confirm** (`ConfirmModal`) | Destructive or irreversible actions | A stacked full-width confirm (`danger` or `primary`) over a `ghost` Cancel. |
 
-### Modals
-- **Mobile (< sm):** Bottom sheet. `border-radius: 28px 28px 0 0`. Appears via `sheetUp` keyframe (translateY + opacity, cubic-bezier(0.16,1,0.3,1), 320ms).
-- **Desktop (≥ sm):** Centered dialog, max-width 440px, `border-radius: 28px`. Same `sheetUp` animation.
-- **Backdrop:** `background: rgba(11,13,18,0.35)`, `backdrop-filter: blur(4px)`, `fadeIn` 200ms ease. Clicking backdrop closes.
-- **Header:** Title in 20px extrabold Plus Jakarta Sans, optional description in 13px ink-muted. Close button: 36×36px ghost icon circle.
+Footer rules:
+- **No Cancel button in A or B.** The ✕, Esc and the backdrop already cancel.
+- **The primary label says what happens:** "Add", "Save changes", "Pay ฿1,200", "Log ฿5,000 buy", "Import 12 transactions". For a destructive confirm, name the thing: "Delete account", not "Confirm".
+- **The primary button is `primary`**, never green and never a hand-built colour. Sell is not destructive; it uses `primary` with a clear label.
+- **A disabled primary must have a visible reason:** a field error, or `FormActions`' `hint` line above the button ("Enter an amount"). Don't leave a grey button unexplained.
+- **`FormActions` takes `submitLabel`** for anything more specific than "Add" / "Save changes".
+- **Enter submits:** every footer marks its main button `data-modal-submit`, so Enter in a text field submits.
 
-### PnL Chips (signature component)
-The primary financial signal component. Compact pill that communicates directional portfolio performance at a glance.
-- **Gain:** `background: {colors.gain-soft}`, `color: {colors.gain}`. Prefix `+` on positive percent values.
-- **Loss:** `background: {colors.loss-soft}`, `color: {colors.loss}`. Values render as-is (already negative).
-- **Shape:** `border-radius: {rounded.full}`, `padding: 2px 8px`, 11.5–12px semibold, tabular-nums.
-- **Rule:** PnL chips are data, not status badges. Do not use them for non-financial directional signals (e.g., "more than last month"). That dilutes the financial vocabulary.
+**Choosing how to confirm a delete**
+- **Inside an edit form:** use the 2-tap bin (pattern A). It's quick, and the form gives the context.
+- **Anywhere else** (a list row, a menu, a bulk delete, reset, undo, replace data): use `ConfirmModal` (pattern C).
 
-## 6. Do's and Don'ts
+**Body layout:** `space-y-5` between groups. Inside a modal, a group gets an inset (`rounded-2xl bg-surface-muted`), never a bordered card. Section toggles inside long forms are plain text rows with a chevron and no emoji.
 
-### Do:
-- **Do** use tabular-nums (`.tnum`) on every number that could change — balances, percentages, counts, unit quantities. Proportional figures are forbidden on financial data.
-- **Do** keep Precision Indigo (`--color-brand`) to ≤10% of any screen surface. Its scarcity is its signal value.
-- **Do** use `--shadow-soft` as the default card state and `--shadow-lift` only in response to user interaction (hover, modal open). Shadows are affordance signals, not atmosphere.
-- **Do** add `@media (prefers-reduced-motion: reduce)` to every keyframe animation (`rise`, `sheetUp`, `fadeIn`, `draw`). Minimum alternative: a crossfade or instant transition. The instrument must work without motion.
-- **Do** scope asset accent colors (`--color-funds`, `--color-stocks`, `--color-crypto`, `--color-cash`) to icon backgrounds and chart segments only. Tint at 11% with `color-mix` for icon containers.
-- **Do** use the `.tnum` utility on all financial display values in Plus Jakarta Sans. The `font-feature-settings: 'tnum'` fallback is already in the class; lean on it.
-- **Do** use Plus Jakarta Sans for hero and section titles, and Inter for body, label, and metadata text. The separation is strict.
+**Pickers and menus (`Popover`)**
+- **Phone:** they open in the same bottom-sheet shell and header as `Modal`.
+- **Desktop:** they open as a dropdown under the button: `rounded-2xl border-line bg-surface p-1.5 shadow-[var(--shadow-lift)]`. Options are `PopoverOption`.
+- **Row "⋯" menus** (holding and location menus) are `Popover` lists too, with neutral item colours. "Sell" is not red and "Buy more" is not green: the icon carries the meaning.
 
-### Don't:
-- **Don't** use Precision Indigo as a surface fill, gradient, or large text block. No indigo backgrounds, no `background: var(--color-brand)` on cards or hero sections. The one exception is the primary button — and even there it uses `--color-ink`, not `--color-brand`.
-- **Don't** introduce the Robinhood / crypto-app pattern: no animated price tickers, no dopamine green/red flashes on data load, no confetti or celebration animations on portfolio gains, no "you're up X% today" banners. This system observes; it does not cheer.
-- **Don't** add a third typeface. Plus Jakarta Sans + Inter is the complete vocabulary. A serif, mono, or script font breaks the instrument register.
-- **Don't** use `border-left` or `border-right` greater than 1px as a colored accent stripe on cards, list items, or alert callouts. The system uses full borders or no border; side stripes are a different design language.
-- **Don't** apply gradient text (`background-clip: text` with a gradient fill). Color is semantically earned in this system; gradient text is pure decoration with no signal value.
-- **Don't** place a card inside another card. Nested cards break the elevation hierarchy and multiply shadow complexity.
-- **Don't** use gain/loss/warn semantic colors outside their financial contexts. `--color-gain` is not a general "success" color; `--color-warn` is not a general "caution" color. If you need a non-financial signal state, use ink scale colors instead.
-- **Don't** round cards, modals, or inputs beyond their defined radii. Cards at 24px, modals at 28px, inputs at 12px. Rounding beyond these reads as consumer-app softness, not instrument precision.
+**Command palette:** the one placement exception. It is anchored near the top so the phone keyboard doesn't cover the results, and it has no header. It shares the modal surface, 28px radius, backdrop and `sheetUp` motion. The keyboard-shortcuts screen opens as a normal `Modal` (`sm`).
 
-## 7. Sign-In & Landing Page Specification (Fastwork Light Theme)
+### 6.7 Feedback
+- **Toast** (`showToast`): small confirmations and Undo. Its action button is a `sm` primary pill (ink), the same as every other primary.
+- **Result popup** (`ResultOverlay`): money moves where the amount matters (pay, log a buy, sell, dividend). Errors and warnings wait for "Got it"; success closes itself.
+- **Confetti:** milestones only (a loan paid off, a goal reached), not every save.
+- **Empty states:** `EmptyState` with a lucide icon and one action. Inside a card, a dashed prompt row (6.2) also works.
 
-The unauthenticated entry experience uses a bright, inviting **Fastwork.com-inspired Light Theme** aesthetic:
+### 6.8 Page structure
+- **Header:** every page starts with `PageHeader`: eyebrow, title, optional subtitle, optional action on the right, optional Guide button. Spend Home uses the date as its eyebrow and the greeting as its title.
+- **Layout:** a page is a stack or grid of `Card`s, with the page gutter on each side. No content floats directly on the canvas, apart from the header and banners.
+- **Banners** (offline rate, sync conflict): a full-width `rounded-2xl` row in a semantic soft tint, with a lucide icon and one sentence.
 
-### Ambient Canvas & Atmosphere
-- **Canvas Base:** `#faf6f4`
-- **Ambient Gradients:**
-  - Top-Left: Warm Sunrise Amber (`rgba(254, 243, 199, 0.75)` / `#fff3dd`)
-  - Bottom-Right: Soft Lavender Rose (`rgba(239, 229, 232, 0.85)` / `#efe5e8`)
-  - Directional Mesh: `linear-gradient(135deg, #fff3dd 0%, #faf6f4 45%, #efe5e8 100%)`
+### 6.9 Navigation
+- **Sidebar (lg and up):** a white rail with `border-r border-line`. At the top is the Spend/Invest switch (each half in its own side accent), then grouped links with an uppercase group label. The active item gets a soft tint of its side colour.
+- **Bottom bar (below lg):** `bg-surface/85 backdrop-blur-xl border-t border-line`. The active tab's icon sits in a `brand-soft` pill. Spend's bar has a centre "+" for Quick add; Invest's does not.
+- **"More" opens a `Modal`** with one row per destination: icon tile, title, one-line description, chevron.
 
-### Brand & Typography Accents
-- **Logo Glyph:** Fastwork Electric Blue (`#0066FF`) rounded squircle with crisp white icon.
-- **Headline Highlight Gradient:** Linear gradient flowing from **Left `#405DFF` (Fastwork Blue)** to **Right `#DFAA41` (Golden Amber)**:
-  `linear-gradient(to right, #405DFF 0%, #DFAA41 100%)` with `bg-clip-text text-transparent`.
-- **Status Pill:** `rounded-full bg-white/85 border border-slate-200/80` with emerald pulsating indicator.
+## 7. Icons
+- Use lucide icons through `src/components/icons` only. Stroke icons, sized `h-4 w-4` in buttons and chips and `h-[18px] w-[18px]` in row tiles.
+- **No emoji anywhere in the interface:** not in labels, options, toasts, badges, section headers or empty states. Text glyphs (`·`, `→`, `−`, `✓` drawn as an icon) are fine when they are punctuation, not decoration.
+- **Text exports are not interface.** The Markdown export (`src/lib/portfolioMarkdown.ts`) may keep its own formatting.
 
-### Sign-In Container & Action Elements
-- **Card Surface:** `bg-white/95 backdrop-blur-xl rounded-[22px] sm:rounded-[24px] border border-slate-200/90 shadow-[0_12px_40px_rgba(15,23,42,0.06)]`
-- **Google Sign-In CTA:** Clean white surface, 1px slate-200 hairline border, official multicolored Google SVG logo, full pill shape (`rounded-full`).
-- **Guest / Local Mode CTA:** Primary Fastwork Blue pill (`bg-[#0066FF] hover:bg-[#0052cc] text-white shadow-md shadow-blue-500/25`).
-- **Security Indicator:** `Secure Cloud Sync · 100% Client Privacy` aligned with hairline divider.
+## 8. Dark mode
+Dark mode is supported, but it comes second. It must work without component-level colour work:
+- Use tokens only (`bg-surface`, `text-ink`, `bg-brand`, …). They flip on `.dark`.
+- **No `dark:bg-[#4f46e5]`-style hex values.** The primary button colour is a token (`--color-primary` / `--color-primary-hover`: ink in light, indigo in dark).
+- A `dark:` class is allowed only to pick a different **token**, for example `dark:bg-brand`.
+- **Check light first, then dark**, at phone width (375–430px) and desktop width (1280px and up).
 
-### Translucent Benefit Cards (3-Column Grid)
-- **Container Surface:** `bg-white/60 hover:bg-white/75 backdrop-blur-md rounded-[18px] sm:rounded-[20px] border border-white/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)]`
-- **Icon Badge:** 44×44px (`w-11 h-11 rounded-[14px]`) with Fastwork gradient fill:
-  `linear-gradient(140deg, #6079FE 0%, #765EFD 50%, #B875B4 100%)` and white outlined SVG icons.
-- **Content Hierarchy:** 14px bold title (`text-slate-800`) over 12px description (`text-slate-500 leading-relaxed`).
+## 9. Do and don't
 
+**Do**
+- Reuse `Modal`, `ConfirmModal`, `FormActions`, `Card`, `Button`, `Field`, `Popover`, `EmptyState` and `PageHeader`.
+- Write sentence case, name the action on the button, and put context in the description.
+- Use `.tnum` on every changing number.
+- Test light first, then dark, on a phone and a desktop.
+
+**Don't**
+- Build a dialog, card, button or input by hand.
+- Use emoji.
+- Put a card inside a card, or give inner boxes their own border and shadow.
+- Use green or any custom colour for a normal save button.
+- Use uppercase labels inside cards.
+- Use hex colours or raw Tailwind palette colours in components.
+- Use animation class names that aren't defined in `src/index.css`.
+- Use gradient text or coloured side stripes on cards.
+
+## 10. Sign-in and landing page
+The signed-out page has its own light look, inspired by Fastwork, using the `landing-*` tokens:
+- **Canvas:** `#faf6f4` with a warm amber (top left) and lavender rose (bottom right) ambient gradient.
+- **Logo:** a blue `#0066FF` squircle with a white glyph.
+- **Headline highlight:** blue in both themes. The landing page does not switch to dark.
+- **Sign-in card:** `bg-white/95 backdrop-blur-xl`, `rounded-[24px]`, a hairline slate border and a soft shadow.
+- **Buttons:**
+  - Google sign-in is a white pill with a hairline border.
+  - Demo / offline mode is a quiet secondary button.
+- **Benefit cards:** translucent white, `rounded-[20px]`, with a 44px gradient icon badge.

@@ -799,7 +799,7 @@ export function Retirement() {
                   key={v}
                   onClick={() => setMobileView(v)}
                   className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
-                    mobileView === v ? 'bg-ink text-surface' : 'bg-surface-muted text-ink-soft'
+                    mobileView === v ? 'bg-primary text-white' : 'bg-surface-muted text-ink-soft'
                   }`}
                 >
                   {v === 'chart' ? 'Line' : 'Bars'}

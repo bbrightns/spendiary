@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Card } from '../../components/ui/Card'
+import { Card, CardHeader } from '../../components/ui/Card'
+import { TextLink } from '../../components/ui/TextLink'
 import { CheckIcon } from '../../components/icons'
 import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb, thbExact } from '../../lib/format'
@@ -67,14 +68,7 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
 
   return (
     <Card>
-      <div className="flex items-center justify-between">
-        <h2 className="font-display text-lg font-extrabold text-ink">Bills and recurring</h2>
-        {showManage && (
-          <Link to="/spend/recurring" className="text-sm font-semibold text-brand hover:underline">
-            Manage
-          </Link>
-        )}
-      </div>
+      <CardHeader title="Bills and recurring" action={showManage && <TextLink to="/spend/recurring">Manage</TextLink>} />
 
       {dueRecurring.length === 0 && upcoming.length === 0 && (
         <p className="mt-2 text-sm text-ink-muted">Nothing due this week.</p>
@@ -139,7 +133,7 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
                     )
                   }}
                   aria-label={`Mark ${rec.name} ${rec.type === 'income' ? 'received' : 'paid'}, ${thb(rec.amount)}`}
-                  className="flex shrink-0 items-center gap-1 rounded-full bg-ink px-3 py-1.5 text-xs font-bold text-white cursor-pointer dark:bg-[#4f46e5]"
+                  className="flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white cursor-pointer hover:bg-primary-hover"
                 >
                   <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.6} />
                   {rec.type === 'income' ? 'Received' : 'Paid'}
