@@ -1540,7 +1540,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
           />
           <div className="flex-1 text-xs">
             <span className="font-semibold text-ink flex items-center gap-1.5 text-sm">
-              <LockClosedIcon className="h-4 w-4 text-amber-500" />
+              <LockClosedIcon className="h-4 w-4 text-warn" />
               Lock this asset
             </span>
             <p className="text-ink-muted mt-0.5">

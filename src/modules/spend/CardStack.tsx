@@ -37,7 +37,7 @@ function FavoriteToggle({ on, name, light, onToggle, className = '' }: { on: boo
       }}
       aria-pressed={on}
       aria-label={on ? `Unfavorite ${name}` : `Favorite ${name}`}
-      className={`-mx-2 grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current ${light ? 'hover:bg-white/15' : 'hover:bg-slate-900/10'} ${on ? 'text-amber-300' : 'opacity-70 hover:opacity-100'} ${className}`}
+      className={`-mx-2 grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current ${light ? 'hover:bg-white/15' : 'hover:bg-black/10'} ${on ? 'text-gold' : 'opacity-70 hover:opacity-100'} ${className}`}
     >
       <StarIcon filled={on} />
     </button>
@@ -120,7 +120,7 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
               {c.last4 && <span className={`shrink-0 text-xs tnum ${k.soft}`}>•• {c.last4}</span>}
             </span>
             {t.tone && (
-              <span className={`shrink-0 rounded-full bg-white px-2 py-0.5 text-2xs font-bold ${t.tone === 'loss' ? 'text-rose-600' : 'text-amber-700'}`}>
+              <span className={`shrink-0 rounded-full bg-white px-2 py-0.5 text-2xs font-bold ${t.tone === 'loss' ? 'text-loss' : 'text-warn'}`}>
                 {t.tone === 'loss' ? 'Overdue' : `Due ${shortDate(t.due.date)}`}
               </span>
             )}
@@ -150,7 +150,7 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
             <p className="flex min-w-0 items-center text-sm font-bold">
               <span className="truncate">{active.name}</span>
               {defaultId === active.id && (
-                <span className={`ml-1.5 shrink-0 rounded-full px-1.5 py-0.5 text-2xs font-bold ${ink.light ? 'bg-white/20' : 'bg-slate-900/10'}`}>Default</span>
+                <span className={`ml-1.5 shrink-0 rounded-full px-1.5 py-0.5 text-2xs font-bold ${ink.light ? 'bg-white/20' : 'bg-black/10'}`}>Default</span>
               )}
             </p>
             <p className={`text-xs tnum ${ink.soft}`}>{active.last4 ? `•••• ${active.last4}` : 'Credit card'}</p>

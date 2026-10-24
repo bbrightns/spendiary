@@ -835,7 +835,7 @@ export function DcaPlanner() {
                                       <button
                                         onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
                                         aria-label={`Log DCA buy for ${p.name}`}
-                                        className="inline-flex items-center gap-1.5 rounded-full bg-[#00de9b] hover:bg-[#00c58a] text-[#052e21] px-3.5 py-1.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
+                                        className="inline-flex items-center gap-1.5 rounded-full bg-gain-strong hover:bg-gain-strong-hover text-white px-3.5 py-1.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
                                       >
                                         <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
                                         <span>{p.assetClass === 'cash' ? 'Log deposit' : 'Log buy'}</span>
@@ -903,7 +903,7 @@ export function DcaPlanner() {
                     <p className="text-xs font-semibold text-ink-faint">
                       Dividend income
                     </p>
-                    <span className="rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-xs font-bold">
+                    <span className="rounded-full bg-gain/15 text-gain px-2 py-0.5 text-xs font-bold">
                       {MONTH_NAMES[currentMonth - 1]}
                     </span>
                   </div>
@@ -971,7 +971,7 @@ export function DcaPlanner() {
                                     setDividendModalOpen(true)
                                   }}
                                   aria-label={`Confirm Dividend for ${h.ticker}`}
-                                  className="inline-flex items-center gap-1.5 rounded-full bg-[#00de9b] hover:bg-[#00c58a] text-[#052e21] px-3.5 py-1.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
+                                  className="inline-flex items-center gap-1.5 rounded-full bg-gain-strong hover:bg-gain-strong-hover text-white px-3.5 py-1.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
                                 >
                                   <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
                                   <span>Confirm dividend</span>

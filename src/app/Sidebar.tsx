@@ -149,7 +149,7 @@ export function Sidebar() {
                     </div>
 
                     {badgeCount > 0 && (
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white shadow-xs">
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-xs font-bold text-white shadow-xs">
                         {badgeCount}
                       </span>
                     )}

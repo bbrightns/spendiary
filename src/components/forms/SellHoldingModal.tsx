@@ -459,7 +459,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     >
       <div className="space-y-4">
         {holding.isLocked && (
-          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-2.5 text-xs text-amber-700 dark:text-amber-400">
+          <div className="rounded-2xl border border-warn/30 bg-warn/10 p-3.5 flex items-start gap-2.5 text-xs text-warn">
             <LockClosedIcon className="h-4 w-4 shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-sm">This asset is locked</p>
@@ -468,7 +468,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
           </div>
         )}
         {!holding.isLocked && isCurrentLocLocked && (
-          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-2.5 text-xs text-amber-700 dark:text-amber-400">
+          <div className="rounded-2xl border border-warn/30 bg-warn/10 p-3.5 flex items-start gap-2.5 text-xs text-warn">
             <LockClosedIcon className="h-4 w-4 shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-sm">This location is locked</p>
@@ -778,7 +778,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                         setCustomProceeds(Number(grossProceedsThb.toFixed(2)))
                         setCustomFee('')
                       }}
-                      className="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium text-sky-700 bg-sky-100 hover:bg-sky-200 dark:text-sky-200 dark:bg-sky-950 dark:hover:bg-sky-900 border border-sky-300 dark:border-sky-800 transition-colors cursor-pointer shrink-0 shadow-2xs"
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium text-brand-ink bg-brand-soft hover:bg-brand/15 border border-brand/30 transition-colors cursor-pointer shrink-0 shadow-2xs"
                       title="Enter the exact amount you received if there were fees or discounts"
                     >
                       <PencilIcon className="h-3 w-3" />
@@ -845,7 +845,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                     />
                   </div>
                   {effectiveFee > 0 && (
-                    <div className="flex items-center justify-between text-xs text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-2.5 py-1">
+                    <div className="flex items-center justify-between text-xs text-loss bg-loss/10 border border-loss/20 rounded-lg px-2.5 py-1">
                       <span>Fee taken:</span>
                       <span className="font-bold tnum">
                         -฿{effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({grossProceedsThb > 0 ? ((effectiveFee / grossProceedsThb) * 100).toFixed(2) : '0'}%)
@@ -879,7 +879,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
               <span>Left after sale</span>
               <span className="font-medium tnum">
                 {isFullSell ? (
-                  <span className="text-rose-600 dark:text-rose-400 font-semibold">
+                  <span className="text-loss font-semibold">
                     0 {label} (sold everything)
                   </span>
                 ) : (

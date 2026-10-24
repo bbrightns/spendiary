@@ -78,7 +78,7 @@ export function BottomNav() {
 
                     {/* iPhone style notification badge bubble */}
                     {moreAlertCount > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white shadow-xs ring-2 ring-surface">
+                      <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-xs font-bold text-white shadow-xs ring-2 ring-surface">
                         {moreAlertCount}
                       </span>
                     )}
@@ -115,7 +115,7 @@ export function BottomNav() {
 
                   {/* Route notification badge bubble */}
                   {routeBadge > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-xs font-bold text-white shadow-xs ring-2 ring-surface">
+                    <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-xs font-bold text-white shadow-xs ring-2 ring-surface">
                       {routeBadge}
                     </span>
                   )}

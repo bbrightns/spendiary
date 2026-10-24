@@ -59,7 +59,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
             <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
               <span className="truncate">Net dividend</span>
             </span>
-            <div className="text-sm sm:text-base font-black tracking-tight text-emerald-600 dark:text-emerald-400 truncate mt-0.5">
+            <div className="text-sm sm:text-base font-black tracking-tight text-gain truncate mt-0.5">
               {netDiv !== null ? `฿${netDiv.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
             </div>
             <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={cashAccName ? `Into ${cashAccName}` : 'Received into wallet'}>
@@ -543,7 +543,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                           <span className="whitespace-nowrap">{formatUnit(prevUnits)}</span>
                           <span className="text-ink-faint text-xs">→</span>
                           {currUnits === 0 ? (
-                            <span className="font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">0 (all sold)</span>
+                            <span className="font-bold text-loss whitespace-nowrap">0 (all sold)</span>
                           ) : (
                             <span className="font-semibold text-brand whitespace-nowrap">{formatUnit(currUnits)}</span>
                           )}
@@ -628,7 +628,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                   <span className="truncate">{isReceived ? 'Value received' : 'Amount bought'}</span>
                 </span>
-                <div className="text-sm sm:text-base font-black tracking-tight text-sky-700 dark:text-sky-300 truncate mt-0.5">
+                <div className="text-sm sm:text-base font-black tracking-tight text-brand-ink truncate mt-0.5">
                   {txDetails.amountThbDisplay && txDetails.amountThbDisplay !== '-' ? txDetails.amountThbDisplay : (txDetails.sharesDisplay || '-')}
                 </div>
                 <span className="text-xs font-medium text-ink-faint truncate mt-0.5" title={receivedLine || cashSource || 'Invested'}>

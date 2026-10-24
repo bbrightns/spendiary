@@ -17,11 +17,12 @@ import { TxnRow } from '../TxnRow'
 import { useSpend } from '../useSpend'
 import { HOME_CARDS, homeOrder, isDefaultOrder, moveCard, type HomeCardId } from '../homeLayout'
 import { ArrangeButton, ReorderSheet } from '../ReorderSheet'
+import { STATUS_TONE } from '../tones'
 
 const STATUS: Record<DayStatus, { label: string; stroke: string; chip: string }> = {
-  ok: { label: 'On track', stroke: 'stroke-emerald-500', chip: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300' },
-  careful: { label: 'Careful', stroke: 'stroke-amber-500', chip: 'bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300' },
-  over: { label: 'Over today', stroke: 'stroke-rose-500', chip: 'bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300' },
+  ok: { label: 'On track', ...STATUS_TONE.ok },
+  careful: { label: 'Careful', ...STATUS_TONE.careful },
+  over: { label: 'Over today', ...STATUS_TONE.over },
 }
 
 const parse = (s: string) => {

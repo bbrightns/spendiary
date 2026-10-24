@@ -273,7 +273,7 @@ export function SpendAccounts() {
                         }}
                         aria-pressed={on}
                         aria-label={on ? `Unfavorite ${w.name}` : `Favorite ${w.name}`}
-                        className={`-mr-1.5 -mt-1.5 grid h-8 w-8 place-items-center rounded-full transition-colors cursor-pointer hover:bg-surface-muted ${on ? 'text-amber-500' : 'text-ink-faint'}`}
+                        className={`-mr-1.5 -mt-1.5 grid h-8 w-8 place-items-center rounded-full transition-colors cursor-pointer hover:bg-surface-muted ${on ? 'text-warn' : 'text-ink-faint'}`}
                       >
                         <StarIcon filled={on} className="h-3.5 w-3.5" />
                       </button>

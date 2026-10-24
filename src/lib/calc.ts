@@ -2,6 +2,7 @@ import type { AssetClass, CashAccount, CashAccountCategory, DcaPlan, DebtCategor
 import { daysUntil, localDateStr, localDay } from './format'
 import { rateOrZero } from './fx'
 import { newId } from './id'
+import { TINT } from '../components/tones'
 
 export interface HoldingMetrics extends Holding {
   marketValue: number
@@ -1030,51 +1031,51 @@ export const DEBT_CATEGORIES: Record<
   installment: {
     label: 'Installments / shopping',
     color: '#6366f1',
-    bgClass: 'bg-indigo-500/10 dark:bg-indigo-500/20',
-    textClass: 'text-indigo-600 dark:text-indigo-400',
-    borderClass: 'border-indigo-500/20',
+    bgClass: TINT.indigo.bg,
+    textClass: TINT.indigo.text,
+    borderClass: TINT.indigo.border,
   },
   credit_card: {
     label: 'Credit card',
     color: '#f43f5e',
-    bgClass: 'bg-rose-500/10 dark:bg-rose-500/20',
-    textClass: 'text-rose-600 dark:text-rose-400',
-    borderClass: 'border-rose-500/20',
+    bgClass: TINT.rose.bg,
+    textClass: TINT.rose.text,
+    borderClass: TINT.rose.border,
   },
   mortgage: {
     label: 'Mortgage / home',
     color: '#8b5cf6',
-    bgClass: 'bg-violet-500/10 dark:bg-violet-500/20',
-    textClass: 'text-violet-600 dark:text-violet-400',
-    borderClass: 'border-violet-500/20',
+    bgClass: TINT.violet.bg,
+    textClass: TINT.violet.text,
+    borderClass: TINT.violet.border,
   },
   auto_loan: {
     label: 'Auto loan',
     color: '#0284c7',
-    bgClass: 'bg-sky-500/10 dark:bg-sky-500/20',
-    textClass: 'text-sky-600 dark:text-sky-400',
-    borderClass: 'border-sky-500/20',
+    bgClass: TINT.sky.bg,
+    textClass: TINT.sky.text,
+    borderClass: TINT.sky.border,
   },
   personal_loan: {
     label: 'Personal loan',
     color: '#f59e0b',
-    bgClass: 'bg-amber-500/10 dark:bg-amber-500/20',
-    textClass: 'text-amber-600 dark:text-amber-400',
-    borderClass: 'border-amber-500/20',
+    bgClass: TINT.amber.bg,
+    textClass: TINT.amber.text,
+    borderClass: TINT.amber.border,
   },
   student_loan: {
     label: 'Student loan',
     color: '#10b981',
-    bgClass: 'bg-emerald-500/10 dark:bg-emerald-500/20',
-    textClass: 'text-emerald-600 dark:text-emerald-400',
-    borderClass: 'border-emerald-500/20',
+    bgClass: TINT.emerald.bg,
+    textClass: TINT.emerald.text,
+    borderClass: TINT.emerald.border,
   },
   other: {
     label: 'Other debt',
     color: '#64748b',
-    bgClass: 'bg-slate-500/10 dark:bg-slate-500/20',
-    textClass: 'text-slate-600 dark:text-slate-400',
-    borderClass: 'border-slate-500/20',
+    bgClass: TINT.slate.bg,
+    textClass: TINT.slate.text,
+    borderClass: TINT.slate.border,
   },
 }
 
@@ -1217,7 +1218,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
     return {
       status: 'completed',
       label: 'Fully paid',
-      badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+      badgeClass: 'bg-gain/10 text-gain border border-gain/20',
     }
   }
 
@@ -1225,7 +1226,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
     return {
       status: 'paid',
       label: 'Paid this month',
-      badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+      badgeClass: 'bg-gain/10 text-gain border border-gain/20',
     }
   }
 
@@ -1243,7 +1244,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
     return {
       status: 'due_today',
       label: 'Due today',
-      badgeClass: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse',
+      badgeClass: 'bg-warn/15 text-warn border border-warn/30 animate-pulse',
       daysLeft: 0,
     }
   }
@@ -1268,7 +1269,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
     return {
       status: 'overdue',
       label: `Overdue (due on the ${l.dueDay})`,
-      badgeClass: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30',
+      badgeClass: 'bg-loss/15 text-loss border border-loss/30',
     }
   }
 
@@ -1277,7 +1278,7 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
     return {
       status: 'due_soon',
       label: `In ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} (on the ${l.dueDay})`,
-      badgeClass: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25',
+      badgeClass: 'bg-warn/15 text-warn border border-warn/25',
       daysLeft,
     }
   }

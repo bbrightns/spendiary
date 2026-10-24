@@ -18,7 +18,7 @@ import { MonthStepper } from '../MonthStepper'
 import { openQuickAdd } from '../QuickAddSheet'
 import { TxnRow } from '../TxnRow'
 import { useSpend } from '../useSpend'
-import { TONES } from '../tones'
+import { TAG_CHIP, TONES } from '../tones'
 import { STORAGE_KEYS } from '../../../lib/storageKeys'
 
 type TypeFilter = 'all' | SpendTxnType
@@ -462,7 +462,7 @@ function SearchSheet({
                   key={tag}
                   type="button"
                   onClick={() => pickTag(tag)}
-                  className="rounded-full bg-violet-100 px-3 py-1.5 text-xs font-bold text-violet-700 hover:bg-violet-200 dark:bg-violet-400/15 dark:text-violet-200 cursor-pointer"
+                  className={`rounded-full px-3 py-1.5 text-xs font-bold cursor-pointer ${TAG_CHIP.idle}`}
                 >
                   #{tag}
                   <span className="ml-1.5 font-semibold opacity-70 tnum">

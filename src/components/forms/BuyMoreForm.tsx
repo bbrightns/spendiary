@@ -17,14 +17,14 @@ export const BUY_SELL_SEGMENT_OPTIONS: SegmentOption<'buy' | 'sell'>[] = [
   {
     value: 'buy',
     label: '+ Buy more',
-    activeClassName: 'bg-gain text-white shadow-sm dark:bg-emerald-600',
-    inactiveClassName: 'text-gain hover:bg-gain/10 dark:text-emerald-400',
+    activeClassName: 'bg-gain-strong text-white shadow-sm',
+    inactiveClassName: 'text-gain hover:bg-gain/10',
   },
   {
     value: 'sell',
     label: '− Sell',
-    activeClassName: 'bg-loss text-white shadow-sm dark:bg-rose-600',
-    inactiveClassName: 'text-loss hover:bg-loss/10 dark:text-rose-400',
+    activeClassName: 'bg-danger text-white shadow-sm',
+    inactiveClassName: 'text-loss hover:bg-loss/10',
   },
 ]
 

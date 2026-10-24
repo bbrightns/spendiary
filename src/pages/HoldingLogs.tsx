@@ -950,7 +950,7 @@ export function HoldingLogs() {
           return (
             <div className="space-y-3">
               {isHoldingLocked && (
-                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 flex items-start gap-2.5 text-xs text-amber-700 dark:text-amber-400">
+                <div className="rounded-xl border border-warn/30 bg-warn/10 p-3 flex items-start gap-2.5 text-xs text-warn">
                   <LockClosedIcon className="h-4 w-4 shrink-0 mt-0.5" />
                   <div>
                     <span className="font-semibold block text-sm">This asset is locked</span>

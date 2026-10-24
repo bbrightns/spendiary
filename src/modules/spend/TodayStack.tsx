@@ -22,13 +22,14 @@ import { DEFAULT_BILL_REMINDER_DAYS } from './logic'
 import { dueText, openPayBill } from './PayBillSheet'
 import { openPayLoan } from './PayLoanSheet'
 import { useSpend } from './useSpend'
+import { ATTENTION_TONE } from './tones'
 
 type Tone = 'loss' | 'warn' | 'brand' | 'gain'
 
 const TONE: Record<Tone, { card: string; text: string }> = {
-  // Pastels with enough body to read: pink-red for late or overdue, yellow for due soon
-  loss: { card: 'border-rose-300 bg-rose-100 dark:border-rose-300/45 dark:bg-rose-300/[0.16]', text: 'text-rose-700 dark:text-rose-300' },
-  warn: { card: 'border-amber-300 bg-amber-100 dark:border-amber-200/40 dark:bg-amber-200/[0.13]', text: 'text-amber-700 dark:text-amber-200' },
+  // Pastels with enough body to read (shared in tones): pink-red for late or overdue, yellow for due soon
+  loss: ATTENTION_TONE.loss,
+  warn: ATTENTION_TONE.warn,
   brand: { card: 'border-brand/30 bg-brand-soft/70', text: 'text-brand-ink' },
   gain: { card: 'border-gain/30 bg-gain-soft', text: 'text-gain' },
 }
@@ -227,7 +228,7 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
     {
       id: 'dividends',
       icon: <ReceiptPercentIcon className="h-4 w-4" />,
-      badge: 'bg-gain text-white',
+      badge: 'bg-gain-strong text-white',
       title: (n) => `${count(n, 'dividend')} to log`,
       summary: () => `Expected in ${monthName} · log each when it arrives`,
       items: dividends,

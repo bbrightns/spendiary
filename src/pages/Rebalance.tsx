@@ -473,7 +473,7 @@ export function Rebalance() {
         <Card compact className="animate-rise flex flex-col justify-between">
           <div>
             <p className="text-xs font-medium text-ink-muted">Available liquid</p>
-            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tnum truncate">
+            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-gain tnum truncate">
               {thb(availCash)}
             </p>
           </div>
@@ -558,7 +558,7 @@ export function Rebalance() {
                     <button
                       type="button"
                       onClick={() => setNewCash(Math.round(availCash))}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition-all cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-gain/10 px-3 py-1 text-xs font-semibold text-gain hover:bg-gain/20 active:scale-95 transition-all cursor-pointer"
                     >
                       <span>Use available cash: {thb(availCash)}</span>
                     </button>
@@ -592,7 +592,7 @@ export function Rebalance() {
                     className="rounded border-line-strong text-brand focus:ring-brand/15 h-4 w-4"
                   />
                   <span className="flex items-center gap-1.5">
-                    <LockClosedIcon className="h-4 w-4 text-amber-500" />
+                    <LockClosedIcon className="h-4 w-4 text-warn" />
                     <span>Exclude safe-haven and locked assets</span>
                   </span>
                 </label>

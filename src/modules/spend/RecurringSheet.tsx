@@ -168,7 +168,7 @@ export function RecurringSheet({ open, rec, onClose }: { open: boolean; rec?: Sp
               value={form.amount}
               onChange={(e) => set('amount', e.target.value.replace(/[^\d.,]/g, ''))}
               className={`w-full max-w-[14ch] bg-transparent text-center font-display text-5xl font-extrabold tracking-tight tnum outline-none placeholder:text-ink-faint/50 ${
-                form.type === 'income' ? 'text-emerald-600 dark:text-emerald-300' : 'text-ink'
+                form.type === 'income' ? 'text-gain' : 'text-ink'
               }`}
               style={{ width: `${Math.max(2, form.amount.length + 1)}ch` }}
             />

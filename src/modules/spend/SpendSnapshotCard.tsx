@@ -5,11 +5,12 @@ import { WalletIcon } from '../../components/icons'
 import { localDateStr, thb, thbCompact } from '../../lib/format'
 import { dayAllowance, inPeriod, periodFor, periodLabel, totalsFor, type DayStatus } from './logic'
 import { useSpend } from './useSpend'
+import { STATUS_TONE } from './tones'
 
 const STATUS: Record<DayStatus, { label: string; chip: string }> = {
-  ok: { label: 'On track', chip: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300' },
-  careful: { label: 'Careful', chip: 'bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300' },
-  over: { label: 'Over today', chip: 'bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300' },
+  ok: { label: 'On track', chip: STATUS_TONE.ok.chip },
+  careful: { label: 'Careful', chip: STATUS_TONE.careful.chip },
+  over: { label: 'Over today', chip: STATUS_TONE.over.chip },
 }
 
 const signed = (n: number, fmt: (v: number) => string) => `${n < 0 ? '−' : ''}${fmt(Math.abs(n))}`

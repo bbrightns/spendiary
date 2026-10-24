@@ -49,7 +49,7 @@ export function ModeSwitcher({ size = 'md', className = '' }: { size?: 'sm' | 'm
       label: 'Spend',
       active: spend,
       onClick: () => go(true),
-      idle: 'hover:text-emerald-700 dark:hover:text-emerald-300',
+      idle: 'hover:text-spend-ink',
     },
     { label: 'Invest', active: !spend, onClick: () => go(false), idle: 'hover:text-invest-ink' },
   ]
@@ -64,7 +64,7 @@ export function ModeSwitcher({ size = 'md', className = '' }: { size?: 'sm' | 'm
       {thumb && (
         <span
           aria-hidden="true"
-          className={`absolute bottom-0.5 top-0.5 left-0 rounded-full shadow-xs ${spend ? 'bg-emerald-700' : 'bg-invest'} ${
+          className={`absolute bottom-0.5 top-0.5 left-0 rounded-full shadow-xs ${spend ? 'bg-spend' : 'bg-invest'} ${
             animate ? 'transition-[transform,width,background-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none' : ''
           }`}
           style={{ width: thumb.width, transform: `translateX(${thumb.left}px)` }}
@@ -82,7 +82,7 @@ export function ModeSwitcher({ size = 'md', className = '' }: { size?: 'sm' | 'm
           onClick={o.onClick}
           className={`${btn} relative inline-flex items-center justify-center rounded-full font-semibold transition-colors duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
             o.active ? 'font-bold text-white' : `text-ink-muted ${o.idle}`
-          } ${thumb ? '' : o.active ? (i === 0 ? 'bg-emerald-700' : 'bg-invest') : ''}`}
+          } ${thumb ? '' : o.active ? (i === 0 ? 'bg-spend' : 'bg-invest') : ''}`}
         >
           {o.label}
         </button>

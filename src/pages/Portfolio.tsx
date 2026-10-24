@@ -546,7 +546,7 @@ export function Portfolio() {
                 {h.isLocked && (
                   <span
                     title="Locked (protected from selling or deleting)"
-                    className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 text-xs font-semibold tracking-tight shrink-0"
+                    className="inline-flex items-center gap-1 rounded-md bg-warn/10 text-warn px-1.5 py-0.5 text-xs font-semibold tracking-tight shrink-0"
                   >
                     <LockClosedIcon className="h-3 w-3" />
                     <span>Safe-Haven</span>
@@ -654,7 +654,7 @@ export function Portfolio() {
                                 {loc.isLocked && (
                                   <span
                                     title="Location is locked (protected from selling)"
-                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-2xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 shrink-0"
+                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-2xs font-semibold bg-warn/10 text-warn shrink-0"
                                   >
                                     <LockClosedIcon className="h-2.5 w-2.5" />
                                     <span>Lock</span>
@@ -709,7 +709,7 @@ export function Portfolio() {
                                 {loc.isLocked && (
                                   <span
                                     title="Location is locked (protected from selling)"
-                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-2xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 shrink-0"
+                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-2xs font-semibold bg-warn/10 text-warn shrink-0"
                                   >
                                     <LockClosedIcon className="h-2.5 w-2.5" />
                                     <span>Lock</span>
@@ -758,7 +758,7 @@ export function Portfolio() {
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface border border-line/70 text-ink-muted shadow-2xs">
               {priceStatus === 'loading' && (
                 <>
-                  <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                  <span className="inline-block h-2 w-2 rounded-full bg-warn animate-pulse shrink-0" />
                   <span className="text-xs font-medium">Updating prices…</span>
                 </>
               )}
@@ -775,7 +775,7 @@ export function Portfolio() {
               )}
               {priceStatus === 'partial' && (
                 <>
-                  <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                  <span className="inline-block h-2 w-2 rounded-full bg-warn animate-pulse shrink-0" />
                   <span className="text-xs font-medium text-ink">Partial</span>
                   {lastUpdated && (
                     <span className="text-xs text-ink-muted">
@@ -789,7 +789,7 @@ export function Portfolio() {
                 <>
                   <span className="inline-block h-2 w-2 rounded-full bg-loss shrink-0" />
                   <span className="text-xs font-medium text-loss">Fetch failed</span>
-                  <button onClick={refreshPrices} className="text-xs underline text-brand hover:text-brand-emphasis cursor-pointer ml-0.5">
+                  <button onClick={refreshPrices} className="text-xs underline text-brand hover:text-brand-ink cursor-pointer ml-0.5">
                     retry
                   </button>
                 </>
@@ -824,7 +824,7 @@ export function Portfolio() {
               >
                 <CoinsIcon className="h-3.5 w-3.5 text-ink-muted" />
                 <span className="text-xs font-medium text-ink-muted">Gold 96.5%</span>
-                <span className="tnum text-xs font-bold text-amber-600 dark:text-amber-400 tracking-tight">
+                <span className="tnum text-xs font-bold text-warn tracking-tight">
                   ฿{effectiveGoldPerBaht.toLocaleString()}
                 </span>
                 <span className="hidden sm:inline text-xs text-ink-muted">/gold baht</span>
@@ -1386,7 +1386,7 @@ export function Portfolio() {
             />
             <div className="flex-1 text-xs">
               <span className="font-semibold text-ink flex items-center gap-1.5">
-                <LockClosedIcon className="h-3.5 w-3.5 text-amber-500" />
+                <LockClosedIcon className="h-3.5 w-3.5 text-warn" />
                 Lock this location
               </span>
               <p className="text-ink-muted mt-0.5">Protects it from being sold or removed by accident.</p>

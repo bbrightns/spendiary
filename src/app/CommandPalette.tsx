@@ -319,7 +319,7 @@ export function CommandPalette() {
         keywords: ['transfer', 'move', 'pay', 'card', 'bill', 'โอน', 'จ่ายบัตร'],
         group: 'Actions',
         spend: true,
-        icon: ic(TransferIcon, 'text-sky-500'),
+        icon: ic(TransferIcon, 'text-brand-ink'),
         run: () => openQuickAdd({ type: 'transfer' }),
       },
       {
@@ -350,7 +350,7 @@ export function CommandPalette() {
         badge: 'Action',
         keywords: ['add', 'debt', 'loan', 'liability', 'installment', 'บัตรเครดิต', 'ผ่อน', 'หนี้', 'กู้', 'เพิ่มหนี้'],
         group: 'Actions',
-        icon: ic(DebtIcon, 'text-rose-500'),
+        icon: ic(DebtIcon, 'text-loss'),
         run: go('/spend/loans?action=new'),
       },
       {
@@ -360,7 +360,7 @@ export function CommandPalette() {
         badge: 'Action',
         keywords: ['dca', 'plan', 'recurring', 'monthly', 'แผน', 'ออม', 'ซื้อถัว'],
         group: 'Actions',
-        icon: ic(DcaIcon, 'text-amber-500'),
+        icon: ic(DcaIcon, 'text-warn'),
         run: go('/dca?action=new'),
       },
       {
@@ -370,7 +370,7 @@ export function CommandPalette() {
         badge: 'Action',
         keywords: ['bank', 'cash', 'account', 'saving', 'wallet', 'ธนาคาร', 'เงินสด', 'บัญชี', 'เงินฝาก'],
         group: 'Actions',
-        icon: ic(WalletIcon, 'text-emerald-500'),
+        icon: ic(WalletIcon, 'text-gain'),
         run: go('/cash?action=new'),
       },
 
@@ -562,7 +562,7 @@ export function CommandPalette() {
         keywords: ['goal', 'saving', 'save', 'เป้าหมาย', 'ออมเงิน'],
         group: 'Accounts',
         spend: true,
-        icon: ic(SparkleIcon, 'text-emerald-500'),
+        icon: ic(SparkleIcon, 'text-gain'),
         run: go('/spend/accounts'),
       })
     }
@@ -590,7 +590,7 @@ export function CommandPalette() {
         subtitle: `DCA · ${thb(p.monthlyAmount)} ${p.frequency === 'weekly' ? 'a week' : p.frequency === 'daily' ? 'a day' : 'a month'}`,
         keywords: [p.ticker ?? '', 'dca', 'plan', 'ออม'],
         group: 'DCA plans',
-        icon: ic(DcaIcon, 'text-amber-500'),
+        icon: ic(DcaIcon, 'text-warn'),
         run: go('/dca'),
       })
     }
@@ -603,7 +603,7 @@ export function CommandPalette() {
         subtitle: `Debt · ${thb(l.balance)} left${l.monthlyPayment ? ` · ${thb(l.monthlyPayment)}/mo` : ''}`,
         keywords: ['debt', 'loan', 'installment', 'หนี้', 'ผ่อน'],
         group: 'Debts',
-        icon: ic(DebtIcon, 'text-rose-500'),
+        icon: ic(DebtIcon, 'text-loss'),
         run: go('/spend/loans'),
       })
     }

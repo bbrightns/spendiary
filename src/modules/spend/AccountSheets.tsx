@@ -37,7 +37,7 @@ function QuickAddPrefs({ id }: { id: string }) {
       <button type="button" role="switch" aria-checked={fav} onClick={() => toggleFavorite(id)} className={row}>
         <span>
           <span className="flex items-center gap-1.5 text-sm font-bold text-ink">
-            <StarIcon filled={fav} className="h-4 w-4 text-amber-500" /> Favorite
+            <StarIcon filled={fav} className="h-4 w-4 text-warn" /> Favorite
           </span>
           <span className="block text-xs text-ink-muted">Show as a one-tap choice</span>
         </span>

@@ -55,7 +55,7 @@ export function NavSheetList({ items, activePath, onSelect, badgeFor }: NavSheet
                     </span>
                   )}
                   {badge > 0 && (
-                    <span className="rounded-full bg-red-500 text-white px-1.5 py-0.2 text-xs font-bold">
+                    <span className="rounded-full bg-danger text-white px-1.5 py-0.2 text-xs font-bold">
                       {badge}
                     </span>
                   )}

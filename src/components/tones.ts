@@ -147,7 +147,7 @@ export const TYPE_ACTIVE = {
 } as const
 
 /** Spend's accent for small text (page eyebrows), matching the green of the Invest/Spend switch */
-export const SPEND_ACCENT_TEXT = 'text-emerald-700 dark:text-emerald-400'
+export const SPEND_ACCENT_TEXT = 'text-spend-ink'
 /** Invest's accent for small text, the blue of the switch */
 export const INVEST_ACCENT_TEXT = 'text-invest dark:text-invest-ink'
 
@@ -156,6 +156,52 @@ export const INVEST_ACCENT_TEXT = 'text-invest dark:text-invest-ink'
  * Spend/Invest switch), so it's always clear which side you're on.
  */
 export const SIDE_ACTIVE = {
-  spend: { text: 'text-emerald-700 dark:text-emerald-300', bg: 'bg-emerald-100 dark:bg-emerald-400/15', line: 'border-emerald-600 dark:border-emerald-400' },
+  spend: { text: 'text-spend-ink', bg: 'bg-spend-soft', line: 'border-spend dark:border-spend-ink' },
   invest: { text: 'text-invest-ink', bg: 'bg-invest-soft', line: 'border-invest' },
 } as const
+
+/**
+ * Spend's status pastels, shared so they're written once: the day's allowance ("On track",
+ * "Careful", "Over today"), the Today stack's urgent cards, note tags and the "spent" bars.
+ * These are the only raw palette colours outside TONES (DESIGN.md §3).
+ */
+export const STATUS_TONE = {
+  ok: { chip: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300', stroke: 'stroke-emerald-500' },
+  careful: { chip: 'bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300', stroke: 'stroke-amber-500' },
+  over: { chip: 'bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300', stroke: 'stroke-rose-500' },
+} as const
+
+/** Today stack: pink-red for late or overdue, yellow for due soon, with enough body to read */
+export const ATTENTION_TONE = {
+  loss: { card: 'border-rose-300 bg-rose-100 dark:border-rose-300/45 dark:bg-rose-300/[0.16]', text: 'text-rose-700 dark:text-rose-300' },
+  warn: { card: 'border-amber-300 bg-amber-100 dark:border-amber-200/40 dark:bg-amber-200/[0.13]', text: 'text-amber-700 dark:text-amber-200' },
+} as const
+
+/** #tags on notes and in Analysis */
+export const TAG_CHIP = {
+  idle: 'bg-violet-100 text-violet-700 hover:bg-violet-200 dark:bg-violet-400/15 dark:text-violet-200',
+  on: 'bg-violet-200 text-violet-800 dark:bg-violet-400/30 dark:text-violet-100',
+} as const
+
+/** Money spent in Analysis: orange, so it never reads as a loss */
+export const SPENT_TONE = { bar: 'bg-orange-400 dark:bg-orange-400/80', text: 'text-orange-600 dark:text-orange-300' } as const
+
+
+/**
+ * Categorical badges on the Invest side (debt types, activity-log kinds): a faint wash, the
+ * hue as text and a faint border. Not for status; status uses gain / warn / loss.
+ */
+export type Tint = 'indigo' | 'rose' | 'violet' | 'sky' | 'amber' | 'emerald' | 'slate'
+
+export const TINT: Record<Tint, { bg: string; text: string; border: string }> = {
+  indigo: { bg: 'bg-indigo-500/10 dark:bg-indigo-500/20', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-500/20' },
+  rose: { bg: 'bg-rose-500/10 dark:bg-rose-500/20', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-500/20' },
+  violet: { bg: 'bg-violet-500/10 dark:bg-violet-500/20', text: 'text-violet-600 dark:text-violet-400', border: 'border-violet-500/20' },
+  sky: { bg: 'bg-sky-500/10 dark:bg-sky-500/20', text: 'text-sky-600 dark:text-sky-400', border: 'border-sky-500/20' },
+  amber: { bg: 'bg-amber-500/10 dark:bg-amber-500/20', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-500/20' },
+  emerald: { bg: 'bg-emerald-500/10 dark:bg-emerald-500/20', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/20' },
+  slate: { bg: 'bg-slate-500/10 dark:bg-slate-500/20', text: 'text-slate-600 dark:text-slate-400', border: 'border-slate-500/20' },
+}
+
+/** One badge string for a tint */
+export const tintBadge = (t: Tint) => `${TINT[t].bg} ${TINT[t].text} border ${TINT[t].border}`
