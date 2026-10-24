@@ -43,6 +43,19 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
     [recurring, today],
   )
 
+  // Same-day items under one date, with what goes out and comes in that day
+  const upcomingByDay = useMemo(() => {
+    const days: { date: string; items: typeof recurring; out: number; inflow: number }[] = []
+    for (const { rec, date } of upcoming) {
+      let day = days[days.length - 1]
+      if (day?.date !== date) days.push((day = { date, items: [], out: 0, inflow: 0 }))
+      day.items.push(rec)
+      if (rec.type === 'income') day.inflow += rec.amount
+      else day.out += rec.amount
+    }
+    return days
+  }, [upcoming])
+
   if (recurring.length === 0) {
     // On the Bills page its own empty state takes over; on Home, keep a way in so new users find it
     if (!showManage) return null
@@ -146,20 +159,49 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
 
       {upcoming.length > 0 && (
         <div className={dueRecurring.length > 0 ? 'mt-2 border-t border-line pt-3' : 'mt-3'}>
-          <p className="mb-1.5 text-xs font-semibold text-ink-muted">Coming up</p>
-          <ul className="space-y-1.5">
-            {upcoming.map(({ rec, date }) => (
-              <li key={rec.id} className="flex items-center justify-between gap-3 text-sm">
-                <span className="min-w-0 truncate text-ink-soft">
-                  <span className="font-semibold text-ink">{shortDay(date)}</span> · {rec.name}
-                </span>
-                <span className={`shrink-0 font-semibold tnum ${rec.type === 'income' ? 'text-gain-ink' : 'text-ink'}`}>
-                  {rec.type === 'income' ? '+' : ''}
-                  {thb(rec.amount)}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <p className="mb-2 text-xs font-semibold text-ink-muted">Coming up</p>
+          {/* One block per day, headed by the date and that day's total, like the day list on Home */}
+          <div className="space-y-4">
+            {upcomingByDay.map(({ date, items, out, inflow }) => {
+              const inDays = daysFrom(today, date)
+              return (
+                <section key={date} aria-label={shortDay(date)}>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="min-w-0 truncate text-sm">
+                      <span className="font-bold text-ink">{shortDay(date)}</span>
+                      <span className="text-ink-muted"> · {inDays === 1 ? 'Tomorrow' : `In ${inDays} days`}</span>
+                    </p>
+                    {items.length > 1 && (
+                      <p className="shrink-0 text-xs font-semibold text-ink-muted tnum">
+                        {/* Labelled, so the day's total doesn't read as one more bill */}
+                        {inflow > 0 && <span className="text-gain-ink">+{thb(inflow)}{out > 0 ? ' in' : ' total'}</span>}
+                        {inflow > 0 && out > 0 && ' · '}
+                        {out > 0 && `${thb(out)}${inflow > 0 ? ' out' : ' total'}`}
+                      </p>
+                    )}
+                  </div>
+                  <ul className="mt-1.5 space-y-1">
+                    {items.map((rec) => {
+                      const cat = getCategory(rec.categoryId)
+                      const Icon = cat?.icon ?? RepeatIcon
+                      return (
+                        <li key={rec.id} className="flex items-center gap-2.5 text-sm">
+                          <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${TONES[cat?.tone ?? 'slate'].chip}`}>
+                            <Icon className="h-3.5 w-3.5" />
+                          </span>
+                          <span className="min-w-0 flex-1 truncate text-ink-soft">{rec.name}</span>
+                          <span className={`shrink-0 font-semibold tnum ${rec.type === 'income' ? 'text-gain-ink' : 'text-ink'}`}>
+                            {rec.type === 'income' ? '+' : ''}
+                            {thb(rec.amount)}
+                          </span>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </section>
+              )
+            })}
+          </div>
         </div>
       )}
     </Card>
