@@ -13,7 +13,7 @@ import { localDateStr, thb } from '../../../lib/format'
 import { dateRangeLabel } from '../../../lib/paletteSearch'
 import type { SpendTransaction, SpendTxnType } from '../../../lib/types'
 import { ListBulletIcon, categoriesFor, getCategory } from '../categories'
-import { inPeriod, periodFor, shiftDate, weekOf, type Period } from '../logic'
+import { inPeriod, periodFor, shiftDate, spendOf, weekOf, type Period } from '../logic'
 import { MonthStepper } from '../MonthStepper'
 import { openQuickAdd } from '../QuickAddSheet'
 import { TxnRow } from '../TxnRow'
@@ -155,8 +155,9 @@ export function SpendTransactions() {
     return [...map.entries()]
   }, [filtered])
 
-  const spent = filtered.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
-  const earned = filtered.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0)
+  // Money paid back comes off what was spent rather than counting as earned
+  const spent = Math.max(0, filtered.reduce((s, t) => s + spendOf(t), 0))
+  const earned = filtered.filter((t) => t.type === 'income' && !t.paidBack).reduce((s, t) => s + t.amount, 0)
   const [searchOpen, setSearchOpen] = useState(false)
 
   const toggleTag = (tag: string) => {

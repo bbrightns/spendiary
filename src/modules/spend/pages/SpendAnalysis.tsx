@@ -6,7 +6,7 @@ import { SegmentedControl } from '../../../components/ui/SegmentedControl'
 import { localDateStr, thb, thbCompact } from '../../../lib/format'
 import type { SpendTransaction } from '../../../lib/types'
 import { getCategory } from '../categories'
-import { budgetState, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, categoryBreakdown, totalsFor, weekOf, type Period } from '../logic'
+import { budgetState, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, categoryBreakdown, spendOf, totalsFor, weekOf, type Period } from '../logic'
 import { MonthStepper } from '../MonthStepper'
 import { SPENT_TONE, TAG_CHIP, TONES } from '../tones'
 import { useSpend } from '../useSpend'
@@ -50,10 +50,12 @@ interface Bucket {
 
 function buckets(range: Range, p: Period, txns: SpendTransaction[], today: string): Bucket[] {
   const spentOn = new Map<string, number>()
-  for (const t of txns) if (t.type === 'expense' && inPeriod(p, t.date)) {
+  for (const t of txns) if (spendOf(t) && inPeriod(p, t.date)) {
     const k = range === 'year' ? t.date.slice(0, 7) : t.date
-    spentOn.set(k, (spentOn.get(k) ?? 0) + t.amount)
+    spentOn.set(k, (spentOn.get(k) ?? 0) + spendOf(t))
   }
+  // A pay-back on a day with less spending would draw a bar below zero
+  for (const [k, v] of spentOn) if (v < 0) spentOn.set(k, 0)
   if (range === 'year') {
     const s = parse(p.start)
     return Array.from({ length: 12 }, (_, i) => {
@@ -156,7 +158,7 @@ export function SpendAnalysis() {
     const prev = range === 'week' ? weekOf(shiftDate(period.start, -1)) : shiftPeriod(period, -1, settings.cycle)
     const elapsed = isCurrent ? daysBetween(period.start, today) : daysBetween(period.start, period.end)
     const prevUpTo = { start: prev.start, end: shiftDate(prev.start, Math.min(elapsed, daysBetween(prev.start, prev.end))) }
-    const spentPrev = transactions.filter((t) => t.type === 'expense' && inPeriod(prevUpTo, t.date)).reduce((s, t) => s + t.amount, 0)
+    const spentPrev = transactions.filter((t) => inPeriod(prevUpTo, t.date)).reduce((s, t) => s + spendOf(t), 0)
     return spentPrev > 0 ? totals.expense - spentPrev : null
   }, [range, period, isCurrent, today, transactions, totals.expense, settings.cycle])
 
@@ -168,8 +170,8 @@ export function SpendAnalysis() {
   const over = totals.income > 0 && totals.net < 0
   const tagTotals = useMemo(() => {
     const m = new Map<string, number>()
-    for (const t of inRange) if (t.type === 'expense') for (const tag of t.tags ?? []) m.set(tag, (m.get(tag) ?? 0) + t.amount)
-    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
+    for (const t of inRange) if (spendOf(t)) for (const tag of t.tags ?? []) m.set(tag, (m.get(tag) ?? 0) + spendOf(t))
+    return [...m.entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 5)
   }, [inRange])
 
   const catBudgets = range === 'month' ? settings.categoryBudgets ?? {} : {}

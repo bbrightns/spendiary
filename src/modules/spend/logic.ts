@@ -425,6 +425,12 @@ export function upcomingPaydays(cycle: PayCycle, count = 3, today = localDateStr
   return out
 }
 
+/** Income that is someone paying you back (a split bill, a shop's refund), not money earned */
+export const isPaidBack = (t: SpendTransaction) => t.type === 'income' && !!t.paidBack
+
+/** What a transaction adds to spending: an expense's amount, less any money paid back; 0 otherwise */
+export const spendOf = (t: SpendTransaction) => (t.type === 'expense' ? t.amount : isPaidBack(t) ? -t.amount : 0)
+
 export interface MonthTotals {
   income: number
   expense: number
@@ -438,15 +444,18 @@ export function totalsFor(txns: SpendTransaction[]): MonthTotals {
   let expense = 0
   const cat = new Map<string, number>()
   for (const t of txns) {
-    if (t.type === 'income') income += t.amount
-    else if (t.type === 'expense') {
-      expense += t.amount
+    if (t.type === 'income' && !t.paidBack) income += t.amount
+    else if (t.type === 'expense' || isPaidBack(t)) {
+      // Money paid back lowers its category's spending rather than counting as income
+      expense += spendOf(t)
       const id = t.categoryId ?? 'other'
-      cat.set(id, (cat.get(id) ?? 0) + t.amount)
+      cat.set(id, (cat.get(id) ?? 0) + spendOf(t))
     }
   }
   const byCategory = [...cat.entries()]
     .map(([categoryId, amount]) => ({ categoryId, amount }))
+    // A pay-back can land in a later period than the spend it covers; nothing left spent, nothing to show
+    .filter((c) => c.amount > 0)
     .sort((a, b) => b.amount - a.amount)
   return { income, expense, net: income - expense, byCategory }
 }
@@ -455,10 +464,13 @@ export function totalsFor(txns: SpendTransaction[]): MonthTotals {
 export function totalsBySubcategory(txns: SpendTransaction[], categoryId: string): { subcategory: string; amount: number }[] {
   const sub = new Map<string, number>()
   for (const t of txns) {
-    if (t.type !== 'expense' || (t.categoryId ?? 'other') !== categoryId || !t.subcategory) continue
-    sub.set(t.subcategory, (sub.get(t.subcategory) ?? 0) + t.amount)
+    if (!spendOf(t) || (t.categoryId ?? 'other') !== categoryId || !t.subcategory) continue
+    sub.set(t.subcategory, (sub.get(t.subcategory) ?? 0) + spendOf(t))
   }
-  return [...sub.entries()].map(([subcategory, amount]) => ({ subcategory, amount })).sort((a, b) => b.amount - a.amount)
+  return [...sub.entries()]
+    .map(([subcategory, amount]) => ({ subcategory, amount }))
+    .filter((r) => r.amount > 0)
+    .sort((a, b) => b.amount - a.amount)
 }
 
 /**
@@ -476,7 +488,17 @@ export function categoryBreakdown(txns: SpendTransaction[], categoryId: string, 
     if (label && label !== 'Other') named.set(label, (named.get(label) ?? 0) + t.amount)
     else other += t.amount
   }
-  const rows = [...named.entries()].map(([label, amount]) => ({ label, amount })).sort((a, b) => b.amount - a.amount)
+  // Money paid back comes off its subcategory when it has one; otherwise off the trailing Other
+  for (const t of txns) {
+    if (!isPaidBack(t) || (t.categoryId ?? 'other') !== categoryId) continue
+    if (t.subcategory && named.has(t.subcategory)) named.set(t.subcategory, named.get(t.subcategory)! - t.amount)
+    else other -= t.amount
+  }
+  other = Math.max(0, other)
+  const rows = [...named.entries()]
+    .map(([label, amount]) => ({ label, amount }))
+    .filter((r) => r.amount > 0)
+    .sort((a, b) => b.amount - a.amount)
   if (rows.length === 0) return []
   other += rows.slice(limit).reduce((s, r) => s + r.amount, 0)
   return other > 0 ? [...rows.slice(0, limit), { label: 'Other', amount: other }] : rows.slice(0, limit)
@@ -620,8 +642,8 @@ export interface DayAllowance {
   overBy: number
 }
 
-/** Counts against the budget: expenses, except one-offs kept outside it */
-export const countsInBudget = (t: SpendTransaction) => t.type === 'expense' && !t.outsideBudget
+/** Counts against the budget: expenses, except one-offs kept outside it, and money paid back (as a minus) */
+export const countsInBudget = (t: SpendTransaction) => (t.type === 'expense' && !t.outsideBudget) || isPaidBack(t)
 
 const periodDays = (p: Period) => Math.round((parse(p.end).getTime() - parse(p.start).getTime()) / 86_400_000) + 1
 
@@ -642,9 +664,11 @@ export function dayAllowance(budget: number, period: Period, txns: SpendTransact
   let spentToday = 0
   for (const t of txns) {
     if (!countsInBudget(t) || !inPeriod(period, t.date)) continue
-    if (t.date < today) before += t.amount
-    else if (t.date === today) spentToday += t.amount
+    if (t.date < today) before += spendOf(t)
+    else if (t.date === today) spentToday += spendOf(t)
   }
+  // Paid back more today than spent: nothing spent, rather than a negative day
+  spentToday = Math.max(0, spentToday)
   const daysLeft = Math.max(1, daysLeftIn(period, today))
   const left = budget - before
   const soft = budget > 0 && left <= 0
@@ -722,7 +746,8 @@ export function averageMonthlySpend(
   let p = shiftPeriod(periodFor(today, cycle), -1, cycle)
   for (let i = 0; i < maxMonths && p.end >= first; i++) {
     const period = p
-    totals.push(expenses.filter((t) => inPeriod(period, t.date)).reduce((s, t) => s + t.amount, 0))
+    // Money paid back in the period comes off what was spent
+    totals.push(Math.max(0, txns.filter((t) => inPeriod(period, t.date)).reduce((s, t) => s + spendOf(t), 0)))
     p = shiftPeriod(p, -1, cycle)
   }
   if (totals.length < minMonths) return undefined
