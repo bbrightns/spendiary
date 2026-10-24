@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Card } from '../../../components/ui/Card'
+import { PageHeader } from '../../../components/layout/PageHeader'
 import { AddButton } from '../../../components/ui/AddButton'
 import { Button } from '../../../components/ui/Button'
 import { EmptyState } from '../../../components/ui/EmptyState'
@@ -14,7 +15,6 @@ import { openQuickAdd } from '../QuickAddSheet'
 import { TodayStack } from '../TodayStack'
 import { TxnRow } from '../TxnRow'
 import { useSpend } from '../useSpend'
-import { SPEND_ACCENT_TEXT } from '../tones'
 import { HOME_CARDS, homeOrder, isDefaultOrder, moveCard, type HomeCardId } from '../homeLayout'
 import { ArrangeButton, ReorderSheet } from '../ReorderSheet'
 
@@ -203,23 +203,20 @@ export function SpendOverview() {
 
   return (
     <div className="space-y-5">
-      <header className="flex items-end justify-between gap-3">
-        <div className="min-w-0">
-          <p className={`mb-1 text-xs font-semibold uppercase tracking-[0.08em] ${SPEND_ACCENT_TEXT}`}>
-            {parse(today).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </p>
-          <h1 className="font-display text-2xl sm:text-3xl font-extrabold leading-tight tracking-tight text-ink [text-wrap:balance]">
-            {`${greeting}${userName ? `, ${userName}` : ''}`}
-          </h1>
-          <p className="mt-1.5 text-sm text-ink-muted">Here's where your money stands today.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="hidden lg:block">
-            <AddButton onClick={() => openQuickAdd()} label="Add" />
+      {/* The standard page header: the date is the eyebrow, the greeting the title */}
+      <PageHeader
+        eyebrow={parse(today).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+        title={`${greeting}${userName ? `, ${userName}` : ''}`}
+        subtitle="Here's where your money stands today."
+        action={
+          <div className="flex items-center gap-2">
+            <div className="hidden lg:block">
+              <AddButton onClick={() => openQuickAdd()} label="Add" />
+            </div>
+            <ArrangeButton label="Arrange cards" onClick={() => setArrangeOpen(true)} />
           </div>
-          <ArrangeButton label="Arrange cards" onClick={() => setArrangeOpen(true)} />
-        </div>
-      </header>
+        }
+      />
 
       {/* Card bills, loans, DCA buys and dividends due: both sides' to-dos in one place */}
       <TodayStack />
