@@ -377,7 +377,7 @@ export function WalletSheet({ wallet, onClose }: { wallet?: PayMethod; onClose: 
               ).map((a) => (
                 <Button
                   key={a.type}
-                  variant={a.type === 'transfer' ? 'primary' : 'secondary'}
+                  variant="secondary"
                   size="sm"
                   onClick={() => {
                     onClose()

@@ -234,6 +234,8 @@ export function SpendAccounts() {
                 const f = flows.get(w.id)
                 const on = favs.includes(w.id)
                 const isDefault = settings.defaultAccountId === w.id
+                // Wallets can't really go below zero, so this is almost always a txn logged to the wrong one
+                const overdrawn = w.balance < 0
                 return (
                   <div
                     key={w.id}
@@ -245,10 +247,10 @@ export function SpendAccounts() {
                       e.preventDefault()
                       setWalletSheet(w)
                     }}
-                    aria-label={`${w.name}${isDefault ? ', default' : ''}${w.locked ? ', locked savings' : ''}, ${thb(w.balance, true)}`}
-                    title={`${w.name} · ${thb(w.balance, true)}`}
+                    aria-label={`${w.name}${isDefault ? ', default' : ''}${w.locked ? ', locked savings' : ''}, ${thbSigned(w.balance, true)}${overdrawn ? ', overdrawn' : ''}`}
+                    title={`${w.name} · ${thbSigned(w.balance, true)}`}
                     className={`@container relative flex aspect-square min-w-0 flex-col rounded-2xl border bg-surface p-1.5 min-[370px]:p-2 sm:p-2.5 text-left shadow-[var(--shadow-soft)] transition-all cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                      isDefault ? 'border-brand/60 ring-1 ring-brand/30' : 'border-line'
+                      overdrawn ? 'border-loss/60 ring-1 ring-loss/25' : isDefault ? 'border-brand/60 ring-1 ring-brand/30' : 'border-line'
                     }`}
                   >
                     <div className="flex items-start justify-between">
@@ -285,18 +287,20 @@ export function SpendAccounts() {
                       </p>
                       {/* Satang in small type so it still fits a third of a phone; millions go compact.
                           The gaps grow with the tile: none on a small phone, where the tile is full */}
-                      <p className="truncate mt-[clamp(0px,calc((100cqw_-_90px)*0.2),6px)] font-display text-[14px] min-[380px]:text-[15px] font-extrabold leading-tight tracking-tight tnum text-ink">
+                      <p className={`truncate mt-[clamp(0px,calc((100cqw_-_90px)*0.2),6px)] font-display text-[14px] min-[380px]:text-[15px] font-extrabold leading-tight tracking-tight tnum ${overdrawn ? 'text-loss' : 'text-ink'}`}>
                         {Math.abs(w.balance) >= 1_000_000 ? (
                           thbCompact(w.balance)
                         ) : (
                           <>
                             {thbSigned(w.balance, true).slice(0, -3)}
-                            <span className="text-2xs font-bold text-ink-muted">{thbSigned(w.balance, true).slice(-3)}</span>
+                            <span className={`text-2xs font-bold ${overdrawn ? 'text-loss/70' : 'text-ink-muted'}`}>{thbSigned(w.balance, true).slice(-3)}</span>
                           </>
                         )}
                       </p>
                       <p className="truncate mt-[clamp(0px,calc((100cqw_-_90px)*0.12),4px)] text-2xs leading-tight text-ink-muted tnum">
-                        {f ? (
+                        {overdrawn ? (
+                          <span className="font-bold text-loss">Overdrawn</span>
+                        ) : f ? (
                           <>
                             <span className="text-gain">+{compact(f.in)}</span> · −{compact(f.out)}
                           </>

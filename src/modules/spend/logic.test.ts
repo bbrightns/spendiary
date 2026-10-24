@@ -34,6 +34,7 @@ import {
   categoryBreakdown,
   renameInList,
   renameSubOn,
+  walletOverdraw,
 } from './logic'
 
 const txn = (p: Partial<SpendTransaction>): SpendTransaction => ({
@@ -156,6 +157,37 @@ describe('applyToBalances', () => {
   })
   it('leaves balances alone for entries already in the balance', () => {
     expect(applyToBalances(b, txn({ accountId: 'w1', alreadyInBalance: true }), 1)).toBe(b)
+  })
+})
+
+describe('walletOverdraw', () => {
+  const ws = [wallet('w1', 1000), wallet('w2', -50)]
+
+  it('flags spending or transferring more than the wallet holds', () => {
+    expect(walletOverdraw(ws, txn({ accountId: 'w1', amount: 1000 }))).toBeUndefined()
+    expect(walletOverdraw(ws, txn({ accountId: 'w1', amount: 1000.01 }))).toEqual({ accountId: 'w1', before: 1000, after: -0.01 })
+    expect(walletOverdraw(ws, txn({ type: 'transfer', accountId: 'w1', toAccountId: 'w2', amount: 1200 }))?.after).toBe(-200)
+  })
+  it('never flags income, cards, no wallet or entries already in the balance', () => {
+    expect(walletOverdraw(ws, txn({ type: 'income', accountId: 'w2', amount: 10 }))).toBeUndefined()
+    expect(walletOverdraw(ws, txn({ accountId: 'card', amount: 99_999 }))).toBeUndefined()
+    expect(walletOverdraw(ws, txn({ accountId: undefined, amount: 99_999 }))).toBeUndefined()
+    expect(walletOverdraw(ws, txn({ accountId: 'w1', amount: 5000, alreadyInBalance: true }))).toBeUndefined()
+  })
+  it('flags any new spending from a wallet already below zero', () => {
+    expect(walletOverdraw(ws, txn({ accountId: 'w2', amount: 1 }))).toEqual({ accountId: 'w2', before: -50, after: -51 })
+  })
+  it('when editing, counts only what leaves on top of the saved entry', () => {
+    // Saved ฿900 from w1 (balance now 100): re-saving it, or lowering it, is fine
+    const saved = txn({ accountId: 'w1', amount: 900 })
+    const now = [wallet('w1', 100)]
+    expect(walletOverdraw(now, saved, saved)).toBeUndefined()
+    expect(walletOverdraw(now, { ...saved, amount: 1000 }, saved)).toBeUndefined()
+    expect(walletOverdraw(now, { ...saved, amount: 1000.5 }, saved)).toEqual({ accountId: 'w1', before: 1000, after: -0.5 })
+    // Moving it to another wallet takes it all from there
+    expect(walletOverdraw([...now, wallet('w3', 500)], { ...saved, accountId: 'w3' }, saved)?.accountId).toBe('w3')
+    // An already-overdrawn wallet doesn't warn when the edit changes nothing
+    expect(walletOverdraw([wallet('w2', -50)], txn({ accountId: 'w2', amount: 10 }), txn({ accountId: 'w2', amount: 10 }))).toBeUndefined()
   })
 })
 

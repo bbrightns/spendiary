@@ -20,6 +20,18 @@
    - Only then execute `git push`.
 4. **Report Commit Details in Responses**: Every time you perform a commit, you MUST explicitly report the commit hash (short SHA) and the exact commit message in your response to the user so the user is always informed of the changes.
 
+## Ship Command
+When the user says **"ship"** (or "ship it", "ขึ้น vercel", "ปล่อยเลย"), that is the explicit command to push AND merge to `main`. Run every step without asking in between:
+1. Commit anything left over; review `git diff origin/main..HEAD`.
+2. Run "Bug Check Before Push" (`npm run build`, `npm run lint`, `npm test`), and the visual check if UI changed. Fix what fails.
+3. Bump the version **once for the whole PR** (patch/minor per the rules above), only if `package.json` still equals the version on `origin/main`. Commit it.
+4. Push the branch, then open a PR into `main` (reuse it if one is already open).
+5. Wait for the `check` CI to go green. If it is red, fix, push and wait again.
+6. Merge the PR (merge commit). Vercel then deploys `main`.
+7. Report: merged SHA, the version Vercel should show (footer of the app), and what was checked.
+
+Stop and ask before merging if: the change needs SQL run by hand in Supabase, a merge conflict means choosing between two behaviours, or CI keeps failing for a reason outside this change.
+
 ## Quality & Pre-Commit Verification Rules
 1. **Strict TypeScript & Unused Import Checking**:
    - Whenever code is replaced, refactored, or deleted, immediately inspect all imports and declared variables in the file.

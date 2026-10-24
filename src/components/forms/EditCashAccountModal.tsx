@@ -26,6 +26,17 @@ function formatWithCommas(value: string | number): string {
   return integerPart
 }
 
+/** Like formatWithCommas, but keeps a leading minus (a wallet can be overdrawn). */
+function formatSigned(value: string): string {
+  return (value.trimStart().startsWith('-') ? '-' : '') + formatWithCommas(value)
+}
+
+/** "-3,158.52" → -3158.52; blank → 0 */
+function parseSigned(value: string): number {
+  const n = Number(value.replace(/[^0-9.]/g, '')) || 0
+  return value.trimStart().startsWith('-') && n ? -n : n
+}
+
 /** Add or edit a cash account; shared by Cash & Liquidity and Spend's wallet sheet. */
 interface EditAccountModalProps {
   open: boolean
@@ -62,7 +73,9 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
   const num = (v: string) => Number(v.replace(/[^0-9.]/g, '')) || 0
   const yearlyInterest = (() => {
     const cap = num(maxEligibleBalance)
-    const eligible = cap > 0 ? Math.min(num(balance), cap) : num(balance)
+    // Nothing earns interest while overdrawn
+    const bal = Math.max(0, parseSigned(balance))
+    const eligible = cap > 0 ? Math.min(bal, cap) : bal
     return (eligible * num(interestRate)) / 100
   })()
 
@@ -70,8 +83,7 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
     e.preventDefault()
     if (!name.trim()) return
 
-    const cleanBal = balance.replace(/[^0-9.]/g, '')
-    const balNum = cleanBal === '' ? 0 : Number(cleanBal)
+    const balNum = parseSigned(balance)
     const rateClean = interestRate.replace(/[^0-9.]/g, '')
     const rateNum = rateClean !== '' ? Number(rateClean) : undefined
     const capClean = maxEligibleBalance.replace(/[^0-9.]/g, '')
@@ -160,7 +172,7 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
               type="text"
               inputMode="decimal"
               placeholder="0.00"
-              value={formatWithCommas(balance)}
+              value={formatSigned(balance)}
               onChange={(e) => setBalance(e.target.value)}
               className="min-w-0 flex-1 bg-transparent px-2 text-base font-bold tnum text-ink outline-none"
             />

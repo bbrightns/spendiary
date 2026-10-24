@@ -115,8 +115,10 @@ export function applyToBalances(b: Balances, txn: SpendTransaction, sign: 1 | -1
   }
 }
 
+type BalanceMove = Pick<SpendTransaction, 'type' | 'amount' | 'accountId' | 'toAccountId' | 'alreadyInBalance'>
+
 /** Net money in (+) / out (−) per account id for one transaction. */
-function moneyDeltas(txn: SpendTransaction): Map<string, number> {
+function moneyDeltas(txn: BalanceMove): Map<string, number> {
   const deltas = new Map<string, number>()
   if (txn.alreadyInBalance) return deltas
   const add = (id: string | undefined, v: number) => {
@@ -130,6 +132,30 @@ function moneyDeltas(txn: SpendTransaction): Map<string, number> {
     add(txn.toAccountId, txn.amount)
   }
   return deltas
+}
+
+export interface Overdraw {
+  accountId: string
+  /** Balance before this transaction (with the edited one's old effect taken back) */
+  before: number
+  /** Balance once it's saved; below zero */
+  after: number
+}
+
+/**
+ * The wallet a transaction would take below zero, if any. When editing, pass the saved
+ * version as `old`: only money leaving on top of what it already took counts, so
+ * re-saving an unchanged entry never warns.
+ */
+export function walletOverdraw(wallets: Pick<CashAccount, 'id' | 'balance'>[], next: BalanceMove, old?: BalanceMove): Overdraw | undefined {
+  const added = moneyDeltas(next)
+  const taken = old ? moneyDeltas(old) : new Map<string, number>()
+  for (const w of wallets) {
+    const net = roundMoney((added.get(w.id) ?? 0) - (taken.get(w.id) ?? 0))
+    if (net >= 0) continue
+    const after = roundMoney(w.balance + net)
+    if (after < 0) return { accountId: w.id, before: roundMoney(w.balance - (taken.get(w.id) ?? 0)), after }
+  }
 }
 
 /** Date `day` of the month containing `ref`, clamped to the month's length. */

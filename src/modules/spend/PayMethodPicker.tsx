@@ -69,9 +69,12 @@ export function PayMethodPicker({ label, methods, value, onChange, favoriteIds, 
                 </span>
                 <span className="block text-2xs font-medium text-ink-muted tnum">
                   {m.id === defaultId && <span className="font-bold text-brand-ink">Default · </span>}
-                  {m.kind === 'card'
-                    ? `${thb(m.available ?? Math.max(0, (m.creditLimit ?? 0) - m.balance), true)} left`
-                    : thb(m.balance, true)}
+                  {m.kind === 'card' ? (
+                    `${thb(m.available ?? Math.max(0, (m.creditLimit ?? 0) - m.balance), true)} left`
+                  ) : (
+                    // A wallet below zero stands out, so it's not picked by habit
+                    <span className={m.balance < 0 ? 'font-bold text-loss' : undefined}>{thbSigned(m.balance, true)}</span>
+                  )}
                 </span>
               </span>
             </button>
@@ -104,7 +107,7 @@ export function PayMethodPicker({ label, methods, value, onChange, favoriteIds, 
             <optgroup label="Wallets">
               {usable.filter((m) => m.kind === 'cash').map((m) => (
                 <option key={m.id} value={m.id}>
-                  {`${m.name} · ${m.kind === 'card' ? `${thbSigned(m.balance, true)} owed` : thb(m.balance, true)}`}
+                  {`${m.name} · ${m.kind === 'card' ? `${thbSigned(m.balance, true)} owed` : thbSigned(m.balance, true)}`}
                 </option>
               ))}
             </optgroup>
