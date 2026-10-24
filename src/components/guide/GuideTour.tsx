@@ -211,12 +211,12 @@ export function GuideTour({
                 width: `${popoverWidth}px`,
               }
         }
-        className="absolute bg-surface dark:bg-[#1c1f26] border border-line dark:border-white/10 rounded-2xl p-5 shadow-2xl backdrop-blur-xl transition-all duration-300 z-10"
+        className="absolute bg-surface border border-line rounded-2xl p-5 shadow-2xl backdrop-blur-xl transition-all duration-300 z-10"
       >
         {/* Header Bar */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase bg-brand/10 text-brand border border-brand/20 dark:bg-[#4f46e5]/20 dark:text-[#c7d2fe] dark:border-[#4f46e5]/30">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase bg-brand/10 text-brand border border-brand/20 dark:bg-brand/20 dark:text-brand-ink dark:border-brand/30">
               {currentStep.badge || 'Guide'}
             </span>
             <span className="text-xs font-medium text-ink-muted">
@@ -272,7 +272,7 @@ export function GuideTour({
             <button
               type="button"
               onClick={isLastStep ? onFinish : onNext}
-              className="px-4 py-1.5 rounded-xl bg-ink text-white dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] hover:bg-ink-hover text-xs font-bold shadow-md shadow-brand/20 dark:shadow-[#4f46e5]/30 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+              className="px-4 py-1.5 rounded-xl bg-primary text-white hover:bg-primary-hover text-xs font-bold shadow-md shadow-brand/20 dark:shadow-brand/30 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
             >
               <span>{isLastStep ? 'Got it' : 'Next'}</span>
               {!isLastStep && (

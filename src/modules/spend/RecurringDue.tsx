@@ -139,7 +139,7 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
                     )
                   }}
                   aria-label={`Mark ${rec.name} ${rec.type === 'income' ? 'received' : 'paid'}, ${thb(rec.amount)}`}
-                  className="flex shrink-0 items-center gap-1 rounded-full bg-ink px-3 py-1.5 text-xs font-bold text-white cursor-pointer dark:bg-[#4f46e5]"
+                  className="flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white cursor-pointer hover:bg-primary-hover"
                 >
                   <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.6} />
                   {rec.type === 'income' ? 'Received' : 'Paid'}

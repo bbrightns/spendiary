@@ -145,7 +145,8 @@ components:
 
 ### What not to use
 - No raw Tailwind palette colours (`emerald-600`, `rose-500`, `amber-400`, …) in components. The only exceptions are the `tones.ts` definitions and the side accent, which live in one file so Tailwind can see them.
-- No hex values in `className`. If a colour is missing, add a token in `src/index.css`.
+- No hex values in `className`. If a colour is missing, add a token in `src/index.css`. The only exception is third-party brand marks: bank and fund logos in `AssetLogo`, and social glyphs.
+- Solid action fills use `bg-primary hover:bg-primary-hover text-white`, never `bg-ink`. `ink` flips to near-white in dark, so `bg-ink text-white` turns unreadable.
 
 ## 4. Typography
 

@@ -124,7 +124,7 @@ function SettingsMenu({ shown, open }: { shown: SettingsSectionId; open?: Settin
                 >
                   <span
                     className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-surface-muted text-ink-soft ${
-                      here ? 'xl:bg-ink xl:text-surface xl:dark:bg-brand xl:dark:text-white' : ''
+                      here ? 'xl:bg-primary xl:text-white' : ''
                     }`}
                   >
                     <Icon className="h-5 w-5" />

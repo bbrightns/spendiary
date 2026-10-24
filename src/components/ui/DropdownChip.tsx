@@ -31,7 +31,7 @@ export function DropdownChip({ label, active, title, onClear, icon, align, child
       <span
         className={`inline-flex h-[30px] shrink-0 items-center rounded-full text-xs font-semibold leading-none transition-colors ${
           active
-            ? 'bg-ink text-white dark:bg-[#4f46e5] shadow-xs'
+            ? 'bg-primary text-white shadow-xs'
             : 'bg-surface-muted text-ink-soft hover:text-ink'
         }`}
       >

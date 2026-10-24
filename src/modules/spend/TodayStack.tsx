@@ -36,7 +36,7 @@ const TONE: Record<Tone, { card: string; text: string }> = {
 const RANK: Record<Tone, number> = { loss: 0, warn: 1, brand: 2, gain: 3 }
 
 const FREQ: Record<string, string> = { daily: 'daily', weekly: 'weekly', biweekly: 'every 2 weeks', monthly: 'monthly', quarterly: 'quarterly' }
-const PILL = 'shrink-0 rounded-full bg-ink px-3.5 py-1.5 text-xs font-bold text-white cursor-pointer dark:bg-[#4f46e5]'
+const PILL = 'shrink-0 rounded-full bg-primary px-3.5 py-1.5 text-xs font-bold text-white cursor-pointer'
 const NEUTRAL_BADGE = 'bg-ink text-white dark:bg-surface-muted dark:text-ink'
 
 interface Item {

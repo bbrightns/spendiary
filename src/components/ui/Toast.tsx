@@ -51,7 +51,7 @@ function ToastElement({ toast, onDismiss }: { toast: ToastItem; onDismiss: () =>
             toast.action?.onClick()
             onDismiss()
           }}
-          className="shrink-0 rounded-xl bg-brand text-white dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] hover:bg-brand-ink px-3 py-1 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
+          className="shrink-0 rounded-xl bg-primary text-white hover:bg-primary-hover px-3 py-1 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
         >
           {toast.action.label}
         </button>

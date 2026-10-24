@@ -997,7 +997,7 @@ export function Rebalance() {
                                     }
                                   }}
                                   title={row.isPlanned ? 'Add to portfolio' : 'Buy more'}
-                                  className="inline-flex items-center gap-1 rounded-full bg-brand px-3 py-1 text-xs font-bold text-white dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] shadow-xs hover:bg-brand/90 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+                                  className="inline-flex items-center gap-1 rounded-full bg-brand px-3 py-1 text-xs font-bold text-white shadow-xs hover:bg-brand/90 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
                                 >
                                   {row.isPlanned ? '+ Add' : '+ Buy'}
                                 </button>
@@ -1226,7 +1226,7 @@ export function Rebalance() {
                                         }
                                       }}
                                       title={row.isPlanned ? 'Add to portfolio' : 'Buy more'}
-                                      className="inline-flex items-center gap-1 rounded-full bg-brand px-3 py-1 text-xs font-bold text-white dark:bg-[#4f46e5] dark:hover:bg-[#4338ca] shadow-xs hover:bg-brand/90 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+                                      className="inline-flex items-center gap-1 rounded-full bg-brand px-3 py-1 text-xs font-bold text-white shadow-xs hover:bg-brand/90 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
                                     >
                                       {row.isPlanned ? '+ Add' : '+ Buy'}
                                     </button>

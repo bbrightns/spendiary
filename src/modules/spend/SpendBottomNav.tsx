@@ -61,7 +61,7 @@ export function SpendBottomNav() {
               type="button"
               onClick={() => openQuickAdd()}
               aria-label="Quick add transaction"
-              className="-mt-4 grid h-14 w-14 place-items-center rounded-full bg-ink text-white shadow-[var(--shadow-lift)] ring-4 ring-canvas transition-transform active:scale-95 dark:bg-[#4f46e5] cursor-pointer focus-visible:outline-none focus-visible:ring-brand"
+              className="-mt-4 grid h-14 w-14 place-items-center rounded-full bg-primary text-white shadow-[var(--shadow-lift)] ring-4 ring-canvas transition-transform active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-brand"
             >
               <PlusIcon className="h-6 w-6" strokeWidth={2.4} />
             </button>

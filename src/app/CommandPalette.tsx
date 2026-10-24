@@ -1014,7 +1014,7 @@ export function CommandPalette() {
             <button
               type="button"
               onClick={() => setShowShortcuts(false)}
-              className="rounded-full bg-ink dark:bg-[#4f46e5] hover:bg-ink-hover dark:hover:bg-[#4338ca] text-white px-5 py-2 text-xs font-bold transition-all shadow-xs cursor-pointer"
+              className="rounded-full bg-primary hover:bg-primary-hover text-white px-5 py-2 text-xs font-bold transition-all shadow-xs cursor-pointer"
             >
               Back to Command Palette
             </button>

@@ -515,7 +515,7 @@ export function Portfolio() {
         onClick={(e) => openPocketMenu(e, h, locId)}
         className={`grid h-8 w-8 shrink-0 place-items-center rounded-full transition-all cursor-pointer active:scale-95 ${
           pocketMenu?.holding.id === h.id && pocketMenu.locId === locId
-            ? 'bg-ink text-white dark:bg-[#4f46e5] shadow-xs'
+            ? 'bg-primary text-white shadow-xs'
             : 'bg-surface-muted text-ink-muted hover:bg-surface-elevated hover:text-ink'
         }`}
       >
@@ -545,7 +545,7 @@ export function Portfolio() {
           title={isExpanded ? 'Hide storage locations' : 'Show storage locations'}
           className={`grid h-8 w-8 place-items-center rounded-full transition-all cursor-pointer active:scale-95 ${
             isExpanded
-              ? 'bg-ink text-white dark:bg-[#4f46e5] shadow-xs'
+              ? 'bg-primary text-white shadow-xs'
               : 'bg-surface-muted text-ink-muted hover:bg-surface-elevated hover:text-ink'
           }`}
         >
@@ -644,7 +644,7 @@ export function Portfolio() {
               title="Actions"
               className={`relative grid h-8 w-8 place-items-center rounded-full transition-all cursor-pointer ${
                 activeMenuHoldingId === h.id
-                  ? 'bg-ink text-white dark:bg-[#4f46e5] shadow-xs'
+                  ? 'bg-primary text-white shadow-xs'
                   : 'bg-surface-muted text-ink-muted hover:bg-surface-elevated hover:text-ink active:scale-95'
               }`}
             >
