@@ -37,7 +37,7 @@ function Stat({ label, value, tone = 'neutral', hint }: {
   const toneClass = tone === 'gain' ? 'text-gain' : tone === 'loss' ? 'text-loss' : 'text-ink'
   return (
     <div className="rounded-2xl bg-surface-muted px-3.5 py-3">
-      <p className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-muted">{label}</p>
+      <p className="text-xs font-semibold text-ink-muted">{label}</p>
       <p className={`mt-1 font-display text-lg font-bold tnum leading-tight ${toneClass}`}>{value}</p>
       {hint && <p className="mt-0.5 text-xs text-ink-faint leading-snug">{hint}</p>}
     </div>
@@ -126,7 +126,7 @@ export function ActivitySummary() {
     <>
       <PageHeader
         eyebrow="Records"
-        title="Profit & Loss Summary"
+        title="Profit & loss summary"
         subtitle="Money you have actually made or lost in the selected period (from sales and dividends received)"
         onStartGuide={startTour}
       />
@@ -208,7 +208,7 @@ export function ActivitySummary() {
           <Card id="guide-summary-hero" className="mb-4">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-ink-muted">
+                <p className="text-xs font-semibold text-ink-muted">
                   Net profit · {describePeriod(period)}
                 </p>
                 <p
@@ -313,7 +313,7 @@ export function ActivitySummary() {
               {/* Narrow screens show Asset · Net only, so nothing gets clipped off-screen */}
               <table className="w-full text-left text-sm border-collapse min-w-[320px] sm:min-w-[680px]">
                 <thead>
-                  <tr className="border-y border-line bg-surface-muted/60 text-xs font-bold text-ink-muted uppercase tracking-wider">
+                  <tr className="border-y border-line bg-surface-muted/60 text-xs font-bold text-ink-muted">
                     <th className="py-2.5 px-4 sm:px-5">Asset</th>
                     <th className="py-2.5 px-3 text-right hidden sm:table-cell">Trades</th>
                     <th className="py-2.5 px-3 text-right hidden md:table-cell">Invested</th>

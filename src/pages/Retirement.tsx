@@ -473,7 +473,7 @@ export function Retirement() {
     <>
       <PageHeader
         eyebrow="Analyze"
-        title="Retirement Planner"
+        title="Retirement planner"
         onStartGuide={startTour}
         subtitle={`Age ${currentAge} · ${yearsLeft} years until retirement`}
       />
@@ -653,7 +653,7 @@ export function Retirement() {
                 {milestoneList.map((m) => (
                   <div key={m.id} className="flex items-start gap-3 py-3">
                     <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                      m.completed ? 'bg-gain text-white' : 'bg-surface-muted text-ink-faint border border-line-strong'
+                      m.completed ? 'bg-gain-strong text-white' : 'bg-surface-muted text-ink-faint border border-line-strong'
                     }`}>
                       {m.completed ? <CheckIcon className="h-3 w-3" strokeWidth={3} /> : <span className="h-1.5 w-1.5 rounded-full bg-current" />}
                     </span>

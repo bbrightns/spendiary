@@ -319,7 +319,7 @@ export function CommandPalette() {
         keywords: ['transfer', 'move', 'pay', 'card', 'bill', 'โอน', 'จ่ายบัตร'],
         group: 'Actions',
         spend: true,
-        icon: ic(TransferIcon, 'text-sky-500'),
+        icon: ic(TransferIcon, 'text-brand-ink'),
         run: () => openQuickAdd({ type: 'transfer' }),
       },
       {
@@ -350,7 +350,7 @@ export function CommandPalette() {
         badge: 'Action',
         keywords: ['add', 'debt', 'loan', 'liability', 'installment', 'บัตรเครดิต', 'ผ่อน', 'หนี้', 'กู้', 'เพิ่มหนี้'],
         group: 'Actions',
-        icon: ic(DebtIcon, 'text-rose-500'),
+        icon: ic(DebtIcon, 'text-loss'),
         run: go('/spend/loans?action=new'),
       },
       {
@@ -360,7 +360,7 @@ export function CommandPalette() {
         badge: 'Action',
         keywords: ['dca', 'plan', 'recurring', 'monthly', 'แผน', 'ออม', 'ซื้อถัว'],
         group: 'Actions',
-        icon: ic(DcaIcon, 'text-amber-500'),
+        icon: ic(DcaIcon, 'text-warn'),
         run: go('/dca?action=new'),
       },
       {
@@ -370,14 +370,14 @@ export function CommandPalette() {
         badge: 'Action',
         keywords: ['bank', 'cash', 'account', 'saving', 'wallet', 'ธนาคาร', 'เงินสด', 'บัญชี', 'เงินฝาก'],
         group: 'Actions',
-        icon: ic(WalletIcon, 'text-emerald-500'),
+        icon: ic(WalletIcon, 'text-gain'),
         run: go('/cash?action=new'),
       },
 
       // ── Pages ──
       ...(
         [
-          ['nav-spend', 'Spend Home', "Today's allowance, bills due and today's spending", '/', ['spend', 'overview', 'budget', 'allowance', 'รายจ่าย', 'งบ', 'หน้าแรก'], HomeIcon, true, undefined],
+          ['nav-spend', 'Spend home', "Today's allowance, bills due and today's spending", '/', ['spend', 'overview', 'budget', 'allowance', 'รายจ่าย', 'งบ', 'หน้าแรก'], HomeIcon, true, undefined],
           ['nav-spend-txns', 'Transactions', 'Every income, expense and transfer', '/spend/txns', ['history', 'transactions', 'search', 'ประวัติ', 'รายการ'], ListBulletIcon, true, undefined],
           ['nav-spend-accounts', 'Accounts', 'Wallets and credit cards you pay with', '/spend/accounts', ['wallets', 'cards', 'credit', 'บัตร', 'กระเป๋า'], CreditCardIcon, true, undefined],
           ['nav-spend-analysis', 'Analysis', 'Spending by week, month or year', '/spend/analysis', ['analysis', 'report', 'chart', 'trend', 'วิเคราะห์', 'สรุป'], PieChartIcon, true, undefined],
@@ -385,13 +385,13 @@ export function CommandPalette() {
           ['nav-spend-loans', 'Loans & installments', 'What you owe and pay back each month', '/spend/loans', ['loans', 'installments', 'debt', 'pay', 'หนี้', 'ผ่อน', 'งวด'], DebtIcon, true, undefined],
           ['nav-dashboard', 'Dashboard', 'Your net worth at a glance', '/invest', ['dashboard', 'home', 'net worth', 'หน้าแรก', 'แดชบอร์ด', 'ภาพรวม'], DashboardIcon, false, 'G D'],
           ['nav-portfolio', 'Portfolio', 'All your holdings', '/portfolio', ['portfolio', 'holdings', 'stocks', 'funds', 'พอร์ต', 'หุ้น', 'สินทรัพย์'], PortfolioIcon, false, 'G P'],
-          ['nav-rebalance', 'Rebalance Hub', 'Check and adjust how your portfolio is split', '/rebalance', ['rebalance', 'allocation', 'target', 'drift', 'ปรับพอร์ต', 'สมดุล'], SparkleIcon, false, 'G R'],
-          ['nav-dca', 'DCA Planner', 'Plan and confirm your recurring buys', '/dca', ['dca', 'planner', 'recurring', 'งวด', 'ออมหุ้น'], DcaIcon, false, 'G A'],
+          ['nav-rebalance', 'Rebalancing', 'Check and adjust how your portfolio is split', '/rebalance', ['rebalance', 'allocation', 'target', 'drift', 'ปรับพอร์ต', 'สมดุล'], SparkleIcon, false, 'G R'],
+          ['nav-dca', 'DCA plans', 'Plan and confirm your recurring buys', '/dca', ['dca', 'planner', 'recurring', 'งวด', 'ออมหุ้น'], DcaIcon, false, 'G A'],
           ['nav-dividends', 'Dividends', 'Dividends received and expected', '/dividends', ['dividend', 'passive income', 'yield', 'ปันผล', 'เงินปันผล'], ReceiptPercentIcon, false, 'G V'],
-          ['nav-cash', 'Cash & Liquidity', 'Cash, savings and interest', '/cash', ['cash', 'liquidity', 'emergency', 'เงินสด', 'บัญชี', 'สภาพคล่อง'], WalletIcon, false, 'G C'],
-          ['nav-retirement', 'Retirement (FIRE)', 'Plan for retirement and financial freedom', '/retirement', ['retirement', 'fire', 'financial freedom', 'เกษียณ', 'อิสรภาพ'], SparkleIcon, false, 'G F'],
-          ['nav-logs', 'Activity Logs', 'History of buys, sales, dividends and tax', '/logs', ['logs', 'history', 'activity', 'ประวัติ', 'บันทึก'], ClockIcon, false, 'G L'],
-          ['nav-summary', 'P/L Summary', 'Profit and loss by month, year or period', '/logs/summary', ['summary', 'profit', 'loss', 'pnl', 'สรุป', 'กำไร', 'ขาดทุน'], PieChartIcon, false, undefined],
+          ['nav-cash', 'Cash & liquidity', 'Cash, savings and interest', '/cash', ['cash', 'liquidity', 'emergency', 'เงินสด', 'บัญชี', 'สภาพคล่อง'], WalletIcon, false, 'G C'],
+          ['nav-retirement', 'Retirement planner', 'Plan for retirement and financial freedom', '/retirement', ['retirement', 'fire', 'financial freedom', 'เกษียณ', 'อิสรภาพ'], SparkleIcon, false, 'G F'],
+          ['nav-logs', 'Activity logs', 'History of buys, sales, dividends and tax', '/logs', ['logs', 'history', 'activity', 'ประวัติ', 'บันทึก'], ClockIcon, false, 'G L'],
+          ['nav-summary', 'Profit & loss summary', 'Profit and loss by month, year or period', '/logs/summary', ['summary', 'profit', 'loss', 'pnl', 'สรุป', 'กำไร', 'ขาดทุน'], PieChartIcon, false, undefined],
           ['nav-settings', 'Settings', 'Theme, spending month, budgets, backup and sync', '/settings', ['settings', 'preferences', 'theme', 'budget', 'payday', 'categories', 'backup', 'profile', 'ตั้งค่า', 'สำรอง'], SettingsIcon, false, 'G S'],
         ] as const
       ).map(([id, title, subtitle, to, keywords, Icon, isSpend, badge]) => ({
@@ -562,7 +562,7 @@ export function CommandPalette() {
         keywords: ['goal', 'saving', 'save', 'เป้าหมาย', 'ออมเงิน'],
         group: 'Accounts',
         spend: true,
-        icon: ic(SparkleIcon, 'text-emerald-500'),
+        icon: ic(SparkleIcon, 'text-gain'),
         run: go('/spend/accounts'),
       })
     }
@@ -590,7 +590,7 @@ export function CommandPalette() {
         subtitle: `DCA · ${thb(p.monthlyAmount)} ${p.frequency === 'weekly' ? 'a week' : p.frequency === 'daily' ? 'a day' : 'a month'}`,
         keywords: [p.ticker ?? '', 'dca', 'plan', 'ออม'],
         group: 'DCA plans',
-        icon: ic(DcaIcon, 'text-amber-500'),
+        icon: ic(DcaIcon, 'text-warn'),
         run: go('/dca'),
       })
     }
@@ -603,7 +603,7 @@ export function CommandPalette() {
         subtitle: `Debt · ${thb(l.balance)} left${l.monthlyPayment ? ` · ${thb(l.monthlyPayment)}/mo` : ''}`,
         keywords: ['debt', 'loan', 'installment', 'หนี้', 'ผ่อน'],
         group: 'Debts',
-        icon: ic(DebtIcon, 'text-rose-500'),
+        icon: ic(DebtIcon, 'text-loss'),
         run: go('/spend/loans'),
       })
     }
@@ -1085,7 +1085,7 @@ export function CommandPalette() {
               return (
                 <div key={item.id}>
                   {showHeader && (
-                    <div className="flex items-center justify-between px-3 pt-3 pb-1 text-xs font-extrabold uppercase tracking-wider text-ink-muted">
+                    <div className="flex items-center justify-between px-3 pt-3 pb-1 text-xs font-extrabold text-ink-muted">
                       <span>{item.group}</span>
                       {query.trim() && count > 0 && (
                         <span className="font-semibold normal-case tracking-normal tnum">

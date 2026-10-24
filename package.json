@@ -1,13 +1,14 @@
 {
   "name": "spendiary",
   "private": true,
-  "version": "1.35.1",
+  "version": "1.36.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
+    "lint:design": "node scripts/lint-design.mjs",
     "test": "vitest run"
   },
   "dependencies": {

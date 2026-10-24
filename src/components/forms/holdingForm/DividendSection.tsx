@@ -96,7 +96,7 @@ export function DividendSection({
           <span
             className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium shrink-0 ${
               paysDividend
-                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold'
+                ? 'bg-gain/10 text-gain font-bold'
                 : 'bg-surface-muted text-ink-muted'
             }`}
           >
@@ -123,7 +123,7 @@ export function DividendSection({
                 type="checkbox"
                 checked={paysDividend}
                 onChange={(e) => setPaysDividend(e.target.checked)}
-                className="h-4 w-4 rounded-md border-line text-emerald-600 focus:ring-emerald-500/30 shrink-0"
+                className="h-4 w-4 rounded-md border-line text-gain focus:ring-gain/30 shrink-0"
               />
               <div className="min-w-0">
                 <span className="text-sm font-bold text-ink flex items-center gap-1.5 whitespace-nowrap">
@@ -148,7 +148,7 @@ export function DividendSection({
                 Months it pays dividends
               </label>
               {dividendMonths.length > 0 && (
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap shrink-0">
+                <span className="text-xs font-bold text-gain whitespace-nowrap shrink-0">
                   {dividendMonths.length} per year
                 </span>
               )}
@@ -165,7 +165,7 @@ export function DividendSection({
                     onClick={() => handleToggleMonth(mNum)}
                     className={`py-1.5 rounded-lg font-bold transition-all cursor-pointer border ${
                       isSelected
-                        ? 'bg-emerald-500 text-white border-emerald-500 shadow-2xs scale-105'
+                        ? 'bg-gain-strong text-white border-gain-strong shadow-2xs scale-105'
                         : 'bg-surface text-ink-muted border-line hover:text-ink hover:border-line-strong'
                     }`}
                   >
@@ -175,7 +175,7 @@ export function DividendSection({
               })}
             </div>
             {dividendMonths.length > 0 && (
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium pt-0.5">
+              <p className="text-xs text-gain font-medium pt-0.5">
                 Dividend reminders in: {dividendMonths.slice().sort((a, b) => a - b).map((m) => THAI_MONTHS_SHORT[m - 1]).join(', ')}
               </p>
             )}
@@ -203,7 +203,7 @@ export function DividendSection({
                   <button
                     type="button"
                     onClick={handleApplyDpsToAll}
-                    className="inline-flex items-center text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                    className="inline-flex items-center text-xs font-semibold text-gain hover:underline cursor-pointer"
                   >
                     Use the same amount every time
                   </button>
@@ -215,7 +215,7 @@ export function DividendSection({
                   <div key={mNum} className="rounded-xl border border-line bg-surface/80 p-2.5 shadow-2xs space-y-1.5">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-ink flex items-center gap-1.5">
-                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gain/15 text-gain text-xs font-bold">
                           {roundIdx + 1}
                         </span>
                         {THAI_MONTHS_SHORT[mNum - 1]} payout
@@ -238,10 +238,10 @@ export function DividendSection({
               </div>
 
               {/* Summary box */}
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="rounded-xl border border-gain/20 bg-gain/5 p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
                 <div>
                   <span className="text-ink-muted block text-xs">Total dividend per year:</span>
-                  <span className="font-display font-extrabold text-sm text-emerald-600 dark:text-emerald-400 tnum">
+                  <span className="font-display font-extrabold text-sm text-gain tnum">
                     {currencyPrefix}{totalAnnualDps.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
                     <span className="text-xs font-normal text-ink-muted ml-1">/{isStock ? 'share' : 'share'}</span>
                   </span>

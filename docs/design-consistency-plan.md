@@ -140,7 +140,14 @@ About 70 emoji in UI files. The Markdown export (`portfolioMarkdown.ts`) is out 
 
 ---
 
-## Phase 4: Page structure and type
+## Phase 4: Page structure and type [done]
+- **One name per page, sentence case**, in the nav, the page title and the palette.
+- **Labels:** about 120 Title Case labels, plus the shared asset, debt and filter labels, are sentence case.
+- **No all-caps labels** inside cards.
+- **Spend Home** uses `PageHeader`.
+- **Links:** one text-link style.
+- **Date quick-picks** use the chip style.
+- **Money** is set in tabular figures.
 | # | Change |
 |---|---|
 | 4.1 | `PageHeader` on Spend Home (date as eyebrow, greeting as title) and on the Spend settings sections. |
@@ -152,7 +159,8 @@ About 70 emoji in UI files. The Markdown export (`portfolioMarkdown.ts`) is out 
 
 ---
 
-## Phase 5: Colour and dark-mode cleanup
+## Phase 5: Colour and dark-mode cleanup [done]
+Done: status colours use `gain` / `loss` / `warn` / `brand` tokens; three new tokens for fills that need white text in both themes (`danger`, `gain-strong`) and for the Spend side (`spend`, `spend-ink`, `spend-soft`). Spend's shared pastels (status chips, Today stack, #tags, spent bars) and Invest's categorical badges (`TINT`: debt types, log kinds) live in `tones.ts`. The DCA mint pills became `gain-strong`, matching "Mark received". `TestModeBanner` and the sidebar TEST badge keep their bright amber on purpose: the test-mode warning must look the same in both themes, which `warn` (amber-600 / amber-400) does not.
 | # | Change |
 |---|---|
 | 5.1 | **Raw palette colours become tokens:** `Dashboard` (43), `Dividends` (25), `AiImportModal` (25), `SellHoldingModal` (22), `DividendSection` (20), `SpendAnalysis` (16), `TestModeBanner` (15, which becomes `warn`), `NoteField` (14), `Portfolio`, `CashLiquidity`, `SpendOverview`, `TodayStack`, `SpendSnapshotCard` and others. `tones.ts` and the side accent stay as they are. |
@@ -163,7 +171,9 @@ About 70 emoji in UI files. The Markdown export (`portfolioMarkdown.ts`) is out 
 
 ---
 
-## Phase 6: Guardrails (so the next agent can't undo this)
+## Phase 6: Guardrails (so the next agent can't undo this) [done]
+Done: `scripts/lint-design.mjs` runs as `npm run lint:design` and in CI after `lint`. Beyond the list below it also fails on raw Tailwind palette colours outside `tones.ts` and the allowlisted files, and reads defined animations from `src/index.css` rather than a fixed list. Emoji are checked in `.tsx` only (the portfolio Markdown export keeps its emoji).
+
 - **Add `npm run lint:design`** (a small Node script in `scripts/`) and run it in CI after `lint`. It fails on:
   - emoji in `src/**/*.tsx`
   - `[#` hex values in a `className` (landing page allowlisted)

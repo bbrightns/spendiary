@@ -274,7 +274,7 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
                   key={s}
                   className={`inline-flex h-8 items-center rounded-full border text-xs font-semibold transition-colors ${
                     // Picked: solid in the category's color; the rest are outlined in it
-                    on ? `border-transparent ${TONES[tone].bar} font-bold text-slate-900` : TONES[tone].subChip
+                    on ? `border-transparent ${TONES[tone].bar} font-bold text-black/85` : TONES[tone].subChip
                   } ${editing ? 'border-dashed' : ''}`}
                 >
                   <button

@@ -778,7 +778,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       afterHoldingState: savedHolding,
       ...sourceLogFields,
     })
-    showToast(editing ? `Updated ${name}` : `${name} is now in your portfolio.`, 'success', undefined, { celebrate: !editing, title: 'Holding added!' })
+    showToast(editing ? `Updated ${name}` : `${name} is now in your portfolio.`, 'success', undefined, { popup: !editing, title: 'Holding added!' })
     onClose()
   }
 
@@ -900,11 +900,11 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
             setSuggestions([])
           }}
           options={[
-            { value: 'stock', label: 'US Stock' },
-            { value: 'fund', label: 'Thai Assets (Stocks, Funds, DR)' },
+            { value: 'stock', label: 'US stock' },
+            { value: 'fund', label: 'Thai assets (stocks, funds, DR)' },
             { value: 'crypto', label: 'Crypto (BTC, ETH, and other tokens)' },
             { value: 'gold', label: 'Gold' },
-            { value: 'real_estate', label: 'Real Estate (House / Condo / Land)' },
+            { value: 'real_estate', label: 'Real estate (house / condo / land)' },
           ]}
         />
 
@@ -974,7 +974,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
               )}
             </div>
             <TextField
-              label="Ticker / Code"
+              label="Ticker / code"
               hint="optional"
               value={form.ticker}
               onChange={(ticker) => setForm((f) => ({ ...f, ticker: ticker.toUpperCase() }))}
@@ -1001,7 +1001,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
             {/* Tag / Category */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-ink-muted">Asset Tag / Group</label>
+                <label className="text-sm font-medium text-ink-muted">Asset tag / group</label>
                 <span className="text-xs text-ink-faint">optional · group your portfolio</span>
               </div>
               <input
@@ -1322,13 +1322,13 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
               {/* Card A: THB Investment Summary (Total THB Invested has a subtle edit option, rest read-only) */}
               <div className="rounded-2xl bg-surface-muted p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-brand">THB Investment Summary</p>
+                  <p className="text-xs font-bold text-brand">THB investment summary</p>
                   {!isEditingThb && (
                     <button
                       type="button"
                       onClick={() => setIsEditingThb(true)}
                       aria-label="Edit THB cost basis manually"
-                      className="inline-flex items-center gap-1 rounded-md bg-brand/15 px-2 py-0.5 text-xs font-bold text-brand hover:bg-brand/25 active:scale-95 transition-all cursor-pointer uppercase tracking-wider"
+                      className="inline-flex items-center gap-1 rounded-md bg-brand/15 px-2 py-0.5 text-xs font-bold text-brand hover:bg-brand/25 active:scale-95 transition-all cursor-pointer"
                     >
                       <PencilIcon className="h-3 w-3" />
                       EDIT THB
@@ -1339,14 +1339,14 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 {isEditingThb ? (
                   <div className="space-y-3 pt-0.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-ink-muted">Manually Adjust THB Cost</span>
+                      <span className="text-sm text-ink-muted">Manually adjust THB cost</span>
                       <button
                         type="button"
                         onClick={() => setIsEditingThb(false)}
                         aria-label="Keep manually adjusted THB value"
-                        className="text-xs font-bold text-brand hover:underline cursor-pointer uppercase tracking-wider"
+                        className="text-xs font-bold text-brand hover:underline cursor-pointer"
                       >
-                        Keep Value
+                        Keep value
                       </button>
                     </div>
                     <NumberField
@@ -1383,7 +1383,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                   </div>
                 ) : (
                   <div className="flex items-center justify-between text-sm pt-1">
-                    <span className="text-ink-soft">Total THB Invested</span>
+                    <span className="text-ink-soft">Total THB invested</span>
                     <span className="font-bold tnum text-sm text-ink">
                       ฿{totalThbInvestedVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
@@ -1391,21 +1391,21 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 )}
 
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-ink-soft">Current Market Value (THB)</span>
+                  <span className="text-ink-soft">Current market value (THB)</span>
                   <span className="font-bold tnum text-ink">
                     ฿{currentMarketValueThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-ink-soft">Net Profit / Loss (THB)</span>
+                  <span className="text-ink-soft">Net profit / loss (THB)</span>
                   <span className={`font-bold tnum ${netPnlThb >= 0 ? 'text-gain' : 'text-loss'}`}>
                     {formattedNetPnlThb}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-ink-soft">Net Return (%)</span>
+                  <span className="text-ink-soft">Net return (%)</span>
                   <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${netPnlThb >= 0 ? 'bg-gain-soft text-gain' : 'bg-loss-soft text-loss'}`}>
                     {netPnlThb >= 0 ? '+' : ''}{netReturnPct.toFixed(2)}%
                   </span>
@@ -1414,10 +1414,10 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
 
               {/* Card B: USD Position Details (USD Focus - Editable) */}
               <div className="rounded-2xl border border-line p-4 space-y-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-brand">USD Position Details</p>
+                <p className="text-xs font-bold text-brand">USD position details</p>
                 
                 <NumberField
-                  label="Total Shares Held"
+                  label="Total shares held"
                   value={form.units}
                   suffix="shares"
                   error={showErrors && form.units === '' ? 'Shares held is required' : undefined}
@@ -1429,7 +1429,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 />
 
                 <NumberField
-                  label="Average Cost per Share (USD)"
+                  label="Average cost per share (USD)"
                   prefix="$"
                   value={form.avgCost}
                   error={showErrors && form.avgCost === '' ? 'Average cost is required' : undefined}
@@ -1442,7 +1442,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
 
                 {editing ? (
                   <div>
-                    <p className="mb-1.5 text-sm font-medium text-ink-muted">Live Market Price per Share (USD)</p>
+                    <p className="mb-1.5 text-sm font-medium text-ink-muted">Live market price per share (USD)</p>
                     <div className="flex h-10 items-center gap-2 rounded-xl bg-surface-muted px-3">
                       <span className="text-sm font-semibold tnum text-ink">
                         {livePriceUsd !== null ? `$${livePriceUsd.toFixed(2)}` : '—'}
@@ -1452,7 +1452,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                   </div>
                 ) : (
                   <NumberField
-                    label="Live Market Price per Share (USD)"
+                    label="Live market price per share (USD)"
                     prefix="$"
                     value={form.price}
                     hint="Auto-filled by ticker · optional"
@@ -1463,7 +1463,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                 )}
 
                 <NumberField
-                  label="Applied FX Rate (USD/THB)"
+                  label="Applied FX rate (USD/THB)"
                   value={fxRateInput}
                   error={showErrors && fxRateInput === '' ? 'FX rate is required' : undefined}
                   onChange={handleFxRateChange}
@@ -1540,7 +1540,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
           />
           <div className="flex-1 text-xs">
             <span className="font-semibold text-ink flex items-center gap-1.5 text-sm">
-              <LockClosedIcon className="h-4 w-4 text-amber-500" />
+              <LockClosedIcon className="h-4 w-4 text-warn" />
               Lock this asset
             </span>
             <p className="text-ink-muted mt-0.5">

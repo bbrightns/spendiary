@@ -5,22 +5,22 @@ import { CheckIcon, AlertIcon, SparkleIcon, CloseIcon } from '../icons'
 const TYPE_CONFIG = {
   success: {
     icon: <CheckIcon className="h-4 w-4 shrink-0 text-gain" strokeWidth={2.4} />,
-    style: 'border-gain/30 bg-surface dark:bg-surface text-ink',
+    style: 'border-gain/30 bg-surface text-ink',
     badge: 'bg-gain-soft text-gain',
   },
   error: {
     icon: <AlertIcon className="h-4 w-4 shrink-0 text-loss" />,
-    style: 'border-loss/30 bg-surface dark:bg-surface text-ink',
+    style: 'border-loss/30 bg-surface text-ink',
     badge: 'bg-loss-soft text-loss',
   },
   warn: {
     icon: <AlertIcon className="h-4 w-4 shrink-0 text-warn" />,
-    style: 'border-warn/30 bg-surface dark:bg-surface text-ink',
+    style: 'border-warn/30 bg-surface text-ink',
     badge: 'bg-warn-soft text-warn',
   },
   info: {
     icon: <SparkleIcon className="h-4 w-4 shrink-0 text-brand" strokeWidth={2} />,
-    style: 'border-brand/30 bg-surface dark:bg-surface text-ink',
+    style: 'border-brand/30 bg-surface text-ink',
     badge: 'bg-brand-soft text-brand-ink',
   },
 }

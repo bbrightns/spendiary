@@ -242,7 +242,7 @@ export function TrendsCard({ end, txns, cycle }: { end: Period; txns: SpendTrans
                     {c.series.map((v, i) => (
                       <span
                         key={i}
-                        className={`flex-1 rounded-t-[3px] ${i === MONTHS - 1 ? tone.bar : 'bg-slate-300 dark:bg-slate-600'}`}
+                        className={`flex-1 rounded-t-[3px] ${i === MONTHS - 1 ? tone.bar : TONES.slate.bar}`}
                         style={{ height: `${Math.max(6, (v / peak) * 100)}%` }}
                       />
                     ))}

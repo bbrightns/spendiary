@@ -24,6 +24,7 @@ import {
 import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
 import type { DcaPlan, Holding, SpendRecurring } from '../lib/types'
 import { daysUntil, localDateStr, ordinal, thb } from '../lib/format'
+import { TextLink } from '../components/ui/TextLink'
 
 // ─── Chevron icon ─────────────────────────────────────────────────────────────
 
@@ -91,7 +92,7 @@ function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; 
         {
           pct: (savingsFromSalary / totalAllocated) * 100,
           amount: savingsFromSalary,
-          label: 'Savings (Salary)',
+          label: 'Savings (salary)',
           textColor: 'var(--color-gain)',
           bg: 'var(--color-gain-soft)',
           barColor: 'var(--color-cash)',
@@ -278,7 +279,7 @@ function SectionHeader({ label, total, open, onToggle, action }: {
         className="flex items-center gap-2 group cursor-pointer"
       >
         <div className="text-left">
-          <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">{label}</p>
+          <p className="text-xs font-semibold text-ink-faint">{label}</p>
           <p className="mt-0.5 font-display text-xl font-extrabold tnum text-ink leading-none">
             {thb(total)}
           </p>
@@ -494,7 +495,7 @@ export function DcaPlanner() {
     <>
       <PageHeader
         eyebrow="Plan"
-        title="DCA Plans"
+        title="DCA plans"
         subtitle="Monthly salary allocation & recurring investments."
         onStartGuide={startTour}
         action={
@@ -503,7 +504,7 @@ export function DcaPlanner() {
             size="sm"
             onClick={handleCopyMarkdown}
             aria-label="Copy portfolio markdown"
-            title="Copy Portfolio as Markdown"
+            title="Copy portfolio as Markdown"
             className="cursor-pointer shrink-0 h-9 text-xs sm:text-sm whitespace-nowrap"
           >
             {copied ? (
@@ -514,7 +515,7 @@ export function DcaPlanner() {
             ) : (
               <>
                 <CopyIcon className="h-4 w-4 text-ink-muted shrink-0" />
-                <span>Copy Portfolio MD</span>
+                <span>Copy portfolio MD</span>
               </>
             )}
           </Button>
@@ -529,7 +530,7 @@ export function DcaPlanner() {
             <Card className="animate-rise @container">
               <div className="flex flex-col items-start gap-3 @min-[19rem]:flex-row @min-[19rem]:justify-between @min-[19rem]:gap-4">
                 <InlineEditStat
-                  label="Monthly Salary"
+                  label="Monthly salary"
                   value={salary > 0 ? thb(salary) : '-'}
                   editing={editingSalary}
                   draft={salaryDraft}
@@ -542,7 +543,7 @@ export function DcaPlanner() {
                 />
                 {salary > 0 && fixedTotal + savingsTotal > salary && (
                   <div className="@min-[19rem]:text-right">
-                    <p className="text-xs font-medium text-ink-muted">Total Planned</p>
+                    <p className="text-xs font-medium text-ink-muted">Total planned</p>
                     {/* Same 40px row as the salary value so both numbers share a baseline */}
                     <p className="mt-1 flex min-h-[40px] items-center font-display text-xl font-extrabold tnum text-ink leading-none @min-[19rem]:justify-end">
                       {thb(fixedTotal + savingsTotal)}
@@ -587,7 +588,7 @@ export function DcaPlanner() {
           <div id="guide-dca-transfers">
             <Card className="animate-rise">
             <SectionHeader
-              label="Fixed Costs"
+              label="Fixed costs"
               total={fixedTotal}
               open={fixedOpen}
               onToggle={() => setFixedOpen((v) => !v)}
@@ -834,7 +835,7 @@ export function DcaPlanner() {
                                       <button
                                         onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
                                         aria-label={`Log DCA buy for ${p.name}`}
-                                        className="inline-flex items-center gap-1.5 rounded-full bg-[#00de9b] hover:bg-[#00c58a] text-[#052e21] px-3.5 py-1.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
+                                        className="inline-flex items-center gap-1.5 rounded-full bg-gain-strong hover:bg-gain-strong-hover text-white px-3.5 py-1.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
                                       >
                                         <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
                                         <span>{p.assetClass === 'cash' ? 'Log deposit' : 'Log buy'}</span>
@@ -883,7 +884,7 @@ export function DcaPlanner() {
                       </div>
 
                       <div className="text-right">
-                        <p className="text-xs text-ink-muted">Total DCA Allocation</p>
+                        <p className="text-xs text-ink-muted">Total DCA allocation</p>
                         <p className={`font-display text-base font-extrabold tnum mt-0.5 ${isPercentNot100 ? 'text-warn' : 'text-gain'}`}>
                           {totalPercentSum.toFixed(1)}%
                         </p>
@@ -899,10 +900,10 @@ export function DcaPlanner() {
               <div className="p-5 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">
-                      Dividend Income
+                    <p className="text-xs font-semibold text-ink-faint">
+                      Dividend income
                     </p>
-                    <span className="rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-xs font-bold">
+                    <span className="rounded-full bg-gain/15 text-gain px-2 py-0.5 text-xs font-bold">
                       {MONTH_NAMES[currentMonth - 1]}
                     </span>
                   </div>
@@ -910,13 +911,7 @@ export function DcaPlanner() {
                     {totalEstDividendNet > 0 ? `~${thb(totalEstDividendNet)}` : '฿0'}
                   </p>
                 </div>
-                <Link
-                  to="/dividends"
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline cursor-pointer"
-                >
-                  <span>View All</span>
-                  <span aria-hidden="true">→</span>
-                </Link>
+                <TextLink to="/dividends">Dividends →</TextLink>
               </div>
 
               <div className="border-t border-line">
@@ -925,12 +920,9 @@ export function DcaPlanner() {
                     <p className="text-sm text-ink-muted">
                       No holdings scheduled for dividend payout in {MONTH_NAMES[currentMonth - 1]}.
                     </p>
-                    <Link
-                      to="/dividends"
-                      className="mt-1.5 inline-block text-xs font-semibold text-brand hover:underline cursor-pointer"
-                    >
-                      Manage Dividends & Payouts →
-                    </Link>
+                    <TextLink to="/dividends" className="mt-1.5 inline-block">
+                      Dividends →
+                    </TextLink>
                   </div>
                 ) : (
                   <ul className="divide-y divide-line max-h-[380px] overflow-y-auto">
@@ -979,10 +971,10 @@ export function DcaPlanner() {
                                     setDividendModalOpen(true)
                                   }}
                                   aria-label={`Confirm Dividend for ${h.ticker}`}
-                                  className="inline-flex items-center gap-1.5 rounded-full bg-[#00de9b] hover:bg-[#00c58a] text-[#052e21] px-3.5 py-1.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
+                                  className="inline-flex items-center gap-1.5 rounded-full bg-gain-strong hover:bg-gain-strong-hover text-white px-3.5 py-1.5 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer min-h-[34px]"
                                 >
                                   <CheckCircleIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
-                                  <span>Confirm Dividend</span>
+                                  <span>Confirm dividend</span>
                                 </button>
                               )}
                             </div>

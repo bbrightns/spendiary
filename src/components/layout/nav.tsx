@@ -53,14 +53,14 @@ export interface MobileNavItem {
 export const cashflowSubItems: NavSubItem[] = [
   {
     to: '/cash',
-    label: 'Cash & Liquidity',
+    label: 'Cash & liquidity',
     short: 'Cash',
     description: 'Liquid reserves, emergency runway & yield booster',
     icon: WalletIcon,
   },
   {
     to: '/dca',
-    label: 'DCA Plans',
+    label: 'DCA plans',
     short: 'DCA',
     description: 'Monthly salary allocation & recurring investments',
     icon: DcaIcon,
@@ -77,14 +77,14 @@ export const cashflowSubItems: NavSubItem[] = [
 export const strategySubItems: NavSubItem[] = [
   {
     to: '/rebalance',
-    label: 'Portfolio Rebalancing',
+    label: 'Rebalancing',
     short: 'Rebalance',
     description: 'Re-align target asset weights & drift',
     icon: ScaleIcon,
   },
   {
     to: '/retirement',
-    label: 'Retirement Simulator',
+    label: 'Retirement planner',
     short: 'Retirement',
     description: 'Simulate FIRE goals & nest egg projections',
     icon: RetirementIcon,
@@ -116,7 +116,7 @@ const portfolioItem: NavSubItem = {
 // `exact` keeps Activity Logs from lighting up while its sibling Summary is open
 const logsItem: NavSubItem = {
   to: '/logs',
-  label: 'Activity Logs',
+  label: 'Activity logs',
   short: 'Logs',
   description: 'History of every buy, sell, dividend & edit',
   icon: ClockIcon,
@@ -153,8 +153,8 @@ export function isSubItemActive(sub: NavSubItem, pathname: string): boolean {
 export const mobileNavItems: MobileNavItem[] = [
   { id: 'home', to: INVEST_HOME, label: 'Dashboard', short: 'Home', icon: DashboardIcon },
   { id: 'portfolio', to: '/portfolio', label: 'Portfolio', short: 'Port', icon: PortfolioIcon },
-  { id: 'dca', to: '/dca', label: 'DCA Plans', short: 'DCA', icon: DcaIcon },
-  { id: 'history', to: '/logs', label: 'Activity Logs', short: 'History', icon: ClockIcon, exact: true },
+  { id: 'dca', to: '/dca', label: 'DCA plans', short: 'DCA', icon: DcaIcon },
+  { id: 'history', to: '/logs', label: 'Activity logs', short: 'History', icon: ClockIcon, exact: true },
   { id: 'more', label: 'More', short: 'More', icon: DotsHorizontalIcon, isAction: true },
 ]
 

@@ -14,13 +14,13 @@ export function Footer({ className = '', lightOnly = false }: FooterProps) {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const borderClass = lightOnly ? 'border-slate-200/80' : 'border-line/60'
+  const borderClass = lightOnly ? 'border-landing-line' : 'border-line/60'
   const buttonClass = lightOnly
-    ? 'border-slate-200/90 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900'
+    ? 'border-landing-line-strong bg-landing-surface hover:bg-landing-canvas text-landing-ink-soft hover:text-landing-ink'
     : 'border-line/80 bg-surface/80 dark:bg-surface-muted/60 backdrop-blur-md text-ink-muted hover:border-line hover:bg-surface-muted hover:text-ink'
-  const textClass = lightOnly ? 'text-slate-500' : 'text-ink-muted'
-  const buildTextClass = lightOnly ? 'text-slate-500' : 'text-ink-muted'
-  const dotClass = lightOnly ? 'text-slate-300' : 'text-ink-muted/40'
+  const textClass = lightOnly ? 'text-landing-ink-muted' : 'text-ink-muted'
+  const buildTextClass = lightOnly ? 'text-landing-ink-muted' : 'text-ink-muted'
+  const dotClass = lightOnly ? 'text-landing-ink-faint' : 'text-ink-muted/40'
 
   return (
     <footer className={`w-full mt-10 pt-8 pb-10 border-t ${borderClass} select-none ${className}`}>

@@ -147,14 +147,14 @@ function AppContent() {
         <main className="relative z-10 w-full max-w-4xl mx-auto px-6 sm:px-8 pt-2 sm:pt-4 pb-12 sm:pb-16 flex flex-col items-center">
           {/* Center Announcement Pill */}
           <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 py-1 sm:px-4 sm:py-1.5 rounded-full bg-landing-surface-soft border border-landing-line shadow-xs text-xs font-medium text-landing-ink-soft mb-4 sm:mb-6 text-center">
-            <SparkleIcon className="h-3.5 w-3.5 text-brand" />
+            <SparkleIcon className="h-3.5 w-3.5 text-invest" />
             <span>The intelligent personal wealth cockpit</span>
           </div>
 
           {/* Hero Headline */}
           <h1 className="font-display font-black text-3xl sm:text-5xl md:text-6xl text-landing-ink text-center tracking-tight leading-[1.15] max-w-2xl mb-3 sm:mb-4 px-2 text-balance">
             Spend smarter.{' '}
-            <span className="block mt-1 sm:mt-2 font-black text-brand tracking-tight">
+            <span className="block mt-1 sm:mt-2 font-black text-invest tracking-tight">
               Now live wealthier.
             </span>
           </h1>

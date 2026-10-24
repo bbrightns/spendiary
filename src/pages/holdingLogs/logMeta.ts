@@ -3,6 +3,7 @@ import type { FC } from 'react'
 import type { AssetClass, HoldingLog } from '../../lib/types'
 import type { IconProps } from '../../components/appIcon'
 import { ArrowDownIcon, ArrowUpIcon, DividendIcon, GiftIcon, MoveIcon, PencilIcon, PlusIcon, TagIcon } from '../../components/icons'
+import { tintBadge } from '../../components/tones'
 
 export interface ActionMeta {
   label: string
@@ -16,7 +17,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
   if (log.action === 'note') {
     return {
       label: 'Note',
-      style: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20',
+      style: tintBadge('violet'),
       icon: PencilIcon,
       isPriceUpdate: false,
     }
@@ -25,7 +26,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
   if (log.action === 'transfer') {
     return {
       label: 'Transfer',
-      style: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20',
+      style: tintBadge('sky'),
       icon: MoveIcon,
       isPriceUpdate: false,
     }
@@ -34,7 +35,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
   if (log.action === 'dividend') {
     return {
       label: 'Dividend',
-      style: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+      style: tintBadge('emerald'),
       icon: DividendIcon,
       isPriceUpdate: false,
     }
@@ -43,7 +44,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
   if (log.action === 'sell') {
     return {
       label: 'Sold',
-      style: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20',
+      style: tintBadge('rose'),
       icon: ArrowDownIcon,
       isPriceUpdate: false,
     }
@@ -52,7 +53,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
   if ((log.action === 'add' || log.action === 'buy_more') && log.source === 'received') {
     return {
       label: 'Received',
-      style: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20',
+      style: tintBadge('violet'),
       icon: GiftIcon,
       isPriceUpdate: false,
     }
@@ -85,7 +86,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
 
   if (log.action === 'buy_more') {
     return {
-      label: log.dcaPlanId ? 'DCA Buy' : 'Bought more',
+      label: log.dcaPlanId ? 'DCA buy' : 'Bought more',
       style: 'bg-brand/10 text-brand',
       icon: ArrowUpIcon,
       isPriceUpdate: false,
@@ -114,7 +115,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
     if (tickerChanged || nameChanged) {
       return {
         label: tickerChanged ? 'Ticker Updated' : 'Renamed',
-        style: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
+        style: tintBadge('amber'),
         icon: TagIcon,
         isPriceUpdate: false,
       }
@@ -124,7 +125,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
       const isFund = log.assetClass === 'fund'
       return {
         label: isFund ? 'NAV Updated' : 'Price Updated',
-        style: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20',
+        style: tintBadge('sky'),
         icon: TagIcon,
         isPriceUpdate: true,
       }
@@ -134,7 +135,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
   if (log.note && (log.note.toLowerCase().includes('ticker') || log.note.toLowerCase().includes('renamed'))) {
     return {
       label: 'Renamed',
-      style: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
+      style: tintBadge('amber'),
       icon: TagIcon,
       isPriceUpdate: false,
     }
@@ -143,7 +144,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
   if (log.note && (log.note.toLowerCase().includes('price') || log.note.toLowerCase().includes('nav')) && !log.note.includes('+') && !log.note.includes('shares @') && !log.note.includes('units @')) {
     return {
       label: log.assetClass === 'fund' ? 'NAV Updated' : 'Price Updated',
-      style: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20',
+      style: tintBadge('sky'),
       icon: TagIcon,
       isPriceUpdate: true,
     }
@@ -333,11 +334,11 @@ export function getDestinationLocation(log: HoldingLog): string | null {
 
 export const ASSET_FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
-  { key: 'fund', label: 'Thai Assets' },
-  { key: 'stock', label: 'US Stocks' },
+  { key: 'fund', label: 'Thai assets' },
+  { key: 'stock', label: 'US stocks' },
   { key: 'crypto', label: 'Crypto' },
   { key: 'gold', label: 'Gold' },
-  { key: 'real_estate', label: 'Real Estate' },
+  { key: 'real_estate', label: 'Real estate' },
   { key: 'cash', label: 'Cash' },
 ]
 
@@ -348,7 +349,7 @@ export function getLogAssetLabel(log: HoldingLog): string {
 
 export const ACTION_FILTERS = [
   { key: 'all', label: 'All' },
-  { key: 'buy', label: 'Buy / Add' },
+  { key: 'buy', label: 'Buy / add' },
   { key: 'sell', label: 'Sold' },
   { key: 'dividend', label: 'Dividend' },
   { key: 'transfer', label: 'Transfer' },

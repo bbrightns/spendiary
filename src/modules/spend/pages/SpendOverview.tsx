@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Card } from '../../../components/ui/Card'
+import { PageHeader } from '../../../components/layout/PageHeader'
 import { AddButton } from '../../../components/ui/AddButton'
 import { Button } from '../../../components/ui/Button'
 import { EmptyState } from '../../../components/ui/EmptyState'
@@ -14,14 +15,14 @@ import { openQuickAdd } from '../QuickAddSheet'
 import { TodayStack } from '../TodayStack'
 import { TxnRow } from '../TxnRow'
 import { useSpend } from '../useSpend'
-import { SPEND_ACCENT_TEXT } from '../tones'
 import { HOME_CARDS, homeOrder, isDefaultOrder, moveCard, type HomeCardId } from '../homeLayout'
 import { ArrangeButton, ReorderSheet } from '../ReorderSheet'
+import { STATUS_TONE } from '../tones'
 
 const STATUS: Record<DayStatus, { label: string; stroke: string; chip: string }> = {
-  ok: { label: 'On track', stroke: 'stroke-emerald-500', chip: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300' },
-  careful: { label: 'Careful', stroke: 'stroke-amber-500', chip: 'bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300' },
-  over: { label: 'Over today', stroke: 'stroke-rose-500', chip: 'bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300' },
+  ok: { label: 'On track', ...STATUS_TONE.ok },
+  careful: { label: 'Careful', ...STATUS_TONE.careful },
+  over: { label: 'Over today', ...STATUS_TONE.over },
 }
 
 const parse = (s: string) => {
@@ -203,23 +204,20 @@ export function SpendOverview() {
 
   return (
     <div className="space-y-5">
-      <header className="flex items-end justify-between gap-3">
-        <div className="min-w-0">
-          <p className={`mb-1 text-xs font-semibold uppercase tracking-[0.08em] ${SPEND_ACCENT_TEXT}`}>
-            {parse(today).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </p>
-          <h1 className="font-display text-2xl sm:text-3xl font-extrabold leading-tight tracking-tight text-ink [text-wrap:balance]">
-            {`${greeting}${userName ? `, ${userName}` : ''}`}
-          </h1>
-          <p className="mt-1.5 text-sm text-ink-muted">Here's where your money stands today.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="hidden lg:block">
-            <AddButton onClick={() => openQuickAdd()} label="Add" />
+      {/* The standard page header: the date is the eyebrow, the greeting the title */}
+      <PageHeader
+        eyebrow={parse(today).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+        title={`${greeting}${userName ? `, ${userName}` : ''}`}
+        subtitle="Here's where your money stands today."
+        action={
+          <div className="flex items-center gap-2">
+            <div className="hidden lg:block">
+              <AddButton onClick={() => openQuickAdd()} label="Add" />
+            </div>
+            <ArrangeButton label="Arrange cards" onClick={() => setArrangeOpen(true)} />
           </div>
-          <ArrangeButton label="Arrange cards" onClick={() => setArrangeOpen(true)} />
-        </div>
-      </header>
+        }
+      />
 
       {/* Card bills, loans, DCA buys and dividends due: both sides' to-dos in one place */}
       <TodayStack />

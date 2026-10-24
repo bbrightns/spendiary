@@ -8,7 +8,7 @@ import type { SpendTransaction } from '../../../lib/types'
 import { getCategory } from '../categories'
 import { budgetState, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, categoryBreakdown, totalsFor, weekOf, type Period } from '../logic'
 import { MonthStepper } from '../MonthStepper'
-import { TONES } from '../tones'
+import { SPENT_TONE, TAG_CHIP, TONES } from '../tones'
 import { useSpend } from '../useSpend'
 import { TrendsCard } from '../TrendsCard'
 import { settingsPath } from '../../../lib/settingsSections'
@@ -113,10 +113,10 @@ function Bars({ data, unit }: { data: Bucket[]; unit: string }) {
                   b.future
                     ? 'bg-surface-muted/50'
                     : isTop
-                      ? 'bg-orange-400 dark:bg-orange-400/80'
+                      ? SPENT_TONE.bar
                       : hover === b.key
                         ? 'bg-brand/60'
-                        : 'bg-slate-300 dark:bg-slate-500'
+                        : TONES.slate.bar
                 }`}
                 style={{ height: `${b.future ? 4 : Math.max(3, (b.spent / max) * 100)}%` }}
               />
@@ -214,7 +214,7 @@ export function SpendAnalysis() {
             <p className="text-sm font-medium text-ink-muted">{isCurrent ? `Spent this ${rangeName}` : `Spent that ${rangeName}`}</p>
             <p className="mt-1 font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ink tnum truncate">{thb(totals.expense)}</p>
             {compare !== null && (
-              <p className={`mt-1 text-xs font-semibold tnum ${compare <= 0 ? 'text-gain' : 'text-orange-600 dark:text-orange-300'}`}>
+              <p className={`mt-1 text-xs font-semibold tnum ${compare <= 0 ? 'text-gain' : SPENT_TONE.text}`}>
                 {compare <= 0 ? `${thb(-compare)} less` : `${thb(compare)} more`}
                 <span className="font-normal text-ink-muted"> than last {rangeName} at this point</span>
               </p>
@@ -231,13 +231,13 @@ export function SpendAnalysis() {
         {totals.income > 0 && (
           <>
             <div className="mt-5 flex h-2.5 w-full gap-1 overflow-hidden rounded-full bg-surface-muted" aria-hidden>
-              {spentPct > 0 && <div className={`rounded-full ${over ? 'bg-loss' : 'bg-orange-400'}`} style={{ width: `${Math.min(100, spentPct)}%` }} />}
-              {!over && totals.net > 0 && <div className="rounded-full bg-emerald-500" style={{ width: `${100 - spentPct}%` }} />}
+              {spentPct > 0 && <div className={`rounded-full ${over ? 'bg-loss' : SPENT_TONE.bar}`} style={{ width: `${Math.min(100, spentPct)}%` }} />}
+              {!over && totals.net > 0 && <div className="rounded-full bg-gain" style={{ width: `${100 - spentPct}%` }} />}
             </div>
             <div className="mt-2 flex items-start justify-between gap-3">
               <p className="min-w-0">
                 <span className="flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
-                  <span className={`h-2 w-2 shrink-0 rounded-full ${over ? 'bg-loss' : 'bg-orange-400'}`} />
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${over ? 'bg-loss' : SPENT_TONE.bar}`} />
                   Spent
                 </span>
                 <span className="mt-1 block text-base sm:text-lg font-display font-extrabold text-ink tnum">
@@ -246,7 +246,7 @@ export function SpendAnalysis() {
               </p>
               <p className="min-w-0 text-right">
                 <span className="flex items-center justify-end gap-1.5 text-xs font-semibold text-ink-soft">
-                  <span className={`h-2 w-2 shrink-0 rounded-full ${over ? 'bg-loss' : 'bg-emerald-500'}`} />
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${over ? 'bg-loss' : 'bg-gain'}`} />
                   {over ? 'Over by' : 'Left'}
                 </span>
                 <span className={`mt-1 block truncate font-display text-base sm:text-lg font-extrabold tnum ${over ? 'text-loss' : 'text-ink'}`}>
@@ -273,7 +273,7 @@ export function SpendAnalysis() {
         </Card>
         <Card compact>
           <p className="text-xs text-ink-muted">Top category</p>
-          <p className="mt-1 truncate font-display text-lg font-extrabold text-orange-600 dark:text-orange-300">
+          <p className={`mt-1 truncate font-display text-lg font-extrabold ${SPENT_TONE.text}`}>
             {topCat ? getCategory(topCat.categoryId)?.label ?? 'Other' : '—'}
           </p>
           {topCat && <p className="text-xs text-ink-muted tnum">{thb(topCat.amount)}</p>}
@@ -373,7 +373,7 @@ export function SpendAnalysis() {
             <ul className="mt-3 divide-y divide-line">
               {tagTotals.map(([tag, amount]) => (
                 <li key={tag} className="flex items-center justify-between py-2.5">
-                  <Link to={`/spend/txns?q=${encodeURIComponent(`#${tag}`)}`} className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-bold text-violet-700 dark:bg-violet-400/15 dark:text-violet-200">
+                  <Link to={`/spend/txns?q=${encodeURIComponent(`#${tag}`)}`} className={`rounded-full px-2.5 py-1 text-xs font-bold ${TAG_CHIP.idle}`}>
                     #{tag}
                   </Link>
                   <span className="text-sm font-bold text-ink tnum">{thb(amount)}</span>

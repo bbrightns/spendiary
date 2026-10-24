@@ -307,7 +307,7 @@ export function HoldingLogs() {
     <>
       <PageHeader
         eyebrow="Records"
-        title="Activity Logs"
+        title="Activity logs"
         onStartGuide={startTour}
       />
 
@@ -584,7 +584,7 @@ export function HoldingLogs() {
             <div className="logs-table-shell overflow-x-auto">
               <table className="logs-table w-full text-left text-sm min-w-[980px]">
                 <thead>
-                  <tr className="logs-table-head text-xs font-bold text-ink-muted uppercase tracking-[0.12em]">
+                  <tr className="logs-table-head text-xs font-bold text-ink-muted">
                     {editMode && (
                     <th className="logs-table-cell logs-table-check text-center">
                       <input
@@ -596,11 +596,11 @@ export function HoldingLogs() {
                       />
                     </th>
                     )}
-                    <th className="logs-table-cell logs-table-date">Date & Time</th>
+                    <th className="logs-table-cell logs-table-date">Date & time</th>
                     <th className="logs-table-cell logs-table-action">Action</th>
-                    <th className="logs-table-cell logs-table-asset">Asset / Ticker</th>
+                    <th className="logs-table-cell logs-table-asset">Asset / ticker</th>
                     <th className="logs-table-cell logs-table-metric text-right">Price / NAV</th>
-                    <th className="logs-table-cell logs-table-metric text-right">Shares / Qty</th>
+                    <th className="logs-table-cell logs-table-metric text-right">Shares / qty</th>
                     <th className="logs-table-cell logs-table-metric text-right">Amount (THB)</th>
                     <th className="logs-table-cell logs-table-location">Location</th>
                     <th className="logs-table-cell logs-table-note min-w-[220px]">Note</th>
@@ -741,7 +741,7 @@ export function HoldingLogs() {
                               {hasComparison && (
                                 <span
                                   className="logs-table-diff text-xs font-medium shrink-0"
-                                  title="Click row to view Before/After comparison"
+                                  title="Click a row to see before and after"
                                 >
                                   {isExpanded ? '▲ Hide' : '▼ Diff'}
                                 </span>
@@ -782,8 +782,8 @@ export function HoldingLogs() {
                           <tr className="bg-surface-muted/20 border-b border-line">
                             <td colSpan={editMode ? 10 : 8} className="p-4 pl-8 sm:pl-12">
                               <div className="max-w-xl">
-                                <p className="text-xs font-bold uppercase tracking-wider text-ink-muted mb-1">
-                                  State Comparison (Before → After)
+                                <p className="text-xs font-bold text-ink-muted mb-1">
+                                  State comparison (before → after)
                                 </p>
                                 {renderLogDetails(log, { cashAccounts: data.cashAccounts, usdThb, detailsOpen: expandedDetails.has(log.id), onToggleDetails: () => toggleDetails(log.id) })}
                               </div>
@@ -950,7 +950,7 @@ export function HoldingLogs() {
           return (
             <div className="space-y-3">
               {isHoldingLocked && (
-                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 flex items-start gap-2.5 text-xs text-amber-700 dark:text-amber-400">
+                <div className="rounded-xl border border-warn/30 bg-warn/10 p-3 flex items-start gap-2.5 text-xs text-warn">
                   <LockClosedIcon className="h-4 w-4 shrink-0 mt-0.5" />
                   <div>
                     <span className="font-semibold block text-sm">This asset is locked</span>

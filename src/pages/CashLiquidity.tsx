@@ -112,8 +112,8 @@ export function CashLiquidity() {
 
   const pctOfCash = (v: number) => (totalCashThb > 0 ? (v / totalCashThb) * 100 : 0)
   const split = [
-    { key: 'spending' as const, label: 'Everyday', hint: 'free to use', bar: 'bg-emerald-500', amount: categoryBreakdown.spending, pct: pctOfCash(categoryBreakdown.spending) },
-    { key: 'locked' as const, label: 'Savings', hint: 'leave alone', bar: 'bg-amber-500', amount: categoryBreakdown.locked, pct: pctOfCash(categoryBreakdown.locked) },
+    { key: 'spending' as const, label: 'Everyday', hint: 'free to use', bar: 'bg-gain', amount: categoryBreakdown.spending, pct: pctOfCash(categoryBreakdown.spending) },
+    { key: 'locked' as const, label: 'Savings', hint: 'leave alone', bar: 'bg-warn', amount: categoryBreakdown.locked, pct: pctOfCash(categoryBreakdown.locked) },
   ]
 
   // Filtering and Sorting
@@ -201,7 +201,7 @@ export function CashLiquidity() {
       {/* ── Page Header ── */}
       <PageHeader
         eyebrow="Plan"
-        title="Cash & Liquidity Hub"
+        title="Cash & liquidity"
         subtitle="Your cash accounts, emergency savings, money ready to invest, and the interest you earn"
         action={
           <Button
@@ -304,7 +304,7 @@ export function CashLiquidity() {
                   onClick={() => setActiveCategoryFilter(catKey)}
                   className={`px-3 py-1.5 rounded-full font-medium transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
                     isSelected
-                      ? 'bg-brand text-white shadow-xs font-semibold'
+                      ? 'bg-primary text-white shadow-xs font-semibold'
                       : 'bg-surface-muted text-ink-muted hover:text-ink'
                   }`}
                 >
@@ -401,7 +401,7 @@ export function CashLiquidity() {
                         {a.name || 'Untitled'}
                       </span>
                       {a.currency === 'USD' && (
-                        <span className="text-xs font-bold px-1 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 font-mono shrink-0">
+                        <span className="text-xs font-bold px-1 py-0.5 rounded bg-brand/15 text-brand-ink tnum shrink-0">
                           USD
                         </span>
                       )}
@@ -412,7 +412,7 @@ export function CashLiquidity() {
                       {rateNum > 0 && (
                         <>
                           <span className="opacity-40">·</span>
-                          <span className="font-semibold text-emerald-600 dark:text-emerald-400 font-mono shrink-0">
+                          <span className="font-semibold text-gain tnum shrink-0">
                             {rateNum}%
                           </span>
                         </>
@@ -424,7 +424,7 @@ export function CashLiquidity() {
                       {a.currency === 'USD' ? `$${a.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : thb(a.balance, true)}
                     </div>
                     {annualEarned > 0 || (a.currency === 'USD' && rate <= 0 && rateNum > 0 && eligibleBal > 0) ? (
-                      <div className="text-2xs font-semibold text-emerald-600 dark:text-emerald-400 tnum">
+                      <div className="text-2xs font-semibold text-gain tnum">
                         +{yearlyInterest(a.currency, eligibleBal * (rateNum / 100), annualEarned)}/yr
                       </div>
                     ) : a.currency === 'USD' && a.balance > 0 && rate > 0 ? (
@@ -447,7 +447,7 @@ export function CashLiquidity() {
         <div className="hidden md:block overflow-x-auto -mx-4 sm:mx-0">
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
-              <tr className="border-b border-line/60 text-xs font-bold uppercase tracking-wider text-ink-muted select-none">
+              <tr className="border-b border-line/60 text-xs font-bold text-ink-muted select-none">
                 {/* Column 1: Account */}
                 <th
                   onClick={() => handleSortToggle('name')}
@@ -534,7 +534,7 @@ export function CashLiquidity() {
                               {a.name || 'Untitled Account'}
                             </span>
                             {a.currency === 'USD' && a.balance > 0 && rate > 0 && (
-                              <span className="text-xs font-mono text-ink-muted block">
+                              <span className="text-xs tnum text-ink-muted block">
                                 ≈ {thb(a.balance * rate)} (@{rate.toFixed(2)})
                               </span>
                             )}
@@ -554,7 +554,7 @@ export function CashLiquidity() {
                       <td className="py-2 px-3">
                         {rateNum > 0 ? (
                           <div className="space-y-0.5">
-                            <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400 text-xs">
+                            <div className="flex items-center gap-1.5 font-bold text-gain text-xs">
                               <span>{rateNum.toFixed(2)}% a year</span>
                               {capNum && capNum > 0 && (
                                 <span className="text-xs opacity-75 font-normal">
@@ -562,7 +562,7 @@ export function CashLiquidity() {
                                 </span>
                               )}
                             </div>
-                            <div className="text-xs text-ink-muted font-mono">
+                            <div className="text-xs text-ink-muted tnum">
                               ≈ {yearlyInterest(a.currency, eligibleBal * (rateNum / 100), annualEarned)}/year{' '}
                               <span className="opacity-70 font-sans">
                                 ({a.payoutSchedule === 'monthly' ? 'paid monthly' : a.payoutSchedule === 'semi_annual' ? 'paid twice a year' : 'paid once a year'})
@@ -666,7 +666,7 @@ export function CashLiquidity() {
                             </div>
                             <div className="p-2 rounded-lg bg-surface border border-line/40">
                               <span className="text-ink-muted block text-xs">Estimated interest:</span>
-                              <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-0.5 block">
+                              <span className="font-bold text-gain tnum mt-0.5 block">
                                 {thb(annualEarned)} / year
                               </span>
                             </div>

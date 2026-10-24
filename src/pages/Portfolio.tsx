@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, type MouseEvent as ReactMouseEvent } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
@@ -48,14 +48,15 @@ import { STORAGE_KEYS } from '../lib/storageKeys'
 import { buildCsv, downloadCsv } from '../lib/csv'
 import { HoldingActionMenu, PocketActionMenu } from './portfolio/HoldingMenus'
 import { PORTFOLIO_CSV_HEADER, isPriceStale, portfolioCsvRows, unitLabel } from './portfolio/portfolioCsv'
+import { TextLink } from '../components/ui/TextLink'
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
-  { key: 'fund', label: 'Thai Assets' },
-  { key: 'stock', label: 'US Stocks' },
+  { key: 'fund', label: 'Thai assets' },
+  { key: 'stock', label: 'US stocks' },
   { key: 'crypto', label: 'Crypto' },
   { key: 'gold', label: 'Gold' },
-  { key: 'real_estate', label: 'Real Estate' },
+  { key: 'real_estate', label: 'Real estate' },
 ]
 
 /** Sort choices: one tap picks both the field and the direction */
@@ -545,7 +546,7 @@ export function Portfolio() {
                 {h.isLocked && (
                   <span
                     title="Locked (protected from selling or deleting)"
-                    className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 text-xs font-semibold tracking-tight shrink-0"
+                    className="inline-flex items-center gap-1 rounded-md bg-warn/10 text-warn px-1.5 py-0.5 text-xs font-semibold tracking-tight shrink-0"
                   >
                     <LockClosedIcon className="h-3 w-3" />
                     <span>Safe-Haven</span>
@@ -607,7 +608,7 @@ export function Portfolio() {
             isLast ? 'sm:rounded-b-[var(--radius-card)]' : ''
           }`}>
             <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold text-ink-muted">Storage & Purchase Locations</p>
+              <p className="text-xs font-semibold text-ink-muted">Storage & purchase locations</p>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
@@ -637,7 +638,7 @@ export function Portfolio() {
                     className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong py-2.5 text-sm font-semibold text-brand transition-colors hover:bg-brand-soft cursor-pointer active:scale-[0.99]"
                   >
                     <PlusIcon className="h-4 w-4" strokeWidth={2.4} />
-                    Add first location (Buy)
+                    Add first location (buy)
                   </button>
                 )
                 : (
@@ -653,7 +654,7 @@ export function Portfolio() {
                                 {loc.isLocked && (
                                   <span
                                     title="Location is locked (protected from selling)"
-                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-2xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 shrink-0"
+                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-2xs font-semibold bg-warn/10 text-warn shrink-0"
                                   >
                                     <LockClosedIcon className="h-2.5 w-2.5" />
                                     <span>Lock</span>
@@ -691,7 +692,7 @@ export function Portfolio() {
                     className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong py-2.5 text-sm font-semibold text-brand transition-colors hover:bg-brand-soft cursor-pointer active:scale-[0.99]"
                   >
                     <PlusIcon className="h-4 w-4" strokeWidth={2.4} />
-                    Add first location (Buy)
+                    Add first location (buy)
                   </button>
                 )
                 : (
@@ -708,7 +709,7 @@ export function Portfolio() {
                                 {loc.isLocked && (
                                   <span
                                     title="Location is locked (protected from selling)"
-                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-2xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 shrink-0"
+                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-2xs font-semibold bg-warn/10 text-warn shrink-0"
                                   >
                                     <LockClosedIcon className="h-2.5 w-2.5" />
                                     <span>Lock</span>
@@ -757,7 +758,7 @@ export function Portfolio() {
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface border border-line/70 text-ink-muted shadow-2xs">
               {priceStatus === 'loading' && (
                 <>
-                  <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                  <span className="inline-block h-2 w-2 rounded-full bg-warn animate-pulse shrink-0" />
                   <span className="text-xs font-medium">Updating prices…</span>
                 </>
               )}
@@ -774,7 +775,7 @@ export function Portfolio() {
               )}
               {priceStatus === 'partial' && (
                 <>
-                  <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                  <span className="inline-block h-2 w-2 rounded-full bg-warn animate-pulse shrink-0" />
                   <span className="text-xs font-medium text-ink">Partial</span>
                   {lastUpdated && (
                     <span className="text-xs text-ink-muted">
@@ -788,7 +789,7 @@ export function Portfolio() {
                 <>
                   <span className="inline-block h-2 w-2 rounded-full bg-loss shrink-0" />
                   <span className="text-xs font-medium text-loss">Fetch failed</span>
-                  <button onClick={refreshPrices} className="text-xs underline text-brand hover:text-brand-emphasis cursor-pointer ml-0.5">
+                  <button onClick={refreshPrices} className="text-xs underline text-brand hover:text-brand-ink cursor-pointer ml-0.5">
                     retry
                   </button>
                 </>
@@ -804,7 +805,7 @@ export function Portfolio() {
             {/* USD/THB Badge */}
             {effectiveUsdThb && (
               <div
-                title="Exchange Rate USD to THB"
+                title="Exchange rate USD to THB"
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface border border-line/70 text-ink shadow-2xs"
               >
                 <BanknoteIcon className="h-3.5 w-3.5 text-ink-muted" />
@@ -823,7 +824,7 @@ export function Portfolio() {
               >
                 <CoinsIcon className="h-3.5 w-3.5 text-ink-muted" />
                 <span className="text-xs font-medium text-ink-muted">Gold 96.5%</span>
-                <span className="tnum text-xs font-bold text-amber-600 dark:text-amber-400 tracking-tight">
+                <span className="tnum text-xs font-bold text-warn tracking-tight">
                   ฿{effectiveGoldPerBaht.toLocaleString()}
                 </span>
                 <span className="hidden sm:inline text-xs text-ink-muted">/gold baht</span>
@@ -851,7 +852,7 @@ export function Portfolio() {
               size="sm"
               onClick={handleCopyMarkdown}
               aria-label="Copy portfolio markdown"
-              title="Copy Portfolio as Markdown"
+              title="Copy portfolio as Markdown"
               className="cursor-pointer shrink-0 h-9 text-xs sm:text-sm whitespace-nowrap"
             >
               {copied ? (
@@ -862,7 +863,7 @@ export function Portfolio() {
               ) : (
                 <>
                   <CopyIcon className="h-4 w-4 text-ink-muted shrink-0" />
-                  <span className="hidden sm:inline">Copy Portfolio MD</span>
+                  <span className="hidden sm:inline">Copy portfolio MD</span>
                 </>
               )}
             </Button>
@@ -979,13 +980,7 @@ export function Portfolio() {
 
             <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-xs">
               <span className="text-ink-muted">{data.holdings.length} holding positions</span>
-              <Link
-                to="/rebalance"
-                className="inline-flex items-center gap-1 font-bold text-brand hover:underline cursor-pointer"
-              >
-                <span>Rebalance Portfolio</span>
-                <span aria-hidden="true">→</span>
-              </Link>
+              <TextLink to="/rebalance">Rebalance →</TextLink>
             </div>
           </Card>
         </div>
@@ -1391,7 +1386,7 @@ export function Portfolio() {
             />
             <div className="flex-1 text-xs">
               <span className="font-semibold text-ink flex items-center gap-1.5">
-                <LockClosedIcon className="h-3.5 w-3.5 text-amber-500" />
+                <LockClosedIcon className="h-3.5 w-3.5 text-warn" />
                 Lock this location
               </span>
               <p className="text-ink-muted mt-0.5">Protects it from being sold or removed by accident.</p>

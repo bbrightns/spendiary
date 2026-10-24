@@ -40,6 +40,18 @@
   --color-primary: #090d16;
   --color-primary-hover: #1a202c;
 
+  /* Spend side: emerald, the counterpart of Invest's blue (switch, eyebrows, active nav) */
+  --color-spend: #047857;
+  --color-spend-ink: #047857;
+  --color-spend-soft: #d1fae5;
+
+  /* Destructive fills (delete buttons): deep enough for white text in both themes */
+  --color-danger: #e11d48;
+  --color-danger-hover: #be123c;
+  /* Solid green fills (selected chips, "received" buttons, done markers): white text in both themes */
+  --color-gain-strong: #059669;
+  --color-gain-strong-hover: #047857;
+
   /* Invest side: the same electric blue in both themes, so the side keeps its colour when
      dark mode turns the brand indigo (Spend's side colour is emerald) */
   --color-invest: #0066ff;
@@ -113,6 +125,10 @@
   /* Primary action fill: Precision Indigo, white text stays 7.4:1 */
   --color-primary: #4f46e5;
   --color-primary-hover: #4338ca;
+
+  /* Spend side: same emerald fill; small text and tints lighter so they read on dark */
+  --color-spend-ink: #34d399;
+  --color-spend-soft: rgb(52 211 153 / 0.15);
 
   /* Invest side: same blue; small text a lighter shade so it stays readable on dark */
   --color-invest: #0066ff;

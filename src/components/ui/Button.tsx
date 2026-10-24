@@ -27,7 +27,7 @@ export function Button({
     secondary:
       'bg-surface text-ink border border-line-strong hover:bg-surface-muted active:scale-[0.98]',
     ghost: 'text-ink-soft hover:bg-surface-muted',
-    danger: 'bg-loss text-white dark:bg-rose-600 dark:hover:bg-rose-700 hover:opacity-90 active:scale-[0.98]',
+    danger: 'bg-danger text-white hover:bg-danger-hover active:scale-[0.98]',
   }
   const sizes = {
     sm: 'h-9 px-3.5 text-sm gap-1.5',

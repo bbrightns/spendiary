@@ -221,7 +221,7 @@ export function MoveLocationModal({ open, holding, fromLocationId, onClose }: Pr
         {/* Before → after preview */}
         <div className="rounded-2xl bg-surface-muted p-4 space-y-3">
           <div className="flex items-center justify-between border-b border-line pb-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-brand">Move preview (before → after)</p>
+            <p className="text-xs font-bold text-brand">Move preview (before → after)</p>
           </div>
 
           {amountBase > 0 && (

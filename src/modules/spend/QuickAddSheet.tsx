@@ -49,8 +49,8 @@ const TYPE_OPTIONS = [
 
 const AMOUNT_COLOR: Record<SpendTxnType, string> = {
   expense: 'text-ink',
-  income: 'text-emerald-600 dark:text-emerald-300',
-  transfer: 'text-sky-600 dark:text-sky-300',
+  income: 'text-gain',
+  transfer: 'text-brand-ink',
 }
 
 const NO_WALLET = NOT_TRACKED

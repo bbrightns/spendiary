@@ -78,7 +78,7 @@ export function Sidebar() {
                 Spendiary
               </span>
               <p className="text-xs font-medium text-ink-muted leading-tight mt-0.5">
-                Financial Cockpit
+                Financial cockpit
               </p>
             </div>
           </Link>
@@ -149,7 +149,7 @@ export function Sidebar() {
                     </div>
 
                     {badgeCount > 0 && (
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white shadow-xs">
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-xs font-bold text-white shadow-xs">
                         {badgeCount}
                       </span>
                     )}
@@ -190,7 +190,7 @@ export function Sidebar() {
                 {displayName}
               </p>
               <p className="truncate text-xs text-ink-muted leading-tight">
-                Cloud Sync
+                Cloud sync
               </p>
             </div>
           </div>

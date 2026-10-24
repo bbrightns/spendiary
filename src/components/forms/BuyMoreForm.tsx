@@ -17,14 +17,14 @@ export const BUY_SELL_SEGMENT_OPTIONS: SegmentOption<'buy' | 'sell'>[] = [
   {
     value: 'buy',
     label: '+ Buy more',
-    activeClassName: 'bg-gain text-white shadow-sm dark:bg-emerald-600',
-    inactiveClassName: 'text-gain hover:bg-gain/10 dark:text-emerald-400',
+    activeClassName: 'bg-gain-strong text-white shadow-sm',
+    inactiveClassName: 'text-gain hover:bg-gain/10',
   },
   {
     value: 'sell',
     label: '− Sell',
-    activeClassName: 'bg-loss text-white shadow-sm dark:bg-rose-600',
-    inactiveClassName: 'text-loss hover:bg-loss/10 dark:text-rose-400',
+    activeClassName: 'bg-danger text-white shadow-sm',
+    inactiveClassName: 'text-loss hover:bg-loss/10',
   },
 ]
 
@@ -454,7 +454,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         timestamp: dateStrToTimestamp(txDate),
         ...sourceParams,
       })
-      showToast(`${verb} ${g.toFixed(4)}g (${bahtAmount} gold baht) gold for ${holding!.name}`, 'success', undefined, { celebrate: true, title: toastTitle })
+      showToast(`${verb} ${g.toFixed(4)}g (${bahtAmount} gold baht) gold for ${holding!.name}`, 'success', undefined, { popup: true, title: toastTitle })
       onClose()
     }
 
@@ -666,7 +666,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         timestamp: dateStrToTimestamp(txDate),
         ...sourceParams,
       })
-      showToast(`${verb} ${sats.toLocaleString()} sats for ${holding!.name}`, 'success', undefined, { celebrate: true, title: toastTitle })
+      showToast(`${verb} ${sats.toLocaleString()} sats for ${holding!.name}`, 'success', undefined, { popup: true, title: toastTitle })
       onClose()
     }
 
@@ -822,7 +822,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         timestamp: dateStrToTimestamp(txDate),
         ...sourceParams,
       })
-      showToast(`${verb} ${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares of ${holding!.name}`, 'success', undefined, { celebrate: true, title: toastTitle })
+      showToast(`${verb} ${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares of ${holding!.name}`, 'success', undefined, { popup: true, title: toastTitle })
       onClose()
     } else {
       if (!valid) { setShowErrors(true); return }
@@ -847,7 +847,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         timestamp: dateStrToTimestamp(txDate),
         ...sourceParams,
       })
-      showToast(`${verb} ${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} units of ${holding!.name}`, 'success', undefined, { celebrate: true, title: toastTitle })
+      showToast(`${verb} ${Number(units).toLocaleString(undefined, { maximumFractionDigits: 4 })} units of ${holding!.name}`, 'success', undefined, { popup: true, title: toastTitle })
       onClose()
     }
   }
@@ -927,7 +927,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
               allowString
             />
             <NumberField
-              label="Applied FX Rate (USD/THB)"
+              label="Applied FX rate (USD/THB)"
               value={fxRate}
               error={showErrors && (fxRate === '' || Number(fxRate) <= 0) ? 'Required (> 0)' : undefined}
               onChange={handleFxRateChange}
@@ -1000,15 +1000,15 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-ink-soft">Shares Added</span>
+              <span className="text-ink-soft">Shares added</span>
               <span className="font-semibold tnum text-ink">+{sharesBoughtNum.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} shares</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-ink-soft">New Total Shares</span>
+              <span className="text-ink-soft">New total shares</span>
               <span className="font-semibold tnum text-ink">{stockNewTotalUnits.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} shares</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-ink-soft">New Total THB Invested</span>
+              <span className="text-ink-soft">New total THB invested</span>
               <span className="font-semibold tnum text-ink">฿{stockNewTotalThbInvested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>

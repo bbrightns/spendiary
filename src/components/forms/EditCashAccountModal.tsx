@@ -322,7 +322,7 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
                             setPayoutMonths(next)
                           }}
                           className={`h-8 rounded-lg font-bold transition-colors cursor-pointer border ${
-                            isSelected ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-surface text-ink-muted border-line'
+                            isSelected ? 'bg-gain-strong text-white border-gain-strong' : 'bg-surface text-ink-muted border-line'
                           }`}
                         >
                           {mName}

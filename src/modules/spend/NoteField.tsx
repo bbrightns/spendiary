@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { activeTagQuery, noteTitle, parseTags, recentTags, suggestTags, topTags } from './logic'
 import { useSpend } from './useSpend'
+import { TAG_CHIP } from './tones'
 
 interface Props {
   value: string
@@ -60,7 +61,7 @@ export function NoteField({ value: note, onChange, fallbackTitle, placeholder = 
               // keep focus in the note field so typing can continue
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => completeTag(tag)}
-              className="rounded-full bg-violet-100 px-3 py-1.5 text-xs font-bold text-violet-700 transition-all cursor-pointer hover:bg-violet-200 active:scale-95 dark:bg-violet-400/15 dark:text-violet-200"
+              className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95 ${TAG_CHIP.idle}`}
             >
               #{tag}
             </button>
@@ -91,8 +92,8 @@ export function NoteField({ value: note, onChange, fallbackTitle, placeholder = 
                 aria-pressed={added}
                 className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95 ${
                   added
-                    ? 'bg-violet-200 text-violet-800 dark:bg-violet-400/30 dark:text-violet-100'
-                    : 'bg-violet-100 text-violet-700 hover:bg-violet-200 dark:bg-violet-400/15 dark:text-violet-200'
+                    ? TAG_CHIP.on
+                    : TAG_CHIP.idle
                 }`}
               >
                 #{tag}

@@ -135,7 +135,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
       'success',
       { label: 'Undo', onClick: () => removeDividendRecord(recordId) },
       {
-        celebrate: true,
+        popup: true,
         title: 'Received',
         // The amount that landed, then whose dividend it was, the tax and where it went
         detail: {
@@ -253,7 +253,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
         </div>
 
         {/* Summary & Withholding Tax Card */}
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-3">
+        <div className="rounded-2xl border border-gain/30 bg-gain/5 p-4 space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-ink-muted">Total dividend</span>
             <span className="font-semibold text-ink tnum">
@@ -274,19 +274,19 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
                 Tax withheld (10%)
               </span>
             </label>
-            <span className="text-xs font-semibold text-rose-500 tnum">
+            <span className="text-xs font-semibold text-loss tnum">
               {taxAmount > 0 ? `-${formatCur(taxAmount)}` : `${currencyPrefix}0.00`}
             </span>
           </div>
 
           {/* Net Amount Box */}
-          <div className="flex items-center justify-between border-t border-emerald-500/20 pt-2.5">
+          <div className="flex items-center justify-between border-t border-gain/20 pt-2.5">
             <div>
               <span className="text-sm font-bold text-ink">Net amount received</span>
               <p className="text-xs text-ink-muted">What actually lands in your account</p>
             </div>
             <div className="text-right">
-              <span className="font-display text-xl font-extrabold text-emerald-600 dark:text-emerald-400 tnum">
+              <span className="font-display text-xl font-extrabold text-gain tnum">
                 {netAmount > 0 ? formatCur(netAmount) : `${currencyPrefix}0.00`}
               </span>
             </div>

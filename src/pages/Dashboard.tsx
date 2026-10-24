@@ -127,10 +127,10 @@ export function Dashboard() {
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <Button variant="primary" onClick={() => setAiImportOpen(true)}>
                   <SparkleIcon className="h-4 w-4 mr-1.5" />
-                  Import Portfolio & Cash (AI)
+                  Import portfolio & cash (AI)
                 </Button>
                 <Button variant="secondary" onClick={() => navigate('/portfolio')}>
-                  Go to Portfolio
+                  Go to portfolio
                 </Button>
               </div>
             }

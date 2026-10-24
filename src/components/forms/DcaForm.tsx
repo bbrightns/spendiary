@@ -207,7 +207,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
       confirmedDates: editing?.confirmedDates,
       skippedDates: editing?.skippedDates,
     })
-    showToast(editing ? `Updated DCA plan "${nameToUse}"` : `${nameToUse} will now be bought on schedule.`, 'success', undefined, { celebrate: !editing, title: 'Plan created!' })
+    showToast(editing ? `Updated DCA plan "${nameToUse}"` : `${nameToUse} will now be bought on schedule.`, 'success', undefined, { popup: !editing, title: 'Plan created!' })
     onClose()
   }
 
@@ -331,7 +331,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
             }}
             options={[
               { value: 'portfolio', label: 'Portfolio' },
-              { value: 'cash', label: 'Cash / Savings' },
+              { value: 'cash', label: 'Cash / savings' },
               { value: 'custom', label: 'New asset' },
             ]}
           />
@@ -343,7 +343,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
             <AssetLogo assetClass={editing.assetClass} ticker={editing.ticker} name={editing.name} size="md" />
             <div className="min-w-0 flex-1">
               <span
-                className="inline-block rounded px-1.5 py-0.5 text-xs font-extrabold uppercase tracking-wider mb-0.5"
+                className="inline-block rounded px-1.5 py-0.5 text-xs font-extrabold mb-0.5"
                 style={{
                   color: ASSET_META[editing.assetClass]?.color ?? '#6366f1',
                   background: `color-mix(in srgb, ${ASSET_META[editing.assetClass]?.color ?? '#6366f1'} 15%, transparent)`,
@@ -367,7 +367,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
           ) : (
             <div className="space-y-4">
               <SelectField
-                label="Target Cash / Savings Account"
+                label="Target cash / savings account"
                 value={form.cashAccountId}
                 onChange={(id) => {
                   const acc = data.cashAccounts.find((a) => a.id === id)
@@ -402,7 +402,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
           holdingOptions.length === 0 ? (
             <div className="rounded-xl bg-warn-soft p-4 text-sm text-warn space-y-2">
               <p className="font-semibold">No holdings in your portfolio yet.</p>
-              <p className="text-xs opacity-90">Switch to <strong>New asset</strong> or <strong>Cash / Savings</strong> above to start DCAing.</p>
+              <p className="text-xs opacity-90">Switch to <strong>New asset</strong> or <strong>Cash / savings</strong> above to start DCAing.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -435,8 +435,8 @@ export function DcaForm({ open, editing, onClose }: Props) {
                 setSuggestions([])
               }}
               options={[
-                { value: 'stock',  label: 'US Stock' },
-                { value: 'fund',   label: 'Thai Assets' },
+                { value: 'stock',  label: 'US stock' },
+                { value: 'fund',   label: 'Thai assets' },
                 { value: 'crypto', label: 'Bitcoin' },
                 { value: 'gold',   label: 'Gold' },
               ]}
@@ -481,7 +481,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
                   )}
                 </div>
                 <TextField
-                  label="Ticker / Symbol"
+                  label="Ticker / symbol"
                   hint="optional"
                   value={form.ticker}
                   onChange={(ticker) => setForm((f) => ({ ...f, ticker: ticker.toUpperCase() }))}

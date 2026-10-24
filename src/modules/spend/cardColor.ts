@@ -62,5 +62,5 @@ function luminance(hex: string): number {
 export function inkOn(hex: string): { light: boolean; text: string; soft: string } {
   const l = luminance(hex)
   const light = 1.05 / (l + 0.05) >= (l + 0.05) / 0.059
-  return light ? { light, text: 'text-white', soft: 'text-white/70' } : { light, text: 'text-slate-900', soft: 'text-slate-900/65' }
+  return light ? { light, text: 'text-white', soft: 'text-white/70' } : { light, text: 'text-black/90', soft: 'text-black/60' }
 }
