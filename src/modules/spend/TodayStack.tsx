@@ -395,8 +395,9 @@ function DcaHint() {
 const noop = () => {}
 
 /**
- * Invest Home's lines for what's waiting today. Each points where the item lives, so DCA buys and
- * dividends stay in Invest (DCA page) and only bills and loans send you to Spend Home.
+ * Invest Home's cards for what's waiting today, in the same style as Spend Home's. Each points where
+ * the items live, so DCA buys and dividends stay in Invest (DCA page) and only bills and loans send
+ * you to Spend Home.
  */
 export function TodayLink({ id }: { id?: string }) {
   const groups = useTodayGroups(noop, noop)
@@ -405,25 +406,41 @@ export function TodayLink({ id }: { id?: string }) {
   const spend = groups.filter((g) => g.id === 'pay')
   // Same pages the bottom nav badges: DCA buys on the DCA page, dividends on Dividends
   const investTo = invest.some((g) => g.id === 'dca') ? '/dca' : '/dividends'
+  // Most urgent first, like Spend Home
+  const cards = [
+    { key: 'invest', to: investTo, groups: invest },
+    { key: 'spend', to: '/', groups: spend, source: 'Spend' },
+  ]
+    .filter((c) => c.groups.length > 0)
+    .sort((a, b) => RANK[worst(a.groups.flatMap((g) => g.items))] - RANK[worst(b.groups.flatMap((g) => g.items))])
   return (
-    <div id={id} className="divide-y divide-line overflow-hidden rounded-2xl border border-line text-sm text-ink-muted">
-      {invest.length > 0 && <TodayLinkRow to={investTo} groups={invest} />}
-      {spend.length > 0 && <TodayLinkRow to="/" groups={spend} where="on Spend Home" />}
+    <div id={id} className="space-y-2" role="region" aria-label="To do today">
+      {cards.map((c) => (
+        <TodayLinkCard key={c.key} to={c.to} groups={c.groups} source={c.source} />
+      ))}
     </div>
   )
 }
 
-function TodayLinkRow({ to, groups, where }: { to: string; groups: Group[]; where?: string }) {
+function TodayLinkCard({ to, groups, source }: { to: string; groups: Group[]; source?: string }) {
   const items = groups.flatMap((g) => g.items)
+  const tone = worst(items)
   const urgent = items.filter(isDueNow).length
+  const lead = groups[0]
   return (
-    <Link to={to} className="flex items-center justify-between gap-3 px-4 py-2.5 transition-colors hover:bg-surface-muted/60">
-      <span>
-        <span className="font-semibold text-ink">{groups.map((g) => g.title(g.items.length)).join(' · ')}</span>
-        {urgent > 0 && <span className="font-semibold text-warn"> · {urgent} due now</span>}
-        {where && ` · ${where}`}
+    <Link to={to} className={`flex items-center gap-3 rounded-2xl border px-4 py-3 transition-[filter] hover:brightness-[0.98] dark:hover:brightness-110 animate-rise ${TONE[tone].card}`}>
+      <span className={`grid h-9 w-12 shrink-0 place-items-center rounded-lg ${lead.badge}`}>{lead.icon}</span>
+      <span className="min-w-0 flex-1">
+        <span className="flex min-w-0 items-center gap-1.5 text-sm font-bold text-ink">
+          <span className="truncate">{groups.map((g) => g.title(g.items.length)).join(' · ')}</span>
+          {source && <SourceTag label={source} />}
+        </span>
+        <span className={`block truncate text-xs font-semibold tnum ${TONE[tone].text}`}>
+          {urgent > 0 ? `${urgent} due now · ` : ''}
+          {groups.map((g) => g.summary(g.items)).join(' · ')}
+        </span>
       </span>
-      <span aria-hidden="true">→</span>
+      <span className={PILL}>Review</span>
     </Link>
   )
 }
