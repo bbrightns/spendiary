@@ -195,24 +195,24 @@ Rules:
 | ~~`success`~~ | Deprecated. Use `primary`. |
 
 - **Shape:** always a pill. Sizes are `md` (44px, the default for footers) and `sm` (36px, inside cards and headers).
-- **Text links:** `text-sm font-semibold text-brand hover:underline` (the "Manage" link on Spend Home). Use an arrow (`→`) only when the link leaves the page. Name the destination: "See analysis →", "Portfolio →".
+- **Text links:** `TextLink` (`text-sm font-semibold text-brand hover:underline`), like the "Manage" link on Spend Home. Use an arrow (`→`) only when the link leaves the page. Name the destination: "See analysis →", "Portfolio →".
 - **Row actions:** `IconButton` (ghost, or brand for "buy more"). A small row confirm such as "Paid" is a `sm` pill in primary.
 - **Don't build buttons by hand.** A raw `<button>` with `bg-ink text-white` means `Button` is missing a feature; add it there instead.
 
 ### 6.2 Cards (`src/components/ui/Card.tsx`)
-There is one card: `Card`. Don't build card-like boxes by hand.
+There is one card: `Card` (`src/components/ui/Card.tsx`, along with `CardHeader` and `Inset`). Don't build card-like boxes by hand.
 
 **Anatomy, top to bottom:**
-1. **Header row** (optional): card title on the left (`font-display text-lg font-extrabold`); one text link or one `sm` button on the right. No icon tile before the title.
+1. **Header row** (optional): `CardHeader`. The card title is on the left (`font-display text-lg font-extrabold`), with an optional one-line description below it; one `TextLink` or one `sm` button sits on the right. No icon tile before the title.
 2. **Body**: a hero figure, a list (`divide-y divide-line`), a chart, or a form.
 3. **Footer line** (optional): one `text-xs text-ink-muted` line, or a "Coming up" style sub-list above a `border-t border-line`.
 
-**Padding:** `p-5`. The only other size is `compact` (`p-4`), for stat tiles in a grid. No per-page padding overrides.
+**Padding:** `p-5`. The only other size is `<Card compact>` (`p-4`), for stat tiles in a grid. No per-page padding overrides.
 
 **Interactive cards:** if the whole card is a link or button, add `hover:shadow-[var(--shadow-lift)] transition-shadow`. Otherwise it never lifts.
 
 **Inside a card, never nest another card.** For grouped content, use one of two inner surfaces:
-- **Inset:** `rounded-2xl bg-surface-muted p-4`, with no border and no shadow. Use it for a group of figures inside a card, such as portfolio value plus all-time PnL.
+- **Inset** (`<Inset>`): `rounded-2xl bg-surface-muted p-4`, with no border and no shadow. Use it for a group of figures inside a card, such as portfolio value plus all-time PnL.
 - **Dashed prompt:** `rounded-2xl border border-dashed border-line-strong p-3`. Use it for empty or setup prompts ("Set up bills that repeat").
 
 **Stat tiles** are a grid of `Card compact`. Each tile has a label (`text-xs font-semibold text-ink-muted`), a value (stat value style), and an optional one-line note. Long values must fit or be shortened (`฿140.0K`). A chip must never overflow its tile.
