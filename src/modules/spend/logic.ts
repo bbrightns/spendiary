@@ -611,24 +611,46 @@ export interface DayAllowance {
   leftToday: number
   daysLeft: number
   status: DayStatus
+  /**
+   * The month's budget was used up before today, so `allowance` is a suggestion (the budget's
+   * usual day) rather than what's left. A gauge stuck at ฿0 until payday helps no one.
+   */
+  soft: boolean
+  /** How far the month is past its budget before today (0 while within it) */
+  overBy: number
 }
+
+/** Counts against the budget: expenses, except one-offs kept outside it */
+export const countsInBudget = (t: SpendTransaction) => t.type === 'expense' && !t.outsideBudget
+
+const periodDays = (p: Period) => Math.round((parse(p.end).getTime() - parse(p.start).getTime()) / 86_400_000) + 1
+
+/** The budget's usual day: the monthly budget spread evenly over the period */
+export const usualDay = (budget: number, period: Period) => budget / periodDays(period)
+
+/** One expense this big (five usual days) is worth asking whether it belongs in the daily budget */
+export const isBigExpense = (amount: number, budget: number, period: Period) => budget > 0 && amount >= usualDay(budget, period) * 5
 
 /**
  * Locked each morning: (budget − spent before today) ÷ days left including today.
  * Spending during the day only lowers "left today"; the allowance itself doesn't move.
+ * Once the budget is used up, today gets the budget's usual day as a target instead of ฿0.
+ * One-offs marked outside the budget don't count.
  */
 export function dayAllowance(budget: number, period: Period, txns: SpendTransaction[], today = localDateStr()): DayAllowance {
   let before = 0
   let spentToday = 0
   for (const t of txns) {
-    if (t.type !== 'expense' || !inPeriod(period, t.date)) continue
+    if (!countsInBudget(t) || !inPeriod(period, t.date)) continue
     if (t.date < today) before += t.amount
     else if (t.date === today) spentToday += t.amount
   }
   const daysLeft = Math.max(1, daysLeftIn(period, today))
-  const allowance = Math.max(0, (budget - before) / daysLeft)
+  const left = budget - before
+  const soft = budget > 0 && left <= 0
+  const allowance = soft ? usualDay(budget, period) : Math.max(0, left / daysLeft)
   const status: DayStatus = spentToday > allowance ? 'over' : spentToday > allowance * 0.8 ? 'careful' : 'ok'
-  return { allowance, spentToday, leftToday: allowance - spentToday, daysLeft, status }
+  return { allowance, spentToday, leftToday: allowance - spentToday, daysLeft, status, soft, overBy: soft ? -left : 0 }
 }
 
 export const shiftDate = (date: string, n: number) => addDays(date, n)

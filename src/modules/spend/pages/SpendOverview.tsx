@@ -9,7 +9,7 @@ import { Modal } from '../../../components/ui/Modal'
 import { PencilIcon, WalletIcon } from '../../../components/icons'
 import { getRandomGreeting, localDateStr, thb } from '../../../lib/format'
 import { useData } from '../../../store/DataContext'
-import { dayAllowance, inPeriod, periodFor, shiftDate, type DayStatus } from '../logic'
+import { countsInBudget, dayAllowance, inPeriod, periodFor, shiftDate, type DayStatus } from '../logic'
 import { RecurringDue } from '../RecurringDue'
 import { openQuickAdd } from '../QuickAddSheet'
 import { TodayStack } from '../TodayStack'
@@ -62,10 +62,17 @@ export function SpendOverview() {
 
   const budget = settings.monthlyBudget ?? 0
   const allowance = useMemo(() => dayAllowance(budget, period, transactions, today), [budget, period, transactions, today])
-  const spentPeriod = useMemo(
-    () => transactions.filter((t) => t.type === 'expense' && inPeriod(period, t.date)).reduce((s, t) => s + t.amount, 0),
-    [transactions, period],
-  )
+  // The budget bar counts what the budget covers; one-offs kept outside it are shown on their own line
+  const { spentPeriod, outsidePeriod } = useMemo(() => {
+    let spent = 0
+    let outside = 0
+    for (const t of transactions) {
+      if (t.type !== 'expense' || !inPeriod(period, t.date)) continue
+      if (countsInBudget(t)) spent += t.amount
+      else outside += t.amount
+    }
+    return { spentPeriod: spent, outsidePeriod: outside }
+  }, [transactions, period])
 
   // Last 7 days ending today, with what was spent each day
   const days = useMemo(
@@ -79,6 +86,10 @@ export function SpendOverview() {
   )
   const dayTxns = transactions.filter((t) => t.date === day)
   const st = STATUS[allowance.status]
+  const leftText = `${allowance.leftToday < 0 ? '−' : ''}${thb(Math.abs(allowance.leftToday))}`
+  // Long amounts step down so they stay inside the gauge's arc
+  const leftSize = leftText.length <= 6 ? 'text-4xl' : leftText.length <= 8 ? 'text-3xl' : 'text-2xl'
+  const untilEnd = settings.cycle?.mode === 'payday' ? 'payday' : 'the month ends'
 
   // The reorderable cards; Home shows them in the order saved in Spend settings
   const allowanceCard = (
@@ -90,9 +101,8 @@ export function SpendOverview() {
           <>
             <Gauge pct={allowance.allowance > 0 ? allowance.spentToday / allowance.allowance : 1} strokeClass={st.stroke} />
             <div className="-mt-12">
-              <p className={`font-display text-4xl font-extrabold tracking-tight tnum ${allowance.leftToday < 0 ? 'text-loss-ink' : 'text-ink'}`}>
-                {allowance.leftToday < 0 ? '−' : ''}
-                {thb(Math.abs(allowance.leftToday))}
+              <p className={`font-display font-extrabold tracking-tight tnum ${leftSize} ${allowance.leftToday < 0 ? 'text-loss-ink' : 'text-ink'}`}>
+                {leftText}
               </p>
               <p className="mt-0.5 text-sm text-ink-muted tnum">
                 {allowance.leftToday < 0 ? 'over' : 'left'} today of {thb(allowance.allowance)}
@@ -102,6 +112,13 @@ export function SpendOverview() {
               <span className="h-1.5 w-1.5 rounded-full bg-current" />
               {st.label}
             </span>
+            {/* Budget used up: say so once, and give today a target instead of ฿0 until the period ends */}
+            {allowance.soft && (
+              <p className="mx-auto mt-3 max-w-xs text-xs leading-relaxed text-ink-muted tnum">
+                This month is <span className="font-semibold text-loss-ink">{thb(allowance.overBy)} over</span> the budget
+                {`, so until ${untilEnd} each day aims for ${thb(allowance.allowance)}, a usual day on your budget.`}
+              </p>
+            )}
             <button
               type="button"
               onClick={() => setBudgetOpen(true)}
@@ -143,6 +160,7 @@ export function SpendOverview() {
                 style={{ width: `${Math.min(100, (spentPeriod / budget) * 100)}%` }}
               />
             </div>
+            {outsidePeriod > 0 && <p className="mt-1.5 text-xs text-ink-muted tnum">Plus {thb(outsidePeriod)} kept outside the budget</p>}
             <p className="mt-1.5 text-xs text-ink-muted tnum">
               {allowance.daysLeft} {allowance.daysLeft === 1 ? 'day' : 'days'} {settings.cycle?.mode === 'payday' ? 'to payday' : 'left this month'} · See analysis →
             </p>

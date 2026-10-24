@@ -41,6 +41,8 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
         `${from ?? '—'} → ${txn.liabilityId && !txn.toAccountId ? 'loan payment' : walletName(txn.toAccountId) ?? '—'}${txn.alreadyInBalance ? ' · already in balance' : ''}`
       : [
           cat?.label && txn.subcategory ? `${cat.label} › ${txn.subcategory}` : cat?.label,
+          // Early in the line, so it's never the part a long wallet name cuts off
+          txn.outsideBudget && 'outside budget',
           // A bill paid on another day than it was due says when it was due (early, so a long wallet name can't cut it off)
           txn.recurring && txn.recurring.date !== txn.date && `(due ${shortDate(txn.recurring.date)})`,
           txn.time,

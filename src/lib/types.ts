@@ -347,6 +347,11 @@ export interface SpendTransaction {
    * and totals, but never moves a balance (on add, edit or delete).
    */
   alreadyInBalance?: boolean
+  /**
+   * A one-off kept out of the daily budget (a trip, a big purchase): it still counts in totals,
+   * Analysis and category budgets, but not in "left today" or the month's budget bar. Expenses only.
+   */
+  outsideBudget?: boolean
   /** Lowercase hashtags parsed from the note, without the leading # */
   tags?: string[]
   /** ISO timestamp */
