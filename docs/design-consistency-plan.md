@@ -159,7 +159,7 @@ About 70 emoji in UI files. The Markdown export (`portfolioMarkdown.ts`) is out 
 | 5 Colour cleanup | M | Patch |
 | 6 Guardrails | S | Patch |
 
-## Open questions for the owner
-1. **Confetti (5.5):** only for "paid off" and "goal reached", or drop it entirely?
-2. **Page names in the nav (4.5):** sentence case too, or keep them as product names?
-3. **Dashboard hero (2.5):** go fully plain like Spend's Today card, or keep a very faint tint for the net-worth card only?
+## Decisions
+1. **Confetti (5.5):** milestones only: a loan paid off and a goal reached.
+2. **Page names in the nav (4.5):** sentence case too ("Activity logs", "Cash and liquidity"). One rule, no exceptions.
+3. **Dashboard hero (2.5):** fully plain `Card`, like Spend's Today card.
