@@ -73,7 +73,7 @@ export function PlannedAssetModal({ open, onClose, onAdded }: Props) {
     >
       <div className="space-y-4">
         <SelectField
-          label="Asset Class"
+          label="Asset class"
           value={form.assetClass}
           onChange={(v) => {
             const ac = v as InvestAssetClass
@@ -86,8 +86,8 @@ export function PlannedAssetModal({ open, onClose, onAdded }: Props) {
             setSuggestions([])
           }}
           options={[
-            { value: 'stock', label: 'US Stock' },
-            { value: 'fund', label: 'Thai Assets' },
+            { value: 'stock', label: 'US stock' },
+            { value: 'fund', label: 'Thai assets' },
             { value: 'crypto', label: 'Bitcoin' },
             { value: 'gold', label: 'Gold' },
           ]}
@@ -97,7 +97,7 @@ export function PlannedAssetModal({ open, onClose, onAdded }: Props) {
           <>
             <div className="relative">
               <TextField
-                label="Asset Name"
+                label="Asset name"
                 value={form.name}
                 error={showErrors && !form.name.trim() ? 'Name is required' : undefined}
                 onChange={(name) => {
@@ -131,7 +131,7 @@ export function PlannedAssetModal({ open, onClose, onAdded }: Props) {
             </div>
 
             <TextField
-              label="Ticker / Symbol"
+              label="Ticker / symbol"
               hint="optional"
               value={form.ticker}
               onChange={(ticker) => setForm((f) => ({ ...f, ticker: ticker.toUpperCase() }))}
@@ -141,7 +141,7 @@ export function PlannedAssetModal({ open, onClose, onAdded }: Props) {
         )}
 
         <NumberField
-          label="Initial Target Allocation (%)"
+          label="Initial target allocation (%)"
           hint="optional (can adjust later)"
           value={form.targetPct}
           onChange={(targetPct) => setForm((f) => ({ ...f, targetPct }))}

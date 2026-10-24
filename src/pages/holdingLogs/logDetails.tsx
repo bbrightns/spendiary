@@ -119,7 +119,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
                 {hasNameChange && (
                   <div>
                     <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">
-                      Account Name
+                      Account name
                     </span>
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                       <span className="whitespace-nowrap">{item.prevName}</span>
@@ -398,7 +398,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
       {/* Ticker Symbol Row (if ticker updated) */}
       {showTickerRow && (
         <div className={showNameRow ? 'pt-1.5 border-t border-line/60' : ''}>
-          <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">Ticker Symbol</span>
+          <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">Ticker symbol</span>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
             <span className="rounded-md bg-surface px-1.5 py-0.5 tnum text-xs font-medium text-ink-muted border border-line">{prev.ticker}</span>
             <span className="text-ink-faint text-xs">→</span>
@@ -841,7 +841,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
 
             {showBalanceRow && (
               <div className={(showNameRow || showTickerRow || showPriceRow) ? 'pt-1.5 border-t border-line/60' : ''}>
-                <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">Holding Balance</span>
+                <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">Holding balance</span>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                   <span className="whitespace-nowrap">{formatUnit(prevUnits)}</span>
                   <span className="text-ink-faint text-xs">→</span>
@@ -857,7 +857,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
 
             {showAvgCostRow && (
               <div className={(showNameRow || showTickerRow || showPriceRow || showBalanceRow) ? 'pt-1.5 border-t border-line/60' : ''}>
-                <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">Average Cost</span>
+                <span className="text-ink-faint block text-xs uppercase tracking-wider font-semibold">Average cost</span>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-ink mt-0.5">
                   <span className="whitespace-nowrap">{prevAvgCostDisplay}</span>
                   <span className="text-ink-faint text-xs">→</span>

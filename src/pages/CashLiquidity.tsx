@@ -201,7 +201,7 @@ export function CashLiquidity() {
       {/* ── Page Header ── */}
       <PageHeader
         eyebrow="Plan"
-        title="Cash & Liquidity Hub"
+        title="Cash & liquidity"
         subtitle="Your cash accounts, emergency savings, money ready to invest, and the interest you earn"
         action={
           <Button

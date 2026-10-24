@@ -927,7 +927,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
               allowString
             />
             <NumberField
-              label="Applied FX Rate (USD/THB)"
+              label="Applied FX rate (USD/THB)"
               value={fxRate}
               error={showErrors && (fxRate === '' || Number(fxRate) <= 0) ? 'Required (> 0)' : undefined}
               onChange={handleFxRateChange}
@@ -1000,15 +1000,15 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-ink-soft">Shares Added</span>
+              <span className="text-ink-soft">Shares added</span>
               <span className="font-semibold tnum text-ink">+{sharesBoughtNum.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} shares</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-ink-soft">New Total Shares</span>
+              <span className="text-ink-soft">New total shares</span>
               <span className="font-semibold tnum text-ink">{stockNewTotalUnits.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} shares</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-ink-soft">New Total THB Invested</span>
+              <span className="text-ink-soft">New total THB invested</span>
               <span className="font-semibold tnum text-ink">฿{stockNewTotalThbInvested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>

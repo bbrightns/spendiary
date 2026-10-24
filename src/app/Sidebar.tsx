@@ -78,7 +78,7 @@ export function Sidebar() {
                 Spendiary
               </span>
               <p className="text-xs font-medium text-ink-muted leading-tight mt-0.5">
-                Financial Cockpit
+                Financial cockpit
               </p>
             </div>
           </Link>
@@ -190,7 +190,7 @@ export function Sidebar() {
                 {displayName}
               </p>
               <p className="truncate text-xs text-ink-muted leading-tight">
-                Cloud Sync
+                Cloud sync
               </p>
             </div>
           </div>

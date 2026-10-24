@@ -570,7 +570,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
       <div className="space-y-4">
         {data.holdings.length > 0 && !isCash && (
           <SelectField
-            label="Target Holding in Portfolio"
+            label="Target holding in portfolio"
             value={targetHoldingId}
             onChange={setTargetHoldingId}
             options={[
@@ -589,18 +589,18 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
           <div className="space-y-4">
             <div className="rounded-2xl bg-surface-muted p-4 space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-ink-muted">Destination Account</span>
+                <span className="text-xs font-semibold text-ink-muted">Destination account</span>
                 <span className="text-sm font-bold text-ink">{targetCashAccount?.name || plan.name}</span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-ink-muted">Current Balance</span>
+                <span className="text-ink-muted">Current balance</span>
                 <span className="font-display font-semibold text-ink tnum">
                   {targetCashAccount?.currency === 'USD' ? '$' : '฿'}
                   {(targetCashAccount?.balance ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs border-t border-line/40 pt-2">
-                <span className="text-cash font-semibold">New Balance After Deposit</span>
+                <span className="text-cash font-semibold">New balance after deposit</span>
                 <span className="font-display font-extrabold text-cash tnum">
                   {targetCashAccount?.currency === 'USD' ? '$' : '฿'}
                   {((targetCashAccount?.balance ?? 0) + (typeof amountSpentThb === 'number' ? amountSpentThb : 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -665,7 +665,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
             {liveStockPrice !== null && liveStockPrice > 0 && (
               <div className="flex items-center justify-between rounded-2xl bg-surface-muted px-4 py-2.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-ink-soft">Market Price</span>
+                  <span className="text-sm font-semibold text-ink-soft">Market price</span>
                   <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-bold text-brand">Live</span>
                 </div>
                 <span className="text-sm font-bold tnum text-ink">
@@ -714,7 +714,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
             {showFxEdit && (
               <div className="rounded-2xl bg-surface-muted p-4 transition-all">
                 <NumberField
-                  label="Custom FX Rate (USD/THB)"
+                  label="Custom FX rate (USD/THB)"
                   hint="Override if broker used different rate"
                   value={fxRate}
                   onChange={setFxRate}
@@ -792,7 +792,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
             />
 
             <SelectField
-              label="Storage / Location"
+              label="Storage / location"
               value={selectedLocId}
               onChange={setSelectedLocId}
               options={btcLocationOptions}
@@ -800,7 +800,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
 
             {selectedLocId === '__new__' && (
               <TextField
-                label="New Location Name"
+                label="New location name"
                 value={newLocName}
                 onChange={setNewLocName}
                 placeholder="e.g. Binance, Cold Wallet..."
@@ -865,7 +865,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               options={[
                 { value: 'grams', label: 'Weight (g)' },
                 { value: 'baht', label: 'Weight (gold baht)' },
-                { value: 'price', label: 'Price / Gram (฿/g)' },
+                { value: 'price', label: 'Price / gram (฿/g)' },
                 { value: 'price_baht', label: 'Price / gold baht' },
               ]}
             />
@@ -916,7 +916,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
             )}
 
             <SelectField
-              label="Storage / Location"
+              label="Storage / location"
               value={selectedLocId}
               onChange={setSelectedLocId}
               options={goldLocationOptions}
@@ -924,7 +924,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
 
             {selectedLocId === '__new__' && (
               <TextField
-                label="New Location Name"
+                label="New location name"
                 value={newLocName}
                 onChange={setNewLocName}
                 placeholder="e.g. Home safe, Bank vault..."

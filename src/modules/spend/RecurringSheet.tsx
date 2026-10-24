@@ -268,7 +268,7 @@ export function RecurringSheet({ open, rec, onClose }: { open: boolean; rec?: Sp
           >
             <span>
               <span className="block text-sm font-bold text-ink">Count as a fixed cost</span>
-              <span className="block text-xs text-ink-muted">Subtracted from your salary on DCA Plans</span>
+              <span className="block text-xs text-ink-muted">Subtracted from your salary on DCA plans</span>
             </span>
             <SwitchVisual on={form.fixedCost} />
           </button>

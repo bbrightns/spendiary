@@ -85,7 +85,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
 
   if (log.action === 'buy_more') {
     return {
-      label: log.dcaPlanId ? 'DCA Buy' : 'Bought more',
+      label: log.dcaPlanId ? 'DCA buy' : 'Bought more',
       style: 'bg-brand/10 text-brand',
       icon: ArrowUpIcon,
       isPriceUpdate: false,
@@ -333,11 +333,11 @@ export function getDestinationLocation(log: HoldingLog): string | null {
 
 export const ASSET_FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
-  { key: 'fund', label: 'Thai Assets' },
-  { key: 'stock', label: 'US Stocks' },
+  { key: 'fund', label: 'Thai assets' },
+  { key: 'stock', label: 'US stocks' },
   { key: 'crypto', label: 'Crypto' },
   { key: 'gold', label: 'Gold' },
-  { key: 'real_estate', label: 'Real Estate' },
+  { key: 'real_estate', label: 'Real estate' },
   { key: 'cash', label: 'Cash' },
 ]
 
@@ -348,7 +348,7 @@ export function getLogAssetLabel(log: HoldingLog): string {
 
 export const ACTION_FILTERS = [
   { key: 'all', label: 'All' },
-  { key: 'buy', label: 'Buy / Add' },
+  { key: 'buy', label: 'Buy / add' },
   { key: 'sell', label: 'Sold' },
   { key: 'dividend', label: 'Dividend' },
   { key: 'transfer', label: 'Transfer' },

@@ -88,7 +88,7 @@ export function AssetLogo({
   ) {
     return (
       <div
-        title={name || ticker || 'Real Estate'}
+        title={name || ticker || 'Real estate'}
         className={`relative inline-flex items-center justify-center shrink-0 rounded-full font-bold shadow-xs select-none ${sizeClasses[size]} ${className}`}
         style={{
           background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',

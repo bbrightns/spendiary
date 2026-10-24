@@ -548,9 +548,9 @@ export function Settings() {
                 This project started purely to solve my own personal headache: having savings and investments scattered across multiple banks and apps to the point where I lost track of where my money actually was! So I decided to build this web app to bring everything together into a clean, single cockpit:
               </p>
               <ul className="list-disc list-inside space-y-1 pl-1 text-xs text-ink-soft">
-                <li><strong className="font-semibold text-ink">Real-time Market Prices:</strong> Live price feeds for US Stocks, Gold, and Bitcoin (Thai stocks not included yet).</li>
-                <li><strong className="font-semibold text-ink">Comprehensive Retirement FIRE Planner:</strong> In-depth milestone modeling with inflation adjustments and dividend calculations.</li>
-                <li><strong className="font-semibold text-ink">Privacy-First Architecture:</strong> Your financial data stays locally on your device with optional encrypted cloud backup.</li>
+                <li><strong className="font-semibold text-ink">Real-time market prices:</strong> Live price feeds for US Stocks, Gold, and Bitcoin (Thai stocks not included yet).</li>
+                <li><strong className="font-semibold text-ink">Comprehensive retirement FIRE planner:</strong> In-depth milestone modeling with inflation adjustments and dividend calculations.</li>
+                <li><strong className="font-semibold text-ink">Privacy-first architecture:</strong> Your financial data stays locally on your device with optional encrypted cloud backup.</li>
               </ul>
               <p className="text-xs text-ink-muted pt-1">
                 It's 100% free to use. If your portfolio is scattered like mine, feel free to give it a spin! Any feedback or feature requests are always welcome.

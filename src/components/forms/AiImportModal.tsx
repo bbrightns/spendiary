@@ -351,14 +351,14 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
         <div className="rounded-2xl bg-surface-muted p-4 space-y-3">
           <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-brand">
             <SparkleIcon className="h-4 w-4" />
-            <span>How It Works in 3 Easy Steps</span>
+            <span>How it works in 3 easy steps</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
             <div className="flex flex-col gap-1 p-2.5 rounded-xl bg-surface border border-line/60">
               <span className="font-bold text-ink flex items-center gap-1.5">
                 <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand/15 text-xs text-brand">1</span>
-                Copy Prompt
+                Copy prompt
               </span>
               <p className="text-ink-muted leading-relaxed">
                 Click <strong>"Copy AI Prompt"</strong> below. It tells AI the exact JSON format Spendiary needs.
@@ -378,7 +378,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
             <div className="flex flex-col gap-1 p-2.5 rounded-xl bg-surface border border-line/60">
               <span className="font-bold text-ink flex items-center gap-1.5">
                 <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand/15 text-xs text-brand">3</span>
-                Paste & Import
+                Paste & import
               </span>
               <p className="text-ink-muted leading-relaxed">
                 Paste the generated JSON block in the box below and click <strong>Import</strong>.
@@ -406,12 +406,12 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
               {copied ? (
                 <>
                   <CheckIcon className="h-3.5 w-3.5 text-emerald-500 mr-1.5" />
-                  Prompt Copied to Clipboard!
+                  Prompt copied to clipboard!
                 </>
               ) : (
                 <>
                   <CopyIcon className="h-3.5 w-3.5 mr-1.5" />
-                  Copy AI Prompt
+                  Copy AI prompt
                 </>
               )}
             </Button>
@@ -429,7 +429,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label htmlFor="json-paste-area" className="text-sm font-semibold text-ink">
-              Paste JSON or Upload File
+              Paste JSON or upload file
             </label>
             <div className="flex items-center gap-2">
               <input
@@ -506,7 +506,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
         {hasExistingData && (
           <div className="rounded-xl border border-line p-3.5 space-y-2 bg-surface">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-ink">Import Action</span>
+              <span className="text-xs font-semibold text-ink">Import action</span>
               <SegmentedControl
                 value={mode}
                 onChange={(val) => setMode(val as 'merge' | 'replace')}

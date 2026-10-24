@@ -543,7 +543,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                 step={0.01}
               />
               <NumberField
-                label="FX Rate (USD/THB)"
+                label="FX rate (USD/THB)"
                 value={stockFxRate}
                 error={showErrors && (stockFxRate === '' || Number(stockFxRate) <= 0) ? 'Required' : undefined}
                 onChange={(val) => setStockFxRate(val === '' ? '' : Number(val))}

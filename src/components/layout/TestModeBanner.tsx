@@ -9,7 +9,7 @@ export function TestModeBanner() {
 
   return (
     <aside
-      aria-label="Test Mode Environment Warning"
+      aria-label="Test mode environment warning"
       className="fixed top-0 inset-x-0 z-40 h-9 bg-amber-400 dark:bg-amber-500 text-amber-950 px-3 sm:px-4 flex items-center justify-between shadow-xs select-none border-b border-amber-500/40 dark:border-amber-600/50 box-border"
     >
       <div className="flex items-center gap-2 min-w-0">
@@ -17,7 +17,7 @@ export function TestModeBanner() {
           <FlaskIcon className="w-3.5 h-3.5" />
         </span>
         <span className="inline-flex items-center justify-center h-5 px-1.5 rounded bg-amber-950/15 text-xs font-black uppercase tracking-wider text-amber-950 leading-none shrink-0">
-          Test Mode
+          Test mode
         </span>
         <span className="hidden sm:inline font-medium text-amber-950/90 text-xs leading-none truncate">
           Sandbox environment — Simulated mock data, changes will not affect real accounts
@@ -34,7 +34,7 @@ export function TestModeBanner() {
         title="Exit test mode and return to sign in"
       >
         <LogOutIcon className="w-3.5 h-3.5 shrink-0" />
-        <span className="hidden sm:inline leading-none">Exit Test Mode</span>
+        <span className="hidden sm:inline leading-none">Exit test mode</span>
         <span className="sm:hidden leading-none">Exit</span>
       </button>
     </aside>

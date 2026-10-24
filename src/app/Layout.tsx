@@ -62,7 +62,7 @@ export function Layout({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={openCommandPalette}
-            aria-label="Quick Search / Command Palette"
+            aria-label="Quick search / command palette"
             title={`Search (${SEARCH_SHORTCUT})`}
             className="grid h-9 w-9 place-items-center rounded-xl text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors cursor-pointer"
           >

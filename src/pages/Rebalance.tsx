@@ -429,7 +429,7 @@ export function Rebalance() {
     <>
       <PageHeader
         eyebrow="Analyze"
-        title="Portfolio Rebalance"
+        title="Rebalancing"
         subtitle="Align portfolio allocation with target weights & simulate capital deployment."
         onStartGuide={startTour}
         action={
@@ -437,19 +437,19 @@ export function Rebalance() {
             variant="secondary"
             size="sm"
             onClick={handleCopyPlan}
-            aria-label="Copy Action Plan"
-            title="Copy Action Plan as Text"
+            aria-label="Copy action plan"
+            title="Copy action plan as text"
             className="cursor-pointer shrink-0 h-9 text-xs sm:text-sm whitespace-nowrap"
           >
             {copied ? (
               <>
                 <CheckIcon className="h-4 w-4 text-gain shrink-0" strokeWidth={2.2} />
-                <span className="text-gain">Copied Plan!</span>
+                <span className="text-gain">Copied plan!</span>
               </>
             ) : (
               <>
                 <CopyIcon className="h-4 w-4 text-ink-muted shrink-0" />
-                <span>Copy Action Plan</span>
+                <span>Copy action plan</span>
               </>
             )}
           </Button>
@@ -460,7 +460,7 @@ export function Rebalance() {
       <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4 mb-6">
         <Card compact className="animate-rise flex flex-col justify-between">
           <div>
-            <p className="text-xs font-medium text-ink-muted">Current Value</p>
+            <p className="text-xs font-medium text-ink-muted">Current value</p>
             <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-ink tnum truncate">
               {thb(portVal)}
             </p>
@@ -472,7 +472,7 @@ export function Rebalance() {
 
         <Card compact className="animate-rise flex flex-col justify-between">
           <div>
-            <p className="text-xs font-medium text-ink-muted">Available Liquid</p>
+            <p className="text-xs font-medium text-ink-muted">Available liquid</p>
             <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tnum truncate">
               {thb(availCash)}
             </p>
@@ -484,7 +484,7 @@ export function Rebalance() {
 
         <Card compact className="animate-rise flex flex-col justify-between">
           <div>
-            <p className="text-xs font-medium text-ink-muted">Cash to Deploy</p>
+            <p className="text-xs font-medium text-ink-muted">Cash to deploy</p>
             <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-brand-ink tnum truncate">
               +{thb(cashToDeploy)}
             </p>
@@ -496,7 +496,7 @@ export function Rebalance() {
 
         <Card compact className="animate-rise flex flex-col justify-between">
           <div>
-            <p className="text-xs font-medium text-ink-muted">Projected Total</p>
+            <p className="text-xs font-medium text-ink-muted">Projected total</p>
             <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-ink tnum truncate">
               {thb(targetTotalValue)}
             </p>
@@ -512,7 +512,7 @@ export function Rebalance() {
                 currentTargetsSum === 100 ? 'text-gain' : 'text-warn'
               }`}
             >
-              {currentTargetsSum === 100 ? '100% Target Sum' : `Sum: ${currentTargetsSum}% (Incomplete)`}
+              {currentTargetsSum === 100 ? 'Targets add up to 100%' : `Targets add up to ${currentTargetsSum}%`}
             </span>
           </div>
         </Card>
@@ -531,13 +531,13 @@ export function Rebalance() {
               {/* Mode Switcher */}
               <div id="guide-rebalance-mode" className="space-y-1.5">
                 <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">
-                  Allocation Mode
+                  Allocation mode
                 </span>
                 <SegmentedControl
                   value={mode}
                   onChange={(v) => setRebalanceMode(v as RebalanceMode)}
                   options={[
-                    { value: 'class', label: 'Asset Class (Macro)' },
+                    { value: 'class', label: 'Asset class (macro)' },
                     { value: 'holding', label: `Holdings (${holdingRows.length})` },
                   ]}
                 />
@@ -546,7 +546,7 @@ export function Rebalance() {
               {/* Cash Deployment */}
               <div id="guide-rebalance-cash" className="space-y-2">
                 <NumberField
-                  label="New Cash to Deploy"
+                  label="New cash to deploy"
                   prefix="฿"
                   value={newCash}
                   onChange={setNewCash}
@@ -560,7 +560,7 @@ export function Rebalance() {
                       onClick={() => setNewCash(Math.round(availCash))}
                       className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition-all cursor-pointer"
                     >
-                      <span>+ Use Available Cash: {thb(availCash)}</span>
+                      <span>Use available cash: {thb(availCash)}</span>
                     </button>
                   </div>
                 )}
@@ -575,7 +575,7 @@ export function Rebalance() {
                     onChange={(e) => setSmartRebalance(e.target.checked)}
                     className="rounded border-line-strong text-brand focus:ring-brand/15 h-4 w-4"
                   />
-                  <span>Smart Rebalance (Buy Only)</span>
+                  <span>Smart rebalance (buy only)</span>
                 </label>
                 <p className="mt-1 text-xs text-ink-muted leading-relaxed">
                   Calculates purchases exclusively for underweight positions without generating sell advice.
@@ -593,7 +593,7 @@ export function Rebalance() {
                   />
                   <span className="flex items-center gap-1.5">
                     <LockClosedIcon className="h-4 w-4 text-amber-500" />
-                    <span>Exclude Safe-Haven / Locked Assets (Lock)</span>
+                    <span>Exclude safe-haven and locked assets</span>
                   </span>
                 </label>
                 <p className="mt-1 text-xs text-ink-muted leading-relaxed">
@@ -628,7 +628,7 @@ export function Rebalance() {
           {/* Side-by-Side Allocation Visualizer */}
           <Card className="animate-rise">
             <h2 className="font-display text-lg font-extrabold text-ink">Allocation comparison</h2>
-            <p className="text-xs text-ink-muted mb-4">Current vs Target Distribution</p>
+            <p className="text-xs text-ink-muted mb-4">Current vs target distribution</p>
 
             <div className="grid grid-cols-2 gap-4 items-center justify-items-center pt-2">
               <div className="flex flex-col items-center">
@@ -790,7 +790,7 @@ export function Rebalance() {
                           <div className="grid grid-cols-2 gap-2 my-3 rounded-xl bg-surface p-3 border border-line/50">
                             <div>
                               <span className="text-xs font-bold uppercase tracking-wider text-ink-muted block">
-                                Current Value
+                                Current value
                               </span>
                               <p className="font-bold text-ink text-sm mt-0.5 tnum">
                                 {thb(row.actualVal)}
@@ -801,7 +801,7 @@ export function Rebalance() {
                             </div>
                             <div className="text-right">
                               <span className="text-xs font-bold uppercase tracking-wider text-ink-muted block">
-                                Projected Value
+                                Projected value
                               </span>
                               <p className="font-bold text-ink-soft text-sm mt-0.5 tnum">
                                 {thb(row.targetVal)}
@@ -815,7 +815,7 @@ export function Rebalance() {
                           {/* Bottom Row: Target Allocation Controls */}
                           <div className="flex items-center justify-between gap-2 pt-1 border-t border-line/40">
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-bold text-ink-soft">Target Weight</span>
+                              <span className="text-xs font-bold text-ink-soft">Target weight</span>
                             </div>
 
                             <div className="flex items-center gap-1">
@@ -866,15 +866,15 @@ export function Rebalance() {
                     <table className="w-full min-w-[620px] text-left text-sm border-collapse">
                       <thead>
                         <tr className="text-ink-muted border-b border-line pb-2 font-medium">
-                          <th className="pb-2 pr-4 font-semibold text-left">Asset Class</th>
-                          <th className="pb-2 px-3 font-semibold text-right">Current Value</th>
+                          <th className="pb-2 pr-4 font-semibold text-left">Asset class</th>
+                          <th className="pb-2 px-3 font-semibold text-right">Current value</th>
                           <th className="pb-2 px-3 font-semibold text-center w-[90px]">Target %</th>
-                          <th className="pb-2 px-3 font-semibold text-right">Projected Value</th>
+                          <th className="pb-2 px-3 font-semibold text-right">Projected value</th>
                           <th
                             id={!isMobile ? 'guide-rebalance-suggestions' : undefined}
                             className="pb-2 pl-3 font-semibold text-right"
                           >
-                            Action Advice
+                            Action advice
                           </th>
                         </tr>
                       </thead>
@@ -1028,7 +1028,7 @@ export function Rebalance() {
                           <div className="grid grid-cols-2 gap-2 my-2.5 rounded-xl bg-surface p-3 border border-line/50">
                             <div>
                               <span className="text-xs font-bold uppercase tracking-wider text-ink-muted block">
-                                Current Value
+                                Current value
                               </span>
                               <p className="font-bold text-ink text-sm mt-0.5 tnum">
                                 {row.actualVal > 0 ? thb(row.actualVal) : '฿0'}
@@ -1039,7 +1039,7 @@ export function Rebalance() {
                             </div>
                             <div className="text-right">
                               <span className="text-xs font-bold uppercase tracking-wider text-ink-muted block">
-                                Projected Value
+                                Projected value
                               </span>
                               <p className="font-bold text-ink-soft text-sm mt-0.5 tnum">{thb(row.targetVal)}</p>
                               <p className="text-xs text-brand mt-0.5 tnum font-bold">
@@ -1119,14 +1119,14 @@ export function Rebalance() {
                       <thead>
                         <tr className="text-ink-muted border-b border-line pb-2 font-medium">
                           <th className="pb-2 pr-4 font-semibold text-left">Security</th>
-                          <th className="pb-2 px-3 font-semibold text-right">Current Value</th>
+                          <th className="pb-2 px-3 font-semibold text-right">Current value</th>
                           <th className="pb-2 px-3 font-semibold text-center w-[85px]">Target %</th>
                           <th className="pb-2 px-3 font-semibold text-right">Projected</th>
                           <th
                             id={!isMobile ? 'guide-rebalance-suggestions' : undefined}
                             className="pb-2 px-3 font-semibold text-right"
                           >
-                            Action Advice
+                            Action advice
                           </th>
                           <th className="pb-2 pl-3 font-semibold text-right w-[65px]">Action</th>
                         </tr>

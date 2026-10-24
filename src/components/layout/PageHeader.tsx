@@ -31,7 +31,7 @@ export function PageHeader({ eyebrow, title, subtitle, action, onStartGuide, cla
             <button
               type="button"
               onClick={onStartGuide}
-              title="Page Guide"
+              title="Page guide"
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold text-brand bg-brand/10 hover:bg-brand/20 dark:bg-brand/20 dark:text-brand-ink dark:border-brand/40 active:scale-95 transition-all border border-brand/20 cursor-pointer shadow-xs"
             >
               <HelpCircleIcon className="w-3.5 h-3.5" />

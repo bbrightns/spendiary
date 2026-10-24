@@ -307,7 +307,7 @@ export function HoldingLogs() {
     <>
       <PageHeader
         eyebrow="Records"
-        title="Activity Logs"
+        title="Activity logs"
         onStartGuide={startTour}
       />
 
@@ -596,11 +596,11 @@ export function HoldingLogs() {
                       />
                     </th>
                     )}
-                    <th className="logs-table-cell logs-table-date">Date & Time</th>
+                    <th className="logs-table-cell logs-table-date">Date & time</th>
                     <th className="logs-table-cell logs-table-action">Action</th>
-                    <th className="logs-table-cell logs-table-asset">Asset / Ticker</th>
+                    <th className="logs-table-cell logs-table-asset">Asset / ticker</th>
                     <th className="logs-table-cell logs-table-metric text-right">Price / NAV</th>
-                    <th className="logs-table-cell logs-table-metric text-right">Shares / Qty</th>
+                    <th className="logs-table-cell logs-table-metric text-right">Shares / qty</th>
                     <th className="logs-table-cell logs-table-metric text-right">Amount (THB)</th>
                     <th className="logs-table-cell logs-table-location">Location</th>
                     <th className="logs-table-cell logs-table-note min-w-[220px]">Note</th>
@@ -741,7 +741,7 @@ export function HoldingLogs() {
                               {hasComparison && (
                                 <span
                                   className="logs-table-diff text-xs font-medium shrink-0"
-                                  title="Click row to view Before/After comparison"
+                                  title="Click a row to see before and after"
                                 >
                                   {isExpanded ? '▲ Hide' : '▼ Diff'}
                                 </span>
@@ -783,7 +783,7 @@ export function HoldingLogs() {
                             <td colSpan={editMode ? 10 : 8} className="p-4 pl-8 sm:pl-12">
                               <div className="max-w-xl">
                                 <p className="text-xs font-bold uppercase tracking-wider text-ink-muted mb-1">
-                                  State Comparison (Before → After)
+                                  State comparison (before → after)
                                 </p>
                                 {renderLogDetails(log, { cashAccounts: data.cashAccounts, usdThb, detailsOpen: expandedDetails.has(log.id), onToggleDetails: () => toggleDetails(log.id) })}
                               </div>

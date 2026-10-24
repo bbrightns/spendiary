@@ -51,11 +51,11 @@ import { PORTFOLIO_CSV_HEADER, isPriceStale, portfolioCsvRows, unitLabel } from 
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
-  { key: 'fund', label: 'Thai Assets' },
-  { key: 'stock', label: 'US Stocks' },
+  { key: 'fund', label: 'Thai assets' },
+  { key: 'stock', label: 'US stocks' },
   { key: 'crypto', label: 'Crypto' },
   { key: 'gold', label: 'Gold' },
-  { key: 'real_estate', label: 'Real Estate' },
+  { key: 'real_estate', label: 'Real estate' },
 ]
 
 /** Sort choices: one tap picks both the field and the direction */
@@ -607,7 +607,7 @@ export function Portfolio() {
             isLast ? 'sm:rounded-b-[var(--radius-card)]' : ''
           }`}>
             <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold text-ink-muted">Storage & Purchase Locations</p>
+              <p className="text-xs font-semibold text-ink-muted">Storage & purchase locations</p>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
@@ -637,7 +637,7 @@ export function Portfolio() {
                     className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong py-2.5 text-sm font-semibold text-brand transition-colors hover:bg-brand-soft cursor-pointer active:scale-[0.99]"
                   >
                     <PlusIcon className="h-4 w-4" strokeWidth={2.4} />
-                    Add first location (Buy)
+                    Add first location (buy)
                   </button>
                 )
                 : (
@@ -691,7 +691,7 @@ export function Portfolio() {
                     className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong py-2.5 text-sm font-semibold text-brand transition-colors hover:bg-brand-soft cursor-pointer active:scale-[0.99]"
                   >
                     <PlusIcon className="h-4 w-4" strokeWidth={2.4} />
-                    Add first location (Buy)
+                    Add first location (buy)
                   </button>
                 )
                 : (
@@ -804,7 +804,7 @@ export function Portfolio() {
             {/* USD/THB Badge */}
             {effectiveUsdThb && (
               <div
-                title="Exchange Rate USD to THB"
+                title="Exchange rate USD to THB"
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface border border-line/70 text-ink shadow-2xs"
               >
                 <BanknoteIcon className="h-3.5 w-3.5 text-ink-muted" />
@@ -851,7 +851,7 @@ export function Portfolio() {
               size="sm"
               onClick={handleCopyMarkdown}
               aria-label="Copy portfolio markdown"
-              title="Copy Portfolio as Markdown"
+              title="Copy portfolio as Markdown"
               className="cursor-pointer shrink-0 h-9 text-xs sm:text-sm whitespace-nowrap"
             >
               {copied ? (
@@ -862,7 +862,7 @@ export function Portfolio() {
               ) : (
                 <>
                   <CopyIcon className="h-4 w-4 text-ink-muted shrink-0" />
-                  <span className="hidden sm:inline">Copy Portfolio MD</span>
+                  <span className="hidden sm:inline">Copy portfolio MD</span>
                 </>
               )}
             </Button>
@@ -983,7 +983,7 @@ export function Portfolio() {
                 to="/rebalance"
                 className="inline-flex items-center gap-1 font-bold text-brand hover:underline cursor-pointer"
               >
-                <span>Rebalance Portfolio</span>
+                <span>Rebalance portfolio</span>
                 <span aria-hidden="true">→</span>
               </Link>
             </div>
