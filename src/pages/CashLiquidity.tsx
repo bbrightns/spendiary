@@ -185,12 +185,15 @@ export function CashLiquidity() {
     showToast(`Saved account "${savedAcc.name}"`, 'success')
   }
 
+  const deleteAccount = (acc: CashAccount) => {
+    setCashAccounts(accounts.filter((a) => a.id !== acc.id))
+    showToast(`Deleted account "${acc.name}"`, 'info')
+  }
+
   const handleDeleteAccount = () => {
     if (!accountToDelete) return
-    const updated = accounts.filter((a) => a.id !== accountToDelete.id)
-    setCashAccounts(updated)
+    deleteAccount(accountToDelete)
     setAccountToDelete(null)
-    showToast(`Deleted account "${accountToDelete.name}"`, 'info')
   }
 
   return (
@@ -700,8 +703,9 @@ export function CashLiquidity() {
           onDelete={
             accounts.some((x) => x.id === accountToEdit.id)
               ? () => {
+                  // The edit form's bin already took two taps: delete without a second dialog
                   setIsEditModalOpen(false)
-                  setAccountToDelete(accountToEdit)
+                  deleteAccount(accountToEdit)
                   setAccountToEdit(null)
                 }
               : undefined

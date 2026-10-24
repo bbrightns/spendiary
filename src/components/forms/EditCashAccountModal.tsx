@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Modal } from '../ui/Modal'
-import { Button } from '../ui/Button'
+import { FormActions } from './FormActions'
+import { fieldClass } from '../ui/fieldClasses'
 import type { CashAccount, CashAccountCategory, CashPayoutSchedule } from '../../lib/types'
 import { CASH_CATEGORIES, getCashCategory, inferCashCategory } from '../../lib/calc'
 import { ListIcon } from '../icons'
 import { SwitchVisual } from '../ui/SwitchVisual'
-import { TrashIcon } from '../icons'
 
 const THAI_MONTHS_SHORT = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -49,8 +49,9 @@ interface EditAccountModalProps {
   onShowTxns?: () => void
 }
 
-const labelCls = 'mb-1.5 block text-xs font-bold text-ink-soft'
-const fieldCls = 'h-11 w-full rounded-xl border border-line bg-surface-muted/40 text-base font-semibold text-ink outline-none transition-colors focus:border-brand focus:bg-surface'
+const labelCls = 'mb-1.5 block text-sm font-semibold text-ink-soft'
+/** The shared field look, minus its padding: several fields here hold a prefix or suffix inside the box */
+const fieldCls = fieldClass.replace(' px-3.5', '')
 
 export function EditAccountModal({ open, initialAccount, onClose, onSave, onDelete, onShowTxns }: EditAccountModalProps) {
   const [name, setName] = useState(initialAccount.name)
@@ -81,6 +82,10 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    save()
+  }
+
+  const save = () => {
     if (!name.trim()) return
 
     const balNum = parseSigned(balance)
@@ -110,24 +115,13 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
       title={initialAccount.name ? 'Edit account' : 'Add account'}
       size="md"
       footer={
-        <div className="flex items-center justify-end gap-2 w-full">
-          {onDelete && (
-            <button
-              type="button"
-              onClick={onDelete}
-              className="mr-auto inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-loss transition-colors cursor-pointer hover:bg-loss-soft"
-            >
-              <TrashIcon className="h-4 w-4" />
-              Delete
-            </button>
-          )}
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" form="account-edit-form">
-            Save
-          </Button>
-        </div>
+        <FormActions
+          editing={Boolean(initialAccount.name)}
+          canSave={name.trim() !== ''}
+          onSave={save}
+          onDelete={onDelete}
+          hint="Give the account a name"
+        />
       }
     >
       <form id="account-edit-form" onSubmit={handleSubmit} className="space-y-4 pt-1">
@@ -165,7 +159,7 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
           <label htmlFor="account-balance" className={labelCls}>
             Balance
           </label>
-          <div className={`${fieldCls} flex items-center focus-within:border-brand focus-within:bg-surface focus-within:ring-2 focus-within:ring-brand/15`}>
+          <div className={`${fieldCls} flex items-center focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15`}>
             <span className="pl-3.5 text-base font-bold text-ink-muted">{currency === 'USD' ? '$' : '฿'}</span>
             <input
               id="account-balance"
@@ -250,7 +244,7 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
               <div className="grid grid-cols-2 gap-3">
                 <label className="block">
                   <span className={labelCls}>Rate</span>
-                  <div className={`${fieldCls} flex items-center focus-within:border-brand focus-within:bg-surface`}>
+                  <div className={`${fieldCls} flex items-center focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15`}>
                     <input
                       type="text"
                       inputMode="decimal"
@@ -263,8 +257,9 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
                   </div>
                 </label>
                 <label className="block">
-                  <span className={labelCls}>
-                    Up to <span className="font-normal text-ink-muted">(optional)</span>
+                  <span className="mb-1.5 flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold text-ink-soft">Up to</span>
+                    <span className="text-xs text-ink-muted">optional</span>
                   </span>
                   <input
                     type="text"
