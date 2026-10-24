@@ -1,5 +1,10 @@
 import { localDateStr } from '../../lib/format'
 
+/** Quick picks above the date: compact filter chips (DESIGN.md §6.4) */
+const CHIP = 'rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors cursor-pointer'
+const CHIP_ON = 'bg-primary text-white'
+const CHIP_OFF = 'bg-surface-muted text-ink-soft hover:text-ink'
+
 interface Props {
   value: string
   onChange: (date: string) => void
@@ -33,22 +38,16 @@ export function TransactionDateField({
             <button
               type="button"
               onClick={() => onChange(today)}
-              className={`rounded-md px-2 py-0.5 text-xs transition-colors cursor-pointer ${
-                value === today
-                  ? 'bg-brand text-white font-bold shadow-xs'
-                  : 'bg-surface-muted text-ink-muted hover:bg-surface-muted/80 hover:text-ink font-medium'
-              }`}
+              aria-pressed={value === today}
+              className={`${CHIP} ${value === today ? CHIP_ON : CHIP_OFF}`}
             >
               Today
             </button>
             <button
               type="button"
               onClick={() => onChange(yesterday)}
-              className={`rounded-md px-2 py-0.5 text-xs transition-colors cursor-pointer ${
-                value === yesterday
-                  ? 'bg-brand text-white font-bold shadow-xs'
-                  : 'bg-surface-muted text-ink-muted hover:bg-surface-muted/80 hover:text-ink font-medium'
-              }`}
+              aria-pressed={value === yesterday}
+              className={`${CHIP} ${value === yesterday ? CHIP_ON : CHIP_OFF}`}
             >
               Yesterday
             </button>

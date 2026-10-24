@@ -24,6 +24,7 @@ import {
 import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
 import type { DcaPlan, Holding, SpendRecurring } from '../lib/types'
 import { daysUntil, localDateStr, ordinal, thb } from '../lib/format'
+import { TextLink } from '../components/ui/TextLink'
 
 // ─── Chevron icon ─────────────────────────────────────────────────────────────
 
@@ -910,13 +911,7 @@ export function DcaPlanner() {
                     {totalEstDividendNet > 0 ? `~${thb(totalEstDividendNet)}` : '฿0'}
                   </p>
                 </div>
-                <Link
-                  to="/dividends"
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline cursor-pointer"
-                >
-                  <span>View all</span>
-                  <span aria-hidden="true">→</span>
-                </Link>
+                <TextLink to="/dividends">Dividends →</TextLink>
               </div>
 
               <div className="border-t border-line">
@@ -925,12 +920,9 @@ export function DcaPlanner() {
                     <p className="text-sm text-ink-muted">
                       No holdings scheduled for dividend payout in {MONTH_NAMES[currentMonth - 1]}.
                     </p>
-                    <Link
-                      to="/dividends"
-                      className="mt-1.5 inline-block text-xs font-semibold text-brand hover:underline cursor-pointer"
-                    >
-                      Manage dividends & payouts →
-                    </Link>
+                    <TextLink to="/dividends" className="mt-1.5 inline-block">
+                      Dividends →
+                    </TextLink>
                   </div>
                 ) : (
                   <ul className="divide-y divide-line max-h-[380px] overflow-y-auto">

@@ -304,7 +304,7 @@ export function CashLiquidity() {
                   onClick={() => setActiveCategoryFilter(catKey)}
                   className={`px-3 py-1.5 rounded-full font-medium transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
                     isSelected
-                      ? 'bg-brand text-white shadow-xs font-semibold'
+                      ? 'bg-primary text-white shadow-xs font-semibold'
                       : 'bg-surface-muted text-ink-muted hover:text-ink'
                   }`}
                 >
@@ -401,7 +401,7 @@ export function CashLiquidity() {
                         {a.name || 'Untitled'}
                       </span>
                       {a.currency === 'USD' && (
-                        <span className="text-xs font-bold px-1 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 font-mono shrink-0">
+                        <span className="text-xs font-bold px-1 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 tnum shrink-0">
                           USD
                         </span>
                       )}
@@ -412,7 +412,7 @@ export function CashLiquidity() {
                       {rateNum > 0 && (
                         <>
                           <span className="opacity-40">·</span>
-                          <span className="font-semibold text-emerald-600 dark:text-emerald-400 font-mono shrink-0">
+                          <span className="font-semibold text-emerald-600 dark:text-emerald-400 tnum shrink-0">
                             {rateNum}%
                           </span>
                         </>
@@ -534,7 +534,7 @@ export function CashLiquidity() {
                               {a.name || 'Untitled Account'}
                             </span>
                             {a.currency === 'USD' && a.balance > 0 && rate > 0 && (
-                              <span className="text-xs font-mono text-ink-muted block">
+                              <span className="text-xs tnum text-ink-muted block">
                                 ≈ {thb(a.balance * rate)} (@{rate.toFixed(2)})
                               </span>
                             )}
@@ -562,7 +562,7 @@ export function CashLiquidity() {
                                 </span>
                               )}
                             </div>
-                            <div className="text-xs text-ink-muted font-mono">
+                            <div className="text-xs text-ink-muted tnum">
                               ≈ {yearlyInterest(a.currency, eligibleBal * (rateNum / 100), annualEarned)}/year{' '}
                               <span className="opacity-70 font-sans">
                                 ({a.payoutSchedule === 'monthly' ? 'paid monthly' : a.payoutSchedule === 'semi_annual' ? 'paid twice a year' : 'paid once a year'})
@@ -666,7 +666,7 @@ export function CashLiquidity() {
                             </div>
                             <div className="p-2 rounded-lg bg-surface border border-line/40">
                               <span className="text-ink-muted block text-xs">Estimated interest:</span>
-                              <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-0.5 block">
+                              <span className="font-bold text-emerald-600 dark:text-emerald-400 tnum mt-0.5 block">
                                 {thb(annualEarned)} / year
                               </span>
                             </div>

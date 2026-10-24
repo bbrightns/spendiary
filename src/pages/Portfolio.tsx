@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, type MouseEvent as ReactMouseEvent } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
@@ -48,6 +48,7 @@ import { STORAGE_KEYS } from '../lib/storageKeys'
 import { buildCsv, downloadCsv } from '../lib/csv'
 import { HoldingActionMenu, PocketActionMenu } from './portfolio/HoldingMenus'
 import { PORTFOLIO_CSV_HEADER, isPriceStale, portfolioCsvRows, unitLabel } from './portfolio/portfolioCsv'
+import { TextLink } from '../components/ui/TextLink'
 
 const FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -979,13 +980,7 @@ export function Portfolio() {
 
             <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-xs">
               <span className="text-ink-muted">{data.holdings.length} holding positions</span>
-              <Link
-                to="/rebalance"
-                className="inline-flex items-center gap-1 font-bold text-brand hover:underline cursor-pointer"
-              >
-                <span>Rebalance portfolio</span>
-                <span aria-hidden="true">→</span>
-              </Link>
+              <TextLink to="/rebalance">Rebalance →</TextLink>
             </div>
           </Card>
         </div>
