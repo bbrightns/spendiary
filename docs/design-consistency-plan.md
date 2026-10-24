@@ -17,7 +17,15 @@ Every phase finishes with the same checks:
 
 ---
 
-## Phase 0: Foundations (shared pieces; little visible change)
+## Phase 0: Foundations (shared pieces; little visible change) [done]
+Shipped in `c776ee8`, `41bedca`, `82682c9`, `7a0b07d`, `0df243d` and `94f3469`.
+- 5.2 (guide tour box) and 5.3 (toast "Undo" uses primary) were pulled forward into 0.1.
+- Found and fixed along the way:
+  - `bg-ink text-white` with no dark override turned unreadable in dark (the skip link, plus Retirement, Cash and Settings toggles).
+  - Dashboard "Pay term" hovered to lavender behind white text.
+  - Escape in a picker opened inside a modal could close both.
+- The no-footer modal now clears the iPhone home indicator.
+- Pickers open on the selected option (`data-autofocus`).
 Each later phase uses these, so they go first.
 
 | # | Change | Files |
