@@ -8,6 +8,7 @@ import {
   CreditCard, Database, Download, Ellipsis, FlaskConical, HandCoins, House, Info, Keyboard, Layers, LayoutGrid, List,
   Lock, LockOpen, LogOut, Minus, Pencil, Plus, Receipt, ReceiptText, Scale, Search, Settings, ShoppingBag, Sparkle,
   Sparkles, Table, Tag, Target, Trash2, TreePalm, TrendingUp, TriangleAlert, Undo, Upload, Wallet, X,
+  ArrowDown, ArrowDownToLine, ArrowUp, Banknote, Gift, Hourglass, Landmark, Lightbulb, Package, Star, TrendingDown,
 } from 'lucide-react'
 import { appIcon } from './appIcon'
 
@@ -77,3 +78,18 @@ export const InfoIcon = appIcon(Info, 'InfoIcon')
 export const SparkleIcon = appIcon(Sparkles, 'SparkleIcon')
 /** A single four-point star */
 export const SparklesIcon = appIcon(Sparkle, 'SparklesIcon')
+
+// Activity and money events (these replace emoji in labels: the interface uses icons only)
+export const ArrowUpIcon = appIcon(ArrowUp, 'ArrowUpIcon')
+export const ArrowDownIcon = appIcon(ArrowDown, 'ArrowDownIcon')
+export const ArrivedIcon = appIcon(ArrowDownToLine, 'ArrivedIcon')
+export const MoveIcon = appIcon(ArrowLeftRight, 'MoveIcon')
+export const GiftIcon = appIcon(Gift, 'GiftIcon')
+export const BanknoteIcon = appIcon(Banknote, 'BanknoteIcon')
+export const PackageIcon = appIcon(Package, 'PackageIcon')
+export const LandmarkIcon = appIcon(Landmark, 'LandmarkIcon')
+export const TrendUpIcon = appIcon(TrendingUp, 'TrendUpIcon')
+export const TrendDownIcon = appIcon(TrendingDown, 'TrendDownIcon')
+export const LightbulbIcon = appIcon(Lightbulb, 'LightbulbIcon')
+export const HourglassIcon = appIcon(Hourglass, 'HourglassIcon')
+export const StarIcon = appIcon(Star, 'StarIcon')

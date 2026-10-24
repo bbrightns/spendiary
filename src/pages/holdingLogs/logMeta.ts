@@ -1,10 +1,14 @@
 /** How each activity-log entry is labelled, filtered and described. */
+import type { FC } from 'react'
 import type { AssetClass, HoldingLog } from '../../lib/types'
+import type { IconProps } from '../../components/appIcon'
+import { ArrowDownIcon, ArrowUpIcon, DividendIcon, GiftIcon, MoveIcon, PencilIcon, PlusIcon, TagIcon } from '../../components/icons'
 
 export interface ActionMeta {
   label: string
   style: string
-  icon: string
+  /** Lucide icon for the entry's badge */
+  icon: FC<IconProps>
   isPriceUpdate: boolean
 }
 
@@ -13,7 +17,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
     return {
       label: 'Note',
       style: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20',
-      icon: '✎',
+      icon: PencilIcon,
       isPriceUpdate: false,
     }
   }
@@ -22,7 +26,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
     return {
       label: 'Transfer',
       style: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20',
-      icon: '⇄',
+      icon: MoveIcon,
       isPriceUpdate: false,
     }
   }
@@ -31,7 +35,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
     return {
       label: 'Dividend',
       style: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
-      icon: '💰',
+      icon: DividendIcon,
       isPriceUpdate: false,
     }
   }
@@ -40,7 +44,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
     return {
       label: 'Sold',
       style: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20',
-      icon: '↓',
+      icon: ArrowDownIcon,
       isPriceUpdate: false,
     }
   }
@@ -49,7 +53,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
     return {
       label: 'Received',
       style: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20',
-      icon: '🎁',
+      icon: GiftIcon,
       isPriceUpdate: false,
     }
   }
@@ -58,7 +62,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
     return {
       label: 'Added',
       style: 'bg-gain/10 text-gain',
-      icon: '+',
+      icon: PlusIcon,
       isPriceUpdate: false,
     }
   }
@@ -74,7 +78,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
     return {
       label: 'Added',
       style: 'bg-gain/10 text-gain',
-      icon: '+',
+      icon: PlusIcon,
       isPriceUpdate: false,
     }
   }
@@ -83,7 +87,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
     return {
       label: log.dcaPlanId ? 'DCA Buy' : 'Bought more',
       style: 'bg-brand/10 text-brand',
-      icon: '↑',
+      icon: ArrowUpIcon,
       isPriceUpdate: false,
     }
   }
@@ -111,7 +115,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
       return {
         label: tickerChanged ? 'Ticker Updated' : 'Renamed',
         style: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
-        icon: '🏷️',
+        icon: TagIcon,
         isPriceUpdate: false,
       }
     }
@@ -121,7 +125,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
       return {
         label: isFund ? 'NAV Updated' : 'Price Updated',
         style: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20',
-        icon: '🏷️',
+        icon: TagIcon,
         isPriceUpdate: true,
       }
     }
@@ -131,7 +135,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
     return {
       label: 'Renamed',
       style: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
-      icon: '🏷️',
+      icon: TagIcon,
       isPriceUpdate: false,
     }
   }
@@ -140,7 +144,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
     return {
       label: log.assetClass === 'fund' ? 'NAV Updated' : 'Price Updated',
       style: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20',
-      icon: '🏷️',
+      icon: TagIcon,
       isPriceUpdate: true,
     }
   }
@@ -148,7 +152,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
   return {
     label: 'Edited',
     style: 'bg-surface-muted text-ink-muted',
-    icon: '✎',
+    icon: PencilIcon,
     isPriceUpdate: false,
   }
 }

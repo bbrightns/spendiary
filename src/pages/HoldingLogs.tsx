@@ -841,7 +841,7 @@ export function HoldingLogs() {
                                 background: `color-mix(in srgb, ${ASSET_META[log.assetClass]?.color ?? '#6366f1'} 14%, transparent)`,
                               }}
                             >
-                              {actionMeta.icon}
+                              <actionMeta.icon className="h-4 w-4" />
                             </span>
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -983,7 +983,7 @@ export function HoldingLogs() {
                         background: `color-mix(in srgb, ${ASSET_META[undoTarget.assetClass]?.color ?? '#6366f1'} 14%, transparent)`,
                       }}
                     >
-                      {undoMeta.icon}
+                      <undoMeta.icon className="h-4 w-4" />
                     </span>
                     <span className="font-bold text-sm text-ink truncate">{undoTarget.holdingName}</span>
                     {undoTarget.ticker && undoTarget.ticker !== 'CASH' && undoTarget.ticker !== 'FIXED' && undoTarget.ticker !== 'DCA' && (
@@ -1044,7 +1044,7 @@ export function HoldingLogs() {
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-base font-bold text-ink"
                   aria-hidden
                 >
-                  {meta.icon}
+                  <meta.icon className="h-4 w-4" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
