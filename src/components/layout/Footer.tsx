@@ -2,10 +2,9 @@ import { useState } from 'react'
 
 interface FooterProps {
   className?: string
-  lightOnly?: boolean
 }
 
-export function Footer({ className = '', lightOnly = false }: FooterProps) {
+export function Footer({ className = '' }: FooterProps) {
   const [copied, setCopied] = useState(false)
 
   const handleCopyBuild = () => {
@@ -14,16 +13,14 @@ export function Footer({ className = '', lightOnly = false }: FooterProps) {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const borderClass = lightOnly ? 'border-landing-line' : 'border-line/60'
-  const buttonClass = lightOnly
-    ? 'border-landing-line-strong bg-landing-surface hover:bg-landing-canvas text-landing-ink-soft hover:text-landing-ink'
-    : 'border-line/80 bg-surface/80 dark:bg-surface-muted/60 backdrop-blur-md text-ink-muted hover:border-line hover:bg-surface-muted hover:text-ink'
-  const textClass = lightOnly ? 'text-landing-ink-muted' : 'text-ink-muted'
-  const buildTextClass = lightOnly ? 'text-landing-ink-muted' : 'text-ink-muted'
-  const dotClass = lightOnly ? 'text-landing-ink-faint' : 'text-ink-muted/40'
+  const buttonClass =
+    'border-line/80 bg-surface/80 dark:bg-surface-muted/60 backdrop-blur-md text-ink-muted hover:border-line hover:bg-surface-muted hover:text-ink'
+  const textClass = 'text-ink-muted'
+  const buildTextClass = 'text-ink-muted'
+  const dotClass = 'text-ink-muted/40'
 
   return (
-    <footer className={`w-full mt-10 pt-8 pb-10 border-t ${borderClass} select-none ${className}`}>
+    <footer className={`w-full mt-10 pt-8 pb-10 border-t border-line/60 select-none ${className}`}>
       <div className="flex flex-col items-start gap-3.5">
         {/* Version Control Capsule */}
         <button

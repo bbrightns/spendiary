@@ -83,17 +83,22 @@
   --color-cash: #10b981;
   --color-debt: #f43f5e;
 
-  /* Landing Page (Fastwork theme) tokens */
-  --color-landing-canvas: #faf6f4;
+  /* Landing page: light only, so these copy the light tokens and are never overridden by .dark */
+  --color-landing-canvas: #faf9f5;
   --color-landing-surface: #ffffff;
-  --color-landing-surface-soft: rgba(255, 255, 255, 0.85);
-  --color-landing-surface-glass: rgba(255, 255, 255, 0.95);
-  --color-landing-ink: #020617;
+  --color-landing-surface-muted: #f4f6fa;
+  --color-landing-ink: #090d16;
+  --color-landing-ink-hover: #1a202c;
   --color-landing-ink-soft: #334155;
-  --color-landing-ink-muted: #64748b;
-  --color-landing-ink-faint: #94a3b8;
-  --color-landing-line: rgba(226, 232, 240, 0.8);
-  --color-landing-line-strong: rgba(226, 232, 240, 0.9);
+  --color-landing-ink-muted: #555b6a;
+  --color-landing-ink-faint: #6b7280;
+  --color-landing-line: #eaedf3;
+  --color-landing-line-strong: #dbe2ec;
+  --color-landing-brand: #0066ff;
+  --color-landing-link: #005ce8;
+  --color-landing-loss-ink: #be123c;
+  --color-landing-loss-soft: #fff1f2;
+  --shadow-landing-soft: 0 1px 3px rgba(15, 23, 42, 0.03), 0 10px 30px -10px rgba(15, 23, 42, 0.07);
 
   --radius-card: 1.5rem;
 
@@ -179,7 +184,7 @@
   html {
     -webkit-text-size-adjust: 100%;
     /* Painted behind the system nav/gesture bar on Android PWAs (edge-to-edge) */
-    background-color: #faf6f4;
+    background-color: #faf9f5;
     color-scheme: light;
   }
 

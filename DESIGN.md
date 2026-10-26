@@ -148,7 +148,7 @@ components:
 - **Asset accents** (`--color-funds`, `-stocks`, `-crypto`, `-gold`, `-real-estate`, `-cash`, `-debt`) are for chart segments, legend dots and asset icon tiles only. They are never text colour, button colour or a section fill.
 
 ### What not to use
-- No raw Tailwind palette colours (`emerald-600`, `rose-500`, `amber-400`, …) in components. The only exceptions are `tones.ts` (which holds every pastel set, so Tailwind can see the full class names), the test-mode banner and sidebar TEST badge (bright amber in both themes on purpose), the landing page and `AssetLogo`. `npm run lint:design` enforces this.
+- No raw Tailwind palette colours (`emerald-600`, `rose-500`, `amber-400`, …) in components. The only exceptions are `tones.ts` (which holds every pastel set, so Tailwind can see the full class names), the test-mode banner and sidebar TEST badge (bright amber in both themes on purpose), and `AssetLogo`. The landing page uses its own `landing-*` tokens (section 10). `npm run lint:design` enforces this.
 - No hex values in `className`. If a colour is missing, add a token in `src/index.css`. The only exception is third-party brand marks: bank and fund logos in `AssetLogo`, and social glyphs.
 - Solid action fills use `bg-primary hover:bg-primary-hover text-white`, never `bg-ink`. `ink` flips to near-white in dark, so `bg-ink text-white` turns unreadable.
 
@@ -346,12 +346,10 @@ Dark mode is supported, but it comes second. It must work without component-leve
 - Use gradient text or coloured side stripes on cards.
 
 ## 10. Sign-in and landing page
-The signed-out page has its own light look, inspired by Fastwork, using the `landing-*` tokens:
-- **Canvas:** `#faf6f4` with a warm amber (top left) and lavender rose (bottom right) ambient gradient.
-- **Logo:** a blue `#0066FF` squircle with a white glyph.
-- **Headline highlight:** blue in both themes. The landing page does not switch to dark.
-- **Sign-in card:** `bg-white/95 backdrop-blur-xl`, `rounded-[24px]`, a hairline slate border and a soft shadow.
-- **Buttons:**
-  - Google sign-in is a white pill with a hairline border.
-  - Demo / offline mode is a quiet secondary button.
-- **Benefit cards:** translucent white, `rounded-[20px]`, with a 44px gradient icon badge.
+The signed-out page (`src/app/Landing.tsx`, with `EmailCodeSignIn.tsx`) is invite-only, written in Thai, and **light only**. It uses the `landing-*` tokens: the same values as the light app tokens, but never overridden by `.dark`, so a visitor whose saved theme is dark still sees it light. The plan behind it is `docs/landing-redesign-plan.md`.
+- **Canvas:** flat `landing-canvas`. No gradient, no glow.
+- **Layout:** the heading and description on the left, the sign-in card on the right (lg and up). On phones the card comes straight after the description and must sit above the fold at 375×812.
+- **Sign-in card:** `landing-surface`, a hairline `landing-line` border, `--shadow-landing-soft`, `--radius-card`.
+- **Buttons:** pills. Google sign-in is the one dark pill (`landing-ink`); Demo is a secondary pill with a `landing-line-strong` border. Links are `landing-link`.
+- **Product, not claims:** real screenshots from demo mode (`public/landing/`, retaken with `npm run landing` in `promo/`), then three plain-text lines on what Spend, Invest and data storage cover. No feature cards, badges, stats or decorative motion. Every sentence must be true of the app.
+- **Thai text:** the page sets `lang="th"`. Wrap loanwords and short phrases that the browser would split (คริปโต, ยังไง) in `keep()`.
