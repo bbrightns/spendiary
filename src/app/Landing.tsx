@@ -11,14 +11,14 @@ const SIDES = [
     chip: 'bg-landing-mint text-landing-mint-ink',
     label: 'Income & expenses',
     title: 'Know where your money goes',
-    body: 'Log expenses, manage credit cards and bills, plan budgets and keep track of debts.',
+    body: 'Log expenses, keep up with cards and bills, set budgets and track debts.',
   },
   {
     icon: <TrendUpIcon className="h-3.5 w-3.5" />,
     chip: 'bg-landing-sky text-landing-sky-ink',
     label: 'Investing',
     title: 'See all your investments in one place',
-    body: 'Track US stocks, funds and crypto, plan monthly investing (DCA), check dividends and plan for retirement.',
+    body: 'Follow US stocks, funds and crypto, plan monthly DCA, and track dividends and retirement.',
   },
 ]
 
@@ -43,22 +43,21 @@ export function Landing() {
         <main className="flex flex-1 flex-col items-center pb-16 pt-2 sm:pt-6 text-center">
           <span className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs sm:text-sm font-medium text-landing-ink-soft ${glass}`}>
             <SparkleIcon className="h-4 w-4 text-landing-brand" />
-            Spending · Investing · Retirement planning
+            Personal finance in Thai baht
           </span>
 
-          <h1 className="mt-6 font-display text-4xl sm:text-6xl font-extrabold leading-[1.1] tracking-tight text-balance">
-            Manage spending, plan investing.
-            <span className="mt-1 block text-landing-brand">All in one app.</span>
+          {/* No punctuation: Plus Jakarta's comma and period are very wide at this weight and read as stray spaces */}
+          <h1 className="mt-6 max-w-3xl font-display text-4xl sm:text-6xl font-extrabold leading-[1.1] tracking-tight text-balance">
+            Manage spending and plan investing
+            <span className="mt-1 block text-landing-brand">all in one app</span>
           </h1>
 
-          <p className="mt-5 max-w-2xl text-base sm:text-lg leading-relaxed text-landing-ink-muted text-pretty">
-            Track your spending, see when card and bill payments are due, and follow your stocks, funds and crypto in
-            one place, with every amount converted to Thai baht at the latest exchange rate.
+          <p className="mt-5 max-w-xl text-base sm:text-lg leading-relaxed text-landing-ink-muted text-pretty">
+            See where your money goes and when cards and bills are due. Follow your stocks, funds and crypto in the same place.
           </p>
 
-          <div className={`mt-9 w-full max-w-md rounded-[28px] p-6 sm:p-8 ${glass}`}>
+          <div className={`mt-10 w-full max-w-md rounded-[28px] p-6 sm:p-8 ${glass}`}>
             <h2 className="font-display text-2xl font-extrabold tracking-tight">Sign in</h2>
-            <p className="mt-1 text-sm text-landing-ink-muted">Welcome to Spendiary</p>
 
             {authError && (
               <p role="alert" className="mt-4 rounded-2xl bg-landing-loss-soft p-3 text-sm text-landing-loss-ink">
@@ -82,7 +81,7 @@ export function Landing() {
 
             <EmailCodeSignIn />
 
-            <div className="my-4 flex items-center gap-3">
+            <div className="my-5 flex items-center gap-3">
               <span className="h-px flex-1 bg-landing-line-strong" />
               <span className="text-xs uppercase tracking-wider text-landing-ink-faint">or</span>
               <span className="h-px flex-1 bg-landing-line-strong" />
@@ -96,19 +95,18 @@ export function Landing() {
               <FlaskIcon className="h-4 w-4" />
               Try the demo
             </button>
-            <p className="mt-3 text-xs leading-relaxed text-landing-ink-muted">
-              Don't have an account? Try it right away. No sign-up needed, and nothing is saved.
-            </p>
+            <p className="mt-3 text-xs text-landing-ink-muted">No account? Try the demo. Nothing is saved.</p>
 
-            <div className="mt-5 border-t border-landing-line pt-4 text-xs text-landing-ink-muted">
-              <p className="flex items-center justify-center gap-1.5">
+            {/* Two whole pieces that wrap as units on narrow phones, so nothing is left hanging */}
+            <p className="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 border-t border-landing-line pt-5 text-xs text-landing-ink-muted">
+              <span className="inline-flex items-center gap-1.5">
                 <LockClosedIcon className="h-3.5 w-3.5 shrink-0 text-landing-mint-ink" />
-                Stored on Supabase. Each account can only access its own data.
-              </p>
-              <Link to="/privacy" className="mt-1 inline-block font-semibold text-landing-link hover:underline">
+                Each account sees only its own data
+              </span>
+              <Link to="/privacy" className="font-semibold text-landing-link hover:underline">
                 Privacy policy
               </Link>
-            </div>
+            </p>
           </div>
 
           {/* Real screens from demo mode (promo/landing-shots.mjs). Desktop: the wide screen with the phone over its corner.
@@ -142,8 +140,8 @@ export function Landing() {
                   {s.icon}
                   {s.label}
                 </span>
-                <h3 className="mt-3 font-display text-xl sm:text-2xl font-extrabold tracking-tight">{s.title}</h3>
-                <p className="mt-2 text-sm sm:text-base leading-relaxed text-landing-ink-muted">{s.body}</p>
+                <h3 className="mt-3 font-display text-xl sm:text-2xl font-extrabold tracking-tight text-balance">{s.title}</h3>
+                <p className="mt-2 text-sm sm:text-base leading-relaxed text-landing-ink-muted text-pretty">{s.body}</p>
               </div>
             ))}
           </section>

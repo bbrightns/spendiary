@@ -104,7 +104,7 @@ export function EmailCodeSignIn() {
           className={inputClass}
         />
         <p className="text-xs text-landing-ink-muted">
-          We'll email you a {CODE_LENGTH}-digit code. Open it on any device, such as your phone, and type the code here.
+          We'll email you a {CODE_LENGTH}-digit code to enter here.
         </p>
         <button type="submit" disabled={busy || !email.trim()} className={submitClass}>
           {busy ? 'Sending…' : 'Send code'}
@@ -203,7 +203,7 @@ export function EmailCodeSignIn() {
         <div>
           <p className="text-sm font-semibold text-landing-ink">Security tip</p>
           <p className="mt-0.5 text-xs sm:text-sm text-landing-ink-soft leading-relaxed">
-            Never share this code with anyone. Spendiary will never ask you for it.
+            Never share this code. Spendiary will never ask for it.
           </p>
         </div>
       </div>
