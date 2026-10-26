@@ -3,6 +3,7 @@ import { Modal } from '../../components/ui/Modal'
 import { SegmentedControl } from '../../components/ui/SegmentedControl'
 import { FormActions } from '../../components/forms/FormActions'
 import { useToast } from '../../store/ToastContext'
+import { Button } from '../../components/ui/Button'
 import { PencilIcon, SearchIcon } from '../../components/icons'
 import { CATEGORY_ICON_GROUPS, pickableCategoryIcons } from '../../components/categoryIcons'
 import { CATEGORY_ICONS, CATEGORY_TONES, SPEND_CATEGORIES, categoriesFor, manageableCategories, pickerTone, type SpendCategory } from './categories'
@@ -237,10 +238,11 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
 /** Every expense or income category, tap to edit, plus one to add and a way to arrange them; for the settings page. */
 export function CategoryManager() {
   const { settings, updateSettings, setCategoryHidden } = useSpend()
-  const { showToast } = useToast()
+  const { showToast, toasts, dismissToast } = useToast()
   const [type, setType] = useState<CatType>('expense')
   const [sheet, setSheet] = useState<{ open: boolean; category?: SpendCategory }>({ open: false })
   const [arranging, setArranging] = useState(false)
+  const [showDeleted, setShowDeleted] = useState(false)
   // A deleted category is only hidden inside (past transactions keep its name); here it just leaves the list
   const list = manageableCategories(type)
   const tiles = list.filter((c) => !c.hidden)
@@ -284,14 +286,61 @@ export function CategoryManager() {
         <button
           type="button"
           onClick={() => {
-            deleted.forEach((c) => setCategoryHidden(c.id, false))
-            showToast(deleted.length === 1 ? `${deleted[0].label} is back` : `${deleted.length} categories are back`)
+            // Toasts sit above sheets on phones and would cover the list; its Restore buttons do what their Undo did
+            toasts.forEach((t) => dismissToast(t.id))
+            setShowDeleted(true)
           }}
           className="text-sm font-semibold text-link hover:underline cursor-pointer"
         >
-          Restore deleted ({deleted.length})
+          Deleted categories ({deleted.length})
         </button>
       )}
+      {/* See what was deleted before bringing any back */}
+      <Modal
+        open={showDeleted && deleted.length > 0}
+        onClose={() => setShowDeleted(false)}
+        title="Deleted categories"
+        description="Past transactions keep these names. Restore the ones you want back."
+        size="sm"
+        enterToSubmit={false}
+        footer={
+          deleted.length > 1 ? (
+            <Button
+              className="w-full"
+              onClick={() => {
+                deleted.forEach((c) => setCategoryHidden(c.id, false))
+                setShowDeleted(false)
+                showToast(`${deleted.length} categories restored`)
+              }}
+            >
+              Restore all
+            </Button>
+          ) : undefined
+        }
+      >
+        <ul className="space-y-2">
+          {deleted.map((c) => (
+            <li key={c.id} className="flex items-center gap-3 rounded-xl border border-line px-3 py-2.5">
+              <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${TONES[c.tone].chip}`}>
+                <c.icon className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{c.label}</span>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setCategoryHidden(c.id, false)
+                  // Restoring the last one closes the list, so a later delete doesn't reopen it
+                  if (deleted.length === 1) setShowDeleted(false)
+                  showToast(`Restored ${c.label}`)
+                }}
+              >
+                Restore
+              </Button>
+            </li>
+          ))}
+        </ul>
+      </Modal>
       <CategorySheet open={sheet.open} category={sheet.category} type={type} onClose={() => setSheet({ open: false })} />
       <ReorderSheet
         open={arranging}

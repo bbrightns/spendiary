@@ -526,7 +526,7 @@ export function CommandPalette() {
         list.push({
           id: `cat-${c.id}`,
           title: c.label,
-          subtitle: `${type === 'income' ? 'Income' : 'Expense'} category${c.hidden ? ' · hidden' : ''}`,
+          subtitle: `${type === 'income' ? 'Income' : 'Expense'} category${c.hidden ? ' · deleted' : ''}`,
           keywords: [...c.keywords, 'category', 'หมวด'],
           group: 'Categories',
           spend: true,
