@@ -91,6 +91,111 @@ function SpendSettingsRedirect() {
   return <Navigate to={settingsPath(hash || 'spend')} replace />
 }
 
+/** Sign-in for computers that can't reach Google: the code goes to the account's email, is read on
+ *  any device (a phone) and typed here, so this browser gets the session. Same email → same account. */
+function EmailCodeSignIn() {
+  const { sendEmailCode, verifyEmailCode } = useData()
+  const [open, setOpen] = useState(false)
+  const [email, setEmail] = useState('')
+  const [sentTo, setSentTo] = useState<string | null>(null)
+  const [code, setCode] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const send = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const address = email.trim().toLowerCase()
+    if (!address || busy) return
+    setBusy(true)
+    if (await sendEmailCode(address)) {
+      setSentTo(address)
+      setCode('')
+    }
+    setBusy(false)
+  }
+
+  const verify = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!sentTo || code.length < 6 || busy) return
+    setBusy(true)
+    // On success the auth listener signs in and this screen goes away
+    if (!(await verifyEmailCode(sentTo, code))) setBusy(false)
+  }
+
+  const inputClass =
+    'h-11 w-full rounded-xl border border-slate-300 bg-landing-surface px-3.5 text-base text-landing-ink outline-none transition-colors placeholder:text-landing-ink-faint focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15'
+  const submitClass =
+    'w-full h-11 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl sm:rounded-2xl font-semibold text-sm transition-colors cursor-pointer'
+  const linkClass = 'text-xs sm:text-sm font-semibold text-blue-700 hover:text-blue-800 hover:underline cursor-pointer'
+
+  if (!open) {
+    return (
+      <div className="mt-2.5 text-center">
+        <button type="button" onClick={() => setOpen(true)} className={linkClass}>
+          Can't open Google? Sign in with an email code
+        </button>
+      </div>
+    )
+  }
+
+  if (!sentTo) {
+    return (
+      <form onSubmit={send} className="mt-4 space-y-2.5">
+        <label htmlFor="signin-email" className="block text-sm font-semibold text-landing-ink-soft">
+          Email of your Spendiary account
+        </label>
+        <input
+          id="signin-email"
+          type="email"
+          autoComplete="email"
+          required
+          placeholder="you@gmail.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={inputClass}
+        />
+        <p className="text-xs text-landing-ink-muted">
+          We'll email a sign-in code. Open the email on any device, such as your phone, and type the code here.
+        </p>
+        <button type="submit" disabled={busy || !email.trim()} className={submitClass}>
+          {busy ? 'Sending…' : 'Send code'}
+        </button>
+      </form>
+    )
+  }
+
+  return (
+    <form onSubmit={verify} className="mt-4 space-y-2.5">
+      <label htmlFor="signin-code" className="block text-sm font-semibold text-landing-ink-soft">
+        Code sent to <span className="text-landing-ink break-all">{sentTo}</span>
+      </label>
+      <input
+        id="signin-code"
+        type="text"
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        maxLength={10}
+        required
+        autoFocus
+        placeholder="Code from the email"
+        value={code}
+        onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+        className={`${inputClass} tracking-[0.2em] text-center font-semibold placeholder:tracking-normal placeholder:font-normal`}
+      />
+      <button type="submit" disabled={busy || code.length < 6} className={submitClass}>
+        {busy ? 'Signing in…' : 'Sign in'}
+      </button>
+      <div className="flex items-center justify-between gap-3 pt-0.5">
+        <button type="button" onClick={() => setSentTo(null)} className={linkClass}>
+          Use another email
+        </button>
+        <button type="button" disabled={busy} onClick={send} className={linkClass}>
+          Send a new code
+        </button>
+      </div>
+    </form>
+  )
+}
+
 // 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
 function AppContent() {
   const { user, loginWithGoogle, loginAsTestMode, authError, dataReady, loadError, syncConflict, retryLoad } = useData()
@@ -209,6 +314,8 @@ function AppContent() {
               </svg>
               <span>Continue with Google</span>
             </button>
+
+            <EmailCodeSignIn />
 
             {/* Divider */}
             <div className="flex items-center gap-3 my-3 sm:my-3.5">
