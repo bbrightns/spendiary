@@ -101,14 +101,12 @@ export function Landing() {
 
   return (
     <div className="landing-canvas-bg landing-text min-h-dvh font-sans text-landing-ink">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8 sm:py-6">
+      {/* Logo only: the hero's sign-in pills sit right below, so a header button would only repeat them */}
+      <header className="mx-auto flex max-w-6xl items-center px-5 py-5 sm:px-8 sm:py-6">
         <div className="flex items-center gap-2.5">
           <img src="/logo.png" alt="" width={36} height={36} className="h-8 w-8 object-contain" />
           <span className={`text-xl sm:text-2xl ${display}`}>spendiary</span>
         </div>
-        <button type="button" onClick={loginAsTestMode} className={`${pill} h-10 bg-landing-ink px-5 text-white hover:bg-landing-ink-hover`}>
-          Try the demo
-        </button>
       </header>
 
       <main>
@@ -150,7 +148,7 @@ export function Landing() {
           <div className="mx-auto max-w-sm">
             <EmailCodeSignIn />
           </div>
-          <p className="mt-3 text-xs text-landing-ink-faint">No account? Try the demo. Nothing is saved.</p>
+          <p className="mt-3 text-xs text-landing-ink-faint">The demo needs no account. Nothing is saved.</p>
 
           {/* Real screens from demo mode; hidden lazy images never load, so each size fetches only its own */}
           <div className="landing-reveal relative mx-auto mt-14 hidden max-w-4xl md:block">
