@@ -161,15 +161,14 @@ export function Landing() {
               <img src="/landing/portfolio-mobile.webp" width={780} height={1688} alt="Portfolio in demo mode" loading="lazy" className="h-auto w-full rounded-[24px]" />
             </div>
           </div>
-          <div className="landing-reveal mx-auto mt-12 grid max-w-md grid-cols-2 gap-3 md:hidden">
-            {[
-              ['/landing/spend-mobile.webp', 'Spending home in demo mode'],
-              ['/landing/portfolio-mobile.webp', 'Portfolio in demo mode'],
-            ].map(([src, alt]) => (
-              <div key={src} className="rounded-[24px] border border-landing-line bg-landing-surface p-1.5 shadow-[var(--shadow-landing-soft)]">
-                <img src={src} width={780} height={1688} alt={alt} loading="lazy" className="h-auto w-full rounded-[18px]" />
-              </div>
-            ))}
+          {/* Phones: the same layering as desktop, at phone scale. Spend in front, Portfolio behind it to the right */}
+          <div className="landing-reveal relative mx-auto mt-12 max-w-sm md:hidden">
+            <div className="relative z-10 w-[64%] rounded-[26px] border border-landing-line bg-landing-surface p-1.5 shadow-[var(--shadow-landing-soft)]">
+              <img src="/landing/spend-mobile.webp" width={780} height={1688} alt="Spending home in demo mode" loading="lazy" className="h-auto w-full rounded-[20px]" />
+            </div>
+            <div className="absolute right-0 top-10 w-[54%] rounded-[24px] border border-landing-line bg-landing-surface p-1.5 shadow-[var(--shadow-landing-soft)]">
+              <img src="/landing/portfolio-mobile.webp" width={780} height={1688} alt="Portfolio in demo mode" loading="lazy" className="h-auto w-full rounded-[18px]" />
+            </div>
           </div>
         </section>
 
