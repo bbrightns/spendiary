@@ -32,7 +32,7 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
       <ul className="list-disc space-y-2 pl-5">
         <li>You.</li>
         <li>
-          The admin (the person who invited you), who has access to the Supabase dashboard and so can technically see every
+          The admin of this Spendiary site, who has access to the Supabase dashboard and so can technically see every
           account's data. We say this up front so you can decide what to record.
         </li>
       </ul>
@@ -68,7 +68,7 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
   },
   {
     title: 'Contact',
-    body: <p>Questions? Contact the admin, the person who invited you.</p>,
+    body: <p>Questions about your data? Contact the admin of this Spendiary site.</p>,
   },
 ]
 
@@ -90,7 +90,7 @@ export function Privacy() {
         <main className="flex-1 pb-16 pt-4 sm:pt-8">
           <h1 className="font-display text-4xl sm:text-6xl font-extrabold leading-[1.05] tracking-tight">Privacy policy</h1>
           <p className="mt-4 text-base sm:text-lg leading-relaxed text-landing-ink-muted">
-            Spendiary is invite-only. This page explains what we store, where it is stored and who can see it.
+            This page explains what Spendiary stores, where it is stored and who can see it.
           </p>
           <p className="mt-2 text-sm text-landing-ink-faint">Last updated 26 October 2026</p>
 

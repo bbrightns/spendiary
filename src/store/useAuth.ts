@@ -24,7 +24,7 @@ export function useAuth() {
       }
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) signIn(session.user)
-      // A sign-in redirect that came back with an error (cancelled at Google, or an address nobody invited)
+      // A sign-in redirect that came back with an error (e.g. cancelled at Google)
       else if (error) setAuthError(authErrorText(error))
     })
 
@@ -58,7 +58,7 @@ export function useAuth() {
   // For computers that can't reach Google: the code is read on another device (phone) and typed here,
   // so the session lands on this browser. A link in the email would sign in whichever device opened it.
   // Same address as the Google account → Supabase signs in the same user, so the data is the same.
-  /** Emails a one-time code. Invited (existing) accounts only: an unknown address gets an error, not a new empty account. */
+  /** Emails a one-time code. Existing accounts only (Google creates them): an unknown address gets an error, not a new empty account. */
   const sendEmailCode = async (email: string): Promise<boolean> => {
     setAuthError(null)
     if (!supabaseConfigured()) return false

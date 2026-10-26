@@ -6,16 +6,17 @@ export interface AuthErrorLike {
   name?: string
 }
 
-/** What a visitor who isn't invited sees, from Google or from the email code */
-export const NOT_INVITED = "This email hasn't been invited yet. Ask the person who sent you this link for an invite, or try the demo first."
+/** Email code for an address with no account: codes only sign in existing accounts (shouldCreateUser: false) */
+export const NO_ACCOUNT = 'No account uses this email yet. Continue with Google once to create it, then you can sign in with an email code.'
+/** Only if sign-ups are ever switched off in Supabase (Authentication → Allow new users to sign up) */
+export const SIGNUPS_CLOSED = 'New sign-ups are closed right now. You can still try the demo.'
 
 /** Supabase's auth errors in plain words, saying what to do next. Unknown errors keep Supabase's own text for support. */
 export function authErrorText(error: AuthErrorLike): string {
   const { code, status, name, message } = error
-  // Sign-ups are off (invite-only), so an address with no account is an address nobody invited
-  if (code === 'signup_disabled' || code === 'otp_disabled' || code === 'user_not_found' || /signups? not allowed/i.test(message)) {
-    return NOT_INVITED
-  }
+  // The email-code path never creates accounts, so an unknown address comes back as "signups not allowed for otp"
+  if (code === 'otp_disabled' || code === 'user_not_found' || /signups? not allowed for otp/i.test(message)) return NO_ACCOUNT
+  if (code === 'signup_disabled' || /signups? not allowed/i.test(message)) return SIGNUPS_CLOSED
   if (code === 'otp_expired') return 'That code is wrong or has expired. Check the latest email, or send a new code.'
   if (status === 429 || code === 'over_email_send_rate_limit' || code === 'over_request_rate_limit') {
     return 'Too many codes requested. Wait a moment and try again, or use the last code you received.'
