@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Modal } from '../../components/ui/Modal'
 import { SegmentedControl } from '../../components/ui/SegmentedControl'
 import { FormActions } from '../../components/forms/FormActions'
@@ -263,8 +263,20 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
 
 /** Every expense or income category, tap to edit, plus one to add and a way to arrange them; for the settings page. */
 export function CategoryManager() {
-  const { settings, updateSettings, setCategoryHidden } = useSpend()
+  const { settings, updateSettings, setCategoryHidden, transactions, recurring } = useSpend()
   const { showToast, toasts, dismissToast } = useToast()
+  // How many transactions use each category, and which ones a recurring item still logs into
+  const usage = useMemo(() => {
+    const txns = new Map<string, number>()
+    for (const t of transactions) if (t.categoryId) txns.set(t.categoryId, (txns.get(t.categoryId) ?? 0) + 1)
+    return { txns, recurring: new Set(recurring.filter((r) => !r.paused).map((r) => r.categoryId)) }
+  }, [transactions, recurring])
+  const usageLabel = (id: string) => {
+    const n = usage.txns.get(id) ?? 0
+    // Short enough to fit a tile on a phone
+    if (n) return `${n} txn${n === 1 ? '' : 's'}`
+    return usage.recurring.has(id) ? 'Recurring' : 'Not used'
+  }
   const [type, setType] = useState<CatType>('expense')
   const [sheet, setSheet] = useState<{ open: boolean; category?: SpendCategory }>({ open: false })
   const [arranging, setArranging] = useState(false)
@@ -295,7 +307,10 @@ export function CategoryManager() {
             <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${TONES[c.tone].chip}`}>
               <c.icon className="h-4 w-4" />
             </span>
-            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{c.label}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold text-ink">{c.label}</span>
+              <span className="block truncate text-xs text-ink-muted tnum">{usageLabel(c.id)}</span>
+            </span>
             {/* Phones have no room beside the name; the line above the list says to tap */}
             <PencilIcon className="hidden h-3.5 w-3.5 shrink-0 text-ink-faint group-hover:text-ink-soft sm:block" />
           </button>
