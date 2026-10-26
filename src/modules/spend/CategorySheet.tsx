@@ -1,11 +1,9 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Modal } from '../../components/ui/Modal'
 import { SegmentedControl } from '../../components/ui/SegmentedControl'
 import { FormActions } from '../../components/forms/FormActions'
 import { useToast } from '../../store/ToastContext'
-import { DotsHorizontalIcon, PencilIcon, SearchIcon, TrashIcon, UndoIcon } from '../../components/icons'
-import { ConfirmModal } from '../../components/ui/ConfirmModal'
-import { Popover, PopoverOption } from '../../components/ui/Popover'
+import { PencilIcon, SearchIcon } from '../../components/icons'
 import { CATEGORY_ICON_GROUPS, pickableCategoryIcons } from '../../components/categoryIcons'
 import { CATEGORY_ICONS, CATEGORY_TONES, SPEND_CATEGORIES, categoriesFor, manageableCategories, pickerTone, type SpendCategory } from './categories'
 import { moveId } from './logic'
@@ -255,18 +253,13 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
 
 /** Every expense or income category, tap to edit, plus one to add and a way to arrange them; for the settings page. */
 export function CategoryManager() {
-  const { settings, updateSettings, transactions, recurring, setCategoryHidden } = useSpend()
-  const { showToast } = useToast()
-  const remove = useRemoveCategory()
+  const { settings, updateSettings } = useSpend()
   const [type, setType] = useState<CatType>('expense')
   const [sheet, setSheet] = useState<{ open: boolean; category?: SpendCategory }>({ open: false })
-  // The ⋯ menu of one tile, and the delete it may ask to confirm
-  const menuAnchor = useRef<HTMLElement | null>(null)
-  const [menu, setMenu] = useState<SpendCategory | null>(null)
-  const [confirming, setConfirming] = useState<SpendCategory | null>(null)
-  // A built-in, or one past transactions or recurring items use, is hidden rather than deleted
-  const hidesOnly = (c: SpendCategory) => !c.custom || transactions.some((t) => t.categoryId === c.id) || recurring.some((r) => r.categoryId === c.id)
   const [arranging, setArranging] = useState(false)
+  // Hidden (deleted) ones sink to the end, so a delete visibly takes the category out of the way
+  const list = manageableCategories(type)
+  const tiles = [...list.filter((c) => !c.hidden), ...list.filter((c) => c.hidden)]
   // Same list the Quick add picker arranges: shown categories, "Other" pinned last
   const arrangeable = categoriesFor(type).filter((c) => !KEEP_CATEGORY.has(c.id))
   return (
@@ -277,37 +270,25 @@ export function CategoryManager() {
         </div>
         {arrangeable.length > 1 && <ArrangeButton label={type === 'income' ? 'Arrange income categories' : 'Arrange categories'} onClick={() => setArranging(true)} />}
       </div>
-      {/* One per row on phones, so the ⋯ button never squeezes the name */}
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        {manageableCategories(type).map((c) => (
-          <div key={c.id} className="flex min-w-0 items-center rounded-xl border border-line transition-colors hover:bg-surface-muted/60">
-            <button
-              type="button"
-              onClick={() => setSheet({ open: true, category: c })}
-              aria-label={`Edit ${c.label}`}
-              className={`flex min-w-0 flex-1 items-center gap-2.5 py-2.5 pl-3 text-left cursor-pointer ${c.hidden ? 'opacity-60' : ''}`}
-            >
-              <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${TONES[c.tone].chip}`}>
-                <c.icon className="h-4 w-4" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold text-ink">{c.label}</span>
-                {c.hidden && <span className="block text-2xs text-ink-muted">Hidden</span>}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                menuAnchor.current = e.currentTarget
-                setMenu(c)
-              }}
-              aria-label={`More for ${c.label}`}
-              aria-haspopup="menu"
-              className="mx-1 grid h-9 w-9 shrink-0 place-items-center rounded-lg text-ink-muted transition-colors cursor-pointer hover:bg-surface-muted hover:text-ink"
-            >
-              <DotsHorizontalIcon className="h-4 w-4" />
-            </button>
-          </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {tiles.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => setSheet({ open: true, category: c })}
+            aria-label={`Edit ${c.label}`}
+            className={`group flex min-w-0 items-center gap-2.5 rounded-xl border border-line px-3 py-2.5 text-left transition-colors cursor-pointer hover:bg-surface-muted/60 ${c.hidden ? 'opacity-60' : ''}`}
+          >
+            <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${TONES[c.tone].chip}`}>
+              <c.icon className="h-4 w-4" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold text-ink">{c.label}</span>
+              {c.hidden && <span className="block text-2xs text-ink-muted">Hidden</span>}
+            </span>
+            {/* Phones have no room beside the name; the line above the list says to tap */}
+            <PencilIcon className="hidden h-3.5 w-3.5 shrink-0 text-ink-faint group-hover:text-ink-soft sm:block" />
+          </button>
         ))}
         <button
           type="button"
@@ -318,65 +299,6 @@ export function CategoryManager() {
         </button>
       </div>
       <CategorySheet open={sheet.open} category={sheet.category} type={type} onClose={() => setSheet({ open: false })} />
-      {menu && (
-        <Popover open onClose={() => setMenu(null)} anchorRef={menuAnchor} title={menu.label} align="right">
-          <PopoverOption
-            icon={<PencilIcon className="h-4 w-4" />}
-            onClick={() => {
-              setMenu(null)
-              setSheet({ open: true, category: menu })
-            }}
-          >
-            Edit name, icon or color
-          </PopoverOption>
-          {menu.hidden && (
-            <PopoverOption
-              icon={<UndoIcon className="h-4 w-4" />}
-              onClick={() => {
-                setMenu(null)
-                setCategoryHidden(menu.id, false)
-                showToast(`${menu.label} is back in the pickers`)
-              }}
-            >
-              Show again
-            </PopoverOption>
-          )}
-          {/* A hidden one that's still in use is already as gone as it gets */}
-          {canRemove(menu) && !(menu.hidden && hidesOnly(menu)) && (
-            <PopoverOption
-              icon={<TrashIcon className="h-4 w-4" />}
-              onClick={() => {
-                setMenu(null)
-                setConfirming(menu)
-              }}
-            >
-              Delete
-            </PopoverOption>
-          )}
-          {KEEP_CATEGORY.has(menu.id) && (
-            <PopoverOption icon={<TrashIcon className="h-4 w-4" />} disabled hint="Always kept" onClick={() => {}}>
-              Delete
-            </PopoverOption>
-          )}
-        </Popover>
-      )}
-      {confirming && (
-        <ConfirmModal
-          open
-          title={`Delete ${confirming.label}?`}
-          description={
-            hidesOnly(confirming)
-              ? `It leaves Quick add and recurring. ${confirming.custom ? 'Past transactions use it, so it is hidden' : 'Built-in categories are hidden'} rather than deleted: past transactions keep its name, and it stays here as Hidden, ready to show again.`
-              : 'It leaves Quick add and recurring for good. You can undo right after.'
-          }
-          confirmText="Delete category"
-          onConfirm={() => {
-            remove(confirming)
-            setConfirming(null)
-          }}
-          onClose={() => setConfirming(null)}
-        />
-      )}
       <ReorderSheet
         open={arranging}
         onClose={() => setArranging(false)}
