@@ -4,7 +4,7 @@ export const SETTINGS_SECTIONS = [
   { id: 'general', title: 'General', hint: 'Theme and your name' },
   { id: 'month', title: 'Spending month', hint: 'Count from the 1st, or from payday' },
   { id: 'budgets', title: 'Budgets', hint: 'Monthly total and per-category limits' },
-  { id: 'categories', title: 'Categories', hint: 'Names, icons and colors' },
+  { id: 'categories', title: 'Categories', hint: 'Edit, add, delete and arrange' },
   { id: 'quick', title: 'Quick add and reminders', hint: 'Default payment method, bill reminders' },
   { id: 'data', title: 'Data and backup', hint: 'Import, export, AI import and reset' },
   { id: 'about', title: 'About Spendiary', hint: 'Who built it and why' },

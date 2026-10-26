@@ -3,9 +3,11 @@ import { Modal } from '../../components/ui/Modal'
 import { SegmentedControl } from '../../components/ui/SegmentedControl'
 import { FormActions } from '../../components/forms/FormActions'
 import { useToast } from '../../store/ToastContext'
-import { SearchIcon } from '../../components/icons'
+import { PencilIcon, SearchIcon } from '../../components/icons'
 import { CATEGORY_ICON_GROUPS, pickableCategoryIcons } from '../../components/categoryIcons'
-import { CATEGORY_ICONS, CATEGORY_TONES, SPEND_CATEGORIES, manageableCategories, pickerTone, type SpendCategory } from './categories'
+import { CATEGORY_ICONS, CATEGORY_TONES, SPEND_CATEGORIES, categoriesFor, manageableCategories, pickerTone, type SpendCategory } from './categories'
+import { moveId } from './logic'
+import { ArrangeButton, ReorderSheet } from './ReorderSheet'
 import { SwitchVisual } from '../../components/ui/SwitchVisual'
 import { TONES, TYPE_ACTIVE, type Tone } from './tones'
 import { useSpend } from './useSpend'
@@ -245,30 +247,40 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
   )
 }
 
-/** Every expense or income category, tap to edit, plus one to add; for the settings page. */
+/** Every expense or income category, tap to edit, plus one to add and a way to arrange them; for the settings page. */
 export function CategoryManager() {
-  // Subscribing re-renders this list when categories change in settings
-  useSpend()
+  const { settings, updateSettings } = useSpend()
   const [type, setType] = useState<CatType>('expense')
   const [sheet, setSheet] = useState<{ open: boolean; category?: SpendCategory }>({ open: false })
+  const [arranging, setArranging] = useState(false)
+  // Same list the Quick add picker arranges: shown categories, "Other" pinned last
+  const arrangeable = categoriesFor(type).filter((c) => !KEEP_CATEGORY.has(c.id))
   return (
     <div className="space-y-4">
-      <SegmentedControl options={TYPE_OPTIONS} value={type} onChange={setType} ariaLabel="Category type" />
+      <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <SegmentedControl options={TYPE_OPTIONS} value={type} onChange={setType} ariaLabel="Category type" />
+        </div>
+        {arrangeable.length > 1 && <ArrangeButton label={type === 'income' ? 'Arrange income categories' : 'Arrange categories'} onClick={() => setArranging(true)} />}
+      </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {manageableCategories(type).map((c) => (
           <button
             key={c.id}
             type="button"
             onClick={() => setSheet({ open: true, category: c })}
-            className={`flex min-w-0 items-center gap-2.5 rounded-xl border border-line px-3 py-2.5 text-left transition-colors cursor-pointer hover:bg-surface-muted/60 ${c.hidden ? 'opacity-60' : ''}`}
+            aria-label={`Edit ${c.label}`}
+            className={`group flex min-w-0 items-center gap-2.5 rounded-xl border border-line px-3 py-2.5 text-left transition-colors cursor-pointer hover:bg-surface-muted/60 ${c.hidden ? 'opacity-60' : ''}`}
           >
             <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${TONES[c.tone].chip}`}>
               <c.icon className="h-4 w-4" />
             </span>
-            <span className="min-w-0">
+            <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-semibold text-ink">{c.label}</span>
               {c.hidden && <span className="block text-2xs text-ink-muted">Hidden</span>}
             </span>
+            {/* Phones have no room beside the name; the line above the list says to tap */}
+            <PencilIcon className="hidden h-3.5 w-3.5 shrink-0 text-ink-faint group-hover:text-ink-soft sm:block" />
           </button>
         ))}
         <button
@@ -280,6 +292,24 @@ export function CategoryManager() {
         </button>
       </div>
       <CategorySheet open={sheet.open} category={sheet.category} type={type} onClose={() => setSheet({ open: false })} />
+      <ReorderSheet
+        open={arranging}
+        onClose={() => setArranging(false)}
+        title={type === 'income' ? 'Arrange income categories' : 'Arrange categories'}
+        description="Sets the order everywhere you pick a category. Other always stays last."
+        items={arrangeable.map((c) => ({
+          id: c.id,
+          label: c.label,
+          leading: (
+            <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${TONES[c.tone].chip}`}>
+              <c.icon className="h-4 w-4" />
+            </span>
+          ),
+        }))}
+        onMove={(id, delta) => updateSettings({ categoryOrder: { ...settings.categoryOrder, [type]: moveId(arrangeable.map((c) => c.id), id, delta) } })}
+        canReset={!!settings.categoryOrder?.[type]}
+        onReset={() => updateSettings({ categoryOrder: { ...settings.categoryOrder, [type]: undefined } })}
+      />
     </div>
   )
 }
