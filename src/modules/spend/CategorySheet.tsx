@@ -8,7 +8,6 @@ import { CATEGORY_ICON_GROUPS, pickableCategoryIcons } from '../../components/ca
 import { CATEGORY_ICONS, CATEGORY_TONES, SPEND_CATEGORIES, categoriesFor, manageableCategories, pickerTone, type SpendCategory } from './categories'
 import { moveId } from './logic'
 import { ArrangeButton, ReorderSheet } from './ReorderSheet'
-import { SwitchVisual } from '../../components/ui/SwitchVisual'
 import { TONES, TYPE_ACTIVE, type Tone } from './tones'
 import { useSpend } from './useSpend'
 import { KEEP_CATEGORY, useRemoveCategory } from './useRemoveCategory'
@@ -217,22 +216,6 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
           </div>
         )}
 
-        {category && (
-          <button
-            type="button"
-            role="switch"
-            aria-checked={form.hidden}
-            onClick={() => setForm((f) => ({ ...f, hidden: !f.hidden }))}
-            className="flex w-full items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 text-left cursor-pointer hover:bg-surface-muted/50"
-          >
-            <span>
-              <span className="block text-sm font-bold text-ink">Hide from Quick add and recurring</span>
-              <span className="block text-xs text-ink-muted">Past transactions keep this category</span>
-            </span>
-            <SwitchVisual on={form.hidden} />
-          </button>
-        )}
-
         {changed && (
           <button
             type="button"
@@ -253,13 +236,15 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
 
 /** Every expense or income category, tap to edit, plus one to add and a way to arrange them; for the settings page. */
 export function CategoryManager() {
-  const { settings, updateSettings } = useSpend()
+  const { settings, updateSettings, setCategoryHidden } = useSpend()
+  const { showToast } = useToast()
   const [type, setType] = useState<CatType>('expense')
   const [sheet, setSheet] = useState<{ open: boolean; category?: SpendCategory }>({ open: false })
   const [arranging, setArranging] = useState(false)
-  // Hidden (deleted) ones sink to the end, so a delete visibly takes the category out of the way
+  // A deleted category is only hidden inside (past transactions keep its name); here it just leaves the list
   const list = manageableCategories(type)
-  const tiles = [...list.filter((c) => !c.hidden), ...list.filter((c) => c.hidden)]
+  const tiles = list.filter((c) => !c.hidden)
+  const deleted = list.filter((c) => c.hidden)
   // Same list the Quick add picker arranges: shown categories, "Other" pinned last
   const arrangeable = categoriesFor(type).filter((c) => !KEEP_CATEGORY.has(c.id))
   return (
@@ -277,15 +262,12 @@ export function CategoryManager() {
             type="button"
             onClick={() => setSheet({ open: true, category: c })}
             aria-label={`Edit ${c.label}`}
-            className={`group flex min-w-0 items-center gap-2.5 rounded-xl border border-line px-3 py-2.5 text-left transition-colors cursor-pointer hover:bg-surface-muted/60 ${c.hidden ? 'opacity-60' : ''}`}
+            className="group flex min-w-0 items-center gap-2.5 rounded-xl border border-line px-3 py-2.5 text-left transition-colors cursor-pointer hover:bg-surface-muted/60"
           >
             <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${TONES[c.tone].chip}`}>
               <c.icon className="h-4 w-4" />
             </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-semibold text-ink">{c.label}</span>
-              {c.hidden && <span className="block text-2xs text-ink-muted">Hidden</span>}
-            </span>
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{c.label}</span>
             {/* Phones have no room beside the name; the line above the list says to tap */}
             <PencilIcon className="hidden h-3.5 w-3.5 shrink-0 text-ink-faint group-hover:text-ink-soft sm:block" />
           </button>
@@ -298,6 +280,18 @@ export function CategoryManager() {
           <span className="text-lg leading-none">+</span> Add category
         </button>
       </div>
+      {deleted.length > 0 && (
+        <button
+          type="button"
+          onClick={() => {
+            deleted.forEach((c) => setCategoryHidden(c.id, false))
+            showToast(deleted.length === 1 ? `${deleted[0].label} is back` : `${deleted.length} categories are back`)
+          }}
+          className="text-sm font-semibold text-link hover:underline cursor-pointer"
+        >
+          Restore deleted ({deleted.length})
+        </button>
+      )}
       <CategorySheet open={sheet.open} category={sheet.category} type={type} onClose={() => setSheet({ open: false })} />
       <ReorderSheet
         open={arranging}
