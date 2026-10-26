@@ -57,8 +57,8 @@ colors-dark:
   warn: "#fbbf24"
 typography:
   families:
-    display: "'Plus Jakarta Sans', Inter, ui-sans-serif, system-ui, sans-serif"
-    body: "'Inter', ui-sans-serif, system-ui, sans-serif"
+    display: "'Plus Jakarta Sans', Inter, 'IBM Plex Sans Thai', ui-sans-serif, system-ui, sans-serif"
+    body: "'Inter', 'IBM Plex Sans Thai', ui-sans-serif, system-ui, sans-serif"
     mono: "ui-monospace only for <kbd> keys and the build hash in the footer"
   scale:
     2xs: "12px. The floor: tight badges, chart axis labels"
@@ -122,7 +122,7 @@ components:
 
 - Warm off-white canvas with a soft ambient gradient (light); flat `canvas` in dark.
 - White cards with a hairline border and a soft shadow. Every block of content lives in a card.
-- Plus Jakarta Sans for titles and big numbers; Inter for everything else.
+- Plus Jakarta Sans for titles and big numbers; Inter for everything else. Neither has Thai glyphs, so IBM Plex Sans Thai sits after them in both stacks and draws only the Thai text.
 - Phones get a bottom nav and bottom-sheet modals. Desktop (lg and up) gets a fixed sidebar and centred modals. The structure of a page never changes between the two, only the chrome around it.
 
 ## 3. Colour
@@ -148,7 +148,7 @@ components:
 - **Asset accents** (`--color-funds`, `-stocks`, `-crypto`, `-gold`, `-real-estate`, `-cash`, `-debt`) are for chart segments, legend dots and asset icon tiles only. They are never text colour, button colour or a section fill.
 
 ### What not to use
-- No raw Tailwind palette colours (`emerald-600`, `rose-500`, `amber-400`, …) in components. The only exceptions are `tones.ts` (which holds every pastel set, so Tailwind can see the full class names), the test-mode banner and sidebar TEST badge (bright amber in both themes on purpose), the landing page and `AssetLogo`. `npm run lint:design` enforces this.
+- No raw Tailwind palette colours (`emerald-600`, `rose-500`, `amber-400`, …) in components. The only exceptions are `tones.ts` (which holds every pastel set, so Tailwind can see the full class names), the test-mode banner and sidebar TEST badge (bright amber in both themes on purpose), and `AssetLogo`. The landing page uses its own `landing-*` tokens (section 10). `npm run lint:design` enforces this.
 - No hex values in `className`. If a colour is missing, add a token in `src/index.css`. The only exception is third-party brand marks: bank and fund logos in `AssetLogo`, and social glyphs.
 - Solid action fills use `bg-primary hover:bg-primary-hover text-white`, never `bg-ink`. `ink` flips to near-white in dark, so `bg-ink text-white` turns unreadable.
 
@@ -346,12 +346,14 @@ Dark mode is supported, but it comes second. It must work without component-leve
 - Use gradient text or coloured side stripes on cards.
 
 ## 10. Sign-in and landing page
-The signed-out page has its own light look, inspired by Fastwork, using the `landing-*` tokens:
-- **Canvas:** `#faf6f4` with a warm amber (top left) and lavender rose (bottom right) ambient gradient.
-- **Logo:** a blue `#0066FF` squircle with a white glyph.
-- **Headline highlight:** blue in both themes. The landing page does not switch to dark.
-- **Sign-in card:** `bg-white/95 backdrop-blur-xl`, `rounded-[24px]`, a hairline slate border and a soft shadow.
-- **Buttons:**
-  - Google sign-in is a white pill with a hairline border.
-  - Demo / offline mode is a quiet secondary button.
-- **Benefit cards:** translucent white, `rounded-[20px]`, with a 44px gradient icon badge.
+The signed-out pages (`src/app/Landing.tsx` with `EmailCodeSignIn.tsx`, `/privacy` in `Privacy.tsx`, shared `LandingFooter.tsx`) are invite-only, in English, and **light only**: the `landing-*` tokens are never overridden by `.dark`. The direction is a warm editorial product page (reference: the Veyra template, adapted, not copied), with Spendiary's own accents. The plan behind it is `docs/landing-redesign-plan.md`.
+- **Grounds:** `.landing-canvas-bg`, the app's light gradient (light only); white `landing-surface` frames with a `landing-line` border; full-width `landing-night` sections (the app's dark canvas) for the statement, the closing call and the footer.
+- **Type:** the app's own: headings in Plus Jakarta Sans (`font-display font-extrabold tracking-tight`), very large (up to `text-8xl` in the hero); body in Inter. Two-tone: the second half in `landing-brand` (on night, `landing-on-night-muted`). Commas and periods in big headings sit in a `Tight` span (-0.08em), since Plus Jakarta's punctuation is wide at this weight.
+- **Accents:** Spendiary's own: `landing-mint` / `-mint-ink` for Spend, `landing-sky` / `-sky-ink` and `landing-brand` for Invest. Dark pills are `landing-ink`; light pills are `landing-paper` with a `landing-line-strong` border.
+- **Hero:** centred two-line heading, one sentence, the sign-in pills (Google, Try the demo) with the email-code link under them, then the real desktop screen with the phone screen overlapping its corner. Below md the same idea at phone scale: the Spend phone screen large in front, the Portfolio phone screen behind it to the right and a little lower (never two small screens side by side). From xl up, four small labels float beside the subtitle: faint, flat and not clickable (no shadow, no border, `pointer-events-none`) so they never read as buttons; no amounts in them (demo figures change daily); they never overlap the heading.
+- **"All in one app."**: real app components cut out of demo mode around the phone screen: Spend home's Today, This month and payments due on the left, Invest home's Total net worth on the right. On phones the same exploded view, never a plain stack: the phone screen in the middle and each card pulled out across its left or right edge beside the spot it comes from (payments due, Today, This month, then net worth), in a box with a fixed aspect ratio so the placement holds from 375 to 430, captioned "Screens from demo mode". Never rebuild app cards in HTML: capture them (`npm run landing` in `promo/`, PARTS in `landing-shots.mjs`), so they always match the app.
+- **Feature rows:** chip, large heading, one sentence, three true bullets, and a captured app card (Bills and recurring, Allocation).
+- **Motion:** sections with `.landing-reveal` rise 24px and fade in once (IntersectionObserver in `Landing.tsx`; off under `prefers-reduced-motion`). Nothing else moves.
+- **Footer (night):** where data is stored with the page's one privacy-policy link, the version and the maker.
+- **Line breaks:** the page roots carry `.landing-text`: headings `text-wrap: balance`, text and bullets `pretty`, so no word sits alone on a line.
+- **Copy:** short, plain and true. Demo figures are labelled as demo. No invented proof (stats, logos, testimonials, "backed by"), no "secure" or "private" claims (no client-side encryption; the admin can read the data), no phrase repeated across sections. Don't lead with "Thai baht": the app also handles USD, so currency is not a selling point.

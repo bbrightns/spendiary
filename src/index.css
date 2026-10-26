@@ -4,8 +4,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', 'IBM Plex Sans Thai', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: 'Plus Jakarta Sans', 'Inter', 'IBM Plex Sans Thai', ui-sans-serif, system-ui, sans-serif;
 
   /* Type: small labels are 13px (Tailwind's default 12px read too small on phones);
      text-2xs (12px) is the floor, for tight badges and chart labels only */
@@ -83,17 +83,32 @@
   --color-cash: #10b981;
   --color-debt: #f43f5e;
 
-  /* Landing Page (Fastwork theme) tokens */
-  --color-landing-canvas: #faf6f4;
+  /* Landing page: light only, so these copy the light tokens and are never overridden by .dark */
   --color-landing-surface: #ffffff;
-  --color-landing-surface-soft: rgba(255, 255, 255, 0.85);
-  --color-landing-surface-glass: rgba(255, 255, 255, 0.95);
-  --color-landing-ink: #020617;
+  --color-landing-ink: #090d16;
+  --color-landing-ink-hover: #1a202c;
   --color-landing-ink-soft: #334155;
-  --color-landing-ink-muted: #64748b;
-  --color-landing-ink-faint: #94a3b8;
-  --color-landing-line: rgba(226, 232, 240, 0.8);
-  --color-landing-line-strong: rgba(226, 232, 240, 0.9);
+  --color-landing-ink-muted: #555b6a;
+  --color-landing-ink-faint: #6b7280;
+  --color-landing-line: #eaedf3;
+  --color-landing-line-strong: #dbe2ec;
+  --color-landing-brand: #0066ff;
+  --color-landing-link: #005ce8;
+  --color-landing-loss-ink: #be123c;
+  --color-landing-loss-soft: #fff1f2;
+  /* Night sections (statement, closing call, footer) in the app's dark canvas */
+  --color-landing-night: #0f1117;
+  --color-landing-night-soft: #1b1f2b;
+  --color-landing-on-night: #ece8dd;
+  --color-landing-on-night-muted: #8e8b84;
+  /* Pastel pairs: soft fill + readable ink. Mint is Spend, sky is Invest, lavender is privacy */
+  --color-landing-mint: #e3f5eb;
+  --color-landing-mint-ink: #047857;
+  --color-landing-sky: #e5eeff;
+  --color-landing-sky-ink: #0052cc;
+  --color-landing-lavender: #eee8fb;
+  --color-landing-lavender-ink: #6d28d9;
+  --shadow-landing-soft: 0 1px 3px rgba(15, 23, 42, 0.03), 0 10px 30px -10px rgba(15, 23, 42, 0.07);
 
   --radius-card: 1.5rem;
 
@@ -179,7 +194,7 @@
   html {
     -webkit-text-size-adjust: 100%;
     /* Painted behind the system nav/gesture bar on Android PWAs (edge-to-edge) */
-    background-color: #faf6f4;
+    background-color: #faf9f5;
     color-scheme: light;
   }
 
@@ -200,7 +215,8 @@
   }
 
   /* Ambient gradient background for light mode (Fastwork exact color match) */
-  body, .app-canvas-bg {
+  /* .landing-canvas-bg: the same light gradient on the signed-out pages; the .dark rule below leaves it alone */
+  body, .app-canvas-bg, .landing-canvas-bg {
     background-color: #faf6f4;
     background-image: 
       radial-gradient(circle at 10% 15%, #fff3dd 0%, rgba(255, 243, 221, 0.85) 30%, transparent 65%),
@@ -208,6 +224,32 @@
       linear-gradient(140deg, #fff3dd 0%, #faf6f4 45%, #efe5e8 100%);
     background-attachment: fixed;
     background-repeat: no-repeat;
+  }
+
+  /* Signed-out pages: no word left alone on a line. Headings balance their lines; text and bullets avoid orphans */
+  .landing-text :is(h1, h2, h3) {
+    text-wrap: balance;
+  }
+  .landing-text :is(p, li) {
+    text-wrap: pretty;
+  }
+
+  /* Signed-out pages: sections rise a little and fade in once as they enter the viewport (Landing.tsx adds .is-visible) */
+  .landing-reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .landing-reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .landing-reveal {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
   }
 
   .dark body, .dark .app-canvas-bg {

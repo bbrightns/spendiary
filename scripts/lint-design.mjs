@@ -20,14 +20,13 @@ const COLOUR_ALLOW = [
   'src/components/tones.ts', // every pastel set lives here, written out so Tailwind sees it
   'src/components/layout/TestModeBanner.tsx', // bright amber in both themes on purpose
   'src/app/Sidebar.tsx', // the TEST badge next to the logo, same reason
-  'src/App.tsx', // landing page
   'src/components/ui/AssetLogo.tsx', // bank and fund brand colours
 ]
 /** Single hex values allowed anywhere: third-party brand marks */
 const HEX_ALLOW = ['#1877F2'] // Facebook
 
 /** Full-screen layers outside the shared Modal / Popover */
-const OVERLAY_ALLOW = ['src/app/CommandPalette.tsx', 'src/components/guide/GuideTour.tsx', 'src/App.tsx']
+const OVERLAY_ALLOW = ['src/app/CommandPalette.tsx', 'src/components/guide/GuideTour.tsx']
 
 /** Tailwind's own animations; the app's own come from index.css (--animate-* tokens and .animate-* classes) */
 const BUILTIN_ANIMATIONS = ['none', 'spin', 'ping', 'pulse', 'bounce']

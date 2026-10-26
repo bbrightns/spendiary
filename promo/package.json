@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "shots": "node capture.mjs",
+    "landing": "node landing-shots.mjs",
     "record": "node record.mjs",
     "sfx": "node sfx.mjs",
     "studio": "remotion studio src/index.ts",
