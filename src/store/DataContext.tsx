@@ -48,6 +48,10 @@ export interface DataContextValue {
   retryLoad: () => void
   user: User | null
   loginWithGoogle: () => void
+  /** Emails a one-time sign-in code to an existing account; true when sent */
+  sendEmailCode: (email: string) => Promise<boolean>
+  /** Signs in with the emailed code; true when signed in */
+  verifyEmailCode: (email: string, code: string) => Promise<boolean>
   loginAsTestMode: () => void
   authError: string | null
   logout: () => Promise<void>
@@ -219,7 +223,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Once per app load; useLivePrices keeps it fresh on the pages that show prices
     fetchUsdThb().then(setUsdThb, (err) => console.warn('USD/THB rate unavailable:', err))
   }, [])
-  const { user, setUser, authError, setAuthError, loginWithGoogle } = useAuth()
+  const { user, setUser, authError, setAuthError, loginWithGoogle, sendEmailCode, verifyEmailCode } = useAuth()
   const {
     syncStatus, setSyncStatus, dataReady, loadError, syncConflict, lastSyncedAt, updateLastSynced,
     retryLoad, pushNow, syncReady, lastSynced,
@@ -343,6 +347,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       lastSyncedAt,
       user,
       loginWithGoogle,
+      sendEmailCode,
+      verifyEmailCode,
       loginAsTestMode,
       authError,
       logout,
