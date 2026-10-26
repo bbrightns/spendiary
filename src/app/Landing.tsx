@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { CalendarIcon, CheckIcon, FlaskIcon, TrendUpIcon, WalletIcon } from '../components/icons'
 import { EmailCodeSignIn } from './EmailCodeSignIn'
@@ -101,12 +102,15 @@ export function Landing() {
 
   return (
     <div className="landing-canvas-bg landing-text min-h-dvh font-sans text-landing-ink">
-      {/* Logo only: the hero's sign-in pills sit right below, so a header button would only repeat them */}
-      <header className="mx-auto flex max-w-6xl items-center px-5 py-5 sm:px-8 sm:py-6">
+      {/* Logo and one quiet text link; no button here, the hero's sign-in pills sit right below */}
+      <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8 sm:py-6">
         <div className="flex items-center gap-2.5">
           <img src="/logo.png" alt="" width={36} height={36} className="h-8 w-8 object-contain" />
           <span className={`text-xl sm:text-2xl ${display}`}>spendiary</span>
         </div>
+        <Link to="/privacy" className="text-sm font-medium text-landing-ink-muted transition-colors hover:text-landing-ink">
+          Privacy
+        </Link>
       </header>
 
       <main>
