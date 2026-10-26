@@ -1,99 +1,98 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { Keep } from './Keep'
 import { LandingFooter } from './LandingFooter'
 
-/** Plain facts about the data, in Thai. Every line must stay true of the code: update it when storage or a
+/** Plain facts about the data. Every line must stay true of the code: update it when storage or a
  *  third-party call changes (lib/prices.ts, store/useCloudSync.ts, index.html fonts). */
 const SECTIONS: { title: string; body: ReactNode }[] = [
   {
-    title: 'เราเก็บข้อมูลอะไรบ้าง',
+    title: 'What we store',
     body: (
       <ul className="list-disc space-y-2 pl-5">
-        <li>ข้อมูลบัญชี ได้แก่อีเมล และถ้าเข้าสู่ระบบด้วย Google จะมีชื่อและรูปโปรไฟล์จาก Google ด้วย</li>
-        <li>ข้อมูลที่คุณบันทึกในแอป เช่น รายรับรายจ่าย บัญชีและบัตร งบประมาณ บิล หนี้ พอร์ตลงทุน แผน DCA เงินปันผล และการตั้งค่า</li>
-        <li>การตั้งค่าบางอย่างของแต่ละเครื่อง เช่นธีม และราคาล่าสุดที่ดึงมา ซึ่งเก็บไว้ในเบราว์เซอร์ของคุณเอง</li>
-        <li>เราไม่เก็บสถิติการใช้งาน ไม่มีโฆษณา และไม่ใช้ cookie ติดตาม</li>
+        <li>Your account: your email, plus your name and profile photo from Google if you sign in with Google.</li>
+        <li>What you record in the app: income and expenses, accounts and cards, budgets, bills, debts, holdings, DCA plans, dividends and settings.</li>
+        <li>A few settings for each device, such as the theme and the latest prices fetched, kept in your own browser.</li>
+        <li>No usage analytics, no ads and no tracking cookies.</li>
       </ul>
     ),
   },
   {
-    title: 'ข้อมูลเก็บไว้ที่ไหน',
+    title: 'Where it is stored',
     body: (
       <p>
-        ข้อมูลที่คุณบันทึกเก็บไว้บน Supabase ซึ่งเป็นฐานข้อมูลบนคลาวด์ โดยแยกเป็นหนึ่งแถวต่อหนึ่งบัญชี และเปิดใช้ Row Level
-        Security ไว้ แต่ละบัญชีจึงอ่านและแก้ไขได้เฉพาะข้อมูลของตัวเอง ข้อมูลถูกส่งผ่าน HTTPS
-        แต่ไม่ได้ถูกเข้ารหัสในเครื่องของคุณก่อนส่ง
+        What you record is stored on Supabase, a cloud database, as one row per account with Row Level Security turned on,
+        so each account can only read and change its own data. Data travels over HTTPS, but it is not encrypted on your
+        device before it is sent.
       </p>
     ),
   },
   {
-    title: 'ใครเข้าถึงข้อมูลได้บ้าง',
+    title: 'Who can see it',
     body: (
       <ul className="list-disc space-y-2 pl-5">
-        <li>ตัวคุณเอง</li>
+        <li>You.</li>
         <li>
-          ผู้ดูแลระบบ (คนที่ส่งคำเชิญให้คุณ) ซึ่งเข้าระบบหลังบ้านของ Supabase ได้ จึงเห็นข้อมูลของทุกบัญชีได้ในทางเทคนิค
-          เราแจ้งไว้ตรงนี้เพื่อให้คุณเลือกเองว่าจะบันทึกอะไรลงในแอป
+          The admin (the person who invited you), who has access to the Supabase dashboard and so can technically see every
+          account's data. We say this up front so you can decide what to record.
         </li>
       </ul>
     ),
   },
   {
-    title: 'บริการภายนอกที่แอปใช้',
+    title: 'Outside services the app uses',
     body: (
       <>
         <ul className="list-disc space-y-2 pl-5">
-          <li>Supabase สำหรับเก็บข้อมูล ระบบเข้าสู่ระบบ และส่งรหัสทางอีเมล</li>
-          <li>Google สำหรับเข้าสู่ระบบ (ถ้าคุณเลือกใช้) และฟอนต์บนหน้าเว็บ ซึ่ง Google จะเห็น IP ของคุณตอนโหลดฟอนต์</li>
-          <li>Vercel สำหรับโฮสต์หน้าเว็บ</li>
-          <li>ราคาหุ้น แอปส่งไปเพียงชื่อหุ้น (เช่น AAPL) หรือคำที่คุณค้นหา ไปที่ Edge Function ของ Supabase ซึ่งดึงราคาจาก Yahoo Finance อีกต่อหนึ่ง</li>
-          <li>ราคา<Keep>คริปโต</Keep>และอัตรา USD/THB เบราว์เซอร์ของคุณขอราคาจาก Binance และ Binance TH โดยตรง และส่งไปเพียงชื่อเหรียญ</li>
+          <li>Supabase, for storage, sign-in and emailing sign-in codes.</li>
+          <li>Google, for sign-in (if you choose it) and the web fonts; Google sees your IP address when the fonts load.</li>
+          <li>Vercel, which hosts the site.</li>
+          <li>Stock prices: only the ticker (such as AAPL) or your search text goes to a Supabase Edge Function, which fetches prices from Yahoo Finance.</li>
+          <li>Crypto prices and the USD/THB rate: your browser asks Binance and Binance TH directly, sending only the coin symbol.</li>
         </ul>
-        <p className="mt-3">ไม่มีบริการใดได้รับยอดเงินหรือรายการของคุณ</p>
+        <p className="mt-3">None of these services receive your balances or transactions.</p>
       </>
     ),
   },
   {
-    title: 'การลบข้อมูล',
+    title: 'Deleting your data',
     body: (
       <ul className="list-disc space-y-2 pl-5">
         <li>
-          ลบข้อมูลทั้งหมดได้เองในแอป ที่ Settings → Data and backup → Reset everything ระบบจะลบข้อมูลของคุณบน Supabase
-          แล้วออกจากระบบให้ ซึ่งกู้คืนไม่ได้ ถ้าต้องการเก็บสำรองไว้ ให้กด Export ในหน้าเดียวกันก่อน
+          Delete everything yourself in Settings → Data and backup → Reset everything. This removes your data from Supabase
+          and signs you out, and it can't be undone. To keep a copy, press Export on the same page first.
         </li>
-        <li>ส่วนบัญชีที่ใช้เข้าสู่ระบบ คุณลบเองในแอปไม่ได้ แจ้งผู้ดูแลระบบให้ลบให้ได้</li>
-        <li>โหมดทดลองใช้งานไม่บันทึกข้อมูลใดๆ เมื่อปิดหน้า ข้อมูลตัวอย่างจะหายไปทันที</li>
+        <li>You can't delete the sign-in account itself in the app. Ask the admin to remove it.</li>
+        <li>The demo saves nothing. Close the page and the sample data is gone.</li>
       </ul>
     ),
   },
   {
-    title: 'ติดต่อเรา',
-    body: <p>หากมีคำถาม ติดต่อผู้ดูแลระบบ ซึ่งก็คือคนที่ส่งคำเชิญให้คุณ</p>,
+    title: 'Contact',
+    body: <p>Questions? Contact the admin, the person who invited you.</p>,
   },
 ]
 
 /** /privacy: opens with or without signing in. Light only, like the landing page (landing-* tokens). */
 export function Privacy() {
   return (
-    <div lang="th" className="landing-canvas-bg min-h-dvh font-sans text-landing-ink">
+    <div className="landing-canvas-bg min-h-dvh font-sans text-landing-ink">
       <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-5 sm:px-8">
         <header className="flex items-center justify-between gap-3 py-5 sm:py-7">
           <Link to="/" className="flex items-center gap-2.5">
             <img src="/logo.png" alt="" width={36} height={36} className="h-8 w-8 sm:h-9 sm:w-9 object-contain" />
-            <span className="font-display text-xl sm:text-2xl font-extrabold tracking-tight">Spendiary</span>
+            <span className="font-display text-xl sm:text-2xl font-extrabold tracking-tight">spendiary</span>
           </Link>
           <Link to="/" className="text-sm font-semibold text-landing-ink-soft hover:text-landing-ink hover:underline">
-            ← กลับหน้าแรก
+            ← Back to home
           </Link>
         </header>
 
         <main className="flex-1 pb-16 pt-4 sm:pt-8">
-          <h1 className="font-display text-3xl sm:text-5xl font-extrabold leading-tight tracking-tight">นโยบายความเป็นส่วนตัว</h1>
+          <h1 className="font-display text-3xl sm:text-5xl font-extrabold leading-tight tracking-tight">Privacy policy</h1>
           <p className="mt-4 text-base sm:text-lg leading-relaxed text-landing-ink-muted">
-            Spendiary เปิดให้ใช้เฉพาะผู้ได้รับเชิญ หน้านี้อธิบายว่าเราเก็บข้อมูลอะไร เก็บไว้ที่ไหน และใคร<Keep>เข้าถึงได้บ้าง</Keep>
+            Spendiary is invite-only. This page explains what we store, where it is stored and who can see it.
           </p>
-          <p className="mt-2 text-sm text-landing-ink-faint">อัปเดตล่าสุด 26 ตุลาคม 2026</p>
+          <p className="mt-2 text-sm text-landing-ink-faint">Last updated 26 October 2026</p>
 
           <div className="mt-10 divide-y divide-landing-line rounded-[28px] border border-landing-surface bg-landing-glass px-6 shadow-[var(--shadow-landing-soft)] sm:px-10">
             {SECTIONS.map((s, i) => (

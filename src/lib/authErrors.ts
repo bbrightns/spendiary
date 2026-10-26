@@ -7,23 +7,23 @@ export interface AuthErrorLike {
 }
 
 /** What a visitor who isn't invited sees, from Google or from the email code */
-export const NOT_INVITED = 'อีเมลนี้ยังไม่ได้รับเชิญ ขอคำเชิญจากคนที่ส่งลิงก์นี้ให้คุณ หรือลองทดลองใช้งานก่อน'
+export const NOT_INVITED = "This email hasn't been invited yet. Ask the person who sent you this link for an invite, or try the demo first."
 
-/** Supabase's auth errors in Thai, saying what to do next. Unknown errors keep Supabase's own text for support. */
+/** Supabase's auth errors in plain words, saying what to do next. Unknown errors keep Supabase's own text for support. */
 export function authErrorText(error: AuthErrorLike): string {
   const { code, status, name, message } = error
   // Sign-ups are off (invite-only), so an address with no account is an address nobody invited
   if (code === 'signup_disabled' || code === 'otp_disabled' || code === 'user_not_found' || /signups? not allowed/i.test(message)) {
     return NOT_INVITED
   }
-  if (code === 'otp_expired') return 'รหัสไม่ถูกต้องหรือหมดอายุแล้ว ดูรหัสในอีเมลล่าสุด หรือกดส่งรหัสใหม่'
+  if (code === 'otp_expired') return 'That code is wrong or has expired. Check the latest email, or send a new code.'
   if (status === 429 || code === 'over_email_send_rate_limit' || code === 'over_request_rate_limit') {
-    return 'ขอรหัสถี่เกินไป รอสักครู่แล้วลองใหม่ หรือใช้รหัสล่าสุดที่ได้รับ'
+    return 'Too many codes requested. Wait a moment and try again, or use the last code you received.'
   }
-  if (code === 'email_address_invalid' || code === 'validation_failed') return 'รูปแบบอีเมลไม่ถูกต้อง ตรวจแล้วลองอีกครั้ง'
-  if (/access_denied|cancel/i.test(`${code ?? ''} ${message}`)) return 'ยกเลิกการเข้าสู่ระบบด้วย Google แล้ว ลองใหม่ได้ทุกเมื่อ'
+  if (code === 'email_address_invalid' || code === 'validation_failed') return "That email address doesn't look right. Check it and try again."
+  if (/access_denied|cancel/i.test(`${code ?? ''} ${message}`)) return 'Google sign-in was cancelled. You can try again any time.'
   if (name === 'AuthRetryableFetchError' || status === 0 || /failed to fetch|network/i.test(message)) {
-    return 'เชื่อมต่อไม่ได้ ตรวจอินเทอร์เน็ตแล้วลองใหม่'
+    return "Couldn't connect. Check your internet connection and try again."
   }
-  return `เข้าสู่ระบบไม่สำเร็จ: ${message}`
+  return `Sign-in failed: ${message}`
 }

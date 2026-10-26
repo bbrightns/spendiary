@@ -40,7 +40,7 @@ export function useAuth() {
 
   const supabaseConfigured = () => {
     if (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_TOKEN) return true
-    setAuthError('ยังไม่ได้ตั้งค่า Supabase (VITE_API_URL / VITE_API_TOKEN ใน .env ดู .env.example) ลองโหมด Demo แทนได้')
+    setAuthError('Supabase is not set up (VITE_API_URL / VITE_API_TOKEN in .env, see .env.example). You can try the demo instead.')
     return false
   }
 

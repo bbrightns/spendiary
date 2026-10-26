@@ -10,16 +10,16 @@ describe('authErrorText', () => {
   })
 
   it('names the next step for a wrong code, too many requests and a dropped connection', () => {
-    expect(authErrorText({ code: 'otp_expired', message: 'Token has expired or is invalid' })).toMatch(/ส่งรหัสใหม่/)
-    expect(authErrorText({ status: 429, message: 'For security purposes…' })).toMatch(/รอสักครู่/)
-    expect(authErrorText({ name: 'AuthRetryableFetchError', status: 0, message: 'Failed to fetch' })).toMatch(/อินเทอร์เน็ต/)
+    expect(authErrorText({ code: 'otp_expired', message: 'Token has expired or is invalid' })).toMatch(/send a new code/)
+    expect(authErrorText({ status: 429, message: 'For security purposes…' })).toMatch(/Wait a moment/)
+    expect(authErrorText({ name: 'AuthRetryableFetchError', status: 0, message: 'Failed to fetch' })).toMatch(/internet connection/)
   })
 
   it('says so when the visitor cancels at Google', () => {
-    expect(authErrorText({ message: 'access_denied' })).toMatch(/ยกเลิก/)
+    expect(authErrorText({ message: 'access_denied' })).toMatch(/cancelled/)
   })
 
   it("keeps Supabase's text for anything else", () => {
-    expect(authErrorText({ message: 'Database error saving new user' })).toBe('เข้าสู่ระบบไม่สำเร็จ: Database error saving new user')
+    expect(authErrorText({ message: 'Database error saving new user' })).toBe('Sign-in failed: Database error saving new user')
   })
 })
