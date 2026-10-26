@@ -7,7 +7,7 @@ import { ChevronDownIcon, DotsHorizontalIcon, PencilIcon, SearchIcon, TrashIcon,
 import { ConfirmModal } from '../../components/ui/ConfirmModal'
 import { Popover, PopoverOption } from '../../components/ui/Popover'
 import { CATEGORY_ICON_GROUPS, pickableCategoryIcons } from '../../components/categoryIcons'
-import { CATEGORY_ICONS, CATEGORY_TONES, SPEND_CATEGORIES, categoriesFor, manageableCategories, pickerTone, type SpendCategory } from './categories'
+import { CATEGORY_ICONS, CATEGORY_TONES, SPEND_CATEGORIES, categoriesFor, manageableCategories, pickerTone, removedCategories, type SpendCategory } from './categories'
 import { moveId } from './logic'
 import { ArrangeButton, ReorderSheet } from './ReorderSheet'
 import { SwitchVisual } from '../../components/ui/SwitchVisual'
@@ -35,9 +35,9 @@ const TYPE_OPTIONS = [
 
 /**
  * Any category but the catch-all "Other" can go. A built-in, or one past transactions use, is hidden
- * instead (so history keeps its name); a built-in that is already hidden has nothing left to delete.
+ * first (so history keeps its name); deleting it again, once hidden, deletes it for good.
  */
-const canRemove = (c: SpendCategory) => !KEEP_CATEGORY.has(c.id) && !(c.hidden && !c.custom)
+const canRemove = (c: SpendCategory) => !KEEP_CATEGORY.has(c.id)
 
 /** Add or edit a category: name, icon and color, for expense or income. */
 export function CategorySheet({ open, category, type = 'expense', onClose, onSaved }: Props) {
@@ -255,7 +255,7 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
 
 /** Every expense or income category, tap to edit, plus one to add and a way to arrange them; for the settings page. */
 export function CategoryManager() {
-  const { settings, updateSettings, transactions, recurring, setCategoryHidden } = useSpend()
+  const { settings, updateSettings, transactions, recurring, setCategoryHidden, setCategoryRemoved } = useSpend()
   const { showToast } = useToast()
   const remove = useRemoveCategory()
   const [type, setType] = useState<CatType>('expense')
@@ -272,6 +272,7 @@ export function CategoryManager() {
   const all = manageableCategories(type)
   const shown = all.filter((c) => !c.hidden)
   const deleted = all.filter((c) => c.hidden)
+  const removed = removedCategories(type)
   const tile = (c: SpendCategory) => (
     <div key={c.id} className="flex min-w-0 items-center rounded-xl border border-line transition-colors hover:bg-surface-muted/60">
       <button
@@ -333,11 +334,23 @@ export function CategoryManager() {
           </button>
           {showDeleted && (
             <>
-              <p className="mt-1 mb-2 text-xs text-ink-muted">Not offered in Quick add or recurring. Past transactions keep them. Use ⋯ to show one again.</p>
+              <p className="mt-1 mb-2 text-xs text-ink-muted">Not offered in Quick add or recurring. Past transactions keep them. Use ⋯ to show one again, or delete it again to remove it for good.</p>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">{deleted.map(tile)}</div>
             </>
           )}
         </div>
+      )}
+      {removed.length > 0 && (
+        <button
+          type="button"
+          onClick={() => {
+            removed.forEach((c) => setCategoryRemoved(c.id, false))
+            showToast(removed.length === 1 ? `${removed[0].label} is back` : `${removed.length} categories are back`)
+          }}
+          className="text-sm font-semibold text-link hover:underline cursor-pointer"
+        >
+          Restore removed categories ({removed.length})
+        </button>
       )}
       <CategorySheet open={sheet.open} category={sheet.category} type={type} onClose={() => setSheet({ open: false })} />
       {menu && (
@@ -364,7 +377,7 @@ export function CategoryManager() {
             </PopoverOption>
           )}
           {/* A hidden one that's still in use is already as gone as it gets */}
-          {canRemove(menu) && !(menu.hidden && hidesOnly(menu)) && (
+          {canRemove(menu) && (
             <PopoverOption
               icon={<TrashIcon className="h-4 w-4" />}
               onClick={() => {
@@ -385,9 +398,11 @@ export function CategoryManager() {
       {confirming && (
         <ConfirmModal
           open
-          title={`Delete ${confirming.label}?`}
+          title={confirming.hidden && hidesOnly(confirming) ? `Remove ${confirming.label} for good?` : `Delete ${confirming.label}?`}
           description={
-            hidesOnly(confirming)
+            confirming.hidden && hidesOnly(confirming)
+              ? 'It leaves Settings too. Past transactions keep its name. "Restore removed" at the bottom brings it back.'
+              : hidesOnly(confirming)
               ? `It leaves Quick add and recurring. ${confirming.custom ? 'Past transactions use it, so it is hidden' : 'Built-in categories are hidden'} rather than deleted: past transactions keep its name, and it moves to Deleted below, ready to show again.`
               : 'It leaves Quick add and recurring for good. You can undo right after.'
           }

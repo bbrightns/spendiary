@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { categoriesFor, guessCategory, syncCategories } from './categories'
+import { categoriesFor, getCategory, guessCategory, manageableCategories, removedCategories, syncCategories } from './categories'
 import { homeOrder, isDefaultOrder, moveCard } from './homeLayout'
 import type { CashAccount, Liability, PayCycle, SpendCard, SpendRecurring, SpendTransaction } from '../../lib/types'
 import { firstInstallmentDue, installmentAmount, installmentHold, isLoanDone, loanPaymentAmount, loanProgress, paymentIsSpending } from './loans'
@@ -562,6 +562,24 @@ describe('category order', () => {
     expect(ex.slice(0, 3)).toEqual(['fun', 'food', 'drinks'])
     expect(ex.slice(-2)).toEqual(['c1', 'other'])
     expect(categoriesFor('income')[0].id).toBe('bonus')
+    syncCategories({})
+  })
+})
+
+describe('a category deleted for good', () => {
+  it('leaves pickers and Settings but still names past transactions', () => {
+    syncCategories({
+      customCategories: [{ id: 'c1', label: 'Pets', type: 'expense', icon: 'tag', tone: 'rose', removed: true }],
+      categoryEdits: { family: { removed: true } },
+    })
+    const ids = (list: { id: string }[]) => list.map((c) => c.id)
+    expect(ids(categoriesFor('expense'))).not.toContain('family')
+    expect(ids(manageableCategories('expense'))).not.toContain('family')
+    expect(ids(manageableCategories('expense'))).not.toContain('c1')
+    expect(ids(removedCategories('expense'))).toEqual(['family', 'c1'])
+    expect(getCategory('family')?.label).toBe('Family')
+    expect(getCategory('c1')?.label).toBe('Pets')
+    expect(guessCategory('family dinner', 'expense')?.id).not.toBe('family')
     syncCategories({})
   })
 })

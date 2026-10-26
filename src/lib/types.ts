@@ -427,6 +427,8 @@ export interface SpendCustomCategory {
   icon: string
   /** Kept for old transactions but no longer offered in pickers */
   hidden?: boolean
+  /** Deleted for good: gone from Settings too, only past transactions still show its name */
+  removed?: boolean
 }
 
 /** Something to save up for. Progress follows a linked wallet's balance, or a typed amount. */
@@ -447,7 +449,7 @@ export interface SpendGoal {
   createdAt: string
 }
 
-export type SpendCategoryEdit = Partial<Pick<SpendCustomCategory, 'label' | 'tone' | 'icon' | 'hidden'>>
+export type SpendCategoryEdit = Partial<Pick<SpendCustomCategory, 'label' | 'tone' | 'icon' | 'hidden' | 'removed'>>
 
 export type RecurringFrequency = 'weekly' | 'monthly' | 'yearly'
 
