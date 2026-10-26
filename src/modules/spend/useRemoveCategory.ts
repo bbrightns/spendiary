@@ -15,13 +15,13 @@ export function useRemoveCategory() {
   return (c: SpendCategory) => {
     if (KEEP_CATEGORY.has(c.id)) return
     if (c.custom && removeCategory(c.id) === 'removed') {
-      showToast(`Removed ${c.label}`, 'info', {
+      showToast(`Deleted ${c.label}`, 'info', {
         label: 'Undo',
         onClick: () => upsertCategory({ id: c.id, type: c.type, label: c.label, icon: c.iconKey, tone: c.tone }),
       })
       return
     }
     setCategoryHidden(c.id, true)
-    showToast(`Removed ${c.label} · bring it back in Settings`, 'info', { label: 'Undo', onClick: () => setCategoryHidden(c.id, false) })
+    showToast(`Deleted ${c.label} · restore it in Settings`, 'info', { label: 'Undo', onClick: () => setCategoryHidden(c.id, false) })
   }
 }
