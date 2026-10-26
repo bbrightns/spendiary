@@ -88,7 +88,7 @@ export function EmailCodeSignIn() {
           e.preventDefault()
           requestCode(email.trim().toLowerCase())
         }}
-        className="mt-4 space-y-2.5"
+        className="mt-4 space-y-2.5 text-left"
       >
         <label htmlFor="signin-email" className="block text-sm font-semibold text-landing-ink-soft">
           อีเมลของคุณ
@@ -117,7 +117,7 @@ export function EmailCodeSignIn() {
   // "code from Mail" suggestion all work as in a normal field; the boxes only draw its value.
   const activeBox = Math.min(code.length, CODE_LENGTH - 1)
   return (
-    <div className="mt-5">
+    <div className="mt-5 text-left">
       <h3 className="font-display font-extrabold text-lg sm:text-xl text-landing-ink tracking-tight">
         กรอกรหัสยืนยัน
       </h3>
