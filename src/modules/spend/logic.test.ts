@@ -780,7 +780,7 @@ describe('automatic category order', () => {
     syncCategories({ categoryOrder: { expense: ['drinks'] } }, txns)
     const ex = categoriesFor('expense').map((c) => c.id)
     expect(ex.slice(0, 3)).toEqual(['fun', 'bills', 'drinks'])
-    expect(ex.at(-1)).toBe('other')
+    expect(ex[ex.length - 1]).toBe('other')
     syncCategories({})
   })
   it('keeps the hand-made order when set to manual', () => {
