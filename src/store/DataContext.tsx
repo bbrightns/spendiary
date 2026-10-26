@@ -200,11 +200,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // Spend category lookups are plain functions read while rendering, so the list has to match
   // this render's data before the children render; an effect would leave them one render behind.
   // syncCategories only rebuilds when the settings objects change, so calling it here is a cache.
-  syncCategories(data.spendSettings)
+  syncCategories(data.spendSettings, data.spendTransactions)
   // A render React throws away could leave the list on its settings; snap back to what committed
   useLayoutEffect(() => {
-    syncCategories(data.spendSettings)
-  }, [data.spendSettings])
+    syncCategories(data.spendSettings, data.spendTransactions)
+  }, [data.spendSettings, data.spendTransactions])
   // Start from the last real rate this device saw, then fetch a fresh one right away
   const [fx, setFx] = useState<UsdThbRate | null>(() => readCachedUsdThb())
   const usdThb = fx?.rate ?? null

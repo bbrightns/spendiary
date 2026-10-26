@@ -815,3 +815,13 @@ export function categoryUsage(
   if (budget && budget > 0) lines.push(`Its ${thb(budget)} monthly budget stops counting until you restore it.`)
   return lines
 }
+
+/** Category ids ordered by how many transactions use each, most first; ties keep their current order. */
+export function sortByUse(ids: string[], transactions: SpendTransaction[]): string[] {
+  const count = new Map<string, number>()
+  for (const t of transactions) if (t.categoryId) count.set(t.categoryId, (count.get(t.categoryId) ?? 0) + 1)
+  return ids
+    .map((id, i) => ({ id, i, n: count.get(id) ?? 0 }))
+    .sort((a, b) => b.n - a.n || a.i - b.i)
+    .map((x) => x.id)
+}
