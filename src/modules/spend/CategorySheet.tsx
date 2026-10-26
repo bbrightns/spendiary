@@ -281,6 +281,8 @@ export function CategoryManager() {
   const [sheet, setSheet] = useState<{ open: boolean; category?: SpendCategory }>({ open: false })
   const [arranging, setArranging] = useState(false)
   const [showDeleted, setShowDeleted] = useState(false)
+  // Unset means automatic: most used first
+  const manualOrder = settings.categorySort === 'manual'
   // A deleted category is only hidden inside (past transactions keep its name); here it just leaves the list
   const list = manageableCategories(type)
   const tiles = list.filter((c) => !c.hidden)
@@ -293,7 +295,23 @@ export function CategoryManager() {
         <div className="min-w-0 flex-1">
           <SegmentedControl options={TYPE_OPTIONS} value={type} onChange={setType} ariaLabel="Category type" />
         </div>
-        {arrangeable.length > 1 && <ArrangeButton label={type === 'income' ? 'Arrange income categories' : 'Arrange categories'} onClick={() => setArranging(true)} />}
+        {manualOrder && arrangeable.length > 1 && (
+          <ArrangeButton label={type === 'income' ? 'Arrange income categories' : 'Arrange categories'} onClick={() => setArranging(true)} />
+        )}
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+        <p className="text-sm font-semibold text-ink-soft">Order</p>
+        <SegmentedControl
+          ariaLabel="Category order"
+          size="sm"
+          fullWidth={false}
+          value={manualOrder ? 'manual' : 'auto'}
+          onChange={(categorySort) => updateSettings({ categorySort })}
+          options={[
+            { value: 'auto', label: 'Most used' },
+            { value: 'manual', label: 'Manual' },
+          ]}
+        />
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {tiles.map((c) => (

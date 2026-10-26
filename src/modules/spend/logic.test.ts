@@ -7,6 +7,7 @@ import { isLiabilityActionableThisMonth, isLiabilityFirstDueNextMonth, isLiabili
 import { availableCredit, limitOwner, totalAvailable } from './credit'
 import {
   categoryUsage,
+  sortByUse,
   accountTotals,
   applyOrder,
   moveId,
@@ -761,5 +762,30 @@ describe('what still uses a category', () => {
     expect(categoryUsage('salary', { transactions: [], recurring: [rec('salary', { type: 'income' })] }).join(' ')).toContain('DCA Plans')
     expect(categoryUsage('bills', { transactions: [], recurring: [], hasLoans: true })).toEqual(['Loan and installment payments are still recorded under it.'])
     expect(categoryUsage('bills', { transactions: [], recurring: [], hasLoans: false })).toEqual([])
+  })
+})
+
+describe('sorting categories by use', () => {
+  const t = (categoryId: string) => ({ id: Math.random() + '', type: 'expense', amount: 1, categoryId, date: '2026-10-01', createdAt: '' }) as SpendTransaction
+  it('puts the most used first and keeps the current order for ties', () => {
+    const txns = [t('drinks'), t('food'), t('food'), t('food'), t('drinks'), t('fun')]
+    expect(sortByUse(['fun', 'shopping', 'drinks', 'bills', 'food'], txns)).toEqual(['food', 'drinks', 'fun', 'shopping', 'bills'])
+  })
+})
+
+describe('automatic category order', () => {
+  const t = (categoryId: string) => ({ id: Math.random() + '', type: 'expense', amount: 1, categoryId, date: '2026-10-01', createdAt: '' }) as SpendTransaction
+  const txns = [t('fun'), t('fun'), t('fun'), t('bills'), t('bills'), t('other'), t('other'), t('other'), t('other')]
+  it('puts the most used first by default, and Other stays last however much it is used', () => {
+    syncCategories({ categoryOrder: { expense: ['drinks'] } }, txns)
+    const ex = categoriesFor('expense').map((c) => c.id)
+    expect(ex.slice(0, 3)).toEqual(['fun', 'bills', 'drinks'])
+    expect(ex.at(-1)).toBe('other')
+    syncCategories({})
+  })
+  it('keeps the hand-made order when set to manual', () => {
+    syncCategories({ categoryOrder: { expense: ['drinks'] }, categorySort: 'manual' }, txns)
+    expect(categoriesFor('expense')[0].id).toBe('drinks')
+    syncCategories({})
   })
 })
