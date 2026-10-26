@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { authErrorText, NOT_INVITED } from './authErrors'
+import { authErrorText, NO_ACCOUNT, SIGNUPS_CLOSED } from './authErrors'
 
 describe('authErrorText', () => {
-  it('treats a disabled sign-up as not invited, from the email code or the Google redirect', () => {
-    expect(authErrorText({ code: 'otp_disabled', message: 'Signups not allowed for otp' })).toBe(NOT_INVITED)
-    expect(authErrorText({ code: 'signup_disabled', message: 'Signups not allowed for this instance' })).toBe(NOT_INVITED)
+  it('sends an email code for an unknown address back to Google to create the account', () => {
+    expect(authErrorText({ code: 'otp_disabled', message: 'Signups not allowed for otp' })).toBe(NO_ACCOUNT)
+    expect(authErrorText({ message: 'Signups not allowed for otp' })).toBe(NO_ACCOUNT)
+  })
+
+  it('says sign-ups are closed if they are ever switched off, from the code or the Google redirect', () => {
+    expect(authErrorText({ code: 'signup_disabled', message: 'Signups not allowed for this instance' })).toBe(SIGNUPS_CLOSED)
     // The redirect error carries only the description, no code
-    expect(authErrorText({ message: 'Signups not allowed for this instance' })).toBe(NOT_INVITED)
+    expect(authErrorText({ message: 'Signups not allowed for this instance' })).toBe(SIGNUPS_CLOSED)
   })
 
   it('names the next step for a wrong code, too many requests and a dropped connection', () => {

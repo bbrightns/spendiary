@@ -95,6 +95,30 @@ function Feature({ chip, title, body, points, visual, flip }: {
   )
 }
 
+/** "All in one app." cards, each from a different page (captured by promo/landing-shots.mjs) */
+const SPEND_CARDS = [
+  { src: 'part-card', w: 780, h: 652, alt: 'A credit card on Accounts: owed, limit left and the bill due' },
+  { src: 'part-per-day', w: 780, h: 672, alt: 'Spent per day chart on Analysis' },
+  { src: 'part-loan', w: 780, h: 532, alt: 'Loans and installments with due dates' },
+]
+const INVEST_CARDS = [
+  { src: 'part-nw-trend', w: 780, h: 822, alt: 'Net worth over time chart on the Invest home' },
+  { src: 'part-retirement', w: 780, h: 1374, alt: 'Retirement safety net and milestones' },
+]
+
+const spendChip = (
+  <span className="inline-flex items-center gap-1.5 rounded-full bg-landing-mint px-3 py-1 text-xs font-semibold text-landing-mint-ink">
+    <WalletIcon className="h-3.5 w-3.5" />
+    Spend
+  </span>
+)
+const investChip = (
+  <span className="inline-flex items-center gap-1.5 rounded-full bg-landing-sky px-3 py-1 text-xs font-semibold text-landing-sky-ink">
+    <TrendUpIcon className="h-3.5 w-3.5" />
+    Invest
+  </span>
+)
+
 /** The signed-out page. Light only: landing-* tokens and .landing-canvas-bg never flip with .dark. Copy must stay true of the app. */
 export function Landing() {
   const { loginWithGoogle, loginAsTestMode, authError } = useData()
@@ -174,35 +198,47 @@ export function Landing() {
           </div>
         </section>
 
-        {/* All in one app: real cards from Spend home (left) and Invest home (right) around the phone screen */}
+        {/* All in one app: one real card from each of several pages, Spend on the left and Invest on the right,
+            none of them on the phone screen in the middle, so the section shows how much lives in the one app */}
         <section className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
           <h2 className={`landing-reveal text-center text-4xl sm:text-6xl leading-[1.05] ${display}`}>
             All in <span className="text-landing-brand">one app<Tight>.</Tight></span>
           </h2>
-          {/* Phones: the phone screen in the middle, its cards pulled out across both edges. The box keeps one
-              aspect ratio, so the percentages place everything the same at every phone width */}
-          <div className="landing-reveal relative mx-auto mt-10 aspect-[10/15] max-w-sm lg:hidden">
-            <div className="absolute left-1/2 top-0 w-[54%] -translate-x-1/2 rounded-[24px] border border-landing-line bg-landing-surface p-1 shadow-[var(--shadow-landing-soft)]">
-              <img src="/landing/spend-mobile.webp" width={780} height={1688} alt="" loading="lazy" className="h-auto w-full rounded-[20px]" />
-            </div>
-            <Part src="part-today" w={780} h={500} alt="Today card: money left to spend today" className="absolute -right-3 top-[33%] !w-[54%]" />
-            <Part src="part-month" w={780} h={284} alt="This month card: spending against the monthly budget" className="absolute -left-3 top-[55%] !w-[56%]" />
-            <Part src="part-due" w={780} h={224} alt="Payments due row with a Review button" className="absolute -left-3 top-[14%] !w-[62%]" />
-            <Part src="part-networth" w={780} h={998} alt="Total net worth card on the Invest home" className="absolute -right-3 top-[62%] !w-[50%]" />
+
+          {/* Phones: the two groups one after the other, cards offset left and right so the column doesn't read as a plain stack */}
+          <div className="mx-auto mt-10 max-w-sm space-y-8 lg:hidden">
+            {[SPEND_CARDS, INVEST_CARDS].map((group, g) => (
+              <div key={g} className="landing-reveal">
+                <div className="flex justify-center">{g === 0 ? spendChip : investChip}</div>
+                <div className="mt-2">
+                  {group.map((c, i) => (
+                    <Part key={c.src} {...c} className={`-my-2 !w-[90%] ${i % 2 ? 'ml-auto' : ''}`} />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* Desktop: Spend home's cards on the left, Invest home's net worth on the right, the phone screen between */}
-          <div className="landing-reveal mt-14 hidden grid-cols-[1fr_auto_1fr] items-center gap-6 lg:grid">
-            <div className="grid -translate-y-6 gap-2">
-              <Part src="part-today" w={780} h={500} alt="Today card: money left to spend today" />
-              <Part src="part-month" w={780} h={284} alt="This month card: spending against the monthly budget" />
-              <Part src="part-due" w={780} h={224} alt="Payments due row with a Review button" />
+          {/* Desktop: Spend cards on the left, Invest cards on the right, the Spend home phone screen between */}
+          <div className="landing-reveal mt-14 hidden grid-cols-[1fr_auto_1fr] items-start gap-8 lg:grid">
+            <div>
+              <div className="flex justify-center">{spendChip}</div>
+              <div className="mt-2 grid">
+                {SPEND_CARDS.map((c) => (
+                  <Part key={c.src} {...c} className="-my-1" />
+                ))}
+              </div>
             </div>
-            <div className="mx-auto w-60 rounded-[30px] border border-landing-line bg-landing-surface p-1.5 shadow-[var(--shadow-landing-soft)]">
+            <div className="mx-auto mt-24 w-60 rounded-[30px] border border-landing-line bg-landing-surface p-1.5 shadow-[var(--shadow-landing-soft)]">
               <img src="/landing/spend-mobile.webp" width={780} height={1688} alt="" loading="lazy" className="h-auto w-full rounded-[24px]" />
             </div>
-            <div className="translate-y-6">
-              <Part src="part-networth" w={780} h={998} alt="Total net worth card on the Invest home" />
+            <div>
+              <div className="flex justify-center">{investChip}</div>
+              <div className="mt-2 grid">
+                {INVEST_CARDS.map((c) => (
+                  <Part key={c.src} {...c} className="-my-1" />
+                ))}
+              </div>
             </div>
           </div>
           <p className="mt-8 text-center text-xs text-landing-ink-faint">Screens from demo mode</p>
