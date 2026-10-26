@@ -57,8 +57,8 @@ colors-dark:
   warn: "#fbbf24"
 typography:
   families:
-    display: "'Plus Jakarta Sans', Inter, ui-sans-serif, system-ui, sans-serif"
-    body: "'Inter', ui-sans-serif, system-ui, sans-serif"
+    display: "'Plus Jakarta Sans', Inter, 'IBM Plex Sans Thai', ui-sans-serif, system-ui, sans-serif"
+    body: "'Inter', 'IBM Plex Sans Thai', ui-sans-serif, system-ui, sans-serif"
     mono: "ui-monospace only for <kbd> keys and the build hash in the footer"
   scale:
     2xs: "12px. The floor: tight badges, chart axis labels"
@@ -122,7 +122,7 @@ components:
 
 - Warm off-white canvas with a soft ambient gradient (light); flat `canvas` in dark.
 - White cards with a hairline border and a soft shadow. Every block of content lives in a card.
-- Plus Jakarta Sans for titles and big numbers; Inter for everything else.
+- Plus Jakarta Sans for titles and big numbers; Inter for everything else. Neither has Thai glyphs, so IBM Plex Sans Thai sits after them in both stacks and draws only the Thai text.
 - Phones get a bottom nav and bottom-sheet modals. Desktop (lg and up) gets a fixed sidebar and centred modals. The structure of a page never changes between the two, only the chrome around it.
 
 ## 3. Colour

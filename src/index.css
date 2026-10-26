@@ -4,8 +4,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', 'IBM Plex Sans Thai', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: 'Plus Jakarta Sans', 'Inter', 'IBM Plex Sans Thai', ui-sans-serif, system-ui, sans-serif;
 
   /* Type: small labels are 13px (Tailwind's default 12px read too small on phones);
      text-2xs (12px) is the floor, for tight badges and chart labels only */
