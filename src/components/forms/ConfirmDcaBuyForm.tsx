@@ -289,6 +289,12 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     : amountThbNum > 0
 
   const payFrom = data.cashAccounts.find((a) => a.id === payFromId)
+  // The plan's accounts that have since been deleted, by the name they had
+  const removed = data.spendSettings?.removedAccounts
+  const goneName = (id?: string) => (id && !data.cashAccounts.some((a) => a.id === id) ? removed?.[id]?.name ?? 'Its account' : undefined)
+  // A savings deposit into a deleted account would land nowhere, so it can't be logged
+  const depositGone = isCash ? goneName(plan?.cashAccountId) : undefined
+  const payFromGone = goneName(plan?.payFromAccountId)
 
   const locValid = !(isBtc || isGold) ||
     (selectedLocId !== '__new__') ||
@@ -296,7 +302,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
 
   // Paint the spinner first, then apply the buy — instant feedback and no double-confirm
   function confirm() {
-    if (submitting) return
+    if (submitting || depositGone) return
     if (!valid || !locValid) { setShowErrors(true); return }
     setSubmitting(true)
     showResult({
@@ -562,9 +568,16 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         isCash ? 'log it after you move the money.' : "Spendiary doesn't trade for you; log it after you buy at your broker."
       }`}
       footer={
-        <Button data-modal-submit onClick={confirm} loading={submitting} className="w-full">
-          {submitting ? 'Saving…' : `Log ${amountThbNum > 0 ? `${thb(amountThbNum)} ` : ''}${isCash ? 'deposit' : 'buy'}`}
-        </Button>
+        <div className="w-full">
+          {depositGone && (
+            <p role="status" className="mb-2.5 text-center text-xs font-medium text-ink-muted">
+              Pick another account in the plan first
+            </p>
+          )}
+          <Button data-modal-submit onClick={confirm} loading={submitting} disabled={!!depositGone} className="w-full">
+            {submitting ? 'Saving…' : `Log ${amountThbNum > 0 ? `${thb(amountThbNum)} ` : ''}${isCash ? 'deposit' : 'buy'}`}
+          </Button>
+        </div>
       }
     >
       <div className="space-y-4">
@@ -585,7 +598,12 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         {/* ------------------------------------------------------------------ */}
         {/* 0. Cash / Savings Deposit Form */}
         {/* ------------------------------------------------------------------ */}
-        {isCash && (
+        {isCash && depositGone && (
+          <p className="rounded-2xl bg-loss-soft px-4 py-3 text-sm font-semibold text-loss-ink">
+            {depositGone} was deleted, so this deposit has nowhere to go. Edit the plan in DCA plans and pick another account.
+          </p>
+        )}
+        {isCash && !depositGone && (
           <div className="space-y-4">
             <div className="rounded-2xl bg-surface-muted p-4 space-y-2.5">
               <div className="flex items-center justify-between">
@@ -960,6 +978,9 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
                 .map((a) => ({ value: a.id, label: `${a.name} (฿${a.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })})` })),
             ]}
           />
+          {payFromGone && !payFromId && (
+            <p className="mt-1.5 text-xs font-semibold text-loss-ink">Usually paid from {payFromGone}, which was deleted. Pick another account or leave it not set.</p>
+          )}
           <p className="mt-1.5 text-xs leading-relaxed text-ink-muted">
             {payFrom
               ? `฿${fmtNum(amountThbNum, 2)} leaves ${payFrom.name} → ฿${fmtNum(payFrom.balance - amountThbNum, 2)} left. Shows in Spend as ${isCash ? 'a transfer' : 'invested'}, not spending.`
