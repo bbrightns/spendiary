@@ -3,7 +3,7 @@ import { Modal } from '../../components/ui/Modal'
 import { SegmentedControl } from '../../components/ui/SegmentedControl'
 import { FormActions } from '../../components/forms/FormActions'
 import { useToast } from '../../store/ToastContext'
-import { DotsHorizontalIcon, PencilIcon, SearchIcon, TrashIcon, UndoIcon } from '../../components/icons'
+import { ChevronDownIcon, DotsHorizontalIcon, PencilIcon, SearchIcon, TrashIcon, UndoIcon } from '../../components/icons'
 import { ConfirmModal } from '../../components/ui/ConfirmModal'
 import { Popover, PopoverOption } from '../../components/ui/Popover'
 import { CATEGORY_ICON_GROUPS, pickableCategoryIcons } from '../../components/categoryIcons'
@@ -267,6 +267,38 @@ export function CategoryManager() {
   // A built-in, or one past transactions or recurring items use, is hidden rather than deleted
   const hidesOnly = (c: SpendCategory) => !c.custom || transactions.some((t) => t.categoryId === c.id) || recurring.some((r) => r.categoryId === c.id)
   const [arranging, setArranging] = useState(false)
+  const [showDeleted, setShowDeleted] = useState(false)
+  // A deleted (hidden) category leaves the grid, so Delete visibly takes it away; it waits folded below
+  const all = manageableCategories(type)
+  const shown = all.filter((c) => !c.hidden)
+  const deleted = all.filter((c) => c.hidden)
+  const tile = (c: SpendCategory) => (
+    <div key={c.id} className="flex min-w-0 items-center rounded-xl border border-line transition-colors hover:bg-surface-muted/60">
+      <button
+        type="button"
+        onClick={() => setSheet({ open: true, category: c })}
+        aria-label={`Edit ${c.label}`}
+        className={`flex min-w-0 flex-1 items-center gap-2.5 py-2.5 pl-3 text-left cursor-pointer ${c.hidden ? 'opacity-60' : ''}`}
+      >
+        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${TONES[c.tone].chip}`}>
+          <c.icon className="h-4 w-4" />
+        </span>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{c.label}</span>
+      </button>
+      <button
+        type="button"
+        onClick={(e) => {
+          menuAnchor.current = e.currentTarget
+          setMenu(c)
+        }}
+        aria-label={`More for ${c.label}`}
+        aria-haspopup="menu"
+        className="mx-1 grid h-9 w-9 shrink-0 place-items-center rounded-lg text-ink-muted transition-colors cursor-pointer hover:bg-surface-muted hover:text-ink"
+      >
+        <DotsHorizontalIcon className="h-4 w-4" />
+      </button>
+    </div>
+  )
   // Same list the Quick add picker arranges: shown categories, "Other" pinned last
   const arrangeable = categoriesFor(type).filter((c) => !KEEP_CATEGORY.has(c.id))
   return (
@@ -279,36 +311,7 @@ export function CategoryManager() {
       </div>
       {/* One per row on phones, so the ⋯ button never squeezes the name */}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        {manageableCategories(type).map((c) => (
-          <div key={c.id} className="flex min-w-0 items-center rounded-xl border border-line transition-colors hover:bg-surface-muted/60">
-            <button
-              type="button"
-              onClick={() => setSheet({ open: true, category: c })}
-              aria-label={`Edit ${c.label}`}
-              className={`flex min-w-0 flex-1 items-center gap-2.5 py-2.5 pl-3 text-left cursor-pointer ${c.hidden ? 'opacity-60' : ''}`}
-            >
-              <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${TONES[c.tone].chip}`}>
-                <c.icon className="h-4 w-4" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold text-ink">{c.label}</span>
-                {c.hidden && <span className="block text-2xs text-ink-muted">Hidden</span>}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                menuAnchor.current = e.currentTarget
-                setMenu(c)
-              }}
-              aria-label={`More for ${c.label}`}
-              aria-haspopup="menu"
-              className="mx-1 grid h-9 w-9 shrink-0 place-items-center rounded-lg text-ink-muted transition-colors cursor-pointer hover:bg-surface-muted hover:text-ink"
-            >
-              <DotsHorizontalIcon className="h-4 w-4" />
-            </button>
-          </div>
-        ))}
+        {shown.map(tile)}
         <button
           type="button"
           onClick={() => setSheet({ open: true })}
@@ -317,6 +320,25 @@ export function CategoryManager() {
           <span className="text-lg leading-none">+</span> Add category
         </button>
       </div>
+      {deleted.length > 0 && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowDeleted((v) => !v)}
+            aria-expanded={showDeleted}
+            className="flex items-center gap-1.5 text-sm font-semibold text-ink-muted cursor-pointer hover:text-ink"
+          >
+            Deleted ({deleted.length})
+            <ChevronDownIcon className={`h-4 w-4 transition-transform ${showDeleted ? 'rotate-180' : ''}`} />
+          </button>
+          {showDeleted && (
+            <>
+              <p className="mt-1 mb-2 text-xs text-ink-muted">Not offered in Quick add or recurring. Past transactions keep them. Use ⋯ to show one again.</p>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">{deleted.map(tile)}</div>
+            </>
+          )}
+        </div>
+      )}
       <CategorySheet open={sheet.open} category={sheet.category} type={type} onClose={() => setSheet({ open: false })} />
       {menu && (
         <Popover open onClose={() => setMenu(null)} anchorRef={menuAnchor} title={menu.label} align="right">
@@ -366,7 +388,7 @@ export function CategoryManager() {
           title={`Delete ${confirming.label}?`}
           description={
             hidesOnly(confirming)
-              ? `It leaves Quick add and recurring. ${confirming.custom ? 'Past transactions use it, so it is hidden' : 'Built-in categories are hidden'} rather than deleted: past transactions keep its name, and it stays here as Hidden, ready to show again.`
+              ? `It leaves Quick add and recurring. ${confirming.custom ? 'Past transactions use it, so it is hidden' : 'Built-in categories are hidden'} rather than deleted: past transactions keep its name, and it moves to Deleted below, ready to show again.`
               : 'It leaves Quick add and recurring for good. You can undo right after.'
           }
           confirmText="Delete category"
