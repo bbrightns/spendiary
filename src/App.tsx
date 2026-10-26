@@ -9,6 +9,7 @@ import { Layout } from './app/Layout'
 import { PageErrorBoundary } from './app/PageErrorBoundary'
 import { lazyPage } from './lib/lazyPage'
 import { Landing } from './app/Landing'
+import { Privacy } from './app/Privacy'
 import { Dashboard } from './pages/Dashboard'
 import { Portfolio } from './pages/Portfolio'
 import { DcaPlanner } from './pages/DcaPlanner'
@@ -110,6 +111,8 @@ function AppContent() {
     retryLoad()
   }
 
+  // Readable before signing in (linked from the landing page), and stays its own page after
+  if (pathname === '/privacy') return <Privacy />
   if (!user) return <Landing />
 
   // ถ้าล็อกอินผ่านแล้ว ให้แสดงผลหน้าตาแอปและ Router ปกติ

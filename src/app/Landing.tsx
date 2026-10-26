@@ -1,15 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { EmailCodeSignIn } from './EmailCodeSignIn'
-
-/** Keeps a phrase on one line. The browser's Thai dictionary breaks loanwords mid-word (คริ|ปโต)
- *  and splits short phrases that read badly apart (ยัง|ไง). */
-const keep = (text: string) => <span className="whitespace-nowrap">{text}</span>
+import { Keep } from './Keep'
 
 /** What each side of the app covers, under the screenshots. Every item must exist in the app. */
 const SIDES = [
   { title: 'ฝั่ง Spend', body: <>งบใช้จ่ายรายวัน บัตรเครดิต บิล หนี้ และงบประมาณ</> },
-  { title: 'ฝั่ง Invest', body: <>หุ้นสหรัฐ กองทุน {keep('คริปโต')} แผน DCA ปันผล และแผนเกษียณ</> },
+  { title: 'ฝั่ง Invest', body: <>หุ้นสหรัฐ กองทุน <Keep>คริปโต</Keep> แผน DCA ปันผล และแผนเกษียณ</> },
 ]
 
 const screenshotClass = 'h-auto w-full rounded-2xl border border-landing-line shadow-[var(--shadow-landing-soft)]'
@@ -42,8 +39,8 @@ export function Landing() {
                 <span className="inline-block">อยู่ในที่เดียว</span>
               </h1>
               <p className="mt-4 max-w-xl text-base sm:text-lg leading-relaxed text-landing-ink-muted">
-                ดูว่าเดือนนี้ใช้เงินไปเท่าไหร่ บัตรใบไหน{keep('ใกล้ครบกำหนด')} และพอร์ตหุ้น กองทุน {keep('คริปโต')} ตอนนี้เป็น
-                {keep('ยังไง')} ทั้งหมดคิดเป็นเงินบาท ด้วยอัตรา {keep('USD/THB จริง')}
+                ดูว่าเดือนนี้ใช้เงินไปเท่าไหร่ บัตรใบไหน<Keep>ใกล้ครบกำหนด</Keep> และพอร์ตหุ้น กองทุน <Keep>คริปโต</Keep> ตอนนี้เป็น
+                <Keep>ยังไง</Keep> ทั้งหมดคิดเป็นเงินบาท ด้วยอัตรา <Keep>USD/THB จริง</Keep>
               </p>
             </div>
 

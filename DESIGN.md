@@ -352,4 +352,4 @@ The signed-out page (`src/app/Landing.tsx`, with `EmailCodeSignIn.tsx`) is invit
 - **Sign-in card:** `landing-surface`, a hairline `landing-line` border, `--shadow-landing-soft`, `--radius-card`.
 - **Buttons:** pills. Google sign-in is the one dark pill (`landing-ink`); Demo is a secondary pill with a `landing-line-strong` border. Links are `landing-link`.
 - **Product, not claims:** real screenshots from demo mode (`public/landing/`, retaken with `npm run landing` in `promo/`), then three plain-text lines on what Spend, Invest and data storage cover. No feature cards, badges, stats or decorative motion. Every sentence must be true of the app.
-- **Thai text:** the page sets `lang="th"`. Wrap loanwords and short phrases that the browser would split (คริปโต, ยังไง) in `keep()`.
+- **Thai text:** the page sets `lang="th"`. Wrap loanwords and short phrases that the browser would split (คริปโต, ยังไง) in `<Keep>` (`src/app/Keep.tsx`). `/privacy` (`Privacy.tsx`) follows the same rules.
