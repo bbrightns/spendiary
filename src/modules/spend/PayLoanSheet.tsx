@@ -140,7 +140,7 @@ export function PayLoanSheet() {
         <div className="space-y-5">
           <label className="block">
             <span className="mb-1.5 block text-sm font-semibold text-ink-soft">Amount</span>
-            <div className="flex h-12 items-center rounded-xl border border-line-strong bg-surface focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
+            <div className="flex h-12 items-center rounded-xl border border-line-strong bg-surface-muted focus-within:bg-surface focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
               <span className="pl-3.5 text-lg font-bold text-ink-muted">฿</span>
               <input
                 inputMode="decimal"

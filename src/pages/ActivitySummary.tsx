@@ -25,7 +25,7 @@ import {
 import { ClockIcon, PieChartIcon } from '../components/icons'
 
 const SELECT_CLASS =
-  'h-9 rounded-xl border border-line bg-surface px-2.5 text-xs font-semibold text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15 cursor-pointer'
+  'h-9 rounded-xl border border-line-strong bg-surface-muted focus:bg-surface px-2.5 text-xs font-semibold text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15 cursor-pointer'
 
 /** Small labelled figure used in the money-flow strip. */
 function Stat({ label, value, tone = 'neutral', hint }: {

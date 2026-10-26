@@ -456,7 +456,7 @@ export function AiImportModal({ open, onClose, onSuccess }: AiImportModalProps) 
             value={jsonText}
             onChange={(e) => changeJson(e.target.value)}
             placeholder={`Paste the JSON code block from ChatGPT here, e.g.\n{\n  "holdings": [\n    { "ticker": "PTT", "units": 1000, "avgCost": 34.5, "assetClass": "fund", "currency": "THB" },\n    { "ticker": "AAPL", "units": 10, "avgCost": 180.5, "assetClass": "stock", "currency": "USD" }\n  ]\n}`}
-            className="w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 font-mono text-xs text-ink placeholder:text-ink-soft/60 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-line-strong bg-surface-muted focus:bg-surface px-3.5 py-2.5 font-mono text-xs text-ink placeholder:text-ink-soft/60 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/10 dark:bg-black/20"
           />
 
           {/* Validation Feedback & Preview Badges */}

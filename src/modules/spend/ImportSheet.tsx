@@ -249,7 +249,7 @@ export function ImportSheet() {
           setMap(next)
           resetPicks()
         }}
-        className="h-10 w-full truncate rounded-xl border border-line-strong bg-surface px-2.5 text-sm text-ink outline-none focus:border-brand"
+        className="h-10 w-full truncate rounded-xl border border-line-strong bg-surface-muted focus:bg-surface px-2.5 text-sm text-ink outline-none focus:border-brand"
       >
         {optional && <option value={-1}>—</option>}
         {parsed?.header.map((h, i) => (
@@ -311,7 +311,7 @@ export function ImportSheet() {
             spellCheck={false}
             placeholder={'วันที่,รายการ,ถอนเงิน,ฝากเงิน\n05/10/2569,ค่ากาแฟ,65.00,'}
             aria-label="CSV text"
-            className="w-full rounded-xl border border-line-strong bg-surface px-3 py-2 font-mono text-xs text-ink outline-none placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15"
+            className="w-full rounded-xl border border-line-strong bg-surface-muted focus:bg-surface px-3 py-2 font-mono text-xs text-ink outline-none placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15"
           />
         </div>
 

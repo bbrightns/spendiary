@@ -254,7 +254,7 @@ export function SelectField({ label, value, error, onChange, options }: SelectFi
       <div className="relative">
         <select
           id={id}
-          className={`${getFieldClass(!!error)} cursor-pointer appearance-none pr-9`}
+          className={`${getFieldClass(!!error)} cursor-pointer`}
           value={value}
           aria-invalid={!!error}
           aria-describedby={error ? errorId : undefined}
@@ -266,17 +266,6 @@ export function SelectField({ label, value, error, onChange, options }: SelectFi
             </option>
           ))}
         </select>
-        <svg
-          className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.8}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
       </div>
     </FieldWrap>
   )

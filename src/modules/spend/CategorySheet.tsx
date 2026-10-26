@@ -143,7 +143,7 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
             onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
             maxLength={24}
             placeholder={form.type === 'income' ? 'Freelance' : 'Pets'}
-            className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15"
+            className="h-11 w-full rounded-xl border border-line-strong bg-surface-muted focus:bg-surface px-3.5 text-base text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15"
           />
         </label>
 
@@ -157,7 +157,7 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
               value={iconQuery}
               onChange={(e) => setIconQuery(e.target.value)}
               placeholder="Search icons, e.g. dog, หมา, cake"
-              className="h-10 w-full rounded-xl border border-line-strong bg-surface pl-9 pr-3 text-base text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15 sm:text-sm"
+              className="h-10 w-full rounded-xl border border-line-strong bg-surface-muted focus:bg-surface pl-9 pr-3 text-base text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15 sm:text-sm"
             />
           </label>
           {/* Its own scroll area, so Color and Subcategories stay one swipe away */}

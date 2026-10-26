@@ -325,7 +325,7 @@ export function HoldingLogs() {
               placeholder="Search logs…"
               title="Search by ticker, asset, note or wallet"
               aria-label="Search activity"
-              className="h-10 w-full rounded-xl border border-line bg-surface pl-9 pr-8 text-sm text-ink placeholder:text-ink-faint outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15"
+              className="h-10 w-full rounded-xl border border-line-strong bg-surface-muted focus:bg-surface pl-9 pr-8 text-sm text-ink placeholder:text-ink-faint outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15"
             />
             {searchQuery && (
               <button
@@ -430,7 +430,7 @@ export function HoldingLogs() {
                           value={dateFrom}
                           max={dateTo || undefined}
                           onChange={(e) => setDateFrom(e.target.value)}
-                          className="h-9 w-full rounded-lg border border-line bg-surface px-2 text-sm text-ink"
+                          className="h-9 w-full rounded-lg border border-line-strong bg-surface-muted focus:bg-surface px-2 text-sm text-ink"
                         />
                       </label>
                       <label className="space-y-1 text-xs font-medium text-ink-faint">
@@ -440,7 +440,7 @@ export function HoldingLogs() {
                           value={dateTo}
                           min={dateFrom || undefined}
                           onChange={(e) => setDateTo(e.target.value)}
-                          className="h-9 w-full rounded-lg border border-line bg-surface px-2 text-sm text-ink"
+                          className="h-9 w-full rounded-lg border border-line-strong bg-surface-muted focus:bg-surface px-2 text-sm text-ink"
                         />
                       </label>
                     </div>
@@ -1056,7 +1056,7 @@ export function HoldingLogs() {
                     type="time"
                     value={editTimeValue}
                     onChange={(e) => setEditTimeValue(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15"
+                    className="h-11 w-full rounded-xl border border-line-strong bg-surface-muted focus:bg-surface px-3.5 text-base text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15"
                   />
                 </div>
               </div>
