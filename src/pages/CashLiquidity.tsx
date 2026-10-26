@@ -20,6 +20,8 @@ import {
 import { money, thb } from '../lib/format'
 import { rateOrZero } from '../lib/fx'
 import { ListBulletIcon } from '../modules/spend/categories'
+import { recurringUsing } from '../modules/spend/accountRemoval'
+import { RecurringImpact } from '../modules/spend/RecurringImpact'
 import { EditAccountModal } from '../components/forms/EditCashAccountModal'
 import {
   PencilIcon,
@@ -186,9 +188,15 @@ export function CashLiquidity() {
   }
 
   const deleteAccount = (acc: CashAccount) => {
+    // The store pauses the recurring items that use it
+    const paused = recurringUsing(data.spendRecurring ?? [], acc.id).filter((u) => !u.rec.paused).length
     setCashAccounts(accounts.filter((a) => a.id !== acc.id))
-    showToast(`Deleted account "${acc.name}"`, 'info')
+    showToast(`Deleted account "${acc.name}"${paused > 0 ? ` · ${paused} recurring paused` : ''}`, 'info')
   }
+
+  // Recurring bills, income and transfers that use the account about to be deleted
+  const deleteUses = accountToDelete ? recurringUsing(data.spendRecurring ?? [], accountToDelete.id) : []
+  const deletePauses = deleteUses.filter((u) => !u.rec.paused).length
 
   const handleDeleteAccount = () => {
     if (!accountToDelete) return
@@ -704,9 +712,11 @@ export function CashLiquidity() {
           onDelete={
             accounts.some((x) => x.id === accountToEdit.id)
               ? () => {
-                  // The edit form's bin already took two taps: delete without a second dialog
                   setIsEditModalOpen(false)
-                  deleteAccount(accountToEdit)
+                  // The edit form's bin already took two taps: delete without a second dialog,
+                  // unless recurring items use it, which the confirm lists first
+                  if (recurringUsing(data.spendRecurring ?? [], accountToEdit.id).length > 0) setAccountToDelete(accountToEdit)
+                  else deleteAccount(accountToEdit)
                   setAccountToEdit(null)
                 }
               : undefined
@@ -725,11 +735,13 @@ export function CashLiquidity() {
           open={Boolean(accountToDelete)}
           title="Delete this account?"
           description={`Are you sure you want to delete "${accountToDelete.name}"? Your total cash will go down right away.`}
-          confirmText="Delete account"
+          confirmText={deletePauses > 0 ? `Delete and pause ${deletePauses}` : 'Delete account'}
           confirmVariant="danger"
           onConfirm={handleDeleteAccount}
           onClose={() => setAccountToDelete(null)}
-        />
+        >
+          {deleteUses.length > 0 && <RecurringImpact uses={deleteUses} name={accountToDelete.name} undoable />}
+        </ConfirmModal>
       )}
     </div>
   )
