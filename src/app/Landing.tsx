@@ -29,6 +29,8 @@ const FEATURES: { icon: ReactNode; tile: string; title: string; body: ReactNode 
 ]
 
 const glass = 'border border-landing-surface bg-landing-glass shadow-[var(--shadow-landing-soft)] backdrop-blur-xl'
+// Screenshot frames skip the blur: backdrop-filter softens the image drawn inside it
+const frame = 'border border-landing-surface bg-landing-glass shadow-[var(--shadow-landing-soft)]'
 
 /** The signed-out page: one centred column, light only (landing-* tokens and .landing-canvas-bg never flip with .dark). */
 export function Landing() {
@@ -116,7 +118,30 @@ export function Landing() {
             </div>
           </div>
 
-          <section className="mt-12 grid w-full max-w-md gap-4 text-left md:max-w-none md:grid-cols-3">
+          {/* Real screens from demo mode (promo/landing-shots.mjs). Desktop: the wide screen with the phone over its corner.
+              Phones: the two phone screens side by side. Hidden lazy images never load, so each size fetches only its own. */}
+          <section className="relative mt-14 w-full sm:mt-20">
+            <div className="relative mx-auto hidden max-w-4xl md:block">
+              <div className={`rounded-[28px] p-2.5 ${frame}`}>
+                <img src="/landing/spend-desktop.webp" width={1440} height={900} alt="หน้ารายรับรายจ่ายในโหมดทดลองใช้งาน" loading="lazy" className="h-auto w-full rounded-[20px]" />
+              </div>
+              <div className={`absolute -bottom-10 -right-6 w-[23%] rounded-[30px] p-1.5 lg:-right-14 ${frame}`}>
+                <img src="/landing/portfolio-mobile.webp" width={780} height={1688} alt="หน้าพอร์ตลงทุนในโหมดทดลองใช้งาน" loading="lazy" className="h-auto w-full rounded-[24px]" />
+              </div>
+            </div>
+            <div className="mx-auto grid max-w-md grid-cols-2 gap-3 md:hidden">
+              {[
+                ['/landing/spend-mobile.webp', 'หน้ารายรับรายจ่ายในโหมดทดลองใช้งาน'],
+                ['/landing/portfolio-mobile.webp', 'หน้าพอร์ตลงทุนในโหมดทดลองใช้งาน'],
+              ].map(([src, alt]) => (
+                <div key={src} className={`rounded-[24px] p-1.5 ${frame}`}>
+                  <img src={src} width={780} height={1688} alt={alt} loading="lazy" className="h-auto w-full rounded-[18px]" />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-12 grid w-full max-w-md gap-4 text-left md:mt-20 md:max-w-none md:grid-cols-3">
             {FEATURES.map((f) => (
               <div key={f.title} className={`flex items-start gap-3.5 rounded-3xl p-5 ${glass}`}>
                 <span className={`grid h-11 w-11 flex-none place-items-center rounded-2xl ${f.tile}`}>{f.icon}</span>
