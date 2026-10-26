@@ -20,7 +20,7 @@ import {
 import { money, thb } from '../lib/format'
 import { rateOrZero } from '../lib/fx'
 import { ListBulletIcon } from '../modules/spend/categories'
-import { recurringUsing } from '../modules/spend/accountRemoval'
+import { otherUsing, recurringUsing } from '../modules/spend/accountRemoval'
 import { RecurringImpact } from '../modules/spend/RecurringImpact'
 import { EditAccountModal } from '../components/forms/EditCashAccountModal'
 import {
@@ -197,6 +197,8 @@ export function CashLiquidity() {
   // Recurring bills, income and transfers that use the account about to be deleted
   const deleteUses = accountToDelete ? recurringUsing(data.spendRecurring ?? [], accountToDelete.id) : []
   const deletePauses = deleteUses.filter((u) => !u.rec.paused).length
+  // DCA plans, loans and holdings that point at it
+  const deleteOthers = accountToDelete ? otherUsing(data, accountToDelete.id) : []
 
   const handleDeleteAccount = () => {
     if (!accountToDelete) return
@@ -715,7 +717,8 @@ export function CashLiquidity() {
                   setIsEditModalOpen(false)
                   // The edit form's bin already took two taps: delete without a second dialog,
                   // unless recurring items use it, which the confirm lists first
-                  if (recurringUsing(data.spendRecurring ?? [], accountToEdit.id).length > 0) setAccountToDelete(accountToEdit)
+                  if (recurringUsing(data.spendRecurring ?? [], accountToEdit.id).length > 0 || otherUsing(data, accountToEdit.id).length > 0)
+                    setAccountToDelete(accountToEdit)
                   else deleteAccount(accountToEdit)
                   setAccountToEdit(null)
                 }
@@ -740,7 +743,7 @@ export function CashLiquidity() {
           onConfirm={handleDeleteAccount}
           onClose={() => setAccountToDelete(null)}
         >
-          {deleteUses.length > 0 && <RecurringImpact uses={deleteUses} name={accountToDelete.name} undoable />}
+          <RecurringImpact uses={deleteUses} others={deleteOthers} name={accountToDelete.name} undoable />
         </ConfirmModal>
       )}
     </div>

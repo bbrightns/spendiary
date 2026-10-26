@@ -28,6 +28,28 @@ export function recurringUsing(list: SpendRecurring[], accountId: string): Recur
   return out
 }
 
+export interface OtherUse {
+  id: string
+  /** e.g. "DCA · S&P 500" */
+  label: string
+  role: string
+}
+
+/**
+ * DCA plans, loans and holdings that point at this account. They aren't paused: each one
+ * asks for another account the next time it's used (a savings deposit can't be logged until then).
+ */
+export function otherUsing(d: Pick<SpendiaryData, 'dcaPlans' | 'liabilities' | 'holdings'>, accountId: string): OtherUse[] {
+  const out: OtherUse[] = []
+  for (const p of d.dcaPlans ?? []) {
+    if (p.cashAccountId === accountId) out.push({ id: `dca-in-${p.id}`, label: `DCA · ${p.name}`, role: 'deposits into it' })
+    if (p.payFromAccountId === accountId) out.push({ id: `dca-from-${p.id}`, label: `DCA · ${p.name}`, role: 'pays from it' })
+  }
+  for (const l of d.liabilities ?? []) if (l.payFromId === accountId) out.push({ id: `loan-${l.id}`, label: l.name, role: 'paid from it' })
+  for (const h of d.holdings ?? []) if (h.defaultCashAccountId === accountId) out.push({ id: `div-${h.id}`, label: h.name, role: 'dividends go into it' })
+  return out
+}
+
 /** Ids of every wallet and card that exists. */
 export function liveAccountIds(d: Pick<SpendiaryData, 'cashAccounts' | 'spendCards'>): Set<string> {
   return new Set([...(d.cashAccounts ?? []).map((a) => a.id), ...(d.spendCards ?? []).map((c) => c.id)])

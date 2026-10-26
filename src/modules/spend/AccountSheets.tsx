@@ -4,7 +4,7 @@ import { Modal } from '../../components/ui/Modal'
 import { Button } from '../../components/ui/Button'
 import { FormActions } from '../../components/forms/FormActions'
 import { ConfirmModal } from '../../components/ui/ConfirmModal'
-import { recurringUsing } from './accountRemoval'
+import { otherUsing, recurringUsing } from './accountRemoval'
 import { RecurringImpact } from './RecurringImpact'
 import { SwitchVisual } from '../../components/ui/SwitchVisual'
 import { useToast } from '../../store/ToastContext'
@@ -84,6 +84,9 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const uses = card ? recurringUsing(recurring, card.id) : []
   const toPause = uses.filter((u) => !u.rec.paused).length
+  const { data } = useData()
+  // Loans paid with this card
+  const others = card ? otherUsing(data, card.id) : []
   const { showToast } = useToast()
   const [form, setForm] = useState({ name: '', last4: '', limit: '', owed: '', unbilled: '', statementDay: '25', dueDay: '10', minPct: '8', color: CARD_COLORS[0] })
   // Main card whose limit this one shares ('' = its own limit)
@@ -182,7 +185,7 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
             onSave={save}
             onDelete={() => {
               if (!card) return
-              if (uses.length > 0) return setConfirmDelete(true)
+              if (uses.length > 0 || others.length > 0) return setConfirmDelete(true)
               removeCard(card.id)
               showToast('Card removed', 'info')
               onClose()
@@ -376,7 +379,7 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
           }}
           onClose={() => setConfirmDelete(false)}
         >
-          <RecurringImpact uses={uses} name={card.name} />
+          <RecurringImpact uses={uses} others={others} name={card.name} />
         </ConfirmModal>
       )}
     </>

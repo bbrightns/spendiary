@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { SpendRecurring, SpendiaryData } from '../../lib/types'
 import { emptyData } from '../../store/migrate'
-import { accountLabel, reconcileAccounts, recurringUsing, syncRecurringAccounts, trackRemovedMoves } from './accountRemoval'
+import { accountLabel, otherUsing, reconcileAccounts, recurringUsing, syncRecurringAccounts, trackRemovedMoves } from './accountRemoval'
 import { recurringInput } from './useSpend'
 
 const rec = (over: Partial<SpendRecurring>): SpendRecurring => ({
@@ -41,6 +41,23 @@ describe('recurringUsing', () => {
 
   it('ignores a stale toAccountId on a non-transfer', () => {
     expect(recurringUsing([rec({ accountId: 'scb', toAccountId: 'kbank' })], 'kbank')).toEqual([])
+  })
+})
+
+describe('otherUsing', () => {
+  it('lists DCA plans (both sides), loans and holdings that point at the account', () => {
+    const d = {
+      dcaPlans: [{ id: 'p1', name: 'Savings', cashAccountId: 'kbank', payFromAccountId: 'kbank' }, { id: 'p2', name: 'S&P', payFromAccountId: 'scb' }],
+      liabilities: [{ id: 'l1', name: 'Car loan', payFromId: 'kbank' }],
+      holdings: [{ id: 'h1', name: 'Condo', defaultCashAccountId: 'kbank' }],
+    } as unknown as Parameters<typeof otherUsing>[0]
+    expect(otherUsing(d, 'kbank').map((u) => [u.label, u.role])).toEqual([
+      ['DCA · Savings', 'deposits into it'],
+      ['DCA · Savings', 'pays from it'],
+      ['Car loan', 'paid from it'],
+      ['Condo', 'dividends go into it'],
+    ])
+    expect(otherUsing(d, 'none')).toEqual([])
   })
 })
 
