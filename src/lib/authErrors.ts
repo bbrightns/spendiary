@@ -7,7 +7,7 @@ export interface AuthErrorLike {
 }
 
 /** What a visitor who isn't invited sees, from Google or from the email code */
-export const NOT_INVITED = 'อีเมลนี้ยังไม่ได้รับเชิญ ขอคำเชิญจากคนที่ส่งลิงก์นี้ให้คุณ หรือลองโหมด Demo ก่อน'
+export const NOT_INVITED = 'อีเมลนี้ยังไม่ได้รับเชิญ ขอคำเชิญจากคนที่ส่งลิงก์นี้ให้คุณ หรือลองทดลองใช้งานก่อน'
 
 /** Supabase's auth errors in Thai, saying what to do next. Unknown errors keep Supabase's own text for support. */
 export function authErrorText(error: AuthErrorLike): string {

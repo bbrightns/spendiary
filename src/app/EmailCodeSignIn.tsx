@@ -75,7 +75,7 @@ export function EmailCodeSignIn() {
     return (
       <div className="mt-2.5 text-center">
         <button type="button" onClick={() => setOpen(true)} className={linkClass}>
-          ใช้ Google ไม่ได้? รับรหัสทางอีเมลแทน
+          เข้าใช้งานด้วยอีเมลแทน
         </button>
       </div>
     )
@@ -91,7 +91,7 @@ export function EmailCodeSignIn() {
         className="mt-4 space-y-2.5"
       >
         <label htmlFor="signin-email" className="block text-sm font-semibold text-landing-ink-soft">
-          อีเมลที่ได้รับเชิญ
+          อีเมลของคุณ
         </label>
         <input
           id="signin-email"

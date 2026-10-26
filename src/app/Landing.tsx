@@ -21,7 +21,7 @@ function SidePanel({
   tone: 'mint' | 'sky'
   icon: ReactNode
   label: string
-  title: string
+  title: ReactNode
   body: ReactNode
   shot: ReactNode
 }) {
@@ -64,24 +64,19 @@ export function Landing() {
         <main className="flex-1 pb-16">
           <section className="grid items-center gap-8 pt-2 sm:pt-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-16 lg:pt-12">
             <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-landing-lavender px-3 py-1 text-xs sm:text-sm font-semibold text-landing-lavender-ink">
-                <LockClosedIcon className="h-3.5 w-3.5" />
-                เปิดให้ใช้เฉพาะผู้ได้รับเชิญ
-              </span>
-              <h1 className="mt-5 font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
-                <Keep>รายจ่ายทุกวัน</Keep> <Keep>กับพอร์ตลงทุน</Keep>
+              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
+                <Keep>จัดการรายจ่าย</Keep> <Keep>วางแผนลงทุน</Keep>
                 <br />
-                <span className="bg-[linear-gradient(transparent_62%,var(--color-landing-mint)_62%)] px-1">ดูครบในแอปเดียว</span>
+                <span className="bg-[linear-gradient(transparent_62%,var(--color-landing-mint)_62%)] px-1">ครบในแอปเดียว</span>
               </h1>
               <p className="mt-5 max-w-xl text-base sm:text-lg leading-relaxed text-landing-ink-muted">
-                รู้ว่าเดือนนี้ใช้เงินไปเท่าไหร่ บัตรใบไหน<Keep>ใกล้ถึงวันจ่าย</Keep> และพอร์ตหุ้น กองทุน <Keep>คริปโต</Keep>
-                เป็น<Keep>ยังไงบ้าง</Keep> ทุกยอดแปลงเป็นเงินบาทให้ด้วยอัตราแลกเปลี่ยนล่าสุด
+                ติดตามรายจ่าย เช็กวันครบกำหนดชำระบัตรและบิล พร้อมดูภาพรวมพอร์ตหุ้น กองทุน และ<Keep>คริปโต</Keep>ได้<Keep>ในที่เดียว</Keep>{' '}
+                พร้อมแปลงมูลค่าสินทรัพย์เป็นเงินบาทด้วย<Keep>อัตราแลกเปลี่ยนล่าสุด</Keep>
               </p>
             </div>
 
             <div className={`${glassCard} p-6 sm:p-8`}>
               <h2 className="font-display text-2xl font-extrabold tracking-tight">เข้าสู่ระบบ</h2>
-              <p className="mt-1 text-sm text-landing-ink-muted">ใช้บัญชีที่ได้รับเชิญ</p>
 
               {authError && (
                 <p role="alert" className="mt-4 rounded-2xl bg-landing-loss-soft p-3 text-sm text-landing-loss-ink">
@@ -100,7 +95,7 @@ export function Landing() {
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                 </svg>
-                เข้าสู่ระบบด้วย Google
+                ดำเนินการต่อด้วย Google
               </button>
 
               <EmailCodeSignIn />
@@ -116,10 +111,10 @@ export function Landing() {
                 onClick={loginAsTestMode}
                 className="flex h-12 w-full cursor-pointer items-center justify-center rounded-full bg-landing-peach text-sm font-semibold text-landing-ink transition-opacity hover:opacity-85"
               >
-                ลองใช้โหมด Demo
+                ทดลองใช้งาน
               </button>
               <p className="mt-3 text-center text-xs leading-relaxed text-landing-ink-muted">
-                ยังไม่ได้รับเชิญ? ลองโหมด Demo ได้เลย ไม่ต้องสมัคร และไม่มีการบันทึกข้อมูล
+                ยังไม่มีบัญชีใช่ไหม? ลองทดลองใช้งานได้ทันที ไม่ต้องสมัครสมาชิก และข้อมูลจะไม่ถูกบันทึก
               </p>
             </div>
           </section>
@@ -129,23 +124,23 @@ export function Landing() {
             <SidePanel
               tone="mint"
               icon={<WalletIcon className="h-3.5 w-3.5" />}
-              label="ฝั่งใช้จ่าย"
-              title="รู้ทุกวันว่าเงินไปไหน"
-              body={<>งบรายวัน บัตรเครดิต บิลรายเดือน หนี้ และ<Keep>งบประมาณ</Keep></>}
+              label="รายรับรายจ่าย"
+              title="รู้ว่าเงินของคุณใช้ไปกับอะไร"
+              body={<>บันทึกรายจ่าย จัดการบัตรเครดิตและบิล วางแผน<Keep>งบประมาณ</Keep> และติดตามหนี้</>}
               shot={
                 <picture className="block h-full">
                   <source media="(min-width: 1024px)" srcSet="/landing/spend-desktop.webp" width={1440} height={900} />
-                  <img src="/landing/spend-mobile.webp" width={780} height={1688} alt="หน้าแรกฝั่งใช้จ่ายในโหมด Demo" loading="lazy" className={shotClass} />
+                  <img src="/landing/spend-mobile.webp" width={780} height={1688} alt="หน้ารายรับรายจ่ายในโหมดทดลองใช้งาน" loading="lazy" className={shotClass} />
                 </picture>
               }
             />
             <SidePanel
               tone="sky"
               icon={<TrendUpIcon className="h-3.5 w-3.5" />}
-              label="ฝั่งลงทุน"
-              title="เห็นพอร์ตทั้งหมดในหน้าเดียว"
-              body={<>หุ้นสหรัฐ กองทุน <Keep>คริปโต</Keep> แผน DCA เงินปันผล และแผนเกษียณ</>}
-              shot={<img src="/landing/portfolio-mobile.webp" width={780} height={1688} alt="หน้าพอร์ตลงทุนในโหมด Demo" loading="lazy" className={shotClass} />}
+              label="การลงทุน"
+              title={<>ดูภาพรวมการลงทุนทั้งหมด<Keep>ในที่เดียว</Keep></>}
+              body={<>ติดตามหุ้นสหรัฐฯ กองทุน <Keep>คริปโต</Keep> วางแผนลงทุน<Keep>รายเดือน (DCA)</Keep> ตรวจสอบเงินปันผล และวางแผนเกษียณ</>}
+              shot={<img src="/landing/portfolio-mobile.webp" width={780} height={1688} alt="หน้าพอร์ตลงทุนในโหมดทดลองใช้งาน" loading="lazy" className={shotClass} />}
             />
           </section>
 
@@ -154,13 +149,13 @@ export function Landing() {
               <LockClosedIcon className="h-5 w-5" />
             </span>
             <div className="flex-1">
-              <h3 className="font-display text-lg font-extrabold">ข้อมูลของคุณเป็นของคุณ</h3>
+              <h3 className="font-display text-lg font-extrabold">ข้อมูลของคุณเก็บไว้ที่ไหน</h3>
               <p className="mt-1 text-sm sm:text-base leading-relaxed text-landing-ink-soft">
-                เก็บบน Supabase และแต่ละบัญชีเห็นได้เฉพาะข้อมูลของตัวเอง
+                ข้อมูลจัดเก็บบน Supabase โดยผู้ใช้แต่ละบัญชีจะ<Keep>เข้าถึงได้</Keep>เฉพาะข้อมูลของตนเอง
               </p>
             </div>
             <Link to="/privacy" className="text-sm font-semibold text-landing-lavender-ink hover:underline">
-              อ่านเพิ่มเติม →
+              นโยบายความเป็นส่วนตัว →
             </Link>
           </section>
         </main>
