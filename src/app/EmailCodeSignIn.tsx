@@ -75,7 +75,7 @@ export function EmailCodeSignIn() {
     return (
       <div className="mt-2.5 text-center">
         <button type="button" onClick={() => setOpen(true)} className={linkClass}>
-          Sign in with email instead
+          Sign in with an email code
         </button>
       </div>
     )
