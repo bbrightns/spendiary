@@ -38,8 +38,6 @@ export interface SpendCategory {
   keywords: string[]
   /** Not offered in pickers (archived by the user) */
   hidden?: boolean
-  /** Deleted for good: not in Settings either; kept only so past transactions show its name */
-  removed?: boolean
   /** Filled in automatically (e.g. dividends from Invest); never shown in pickers or settings */
   system?: boolean
   /** Made by the user (can be removed); built-ins can only be edited or hidden */
@@ -99,8 +97,7 @@ export function syncCategories(settings?: Pick<SpendSettings, 'customCategories'
       label: e.label?.trim() || c.label,
       tone: toneOf(e.tone, c.tone),
       iconKey: e.icon && e.icon in CATEGORY_ICONS ? e.icon : c.iconKey,
-      hidden: e.hidden || e.removed || undefined,
-      removed: e.removed || undefined,
+      hidden: e.hidden || undefined,
     })
   })
   const mine = (custom ?? []).map((c) =>
@@ -111,8 +108,7 @@ export function syncCategories(settings?: Pick<SpendSettings, 'customCategories'
       tone: toneOf(c.tone, 'slate'),
       iconKey: c.icon in CATEGORY_ICONS ? c.icon : 'tag',
       keywords: [],
-      hidden: c.hidden || c.removed || undefined,
-      removed: c.removed || undefined,
+      hidden: c.hidden || undefined,
       custom: true,
     }),
   )
@@ -136,14 +132,9 @@ export function categoriesFor(type: SpendTxnType, keep?: string): SpendCategory[
   return live.filter((c) => c.type === type && !c.system && (!c.hidden || c.id === keep))
 }
 
-/** Every category the user can manage, hidden ones included (not ones deleted for good). */
+/** Every category the user can manage, hidden ones included. */
 export function manageableCategories(type: 'expense' | 'income'): SpendCategory[] {
-  return live.filter((c) => c.type === type && !c.system && !c.removed)
-}
-
-/** Categories deleted for good, which Settings can still bring back. */
-export function removedCategories(type: 'expense' | 'income'): SpendCategory[] {
-  return live.filter((c) => c.type === type && !c.system && c.removed)
+  return live.filter((c) => c.type === type && !c.system)
 }
 
 /** The category a note most likely belongs to, by name or keyword (Thai or English). */

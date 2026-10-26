@@ -373,21 +373,6 @@ export function useSpend() {
     })
   }
 
-  /**
-   * Delete a category for good (it leaves Settings too), or bring it back fully shown.
-   * Its name stays on past transactions either way.
-   */
-  function setCategoryRemoved(id: string, removed: boolean) {
-    const isBuiltIn = SPEND_CATEGORIES.some((c) => c.id === id)
-    const flags = { hidden: removed || undefined, removed: removed || undefined }
-    setData((prev) => {
-      const st = prev.spendSettings ?? {}
-      if (isBuiltIn) return { ...prev, spendSettings: { ...st, categoryEdits: { ...st.categoryEdits, [id]: { ...st.categoryEdits?.[id], ...flags } } } }
-      const list = (st.customCategories ?? []).map((c) => (c.id === id ? { ...c, ...flags } : c))
-      return { ...prev, spendSettings: { ...st, customCategories: list } }
-    })
-  }
-
   /** Back to the shipped name, icon and color. */
   function resetCategory(id: string) {
     setData((prev) => {
@@ -471,7 +456,6 @@ export function useSpend() {
     resetCategory,
     removeCategory,
     setCategoryHidden,
-    setCategoryRemoved,
     subcategories: (categoryId: string | undefined): string[] => (categoryId ? settings.subcategories?.[categoryId] ?? [] : []),
     addSubcategory,
     removeSubcategory,
