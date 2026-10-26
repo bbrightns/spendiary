@@ -101,7 +101,7 @@ function dayLabel(date: string, withYear = false): string {
 }
 
 export function SpendTransactions() {
-  const { transactions, methods, settings } = useSpend()
+  const { transactions, methods, accountName, settings } = useSpend()
   const cycle = settings.cycle
   const [params, setParams] = useSearchParams()
   const query = params.get('q') ?? ''
@@ -139,7 +139,7 @@ export function SpendTransactions() {
   const showYear = searching || range === 'all'
 
   const filtered = useMemo(() => {
-    const walletName = (id?: string) => methods.find((m) => m.id === id)?.name ?? ''
+    const walletName = (id?: string) => accountName(id) ?? ''
     const words = query.toLowerCase().split(/\s+/).filter(Boolean)
     return transactions.filter(
       (t) =>
@@ -147,7 +147,7 @@ export function SpendTransactions() {
         (type === 'all' || t.type === type) &&
         matches(t, words, walletName),
     )
-  }, [transactions, methods, period, days, type, query])
+  }, [transactions, accountName, period, days, type, query])
 
   const groups = useMemo(() => {
     const map = new Map<string, SpendTransaction[]>()
@@ -248,7 +248,7 @@ export function SpendTransactions() {
         open={searchOpen}
         initial={query}
         transactions={transactions}
-        methods={methods}
+        walletName={(id) => accountName(id) ?? ''}
         onClose={() => setSearchOpen(false)}
         onApply={(q) => {
           setQuery(q)
@@ -344,14 +344,15 @@ function SearchSheet({
   open,
   initial,
   transactions,
-  methods,
+  walletName,
   onClose,
   onApply,
 }: {
   open: boolean
   initial: string
   transactions: SpendTransaction[]
-  methods: { id: string; name: string }[]
+  /** A wallet or card's name, including deleted ones */
+  walletName: (id?: string) => string
   onClose: () => void
   onApply: (q: string) => void
 }) {
@@ -369,7 +370,6 @@ function SearchSheet({
   const words = q.toLowerCase().split(/\s+/).filter(Boolean)
   // The word being typed; empty right after a space (e.g. once a tag was picked)
   const last = /\s$/.test(q) ? '' : words[words.length - 1] ?? ''
-  const walletName = (id?: string) => methods.find((m) => m.id === id)?.name ?? ''
   const count = words.length ? transactions.filter((t) => matches(t, words, walletName)).length : 0
 
   // Tags with how often and how much, narrowed by what's being typed

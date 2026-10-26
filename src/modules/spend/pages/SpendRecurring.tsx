@@ -9,10 +9,11 @@ import { localDateStr, thb } from '../../../lib/format'
 import { nextBuyDate, planMonthlyEquivalent } from '../../../lib/calc'
 import type { DcaPlan, Liability, SpendRecurring } from '../../../lib/types'
 import { useData } from '../../../store/DataContext'
-import { RepeatIcon, getCategory } from '../categories'
+import { RepeatIcon } from '../categories'
 import { fixedCostRecurring, frequencyLabel, nextOccurrence, perMonth } from '../logic'
 import { RecurringSheet } from '../RecurringSheet'
-import { RecurringDue, shortDay } from '../RecurringDue'
+import { RecurringDue, recurringAmountClass, recurringLook, shortDay } from '../RecurringDue'
+import { liveAccountIds, missingAccountIds } from '../accountRemoval'
 import { TONES } from '../tones'
 import { useSpend } from '../useSpend'
 
@@ -36,7 +37,7 @@ const dcaFrequency = (p: DcaPlan) =>
   (p.frequency ?? 'monthly') === 'daily' ? 'Every day' : frequencyLabel({ frequency: p.frequency === 'weekly' ? 'weekly' : 'monthly', day: p.dayOfMonth, startDate: '' })
 
 export function SpendRecurringPage() {
-  const { recurring, methods } = useSpend()
+  const { recurring, methods, accountName } = useSpend()
   const { data } = useData()
   const navigate = useNavigate()
   const debts = data.liabilities ?? []
@@ -56,6 +57,7 @@ export function SpendRecurringPage() {
   const out = active.filter((r) => r.type === 'expense').reduce((s, r) => s + perMonth(r), 0)
   const inc = active.filter((r) => r.type === 'income').reduce((s, r) => s + perMonth(r), 0)
   const fixedIds = new Set(fixedCostRecurring(recurring).map((r) => r.id))
+  const live = liveAccountIds(data)
   const fixed = fixedCostRecurring(recurring).reduce((s, r) => s + perMonth(r), 0)
 
   const sorted = [...recurring].sort((a, b) => {
@@ -100,10 +102,11 @@ export function SpendRecurringPage() {
 
           <Card padded={false} className="divide-y divide-line">
             {sorted.map((r) => {
-              const cat = getCategory(r.categoryId)
-              const Icon = cat?.icon
+              const { Icon, tone } = recurringLook(r)
               const next = r.paused ? undefined : nextOccurrence(r, today)
-              const method = methods.find((m) => m.id === r.accountId)?.name
+              const method = r.type === 'transfer' ? `${accountName(r.accountId) ?? '—'} → ${accountName(r.toAccountId) ?? '—'}` : accountName(r.accountId)
+              // Its wallet or card was deleted: it waits until another one is picked
+              const orphaned = missingAccountIds(r, live).length > 0
               return (
                 <button
                   key={r.id}
@@ -111,15 +114,20 @@ export function SpendRecurringPage() {
                   onClick={() => setSheet({ open: true, rec: r })}
                   className={`flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-muted/50 cursor-pointer sm:px-5 ${r.paused ? 'opacity-60' : ''}`}
                 >
-                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${TONES[cat?.tone ?? 'slate'].chip}`}>
-                    {Icon && <Icon className="h-[18px] w-[18px]" />}
+                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${tone}`}>
+                    <Icon className="h-[18px] w-[18px]" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-ink">
                       {r.name}
-                      {r.paused && <span className="ml-1.5 rounded-full bg-surface-muted px-1.5 py-0.5 text-2xs font-bold text-ink-muted">Paused</span>}
+                      {orphaned ? (
+                        <span className="ml-1.5 rounded-full bg-loss-soft px-1.5 py-0.5 text-2xs font-bold text-loss-ink">Wallet deleted</span>
+                      ) : (
+                        r.paused && <span className="ml-1.5 rounded-full bg-surface-muted px-1.5 py-0.5 text-2xs font-bold text-ink-muted">Paused</span>
+                      )}
                       {fixedIds.has(r.id) && <span className="ml-1.5 rounded-full bg-brand-soft px-1.5 py-0.5 text-2xs font-bold text-brand-ink">Fixed</span>}
                     </span>
+                    {orphaned && <span className="block truncate text-xs font-semibold text-loss-ink">Paused. Tap to pick another account.</span>}
                     <span className="block truncate text-xs text-ink-muted">
                       {next ? `Next ${shortDay(next)} · ` : ''}
                       {frequencyLabel(r)}
@@ -131,7 +139,7 @@ export function SpendRecurringPage() {
                       </span>
                     )}
                   </span>
-                  <span className={`shrink-0 text-sm font-bold tnum ${r.type === 'income' ? 'text-gain-ink' : 'text-ink'}`}>
+                  <span className={`shrink-0 text-sm font-bold tnum ${recurringAmountClass(r.type)}`}>
                     {r.type === 'income' ? '+' : ''}
                     {thb(r.amount)}
                   </span>

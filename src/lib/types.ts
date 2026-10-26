@@ -404,6 +404,8 @@ export interface SpendSettings {
   categoryLayout?: 'chips' | 'tiles'
   /** Order of categories in the pickers, by id, per type; unlisted ones follow, and "Other" stays last */
   categoryOrder?: Partial<Record<'expense' | 'income', string[]>>
+  /** Names of deleted wallets and cards by id, so past transactions still say where the money went */
+  removedAccounts?: Record<string, { name: string; removedAt: string }>
 }
 
 /** A user-made Spend category. `tone` and `icon` are keys from the Spend module's palettes. */
@@ -439,16 +441,19 @@ export type SpendCategoryEdit = Partial<Pick<SpendCustomCategory, 'label' | 'ton
 
 export type RecurringFrequency = 'weekly' | 'monthly' | 'yearly'
 
-/** A bill or income that repeats; each occurrence waits for you to confirm or skip it. */
+/** A bill, income or transfer that repeats; each occurrence waits for you to confirm or skip it. */
 export interface SpendRecurring {
   id: string
   name: string
-  type: 'expense' | 'income'
+  type: 'expense' | 'income' | 'transfer'
   /** Usual amount in THB (editable when confirming) */
   amount: number
+  /** Empty for transfers */
   categoryId: string
-  /** Wallet or card it's paid with / paid into */
+  /** Wallet or card it's paid with / paid into; for a transfer, the wallet the money leaves */
   accountId?: string
+  /** Transfer only: the wallet the money goes to */
+  toAccountId?: string
   frequency: RecurringFrequency
   /** Weekly: 1 = Mon … 7 = Sun. Monthly / yearly: day of month (clamped to short months) */
   day: number
@@ -470,6 +475,8 @@ export interface SpendRecurring {
   /** Occurrence dates skipped */
   skippedDates?: string[]
   paused?: boolean
+  /** Set when the app paused it because its wallet or card was deleted; it resumes once they're all back */
+  pausedReason?: 'accountRemoved'
 }
 
 /** When the payday rule lands on Sat/Sun: move to Friday before, Monday after, or keep it */

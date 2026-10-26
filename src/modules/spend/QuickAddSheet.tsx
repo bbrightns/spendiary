@@ -8,7 +8,7 @@ import { useData } from '../../store/DataContext'
 import { localDateStr, thb, thbExact, thbSigned } from '../../lib/format'
 import type { SpendSettings, SpendTransaction, SpendTxnType } from '../../lib/types'
 import { categoriesFor, getCategory } from './categories'
-import { isBigExpense, noteTitle, periodFor, walletOverdraw } from './logic'
+import { doneWord, isBigExpense, noteTitle, periodFor, walletOverdraw } from './logic'
 import { TYPE_ACTIVE } from './tones'
 import { useSpend, type PayMethod, type SpendTxnInput } from './useSpend'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
@@ -316,14 +316,17 @@ export function QuickAddSheet() {
           { label: 'Undo', onClick: () => removeTransaction(txn.id) },
           {
             popup: true,
-            title: type === 'income' ? 'Received' : 'Paid',
+            title: doneWord(type),
             // What was actually logged, which may differ from the bill's usual amount or wallet
             detail: paidDetail({
               rec: recurring.find((r) => r.id === fromRecurring.id),
               date: fromRecurring.date,
               name: fromRecurring.name,
               amount: input.amount,
-              accountName: methods.find((m) => m.id === input.accountId)?.name,
+              accountName:
+                type === 'transfer'
+                  ? `${methods.find((m) => m.id === input.accountId)?.name ?? '—'} → ${methods.find((m) => m.id === input.toAccountId)?.name ?? '—'}`
+                  : methods.find((m) => m.id === input.accountId)?.name,
               categoryId: input.categoryId,
               subcategory: input.subcategory,
             }),
@@ -353,7 +356,7 @@ export function QuickAddSheet() {
         open={open}
         onClose={() => setOpen(false)}
         title={editId ? 'Edit transaction' : fromRecurring ? fromRecurring.name : 'Quick add'}
-        description={fromRecurring ? `Mark as ${type === 'income' ? 'received' : 'paid'}. Adjust the amount if this one was different.` : hint}
+        description={fromRecurring ? `Mark as ${doneWord(type).toLowerCase()}. Adjust the amount if this one was different.` : hint}
         size="md"
         footer={<FormActions editing={!!editId} canSave={canSave} onSave={save} onDelete={remove} hint={saveHint} />}
       >

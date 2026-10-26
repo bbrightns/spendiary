@@ -429,15 +429,14 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
 /** Statement CSV in / spreadsheet out; lives with the backups in Settings → Data & backup. */
 /** Settings → Data & backup: Spend's own records in and out, and starting the history over. */
 export function SpendDataSection() {
-  const { methods, transactions, cards, recurring, clearTransactions } = useSpend()
+  const { accountName, transactions, cards, recurring, clearTransactions } = useSpend()
   const { showToast } = useToast()
   const [clearOpen, setClearOpen] = useState(false)
   // Export Spend's own records; dividends and DCA buys belong to the Invest side's backup
   const ownTxns = transactions.filter((t) => !t.source)
   const n = (count: number, word: string) => `${count} ${count === 1 ? word : `${word}s`}`
   const exportAll = () => {
-    const accountName = (id?: string) => methods.find((m) => m.id === id)?.name ?? ''
-    downloadCsv(toCsv(ownTxns, { category: (id) => getCategory(id)?.label ?? '', account: accountName }))
+    downloadCsv(toCsv(ownTxns, { category: (id) => getCategory(id)?.label ?? '', account: (id) => accountName(id) ?? '' }))
     showToast(`Exported ${n(ownTxns.length, 'transaction')}`)
   }
   const clearAll = () => {

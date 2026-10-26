@@ -1,5 +1,6 @@
 import type { DcaPlan, SpendiaryData } from '../lib/types'
 import { importFixedCosts } from '../modules/spend/migrate'
+import { liveAccountIds, syncRecurringAccounts } from '../modules/spend/accountRemoval'
 import { newId } from '../lib/id'
 
 export const emptyData: SpendiaryData = {
@@ -77,6 +78,8 @@ export function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
   })
   delete (merged as { cash?: number }).cash
   merged.liabilities = Array.isArray(merged.liabilities) ? merged.liabilities : []
+  // Recurring items whose wallet or card was deleted before the app paused them on delete
+  if (Array.isArray(merged.spendRecurring)) merged.spendRecurring = syncRecurringAccounts(merged.spendRecurring, liveAccountIds(merged))
   // Fixed costs moved to Spend (recurring bills); copy the old list over once
   return importFixedCosts(merged)
 }

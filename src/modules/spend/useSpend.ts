@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useData } from '../../store/DataContext'
 import { localDateStr } from '../../lib/format'
 import { newId } from '../../lib/id'
@@ -7,6 +7,7 @@ import { SPEND_CATEGORIES } from './categories'
 import { investTransactions } from './invest'
 import { DEFAULT_BILL_REMINDER_DAYS, applyOrder, applyToBalances, cardBill, dueRecurring, parseTags, recurringNote, renameInList, renameSubOn, sortTxns, spendWallets } from './logic'
 import { availableCredit } from './credit'
+import { accountLabel } from './accountRemoval'
 
 export type SpendTxnInput = Omit<SpendTransaction, 'id' | 'createdAt' | 'updatedAt' | 'tags'>
 
@@ -42,12 +43,14 @@ function unmarkOccurrence(list: SpendRecurring[], id: string, date: string, key:
  */
 export function recurringInput(rec: SpendRecurring): SpendTxnInput {
   const now = new Date()
+  const transfer = rec.type === 'transfer'
   return {
     type: rec.type,
     amount: rec.amount,
-    categoryId: rec.categoryId,
-    subcategory: rec.subcategory,
+    categoryId: transfer ? undefined : rec.categoryId,
+    subcategory: transfer ? undefined : rec.subcategory,
     accountId: rec.accountId,
+    toAccountId: transfer ? rec.toAccountId : undefined,
     date: localDateStr(now),
     time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
     note: recurringNote(rec),
@@ -98,6 +101,11 @@ export function useSpend() {
   const reminders = useMemo(() => bills.filter((b) => b.remind).sort((a, b) => a.daysToDue - b.daysToDue), [bills])
 
   const recurring = useMemo(() => data.spendRecurring ?? [], [data.spendRecurring])
+  /** A wallet or card's name, or the name it had if it was deleted ("KBank (deleted)") */
+  const accountName = useCallback(
+    (id: string | undefined) => accountLabel(id, methods.find((m) => m.id === id)?.name, settings.removedAccounts),
+    [methods, settings.removedAccounts],
+  )
   const goals = useMemo(() => data.spendGoals ?? [], [data.spendGoals])
   /** Recurring occurrences waiting to be confirmed or skipped */
   const dueRecurringList = useMemo(() => dueRecurring(recurring), [recurring])
@@ -408,6 +416,7 @@ export function useSpend() {
     wallets,
     cards,
     methods,
+    accountName,
     settings,
     bills,
     reminders,

@@ -610,6 +610,12 @@ function ordinalDay(n: number): string {
   return n + (s[(v - 20) % 10] || s[v] || s[0])
 }
 
+/** "Paid", "Received" or "Transferred" */
+export const doneWord = (type: SpendRecurring['type']) => (type === 'income' ? 'Received' : type === 'transfer' ? 'Transferred' : 'Paid')
+
+/** + for income, − for a bill, nothing for money moving between your wallets */
+export const recurringSign = (type: SpendRecurring['type']) => (type === 'income' ? '+' : type === 'expense' ? '−' : '')
+
 /** Rough monthly amount, so weekly and yearly items add up with monthly ones */
 export function perMonth(r: Pick<SpendRecurring, 'amount' | 'frequency'>): number {
   if (r.frequency === 'weekly') return (r.amount * 52) / 12

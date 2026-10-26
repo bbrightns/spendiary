@@ -785,7 +785,7 @@ export function CommandPalette() {
         if (s > 0) ranked.push({ ...it, score: s + boost(it) })
       }
     }
-    const methodName = (id?: string) => spend.methods.find((m) => m.id === id)?.name ?? ''
+    const methodName = (id?: string) => spend.accountName(id) ?? ''
     const txnHits: Ranked[] = []
     const hits: SpendTransaction[] = []
     for (const t of spend.transactions) {

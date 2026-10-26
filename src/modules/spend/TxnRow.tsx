@@ -7,6 +7,8 @@ import { isInvested } from './invest'
 import { noteTitle } from './logic'
 import { openQuickAdd } from './QuickAddSheet'
 import { TONES } from './tones'
+import { useData } from '../../store/DataContext'
+import { accountLabel } from './accountRemoval'
 
 interface Props {
   txn: SpendTransaction
@@ -27,7 +29,9 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
   const cat = getCategory(txn.categoryId)
   const invested = isInvested(txn)
   const Icon = invested ? PortfolioIcon : txn.type === 'transfer' ? TransferIcon : cat?.icon ?? TransferIcon
-  const walletName = (id?: string) => methods.find((m) => m.id === id)?.name
+  const removed = useData().data.spendSettings?.removedAccounts
+  // A deleted wallet or card keeps its name on past rows ("KBank (deleted)")
+  const walletName = (id?: string) => accountLabel(id, methods.find((m) => m.id === id)?.name, removed)
   const from = walletName(txn.accountId)
   const title = noteTitle(txn.note) || (txn.type === 'transfer' ? 'Transfer' : txn.paidBack ? 'Paid back' : cat?.label ?? 'Other')
   // Invest rows say where the money came from, or that no account was picked
