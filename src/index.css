@@ -745,20 +745,29 @@
   }
 }
 
-/* Style calendar / clock picker icon for dark/light mode */
+/* Date / time picker icons: Chrome's own glyph swapped for lucide Calendar / Clock,
+   painted with an ink token so both themes get the same contrast (no invert hack:
+   color-scheme: dark already lightens the native glyph, and inverting it hid it) */
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
-  opacity: 0.5;
-  transition: opacity 0.15s ease;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: var(--color-ink-muted);
+  -webkit-mask: var(--picker-icon) center / contain no-repeat;
+  mask: var(--picker-icon) center / contain no-repeat;
+  transition: background-color 0.15s ease;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+  --picker-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v3'/%3E%3Cpath d='M16 2v3'/%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Cpath d='M3 9h18'/%3E%3C/svg%3E");
+}
+input[type="time"]::-webkit-calendar-picker-indicator {
+  --picker-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 6v6l4 2'/%3E%3C/svg%3E");
 }
 input[type="date"]::-webkit-calendar-picker-indicator:hover,
 input[type="time"]::-webkit-calendar-picker-indicator:hover {
-  opacity: 0.8;
-}
-.dark input[type="date"]::-webkit-calendar-picker-indicator,
-.dark input[type="time"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
+  background: var(--color-ink);
 }
 
 /* iPhone Safari zooms the page when a field under 16px gets focus, and stays zoomed.
