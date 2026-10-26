@@ -22,6 +22,9 @@ const SIDES = [
   },
 ]
 
+/** Punctuation in the display heading, nudged against the word before it */
+const Tight = ({ children }: { children: string }) => <span className="-ml-[0.08em]">{children}</span>
+
 const glass = 'border border-landing-surface bg-landing-glass shadow-[var(--shadow-landing-soft)] backdrop-blur-xl'
 // Screenshot frames skip the blur: backdrop-filter softens the image drawn inside it
 const frame = 'border border-landing-surface bg-landing-glass shadow-[var(--shadow-landing-soft)]'
@@ -46,10 +49,10 @@ export function Landing() {
             Personal finance in Thai baht
           </span>
 
-          {/* No punctuation: Plus Jakarta's comma and period are very wide at this weight and read as stray spaces */}
+          {/* Plus Jakarta's comma and period carry wide side bearings at this weight; Tight pulls them back to the word */}
           <h1 className="mt-6 max-w-3xl font-display text-4xl sm:text-6xl font-extrabold leading-[1.1] tracking-tight text-balance">
-            Manage spending and plan investing
-            <span className="mt-1 block text-landing-brand">all in one app</span>
+            Manage spending<Tight>,</Tight> Plan investing<Tight>.</Tight>
+            <span className="mt-1 block text-landing-brand">All in one app</span>
           </h1>
 
           <p className="mt-5 max-w-xl text-base sm:text-lg leading-relaxed text-landing-ink-muted text-pretty">
@@ -57,7 +60,7 @@ export function Landing() {
           </p>
 
           <div className={`mt-10 w-full max-w-md rounded-[28px] p-6 sm:p-8 ${glass}`}>
-            <h2 className="font-display text-2xl font-extrabold tracking-tight">Sign in</h2>
+            <h2 className="font-display text-2xl font-extrabold tracking-tight">Welcome to Spendiary</h2>
 
             {authError && (
               <p role="alert" className="mt-4 rounded-2xl bg-landing-loss-soft p-3 text-sm text-landing-loss-ink">
