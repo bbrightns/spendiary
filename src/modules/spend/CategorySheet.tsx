@@ -9,6 +9,7 @@ import { CATEGORY_ICONS, CATEGORY_TONES, SPEND_CATEGORIES, manageableCategories,
 import { SwitchVisual } from '../../components/ui/SwitchVisual'
 import { TONES, TYPE_ACTIVE, type Tone } from './tones'
 import { useSpend } from './useSpend'
+import { KEEP_CATEGORY, useRemoveCategory } from './useRemoveCategory'
 
 type CatType = 'expense' | 'income'
 
@@ -30,8 +31,9 @@ const TYPE_OPTIONS = [
 
 /** Add or edit a category: name, icon and color, for expense or income. */
 export function CategorySheet({ open, category, type = 'expense', onClose, onSaved }: Props) {
-  const { upsertCategory, resetCategory, removeCategory, subcategories, addSubcategory, removeSubcategory } = useSpend()
+  const { upsertCategory, resetCategory, subcategories, addSubcategory, removeSubcategory } = useSpend()
   const { showToast } = useToast()
+  const remove = useRemoveCategory()
   const [form, setForm] = useState({ type: type as CatType, label: '', icon: 'tag', tone: 'violet' as Tone, hidden: false })
   const [lastOpen, setLastOpen] = useState(false)
   const [newSub, setNewSub] = useState('')
@@ -50,6 +52,9 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
   const shipped = category && !category.custom ? SPEND_CATEGORIES.find((c) => c.id === category.id) : undefined
   const changed = shipped && (shipped.label !== category?.label || shipped.iconKey !== category?.iconKey || shipped.tone !== category?.tone || !!category?.hidden)
   const canSave = form.label.trim() !== ''
+  // Any category but the catch-all "Other" can go. A built-in, or one past transactions use, is hidden
+  // instead (so history keeps its name); one that is already hidden has nothing left to delete.
+  const canDelete = !!category && !KEEP_CATEGORY.has(category.id) && !(category.hidden && !category.custom)
   const Icon = CATEGORY_ICONS[form.icon] ?? CATEGORY_ICONS.tag
   const iconMatches = pickableCategoryIcons(iconQuery)
   const iconGroups = CATEGORY_ICON_GROUPS.map((g) => ({ ...g, icons: iconMatches.filter((d) => d.group === g.id) })).filter((g) => g.icons.length > 0)
@@ -75,10 +80,9 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
           canSave={canSave}
           onSave={save}
           onDelete={
-            category?.custom
+            canDelete
               ? () => {
-                  const result = removeCategory(category.id)
-                  showToast(result === 'hidden' ? 'Hidden — still used by past transactions' : 'Category removed', 'info')
+                  remove(category)
                   onClose()
                 }
               : undefined
