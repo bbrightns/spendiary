@@ -161,7 +161,9 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
           <div className="flex items-end justify-between gap-3">
             <div className="shrink-0">
               <p className="text-xs text-ink-muted">Owed</p>
-              <p className="whitespace-nowrap font-display text-2xl font-extrabold tracking-tight tnum text-ink">{thbSigned(active.balance, true)}</p>
+              <p className={`whitespace-nowrap font-display text-2xl font-extrabold tracking-tight tnum ${active.balance < 0 ? 'text-gain-ink' : 'text-ink'}`}>
+                {thbSigned(active.balance, true)}
+              </p>
             </div>
             <p className="text-right text-xs text-ink-muted tnum">
               {thb(credit.left, true)} left
