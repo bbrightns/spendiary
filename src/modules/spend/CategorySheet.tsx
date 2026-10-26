@@ -7,13 +7,12 @@ import { Button } from '../../components/ui/Button'
 import { PencilIcon, SearchIcon } from '../../components/icons'
 import { CATEGORY_ICON_GROUPS, pickableCategoryIcons } from '../../components/categoryIcons'
 import { CATEGORY_ICONS, CATEGORY_TONES, SPEND_CATEGORIES, categoriesFor, manageableCategories, pickerTone, type SpendCategory } from './categories'
-import { categoryUsage, moveId } from './logic'
+import { moveId } from './logic'
 import { ConfirmModal } from '../../components/ui/ConfirmModal'
-import { useData } from '../../store/DataContext'
 import { ArrangeButton, ReorderSheet } from './ReorderSheet'
 import { TONES, TYPE_ACTIVE, type Tone } from './tones'
 import { useSpend } from './useSpend'
-import { KEEP_CATEGORY, useRemoveCategory } from './useRemoveCategory'
+import { KEEP_CATEGORY, useCategoryUsage, useRemoveCategory } from './useRemoveCategory'
 
 type CatType = 'expense' | 'income'
 
@@ -41,8 +40,8 @@ const canRemove = (c: SpendCategory) => !KEEP_CATEGORY.has(c.id) && !(c.hidden &
 
 /** Add or edit a category: name, icon and color, for expense or income. */
 export function CategorySheet({ open, category, type = 'expense', onClose, onSaved }: Props) {
-  const { upsertCategory, resetCategory, subcategories, addSubcategory, removeSubcategory, transactions, recurring, settings } = useSpend()
-  const hasLoans = (useData().data.liabilities ?? []).length > 0
+  const { upsertCategory, resetCategory, subcategories, addSubcategory, removeSubcategory } = useSpend()
+  const usageOf = useCategoryUsage()
   const [warning, setWarning] = useState<string[] | null>(null)
   const { showToast } = useToast()
   const remove = useRemoveCategory()
@@ -93,7 +92,7 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
             canDelete
               ? () => {
                   // Something still points at it: say what before it goes
-                  const usage = categoryUsage(category.id, { transactions, recurring, budget: settings.categoryBudgets?.[category.id], hasLoans })
+                  const usage = usageOf(category)
                   if (usage.length) return setWarning(usage)
                   remove(category)
                   onClose()
