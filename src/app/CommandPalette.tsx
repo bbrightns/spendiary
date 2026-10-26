@@ -1122,7 +1122,7 @@ export function CommandPalette() {
                           {item.badge}
                         </span>
                       )}
-                      <ArrowUpRightIcon className={`h-4 w-4 opacity-40 ${isSelected ? 'opacity-100 text-link' : ''}`} />
+                      <ArrowUpRightIcon className={`h-4 w-4 ${isSelected ? 'text-link' : 'text-ink-faint'}`} />
                     </div>
                   </div>
                 </div>

@@ -828,7 +828,7 @@ export function Rebalance() {
                                 -5
                               </button>
 
-                              <div className="flex items-center h-8 rounded-xl border border-line-strong bg-surface px-2 shadow-xs focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">
+                              <div className="flex items-center h-8 rounded-xl border border-line-strong bg-surface-muted focus-within:bg-surface px-2 shadow-xs focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">
                                 <input
                                   type="number"
                                   min={0}
@@ -1060,7 +1060,7 @@ export function Rebalance() {
                                 -
                               </button>
 
-                              <div className="flex items-center h-8 rounded-xl border border-line-strong bg-surface px-2 shadow-xs focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">
+                              <div className="flex items-center h-8 rounded-xl border border-line-strong bg-surface-muted focus-within:bg-surface px-2 shadow-xs focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">
                                 <input
                                   type="number"
                                   min={0}
