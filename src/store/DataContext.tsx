@@ -20,6 +20,7 @@ import * as planningActions from './actions/planning'
 import { applyImport, prepareImport } from './actions/importPortfolio'
 import { applyPreferences, downloadBackup, makeBackup, parseBackup, readPreferences } from './backup'
 import { STORAGE_KEYS } from '../lib/storageKeys'
+import { reconcileAccounts } from '../modules/spend/accountRemoval'
 
 /** Result returned by importData — UI can react to success/error */
 export type ImportResult =
@@ -315,7 +316,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // A wrapper for setDataState that automatically adds/updates lastUpdatedAt.
   const updateData = (next: SpendiaryData | ((prev: SpendiaryData) => SpendiaryData)) => {
     setDataState((prev) => {
-      const resolved = typeof next === 'function' ? next(prev) : next
+      // Edits (not whole-data replacements) also keep recurring items and saved names in step with
+      // wallets and cards being deleted or brought back by an undo
+      const resolved = typeof next === 'function' ? reconcileAccounts(prev, next(prev)) : next
       return {
         ...resolved,
         lastUpdatedAt: Date.now(),

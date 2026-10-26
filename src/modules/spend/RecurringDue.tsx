@@ -5,8 +5,9 @@ import { TextLink } from '../../components/ui/TextLink'
 import { CheckIcon } from '../../components/icons'
 import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb, thbExact } from '../../lib/format'
-import { RepeatIcon, getCategory } from './categories'
-import { nextOccurrence } from './logic'
+import type { SpendRecurring } from '../../lib/types'
+import { RepeatIcon, TransferIcon, getCategory } from './categories'
+import { doneWord, nextOccurrence, recurringSign } from './logic'
 import { paidDetail } from './billPaid'
 import { openQuickAdd } from './QuickAddSheet'
 import { TONES } from './tones'
@@ -19,6 +20,16 @@ export const shortDay = (iso: string) => {
   return new Date(y, m - 1, d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
+/** Icon and color for a recurring item: its category's, or the transfer look */
+export function recurringLook(rec: Pick<SpendRecurring, 'type' | 'categoryId'>) {
+  if (rec.type === 'transfer') return { Icon: TransferIcon, tone: TONES.sky.chip }
+  const cat = getCategory(rec.categoryId)
+  return { Icon: cat?.icon ?? RepeatIcon, tone: TONES[cat?.tone ?? 'slate'].chip }
+}
+
+/** Amount color for a recurring item */
+export const recurringAmountClass = (type: SpendRecurring['type']) => (type === 'income' ? 'text-gain-ink' : type === 'transfer' ? 'text-ink-muted' : 'text-ink')
+
 const daysFrom = (today: string, iso: string) => {
   const p = (s: string) => {
     const [y, m, d] = s.split('-').map(Number)
@@ -29,7 +40,7 @@ const daysFrom = (today: string, iso: string) => {
 
 /** Recurring items waiting for a confirm, plus what's coming in the next week. */
 export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
-  const { recurring, methods, dueRecurring, confirmRecurring, skipRecurring, unskipRecurring, removeTransaction } = useSpend()
+  const { recurring, accountName, dueRecurring, confirmRecurring, skipRecurring, unskipRecurring, removeTransaction } = useSpend()
   const { showToast } = useToast()
   const today = localDateStr()
 
@@ -50,8 +61,9 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
       let day = days[days.length - 1]
       if (day?.date !== date) days.push((day = { date, items: [], out: 0, inflow: 0 }))
       day.items.push(rec)
+      // A transfer only moves money between your own wallets
       if (rec.type === 'income') day.inflow += rec.amount
-      else day.out += rec.amount
+      else if (rec.type === 'expense') day.out += rec.amount
     }
     return days
   }, [upcoming])
@@ -90,9 +102,9 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
       {dueRecurring.length > 0 && (
         <ul className="mt-2 divide-y divide-line">
           {dueRecurring.map(({ rec, date }) => {
-            const cat = getCategory(rec.categoryId)
-            const Icon = cat?.icon
+            const { Icon, tone } = recurringLook(rec)
             const late = daysFrom(today, date)
+            const done = doneWord(rec.type)
             return (
               <li key={`${rec.id}-${date}`} className="flex items-center gap-3 py-3">
                 <button
@@ -101,14 +113,19 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
                   className="flex min-w-0 flex-1 items-center gap-3 text-left cursor-pointer"
                   aria-label={`Review ${rec.name} and adjust the amount`}
                 >
-                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${TONES[cat?.tone ?? 'slate'].chip}`}>
-                    {Icon && <Icon className="h-[18px] w-[18px]" />}
+                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${tone}`}>
+                    <Icon className="h-[18px] w-[18px]" />
                   </span>
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-ink">{rec.name}</span>
                     <span className="block text-xs font-semibold text-warn-ink">
                       {late === 0 ? 'Due today' : `Due ${shortDay(date)}`} · {thb(rec.amount)}
                     </span>
+                    {rec.type === 'transfer' && (
+                      <span className="block truncate text-xs text-ink-muted">
+                        {accountName(rec.accountId) ?? '—'} → {accountName(rec.toAccountId) ?? '—'}
+                      </span>
+                    )}
                   </span>
                 </button>
                 <button
@@ -127,29 +144,30 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
                     const txn = confirmRecurring(rec, date)
                     // Undo deletes the logged transaction, which puts the bill back as due
                     showToast(
-                      `${rec.type === 'income' ? '+' : '−'}${thbExact(rec.amount)} · ${rec.name}`,
+                      `${recurringSign(rec.type)}${thbExact(rec.amount)} · ${rec.name}`,
                       'success',
                       { label: 'Undo', onClick: () => removeTransaction(txn.id) },
                       {
                         popup: true,
-                        title: rec.type === 'income' ? 'Received' : 'Paid',
+                        title: done,
                         detail: paidDetail({
                           rec,
                           date,
                           name: rec.name,
                           amount: rec.amount,
-                          accountName: methods.find((m) => m.id === rec.accountId)?.name,
+                          accountName:
+                            rec.type === 'transfer' ? `${accountName(rec.accountId) ?? '—'} → ${accountName(rec.toAccountId) ?? '—'}` : accountName(rec.accountId),
                           categoryId: rec.categoryId,
                           subcategory: rec.subcategory,
                         }),
                       },
                     )
                   }}
-                  aria-label={`Mark ${rec.name} ${rec.type === 'income' ? 'received' : 'paid'}, ${thb(rec.amount)}`}
+                  aria-label={`Mark ${rec.name} ${done.toLowerCase()}, ${thb(rec.amount)}`}
                   className="flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white cursor-pointer hover:bg-primary-hover"
                 >
                   <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.6} />
-                  {rec.type === 'income' ? 'Received' : 'Paid'}
+                  {done}
                 </button>
               </li>
             )
@@ -182,15 +200,14 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
                   </div>
                   <ul className="mt-1.5 space-y-1">
                     {items.map((rec) => {
-                      const cat = getCategory(rec.categoryId)
-                      const Icon = cat?.icon ?? RepeatIcon
+                      const { Icon, tone } = recurringLook(rec)
                       return (
                         <li key={rec.id} className="flex items-center gap-2.5 text-sm">
-                          <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${TONES[cat?.tone ?? 'slate'].chip}`}>
+                          <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${tone}`}>
                             <Icon className="h-3.5 w-3.5" />
                           </span>
                           <span className="min-w-0 flex-1 truncate text-ink-soft">{rec.name}</span>
-                          <span className={`shrink-0 font-semibold tnum ${rec.type === 'income' ? 'text-gain-ink' : 'text-ink'}`}>
+                          <span className={`shrink-0 font-semibold tnum ${recurringAmountClass(rec.type)}`}>
                             {rec.type === 'income' ? '+' : ''}
                             {thb(rec.amount)}
                           </span>

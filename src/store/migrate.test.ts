@@ -22,6 +22,26 @@ describe('migrate', () => {
     expect(out.spendSettings?.fixedCostsImported).toBe(true)
   })
 
+  it('pauses recurring items whose wallet was deleted before the app paused them on delete', () => {
+    const base = { name: 'x', amount: 1, categoryId: 'bills', frequency: 'monthly', day: 1, startDate: '2026-01-01' }
+    const out = migrate(
+      legacy({
+        cashAccounts: [{ id: 'kbank', name: 'KBank', balance: 1 }],
+        spendRecurring: [
+          { ...base, id: 'ok', type: 'expense', accountId: 'kbank' },
+          { ...base, id: 'gone', type: 'expense', accountId: 'deleted' },
+          { ...base, id: 'none', type: 'income' },
+        ],
+      }),
+    )
+    expect(out.spendRecurring?.map((r) => [r.id, !!r.paused])).toEqual([
+      ['ok', false],
+      ['gone', true],
+      ['none', false],
+    ])
+    expect(out.spendRecurring?.[1].pausedReason).toBe('accountRemoved')
+  })
+
   it('turns the old single cash number into a Cash account and drops the old field', () => {
     const out = migrate(legacy({ cash: 500 }))
     expect(out.cashAccounts).toHaveLength(1)
