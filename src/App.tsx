@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { ScrollToTop } from './components/ScrollToTop'
 import { DataProvider, useData } from './store/DataContext'
@@ -6,6 +6,8 @@ import { ToastProvider } from './store/ToastContext'
 import { ToastContainer } from './components/ui/Toast'
 import { useTheme } from './hooks/useTheme'
 import { Layout } from './app/Layout'
+import { PageErrorBoundary } from './app/PageErrorBoundary'
+import { lazyPage } from './lib/lazyPage'
 import { Footer } from './components/layout/Footer'
 import { Dashboard } from './pages/Dashboard'
 import { Portfolio } from './pages/Portfolio'
@@ -13,18 +15,18 @@ import { DcaPlanner } from './pages/DcaPlanner'
 // Spend Home is where the app opens, so it loads with the app instead of lazily (no skeleton flash)
 import { SpendOverview } from './modules/spend/pages/SpendOverview'
 
-const Retirement = lazy(() => import('./pages/Retirement').then(m => ({ default: m.Retirement })))
-const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })))
-const HoldingLogs = lazy(() => import('./pages/HoldingLogs').then(m => ({ default: m.HoldingLogs })))
-const ActivitySummary = lazy(() => import('./pages/ActivitySummary').then(m => ({ default: m.ActivitySummary })))
-const Rebalance = lazy(() => import('./pages/Rebalance').then(m => ({ default: m.Rebalance })))
-const Dividends = lazy(() => import('./pages/Dividends').then(m => ({ default: m.Dividends })))
-const CashLiquidity = lazy(() => import('./pages/CashLiquidity').then(m => ({ default: m.CashLiquidity })))
-const SpendTransactions = lazy(() => import('./modules/spend/pages/SpendTransactions').then(m => ({ default: m.SpendTransactions })))
-const SpendRecurringPage = lazy(() => import('./modules/spend/pages/SpendRecurring').then(m => ({ default: m.SpendRecurringPage })))
-const SpendLoansPage = lazy(() => import('./modules/spend/pages/SpendLoans').then(m => ({ default: m.SpendLoansPage })))
-const SpendAnalysis = lazy(() => import('./modules/spend/pages/SpendAnalysis').then(m => ({ default: m.SpendAnalysis })))
-const SpendAccounts = lazy(() => import('./modules/spend/pages/SpendAccounts').then(m => ({ default: m.SpendAccounts })))
+const Retirement = lazyPage(() => import('./pages/Retirement').then(m => m.Retirement))
+const Settings = lazyPage(() => import('./pages/Settings').then(m => m.Settings))
+const HoldingLogs = lazyPage(() => import('./pages/HoldingLogs').then(m => m.HoldingLogs))
+const ActivitySummary = lazyPage(() => import('./pages/ActivitySummary').then(m => m.ActivitySummary))
+const Rebalance = lazyPage(() => import('./pages/Rebalance').then(m => m.Rebalance))
+const Dividends = lazyPage(() => import('./pages/Dividends').then(m => m.Dividends))
+const CashLiquidity = lazyPage(() => import('./pages/CashLiquidity').then(m => m.CashLiquidity))
+const SpendTransactions = lazyPage(() => import('./modules/spend/pages/SpendTransactions').then(m => m.SpendTransactions))
+const SpendRecurringPage = lazyPage(() => import('./modules/spend/pages/SpendRecurring').then(m => m.SpendRecurringPage))
+const SpendLoansPage = lazyPage(() => import('./modules/spend/pages/SpendLoans').then(m => m.SpendLoansPage))
+const SpendAnalysis = lazyPage(() => import('./modules/spend/pages/SpendAnalysis').then(m => m.SpendAnalysis))
+const SpendAccounts = lazyPage(() => import('./modules/spend/pages/SpendAccounts').then(m => m.SpendAccounts))
 import { PageSkeleton } from './components/ui/PageSkeleton'
 import { Card } from './components/ui/Card'
 import { EmptyState } from './components/ui/EmptyState'
@@ -92,6 +94,7 @@ function SpendSettingsRedirect() {
 // 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
 function AppContent() {
   const { user, loginWithGoogle, loginAsTestMode, authError, dataReady, loadError, syncConflict, retryLoad } = useData()
+  const { pathname } = useLocation()
 
   // Safety net: if the load stalls (silent network), offer a retry after a while instead of a skeleton forever.
   // The pages stay hidden: they'd show empty data, and anything added there would be replaced when the load lands.
@@ -315,6 +318,7 @@ function AppContent() {
       ) : !dataReady ? (
         loadTimedOut ? <SyncProblemScreen kind="slow" onRetry={retrySlowLoad} /> : <PageLoadingFallback />
       ) : (
+      <PageErrorBoundary resetKey={pathname}>
       <Suspense fallback={<PageLoadingFallback />}>
         <Routes>
           {/* The app opens on Spend Home (used every day); Invest Home lives at /invest */}
@@ -349,6 +353,7 @@ function AppContent() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
+      </PageErrorBoundary>
       )}
     </Layout>
   )

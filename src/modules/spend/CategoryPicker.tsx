@@ -6,7 +6,8 @@ import { CategorySheet } from './CategorySheet'
 import { moveId } from './logic'
 import { ReorderSheet } from './ReorderSheet'
 import { TONES } from './tones'
-import { KEEP_CATEGORY, useRemoveCategory } from './useRemoveCategory'
+import { KEEP_CATEGORY, useCategoryUsage, useRemoveCategory } from './useRemoveCategory'
+import { ConfirmModal } from '../../components/ui/ConfirmModal'
 import { useSpend } from './useSpend'
 import { useToast } from '../../store/ToastContext'
 
@@ -35,6 +36,9 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
   const { settings, updateSettings, subcategories, addSubcategory, removeSubcategory, renameSubcategory } = useSpend()
   const { showToast } = useToast()
   const removeCategory = useRemoveCategory()
+  const usageOf = useCategoryUsage()
+  // A used category waits here for the delete warning to be confirmed
+  const [confirming, setConfirming] = useState<{ category: SpendCategory; lines: string[] } | null>(null)
   const [editing, setEditing] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [arranging, setArranging] = useState(false)
@@ -60,6 +64,13 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
 
   /** Take a category out of the picker; if it was picked, another one is picked instead. */
   const remove = (c: SpendCategory) => {
+    // Same warning as Settings: say what still uses it first
+    const lines = usageOf(c)
+    if (lines.length) return setConfirming({ category: c, lines })
+    removeNow(c)
+  }
+
+  const removeNow = (c: SpendCategory) => {
     removeCategory(c)
     if (c.id !== value) return
     const left = categoriesFor(type).filter((x) => x.id !== c.id)
@@ -365,6 +376,23 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
             canReset={!!settings.categoryOrder?.[type]}
             onReset={() => updateSettings({ categoryOrder: { ...settings.categoryOrder, [type]: undefined } })}
           />
+          <ConfirmModal
+            open={!!confirming}
+            onClose={() => setConfirming(null)}
+            title={`Delete ${confirming?.category.label ?? ''}?`}
+            description="It leaves Settings, Quick add and recurring pickers. Restore it any time from Deleted categories."
+            confirmText="Delete category"
+            onConfirm={() => {
+              if (confirming) removeNow(confirming.category)
+              setConfirming(null)
+            }}
+          >
+            <ul className="list-disc space-y-1.5 pl-5 text-sm text-ink-soft">
+              {(confirming?.lines ?? []).map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </ConfirmModal>
         </>,
         document.body,
       )}

@@ -1,6 +1,15 @@
 import { useToast } from '../../store/ToastContext'
+import { useData } from '../../store/DataContext'
+import { categoryUsage } from './logic'
 import type { SpendCategory } from './categories'
 import { useSpend } from './useSpend'
+
+/** What still uses a category, as lines for the delete warning (empty when nothing does). */
+export function useCategoryUsage() {
+  const { transactions, recurring, settings } = useSpend()
+  const hasLoans = (useData().data.liabilities ?? []).length > 0
+  return (c: SpendCategory) => categoryUsage(c.id, { transactions, recurring, budget: settings.categoryBudgets?.[c.id], hasLoans })
+}
 
 /** The catch-all categories, which every picker keeps. */
 export const KEEP_CATEGORY = new Set(['other', 'other_in'])
