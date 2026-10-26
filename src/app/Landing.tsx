@@ -108,8 +108,8 @@ export function Landing() {
           <img src="/logo.png" alt="" width={36} height={36} className="h-8 w-8 object-contain" />
           <span className={`text-xl sm:text-2xl ${display}`}>spendiary</span>
         </div>
-        <Link to="/privacy" className="text-sm font-medium text-landing-ink-muted transition-colors hover:text-landing-ink">
-          Privacy
+        <Link to="/privacy" className="text-xs font-medium text-landing-ink-muted transition-colors hover:text-landing-ink">
+          Privacy policy
         </Link>
       </header>
 
