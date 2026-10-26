@@ -6,6 +6,8 @@
 @theme {
   --font-sans: 'Inter', 'IBM Plex Sans Thai', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-display: 'Plus Jakarta Sans', 'Inter', 'IBM Plex Sans Thai', ui-sans-serif, system-ui, sans-serif;
+  /* Signed-out pages only: their display headings */
+  --font-landing: 'Instrument Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
 
   /* Type: small labels are 13px (Tailwind's default 12px read too small on phones);
      text-2xs (12px) is the floor, for tight badges and chart labels only */
@@ -84,9 +86,7 @@
   --color-debt: #f43f5e;
 
   /* Landing page: light only, so these copy the light tokens and are never overridden by .dark */
-  --color-landing-canvas: #faf9f5;
   --color-landing-surface: #ffffff;
-  --color-landing-surface-muted: #f4f6fa;
   --color-landing-ink: #090d16;
   --color-landing-ink-hover: #1a202c;
   --color-landing-ink-soft: #334155;
@@ -98,7 +98,14 @@
   --color-landing-link: #005ce8;
   --color-landing-loss-ink: #be123c;
   --color-landing-loss-soft: #fff1f2;
-  --color-landing-glass: rgba(255, 255, 255, 0.78);
+  /* Warm stone grounds, a muted taupe for the quiet half of headings, and night sections in the app's dark canvas */
+  --color-landing-stone: #ece8dd;
+  --color-landing-paper: #f7f4ec;
+  --color-landing-taupe: #8a8377;
+  --color-landing-night: #0f1117;
+  --color-landing-night-soft: #1b1f2b;
+  --color-landing-on-night: #ece8dd;
+  --color-landing-on-night-muted: #8e8b84;
   /* Pastel pairs: soft fill + readable ink. Mint is Spend, sky is Invest, lavender is privacy */
   --color-landing-mint: #e3f5eb;
   --color-landing-mint-ink: #047857;
@@ -106,7 +113,6 @@
   --color-landing-sky-ink: #0052cc;
   --color-landing-lavender: #eee8fb;
   --color-landing-lavender-ink: #6d28d9;
-  --color-landing-peach: #fdebdc;
   --shadow-landing-soft: 0 1px 3px rgba(15, 23, 42, 0.03), 0 10px 30px -10px rgba(15, 23, 42, 0.07);
 
   --radius-card: 1.5rem;
@@ -224,15 +230,22 @@
     background-repeat: no-repeat;
   }
 
-  /* Signed-out pages: amber top left, lavender top right, rose bottom right. Light only, so .dark never touches it */
-  .landing-canvas-bg {
-    background-color: #faf6f4;
-    background-image:
-      radial-gradient(circle at 85% 18%, rgba(237, 233, 254, 0.8) 0%, transparent 50%),
-      radial-gradient(circle at 10% 12%, rgba(254, 243, 199, 0.85) 0%, rgba(255, 248, 235, 0.9) 30%, transparent 60%),
-      radial-gradient(circle at 90% 88%, rgba(239, 229, 232, 0.85) 0%, rgba(243, 232, 255, 0.6) 35%, transparent 65%),
-      linear-gradient(135deg, #fff3dd 0%, #faf6f4 45%, #efe5e8 100%);
-    background-attachment: fixed;
+  /* Signed-out pages: sections rise a little and fade in once as they enter the viewport (Landing.tsx adds .is-visible) */
+  .landing-reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .landing-reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .landing-reveal {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
   }
 
   .dark body, .dark .app-canvas-bg {
