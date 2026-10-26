@@ -8,7 +8,7 @@ export function LandingFooter() {
         <div>
           <div className="flex items-center gap-2.5">
             <img src="/logo.png" alt="" width={28} height={28} className="h-7 w-7 object-contain" />
-            <span className="font-landing text-xl font-medium tracking-[-0.04em] text-landing-on-night">spendiary</span>
+            <span className="font-display text-xl font-extrabold tracking-tight text-landing-on-night">spendiary</span>
           </div>
           <p className="mt-3 max-w-sm">
             Stored on Supabase. Each account can only access its own data.{' '}

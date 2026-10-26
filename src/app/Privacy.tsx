@@ -75,12 +75,12 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
 /** /privacy: opens with or without signing in. Light only, like the landing page (landing-* tokens). */
 export function Privacy() {
   return (
-    <div className="flex min-h-dvh flex-col bg-landing-stone font-sans text-landing-ink">
+    <div className="landing-canvas-bg flex min-h-dvh flex-col font-sans text-landing-ink">
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 sm:px-8">
         <header className="flex items-center justify-between gap-3 py-5 sm:py-7">
           <Link to="/" className="flex items-center gap-2.5">
             <img src="/logo.png" alt="" width={36} height={36} className="h-8 w-8 sm:h-9 sm:w-9 object-contain" />
-            <span className="font-landing text-xl sm:text-2xl font-medium tracking-[-0.04em]">spendiary</span>
+            <span className="font-display text-xl sm:text-2xl font-extrabold tracking-tight">spendiary</span>
           </Link>
           <Link to="/" className="text-sm font-semibold text-landing-ink-soft hover:text-landing-ink hover:underline">
             ← Back to home
@@ -88,20 +88,20 @@ export function Privacy() {
         </header>
 
         <main className="flex-1 pb-16 pt-4 sm:pt-8">
-          <h1 className="font-landing text-4xl sm:text-6xl font-medium leading-[1.05] tracking-[-0.04em]">Privacy policy</h1>
+          <h1 className="font-display text-4xl sm:text-6xl font-extrabold leading-[1.05] tracking-tight">Privacy policy</h1>
           <p className="mt-4 text-base sm:text-lg leading-relaxed text-landing-ink-muted">
             Spendiary is invite-only. This page explains what we store, where it is stored and who can see it.
           </p>
           <p className="mt-2 text-sm text-landing-ink-faint">Last updated 26 October 2026</p>
 
-          <div className="mt-10 divide-y divide-landing-line rounded-[28px] border border-landing-surface bg-landing-paper px-6 shadow-[var(--shadow-landing-soft)] sm:px-10">
+          <div className="mt-10 divide-y divide-landing-line rounded-[28px] border border-landing-surface bg-landing-surface px-6 shadow-[var(--shadow-landing-soft)] sm:px-10">
             {SECTIONS.map((s, i) => (
               <section key={s.title} className="flex gap-4 py-7 sm:gap-5">
                 <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-landing-lavender text-sm font-bold text-landing-lavender-ink tnum">
                   {i + 1}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <h2 className="font-landing text-xl sm:text-2xl font-medium leading-8 tracking-[-0.02em]">{s.title}</h2>
+                  <h2 className="font-display text-xl sm:text-2xl font-extrabold leading-8 tracking-tight">{s.title}</h2>
                   <div className="mt-2 text-base leading-relaxed text-landing-ink-soft">{s.body}</div>
                 </div>
               </section>

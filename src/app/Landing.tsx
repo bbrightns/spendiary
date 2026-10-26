@@ -39,44 +39,31 @@ function GoogleMark() {
 }
 
 const pill = 'inline-flex h-12 cursor-pointer items-center justify-center gap-2.5 rounded-full px-6 text-sm font-semibold transition-colors'
-const card = 'rounded-3xl border border-landing-surface bg-landing-paper p-5 text-left shadow-[var(--shadow-landing-soft)]'
-const display = 'font-landing font-medium tracking-[-0.04em]'
+// Headings as in the app: Plus Jakarta Sans, extrabold, tight
+const display = 'font-display font-extrabold tracking-tight'
 
-/** A small event bubble floating beside the hero (wide screens only). Figures come from demo mode. */
+/** Punctuation in big headings: Plus Jakarta's comma and period carry wide side bearings at this weight */
+const Tight = ({ children }: { children: string }) => <span className="-ml-[0.08em]">{children}</span>
+
+/** A small event bubble floating beside the hero (wide screens only), in the app's own row style. */
 function Chip({ icon, children, className }: { icon: ReactNode; children: ReactNode; className: string }) {
   return (
     <span
       aria-hidden
-      className={`absolute hidden items-center gap-2 rounded-full border border-landing-surface bg-landing-paper px-3.5 py-2 text-xs font-medium text-landing-ink-soft shadow-[var(--shadow-landing-soft)] xl:inline-flex ${className}`}
+      className={`absolute hidden items-center gap-2 rounded-full border border-landing-line bg-landing-surface px-3.5 py-2 text-xs font-medium text-landing-ink-soft shadow-[var(--shadow-landing-soft)] xl:inline-flex ${className}`}
     >
-      <span className="grid h-5 w-5 place-items-center rounded-full bg-landing-stone text-landing-ink">{icon}</span>
+      {icon}
       {children}
     </span>
   )
 }
 
-/** One stat card in the "All in one app" ring, styled like the app's own cards. Demo-mode figures. */
-function Stat({ title, meta, children }: { title: string; meta: string; children: ReactNode }) {
-  return (
-    <div className={card}>
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="text-sm font-semibold text-landing-ink">{title}</p>
-        <p className="text-xs text-landing-ink-faint">{meta}</p>
-      </div>
-      <div className="mt-3">{children}</div>
-    </div>
-  )
+/** A real app component cut out of demo mode (promo/landing-shots.mjs). The capture carries its own card, corners and shadow. */
+function Part({ src, w, h, alt, className = '' }: { src: string; w: number; h: number; alt: string; className?: string }) {
+  return <img src={`/landing/${src}.webp`} width={w} height={h} alt={alt} loading="lazy" className={`h-auto w-full ${className}`} />
 }
 
-function Bar({ value, tone }: { value: number; tone: string }) {
-  return (
-    <span className="mt-3 block h-1.5 overflow-hidden rounded-full bg-landing-stone">
-      <span className={`block h-full rounded-full ${tone}`} style={{ width: `${value}%` }} />
-    </span>
-  )
-}
-
-/** One feature row: words on one side, an app-style fragment on the other. */
+/** One feature row: words on one side, a real app card on the other. */
 function Feature({ chip, title, body, points, visual, flip }: {
   chip: ReactNode
   title: string
@@ -94,7 +81,7 @@ function Feature({ chip, title, body, points, visual, flip }: {
         <ul className="mt-6 space-y-3">
           {points.map((p) => (
             <li key={p} className="flex items-start gap-3 text-sm sm:text-base text-landing-ink-soft">
-              <span className="mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full bg-landing-surface text-landing-ink">
+              <span className="mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full bg-landing-surface text-landing-ink shadow-[var(--shadow-landing-soft)]">
                 <CheckIcon className="h-3 w-3" />
               </span>
               {p}
@@ -102,32 +89,18 @@ function Feature({ chip, title, body, points, visual, flip }: {
           ))}
         </ul>
       </div>
-      <div className={flip ? 'lg:order-1' : ''}>{visual}</div>
+      <div className={`mx-auto w-full max-w-md ${flip ? 'lg:order-1' : ''}`}>{visual}</div>
     </div>
   )
 }
 
-const BILLS: [string, string][] = [
-  ['Electricity', '฿1,450'],
-  ['AIS phone + fiber', '฿899'],
-  ['Netflix + Spotify', '฿459'],
-  ['Gym membership', '฿2,200'],
-]
-
-const HOLDINGS: [string, string, number, string][] = [
-  ['CONDO-BKK', '฿2,850,000', 48.7, 'bg-landing-sky-ink'],
-  ['BTC', '฿1,413,500', 24.2, 'bg-landing-mint-ink'],
-  ['AAPL', '฿409,539', 7.0, 'bg-landing-brand'],
-  ['NVDA', '฿366,289', 6.3, 'bg-landing-lavender-ink'],
-]
-
-/** The signed-out page. Light only: landing-* tokens never flip with .dark. Copy must stay true of the app. */
+/** The signed-out page. Light only: landing-* tokens and .landing-canvas-bg never flip with .dark. Copy must stay true of the app. */
 export function Landing() {
   const { loginWithGoogle, loginAsTestMode, authError } = useData()
   useReveal()
 
   return (
-    <div className="min-h-dvh bg-landing-stone font-sans text-landing-ink">
+    <div className="landing-canvas-bg min-h-dvh font-sans text-landing-ink">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8 sm:py-6">
         <div className="flex items-center gap-2.5">
           <img src="/logo.png" alt="" width={36} height={36} className="h-8 w-8 object-contain" />
@@ -141,14 +114,14 @@ export function Landing() {
       <main>
         {/* Hero */}
         <section className="relative mx-auto max-w-6xl px-5 pb-16 pt-10 text-center sm:px-8 sm:pt-16">
-          <Chip icon={<CalendarIcon className="h-3 w-3" />} className="left-8 top-[19rem]">2 payments due · ฿17,130</Chip>
-          <Chip icon={<WalletIcon className="h-3 w-3" />} className="left-28 top-[25rem]">฿1,562 left today</Chip>
-          <Chip icon={<CheckIcon className="h-3 w-3" />} className="right-10 top-[18.5rem]">4 DCA buys to log</Chip>
-          <Chip icon={<TrendUpIcon className="h-3 w-3" />} className="right-20 top-[24.5rem]">Portfolio +23.5% all time</Chip>
+          <Chip icon={<CalendarIcon className="h-3.5 w-3.5 text-landing-mint-ink" />} className="left-8 top-[19rem]">Bills due this week</Chip>
+          <Chip icon={<WalletIcon className="h-3.5 w-3.5 text-landing-mint-ink" />} className="left-28 top-[25rem]">Left to spend today</Chip>
+          <Chip icon={<CheckIcon className="h-3.5 w-3.5 text-landing-sky-ink" />} className="right-10 top-[18.5rem]">DCA buys to log</Chip>
+          <Chip icon={<TrendUpIcon className="h-3.5 w-3.5 text-landing-sky-ink" />} className="right-20 top-[24.5rem]">All-time profit</Chip>
 
           <h1 className={`mx-auto max-w-4xl text-5xl leading-[0.95] sm:text-7xl lg:text-8xl ${display}`}>
-            <span className="block">Manage spending,</span>
-            <span className="block text-landing-taupe">Plan investing.</span>
+            <span className="block">Manage spending<Tight>,</Tight></span>
+            <span className="block text-landing-brand">Plan investing<Tight>.</Tight></span>
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-base sm:text-lg leading-relaxed text-landing-ink-muted text-pretty">
             Log what you spend, see which cards and bills are due, and follow your stocks, funds and crypto.
@@ -168,7 +141,7 @@ export function Landing() {
             <button
               type="button"
               onClick={loginAsTestMode}
-              className={`${pill} w-full border border-landing-line-strong bg-landing-paper text-landing-ink hover:bg-landing-surface sm:w-auto`}
+              className={`${pill} w-full border border-landing-line-strong bg-landing-surface text-landing-ink hover:bg-landing-line sm:w-auto`}
             >
               <FlaskIcon className="h-4 w-4" />
               Try the demo
@@ -179,12 +152,12 @@ export function Landing() {
           </div>
           <p className="mt-3 text-xs text-landing-ink-faint">No account? Try the demo. Nothing is saved.</p>
 
-          {/* Real screens from demo mode (promo/landing-shots.mjs); hidden lazy images never load */}
+          {/* Real screens from demo mode; hidden lazy images never load, so each size fetches only its own */}
           <div className="landing-reveal relative mx-auto mt-14 hidden max-w-4xl md:block">
-            <div className="rounded-[28px] border border-landing-surface bg-landing-paper p-2.5">
+            <div className="rounded-[28px] border border-landing-line bg-landing-surface p-2.5 shadow-[var(--shadow-landing-soft)]">
               <img src="/landing/spend-desktop.webp" width={1440} height={900} alt="Spending home in demo mode" loading="lazy" className="h-auto w-full rounded-[18px]" />
             </div>
-            <div className="absolute -bottom-10 -right-6 w-[23%] rounded-[30px] border border-landing-surface bg-landing-paper p-1.5 shadow-[var(--shadow-landing-soft)] lg:-right-14">
+            <div className="absolute -bottom-10 -right-6 w-[23%] rounded-[30px] border border-landing-line bg-landing-surface p-1.5 shadow-[var(--shadow-landing-soft)] lg:-right-14">
               <img src="/landing/portfolio-mobile.webp" width={780} height={1688} alt="Portfolio in demo mode" loading="lazy" className="h-auto w-full rounded-[24px]" />
             </div>
           </div>
@@ -193,55 +166,44 @@ export function Landing() {
               ['/landing/spend-mobile.webp', 'Spending home in demo mode'],
               ['/landing/portfolio-mobile.webp', 'Portfolio in demo mode'],
             ].map(([src, alt]) => (
-              <div key={src} className="rounded-[24px] border border-landing-surface bg-landing-paper p-1.5">
+              <div key={src} className="rounded-[24px] border border-landing-line bg-landing-surface p-1.5 shadow-[var(--shadow-landing-soft)]">
                 <img src={src} width={780} height={1688} alt={alt} loading="lazy" className="h-auto w-full rounded-[18px]" />
               </div>
             ))}
           </div>
         </section>
 
-        {/* All in one app: the numbers you see on Home, as cards around the phone */}
+        {/* All in one app: real cards from Home and Portfolio around the phone screen */}
         <section className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
           <h2 className={`landing-reveal text-center text-4xl sm:text-6xl leading-[1.05] ${display}`}>
-            All in <span className="text-landing-taupe">one app.</span>
+            All in <span className="text-landing-brand">one app<Tight>.</Tight></span>
           </h2>
-          <div className="landing-reveal mt-12 grid items-center gap-4 sm:grid-cols-2 lg:mt-16 lg:grid-cols-[1fr_auto_1fr] lg:gap-8">
-            <div className="grid gap-4 lg:-translate-y-6">
-              <Stat title="Today" meta="Daily allowance">
-                <p className={`text-3xl tnum ${display}`}>฿1,562</p>
-                <p className="mt-1 text-xs text-landing-ink-muted">
-                  left today of ฿1,671 · <span className="font-semibold text-landing-mint-ink">On track</span>
-                </p>
-              </Stat>
-              <Stat title="This month" meta="Budget">
-                <p className="text-sm tnum text-landing-ink-soft">
-                  <span className="font-semibold text-landing-ink">฿18,427</span> of ฿25,000
-                </p>
-                <Bar value={74} tone="bg-landing-brand" />
-              </Stat>
+          <div className="landing-reveal mx-auto mt-10 grid max-w-md items-center gap-2 lg:mt-14 lg:max-w-none lg:grid-cols-[1fr_auto_1fr] lg:gap-6">
+            <div className="grid gap-2 lg:-translate-y-6">
+              <Part src="part-today" w={780} h={500} alt="Today card: money left to spend today" />
+              <Part src="part-month" w={780} h={284} alt="This month card: spending against the monthly budget" />
             </div>
-            <div className="mx-auto hidden w-60 rounded-[30px] border border-landing-surface bg-landing-paper p-1.5 shadow-[var(--shadow-landing-soft)] lg:block">
+            <div className="mx-auto hidden w-60 rounded-[30px] border border-landing-line bg-landing-surface p-1.5 shadow-[var(--shadow-landing-soft)] lg:block">
               <img src="/landing/spend-mobile.webp" width={780} height={1688} alt="" loading="lazy" className="h-auto w-full rounded-[24px]" />
             </div>
-            <div className="grid gap-4 lg:translate-y-6">
-              <Stat title="Payments due" meta="Next in 2 days">
-                <p className={`text-3xl tnum ${display}`}>฿17,130</p>
-                <p className="mt-1 text-xs text-landing-ink-muted">2 cards and bills</p>
-              </Stat>
-              <Stat title="Portfolio" meta="All time">
-                <p className={`text-3xl tnum ${display}`}>฿5.85M</p>
-                <p className="mt-1 text-xs font-semibold text-landing-mint-ink tnum">+฿1.11M · +23.5%</p>
-              </Stat>
+            <div className="grid gap-2 lg:translate-y-6">
+              <Part src="part-due" w={780} h={224} alt="Payments due row with a Review button" />
+              {/* The capture is the grey inset only; a white card around it, as in the app */}
+              <div className="mx-6 rounded-[var(--radius-card)] border border-landing-line bg-landing-surface shadow-[var(--shadow-landing-soft)]">
+                <Part src="part-portfolio-value" w={780} h={316} alt="Portfolio value and all-time profit" />
+              </div>
             </div>
           </div>
-          <p className="mt-8 text-center text-xs text-landing-ink-faint">Figures from demo mode</p>
+          <p className="mt-8 text-center text-xs text-landing-ink-faint">Screens from demo mode</p>
         </section>
 
         {/* Statement */}
         <section className="bg-landing-night px-5 py-24 sm:px-8 sm:py-32">
           <p className={`landing-reveal mx-auto max-w-5xl text-3xl sm:text-5xl lg:text-6xl leading-[1.1] text-landing-on-night text-balance ${display}`}>
-            Your daily spending and your investments,{' '}
-            <span className="text-landing-on-night-muted">side by side, every amount in Thai baht.</span>
+            Your daily spending and your investments<Tight>,</Tight>{' '}
+            <span className="text-landing-on-night-muted">
+              side by side<Tight>,</Tight> every amount in Thai baht<Tight>.</Tight>
+            </span>
           </p>
         </section>
 
@@ -257,28 +219,7 @@ export function Landing() {
             title="Know where your money goes"
             body="Log expenses, keep up with cards and bills, set budgets and track debts."
             points={['A daily allowance that shows what is left today', 'Due dates for cards, bills and installments', 'Monthly and per-category budgets']}
-            visual={
-              <div className={`${card} p-6`}>
-                <div className="flex items-baseline justify-between">
-                  <p className="text-base font-semibold">Bills and recurring</p>
-                  <p className="text-xs text-landing-ink-faint">Demo</p>
-                </div>
-                <ul className="mt-4 divide-y divide-landing-line">
-                  {BILLS.map(([name, amount]) => (
-                    <li key={name} className="flex items-center gap-3 py-3">
-                      <span className="grid h-9 w-9 flex-none place-items-center rounded-xl bg-landing-mint text-landing-mint-ink">
-                        <CalendarIcon className="h-4 w-4" />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold">{name}</span>
-                        <span className="block text-xs text-landing-ink-muted">Monthly</span>
-                      </span>
-                      <span className="text-sm font-semibold tnum">{amount}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            }
+            visual={<Part src="part-bills" w={920} h={976} alt="Bills and recurring card with due dates and Paid buttons" />}
           />
           <Feature
             flip
@@ -291,38 +232,18 @@ export function Landing() {
             title="See your whole portfolio"
             body="Follow US stocks, funds and crypto, plan monthly DCA, and track dividends and retirement."
             points={['Stocks, funds and crypto valued in baht', 'Monthly DCA plans with buys to log', 'Dividends and a retirement planner']}
-            visual={
-              <div className={`${card} p-6`}>
-                <div className="flex items-baseline justify-between">
-                  <p className="text-base font-semibold">Allocation</p>
-                  <p className="text-xs text-landing-ink-faint">Demo</p>
-                </div>
-                <ul className="mt-4 space-y-4">
-                  {HOLDINGS.map(([name, value, pct, tone]) => (
-                    <li key={name}>
-                      <div className="flex items-baseline justify-between text-sm">
-                        <span className="font-semibold">{name}</span>
-                        <span className="tnum text-landing-ink-soft">
-                          {value} <span className="text-landing-ink-faint">({pct}%)</span>
-                        </span>
-                      </div>
-                      <Bar value={pct} tone={tone} />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            }
+            visual={<Part src="part-allocation" w={772} h={1566} alt="Allocation card with portfolio value, a donut chart and holdings" className="mx-auto max-w-sm" />}
           />
         </section>
 
         {/* Closing call */}
         <section className="bg-landing-night px-5 py-24 text-center sm:px-8 sm:py-28">
           <h2 className={`landing-reveal mx-auto max-w-3xl text-4xl sm:text-6xl leading-[1.05] text-landing-on-night ${display}`}>
-            See it with sample data <span className="text-landing-on-night-muted">first.</span>
+            See it with sample data <span className="text-landing-on-night-muted">first<Tight>.</Tight></span>
           </h2>
           <p className="mx-auto mt-5 max-w-md text-base text-landing-on-night-muted">The demo opens the full app with example numbers. Nothing is saved.</p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <button type="button" onClick={loginAsTestMode} className={`${pill} w-full bg-landing-on-night text-landing-ink hover:bg-landing-surface sm:w-auto`}>
+            <button type="button" onClick={loginAsTestMode} className={`${pill} w-full bg-landing-surface text-landing-ink hover:bg-landing-line sm:w-auto`}>
               <FlaskIcon className="h-4 w-4" />
               Try the demo
             </button>
