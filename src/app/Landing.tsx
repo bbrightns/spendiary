@@ -45,12 +45,12 @@ const display = 'font-display font-extrabold tracking-tight'
 /** Punctuation in big headings: Plus Jakarta's comma and period carry wide side bearings at this weight */
 const Tight = ({ children }: { children: string }) => <span className="-ml-[0.08em]">{children}</span>
 
-/** A small event bubble floating beside the hero (wide screens only), in the app's own row style. */
+/** A small label floating beside the hero (wide screens only). Faint and flat on purpose, so it never reads as a button. */
 function Chip({ icon, children, className }: { icon: ReactNode; children: ReactNode; className: string }) {
   return (
     <span
       aria-hidden
-      className={`absolute hidden items-center gap-2 rounded-full border border-landing-line bg-landing-surface px-3.5 py-2 text-xs font-medium text-landing-ink-soft shadow-[var(--shadow-landing-soft)] xl:inline-flex ${className}`}
+      className={`pointer-events-none absolute hidden select-none items-center gap-2 rounded-full bg-landing-surface/40 px-3 py-1.5 text-xs text-landing-ink-faint opacity-80 xl:inline-flex ${className}`}
     >
       {icon}
       {children}
@@ -200,10 +200,8 @@ export function Landing() {
         {/* Statement */}
         <section className="bg-landing-night px-5 py-24 sm:px-8 sm:py-32">
           <p className={`landing-reveal mx-auto max-w-5xl text-3xl sm:text-5xl lg:text-6xl leading-[1.1] text-landing-on-night text-balance ${display}`}>
-            Your daily spending and your investments<Tight>,</Tight>{' '}
-            <span className="text-landing-on-night-muted">
-              side by side<Tight>,</Tight> every amount in Thai baht<Tight>.</Tight>
-            </span>
+            Know what you can spend today<Tight>,</Tight>{' '}
+            <span className="text-landing-on-night-muted">without losing sight of what you're building<Tight>.</Tight></span>
           </p>
         </section>
 
@@ -231,7 +229,7 @@ export function Landing() {
             }
             title="See your whole portfolio"
             body="Follow US stocks, funds and crypto, plan monthly DCA, and track dividends and retirement."
-            points={['Stocks, funds and crypto valued in baht', 'Monthly DCA plans with buys to log', 'Dividends and a retirement planner']}
+            points={['Stocks, funds and crypto with current prices', 'Monthly DCA plans with buys to log', 'Dividends and a retirement planner']}
             visual={<Part src="part-allocation" w={772} h={1566} alt="Allocation card with portfolio value, a donut chart and holdings" className="mx-auto max-w-sm" />}
           />
         </section>
