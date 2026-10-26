@@ -118,7 +118,7 @@ export function applyToBalances(b: Balances, txn: SpendTransaction, sign: 1 | -1
 type BalanceMove = Pick<SpendTransaction, 'type' | 'amount' | 'accountId' | 'toAccountId' | 'alreadyInBalance'>
 
 /** Net money in (+) / out (−) per account id for one transaction. */
-function moneyDeltas(txn: BalanceMove): Map<string, number> {
+export function moneyDeltas(txn: BalanceMove): Map<string, number> {
   const deltas = new Map<string, number>()
   if (txn.alreadyInBalance) return deltas
   const add = (id: string | undefined, v: number) => {

@@ -373,6 +373,12 @@ export interface SpendTransaction {
   recurring?: { id: string; date: string }
 }
 
+export interface RemovedAccount {
+  name: string
+  removedAt: string
+  pending?: number
+}
+
 export interface SpendSettings {
   /** Monthly spending budget in THB, drives the "per day left" readout */
   monthlyBudget?: number
@@ -404,8 +410,12 @@ export interface SpendSettings {
   categoryLayout?: 'chips' | 'tiles'
   /** Order of categories in the pickers, by id, per type; unlisted ones follow, and "Other" stays last */
   categoryOrder?: Partial<Record<'expense' | 'income', string[]>>
-  /** Names of deleted wallets and cards by id, so past transactions still say where the money went */
-  removedAccounts?: Record<string, { name: string; removedAt: string }>
+  /**
+   * Deleted wallets and cards by id: the name, so past transactions still say where the money went,
+   * and `pending`, the money edits to those transactions would have moved (+ in, − out), put on the
+   * balance if the account comes back through an undo
+   */
+  removedAccounts?: Record<string, RemovedAccount>
 }
 
 /** A user-made Spend category. `tone` and `icon` are keys from the Spend module's palettes. */

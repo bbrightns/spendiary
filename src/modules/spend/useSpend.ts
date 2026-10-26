@@ -7,7 +7,7 @@ import { SPEND_CATEGORIES } from './categories'
 import { investTransactions } from './invest'
 import { DEFAULT_BILL_REMINDER_DAYS, applyOrder, applyToBalances, cardBill, dueRecurring, parseTags, recurringNote, renameInList, renameSubOn, sortTxns, spendWallets } from './logic'
 import { availableCredit } from './credit'
-import { accountLabel } from './accountRemoval'
+import { accountLabel, trackRemovedMoves } from './accountRemoval'
 
 export type SpendTxnInput = Omit<SpendTransaction, 'id' | 'createdAt' | 'updatedAt' | 'tags'>
 
@@ -57,8 +57,19 @@ export function recurringInput(rec: SpendRecurring): SpendTxnInput {
   }
 }
 
-function balancesOf(d: SpendiaryData) {
-  return { cashAccounts: d.cashAccounts ?? [], spendCards: d.spendCards ?? [] }
+/**
+ * Wallet and card balances after adding (1) or taking back (−1) these transactions. Money a change
+ * would move on a deleted account is kept with its saved name, for an undo of the delete.
+ */
+function moveMoney(d: SpendiaryData, moves: [SpendTransaction, 1 | -1][]): Pick<SpendiaryData, 'cashAccounts' | 'spendCards' | 'spendSettings'> {
+  let balances = { cashAccounts: d.cashAccounts ?? [], spendCards: d.spendCards ?? [] }
+  const before = d.spendSettings?.removedAccounts
+  let removed = before
+  for (const [txn, sign] of moves) {
+    balances = applyToBalances(balances, txn, sign)
+    removed = trackRemovedMoves(removed, txn, sign)
+  }
+  return { ...balances, ...(removed !== before ? { spendSettings: { ...d.spendSettings, removedAccounts: removed } } : {}) }
 }
 
 /**
@@ -125,7 +136,7 @@ export function useSpend() {
     }
     setData((prev) => ({
       ...prev,
-      ...applyToBalances(balancesOf(prev), txn, 1),
+      ...moveMoney(prev, [[txn, 1]]),
       spendTransactions: [...(prev.spendTransactions ?? []), txn],
       ...(fromRecurring ? { spendRecurring: markOccurrence(prev.spendRecurring ?? [], fromRecurring.id, fromRecurring.date, 'doneDates') } : {}),
     }))
@@ -138,7 +149,7 @@ export function useSpend() {
     const txns: SpendTransaction[] = inputs.map((input) => ({ ...input, id: newId(), tags: parseTags(input.note), createdAt: now }))
     setData((prev) => ({
       ...prev,
-      ...txns.reduce((b, t) => applyToBalances(b, t, 1), balancesOf(prev)),
+      ...moveMoney(prev, txns.map((t) => [t, 1])),
       spendTransactions: [...(prev.spendTransactions ?? []), ...txns],
     }))
     return txns.length
@@ -180,10 +191,12 @@ export function useSpend() {
       const old = list.find((t) => t.id === id)
       if (!old) return prev
       const next: SpendTransaction = { ...old, ...input, tags: parseTags(input.note), updatedAt: new Date().toISOString() }
-      const reverted = applyToBalances(balancesOf(prev), old, -1)
       return {
         ...prev,
-        ...applyToBalances(reverted, next, 1),
+        ...moveMoney(prev, [
+          [old, -1],
+          [next, 1],
+        ]),
         spendTransactions: list.map((t) => (t.id === id ? next : t)),
       }
     })
@@ -218,7 +231,7 @@ export function useSpend() {
     const count = (data.spendTransactions ?? []).length
     setData((prev) => ({
       ...prev,
-      ...(prev.spendTransactions ?? []).reduce((b, t) => applyToBalances(b, t, -1), balancesOf(prev)),
+      ...moveMoney(prev, (prev.spendTransactions ?? []).map((t) => [t, -1])),
       spendTransactions: [],
     }))
     return count
@@ -231,7 +244,7 @@ export function useSpend() {
       if (!old) return prev
       return {
         ...prev,
-        ...applyToBalances(balancesOf(prev), old, -1),
+        ...moveMoney(prev, [[old, -1]]),
         spendTransactions: list.filter((t) => t.id !== id),
         // A bill marked paid comes back as due once its transaction is gone
         ...(old.recurring ? { spendRecurring: unmarkOccurrence(prev.spendRecurring ?? [], old.recurring.id, old.recurring.date, 'doneDates') } : {}),

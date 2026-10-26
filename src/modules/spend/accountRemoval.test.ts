@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { SpendRecurring, SpendiaryData } from '../../lib/types'
 import { emptyData } from '../../store/migrate'
-import { accountLabel, reconcileAccounts, recurringUsing, syncRecurringAccounts } from './accountRemoval'
+import { accountLabel, reconcileAccounts, recurringUsing, syncRecurringAccounts, trackRemovedMoves } from './accountRemoval'
 import { recurringInput } from './useSpend'
 
 const rec = (over: Partial<SpendRecurring>): SpendRecurring => ({
@@ -113,6 +113,45 @@ describe('reconcileAccounts', () => {
     expect(oneBack.spendRecurring?.[0].paused).toBe(true)
     const allBack = reconcileAccounts(oneBack, { ...oneBack, cashAccounts: [kbank, scb] })
     expect(allBack.spendRecurring?.[0].paused).toBeUndefined()
+  })
+})
+
+describe('money moved on a deleted account', () => {
+  const txn = (over: object) => ({ type: 'expense' as const, amount: 100, accountId: 'kbank', ...over })
+
+  it('is kept while the account is gone: a deleted expense gives the money back', () => {
+    const removed = { kbank: { name: 'KBank', removedAt: '' } }
+    expect(trackRemovedMoves(removed, txn({}), -1)?.kbank.pending).toBe(100)
+    expect(trackRemovedMoves(removed, txn({ type: 'income' }), -1)?.kbank.pending).toBe(-100)
+  })
+
+  it('an edit (take back old, add new) keeps only the difference; a full round trip leaves nothing', () => {
+    let removed = trackRemovedMoves({ kbank: { name: 'KBank', removedAt: '' } }, txn({}), -1)
+    removed = trackRemovedMoves(removed, txn({ amount: 30 }), 1)
+    expect(removed?.kbank.pending).toBe(70)
+    removed = trackRemovedMoves(removed, txn({ amount: 70 }), 1)
+    expect(removed?.kbank.pending).toBeUndefined()
+  })
+
+  it('a transfer between a live and a deleted wallet only tracks the deleted side', () => {
+    const removed = { kbank: { name: 'KBank', removedAt: '' } }
+    const out = trackRemovedMoves(removed, txn({ type: 'transfer', toAccountId: 'scb' }), -1)
+    expect(out?.kbank.pending).toBe(100)
+    expect(out?.scb).toBeUndefined()
+  })
+
+  it('returns the same object when no deleted account is touched', () => {
+    const removed = { kbank: { name: 'KBank', removedAt: '' } }
+    expect(trackRemovedMoves(removed, txn({ accountId: 'scb' }), 1)).toBe(removed)
+    expect(trackRemovedMoves(undefined, txn({}), 1)).toBeUndefined()
+  })
+
+  it('lands on the balance when the account comes back (wallet +, card owed −)', () => {
+    const prev = data({ cashAccounts: [scb], spendCards: [], spendSettings: { removedAccounts: { kbank: { name: 'KBank', removedAt: '', pending: 250 }, ktc: { name: 'KTC', removedAt: '', pending: 40 } } } })
+    const back = reconcileAccounts(prev, { ...prev, cashAccounts: [kbank, scb], spendCards: [card] })
+    expect(back.cashAccounts.find((a) => a.id === 'kbank')?.balance).toBe(5250)
+    expect(back.spendCards?.[0].balance).toBe(-40)
+    expect(back.spendSettings?.removedAccounts).toEqual({})
   })
 })
 
