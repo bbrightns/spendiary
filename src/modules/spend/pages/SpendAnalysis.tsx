@@ -174,7 +174,8 @@ export function SpendAnalysis() {
     return [...m.entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 5)
   }, [inRange])
 
-  const catBudgets = range === 'month' ? settings.categoryBudgets ?? {} : {}
+  // A deleted category's budget waits until it's restored
+  const catBudgets = range === 'month' ? Object.fromEntries(Object.entries(settings.categoryBudgets ?? {}).filter(([id]) => !getCategory(id)?.hidden)) : {}
   const rangeName = range === 'week' ? 'week' : range === 'year' ? 'year' : 'month'
 
   return (

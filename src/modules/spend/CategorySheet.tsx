@@ -7,7 +7,9 @@ import { Button } from '../../components/ui/Button'
 import { PencilIcon, SearchIcon } from '../../components/icons'
 import { CATEGORY_ICON_GROUPS, pickableCategoryIcons } from '../../components/categoryIcons'
 import { CATEGORY_ICONS, CATEGORY_TONES, SPEND_CATEGORIES, categoriesFor, manageableCategories, pickerTone, type SpendCategory } from './categories'
-import { moveId } from './logic'
+import { categoryUsage, moveId } from './logic'
+import { ConfirmModal } from '../../components/ui/ConfirmModal'
+import { useData } from '../../store/DataContext'
 import { ArrangeButton, ReorderSheet } from './ReorderSheet'
 import { TONES, TYPE_ACTIVE, type Tone } from './tones'
 import { useSpend } from './useSpend'
@@ -39,7 +41,9 @@ const canRemove = (c: SpendCategory) => !KEEP_CATEGORY.has(c.id) && !(c.hidden &
 
 /** Add or edit a category: name, icon and color, for expense or income. */
 export function CategorySheet({ open, category, type = 'expense', onClose, onSaved }: Props) {
-  const { upsertCategory, resetCategory, subcategories, addSubcategory, removeSubcategory } = useSpend()
+  const { upsertCategory, resetCategory, subcategories, addSubcategory, removeSubcategory, transactions, recurring, settings } = useSpend()
+  const hasLoans = (useData().data.liabilities ?? []).length > 0
+  const [warning, setWarning] = useState<string[] | null>(null)
   const { showToast } = useToast()
   const remove = useRemoveCategory()
   const [form, setForm] = useState({ type: type as CatType, label: '', icon: 'tag', tone: 'violet' as Tone, hidden: false })
@@ -88,6 +92,9 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
           onDelete={
             canDelete
               ? () => {
+                  // Something still points at it: say what before it goes
+                  const usage = categoryUsage(category.id, { transactions, recurring, budget: settings.categoryBudgets?.[category.id], hasLoans })
+                  if (usage.length) return setWarning(usage)
                   remove(category)
                   onClose()
                 }
@@ -96,6 +103,26 @@ export function CategorySheet({ open, category, type = 'expense', onClose, onSav
         />
       }
     >
+      {category && (
+        <ConfirmModal
+          open={!!warning}
+          onClose={() => setWarning(null)}
+          title={`Delete ${category.label}?`}
+          description="It leaves Settings, Quick add and recurring pickers. Restore it any time from Deleted categories."
+          confirmText="Delete category"
+          onConfirm={() => {
+            setWarning(null)
+            remove(category)
+            onClose()
+          }}
+        >
+          <ul className="list-disc space-y-1.5 pl-5 text-sm text-ink-soft">
+            {(warning ?? []).map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </ConfirmModal>
+      )}
       <div className="space-y-5">
         <div className="flex items-center gap-3 rounded-2xl bg-surface-muted px-4 py-3">
           <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${TONES[form.tone].chip}`}>

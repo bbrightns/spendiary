@@ -102,7 +102,8 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
       .map(([k, v]) => [k, Number(v.replace(/,/g, ''))] as const)
       .filter(([, n]) => Number.isFinite(n) && n > 0),
   )
-  const catTotal = Object.values(catParsed).reduce((s, n) => s + n, 0)
+  // A deleted category keeps its budget for when it comes back, but it doesn't count meanwhile
+  const catTotal = Object.entries(catParsed).reduce((s, [id, n]) => (getCategory(id)?.hidden ? s : s + n), 0)
   const catOverMonthly = !!settings.monthlyBudget && catTotal > settings.monthlyBudget
   const catChanged = JSON.stringify(catParsed) !== JSON.stringify(Object.fromEntries(Object.entries(settings.categoryBudgets ?? {}).filter(([, n]) => n > 0)))
 
