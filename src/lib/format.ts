@@ -3,6 +3,9 @@
 /** Narrow no-break space — keeps ฿ visually clear of the digits. */
 const NBSP = ' '
 
+/** Word joiner — stops browsers wrapping between a minus sign and ฿, which left the sign alone on a line. */
+const WJ = '\u2060'
+
 const baht = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 0,
   maximumFractionDigits: 0,
@@ -26,7 +29,7 @@ export function thbExact(value: number): string {
 
 /** Like thb, with a leading minus sign for negatives: −฿1,031.00 */
 export function thbSigned(value: number, decimals = false): string {
-  return `${value < 0 ? '−' : ''}${thb(Math.abs(value), decimals)}`
+  return `${value < 0 ? `−${WJ}` : ''}${thb(Math.abs(value), decimals)}`
 }
 
 export function money(value: number, currency: 'THB' | 'USD' = 'THB', decimals = false): string {
@@ -38,7 +41,7 @@ export function money(value: number, currency: 'THB' | 'USD' = 'THB', decimals =
 /** Compact for tight spaces, e.g. ฿1.24M or $1.24M */
 export function thbCompact(value: number): string {
   const abs = Math.abs(value)
-  const sign = value < 0 ? '-' : ''
+  const sign = value < 0 ? `-${WJ}` : ''
   if (abs >= 1_000_000) return `${sign}฿${NBSP}${(abs / 1_000_000).toFixed(2)}M`
   if (abs >= 1_000) return `${sign}฿${NBSP}${(abs / 1_000).toFixed(1)}K`
   return `${sign}฿${NBSP}${baht.format(abs)}`
