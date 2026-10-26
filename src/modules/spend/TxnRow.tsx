@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import type { SpendTransaction } from '../../lib/types'
-import { PortfolioIcon } from '../../components/icons'
+import { PortfolioIcon, UndoIcon } from '../../components/icons'
 import { thb } from '../../lib/format'
 import { TransferIcon, getCategory } from './categories'
 import { isInvested } from './invest'
@@ -70,12 +70,23 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
         className="flex w-full min-w-0 items-center gap-3 text-left cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         aria-label={sourcePage ? `${title}, ${sign}${thb(txn.amount, true)}, open in Invest` : `Edit ${title}, ${sign}${thb(txn.amount, true)}`}
       >
-        <span
-          className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
-            invested ? TONES.indigo.chip : txn.type === 'transfer' ? TONES.sky.chip : TONES[cat?.tone ?? 'slate'].chip
-          }`}
-        >
-          <Icon className="h-[18px] w-[18px]" />
+        <span className="relative shrink-0">
+          <span
+            className={`grid h-10 w-10 place-items-center rounded-xl ${
+              invested ? TONES.indigo.chip : txn.type === 'transfer' ? TONES.sky.chip : TONES[cat?.tone ?? 'slate'].chip
+            }`}
+          >
+            <Icon className="h-[18px] w-[18px]" />
+          </span>
+          {/* Money paid back gets a return-arrow badge, so it stands apart from the expense it pays back */}
+          {txn.paidBack && (
+            <span
+              aria-hidden
+              className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-gain-strong text-white ring-2 ring-surface"
+            >
+              <UndoIcon className="h-2.5 w-2.5" strokeWidth={3} />
+            </span>
+          )}
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex min-w-0 items-center gap-1.5">
