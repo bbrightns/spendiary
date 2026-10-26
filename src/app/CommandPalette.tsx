@@ -746,6 +746,7 @@ export function CommandPalette() {
     const budgetWhat = parseVerb(q, ['budget', 'งบ'])
     if (budgetWhat) {
       for (const c of manageableCategories('expense')) {
+        if (c.hidden) continue
         if (scoreItem(queryTerms(budgetWhat), { title: c.label, keywords: c.keywords }) === 0) continue
         const b = spend.settings.categoryBudgets?.[c.id]
         ranked.push({

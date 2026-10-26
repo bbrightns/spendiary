@@ -6,6 +6,7 @@ import { firstInstallmentDue, installmentAmount, installmentHold, isLoanDone, lo
 import { isLiabilityActionableThisMonth, isLiabilityFirstDueNextMonth, isLiabilityPaidThisMonth } from '../../lib/calc'
 import { availableCredit, limitOwner, totalAvailable } from './credit'
 import {
+  categoryUsage,
   accountTotals,
   applyOrder,
   moveId,
@@ -739,5 +740,26 @@ describe('recurringNote', () => {
     expect(recurringNote({ name: 'Netflix', note: 'Netflix #subscription' })).toBe('Netflix #subscription')
     expect(recurringNote({ name: 'netflix', note: 'Netflix  #subscription ' })).toBe('Netflix  #subscription')
     expect(recurringNote({ name: 'Rent' })).toBe('Rent')
+  })
+})
+
+describe('what still uses a category', () => {
+  const txn = (categoryId: string) => ({ id: categoryId + Math.random(), type: 'expense', amount: 10, categoryId, date: '2026-10-01', createdAt: '' }) as SpendTransaction
+  const rec = (categoryId: string, extra: Partial<SpendRecurring> = {}) =>
+    ({ id: 'r' + Math.random(), name: 'Rent', type: 'expense', amount: 10, categoryId, frequency: 'monthly', day: 1, startDate: '2026-01-01', ...extra }) as SpendRecurring
+  it('says nothing for an unused category', () => {
+    expect(categoryUsage('pets', { transactions: [txn('food')], recurring: [rec('food')] })).toEqual([])
+  })
+  it('counts transactions and active recurring items, and the budget', () => {
+    const lines = categoryUsage('food', { transactions: [txn('food'), txn('food')], recurring: [rec('food'), rec('food', { paused: true })], budget: 3000 })
+    expect(lines).toHaveLength(3)
+    expect(lines[0]).toBe('2 past transactions keep its name.')
+    expect(lines[1]).toContain('1 recurring item (Rent) still logs into it')
+    expect(lines[2]).toContain('monthly budget stops counting')
+  })
+  it('names the features that look up Salary and Bills', () => {
+    expect(categoryUsage('salary', { transactions: [], recurring: [rec('salary', { type: 'income' })] }).join(' ')).toContain('DCA Plans')
+    expect(categoryUsage('bills', { transactions: [], recurring: [], hasLoans: true })).toEqual(['Loan and installment payments are still recorded under it.'])
+    expect(categoryUsage('bills', { transactions: [], recurring: [], hasLoans: false })).toEqual([])
   })
 })

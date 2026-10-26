@@ -1,5 +1,5 @@
 import type { CashAccount, PayCycle, SpendCard, SpendGoal, SpendRecurring, SpendTransaction } from '../../lib/types'
-import { localDateStr } from '../../lib/format'
+import { localDateStr, thb } from '../../lib/format'
 import { roundMoney } from '../../lib/money'
 
 /**
@@ -789,4 +789,29 @@ export function goalProgress(goal: SpendGoal, wallets: Pick<CashAccount, 'id' | 
   const d = parse(goal.deadline)
   const monthsLeft = Math.max(1, (d.getFullYear() - t.getFullYear()) * 12 + d.getMonth() - t.getMonth())
   return { saved, left, pct, done, overdue, monthsLeft, perMonth: left / monthsLeft }
+}
+
+/**
+ * What still uses a category, as lines for the delete warning. Deleting only hides it, so nothing
+ * breaks; these say what keeps pointing at it. Empty when nothing does.
+ */
+export function categoryUsage(
+  id: string,
+  { transactions, recurring, budget, hasLoans }: { transactions: SpendTransaction[]; recurring: SpendRecurring[]; budget?: number; hasLoans?: boolean },
+): string[] {
+  const lines: string[] = []
+  const txns = transactions.filter((t) => t.categoryId === id).length
+  const recs = recurring.filter((r) => r.categoryId === id && !r.paused)
+  if (txns) lines.push(`${txns} past transaction${txns === 1 ? '' : 's'} keep${txns === 1 ? 's' : ''} its name.`)
+  if (recs.length)
+    lines.push(
+      recs.length === 1
+        ? `1 recurring item (${recs[0].name}) still logs into it. Change its category in Bills & recurring if you don't want that.`
+        : `${recs.length} recurring items still log into it. Change their category in Bills & recurring if you don't want that.`,
+    )
+  // The two built-ins other features look up by id
+  if (id === 'salary' && recs.some((r) => r.type === 'income')) lines.push('DCA Plans still reads your salary from its recurring income.')
+  if (id === 'bills' && hasLoans) lines.push('Loan and installment payments are still recorded under it.')
+  if (budget && budget > 0) lines.push(`Its ${thb(budget)} monthly budget stops counting until you restore it.`)
+  return lines
 }
