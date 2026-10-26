@@ -177,17 +177,30 @@ export function Landing() {
           <h2 className={`landing-reveal text-center text-4xl sm:text-6xl leading-[1.05] ${display}`}>
             All in <span className="text-landing-brand">one app<Tight>.</Tight></span>
           </h2>
-          <div className="landing-reveal mx-auto mt-10 grid max-w-md items-center lg:mt-14 lg:max-w-none lg:grid-cols-[1fr_auto_1fr] lg:gap-6">
-            <div className="grid lg:gap-2 lg:-translate-y-6">
-              <Part src="part-today" w={780} h={500} alt="Today card: money left to spend today" className="-my-2 lg:my-0" />
-              <Part src="part-month" w={780} h={284} alt="This month card: spending against the monthly budget" className="-my-2 lg:my-0" />
-              <Part src="part-due" w={780} h={224} alt="Payments due row with a Review button" className="-my-2 lg:my-0" />
+          {/* Phones: the phone screen in the middle, its cards pulled out across both edges. The box keeps one
+              aspect ratio, so the percentages place everything the same at every phone width */}
+          <div className="landing-reveal relative mx-auto mt-10 aspect-[10/15] max-w-sm lg:hidden">
+            <div className="absolute left-1/2 top-0 w-[54%] -translate-x-1/2 rounded-[24px] border border-landing-line bg-landing-surface p-1 shadow-[var(--shadow-landing-soft)]">
+              <img src="/landing/spend-mobile.webp" width={780} height={1688} alt="" loading="lazy" className="h-auto w-full rounded-[20px]" />
             </div>
-            <div className="mx-auto hidden w-60 rounded-[30px] border border-landing-line bg-landing-surface p-1.5 shadow-[var(--shadow-landing-soft)] lg:block">
+            <Part src="part-today" w={780} h={500} alt="Today card: money left to spend today" className="absolute -right-3 top-[33%] !w-[54%]" />
+            <Part src="part-month" w={780} h={284} alt="This month card: spending against the monthly budget" className="absolute -left-3 top-[55%] !w-[56%]" />
+            <Part src="part-due" w={780} h={224} alt="Payments due row with a Review button" className="absolute -left-3 top-[14%] !w-[62%]" />
+            <Part src="part-networth" w={780} h={998} alt="Total net worth card on the Invest home" className="absolute -right-3 top-[62%] !w-[50%]" />
+          </div>
+
+          {/* Desktop: Spend home's cards on the left, Invest home's net worth on the right, the phone screen between */}
+          <div className="landing-reveal mt-14 hidden grid-cols-[1fr_auto_1fr] items-center gap-6 lg:grid">
+            <div className="grid -translate-y-6 gap-2">
+              <Part src="part-today" w={780} h={500} alt="Today card: money left to spend today" />
+              <Part src="part-month" w={780} h={284} alt="This month card: spending against the monthly budget" />
+              <Part src="part-due" w={780} h={224} alt="Payments due row with a Review button" />
+            </div>
+            <div className="mx-auto w-60 rounded-[30px] border border-landing-line bg-landing-surface p-1.5 shadow-[var(--shadow-landing-soft)]">
               <img src="/landing/spend-mobile.webp" width={780} height={1688} alt="" loading="lazy" className="h-auto w-full rounded-[24px]" />
             </div>
-            <div className="grid lg:gap-2 lg:translate-y-6">
-              <Part src="part-networth" w={780} h={998} alt="Total net worth card on the Invest home" className="-my-2 lg:my-0" />
+            <div className="translate-y-6">
+              <Part src="part-networth" w={780} h={998} alt="Total net worth card on the Invest home" />
             </div>
           </div>
           <p className="mt-8 text-center text-xs text-landing-ink-faint">Screens from demo mode</p>
