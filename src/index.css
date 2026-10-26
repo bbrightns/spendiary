@@ -226,6 +226,14 @@
     background-repeat: no-repeat;
   }
 
+  /* Signed-out pages: no word left alone on a line. Headings balance their lines; text and bullets avoid orphans */
+  .landing-text :is(h1, h2, h3) {
+    text-wrap: balance;
+  }
+  .landing-text :is(p, li) {
+    text-wrap: pretty;
+  }
+
   /* Signed-out pages: sections rise a little and fade in once as they enter the viewport (Landing.tsx adds .is-visible) */
   .landing-reveal {
     opacity: 0;

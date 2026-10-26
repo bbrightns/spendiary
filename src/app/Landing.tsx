@@ -100,7 +100,7 @@ export function Landing() {
   useReveal()
 
   return (
-    <div className="landing-canvas-bg min-h-dvh font-sans text-landing-ink">
+    <div className="landing-canvas-bg landing-text min-h-dvh font-sans text-landing-ink">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8 sm:py-6">
         <div className="flex items-center gap-2.5">
           <img src="/logo.png" alt="" width={36} height={36} className="h-8 w-8 object-contain" />
@@ -173,25 +173,22 @@ export function Landing() {
           </div>
         </section>
 
-        {/* All in one app: real cards from Home and Portfolio around the phone screen */}
+        {/* All in one app: real cards from Spend home (left) and Invest home (right) around the phone screen */}
         <section className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
           <h2 className={`landing-reveal text-center text-4xl sm:text-6xl leading-[1.05] ${display}`}>
             All in <span className="text-landing-brand">one app<Tight>.</Tight></span>
           </h2>
-          <div className="landing-reveal mx-auto mt-10 grid max-w-md items-center gap-2 lg:mt-14 lg:max-w-none lg:grid-cols-[1fr_auto_1fr] lg:gap-6">
-            <div className="grid gap-2 lg:-translate-y-6">
-              <Part src="part-today" w={780} h={500} alt="Today card: money left to spend today" />
-              <Part src="part-month" w={780} h={284} alt="This month card: spending against the monthly budget" />
+          <div className="landing-reveal mx-auto mt-10 grid max-w-md items-center lg:mt-14 lg:max-w-none lg:grid-cols-[1fr_auto_1fr] lg:gap-6">
+            <div className="grid lg:gap-2 lg:-translate-y-6">
+              <Part src="part-today" w={780} h={500} alt="Today card: money left to spend today" className="-my-2 lg:my-0" />
+              <Part src="part-month" w={780} h={284} alt="This month card: spending against the monthly budget" className="-my-2 lg:my-0" />
+              <Part src="part-due" w={780} h={224} alt="Payments due row with a Review button" className="-my-2 lg:my-0" />
             </div>
             <div className="mx-auto hidden w-60 rounded-[30px] border border-landing-line bg-landing-surface p-1.5 shadow-[var(--shadow-landing-soft)] lg:block">
               <img src="/landing/spend-mobile.webp" width={780} height={1688} alt="" loading="lazy" className="h-auto w-full rounded-[24px]" />
             </div>
-            <div className="grid gap-2 lg:translate-y-6">
-              <Part src="part-due" w={780} h={224} alt="Payments due row with a Review button" />
-              {/* The capture is the grey inset only; a white card around it, as in the app */}
-              <div className="mx-6 rounded-[var(--radius-card)] border border-landing-line bg-landing-surface shadow-[var(--shadow-landing-soft)]">
-                <Part src="part-portfolio-value" w={780} h={316} alt="Portfolio value and all-time profit" />
-              </div>
+            <div className="grid lg:gap-2 lg:translate-y-6">
+              <Part src="part-networth" w={780} h={998} alt="Total net worth card on the Invest home" className="-my-2 lg:my-0" />
             </div>
           </div>
           <p className="mt-8 text-center text-xs text-landing-ink-faint">Screens from demo mode</p>

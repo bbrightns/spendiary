@@ -43,7 +43,7 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
     body: (
       <>
         <ul className="list-disc space-y-2 pl-5">
-          <li>Supabase, for storage, sign-in and emailing sign-in codes.</li>
+          <li>Supabase: storage, sign-in and the codes we email you.</li>
           <li>Google, for sign-in (if you choose it) and the web fonts; Google sees your IP address when the fonts load.</li>
           <li>Vercel, which hosts the site.</li>
           <li>Stock prices: only the ticker (such as AAPL) or your search text goes to a Supabase Edge Function, which fetches prices from Yahoo Finance.</li>
@@ -75,7 +75,7 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
 /** /privacy: opens with or without signing in. Light only, like the landing page (landing-* tokens). */
 export function Privacy() {
   return (
-    <div className="landing-canvas-bg flex min-h-dvh flex-col font-sans text-landing-ink">
+    <div className="landing-canvas-bg landing-text flex min-h-dvh flex-col font-sans text-landing-ink">
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 sm:px-8">
         <header className="flex items-center justify-between gap-3 py-5 sm:py-7">
           <Link to="/" className="flex items-center gap-2.5">

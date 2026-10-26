@@ -27,7 +27,7 @@ const PARTS = [
   { name: 'part-due', path: '/', text: 'payments due', box: 'row', viewport: PHONE },
   { name: 'part-bills', path: '/', text: 'Bills and recurring', box: 'card', viewport: PARTS_VIEW },
   { name: 'part-allocation', path: '/portfolio', text: 'Allocation', box: 'card', viewport: PARTS_VIEW },
-  { name: 'part-portfolio-value', path: '/portfolio', text: 'Portfolio value', box: 'inset', viewport: PHONE },
+  { name: 'part-networth', path: '/invest', text: 'Total net worth', box: 'card', viewport: PHONE },
 ]
 
 /** A page signed in to demo mode, light theme, without the demo-only chrome, on `path`. */
