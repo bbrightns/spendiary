@@ -385,7 +385,8 @@ export function CategoryManager() {
                 setConfirming(menu)
               }}
             >
-              Delete
+              {/* Deleting a hidden built-in (or used) one takes it out of Settings for good */}
+              {menu.hidden && hidesOnly(menu) ? 'Remove for good' : 'Delete'}
             </PopoverOption>
           )}
           {KEEP_CATEGORY.has(menu.id) && (
