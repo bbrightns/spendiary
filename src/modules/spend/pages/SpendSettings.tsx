@@ -318,7 +318,7 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
 
       {only === 'categories' && (
         <div id="categories" className="scroll-mt-24">
-          <Section solo title="Categories" description="Tap a category to change its name, icon or color, or to delete it. A deleted built-in is hidden, not gone: it stays here as Hidden, and the Hide switch in it brings it back. The arrange button sets the order.">
+          <Section solo title="Categories" description="Tap a category to change its name, icon or color, or to delete it. Past transactions keep a deleted category's name, and Restore deleted brings them back. The arrange button sets the order.">
             <CategoryManager />
           </Section>
         </div>
