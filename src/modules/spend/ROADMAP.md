@@ -18,6 +18,13 @@
   - Optional: partial payment / minimum payment, mark as paid.
 - **Phase 5 (done)** — budget per category (spent vs limit on Overview, warns at 85%, red when over);
   recurring bills / income that wait for a one-tap Log or Skip (or open pre-filled to adjust the amount).
+  - Recurring transfers wallet → wallet (2026-10-26). Cards as a destination are not offered:
+    a card bill's amount changes every month, so it stays on Pay bill.
+  - Deleting a wallet or card (`reconcileAccounts`, run on every store update): its recurring
+    items pause (`pausedReason: 'accountRemoved'`), past rows keep its name via
+    `spendSettings.removedAccounts` ("KBank (deleted)"), and an Activity Logs undo resumes them.
+    Known gap: editing or deleting an old row of a deleted wallet moves no balance, so an undo
+    afterwards brings the wallet back at its balance from before the delete.
 - **Checked in the real UI (2026-10-11):** DCA Confirm Buy (units, invested, Spend "Invested" row) and
   Activity Logs Undo (holding, log, Spend row and the plan all roll back).
 - **Phase 6 (done)** — Invest-side links: dividends → income and DCA buys → "invested" (read-only,

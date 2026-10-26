@@ -69,7 +69,7 @@ const noteOf = (rec: SpendRecurring) =>
   !rec.note && (rec.type === 'transfer' ? /^Transfer( to |$)/.test(rec.name) : rec.name === getCategory(rec.categoryId)?.label) ? '' : recurringNote(rec)
 
 export function RecurringSheet({ open, rec, onClose }: { open: boolean; rec?: SpendRecurring; onClose: () => void }) {
-  const { methods, accountName, settings, upsertRecurring, removeRecurring } = useSpend()
+  const { methods, settings, upsertRecurring, removeRecurring } = useSpend()
   const { showToast } = useToast()
   const [form, setForm] = useState<Form>(blank)
   const [lastOpen, setLastOpen] = useState(false)
@@ -107,9 +107,10 @@ export function RecurringSheet({ open, rec, onClose }: { open: boolean; rec?: Sp
   // A transfer moves money between your own wallets (a card bill is paid from Accounts)
   const wallets = methods.filter((m) => m.kind === 'cash')
   const live = (id: string) => (transfer ? wallets : methods).some((m) => m.id === id)
-  // A saved wallet or card that has since been deleted
-  const goneFrom = form.accountId !== NOT_TRACKED && !live(form.accountId) ? accountName(form.accountId) ?? 'That wallet' : undefined
-  const goneTo = transfer && form.toAccountId !== NOT_TRACKED && !live(form.toAccountId) ? accountName(form.toAccountId) ?? 'That wallet' : undefined
+  // A saved wallet or card that has since been deleted, by the name it had
+  const goneName = (id: string) => (id !== NOT_TRACKED && !live(id) ? settings.removedAccounts?.[id]?.name ?? 'That account' : undefined)
+  const goneFrom = goneName(form.accountId)
+  const goneTo = transfer ? goneName(form.toAccountId) : undefined
   const accountHint = transfer
     ? form.accountId === NOT_TRACKED || goneFrom
       ? 'Pick the wallet it leaves'

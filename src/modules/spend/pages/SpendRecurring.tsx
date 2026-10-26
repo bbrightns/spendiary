@@ -70,7 +70,7 @@ export function SpendRecurringPage() {
       <PageHeader
         eyebrow="Spend"
         title="Bills & recurring"
-        subtitle="Bills and income that repeat. Each one waits for you to mark it paid (or received) or skip it."
+        subtitle="Bills, income and transfers that repeat. Each one waits for you to mark it done or skip it."
         action={recurring.length > 0 ? <AddButton onClick={() => setSheet({ open: true })} label="Add" /> : undefined}
       />
 
