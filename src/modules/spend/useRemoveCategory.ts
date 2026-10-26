@@ -18,7 +18,7 @@ export function useRemoveCategory() {
     // Already hidden and can't be deleted outright (a built-in, or used by past transactions): delete it for good
     if (c.hidden && !(c.custom && removeCategory(c.id) === 'removed')) {
       setCategoryRemoved(c.id, true)
-      showToast(`Removed ${c.label} for good`, 'info', {
+      showToast(`Deleted ${c.label}`, 'info', {
         label: 'Undo',
         onClick: () => {
           setCategoryRemoved(c.id, false)

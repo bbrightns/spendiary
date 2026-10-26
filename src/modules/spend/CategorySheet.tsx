@@ -334,7 +334,7 @@ export function CategoryManager() {
           </button>
           {showDeleted && (
             <>
-              <p className="mt-1 mb-2 text-xs text-ink-muted">Not offered in Quick add or recurring. Past transactions keep them. Use ⋯ to show one again, or delete it again to remove it for good.</p>
+              <p className="mt-1 mb-2 text-xs text-ink-muted">Not offered in Quick add or recurring. Past transactions keep them. Use ⋯ to show one again, or to delete it from Settings.</p>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">{deleted.map(tile)}</div>
             </>
           )}
@@ -385,8 +385,7 @@ export function CategoryManager() {
                 setConfirming(menu)
               }}
             >
-              {/* Deleting a hidden built-in (or used) one takes it out of Settings for good */}
-              {menu.hidden && hidesOnly(menu) ? 'Remove for good' : 'Delete'}
+              Delete
             </PopoverOption>
           )}
           {KEEP_CATEGORY.has(menu.id) && (
@@ -399,10 +398,10 @@ export function CategoryManager() {
       {confirming && (
         <ConfirmModal
           open
-          title={confirming.hidden && hidesOnly(confirming) ? `Remove ${confirming.label} for good?` : `Delete ${confirming.label}?`}
+          title={`Delete ${confirming.label}?`}
           description={
             confirming.hidden && hidesOnly(confirming)
-              ? 'It leaves Settings too. Past transactions keep its name. "Restore removed" at the bottom brings it back.'
+              ? 'It leaves Settings too. Past transactions keep its name. "Restore removed categories" at the bottom brings it back.'
               : hidesOnly(confirming)
               ? `It leaves Quick add and recurring. ${confirming.custom ? 'Past transactions use it, so it is hidden' : 'Built-in categories are hidden'} rather than deleted: past transactions keep its name, and it moves to Deleted below, ready to show again.`
               : 'It leaves Quick add and recurring for good. You can undo right after.'
