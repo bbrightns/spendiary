@@ -63,7 +63,8 @@ export function Sidebar() {
         isTestMode ? 'top-9' : 'top-0'
       }`}
     >
-      <div className="flex flex-col gap-6">
+      {/* Scrolls on short viewports; Settings/user footer below stays pinned */}
+      <div className="-mx-4 flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain px-4">
         {/* Brand Header */}
         <div className="flex items-center justify-between px-2 pt-1">
           {/* The logo goes to Spend Home, where the app opens */}
@@ -162,7 +163,7 @@ export function Sidebar() {
       </div>
 
       {/* Footer / User Profile & Controls */}
-      <div className="flex flex-col gap-2 pt-4 border-t border-line">
+      <div className="flex shrink-0 flex-col gap-2 pt-4 border-t border-line">
         {/* Settings link */}
         <Link
           to={settingsTo}
