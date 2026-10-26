@@ -26,8 +26,8 @@ const SIDES = [
 const Tight = ({ children }: { children: string }) => <span className="-ml-[0.08em]">{children}</span>
 
 const glass = 'border border-landing-surface bg-landing-glass shadow-[var(--shadow-landing-soft)] backdrop-blur-xl'
-// Screenshot frames skip the blur: backdrop-filter softens the image drawn inside it
-const frame = 'border border-landing-surface bg-landing-glass shadow-[var(--shadow-landing-soft)]'
+// Screenshot frames: no blur (backdrop-filter softens the image inside it) and no shadow (only the sign-in card casts one)
+const frame = 'border border-landing-surface bg-landing-glass'
 
 /** The signed-out page: one centred column, light only (landing-* tokens and .landing-canvas-bg never flip with .dark). */
 export function Landing() {
@@ -66,7 +66,7 @@ export function Landing() {
             <button
               type="button"
               onClick={loginWithGoogle}
-              className="mt-6 flex h-12 w-full cursor-pointer items-center justify-center gap-2.5 rounded-full bg-landing-ink text-sm font-semibold text-white shadow-[var(--shadow-landing-soft)] transition-colors hover:bg-landing-ink-hover"
+              className="mt-6 flex h-12 w-full cursor-pointer items-center justify-center gap-2.5 rounded-full bg-landing-ink text-sm font-semibold text-white transition-colors hover:bg-landing-ink-hover"
             >
               <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden>
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -81,7 +81,7 @@ export function Landing() {
 
             <div className="my-5 flex items-center gap-3">
               <span className="h-px flex-1 bg-landing-line-strong" />
-              <span className="text-xs uppercase tracking-wider text-landing-ink-faint">or</span>
+              <span className="text-xs text-landing-ink-faint">or</span>
               <span className="h-px flex-1 bg-landing-line-strong" />
             </div>
 
