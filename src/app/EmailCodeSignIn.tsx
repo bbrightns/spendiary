@@ -75,7 +75,7 @@ export function EmailCodeSignIn() {
     return (
       <div className="mt-2.5 text-center">
         <button type="button" onClick={() => setOpen(true)} className={linkClass}>
-          เปิด Google ไม่ได้? เข้าด้วยรหัสทางอีเมล
+          ใช้ Google ไม่ได้? รับรหัสทางอีเมลแทน
         </button>
       </div>
     )
@@ -196,14 +196,14 @@ export function EmailCodeSignIn() {
         )}
       </div>
 
-      <div className="mt-5 flex items-start gap-3 rounded-2xl bg-landing-surface-muted p-4 text-left">
-        <svg className="mt-0.5 h-5 w-5 shrink-0 text-landing-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <div className="mt-5 flex items-start gap-3 rounded-2xl bg-landing-lavender p-4 text-left">
+        <svg className="mt-0.5 h-5 w-5 shrink-0 text-landing-lavender-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
         </svg>
         <div>
           <p className="text-sm font-semibold text-landing-ink">เพื่อความปลอดภัย</p>
           <p className="mt-0.5 text-xs sm:text-sm text-landing-ink-soft leading-relaxed">
-            อย่าบอกรหัสนี้กับใคร Spendiary จะไม่ขอรหัสนี้จากคุณ
+            อย่าบอกรหัสนี้กับใคร Spendiary จะไม่ขอรหัสนี้จากคุณทุกกรณี
           </p>
         </div>
       </div>

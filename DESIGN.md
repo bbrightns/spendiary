@@ -346,10 +346,11 @@ Dark mode is supported, but it comes second. It must work without component-leve
 - Use gradient text or coloured side stripes on cards.
 
 ## 10. Sign-in and landing page
-The signed-out page (`src/app/Landing.tsx`, with `EmailCodeSignIn.tsx`) is invite-only, written in Thai, and **light only**. It uses the `landing-*` tokens: the same values as the light app tokens, but never overridden by `.dark`, so a visitor whose saved theme is dark still sees it light. The plan behind it is `docs/landing-redesign-plan.md`.
-- **Canvas:** flat `landing-canvas`. No gradient, no glow.
-- **Layout:** the heading and description on the left, the sign-in card on the right (lg and up). On phones the card comes straight after the description and must sit above the fold at 375×812.
-- **Sign-in card:** `landing-surface`, a hairline `landing-line` border, `--shadow-landing-soft`, `--radius-card`.
-- **Buttons:** pills. Google sign-in is the one dark pill (`landing-ink`); Demo is a secondary pill with a `landing-line-strong` border. Links are `landing-link`.
-- **Product, not claims:** real screenshots from demo mode (`public/landing/`, retaken with `npm run landing` in `promo/`), then three plain-text lines on what Spend, Invest and data storage cover. No feature cards, badges, stats or decorative motion. Every sentence must be true of the app.
-- **Thai text:** the page sets `lang="th"`. Wrap loanwords and short phrases that the browser would split (คริปโต, ยังไง) in `<Keep>` (`src/app/Keep.tsx`). `/privacy` (`Privacy.tsx`) follows the same rules.
+The signed-out pages (`src/app/Landing.tsx` with `EmailCodeSignIn.tsx`, and `/privacy` in `Privacy.tsx`; shared `LandingFooter.tsx`) are invite-only, written in Thai, and **light only**. They use the `landing-*` tokens, which are never overridden by `.dark`, so a visitor whose saved theme is dark still sees them light. The plan behind them is `docs/landing-redesign-plan.md`.
+- **Mood:** warm and pastel, not bare. Calm still applies: no motion, no stats, no claims that aren't true.
+- **Canvas:** `.landing-canvas-bg`, the same warm cream-to-rose gradient as the light app canvas.
+- **Pastel pairs:** `landing-mint` / `-mint-ink` for Spend, `landing-sky` / `-sky-ink` for Invest, `landing-lavender` / `-lavender-ink` for invite and privacy, `landing-peach` for the Demo button. Fill with the soft colour; put text and icons in the `-ink` colour.
+- **Hero:** a lavender invite pill with a lock icon, the heading with a mint highlighter under its last line, then the description. The sign-in card sits on the right (lg and up); on phones it comes straight after the description and must sit above the fold at 375×812.
+- **Sign-in card:** `landing-glass` (translucent white) with `backdrop-blur-xl`, a white hairline border, `--shadow-landing-soft`, 28px corners. Google sign-in is the one dark pill (`landing-ink`); Demo is a peach pill. Links are `landing-link`.
+- **Product panels:** one 32px pastel panel per side (mint Spend, sky Invest) with a label chip, a title, one line on what it covers, and a real demo-mode screen cropped by the panel's bottom edge (`public/landing/`, retaken with `npm run landing` in `promo/`). A lavender strip below links to the privacy policy.
+- **Thai copy:** write it the way a Thai speaker would say it ("เข้าสู่ระบบด้วย Google", "นโยบายความเป็นส่วนตัว", "เวอร์ชัน 1.x"), never word for word from English. Pages set `lang="th"`; wrap loanwords and short phrases the browser would split (คริปโต, ยังไง, งบประมาณ) in `<Keep>` (`src/app/Keep.tsx`).

@@ -98,6 +98,15 @@
   --color-landing-link: #005ce8;
   --color-landing-loss-ink: #be123c;
   --color-landing-loss-soft: #fff1f2;
+  --color-landing-glass: rgba(255, 255, 255, 0.78);
+  /* Pastel pairs: soft fill + readable ink. Mint is Spend, sky is Invest, lavender is privacy */
+  --color-landing-mint: #e3f5eb;
+  --color-landing-mint-ink: #047857;
+  --color-landing-sky: #e5eeff;
+  --color-landing-sky-ink: #0052cc;
+  --color-landing-lavender: #eee8fb;
+  --color-landing-lavender-ink: #6d28d9;
+  --color-landing-peach: #fdebdc;
   --shadow-landing-soft: 0 1px 3px rgba(15, 23, 42, 0.03), 0 10px 30px -10px rgba(15, 23, 42, 0.07);
 
   --radius-card: 1.5rem;
@@ -205,7 +214,8 @@
   }
 
   /* Ambient gradient background for light mode (Fastwork exact color match) */
-  body, .app-canvas-bg {
+  /* .landing-canvas-bg is the same light gradient for the signed-out pages; the .dark rule below leaves it alone */
+  body, .app-canvas-bg, .landing-canvas-bg {
     background-color: #faf6f4;
     background-image: 
       radial-gradient(circle at 10% 15%, #fff3dd 0%, rgba(255, 243, 221, 0.85) 30%, transparent 65%),
