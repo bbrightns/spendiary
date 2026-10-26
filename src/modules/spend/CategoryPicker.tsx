@@ -146,7 +146,8 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
       <div className="mb-2 flex items-center justify-between gap-3">
         <p className="text-sm font-semibold text-ink-soft">Category</p>
         <div className="flex items-center gap-0.5">
-          {editing && arrangeable.length > 1 && (
+          {/* Automatic order (Settings) leaves nothing to arrange by hand */}
+          {editing && settings.categorySort === 'manual' && arrangeable.length > 1 && (
             <button type="button" onClick={() => setArranging(true)} className={link}>
               Arrange
             </button>

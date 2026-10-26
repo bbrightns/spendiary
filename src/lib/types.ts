@@ -410,6 +410,8 @@ export interface SpendSettings {
   categoryLayout?: 'chips' | 'tiles'
   /** Order of categories in the pickers, by id, per type; unlisted ones follow, and "Other" stays last */
   categoryOrder?: Partial<Record<'expense' | 'income', string[]>>
+  /** Category order in pickers and Settings: by how many transactions use each (default) or `categoryOrder` */
+  categorySort?: 'auto' | 'manual'
   /**
    * Deleted wallets and cards by id: the name, so past transactions still say where the money went,
    * and `pending`, the money edits to those transactions would have moved (+ in, − out), put on the

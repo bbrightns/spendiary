@@ -1,9 +1,9 @@
 import type { ComponentType } from 'react'
 import { ArrowRightLeft, List, Repeat } from 'lucide-react'
-import type { SpendSettings, SpendTxnType } from '../../lib/types'
+import type { SpendSettings, SpendTransaction, SpendTxnType } from '../../lib/types'
 import { TONES, type Tone } from './tones'
 import { queryTerms, scoreItem, termScore } from '../../lib/paletteSearch'
-import { applyOrder } from './logic'
+import { applyOrder, sortByUse } from './logic'
 import { DotsHorizontalIcon } from '../../components/icons'
 import { CATEGORY_ICONS } from '../../components/categoryIcons'
 import { appIcon, type IconProps } from '../../components/appIcon'
@@ -77,18 +77,25 @@ const withIcon = (c: BuiltIn): SpendCategory => ({ ...c, icon: CATEGORY_ICONS[c.
 /** Built-in categories as shipped (before the user's edits). */
 export const SPEND_CATEGORIES: SpendCategory[] = BUILT_IN.map(withIcon)
 
-// The live list: built-ins with the user's edits, then the user's own categories.
+// The live list: built-ins with the user's edits, then the user's own categories, most used first
+// unless the user arranges them by hand.
 // Synced from Spend settings by the data provider, so plain lookups stay synchronous.
 let live: SpendCategory[] = SPEND_CATEGORIES
 let byId = new Map(live.map((c) => [c.id, c]))
-let syncedFrom: [unknown, unknown, unknown] = [undefined, undefined, undefined]
+let syncedFrom: unknown[] = []
 
-export function syncCategories(settings?: Pick<SpendSettings, 'customCategories' | 'categoryEdits' | 'categoryOrder'>) {
+export function syncCategories(
+  settings?: Pick<SpendSettings, 'customCategories' | 'categoryEdits' | 'categoryOrder' | 'categorySort'>,
+  transactions?: SpendTransaction[],
+) {
   const custom = settings?.customCategories
   const edits = settings?.categoryEdits
   const order = settings?.categoryOrder
-  if (syncedFrom[0] === custom && syncedFrom[1] === edits && syncedFrom[2] === order) return
-  syncedFrom = [custom, edits, order]
+  const auto = settings?.categorySort !== 'manual'
+  // Transactions only matter to the order when it's automatic
+  const key = [custom, edits, order, auto, auto ? transactions : undefined]
+  if (key.every((v, i) => syncedFrom[i] === v)) return
+  syncedFrom = key
   const builtIns = BUILT_IN.map((c) => {
     const e = c.system ? undefined : edits?.[c.id]
     if (!e) return withIcon(c)
@@ -115,10 +122,12 @@ export function syncCategories(settings?: Pick<SpendSettings, 'customCategories'
   // "Other" is the catch-all, so it always stays last — the user's own categories slot in before it.
   // The user's saved order (per type) comes first; categories not in it follow in their usual place.
   const all = [...builtIns, ...mine]
-  const ordered = applyOrder(
+  const arranged = applyOrder(
     all.filter((c) => !CATCH_ALL.has(c.id)),
     [...(order?.expense ?? []), ...(order?.income ?? [])],
   )
+  // Automatic: most used first; ties keep the arranged order
+  const ordered = auto && transactions ? sortByUse(arranged.map((c) => c.id), transactions).map((id) => arranged.find((c) => c.id === id)!) : arranged
   live = [...ordered, ...all.filter((c) => CATCH_ALL.has(c.id))]
   byId = new Map(live.map((c) => [c.id, c]))
 }
