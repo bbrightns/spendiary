@@ -423,7 +423,7 @@ function SearchSheet({
       }
     >
       <div className="space-y-5">
-        <div className="flex h-12 items-center gap-2 rounded-xl border border-line-strong bg-surface px-3.5 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
+        <div className="flex h-12 items-center gap-2 rounded-xl border border-line-strong bg-surface-muted focus-within:bg-surface px-3.5 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
           <SearchIcon className="h-4 w-4 shrink-0 text-ink-faint" />
           <input
             type="text"

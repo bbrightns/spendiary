@@ -341,7 +341,7 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
                     aria-label="Custom color, hex code"
                     autoComplete="off"
                     spellCheck={false}
-                    className="h-9 w-36 rounded-xl border border-line-strong bg-surface pl-7 pr-3 font-mono text-base uppercase text-ink outline-none transition-colors placeholder:font-sans placeholder:normal-case placeholder:text-sm placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15"
+                    className="h-9 w-36 rounded-xl border border-line-strong bg-surface-muted focus:bg-surface pl-7 pr-3 font-mono text-base uppercase text-ink outline-none transition-colors placeholder:font-sans placeholder:normal-case placeholder:text-sm placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15"
                   />
                 </div>
               </div>

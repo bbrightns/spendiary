@@ -27,7 +27,7 @@ export function TransactionDateField({
   const yesterday = localDateStr(new Date(Date.now() - 86_400_000))
 
   const fieldClass =
-    'h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15'
+    'h-11 w-full rounded-xl border border-line-strong bg-surface-muted focus:bg-surface px-3.5 text-base text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15'
 
   return (
     <div className={onTimeChange ? 'grid gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_9.5rem]' : undefined}>

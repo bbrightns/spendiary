@@ -23,7 +23,7 @@ const fmtDay = (iso: string) => {
 }
 
 const inputClass =
-  'h-11 w-20 rounded-xl border border-line-strong bg-surface px-3 text-center text-base font-bold text-ink outline-none tnum focus:border-brand focus:ring-2 focus:ring-brand/15'
+  'h-11 w-20 rounded-xl border border-line-strong bg-surface-muted focus:bg-surface px-3 text-center text-base font-bold text-ink outline-none tnum focus:border-brand focus:ring-2 focus:ring-brand/15'
 
 /** `solo`: the section's only card, under a page header that already names it */
 function Section({ id, title, description, solo, children }: { id?: string; title: string; description: string; solo?: boolean; children: ReactNode }) {
@@ -242,7 +242,7 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
                           const v = e.target.value
                           if (v) setDraft((d) => (d.extraHolidays.includes(v) ? d : { ...d, extraHolidays: [...d.extraHolidays, v] }))
                         }}
-                        className="h-9 rounded-xl border border-line-strong bg-surface px-2.5 text-sm text-ink outline-none focus:border-brand"
+                        className="h-9 rounded-xl border border-line-strong bg-surface-muted focus:bg-surface px-2.5 text-sm text-ink outline-none focus:border-brand"
                       />
                     </div>
                   </div>
@@ -292,7 +292,7 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
       {only === 'budgets' && (
         <Section id="monthly-budget" title="Monthly budget" description="What you plan to spend each month, excluding investing and transfers.">
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex h-11 flex-1 items-center rounded-xl border border-line-strong bg-surface px-3.5 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
+            <div className="flex h-11 flex-1 items-center rounded-xl border border-line-strong bg-surface-muted focus-within:bg-surface px-3.5 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
               <span className="mr-2 text-ink-muted">฿</span>
               <input
                 aria-label="Monthly budget"
@@ -335,7 +335,7 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
                     <c.icon className="h-4 w-4" />
                   </span>
                   <span className="flex-1 text-sm font-semibold text-ink">{c.label}</span>
-                  <div className="flex h-10 w-36 items-center rounded-xl border border-line-strong bg-surface px-3 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
+                  <div className="flex h-10 w-36 items-center rounded-xl border border-line-strong bg-surface-muted focus-within:bg-surface px-3 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
                     <span className="mr-1.5 text-sm text-ink-muted">฿</span>
                     <input
                       aria-label={`${c.label} budget`}
@@ -380,7 +380,7 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
                 updateSettings({ billReminderDays: Number(e.target.value) })
                 showToast('Reminder updated')
               }}
-              className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
+              className="h-11 w-full rounded-xl border border-line-strong bg-surface-muted focus:bg-surface px-3.5 text-base text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
             >
               {[1, 3, 5, 7, 10, 14].map((d) => (
                 <option key={d} value={d}>
@@ -398,7 +398,7 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
                 updateSettings({ defaultAccountId: e.target.value || undefined })
                 showToast('Default updated')
               }}
-              className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-base text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
+              className="h-11 w-full rounded-xl border border-line-strong bg-surface-muted focus:bg-surface px-3.5 text-base text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
             >
               <option value="">Whatever I used last</option>
               {methods.map((m) => (

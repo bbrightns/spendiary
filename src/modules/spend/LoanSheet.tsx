@@ -40,7 +40,7 @@ const str = (n?: number) => (n !== undefined && n > 0 ? String(n) : '')
 /** "3 of 10" payments, as two small number inputs in one field. */
 function PaymentsInput({ paid, total, onPaid, onTotal }: { paid: string; total: string; onPaid: (v: string) => void; onTotal: (v: string) => void }) {
   return (
-    <div className="flex h-11 items-center gap-2 rounded-xl border border-line-strong bg-surface px-3.5 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
+    <div className="flex h-11 items-center gap-2 rounded-xl border border-line-strong bg-surface-muted focus-within:bg-surface px-3.5 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
       <input
         inputMode="numeric"
         value={paid}
@@ -262,7 +262,7 @@ export function LoanSheet({ open, loanId, onClose }: Props) {
             </FieldWrap>
           ) : (
             <FieldWrap label="Interest" hint="optional">
-              <div className="flex h-11 items-center rounded-xl border border-line-strong bg-surface px-3.5 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
+              <div className="flex h-11 items-center rounded-xl border border-line-strong bg-surface-muted focus-within:bg-surface px-3.5 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
                 <input
                   inputMode="decimal"
                   value={form.rate}

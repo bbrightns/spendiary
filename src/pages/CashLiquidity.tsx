@@ -465,7 +465,7 @@ export function CashLiquidity() {
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Account / bank</span>
-                    <span className={`text-xs ${sortField === 'name' ? 'text-link font-black' : 'opacity-30'}`}>
+                    <span className={`text-xs ${sortField === 'name' ? 'text-link font-black' : 'text-ink-faint'}`}>
                       {sortField === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
                     </span>
                   </div>
@@ -478,7 +478,7 @@ export function CashLiquidity() {
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Category</span>
-                    <span className={`text-xs ${sortField === 'category' ? 'text-link font-black' : 'opacity-30'}`}>
+                    <span className={`text-xs ${sortField === 'category' ? 'text-link font-black' : 'text-ink-faint'}`}>
                       {sortField === 'category' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
                     </span>
                   </div>
@@ -491,7 +491,7 @@ export function CashLiquidity() {
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Interest</span>
-                    <span className={`text-xs ${sortField === 'yield' ? 'text-link font-black' : 'opacity-30'}`}>
+                    <span className={`text-xs ${sortField === 'yield' ? 'text-link font-black' : 'text-ink-faint'}`}>
                       {sortField === 'yield' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
                     </span>
                   </div>
@@ -504,7 +504,7 @@ export function CashLiquidity() {
                 >
                   <div className="flex items-center justify-end gap-1.5">
                     <span>Balance</span>
-                    <span className={`text-xs ${sortField === 'balance' ? 'text-link font-black' : 'opacity-30'}`}>
+                    <span className={`text-xs ${sortField === 'balance' ? 'text-link font-black' : 'text-ink-faint'}`}>
                       {sortField === 'balance' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
                     </span>
                   </div>
