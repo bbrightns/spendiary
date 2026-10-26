@@ -154,7 +154,7 @@ function EmailCodeSignIn() {
           className={inputClass}
         />
         <p className="text-xs text-landing-ink-muted">
-          We'll email a 6-digit code. Open the email on any device, such as your phone, and type the code here.
+          We'll email a sign-in code. Open the email on any device, such as your phone, and type the code here.
         </p>
         <button type="submit" disabled={busy || !email.trim()} className={submitClass}>
           {busy ? 'Sending…' : 'Send code'}
@@ -176,10 +176,10 @@ function EmailCodeSignIn() {
         maxLength={10}
         required
         autoFocus
-        placeholder="123456"
+        placeholder="Code from the email"
         value={code}
         onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-        className={`${inputClass} tracking-[0.3em] text-center font-semibold`}
+        className={`${inputClass} tracking-[0.2em] text-center font-semibold placeholder:tracking-normal placeholder:font-normal`}
       />
       <button type="submit" disabled={busy || code.length < 6} className={submitClass}>
         {busy ? 'Signing in…' : 'Sign in'}
