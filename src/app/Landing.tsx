@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useData } from '../store/DataContext'
-import { FlaskIcon, LockClosedIcon, SparkleIcon, TrendUpIcon, WalletIcon } from '../components/icons'
+import { FlaskIcon, LockClosedIcon, TrendUpIcon, WalletIcon } from '../components/icons'
 import { EmailCodeSignIn } from './EmailCodeSignIn'
 import { LandingFooter } from './LandingFooter'
 
@@ -17,7 +17,7 @@ const SIDES = [
     icon: <TrendUpIcon className="h-3.5 w-3.5" />,
     chip: 'bg-landing-sky text-landing-sky-ink',
     label: 'Investing',
-    title: 'See all your investments in one place',
+    title: 'See your whole portfolio',
     body: 'Follow US stocks, funds and crypto, plan monthly DCA, and track dividends and retirement.',
   },
 ]
@@ -43,20 +43,15 @@ export function Landing() {
           </div>
         </header>
 
-        <main className="flex flex-1 flex-col items-center pb-16 pt-2 sm:pt-6 text-center">
-          <span className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs sm:text-sm font-medium text-landing-ink-soft ${glass}`}>
-            <SparkleIcon className="h-4 w-4 text-landing-brand" />
-            Personal finance in Thai baht
-          </span>
-
+        <main className="flex flex-1 flex-col items-center pb-16 pt-8 sm:pt-14 text-center">
           {/* Plus Jakarta's comma and period carry wide side bearings at this weight; Tight pulls them back to the word */}
-          <h1 className="mt-6 max-w-3xl font-display text-4xl sm:text-6xl font-extrabold leading-[1.1] tracking-tight text-balance">
+          <h1 className="max-w-3xl font-display text-4xl sm:text-6xl font-extrabold leading-[1.1] tracking-tight text-balance">
             Manage spending<Tight>,</Tight> Plan investing<Tight>.</Tight>
             <span className="mt-1 block text-landing-brand">All in one app</span>
           </h1>
 
           <p className="mt-5 max-w-xl text-base sm:text-lg leading-relaxed text-landing-ink-muted text-pretty">
-            See where your money goes and when cards and bills are due. Follow your stocks, funds and crypto in the same place.
+            Log what you spend, see which cards and bills are due, and follow your stocks, funds and crypto.
           </p>
 
           <div className={`mt-10 w-full max-w-md rounded-[28px] p-6 sm:p-8 ${glass}`}>
