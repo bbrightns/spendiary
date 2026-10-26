@@ -22,12 +22,14 @@ const SHOTS = [
 
 /** Each part: the page, then the smallest element that contains `text` and matches `box` (a card or a row). */
 const PARTS = [
-  { name: 'part-today', path: '/', text: 'left today of', box: 'card', viewport: PHONE },
-  { name: 'part-month', path: '/', text: 'days to payday', box: 'card', viewport: PHONE },
-  { name: 'part-due', path: '/', text: 'payments due', box: 'row', viewport: PHONE },
   { name: 'part-bills', path: '/', text: 'Bills and recurring', box: 'card', viewport: PARTS_VIEW },
   { name: 'part-allocation', path: '/portfolio', text: 'Allocation', box: 'card', viewport: PARTS_VIEW },
-  { name: 'part-networth', path: '/invest', text: 'Total net worth', box: 'card', viewport: PHONE },
+  // "All in one app.": one card from each of several pages, none of them on the Spend home phone screen
+  { name: 'part-card', path: '/spend/accounts', text: 'UOB YOLO', box: 'card', viewport: PHONE },
+  { name: 'part-per-day', path: '/spend/analysis', text: 'Spent per day', box: 'card', viewport: PHONE },
+  { name: 'part-loan', path: '/spend/loans', text: 'Condo loan', box: 'card', viewport: PHONE },
+  { name: 'part-nw-trend', path: '/invest', text: 'Net worth over time', box: 'card', viewport: PHONE },
+  { name: 'part-retirement', path: '/retirement', text: 'Safety net & milestones', box: 'card', viewport: PHONE },
 ]
 
 /** A page signed in to demo mode, light theme, without the demo-only chrome, on `path`. */
