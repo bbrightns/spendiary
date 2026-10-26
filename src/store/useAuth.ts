@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import type { AuthError, User } from '@supabase/supabase-js'
+import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { authErrorText } from '../lib/authErrors'
 
 /** Who is signed in via Supabase: with Google, or with a one-time code sent by email. */
 export function useAuth() {
@@ -23,8 +24,8 @@ export function useAuth() {
       }
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) signIn(session.user)
-      // A sign-in redirect that came back with an error (e.g. the user cancelled at Google)
-      else if (error) setAuthError(`Sign-in failed: ${error.message}`)
+      // A sign-in redirect that came back with an error (cancelled at Google, or an address nobody invited)
+      else if (error) setAuthError(authErrorText(error))
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -39,7 +40,7 @@ export function useAuth() {
 
   const supabaseConfigured = () => {
     if (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_TOKEN) return true
-    setAuthError('Supabase URL or token is missing in your .env file (see .env.example, or use Test Mode below).')
+    setAuthError('ยังไม่ได้ตั้งค่า Supabase (VITE_API_URL / VITE_API_TOKEN ใน .env ดู .env.example) ลองโหมด Demo แทนได้')
     return false
   }
 
@@ -51,18 +52,18 @@ export function useAuth() {
       provider: 'google',
       options: { redirectTo: window.location.origin },
     })
-    if (error) setAuthError(`Sign-in failed: ${error.message}`)
+    if (error) setAuthError(authErrorText(error))
   }
 
   // For computers that can't reach Google: the code is read on another device (phone) and typed here,
   // so the session lands on this browser. A link in the email would sign in whichever device opened it.
   // Same address as the Google account → Supabase signs in the same user, so the data is the same.
-  /** Emails a one-time code. Existing accounts only: an unknown address gets an error, not a new empty account. */
+  /** Emails a one-time code. Invited (existing) accounts only: an unknown address gets an error, not a new empty account. */
   const sendEmailCode = async (email: string): Promise<boolean> => {
     setAuthError(null)
     if (!supabaseConfigured()) return false
     const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } })
-    if (error) setAuthError(emailCodeError(error))
+    if (error) setAuthError(authErrorText(error))
     return !error
   }
 
@@ -70,21 +71,10 @@ export function useAuth() {
   const verifyEmailCode = async (email: string, code: string): Promise<boolean> => {
     setAuthError(null)
     const { error } = await supabase.auth.verifyOtp({ email, token: code, type: 'email' })
-    if (error) setAuthError(emailCodeError(error))
+    if (error) setAuthError(authErrorText(error))
     return !error
   }
 
   return { user, setUser, authError, setAuthError, loginWithGoogle, sendEmailCode, verifyEmailCode }
 }
 
-/** Supabase's auth errors, in words that say what to do next */
-function emailCodeError(error: AuthError): string {
-  if (error.code === 'otp_disabled' || error.code === 'signup_disabled' || /signups not allowed/i.test(error.message)) {
-    return 'No account uses this email. Sign in with Google once (on any device) to create it, then use the code here.'
-  }
-  if (error.code === 'otp_expired') return 'That code is wrong or has expired. Check the latest email, or send a new code.'
-  if (error.status === 429 || error.code === 'over_email_send_rate_limit') {
-    return 'Too many codes sent. Wait a while, then try again (or use the last code you received).'
-  }
-  return `Sign-in failed: ${error.message}`
-}

@@ -75,7 +75,7 @@ export function EmailCodeSignIn() {
     return (
       <div className="mt-2.5 text-center">
         <button type="button" onClick={() => setOpen(true)} className={linkClass}>
-          Can't open Google? Sign in with an email code
+          เปิด Google ไม่ได้? เข้าด้วยรหัสทางอีเมล
         </button>
       </div>
     )
@@ -91,7 +91,7 @@ export function EmailCodeSignIn() {
         className="mt-4 space-y-2.5"
       >
         <label htmlFor="signin-email" className="block text-sm font-semibold text-landing-ink-soft">
-          Email of your Spendiary account
+          อีเมลที่ได้รับเชิญ
         </label>
         <input
           id="signin-email"
@@ -104,10 +104,10 @@ export function EmailCodeSignIn() {
           className={inputClass}
         />
         <p className="text-xs text-landing-ink-muted">
-          We'll email a {CODE_LENGTH}-digit code. Open the email on any device, such as your phone, and type the code here.
+          เราจะส่งรหัส {CODE_LENGTH} หลักไปที่อีเมลนี้ เปิดอีเมลบนเครื่องไหนก็ได้ เช่นมือถือ แล้วพิมพ์รหัสที่นี่
         </p>
         <button type="submit" disabled={busy || !email.trim()} className={submitClass}>
-          {busy ? 'Sending…' : 'Send code'}
+          {busy ? 'กำลังส่ง…' : 'ส่งรหัส'}
         </button>
       </form>
     )
@@ -119,13 +119,13 @@ export function EmailCodeSignIn() {
   return (
     <div className="mt-5">
       <h3 className="font-display font-extrabold text-lg sm:text-xl text-landing-ink tracking-tight">
-        Enter verification code
+        กรอกรหัสยืนยัน
       </h3>
       <p className="mt-1.5 text-sm text-landing-ink-soft">
-        We sent a {CODE_LENGTH}-digit code to <span className="font-semibold text-landing-ink break-all">{sentTo}</span>
+        ส่งรหัส {CODE_LENGTH} หลักไปที่ <span className="font-semibold text-landing-ink break-all">{sentTo}</span>
       </p>
       <button type="button" onClick={() => setSentTo(null)} className={`${linkClass} mt-1`}>
-        Change email
+        เปลี่ยนอีเมล
       </button>
 
       <form
@@ -161,7 +161,7 @@ export function EmailCodeSignIn() {
             type="text"
             inputMode="numeric"
             autoComplete="one-time-code"
-            aria-label={`${CODE_LENGTH}-digit code`}
+            aria-label={`รหัส ${CODE_LENGTH} หลัก`}
             disabled={busy}
             value={code}
             onChange={(e) => typeCode(e.target.value)}
@@ -174,22 +174,22 @@ export function EmailCodeSignIn() {
 
       <div className="mt-5 text-center">
         {busy ? (
-          <p className="text-sm font-medium text-landing-ink-soft">Signing in…</p>
+          <p className="text-sm font-medium text-landing-ink-soft">กำลังเข้าสู่ระบบ…</p>
         ) : (
           <>
-            <p className="text-sm font-medium text-landing-ink">Didn't receive the code?</p>
-            <p className="mt-0.5 text-xs text-landing-ink-muted">Check Spam too.</p>
+            <p className="text-sm font-medium text-landing-ink">ไม่ได้รับรหัส?</p>
+            <p className="mt-0.5 text-xs text-landing-ink-muted">ลองดูในโฟลเดอร์สแปมด้วย</p>
             <button
               type="button"
               disabled={resendIn > 0}
               onClick={() => requestCode(sentTo)}
               className={`${linkClass} mt-2`}
             >
-              Resend code
+              ส่งรหัสอีกครั้ง
             </button>
             {resendIn > 0 && (
               <p className="mt-0.5 text-xs text-landing-ink-muted tabular-nums">
-                Resend in {Math.floor(resendIn / 60)}:{String(resendIn % 60).padStart(2, '0')}
+                ส่งใหม่ได้ใน {Math.floor(resendIn / 60)}:{String(resendIn % 60).padStart(2, '0')}
               </p>
             )}
           </>
@@ -201,9 +201,9 @@ export function EmailCodeSignIn() {
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
         </svg>
         <div>
-          <p className="text-sm font-semibold text-landing-ink">Security tip</p>
+          <p className="text-sm font-semibold text-landing-ink">เพื่อความปลอดภัย</p>
           <p className="mt-0.5 text-xs sm:text-sm text-landing-ink-soft leading-relaxed">
-            Never share this code with anyone. Spendiary will never ask you for it.
+            อย่าบอกรหัสนี้กับใคร Spendiary จะไม่ขอรหัสนี้จากคุณ
           </p>
         </div>
       </div>
