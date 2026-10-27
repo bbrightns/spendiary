@@ -100,7 +100,7 @@ export function PayMethodPicker({ label, methods, value, onChange, favoriteIds, 
             {usable.some((m) => m.kind === 'card') && (
               <optgroup label="Credit cards">
                 {usable.filter((m) => m.kind === 'card').map((m) => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
+                  <option key={m.id} value={m.id}>{m.last4 ? `${m.name} •• ${m.last4}` : m.name}</option>
                 ))}
               </optgroup>
             )}
