@@ -24,6 +24,8 @@ export interface PayMethod {
   balance: number
   /** Card only */
   creditLimit?: number
+  /** Card only: last 4 digits, shown in pickers to tell cards apart */
+  last4?: string
   /** Card only: credit left, counting cards sharing its limit and installment holds */
   available?: number
   locked?: boolean
@@ -97,6 +99,7 @@ export function useSpend() {
         color: c.color,
         balance: c.balance,
         creditLimit: c.creditLimit,
+        last4: c.last4,
         available: availableCredit(c, cards, data.liabilities ?? []).left,
       })),
       ...wallets.map((w) => ({ id: w.id, kind: 'cash' as const, name: w.name, color: w.color, balance: w.balance, locked: w.category === 'locked' })),
