@@ -23,6 +23,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Fails on high or critical advisories in the code that ships to the browser (dev tools excluded)
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
       - run: npm run lint:design
       - run: npm test
