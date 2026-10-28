@@ -1,0 +1,20 @@
+# Weekly dependency updates. Security updates are turned on in the repo settings and arrive on their own.
+# Minor and patch bumps come as one PR per ecosystem; major bumps stay separate because they can break things.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
