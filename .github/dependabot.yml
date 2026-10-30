@@ -1,6 +1,6 @@
 # Weekly dependency updates. Security updates are turned on in the repo settings and arrive on their own.
-# Packages that must move together share a group, so each PR installs cleanly. A dependency joins the first
-# group it matches; anything else gets its minor and patch bumps in one PR and its major bumps on their own.
+# Only minor and patch bumps come automatically, as one PR per ecosystem. Major bumps (React, Vite, TypeScript,
+# React Router, ESLint plugins…) usually need code changes, so they are planned and tested by hand instead.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -8,13 +8,10 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
-      vite-toolchain:
-        patterns: ["vite", "vitest", "@vitest/*", "@vitejs/*", "@tailwindcss/vite", "tailwindcss"]
-      react:
-        patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
-      typescript:
-        patterns: ["typescript", "typescript-eslint", "@typescript-eslint/*"]
       npm-minor-and-patch:
         update-types: [minor, patch]
 
