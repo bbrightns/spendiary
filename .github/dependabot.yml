@@ -1,5 +1,6 @@
 # Weekly dependency updates. Security updates are turned on in the repo settings and arrive on their own.
-# Minor and patch bumps come as one PR per ecosystem; major bumps stay separate because they can break things.
+# Packages that must move together share a group, so each PR installs cleanly. A dependency joins the first
+# group it matches; anything else gets its minor and patch bumps in one PR and its major bumps on their own.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -8,6 +9,12 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
+      vite-toolchain:
+        patterns: ["vite", "vitest", "@vitest/*", "@vitejs/*", "@tailwindcss/vite", "tailwindcss"]
+      react:
+        patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
+      typescript:
+        patterns: ["typescript", "typescript-eslint", "@typescript-eslint/*"]
       npm-minor-and-patch:
         update-types: [minor, patch]
 
