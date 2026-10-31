@@ -1,6 +1,6 @@
-import type { PayCycle, SpendRecurring, SpendTransaction } from './types'
-import { countsInBudget, fixedCostRecurring, inPeriod, periodFor, shiftPeriod, spendOf } from '../modules/spend/logic'
-import { localDateStr } from './format'
+import type { PayCycle, SpendRecurring, SpendTransaction } from '../../lib/types'
+import { countsInBudget, fixedCostRecurring, inPeriod, periodFor, shiftPeriod, spendOf } from './logic'
+import { localDateStr } from '../../lib/format'
 
 /** Day-to-day spending: what counts in Spend's budget, less the bills logged from fixed-cost recurring items */
 export function livingSpend(txns: SpendTransaction[], recurring: SpendRecurring[]): number {

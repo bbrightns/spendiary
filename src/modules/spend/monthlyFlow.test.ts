@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { livingAverage, livingSpend, monthlyFlow } from './monthlyFlow'
-import type { SpendRecurring, SpendTransaction } from './types'
+import type { SpendRecurring, SpendTransaction } from '../../lib/types'
 
 const txn = (date: string, amount: number, extra: Partial<SpendTransaction> = {}): SpendTransaction => ({
   id: `${date}-${amount}`, type: 'expense', amount, date, categoryId: 'food', tags: [], createdAt: date, ...extra,

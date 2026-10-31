@@ -114,10 +114,10 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
     steps: [
       {
         targetId: 'guide-dca-summary',
-        badge: 'Your budget',
-        title: 'Salary & budget',
+        badge: 'Monthly flow',
+        title: 'Where your salary goes',
         description:
-          'Your regular income and a bar showing how it is split, so you can plan how much to save and invest.',
+          'Salary, then fixed bills, living costs from Spend and your DCA plans. If they add up to more than your salary, it shows what cash covers each month and how long your cash lasts.',
         position: 'bottom',
       },
       {
