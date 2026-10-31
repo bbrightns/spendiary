@@ -494,7 +494,7 @@ export function DcaPlanner() {
   return (
     <>
       <PageHeader
-        eyebrow="Plan"
+        eyebrow="Invest"
         title="DCA plans"
         subtitle="Monthly salary allocation & recurring investments."
         onStartGuide={startTour}

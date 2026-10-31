@@ -357,7 +357,7 @@ export function Portfolio() {
   if (data.holdings.length === 0) {
     return (
       <>
-        <PageHeader eyebrow="Overview" title="Portfolio" />
+        <PageHeader eyebrow="Invest" title="Portfolio" />
         <Card>
           <EmptyState
             icon={<PortfolioIcon className="h-7 w-7" />}
@@ -746,7 +746,7 @@ export function Portfolio() {
   return (
     <>
       <PageHeader
-        eyebrow="Overview"
+        eyebrow="Invest"
         title="Portfolio"
         subtitle={
           <div
@@ -1420,7 +1420,7 @@ export function Portfolio() {
         open={removeLocConfirmOpen}
         onClose={() => { setRemoveLocConfirmOpen(false); setRemoveLocTarget(null) }}
         title={`Remove "${removeLocTarget?.name}"?`}
-        description="This removes this storage location and its units from the holding. The transaction history stays in Activity Logs. This cannot be undone."
+        description="This removes this storage location and its units from the holding. The history stays in Trades. This cannot be undone."
         confirmText="Yes, remove location"
         confirmVariant="danger"
         confirmIcon={<TrashIcon className="h-4 w-4" strokeWidth={2.2} />}

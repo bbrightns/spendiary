@@ -157,7 +157,7 @@ export function Dividends() {
   return (
     <>
       <PageHeader
-        eyebrow="Plan"
+        eyebrow="Invest"
         title="Dividends"
         subtitle="Record dividends you receive, see what to expect this year, and track tax withheld"
       />
