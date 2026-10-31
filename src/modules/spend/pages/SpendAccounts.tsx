@@ -278,21 +278,13 @@ export function SpendAccounts() {
                     }}
                     aria-label={`${w.name}${isDefault ? ', default' : ''}${w.locked ? ', locked savings' : ''}, ${thbSigned(w.balance, true)}${overdrawn ? ', overdrawn' : ''}`}
                     title={`${w.name} · ${thbSigned(w.balance, true)}`}
+                    // The wallet's color washes in from the top and is gone before the amount
+                    style={w.color ? { background: `linear-gradient(180deg, color-mix(in srgb, ${w.color} 18%, transparent), transparent 60%), var(--color-surface)` } : undefined}
                     className={`@container relative flex aspect-square min-w-0 flex-col rounded-2xl border bg-surface p-1.5 min-[370px]:p-2 sm:p-2.5 text-left shadow-[var(--shadow-soft)] transition-all cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                       overdrawn ? 'border-loss/60 ring-1 ring-loss/25' : isDefault ? 'border-brand/60 ring-1 ring-brand/30' : 'border-line'
                     }`}
                   >
-                    {/* Name on top with the wallet's color, if it has one */}
-                    <div className="flex items-start gap-1.5">
-                      {w.color && (
-                        <span
-                          aria-hidden
-                          className="mt-[0.3em] h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/20"
-                          style={{ background: w.color }}
-                        />
-                      )}
-                      <p className="line-clamp-2 min-w-0 flex-1 text-xs font-semibold leading-snug text-ink [overflow-wrap:break-word]">{w.name}</p>
-                    </div>
+                    <p className="line-clamp-2 min-w-0 text-xs font-semibold leading-snug text-ink [overflow-wrap:break-word]">{w.name}</p>
 
                     {/* Whole baht, big; millions go compact. The activity line keeps its height when empty,
                         so the amounts in a row line up */}

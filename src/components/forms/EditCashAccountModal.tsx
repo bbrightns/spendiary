@@ -223,7 +223,7 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
           </div>
         </div>
 
-        {/* Color: the dot on the wallet tile, so the right account is quick to find */}
+        {/* Color: tints the top of the wallet tile, so the right account is quick to find */}
         <div>
           <span className={labelCls}>Color</span>
           <ColorPicker value={color} onChange={setColor} allowNone />
