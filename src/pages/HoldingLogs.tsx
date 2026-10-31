@@ -4,6 +4,7 @@ import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
+import { TextLink } from '../components/ui/TextLink'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
@@ -306,8 +307,14 @@ export function HoldingLogs() {
   return (
     <>
       <PageHeader
-        eyebrow="Records"
-        title="Activity logs"
+        eyebrow="Invest"
+        title="Trades"
+        subtitle={
+          <>
+            Every buy, sale, dividend and edit on your holdings. Day-to-day money is in{' '}
+            <TextLink to="/spend/txns">Spend → Transactions</TextLink>.
+          </>
+        }
         onStartGuide={startTour}
       />
 

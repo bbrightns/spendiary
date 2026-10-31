@@ -55,6 +55,7 @@ import { useSpend } from '../modules/spend/useSpend'
 import { IS_MAC, isSearchShortcut } from '../lib/shortcut'
 import { STORAGE_KEYS } from '../lib/storageKeys'
 import { settingsPath } from '../lib/settingsSections'
+import { SPEND_CASH } from '../lib/routes'
 
 export function openCommandPalette() {
   window.dispatchEvent(new CustomEvent('spendiary:open-command-palette'))
@@ -371,7 +372,7 @@ export function CommandPalette() {
         keywords: ['bank', 'cash', 'account', 'saving', 'wallet', 'ธนาคาร', 'เงินสด', 'บัญชี', 'เงินฝาก'],
         group: 'Actions',
         icon: ic(WalletIcon, 'text-gain-ink'),
-        run: go('/cash?action=new'),
+        run: go(`${SPEND_CASH}&action=new`),
       },
 
       // ── Pages ──
@@ -388,10 +389,10 @@ export function CommandPalette() {
           ['nav-rebalance', 'Rebalancing', 'Check and adjust how your portfolio is split', '/rebalance', ['rebalance', 'allocation', 'target', 'drift', 'ปรับพอร์ต', 'สมดุล'], SparkleIcon, false, 'G R'],
           ['nav-dca', 'DCA plans', 'Plan and confirm your recurring buys', '/dca', ['dca', 'planner', 'recurring', 'งวด', 'ออมหุ้น'], DcaIcon, false, 'G A'],
           ['nav-dividends', 'Dividends', 'Dividends received and expected', '/dividends', ['dividend', 'passive income', 'yield', 'ปันผล', 'เงินปันผล'], ReceiptPercentIcon, false, 'G V'],
-          ['nav-cash', 'Cash & liquidity', 'Cash, savings and interest', '/cash', ['cash', 'liquidity', 'emergency', 'เงินสด', 'บัญชี', 'สภาพคล่อง'], WalletIcon, false, 'G C'],
+          ['nav-cash', 'Cash & interest', 'Spend → Accounts: cash, savings and the interest they earn', SPEND_CASH, ['cash', 'liquidity', 'emergency', 'interest', 'เงินสด', 'บัญชี', 'สภาพคล่อง', 'ดอกเบี้ย'], WalletIcon, true, undefined],
           ['nav-retirement', 'Retirement planner', 'Plan for retirement and financial freedom', '/retirement', ['retirement', 'fire', 'financial freedom', 'เกษียณ', 'อิสรภาพ'], SparkleIcon, false, 'G F'],
-          ['nav-logs', 'Activity logs', 'History of buys, sales, dividends and tax', '/logs', ['logs', 'history', 'activity', 'ประวัติ', 'บันทึก'], ClockIcon, false, 'G L'],
-          ['nav-summary', 'Profit & loss summary', 'Profit and loss by month, year or period', '/logs/summary', ['summary', 'profit', 'loss', 'pnl', 'สรุป', 'กำไร', 'ขาดทุน'], PieChartIcon, false, undefined],
+          ['nav-logs', 'Trades', 'Invest history: buys, sales, dividends and edits', '/logs', ['trades', 'logs', 'history', 'activity', 'buy', 'sell', 'ประวัติ', 'บันทึก', 'ซื้อขาย'], ClockIcon, false, 'G L'],
+          ['nav-summary', 'P&L summary', 'Profit and loss by month, year or period', '/logs/summary', ['summary', 'profit', 'loss', 'pnl', 'สรุป', 'กำไร', 'ขาดทุน'], PieChartIcon, false, undefined],
           ['nav-settings', 'Settings', 'Theme, spending month, budgets, backup and sync', '/settings', ['settings', 'preferences', 'theme', 'budget', 'payday', 'categories', 'backup', 'profile', 'ตั้งค่า', 'สำรอง'], SettingsIcon, false, 'G S'],
         ] as const
       ).map(([id, title, subtitle, to, keywords, Icon, isSpend, badge]) => ({

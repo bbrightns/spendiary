@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { PageHeader } from '../../../components/layout/PageHeader'
 import { Card } from '../../../components/ui/Card'
 import { AddButton } from '../../../components/ui/AddButton'
 import { Button } from '../../../components/ui/Button'
+import { SegmentedControl } from '../../../components/ui/SegmentedControl'
+import { CashLiquidity } from '../../../pages/CashLiquidity'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import { CreditCardIcon, LockClosedIcon } from '../../../components/icons'
 import { localDateStr, thb, thbCompact, thbSigned } from '../../../lib/format'
@@ -25,9 +27,23 @@ import { useSpend, type PayMethod } from '../useSpend'
 /** 1234 → 1.2K, for the tiny in / out line on a wallet tile. */
 const compact = (v: number) => thbCompact(v).replace(/^฿\s/, '')
 
+type AccountsView = 'pay' | 'cash'
+const VIEW_OPTIONS = [
+  { value: 'pay', label: 'Cards & wallets' },
+  { value: 'cash', label: 'Cash & interest' },
+] as const
+
 export function SpendAccounts() {
   const { transactions, methods, cards, settings, bills, toggleFavorite, updateSettings } = useSpend()
-  const navigate = useNavigate()
+  // Cash & liquidity (bucket, interest, USD accounts) is a second view of the same wallets
+  const [searchParams, setSearchParams] = useSearchParams()
+  const view: AccountsView = searchParams.get('view') === 'cash' ? 'cash' : 'pay'
+  const setView = (v: AccountsView) => {
+    const next = new URLSearchParams(searchParams)
+    if (v === 'cash') next.set('view', 'cash')
+    else next.delete('view')
+    setSearchParams(next, { replace: true })
+  }
   const { data, setCashAccounts, usdThb } = useData()
   const liabilities = data.liabilities ?? []
   const { showToast } = useToast()
@@ -87,9 +103,23 @@ export function SpendAccounts() {
       <PageHeader
         eyebrow="Spend"
         title="Accounts"
-        subtitle="Wallets and credit cards you pay with. Star the ones you use most."
+        subtitle="Every wallet and credit card lives here. Star the ones you use most."
       />
 
+      <SegmentedControl
+        options={VIEW_OPTIONS}
+        value={view}
+        onChange={setView}
+        size="sm"
+        shape="pill"
+        fullWidth={false}
+        ariaLabel="Accounts view"
+      />
+
+      {view === 'cash' ? (
+        <CashLiquidity />
+      ) : (
+      <>
       {/* md+: card stack on the left, wallets fill the rest */}
       <div className="space-y-6 md:grid md:grid-cols-[360px_minmax(0,1fr)] md:items-start md:gap-6 md:space-y-0 xl:gap-8">
         {/* ── Credit cards ── */}
@@ -197,8 +227,8 @@ export function SpendAccounts() {
             <div className="flex items-center justify-between px-1">
               <h2 className="font-display text-lg font-extrabold text-ink">Wallets</h2>
               <div className="flex items-center gap-3">
-                <button type="button" onClick={() => navigate('/cash')} className="text-sm font-semibold text-link hover:underline cursor-pointer">
-                  Manage in Cash
+                <button type="button" onClick={() => setView('cash')} className="text-sm font-semibold text-link hover:underline cursor-pointer">
+                  Interest & buckets
                 </button>
                 {wallets.length > 1 && <ArrangeButton label="Arrange wallets" onClick={() => setArrange('wallets')} />}
               </div>
@@ -323,7 +353,7 @@ export function SpendAccounts() {
               </button>
             </div>
           )}
-          <p className="px-1 text-center text-xs text-ink-muted md:text-left">In / out is {periodName.toLowerCase()}. USD accounts stay on the Invest side for now.</p>
+          <p className="px-1 text-center text-xs text-ink-muted md:text-left">In / out is {periodName.toLowerCase()}. USD accounts are under Cash & interest.</p>
         </section>
       </div>
 
@@ -341,6 +371,8 @@ export function SpendAccounts() {
       )}
 
       <GoalsSection />
+      </>
+      )}
 
       <ReorderSheet
         open={arrange === 'cards'}

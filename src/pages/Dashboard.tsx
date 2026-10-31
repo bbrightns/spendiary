@@ -32,6 +32,7 @@ import {
 } from '../lib/calc'
 import { moneyCompact, thb, thbCompact } from '../lib/format'
 import { rateOrZero } from '../lib/fx'
+import { SPEND_CASH } from '../lib/routes'
 
 // Distinct colors for cash account segments — cycles if >8 accounts
 const CASH_COLORS = [
@@ -117,7 +118,7 @@ export function Dashboard() {
   if (!hasAnything) {
     return (
       <>
-        <PageHeader eyebrow="Overview" title="Dashboard" />
+        <PageHeader eyebrow="Invest" title="Dashboard" />
         <Card>
           <EmptyState
             icon={<SparkleIcon className="h-7 w-7" />}
@@ -296,7 +297,7 @@ export function Dashboard() {
         {/* Cash */}
         <div id="guide-dashboard-cash" className="lg:col-span-7 xl:col-span-4">
           <Card className="h-full animate-rise">
-            <CardHeader title="Cash" action={<TextLink to="/cash">Manage</TextLink>} />
+            <CardHeader title="Cash" action={<TextLink to={SPEND_CASH}>Manage</TextLink>} />
 
             <Inset id="guide-cash-summary" className="mt-3">
               <div className="flex items-start justify-between gap-3">
@@ -340,8 +341,8 @@ export function Dashboard() {
                     <button
                       key={a.id}
                       type="button"
-                      onClick={() => navigate('/cash')}
-                      aria-label={`View ${a.name} in Cash`}
+                      onClick={() => navigate(SPEND_CASH)}
+                      aria-label={`View ${a.name} in Accounts`}
                       className="flex w-full items-center gap-2.5 py-2.5 text-left text-sm cursor-pointer"
                     >
                       <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: cashColor(a.name, i) }} />
@@ -355,7 +356,7 @@ export function Dashboard() {
                 </div>
               </>
             ) : (
-              <Link to="/cash" className={`mt-3 ${PROMPT}`}>
+              <Link to={`${SPEND_CASH}&action=new`} className={`mt-3 ${PROMPT}`}>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-bold text-ink">Add your cash accounts</span>
                   <span className="block text-xs text-ink-muted">Bank accounts, savings and wallets, with the interest they earn.</span>

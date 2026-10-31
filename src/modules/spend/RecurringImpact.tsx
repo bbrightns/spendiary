@@ -25,7 +25,7 @@ export function RecurringImpact({ uses, others = [], name, undoable }: { uses: R
         {uses.length > 0 && 'Recurring items will be paused until you pick another account. '}
         {others.length > 0 && 'DCA plans, loans and holdings will ask for another account the next time you use them. '}
         Past transactions stay and still show "{name}".
-        {undoable && ' Undo it in Activity Logs to bring everything back.'}
+        {undoable && ' Undo it in Invest → Trades to bring everything back.'}
       </p>
     </div>
   )

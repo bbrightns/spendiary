@@ -216,7 +216,7 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
   },
 
   logs: {
-    title: 'Activity logs tour',
+    title: 'Trades tour',
     steps: [
       {
         targetId: 'guide-logs-header',

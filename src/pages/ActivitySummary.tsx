@@ -125,7 +125,7 @@ export function ActivitySummary() {
   return (
     <>
       <PageHeader
-        eyebrow="Records"
+        eyebrow="Invest"
         title="Profit & loss summary"
         subtitle="Money you have actually made or lost in the selected period (from sales and dividends received)"
         onStartGuide={startTour}

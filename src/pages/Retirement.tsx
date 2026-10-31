@@ -472,7 +472,7 @@ export function Retirement() {
   return (
     <>
       <PageHeader
-        eyebrow="Analyze"
+        eyebrow="Invest"
         title="Retirement planner"
         onStartGuide={startTour}
         subtitle={`Age ${currentAge} · ${yearsLeft} years until retirement`}
