@@ -1,5 +1,6 @@
 import type { PayCycle, SpendRecurring, SpendTransaction } from '../../lib/types'
-import { countsInBudget, fixedCostRecurring, inPeriod, periodFor, shiftPeriod, spendOf } from './logic'
+import { countsInBudget, daysLeftIn, fixedCostRecurring, inPeriod, periodFor, shiftPeriod, spendOf } from './logic'
+import type { Period } from './logic'
 import { localDateStr } from '../../lib/format'
 
 /** Day-to-day spending: what counts in Spend's budget, less the bills logged from fixed-cost recurring items */
@@ -63,4 +64,43 @@ export function monthlyFlow({ salary, fixed, living, invest, cash }: {
   const net = salary - out
   const runwayMonths = net < 0 ? Math.max(0, cash) / -net : null
   return { salary, fixed, living, invest, out, net, runwayMonths }
+}
+
+/** Below this many months of cash, topping up every month is flagged as running low */
+export const LOW_RUNWAY_MONTHS = 6
+
+export type FlowVerdict =
+  /** Salary covers everything */
+  | { kind: 'covered'; leftover: number }
+  /** Top up from cash; cash lasts a while */
+  | { kind: 'topUp'; topUp: number; runwayMonths: number }
+  /** Top up from cash, but cash runs out soon: cutting DCA by `cut` stops the top-ups */
+  | { kind: 'low'; topUp: number; runwayMonths: number; cut: number; dcaNotEnough: boolean }
+  /** Cash can't cover this month's top-up: DCA has to come down by `cut` */
+  | { kind: 'short'; topUp: number; cut: number; dcaNotEnough: boolean }
+
+/** The one-glance answer: how much to top up this month, and whether DCA has to come down */
+export function flowVerdict(flow: MonthlyFlow, cash: number): FlowVerdict {
+  if (flow.net >= 0) return { kind: 'covered', leftover: flow.net }
+  const topUp = -flow.net
+  if (cash < topUp) {
+    const cut = topUp - Math.max(0, cash)
+    return { kind: 'short', topUp, cut: Math.min(cut, flow.invest), dcaNotEnough: cut > flow.invest }
+  }
+  const runwayMonths = flow.runwayMonths ?? 0
+  if (runwayMonths < LOW_RUNWAY_MONTHS) {
+    return { kind: 'low', topUp, runwayMonths, cut: Math.min(topUp, flow.invest), dcaNotEnough: topUp > flow.invest }
+  }
+  return { kind: 'topUp', topUp, runwayMonths }
+}
+
+/**
+ * Where this month's living spend is heading, from the pace so far. Null in the first week:
+ * a few days say little about a whole month.
+ */
+export function livingPace(spentSoFar: number, period: Period, today = localDateStr()): number | null {
+  const total = daysLeftIn(period, period.start)
+  const elapsed = total - daysLeftIn(period, today) + 1
+  if (elapsed < 7 || total <= 0) return null
+  return (spentSoFar / elapsed) * total
 }

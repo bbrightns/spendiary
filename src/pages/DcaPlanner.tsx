@@ -16,7 +16,7 @@ import { isValidPrice } from '../lib/priceCache'
 import { AlertIcon, CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, PencilIcon, PlusIcon } from '../components/icons'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { fixedCostRecurring, inPeriod, perMonth, periodFor, periodLabel } from '../modules/spend/logic'
-import { livingAverage, livingSpend, monthlyFlow } from '../modules/spend/monthlyFlow'
+import { flowVerdict, livingAverage, livingPace, livingSpend, monthlyFlow } from '../modules/spend/monthlyFlow'
 import { settingsPath } from '../lib/settingsSections'
 import { MonthlyFlowCard } from './dca/MonthlyFlowCard'
 import { useSpend } from '../modules/spend/useSpend'
@@ -209,9 +209,16 @@ export function DcaPlanner() {
   const spendMonthTxns = spend.transactions.filter((t) => inPeriod(spendPeriod, t.date))
   const spendBudget = spend.settings.monthlyBudget ?? 0
   const livingAvg = livingAverage(spend.transactions, spend.recurring, spend.settings.cycle)
-  const living = livingAvg.months > 0 ? livingAvg.average : spendBudget
+  const usualLiving = livingAvg.months > 0 ? livingAvg.average : spendBudget
+  // This month spending faster than usual raises what it needs; slower never lowers it (the month isn't over)
+  const livingSoFar = livingSpend(spendMonthTxns, spend.recurring)
+  const pace = livingPace(livingSoFar, spendPeriod)
+  const aheadOfUsual = pace !== null && usualLiving > 0 && pace > usualLiving * 1.05
+  const living = aheadOfUsual ? pace : usualLiving
   const budgetLink = <Link to={settingsPath('monthly-budget')} className="font-semibold text-link hover:underline">{spendBudget > 0 ? `Budget ${thb(spendBudget)}` : 'Set a budget'}</Link>
-  const livingNote = livingAvg.months > 0 ? (
+  const livingNote = aheadOfUsual ? (
+    <span className="text-warn-ink">On pace for this month, above your usual {thb(usualLiving)}</span>
+  ) : livingAvg.months > 0 ? (
     <>Average of the last {livingAvg.months === 1 ? 'month' : `${livingAvg.months} months`} in Spend · {budgetLink}</>
   ) : spendBudget > 0 ? (
     <>Your Spend budget, until there is a month of history · {budgetLink}</>
@@ -314,6 +321,7 @@ export function DcaPlanner() {
   const effectiveUsdThb = usdThb && usdThb > 0 ? usdThb : null
   const cash = totalCash(data, effectiveUsdThb)
   const flow = monthlyFlow({ salary, fixed: fixedTotal, living, invest: savingsTotal, cash })
+  const verdict = flowVerdict(flow, cash)
   const [copied, setCopied] = useState(false)
 
   const handleCopyMarkdown = async () => {
@@ -382,9 +390,10 @@ export function DcaPlanner() {
           <div id="guide-dca-summary">
             <MonthlyFlowCard
               flow={flow}
+              verdict={verdict}
               cash={cash}
               livingNote={livingNote}
-              livingThisMonth={spendMonthTxns.length > 0 ? livingSpend(spendMonthTxns, spend.recurring) : null}
+              livingThisMonth={spendMonthTxns.length > 0 ? livingSoFar : null}
               periodName={periodLabel(spendPeriod, spend.settings.cycle)}
               salaryNote={salaryFromSpend ? 'Recurring Salary in Spend' : undefined}
               onAddSalary={openSalaryEdit}

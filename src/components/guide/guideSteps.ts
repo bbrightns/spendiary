@@ -114,10 +114,10 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
     steps: [
       {
         targetId: 'guide-dca-summary',
-        badge: 'Monthly flow',
-        title: 'Where your salary goes',
+        badge: 'This month',
+        title: 'Top up or cut DCA',
         description:
-          'Salary, then fixed bills, living costs from Spend and your DCA plans. If they add up to more than your salary, it shows what cash covers each month and how long your cash lasts.',
+          'The answer first: how much to top up from cash this month, and whether DCA has to come down. Below it, salary flows into fixed bills, living costs from Spend and your DCA plans.',
         position: 'bottom',
       },
       {

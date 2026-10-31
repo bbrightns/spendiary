@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { Card, CardHeader, Inset } from '../../components/ui/Card'
-import type { MonthlyFlow } from '../../modules/spend/monthlyFlow'
+import { Card, CardHeader } from '../../components/ui/Card'
+import type { FlowVerdict, MonthlyFlow } from '../../modules/spend/monthlyFlow'
 import { thb } from '../../lib/format'
 
 /** Bar fill: solid inside the salary, striped past it (that part is paid from cash) */
@@ -64,9 +64,59 @@ const months = (n: number) => {
   return `${shown} ${shown === 1 ? 'month' : 'months'}`
 }
 
+const CHIP = 'inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold'
+
+/** The answer first: how much to top up this month, and whether DCA has to come down */
+function Verdict({ verdict, cash }: { verdict: FlowVerdict; cash: number }) {
+  let label: string, figure: string, tone: string, chip: ReactNode, line: ReactNode
+  switch (verdict.kind) {
+    case 'covered':
+      label = 'Left over this month'
+      figure = thb(verdict.leftover)
+      tone = 'text-gain-ink'
+      chip = <span className={`${CHIP} bg-gain-soft text-gain-ink`}>Salary covers everything</span>
+      line = verdict.leftover > 0 ? 'Add it to a DCA plan or keep it as a buffer.' : null
+      break
+    case 'topUp':
+      label = 'Top up from cash this month'
+      figure = thb(verdict.topUp)
+      tone = 'text-ink'
+      chip = <span className={`${CHIP} bg-gain-soft text-gain-ink`}>DCA can stay · cash lasts {months(verdict.runwayMonths)}</span>
+      line = <>Your cash of <span className="font-semibold text-ink tnum">{thb(cash)}</span> covers the gap.</>
+      break
+    case 'low':
+      label = 'Top up from cash this month'
+      figure = thb(verdict.topUp)
+      tone = 'text-warn-ink'
+      chip = <span className={`${CHIP} bg-warn-soft text-warn-ink`}>Cash lasts only {months(verdict.runwayMonths)}</span>
+      line = verdict.dcaNotEnough
+        ? 'Bills and living alone are more than your salary, so cutting DCA won\'t close the gap.'
+        : <>Cut DCA by <span className="font-semibold text-ink tnum">{thb(verdict.cut)}</span> a month to stop topping up.</>
+      break
+    case 'short':
+      label = 'Cut DCA this month by'
+      figure = thb(verdict.cut)
+      tone = 'text-loss-ink'
+      chip = <span className={`${CHIP} bg-loss-soft text-loss-ink`}>Cash can't cover {thb(verdict.topUp)}</span>
+      line = verdict.dcaNotEnough
+        ? 'Even with no DCA, bills and living are more than salary and cash.'
+        : <>You have <span className="font-semibold text-ink tnum">{thb(Math.max(0, cash))}</span> in cash for a <span className="tnum">{thb(verdict.topUp)}</span> gap.</>
+      break
+  }
+  return (
+    <div className="mt-4">
+      <p className="text-xs font-semibold text-ink-muted">{label}</p>
+      <p className={`mt-1 font-display text-4xl font-extrabold tracking-tight tnum ${tone}`}>{figure}</p>
+      <div className="mt-2">{chip}</div>
+      {line && <p className="mt-2 text-xs text-ink-muted">{line}</p>}
+    </div>
+  )
+}
+
 /** Salary at the top, each outflow as a step down, then what is left or what cash has to cover. */
-export function MonthlyFlowCard({ flow, salaryAmount, salaryNote, onAddSalary, livingNote, cash, livingThisMonth, periodName }: {
+export function MonthlyFlowCard({ flow, verdict, salaryAmount, salaryNote, onAddSalary, livingNote, cash, livingThisMonth, periodName }: {
   flow: MonthlyFlow
+  verdict: FlowVerdict
   /** The salary figure, editable */
   salaryAmount: ReactNode
   salaryNote?: ReactNode
@@ -76,7 +126,7 @@ export function MonthlyFlowCard({ flow, salaryAmount, salaryNote, onAddSalary, l
   livingThisMonth: number | null
   periodName: string
 }) {
-  const { salary, fixed, living, invest, net, runwayMonths } = flow
+  const { salary, fixed, living, invest } = flow
   const scale = Math.max(salary, flow.out)
   const steps: Step[] = [
     { label: 'Salary', note: salaryNote, amount: salary, amountNode: salaryAmount, from: 0, color: 'var(--color-gain)', sign: '' },
@@ -84,12 +134,11 @@ export function MonthlyFlowCard({ flow, salaryAmount, salaryNote, onAddSalary, l
     { label: 'Living', note: livingNote, amount: living, from: fixed, color: 'var(--color-warn)', sign: '−' },
     { label: 'Invest', note: 'Your DCA plans', amount: invest, from: fixed + living, color: 'var(--color-invest)', sign: '−' },
   ]
-  const runwayTone = runwayMonths === null ? '' : runwayMonths < 6 ? 'text-loss-ink' : runwayMonths < 12 ? 'text-warn-ink' : 'text-ink'
   const livingPct = living > 0 && livingThisMonth !== null ? Math.min(100, (livingThisMonth / living) * 100) : 0
 
   return (
     <Card className="animate-rise">
-      <CardHeader title="Monthly flow" description="Where your salary goes each month" />
+      <CardHeader title="This month" />
       {salary <= 0 ? (
         <div className="mt-4 rounded-2xl border border-dashed border-line-strong p-3">
           <div className="flex items-center justify-between gap-3">
@@ -102,26 +151,12 @@ export function MonthlyFlowCard({ flow, salaryAmount, salaryNote, onAddSalary, l
         </div>
       ) : (
         <>
-          <ul className="mt-2">
+          <Verdict verdict={verdict} cash={cash} />
+
+          <p className="mt-5 border-t border-line pt-4 text-xs font-semibold text-ink-muted">Where your salary goes</p>
+          <ul className="mt-1">
             {steps.map((s) => <StepRow key={s.label} step={s} scale={scale} salary={salary} />)}
           </ul>
-
-          <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-line pt-3">
-            <span className="text-sm font-semibold text-ink">{net < 0 ? 'From cash each month' : 'Left over each month'}</span>
-            <span className={`shrink-0 font-display text-lg font-extrabold tnum ${net < 0 ? 'text-loss-ink' : 'text-gain-ink'}`}>
-              {net < 0 ? '−' : ''}{thb(Math.abs(net))}
-            </span>
-          </div>
-
-          {runwayMonths !== null ? (
-            <Inset className="mt-3">
-              <p className="text-xs text-ink-muted">At this pace, your cash of <span className="font-semibold text-ink tnum">{thb(cash)}</span> lasts</p>
-              <p className={`mt-0.5 font-display text-2xl font-extrabold tnum ${runwayTone}`}>{months(runwayMonths)}</p>
-              <p className="mt-1 text-xs text-ink-muted">Fine for deploying a lump sum on purpose. If not, lower Invest or Living.</p>
-            </Inset>
-          ) : net > 0 ? (
-            <p className="mt-2 text-xs text-ink-muted">Not in any plan yet. Add it to a DCA plan or keep it as a buffer.</p>
-          ) : null}
 
           {livingThisMonth !== null && living > 0 && (
             <Link to="/spend/analysis" className="mt-3 block rounded-2xl border border-line p-3 transition-colors hover:bg-surface-muted/60">

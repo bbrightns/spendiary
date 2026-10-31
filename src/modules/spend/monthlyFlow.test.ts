@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { livingAverage, livingSpend, monthlyFlow } from './monthlyFlow'
+import { flowVerdict, livingAverage, livingPace, livingSpend, monthlyFlow } from './monthlyFlow'
 import type { SpendRecurring, SpendTransaction } from '../../lib/types'
 
 const txn = (date: string, amount: number, extra: Partial<SpendTransaction> = {}): SpendTransaction => ({
@@ -60,5 +60,39 @@ describe('monthlyFlow', () => {
 
   it('treats negative cash as none', () => {
     expect(monthlyFlow({ salary: 0, fixed: 1000, living: 0, invest: 0, cash: -500 }).runwayMonths).toBe(0)
+  })
+})
+
+describe('flowVerdict', () => {
+  const flow = (salary: number, cash: number) => monthlyFlow({ salary, fixed: 7000, living: 10000, invest: 40000, cash })
+
+  it('is covered when salary pays for everything', () => {
+    expect(flowVerdict(flow(60000, 0), 0)).toEqual({ kind: 'covered', leftover: 3000 })
+  })
+
+  it('tops up from cash when cash lasts', () => {
+    expect(flowVerdict(flow(37000, 200000), 200000)).toMatchObject({ kind: 'topUp', topUp: 20000, runwayMonths: 10 })
+  })
+
+  it('flags cash running low and says how much DCA to cut', () => {
+    expect(flowVerdict(flow(37000, 60000), 60000)).toMatchObject({ kind: 'low', topUp: 20000, cut: 20000, dcaNotEnough: false })
+  })
+
+  it('cuts DCA by what cash cannot cover', () => {
+    expect(flowVerdict(flow(37000, 5000), 5000)).toEqual({ kind: 'short', topUp: 20000, cut: 15000, dcaNotEnough: false })
+  })
+
+  it('says when even no DCA would not be enough', () => {
+    expect(flowVerdict(flow(10000, 0), 0)).toEqual({ kind: 'short', topUp: 47000, cut: 40000, dcaNotEnough: true })
+  })
+})
+
+describe('livingPace', () => {
+  const october = { start: '2026-10-01', end: '2026-10-31' }
+  it('waits for the first week', () => {
+    expect(livingPace(3000, october, '2026-10-06')).toBeNull()
+  })
+  it('projects the month from the pace so far', () => {
+    expect(livingPace(7000, october, '2026-10-07')).toBe(31000)
   })
 })
