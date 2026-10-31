@@ -132,7 +132,7 @@ export function ActivitySummary() {
       />
 
       {/* ── Period selector ── */}
-      <Card id="guide-summary-period" className="mb-5">
+      <Card id="guide-summary-period" className="card-bleed-mobile mb-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1.5 -my-1.5">
             <FilterChip active={isThisMonth} onClick={goToThisMonth} aria-label="Show this month">
@@ -189,7 +189,7 @@ export function ActivitySummary() {
       </Card>
 
       {summary.transactionCount === 0 ? (
-        <Card>
+        <Card className="card-bleed-mobile">
           <EmptyState
             icon={<ClockIcon className="h-7 w-7" />}
             title={`No investment activity in ${describePeriod(period)}`}
@@ -205,7 +205,7 @@ export function ActivitySummary() {
       ) : (
         <>
           {/* ── Headline: what was actually made ── */}
-          <Card id="guide-summary-hero" className="mb-4">
+          <Card id="guide-summary-hero" className="card-bleed-mobile mb-4">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-ink-muted">
@@ -260,7 +260,7 @@ export function ActivitySummary() {
 
           {/* ── Month by month ── */}
           {showMonthly && (
-            <Card className="mb-4">
+            <Card className="card-bleed-mobile mb-4">
               <h2 className="font-display text-lg font-extrabold text-ink">By month</h2>
               <p className="mt-0.5 text-xs text-ink-muted">
                 Sales profit and dividends for each month — green means a profit month
@@ -302,7 +302,7 @@ export function ActivitySummary() {
           )}
 
           {/* ── Per-asset breakdown ── */}
-          <Card id="guide-summary-assets" padded={false} className="mb-4 overflow-hidden">
+          <Card id="guide-summary-assets" padded={false} className="card-bleed-mobile mb-4 overflow-hidden">
             <div className="px-5 pt-5 pb-3">
               <h2 className="font-display text-lg font-extrabold text-ink">Where the profit came from</h2>
               <p className="mt-0.5 text-xs text-ink-muted">
@@ -380,7 +380,7 @@ export function ActivitySummary() {
           </Card>
 
           {/* ── Portfolio value change (snapshot based) ── */}
-          <Card className="mb-5">
+          <Card className="card-bleed-mobile mb-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <h2 className="font-display text-lg font-extrabold text-ink">How much your portfolio value changed</h2>

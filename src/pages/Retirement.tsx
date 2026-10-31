@@ -483,7 +483,7 @@ export function Retirement() {
         <div className="lg:col-span-5 xl:col-span-5 space-y-6">
           {/* ── Left: Inputs ── */}
           <div id="guide-retirement-settings">
-            <Card className="animate-rise">
+            <Card className="card-bleed-mobile animate-rise">
             <h2 className="mb-5 font-display text-lg font-extrabold text-ink">Your retirement plan</h2>
             <div className="space-y-4">
               <TextField
@@ -622,7 +622,7 @@ export function Retirement() {
 
         {/* ── Wealth Runway & Milestones ── */}
         <div id="guide-retirement-freedom">
-          <Card className="animate-rise">
+          <Card className="card-bleed-mobile animate-rise">
             <h2 className="mb-1 font-display text-lg font-extrabold text-ink">Safety net & milestones</h2>
             <p className="text-sm text-ink-muted mb-4">
               How long your savings could last and how close you are to financial freedom
@@ -684,7 +684,7 @@ export function Retirement() {
 
         {/* ── Right Column (7 cols): Projection Chart ── */}
         <div id="guide-retirement-chart" className="lg:col-span-7 xl:col-span-7 space-y-6">
-          <Card className="animate-rise">
+          <Card className="card-bleed-mobile animate-rise">
             {/* Hero stats row */}
             <div className="mb-5">
               <div className="flex items-start justify-between gap-4 flex-wrap">

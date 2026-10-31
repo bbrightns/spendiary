@@ -414,7 +414,7 @@ export function DcaPlanner() {
 
           {/* ── Fixed Costs ── */}
           <div id="guide-dca-transfers">
-            <Card className="animate-rise">
+            <Card className="card-bleed-mobile animate-rise">
             <SectionHeader
               label="Fixed costs"
               total={fixedTotal}
@@ -465,7 +465,7 @@ export function DcaPlanner() {
       {/* Right Column (7 cols): Savings & Invest / DCA Plans */}
       <div id="guide-dca-plans" className="lg:col-span-7 xl:col-span-8 space-y-6">
         {/* ── Savings & Invest ── */}
-        <Card className={`animate-rise overflow-hidden transition-all duration-200 ${isEditingPlansMode ? 'ring-2 ring-brand/40 shadow-sm' : ''}`} padded={false}>
+        <Card className={`card-bleed-mobile animate-rise overflow-hidden transition-all duration-200 ${isEditingPlansMode ? 'ring-2 ring-brand/40 shadow-sm' : ''}`} padded={false}>
             <div className="p-5">
               <SectionHeader
                 label="Savings & Invest"
@@ -731,7 +731,7 @@ export function DcaPlanner() {
           </Card>
 
             {/* ── Expected Dividends (Dividend Income) ── */}
-            <Card className="animate-rise overflow-hidden" padded={false}>
+            <Card className="card-bleed-mobile animate-rise overflow-hidden" padded={false}>
               <div className="p-5 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">

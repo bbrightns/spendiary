@@ -137,7 +137,7 @@ export function MonthlyFlowCard({ flow, verdict, salaryAmount, salaryNote, onAdd
   const livingPct = living > 0 && livingThisMonth !== null ? Math.min(100, (livingThisMonth / living) * 100) : 0
 
   return (
-    <Card className="animate-rise">
+    <Card className="card-bleed-mobile animate-rise">
       <CardHeader title="This month" />
       {salary <= 0 ? (
         <div className="mt-4 rounded-2xl border border-dashed border-line-strong p-3">
