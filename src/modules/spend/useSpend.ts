@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { useData } from '../../store/DataContext'
-import { localDateStr } from '../../lib/format'
+import { localDateStr, localTimeStr } from '../../lib/format'
 import { newId } from '../../lib/id'
 import type { SpendCard, SpendCustomCategory, SpendGoal, SpendRecurring, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
 import { SPEND_CATEGORIES } from './categories'
@@ -54,7 +54,7 @@ export function recurringInput(rec: SpendRecurring): SpendTxnInput {
     accountId: rec.accountId,
     toAccountId: transfer ? rec.toAccountId : undefined,
     date: localDateStr(now),
-    time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+    time: localTimeStr(now),
     note: recurringNote(rec),
   }
 }

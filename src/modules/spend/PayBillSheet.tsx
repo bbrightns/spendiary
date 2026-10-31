@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Modal } from '../../components/ui/Modal'
 import { FormActions } from '../../components/forms/FormActions'
 import { useToast } from '../../store/ToastContext'
-import { localDateStr, thb, thbSigned } from '../../lib/format'
+import { localDateStr, localTimeStr, thb, thbSigned } from '../../lib/format'
 import { getCategory } from './categories'
 import { cardPaidDetail } from './billPaid'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
@@ -87,6 +87,7 @@ export function PayBillSheet() {
       accountId: outside ? undefined : fromId,
       toAccountId: bill.card.id,
       date: localDateStr(),
+      time: localTimeStr(),
       note: `Pay ${bill.card.name} ${due > 0 ? 'bill' : 'card'}`,
     })
     showToast(
