@@ -13,7 +13,7 @@ import type { CashAccount, SpendCard } from '../../../lib/types'
 import { newCashAccount, sortCashAccounts } from '../../../lib/calc'
 import { EditAccountModal } from '../../../components/forms/EditCashAccountModal'
 import { useToast } from '../../../store/ToastContext'
-import { CardSheet, StarIcon, WalletSheet } from '../AccountSheets'
+import { CardSheet, WalletSheet } from '../AccountSheets'
 import { GoalsSection } from '../Goals'
 import { inPeriod, isCalendar, moveId, periodFor } from '../logic'
 import { CardStack } from '../CardStack'
@@ -262,7 +262,6 @@ export function SpendAccounts() {
             <div className="grid w-full grid-cols-3 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(120px,1fr))] sm:gap-3 auto-rows-fr">
               {wallets.map((w) => {
                 const f = flows.get(w.id)
-                const on = favs.includes(w.id)
                 const isDefault = settings.defaultAccountId === w.id
                 // Wallets can't really go below zero, so this is almost always a txn logged to the wrong one
                 const overdrawn = w.balance < 0
@@ -283,60 +282,32 @@ export function SpendAccounts() {
                       overdrawn ? 'border-loss/60 ring-1 ring-loss/25' : isDefault ? 'border-brand/60 ring-1 ring-brand/30' : 'border-line'
                     }`}
                   >
-                    <div className="flex items-start justify-between">
-                      <span
-                        className="relative grid h-7 w-7 @min-[6.5rem]:h-8 @min-[6.5rem]:w-8 place-items-center rounded-xl bg-surface-muted"
-                        style={w.color ? { background: `${w.color}22` } : undefined}
-                      >
-                        <MethodIcon method={w} className="h-4 w-4" />
-                        {w.locked && (
-                          <span className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-surface text-ink-muted ring-1 ring-line">
-                            <LockClosedIcon className="h-2.5 w-2.5" />
-                          </span>
-                        )}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          toggleFavorite(w.id)
-                        }}
-                        aria-pressed={on}
-                        aria-label={on ? `Unfavorite ${w.name}` : `Favorite ${w.name}`}
-                        className={`-mr-1.5 -mt-1.5 grid h-8 w-8 place-items-center rounded-full transition-colors cursor-pointer hover:bg-surface-muted ${on ? 'text-warn-ink' : 'text-ink-faint'}`}
-                      >
-                        <StarIcon filled={on} className="h-3.5 w-3.5" />
-                      </button>
+                    {/* Name on top with the wallet's color, if it has one */}
+                    <div className="flex items-start gap-1.5">
+                      {w.color && (
+                        <span
+                          aria-hidden
+                          className="mt-[0.3em] h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/20"
+                          style={{ background: w.color }}
+                        />
+                      )}
+                      <p className="line-clamp-2 min-w-0 flex-1 text-xs font-semibold leading-snug text-ink [overflow-wrap:break-word]">{w.name}</p>
                     </div>
 
+                    {/* Whole baht, big; millions go compact. The activity line keeps its height when empty,
+                        so the amounts in a row line up */}
                     <div className="mt-auto min-w-0">
-                      {/* Always two lines tall, so a one-line name gives the same tile as a long one */}
-                      <p className="line-clamp-2 min-h-[2lh] break-words text-2xs font-semibold leading-tight @min-[8rem]:leading-snug text-ink-soft">
-                        {isDefault && <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-brand align-middle" aria-hidden />}
-                        {w.name}
+                      <p className={`truncate font-display text-base @min-[5.75rem]:text-lg font-extrabold leading-tight tracking-tight tnum ${overdrawn ? 'text-loss-ink' : 'text-ink'}`}>
+                        {Math.abs(w.balance) >= 1_000_000 ? thbCompact(w.balance) : thbSigned(w.balance)}
                       </p>
-                      {/* Satang in small type so it still fits a third of a phone; millions go compact.
-                          The gaps grow with the tile: none on a small phone, where the tile is full */}
-                      <p className={`truncate mt-[clamp(0px,calc((100cqw_-_90px)*0.2),6px)] font-display text-[14px] min-[380px]:text-[15px] font-extrabold leading-tight tracking-tight tnum ${overdrawn ? 'text-loss-ink' : 'text-ink'}`}>
-                        {Math.abs(w.balance) >= 1_000_000 ? (
-                          thbCompact(w.balance)
-                        ) : (
-                          <>
-                            {thbSigned(w.balance, true).slice(0, -3)}
-                            <span className={`text-2xs font-bold ${overdrawn ? 'text-loss-ink/70' : 'text-ink-muted'}`}>{thbSigned(w.balance, true).slice(-3)}</span>
-                          </>
-                        )}
-                      </p>
-                      <p className="truncate mt-[clamp(0px,calc((100cqw_-_90px)*0.12),4px)] text-2xs leading-tight text-ink-muted tnum">
+                      <p className="mt-0.5 flex min-h-[1lh] items-center gap-1 truncate text-2xs leading-tight text-ink-faint tnum">
+                        {/* Savings you can't spend */}
+                        {w.locked && <LockClosedIcon aria-label="Locked" className="h-3 w-3 shrink-0" />}
                         {overdrawn ? (
                           <span className="font-bold text-loss-ink">Overdrawn</span>
                         ) : f ? (
-                          <>
-                            <span className="text-gain-ink">+{compact(f.in)}</span> · −{compact(f.out)}
-                          </>
-                        ) : (
-                          'No activity'
-                        )}
+                          <>+{compact(f.in)} · −{compact(f.out)}</>
+                        ) : null}
                       </p>
                     </div>
                   </div>
