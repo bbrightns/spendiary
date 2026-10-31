@@ -572,6 +572,8 @@ export interface SpendiaryData {
   liabilities?: Liability[]
   /** Spend module: day-to-day income / expense / transfer records */
   spendTransactions?: SpendTransaction[]
+  /** Order of the cards on DCA plans, by card id; unknown or missing ids fall back to the default order */
+  dcaCardOrder?: string[]
   /** Spend module: user settings such as the monthly spending budget */
   spendSettings?: SpendSettings
   /** Spend module: credit cards usable as a payment method */

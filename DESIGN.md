@@ -217,6 +217,8 @@ There is one card: `Card` (`src/components/ui/Card.tsx`, along with `CardHeader`
 
 No per-page padding overrides. A card whose inside is a full-bleed chart or table uses `padded={false}` and pads its own sections.
 
+**Edge to edge on phones (Invest):** every full-width card on an Invest page carries `card-bleed-mobile` (`src/index.css`). Below `sm` it cancels the page gutter and drops the side border, radius and shadow, so the card reaches the screen edges and cards read as sections; from `sm` up it is a normal card. Stat tiles (`Card compact` in a grid) never bleed. Spend keeps inset cards for now.
+
 **Interactive cards:** if the whole card is a link or button, add `hover:shadow-[var(--shadow-lift)] transition-shadow`. Otherwise it never lifts.
 
 **Inside a card, never nest another card.** For grouped content, use one of two inner surfaces:

@@ -523,7 +523,7 @@ export function Rebalance() {
         {/* Left Column (5 cols): Strategy Controls & Allocation Visualizer */}
         <div className="2xl:col-span-4 space-y-6">
           {/* Strategy & Deployment Card */}
-          <Card className="animate-rise">
+          <Card className="card-bleed-mobile animate-rise">
             <h2 className="font-display text-lg font-extrabold text-ink">Rebalance setup</h2>
             <p className="text-xs text-ink-muted mb-4">Configure allocation mode & capital</p>
 
@@ -626,7 +626,7 @@ export function Rebalance() {
           </Card>
 
           {/* Side-by-Side Allocation Visualizer */}
-          <Card className="animate-rise">
+          <Card className="card-bleed-mobile animate-rise">
             <h2 className="font-display text-lg font-extrabold text-ink">Allocation comparison</h2>
             <p className="text-xs text-ink-muted mb-4">Current vs target distribution</p>
 
@@ -682,7 +682,7 @@ export function Rebalance() {
 
         {/* Right Column (7 cols): Full Interactive Target Table */}
         <div id="guide-rebalance-weights" className="2xl:col-span-8 space-y-6">
-          <Card className="animate-rise overflow-hidden" padded={false}>
+          <Card className="card-bleed-mobile animate-rise overflow-hidden" padded={false}>
             <div className="p-4 sm:p-5">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div>

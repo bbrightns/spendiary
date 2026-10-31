@@ -16,7 +16,7 @@ const STATUS: Record<DayStatus, { label: string; chip: string }> = {
 const signed = (n: number, fmt: (v: number) => string) => `${n < 0 ? '−' : ''}${fmt(Math.abs(n))}`
 
 /** Dashboard card: today's allowance and this spending cycle at a glance, linking into Spend. */
-export function SpendSnapshotCard() {
+export function SpendSnapshotCard({ className = '' }: { className?: string }) {
   const { transactions, settings } = useSpend()
   const today = localDateStr()
   const period = useMemo(() => periodFor(today, settings.cycle), [today, settings.cycle])
@@ -27,7 +27,7 @@ export function SpendSnapshotCard() {
   if (transactions.length === 0 && budget === 0) {
     return (
       <Link to="/" className="block">
-        <Card compact hover className="flex items-center justify-between gap-3">
+        <Card compact hover className={`flex items-center justify-between gap-3 ${className}`}>
           <span className="flex items-center gap-2.5 text-sm font-semibold text-ink">
             <WalletIcon className="h-5 w-5 text-link" />
             Track day-to-day spending in Spend
@@ -47,7 +47,7 @@ export function SpendSnapshotCard() {
 
   return (
     <Link to="/" className="group block" aria-label="Open Spend">
-      <Card hover className="@container">
+      <Card hover className={`@container ${className}`}>
         {/* The whole card is the link, so its "Spend →" is styled text rather than a second link */}
         <CardHeader
           title="Spending"

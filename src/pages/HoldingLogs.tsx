@@ -559,7 +559,7 @@ export function HoldingLogs() {
 
       <div id="guide-logs-list">
         {logs.length === 0 ? (
-          <Card>
+          <Card className="card-bleed-mobile">
             <EmptyState
               icon={<ClockIcon className="h-7 w-7" />}
               title="No activity yet"
@@ -568,7 +568,7 @@ export function HoldingLogs() {
             />
           </Card>
         ) : filtered.length === 0 ? (
-          <Card>
+          <Card className="card-bleed-mobile">
             <EmptyState
               icon={<SearchIcon className="h-7 w-7" />}
               title="No transactions match your search"
@@ -809,7 +809,7 @@ export function HoldingLogs() {
             {groups.map((group) => (
               <div key={group.date}>
                 <p className="mb-3 px-1 text-base sm:text-lg font-extrabold text-ink tracking-tight">{group.date}</p>
-                <Card padded={false}>
+                <Card className="card-bleed-mobile" padded={false}>
                   <ul className="divide-y divide-line">
                   {group.entries.map((log) => {
                     const locName = getDestinationLocation(log)

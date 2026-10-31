@@ -119,7 +119,7 @@ export function Dashboard() {
     return (
       <>
         <PageHeader eyebrow="Invest" title="Dashboard" />
-        <Card>
+        <Card className="card-bleed-mobile">
           <EmptyState
             icon={<SparkleIcon className="h-7 w-7" />}
             title="Welcome to Spendiary"
@@ -152,7 +152,7 @@ export function Dashboard() {
 
       {/* ── Net worth: the one big number, then what it's made of ── */}
       <div id="guide-dashboard-networth">
-        <Card padded={false} className="animate-rise">
+        <Card padded={false} className="card-bleed-mobile animate-rise">
           <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
             <div className="min-w-0">
               <p className="text-sm text-ink-muted">Total net worth</p>
@@ -233,13 +233,13 @@ export function Dashboard() {
       </div>
 
       {/* ── Spend cash flow (this spending month) ── */}
-      <SpendSnapshotCard />
+      <SpendSnapshotCard className="card-bleed-mobile" />
 
       {/* ── Allocation, cash and debts ── */}
       <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-12">
         {/* Allocation */}
         <div id="guide-dashboard-alloc" className="lg:col-span-5 xl:col-span-4">
-          <Card className="h-full animate-rise">
+          <Card className="card-bleed-mobile h-full animate-rise">
             <CardHeader title="Allocation" action={<TextLink to="/portfolio">Portfolio →</TextLink>} />
 
             <Inset id="guide-portfolio-summary" className="@container mt-3">
@@ -296,7 +296,7 @@ export function Dashboard() {
 
         {/* Cash */}
         <div id="guide-dashboard-cash" className="lg:col-span-7 xl:col-span-4">
-          <Card className="h-full animate-rise">
+          <Card className="card-bleed-mobile h-full animate-rise">
             <CardHeader title="Cash" action={<TextLink to={SPEND_CASH}>Manage</TextLink>} />
 
             <Inset id="guide-cash-summary" className="mt-3">
@@ -369,7 +369,7 @@ export function Dashboard() {
 
         {/* Debts */}
         <div id="guide-dashboard-debts" className="lg:col-span-12 xl:col-span-4">
-          <Card className="h-full animate-rise">
+          <Card className="card-bleed-mobile h-full animate-rise">
             <CardHeader title="Debts" action={<TextLink to="/spend/loans">Manage</TextLink>} />
 
             <Inset id="guide-debt-summary" className="mt-3">
@@ -514,7 +514,7 @@ export function Dashboard() {
 
       {/* ── Net worth over time (full width) ── */}
       <div id="guide-dashboard-chart">
-        <Card className="animate-rise overflow-hidden" padded={false}>
+        <Card className="card-bleed-mobile animate-rise overflow-hidden" padded={false}>
           {(data.netWorthHistory?.length ?? 0) >= 2 ? (
             <InteractiveNetWorthChart history={data.netWorthHistory!} />
           ) : (

@@ -217,7 +217,7 @@ export function Dividends() {
         </div>
 
         {/* ── Section 1: Upcoming / Expected Dividends (Smart Accordion) ── */}
-        <Card className="animate-rise overflow-hidden" padded={false}>
+        <Card className="card-bleed-mobile animate-rise overflow-hidden" padded={false}>
           <button
             type="button"
             onClick={() => setIsUpcomingOpen(!upcomingOpen)}
@@ -402,7 +402,7 @@ export function Dividends() {
         </Card>
 
         {/* ── Section 2: Dividend Payout History ── */}
-        <Card className="animate-rise" padded={false}>
+        <Card className="card-bleed-mobile animate-rise" padded={false}>
           <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-line">
             <div>
               <h2 className="font-display text-lg font-extrabold text-ink">Dividend history</h2>

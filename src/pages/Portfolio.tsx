@@ -358,7 +358,7 @@ export function Portfolio() {
     return (
       <>
         <PageHeader eyebrow="Invest" title="Portfolio" />
-        <Card>
+        <Card className="card-bleed-mobile">
           <EmptyState
             icon={<PortfolioIcon className="h-7 w-7" />}
             title="No holdings yet"

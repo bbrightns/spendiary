@@ -13,12 +13,14 @@ import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { useLivePrices } from '../hooks/useLivePrices'
 import { isValidPrice } from '../lib/priceCache'
-import { AlertIcon, CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, PencilIcon, PlusIcon } from '../components/icons'
+import { CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, PencilIcon, PlusIcon } from '../components/icons'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { fixedCostRecurring, inPeriod, perMonth, periodFor, periodLabel } from '../modules/spend/logic'
 import { flowVerdict, livingAverage, livingPace, livingSpend, monthlyFlow } from '../modules/spend/monthlyFlow'
 import { settingsPath } from '../lib/settingsSections'
 import { MonthlyFlowCard } from './dca/MonthlyFlowCard'
+import { cardOrder, isDefaultOrder, moveInOrder } from '../lib/cardOrder'
+import { ArrangeButton, ReorderSheet } from '../modules/spend/ReorderSheet'
 import { useSpend } from '../modules/spend/useSpend'
 import {
   ASSET_META, buyDateThisPeriod, totalCash, dcaThisMonth, getHoldingDpsForMonth, isBuyDayOverdue, isBuyDayToday, isConfirmedForPeriod, isDividendReceivedThisMonth, isSkippedForPeriod,
@@ -121,7 +123,7 @@ function SectionHeader({ label, total, open, onToggle, action }: {
         className="flex items-center gap-2 group cursor-pointer"
       >
         <div className="text-left">
-          <p className="text-xs font-semibold text-ink-faint">{label}</p>
+          <p className="whitespace-nowrap text-xs font-semibold text-ink-faint">{label}</p>
           <p className="mt-0.5 font-display text-xl font-extrabold tnum text-ink leading-none">
             {thb(total)}
           </p>
@@ -148,7 +150,7 @@ export function DcaPlanner() {
   } = usePageGuide('dca')
   const {
     data, setMonthlyIncome,
-    upsertPlan, skipDcaBuy, unskipDcaBuy,
+    setData, skipDcaBuy, unskipDcaBuy,
   } = useData()
   const { showToast } = useToast()
 
@@ -185,9 +187,8 @@ export function DcaPlanner() {
   const [dividendModalOpen, setDividendModalOpen] = useState(false)
   const [selectedDividendHolding, setSelectedDividendHolding] = useState<Holding | null>(null)
 
-  // Edit plans mode (Save / Cancel / Add Plan)
-  const [isEditingPlansMode, setIsEditingPlansMode] = useState(false)
-  const [draftPlanAmounts, setDraftPlanAmounts] = useState<Record<string, number>>({})
+  // Card order, and the sheet that changes it
+  const [arrangeOpen, setArrangeOpen] = useState(false)
 
   // Fixed costs live in Spend as recurring bills; weekly / yearly ones count at their monthly rate
   const fixedItems = fixedCostRecurring(data.spendRecurring ?? []).sort((a, b) => perMonth(b) - perMonth(a))
@@ -226,67 +227,13 @@ export function DcaPlanner() {
     <>Log spending in Spend to see this · {budgetLink}</>
   )
 
-  // Effective plans considering in-progress draft adjustments
-  const rawPlans = sortDcaPlans(data.dcaPlans)
-  const plans = rawPlans.map((p) => ({
-    ...p,
-    monthlyAmount: isEditingPlansMode && draftPlanAmounts[p.id] !== undefined
-      ? draftPlanAmounts[p.id]
-      : p.monthlyAmount,
-  }))
-
-  // Sum of all DCA plans' monthly amounts (total investment among DCA assets)
+  const plans = sortDcaPlans(data.dcaPlans)
+  // Sum of the plans' monthly amounts, for each plan's share
   const currentTotalDcaAmount = plans.reduce((s, p) => s + p.monthlyAmount, 0)
-  // Overall savings total (using draft DCA total when editing)
-  const savingsTotal = isEditingPlansMode ? currentTotalDcaAmount : dcaMonth.total
-
-
-  // Enter edit mode
-  const startEditingPlans = () => {
-    const initialDrafts: Record<string, number> = {}
-    data.dcaPlans.forEach((p) => {
-      initialDrafts[p.id] = p.monthlyAmount
-    })
-    setDraftPlanAmounts(initialDrafts)
-    setIsEditingPlansMode(true)
-  }
-
-  // Cancel edit mode
-  const cancelEditingPlans = () => {
-    setDraftPlanAmounts({})
-    setIsEditingPlansMode(false)
-  }
-
-  // Save all draft amounts to store/logs
-  const saveEditingPlans = () => {
-    plans.forEach((p) => {
-      if (draftPlanAmounts[p.id] !== undefined && draftPlanAmounts[p.id] !== p.monthlyAmount) {
-        upsertPlan({
-          ...p,
-          monthlyAmount: draftPlanAmounts[p.id],
-        })
-      }
-    })
-    showToast('Saved all DCA plan adjustments successfully', 'success')
-    setIsEditingPlansMode(false)
-    setDraftPlanAmounts({})
-  }
-
-  // Slider change handler (adjusts THB by step of 100 in range 100 - 50,000)
-  const handleSliderThb = (planId: string, newThb: number) => {
-    setDraftPlanAmounts((prev) => ({
-      ...prev,
-      [planId]: newThb,
-    }))
-  }
-
-  // Calculate sum of percentages across all DCA plans (percent relative to DCA plans total)
-  const totalPercentSum = currentTotalDcaAmount > 0
-    ? plans.reduce((sum, p) => sum + (p.monthlyAmount / currentTotalDcaAmount) * 100, 0)
-    : 0
+  // What the plans buy this month (weekly and daily plans counted by their buys this month)
+  const savingsTotal = dcaMonth.total
   // The plan list is already in buy order (sortDcaPlans), so each group is one run of rows
   const hasGroups = new Set(plans.map(whenGroup)).size > 1
-  const isPercentNot100 = plans.length > 0 && Math.abs(totalPercentSum - 100) > 0.5
 
   // Expected dividends for the current month
   const currentMonth = new Date().getMonth() + 1
@@ -319,7 +266,8 @@ export function DcaPlanner() {
   const goldHolding = data.holdings?.find((h) => h.assetClass === 'gold' && isValidPrice(h.price) && hasRealPrice(h))
   const effectiveGoldThbPerGram = goldThbPerGram ?? goldHolding?.price ?? null
   const effectiveUsdThb = usdThb && usdThb > 0 ? usdThb : null
-  const cash = totalCash(data, effectiveUsdThb)
+  // Only money you can top up from: accounts marked locked (a provident fund) don't count
+  const cash = totalCash({ ...data, cashAccounts: data.cashAccounts.filter((a) => a.category !== 'locked') }, effectiveUsdThb)
   const flow = monthlyFlow({ salary, fixed: fixedTotal, living, invest: savingsTotal, cash })
   const verdict = flowVerdict(flow, cash)
   const [copied, setCopied] = useState(false)
@@ -352,40 +300,13 @@ export function DcaPlanner() {
   const openAdd = () => { setEditing(null); setFormOpen(true) }
   const openEdit = (p: DcaPlan) => { setEditing(p); setFormOpen(true) }
 
-  return (
-    <>
-      <PageHeader
-        eyebrow="Invest"
-        title="DCA plans"
-        subtitle="Monthly salary allocation & recurring investments."
-        onStartGuide={startTour}
-        action={
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleCopyMarkdown}
-            aria-label="Copy portfolio markdown"
-            title="Copy portfolio as Markdown"
-            className="cursor-pointer shrink-0 h-9 text-xs sm:text-sm whitespace-nowrap"
-          >
-            {copied ? (
-              <>
-                <CheckIcon className="h-4 w-4 text-gain-ink shrink-0" strokeWidth={2.2} />
-                <span className="text-gain-ink">Copied MD!</span>
-              </>
-            ) : (
-              <>
-                <CopyIcon className="h-4 w-4 text-ink-muted shrink-0" />
-                <span>Copy portfolio MD</span>
-              </>
-            )}
-          </Button>
-        }
-      />
+  const order = cardOrder(DCA_CARD_IDS, data.dcaCardOrder)
+  const saveOrder = (next: DcaCardId[]) =>
+    setData((prev) => ({ ...prev, dcaCardOrder: isDefaultOrder(DCA_CARD_IDS, next) ? undefined : next }))
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column (5 cols): Salary Budget & Fixed Costs */}
-        <div className="lg:col-span-5 xl:col-span-4 space-y-6">
+  const cards: Record<DcaCardId, React.ReactNode> = {
+    flow: (
+      <>
           {/* ── Monthly flow: salary → bills → living → invest ── */}
           <div id="guide-dca-summary">
             <MonthlyFlowCard
@@ -411,10 +332,13 @@ export function DcaPlanner() {
               }
             />
           </div>
-
+      </>
+    ),
+    fixed: (
+      <>
           {/* ── Fixed Costs ── */}
           <div id="guide-dca-transfers">
-            <Card className="animate-rise">
+            <Card className="card-bleed-mobile animate-rise">
             <SectionHeader
               label="Fixed costs"
               total={fixedTotal}
@@ -460,12 +384,12 @@ export function DcaPlanner() {
             )}
           </Card>
         </div>
-      </div>
-
-      {/* Right Column (7 cols): Savings & Invest / DCA Plans */}
-      <div id="guide-dca-plans" className="lg:col-span-7 xl:col-span-8 space-y-6">
-        {/* ── Savings & Invest ── */}
-        <Card className={`animate-rise overflow-hidden transition-all duration-200 ${isEditingPlansMode ? 'ring-2 ring-brand/40 shadow-sm' : ''}`} padded={false}>
+      </>
+    ),
+    plans: (
+      <>
+        <div id="guide-dca-plans">
+        <Card className="card-bleed-mobile animate-rise overflow-hidden" padded={false}>
             <div className="p-5">
               <SectionHeader
                 label="Savings & Invest"
@@ -473,62 +397,13 @@ export function DcaPlanner() {
                 open={savingsOpen}
                 onToggle={() => setSavingsOpen((v) => !v)}
                 action={
-                  savingsOpen ? (
-                    <div className="flex items-center gap-2">
-                      {!isEditingPlansMode ? (
-                        <button
-                          onClick={startEditingPlans}
-                          aria-label="Edit DCA plans"
-                          className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 text-xs font-semibold text-ink shadow-2xs hover:bg-surface-muted transition-colors active:scale-95 cursor-pointer"
-                        >
-                          <PencilIcon className="h-3.5 w-3.5" />
-                          <span>Edit plan</span>
-                        </button>
-                      ) : (
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={openAdd}
-                            aria-label="Add new DCA plan"
-                            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 text-xs font-semibold text-ink shadow-2xs hover:bg-surface-muted transition-colors active:scale-95 cursor-pointer"
-                          >
-                            <PlusIcon className="h-3.5 w-3.5" strokeWidth={2.2} />
-                            <span>Add plan</span>
-                          </button>
-                          <button
-                            onClick={saveEditingPlans}
-                            aria-label="Save DCA plans changes"
-                            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-brand hover:bg-brand/90 text-white px-3.5 text-xs font-bold shadow-xs transition-colors active:scale-95 cursor-pointer"
-                          >
-                            <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.4} />
-                            <span>Save</span>
-                          </button>
-                          <button
-                            onClick={cancelEditingPlans}
-                            aria-label="Cancel DCA plans changes"
-                            className="inline-flex h-8 items-center px-2.5 text-xs font-semibold text-ink-muted hover:text-ink transition-colors cursor-pointer"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ) : null
+                  <Button variant="secondary" size="sm" onClick={openAdd} className="shrink-0 gap-1.5 whitespace-nowrap">
+                    <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
+                    Add plan
+                  </Button>
                 }
               />
             </div>
-
-            {/* Notice when sum of plan percentages does not equal 100% */}
-            {savingsOpen && isPercentNot100 && (
-              <div className="border-t border-line bg-warn-soft/40 px-5 py-2.5 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 text-warn-ink font-medium">
-                  <AlertIcon className="h-4 w-4 shrink-0" />
-                  <span>
-                    Total planned weight is <strong>{totalPercentSum.toFixed(1)}%</strong> (difference of{' '}
-                    <strong>{Math.abs(100 - totalPercentSum).toFixed(1)}%</strong> {totalPercentSum > 100 ? 'over' : 'under'} 100%).
-                  </span>
-                </div>
-              </div>
-            )}
 
             {savingsOpen && (
               <div className="border-t border-line">
@@ -594,23 +469,15 @@ export function DcaPlanner() {
                             <div
                               role="button"
                               tabIndex={0}
-                              onClick={() => {
-                                if (!isEditingPlansMode) openEdit(p)
-                              }}
+                              onClick={() => openEdit(p)}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {
-                                  if (!isEditingPlansMode) {
-                                    e.preventDefault()
-                                    openEdit(p)
-                                  }
+                                  e.preventDefault()
+                                  openEdit(p)
                                 }
                               }}
                               aria-label={`Edit ${p.name}`}
-                              className={`flex items-center gap-3 px-5 py-3 sm:gap-3.5 sm:py-4 transition-colors ${
-                                isEditingPlansMode
-                                  ? 'bg-surface hover:bg-surface'
-                                  : 'cursor-pointer hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand'
-                              }`}
+                              className="flex cursor-pointer items-center gap-3 px-5 py-3 transition-colors hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:gap-3.5 sm:py-4"
                             >
                               <AssetLogo
                                 name={p.name}
@@ -624,20 +491,6 @@ export function DcaPlanner() {
                                     {thb(p.monthlyAmount)}
                                   </p>
                                 </div>
-                                {isEditingPlansMode && (
-                                  <div className="mt-2 flex items-center" onClick={(e) => e.stopPropagation()}>
-                                    <input
-                                      type="range"
-                                      min="100"
-                                      max="50000"
-                                      step="100"
-                                      value={p.monthlyAmount}
-                                      onChange={(e) => handleSliderThb(p.id, Number(e.target.value))}
-                                      aria-label={`Adjust monthly amount for ${p.name}`}
-                                      className="h-1.5 w-full appearance-none rounded-lg bg-surface-muted accent-brand cursor-pointer focus:outline-none"
-                                    />
-                                  </div>
-                                )}
                                   <div className="mt-0.5 flex items-center justify-between gap-2 text-xs sm:mt-1">
                                     <span className="min-w-0 truncate text-ink-muted">
                                       {meta.label}
@@ -664,7 +517,7 @@ export function DcaPlanner() {
                                     <span className="inline-block shrink-0 text-xs font-semibold text-stocks">in {days} days</span>
                                   )}
                                   </div>
-                                  {needsAction && !isEditingPlansMode && (
+                                  {needsAction && (
                                     <div id="guide-dca-confirm" className="mt-1.5 flex items-center gap-2 sm:mt-2">
                                       <button
                                         onClick={(e) => { e.stopPropagation(); setConfirming(p); setConfirmOpen(true) }}
@@ -706,23 +559,17 @@ export function DcaPlanner() {
                           {salary > 0 ? (
                             <>
                               <span className="text-gain-ink">{Math.round((savingsTotal / salary) * 100)}%</span>
-                              <span className="text-sm font-medium text-ink dark:text-white ml-1.5">
-                                of Monthly Income
-                              </span>
+                              <span className="ml-1.5 text-sm font-medium text-ink">of salary</span>
                             </>
                           ) : (
-                            <span className="text-sm text-ink-muted font-normal">
-                              Set monthly income above to see invest rate
-                            </span>
+                            <span className="text-sm text-ink-muted font-normal">Set your salary to see this</span>
                           )}
                         </p>
                       </div>
 
                       <div className="text-right">
-                        <p className="text-xs text-ink-muted">Total DCA allocation</p>
-                        <p className={`font-display text-base font-extrabold tnum mt-0.5 ${isPercentNot100 ? 'text-warn-ink' : 'text-gain-ink'}`}>
-                          {totalPercentSum.toFixed(1)}%
-                        </p>
+                        <p className="text-xs text-ink-muted">Plans</p>
+                        <p className="font-display text-lg font-extrabold tnum leading-tight mt-0.5 text-ink">{plans.length}</p>
                       </div>
                     </div>
                   )}
@@ -730,8 +577,12 @@ export function DcaPlanner() {
             )}
           </Card>
 
-            {/* ── Expected Dividends (Dividend Income) ── */}
-            <Card className="animate-rise overflow-hidden" padded={false}>
+        </div>
+      </>
+    ),
+    dividends: (
+      <>
+            <Card className="card-bleed-mobile animate-rise overflow-hidden" padded={false}>
               <div className="p-5 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
@@ -821,10 +672,64 @@ export function DcaPlanner() {
                 )}
               </div>
             </Card>
+      </>
+    ),
+  }
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="Invest"
+        title="DCA plans"
+        subtitle="Monthly salary allocation & recurring investments."
+        onStartGuide={startTour}
+        action={
+          <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleCopyMarkdown}
+            aria-label="Copy portfolio markdown"
+            title="Copy portfolio as Markdown"
+            className="cursor-pointer shrink-0 h-9 text-xs sm:text-sm whitespace-nowrap"
+          >
+            {copied ? (
+              <>
+                <CheckIcon className="h-4 w-4 text-gain-ink shrink-0" strokeWidth={2.2} />
+                <span className="text-gain-ink">Copied MD!</span>
+              </>
+            ) : (
+              <>
+                <CopyIcon className="h-4 w-4 text-ink-muted shrink-0" />
+                <span>Copy portfolio MD</span>
+              </>
+            )}
+          </Button>
+          <ArrangeButton label="Arrange cards" onClick={() => setArrangeOpen(true)} />
           </div>
-        </div>
+        }
+      />
+
+      {/* Cards in your order; on wide screens they flow down two columns */}
+      <div className="flex flex-col gap-6 lg:block lg:columns-2 lg:gap-6">
+        {order.map((id) => (
+          <div key={id} className="break-inside-avoid empty:hidden lg:mb-6">
+            {cards[id]}
+          </div>
+        ))}
+      </div>
 
         <DcaForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
+        <ReorderSheet
+          open={arrangeOpen}
+          onClose={() => setArrangeOpen(false)}
+          title="Arrange cards"
+          description="Choose the order of the cards on DCA plans. On a wide screen they fill two columns, top to bottom."
+          items={order.map((id) => ({ id, label: DCA_CARDS.find((c) => c.id === id)?.label ?? id }))}
+          onMove={(id, delta) => saveOrder(moveInOrder(order, id as DcaCardId, delta))}
+          canReset={!isDefaultOrder(DCA_CARD_IDS, order)}
+          onReset={() => saveOrder([...DCA_CARD_IDS])}
+        />
         <ConfirmDcaBuyForm
           open={confirmOpen}
           plan={confirming}
@@ -854,6 +759,16 @@ export function DcaPlanner() {
   }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Cards on DCA plans that can be reordered, in their default order */
+const DCA_CARDS = [
+  { id: 'flow', label: 'This month' },
+  { id: 'fixed', label: 'Fixed costs' },
+  { id: 'plans', label: 'Savings & Invest' },
+  { id: 'dividends', label: 'Dividend income' },
+] as const
+type DcaCardId = (typeof DCA_CARDS)[number]['id']
+const DCA_CARD_IDS: readonly DcaCardId[] = DCA_CARDS.map((c) => c.id)
 
 function whenGroup(p: DcaPlan): string {
   if (shouldConfirmBuy(p)) return 'Due now'
