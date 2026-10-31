@@ -319,7 +319,8 @@ export function DcaPlanner() {
   const goldHolding = data.holdings?.find((h) => h.assetClass === 'gold' && isValidPrice(h.price) && hasRealPrice(h))
   const effectiveGoldThbPerGram = goldThbPerGram ?? goldHolding?.price ?? null
   const effectiveUsdThb = usdThb && usdThb > 0 ? usdThb : null
-  const cash = totalCash(data, effectiveUsdThb)
+  // Only money you can top up from: accounts marked locked (a provident fund) don't count
+  const cash = totalCash({ ...data, cashAccounts: data.cashAccounts.filter((a) => a.category !== 'locked') }, effectiveUsdThb)
   const flow = monthlyFlow({ salary, fixed: fixedTotal, living, invest: savingsTotal, cash })
   const verdict = flowVerdict(flow, cash)
   const [copied, setCopied] = useState(false)

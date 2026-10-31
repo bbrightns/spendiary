@@ -82,7 +82,7 @@ function Verdict({ verdict, cash }: { verdict: FlowVerdict; cash: number }) {
       figure = thb(verdict.topUp)
       tone = 'text-ink'
       chip = <span className={`${CHIP} bg-gain-soft text-gain-ink`}>DCA can stay · cash lasts {months(verdict.runwayMonths)}</span>
-      line = <>Your cash of <span className="font-semibold text-ink tnum">{thb(cash)}</span> covers the gap.</>
+      line = <>Your spendable cash of <span className="font-semibold text-ink tnum">{thb(cash)}</span> covers the gap.</>
       break
     case 'low':
       label = 'Top up from cash this month'
@@ -90,7 +90,7 @@ function Verdict({ verdict, cash }: { verdict: FlowVerdict; cash: number }) {
       tone = 'text-warn-ink'
       chip = <span className={`${CHIP} bg-warn-soft text-warn-ink`}>Cash lasts only {months(verdict.runwayMonths)}</span>
       line = verdict.dcaNotEnough
-        ? 'Bills and living alone are more than your salary, so cutting DCA won\'t close the gap.'
+        ? <>Stopping all DCA (<span className="tnum">{thb(verdict.cut)}</span>) still leaves <span className="font-semibold text-ink tnum">{thb(verdict.topUp - verdict.cut)}</span> a month to top up: bills and living are more than your salary.</>
         : <>Cut DCA by <span className="font-semibold text-ink tnum">{thb(verdict.cut)}</span> a month to stop topping up.</>
       break
     case 'short':
@@ -99,8 +99,8 @@ function Verdict({ verdict, cash }: { verdict: FlowVerdict; cash: number }) {
       tone = 'text-loss-ink'
       chip = <span className={`${CHIP} bg-loss-soft text-loss-ink`}>Cash can't cover {thb(verdict.topUp)}</span>
       line = verdict.dcaNotEnough
-        ? 'Even with no DCA, bills and living are more than salary and cash.'
-        : <>You have <span className="font-semibold text-ink tnum">{thb(Math.max(0, cash))}</span> in cash for a <span className="tnum">{thb(verdict.topUp)}</span> gap.</>
+        ? <>Stopping all DCA (<span className="tnum">{thb(verdict.cut)}</span>) still isn't enough: bills and living are more than your salary and cash.</>
+        : <>You have <span className="font-semibold text-ink tnum">{thb(Math.max(0, cash))}</span> in spendable cash for a <span className="tnum">{thb(verdict.topUp)}</span> gap.</>
       break
   }
   return (
