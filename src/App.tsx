@@ -22,7 +22,6 @@ const HoldingLogs = lazyPage(() => import('./pages/HoldingLogs').then(m => m.Hol
 const ActivitySummary = lazyPage(() => import('./pages/ActivitySummary').then(m => m.ActivitySummary))
 const Rebalance = lazyPage(() => import('./pages/Rebalance').then(m => m.Rebalance))
 const Dividends = lazyPage(() => import('./pages/Dividends').then(m => m.Dividends))
-const CashLiquidity = lazyPage(() => import('./pages/CashLiquidity').then(m => m.CashLiquidity))
 const SpendTransactions = lazyPage(() => import('./modules/spend/pages/SpendTransactions').then(m => m.SpendTransactions))
 const SpendRecurringPage = lazyPage(() => import('./modules/spend/pages/SpendRecurring').then(m => m.SpendRecurringPage))
 const SpendLoansPage = lazyPage(() => import('./modules/spend/pages/SpendLoans').then(m => m.SpendLoansPage))
@@ -33,6 +32,7 @@ import { Card } from './components/ui/Card'
 import { EmptyState } from './components/ui/EmptyState'
 import { Button } from './components/ui/Button'
 import { settingsPath } from './lib/settingsSections'
+import { SPEND_CASH } from './lib/routes'
 
 function PageLoadingFallback() {
   return <PageSkeleton />
@@ -83,6 +83,15 @@ function SyncProblemScreen({ kind, onRetry }: { kind: keyof typeof SYNC_PROBLEM_
 function LoansRedirect() {
   const { search } = useLocation()
   return <Navigate to={`/spend/loans${search}`} replace />
+}
+
+/** Cash & liquidity is a view of Spend → Accounts now; old links (and ?action=new) land there. */
+function CashRedirect() {
+  const { search } = useLocation()
+  const extra = new URLSearchParams(search)
+  extra.delete('view')
+  const rest = extra.toString()
+  return <Navigate to={rest ? `${SPEND_CASH}&${rest}` : SPEND_CASH} replace />
 }
 
 /** Spend's settings joined Settings; old links (and their #section) still land in the right section */
@@ -137,8 +146,9 @@ function AppContent() {
           <Route path="/dividends" element={<Dividends />} />
           {/* Debts moved to Spend → Loans & installments */}
           <Route path="/debts" element={<LoansRedirect />} />
-          <Route path="/cash" element={<CashLiquidity />} />
-          <Route path="/cashflow/cash" element={<CashLiquidity />} />
+          {/* Cash & liquidity moved to Spend → Accounts */}
+          <Route path="/cash" element={<CashRedirect />} />
+          <Route path="/cashflow/cash" element={<CashRedirect />} />
           <Route path="/cashflow/dca" element={<DcaPlanner />} />
           <Route path="/cashflow/dividends" element={<Dividends />} />
           <Route path="/cashflow/debts" element={<LoansRedirect />} />

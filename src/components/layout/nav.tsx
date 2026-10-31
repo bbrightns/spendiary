@@ -9,7 +9,6 @@ import {
   ScaleIcon,
   DividendIcon,
   DotsHorizontalIcon,
-  WalletIcon,
   PieChartIcon,
 } from '../icons'
 import { INVEST_HOME } from '../../lib/routes'
@@ -50,14 +49,8 @@ export interface MobileNavItem {
   isAction?: boolean
 }
 
+// Cash & liquidity moved to Spend → Accounts (one home for every wallet); Invest links there from its Cash card
 export const cashflowSubItems: NavSubItem[] = [
-  {
-    to: '/cash',
-    label: 'Cash & liquidity',
-    short: 'Cash',
-    description: 'Liquid reserves, emergency runway & yield booster',
-    icon: WalletIcon,
-  },
   {
     to: '/dca',
     label: 'DCA plans',
@@ -113,28 +106,29 @@ const portfolioItem: NavSubItem = {
   icon: PortfolioIcon,
 }
 
-// `exact` keeps Activity Logs from lighting up while its sibling Summary is open
+// `exact` keeps Trades from lighting up while its sibling P&L summary is open.
+// Named "Trades", not "History": Spend's Transactions is the money history
 const logsItem: NavSubItem = {
   to: '/logs',
-  label: 'Activity logs',
-  short: 'Logs',
-  description: 'History of every buy, sell, dividend & edit',
+  label: 'Trades',
+  short: 'Trades',
+  description: 'Every buy, sell, dividend & edit on your holdings',
   icon: ClockIcon,
   exact: true,
 }
 
 const summaryItem: NavSubItem = {
   to: '/logs/summary',
-  label: 'Summary',
-  short: 'Summary',
-  description: 'Monthly activity summary & spending reports',
+  label: 'P&L summary',
+  short: 'P&L',
+  description: 'Profit & loss from your trades by month or year',
   icon: PieChartIcon,
 }
 
 /** Desktop sidebar: flat, grouped by intent (frequent actions first, mirrors the mobile bottom nav). */
 export const desktopNavSections: NavSection[] = [
   { title: 'Overview', items: [dashboardItem, portfolioItem] },
-  { title: 'Plan', items: [cashflowSubItems[1], cashflowSubItems[2], cashflowSubItems[0]] },
+  { title: 'Plan', items: cashflowSubItems },
   { title: 'Analyze', items: strategySubItems },
   { title: 'Records', items: [logsItem, summaryItem] },
 ]
@@ -154,7 +148,7 @@ export const mobileNavItems: MobileNavItem[] = [
   { id: 'home', to: INVEST_HOME, label: 'Dashboard', short: 'Home', icon: DashboardIcon },
   { id: 'portfolio', to: '/portfolio', label: 'Portfolio', short: 'Port', icon: PortfolioIcon },
   { id: 'dca', to: '/dca', label: 'DCA plans', short: 'DCA', icon: DcaIcon },
-  { id: 'history', to: '/logs', label: 'Activity logs', short: 'History', icon: ClockIcon, exact: true },
+  { id: 'history', to: '/logs', label: 'Trades', short: 'Trades', icon: ClockIcon, exact: true },
   { id: 'more', label: 'More', short: 'More', icon: DotsHorizontalIcon, isAction: true },
 ]
 
@@ -163,12 +157,11 @@ export const mobileNavItems: MobileNavItem[] = [
  * worth a top-level slot but must stay reachable (each keeps its own badge).
  */
 // Loans & installments live in Spend now (/spend/loans)
-const [cashItem, , dividendItem] = cashflowSubItems
+const [, dividendItem] = cashflowSubItems
 const [rebalanceItem, retirementItem] = strategySubItems
 
 export const moreSheetItems: NavSubItem[] = [
   dividendItem,
-  cashItem,
   rebalanceItem,
   retirementItem,
   summaryItem,

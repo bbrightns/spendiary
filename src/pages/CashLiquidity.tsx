@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, Fragment } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
@@ -45,6 +44,7 @@ function AccountIcon({ color, bank, className }: { color?: string; bank?: string
   )
 }
 
+/** The Cash view of Spend → Accounts: every cash account with its liquidity bucket and interest. */
 export function CashLiquidity() {
   const { data, setCashAccounts, usdThb } = useData()
   const { showToast } = useToast()
@@ -66,7 +66,8 @@ export function CashLiquidity() {
 
   useEffect(() => {
     if (searchParams.get('action') === 'new') {
-      setAccountToEdit(null)
+      // The form only shows with an account to fill in (null left "Add cash account" doing nothing)
+      setAccountToEdit(newCashAccount())
       setIsEditModalOpen(true)
       const newParams = new URLSearchParams(searchParams)
       newParams.delete('action')
@@ -208,24 +209,22 @@ export function CashLiquidity() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* ── Page Header ── */}
-      <PageHeader
-        eyebrow="Plan"
-        title="Cash & liquidity"
-        subtitle="Your cash accounts, emergency savings, money ready to invest, and the interest you earn"
-        action={
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleAutoSort}
-            className="gap-1.5 text-xs sm:text-sm h-9 cursor-pointer"
-            title="Sort accounts by bank and balance"
-          >
-            <SparklesIcon className="h-3.5 w-3.5 text-ink-muted" strokeWidth={2} />
-            <span>Sort by bank</span>
-          </Button>
-        }
-      />
+      {/* Shown inside Spend → Accounts (the Cash view), so no page header of its own */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="min-w-0 flex-[1_1_16rem] text-sm text-ink-muted">
+          Emergency savings, money ready to invest, and the interest your accounts earn.
+        </p>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={handleAutoSort}
+          className="gap-1.5 text-xs sm:text-sm h-9 cursor-pointer"
+          title="Sort accounts by bank and balance"
+        >
+          <SparklesIcon className="h-3.5 w-3.5 text-ink-muted" strokeWidth={2} />
+          <span>Sort by bank</span>
+        </Button>
+      </div>
 
       {/* ── Summary: one total, how it splits (each half filters the list), and what it earns ── */}
       <Card className="animate-rise">
