@@ -6,6 +6,7 @@ import type { CashAccount, CashAccountCategory, CashPayoutSchedule } from '../..
 import { CASH_CATEGORIES, getCashCategory, inferCashCategory } from '../../lib/calc'
 import { ListIcon } from '../icons'
 import { SwitchVisual } from '../ui/SwitchVisual'
+import { ColorPicker } from '../ui/ColorPicker'
 
 const THAI_MONTHS_SHORT = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -57,6 +58,7 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
   const [name, setName] = useState(initialAccount.name)
   const [balance, setBalance] = useState(initialAccount.balance ? String(initialAccount.balance) : '')
   const [currency, setCurrency] = useState<'THB' | 'USD'>(initialAccount.currency ?? 'THB')
+  const [color, setColor] = useState<string | undefined>(initialAccount.color)
   const [category, setCategory] = useState<CashAccountCategory>(initialAccount.category ? getCashCategory(initialAccount) : 'spending')
   const [interestRate, setInterestRate] = useState(initialAccount.interestRate ? String(initialAccount.interestRate) : '')
   const [maxEligibleBalance, setMaxEligibleBalance] = useState(
@@ -95,7 +97,10 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
     const capNum = capClean !== '' ? Number(capClean) : undefined
 
     onSave({
+      // Fields this form doesn't show (bank preset, …) carry over instead of being dropped
+      ...initialAccount,
       id: initialAccount.id,
+      color,
       name: name.trim(),
       balance: balNum,
       currency,
@@ -216,6 +221,12 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
               )
             })}
           </div>
+        </div>
+
+        {/* Color: tints the top of the wallet tile, so the right account is quick to find */}
+        <div>
+          <span className={labelCls}>Color</span>
+          <ColorPicker value={color} onChange={setColor} allowNone />
         </div>
 
         {/* Interest: off by default, details only when switched on */}

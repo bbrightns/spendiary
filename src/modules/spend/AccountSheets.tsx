@@ -11,7 +11,8 @@ import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb } from '../../lib/format'
 import type { CashAccount, SpendCard } from '../../lib/types'
 import { accountTotals, cardCycle, unbilledOpening } from './logic'
-import { CARD_COLORS, CARD_PALETTE, cardFace, inkOn } from './cardColor'
+import { CARD_COLORS, cardFace, inkOn } from './cardColor'
+import { ColorPicker } from '../../components/ui/ColorPicker'
 import { useSpend, type PayMethod } from './useSpend'
 import { openQuickAdd } from './QuickAddSheet'
 import { EditAccountModal } from '../../components/forms/EditCashAccountModal'
@@ -64,13 +65,6 @@ const digits = (v: string) => v.replace(/[^\d.,]/g, '')
 const shortDay = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 const num = (v: string) => Number(v.replace(/,/g, ''))
 
-const RAINBOW = 'conic-gradient(#ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #8b5cf6, #ec4899, #ef4444)'
-/** "1d4ed8" or "14d" (no #) → "#1d4ed8"; anything else → undefined */
-function parseHex(v: string): string | undefined {
-  if (/^[0-9a-f]{6}$/i.test(v)) return `#${v.toLowerCase()}`
-  if (/^[0-9a-f]{3}$/i.test(v)) return `#${[...v.toLowerCase()].map((c) => c + c).join('')}`
-}
-
 interface CardSheetProps {
   open: boolean
   /** Card to edit; omit to add a new one */
@@ -92,13 +86,9 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
   // Main card whose limit this one shares ('' = its own limit)
   const [shareWith, setShareWith] = useState('')
   const [inNetWorth, setInNetWorth] = useState(true)
-  // What's typed in the hex field while editing (null = show the current color)
-  const [hexDraft, setHexDraft] = useState<string | null>(null)
-  const customColor = !CARD_COLORS.includes(form.color)
   const [lastOpen, setLastOpen] = useState(false)
   if (open !== lastOpen) {
     setLastOpen(open)
-    if (open) setHexDraft(null)
     if (open) setInNetWorth(!card?.excludeFromNetWorth)
     if (open) setShareWith(card?.sharedLimitWith ?? '')
     if (open)
@@ -300,52 +290,7 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
               <span className="min-w-0 flex-1 truncate text-sm font-bold">{form.name.trim() || 'Card name'}</span>
               <span className={`shrink-0 text-xs tnum ${inkOn(form.color).soft}`}>•••• {form.last4 || '0000'}</span>
             </div>
-            <div className="space-y-2.5">
-              {CARD_PALETTE.map((group) => (
-                <div key={group.name} role="group" aria-label={group.name} className="grid w-fit grid-cols-8 gap-2">
-                  {group.colors.map((c) => (
-                    <button
-                      key={c.hex}
-                      type="button"
-                      title={c.name}
-                      aria-label={c.name}
-                      aria-pressed={form.color === c.hex}
-                      onClick={() => set('color')(c.hex)}
-                      className={`h-8 w-8 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/20 transition-transform cursor-pointer ${
-                        form.color === c.hex ? 'scale-110 ring-2 ring-brand ring-offset-2 ring-offset-surface' : 'hover:scale-105'
-                      }`}
-                      style={{ background: c.hex }}
-                    />
-                  ))}
-                </div>
-              ))}
-              {/* Any other color: type a hex code; it applies once it's a full #RGB or #RRGGBB */}
-              <div className="flex items-center gap-2.5">
-                <span
-                  aria-hidden
-                  className={`h-8 w-8 shrink-0 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/20 ${customColor ? 'scale-110 ring-2 ring-brand ring-offset-2 ring-offset-surface' : ''}`}
-                  style={{ background: customColor ? form.color : RAINBOW }}
-                />
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ink-muted">#</span>
-                  <input
-                    value={hexDraft ?? (customColor ? form.color.slice(1).toUpperCase() : '')}
-                    onChange={(e) => {
-                      const v = e.target.value.replace(/[^0-9a-f]/gi, '').slice(0, 6)
-                      setHexDraft(v)
-                      const hex = parseHex(v)
-                      if (hex) set('color')(hex)
-                    }}
-                    onBlur={() => setHexDraft(null)}
-                    placeholder="Custom hex"
-                    aria-label="Custom color, hex code"
-                    autoComplete="off"
-                    spellCheck={false}
-                    className="h-9 w-36 rounded-xl border border-line-strong bg-surface-muted focus:bg-surface pl-7 pr-3 font-mono text-base uppercase text-ink outline-none transition-colors placeholder:font-sans placeholder:normal-case placeholder:text-sm placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/15"
-                  />
-                </div>
-              </div>
-            </div>
+            <ColorPicker value={form.color} onChange={(hex) => hex && set('color')(hex)} />
           </div>
 
           <button
