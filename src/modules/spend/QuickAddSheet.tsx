@@ -5,7 +5,7 @@ import { FormActions } from '../../components/forms/FormActions'
 import { TransactionDateField } from '../../components/forms/TransactionDateField'
 import { useToast } from '../../store/ToastContext'
 import { useData } from '../../store/DataContext'
-import { localDateStr, thb, thbExact, thbSigned } from '../../lib/format'
+import { localDateStr, localTimeStr, thb, thbExact, thbSigned } from '../../lib/format'
 import type { SpendSettings, SpendTransaction, SpendTxnType } from '../../lib/types'
 import { categoriesFor, getCategory } from './categories'
 import { doneWord, isBigExpense, noteTitle, periodFor, walletOverdraw } from './logic'
@@ -56,10 +56,7 @@ const AMOUNT_COLOR: Record<SpendTxnType, string> = {
 const NO_WALLET = NOT_TRACKED
 
 /** Current local time as HH:mm */
-const nowTime = () => {
-  const d = new Date()
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-}
+const nowTime = () => localTimeStr()
 
 const shortDue = (iso: string) => {
   if (!iso) return ''

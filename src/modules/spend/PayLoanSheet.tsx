@@ -3,7 +3,7 @@ import { Modal } from '../../components/ui/Modal'
 import { Button } from '../../components/ui/Button'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
-import { localDateStr, thb } from '../../lib/format'
+import { localDateStr, localTimeStr, thb } from '../../lib/format'
 import { SwitchVisual } from '../../components/ui/SwitchVisual'
 import { loanPaymentAmount, paymentIsSpending } from './loans'
 import { loanPaidDetail } from './billPaid'
@@ -99,6 +99,7 @@ export function PayLoanSheet() {
             categoryId: spending ? 'bills' : undefined,
             accountId: outside ? undefined : fromId,
             date: localDateStr(),
+            time: localTimeStr(),
             note,
             liabilityId: loan.id,
           })

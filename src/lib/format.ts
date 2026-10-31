@@ -90,6 +90,11 @@ export function localDateStr(d = new Date()): string {
   return `${y}-${m}-${day}`
 }
 
+/** Local time of day as HH:mm (the `time` saved on a transaction). */
+export function localTimeStr(d = new Date()): string {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
 /**
  * The local calendar day (YYYY-MM-DD) of a stored date: a plain date stays as is, and a full
  * timestamp is read in the user's time zone. Slicing a UTC timestamp would give yesterday for

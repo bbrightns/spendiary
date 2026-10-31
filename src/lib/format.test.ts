@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { localDateStr, localDay, thbExact } from './format'
+import { localDateStr, localDay, localTimeStr, thbExact } from './format'
 import { isConfirmedForPeriod, isSkippedForPeriod } from './calc'
 import type { DcaPlan } from './types'
 
@@ -68,5 +68,12 @@ describe('thbExact', () => {
   it('leaves whole amounts without decimals', () => {
     expect(thbExact(8500)).toBe('฿\u202f8,500')
     expect(thbExact(120.001)).toBe('฿\u202f120')
+  })
+})
+
+describe('localTimeStr', () => {
+  it('pads hours and minutes to HH:mm in local time', () => {
+    expect(localTimeStr(new Date(2026, 9, 31, 9, 5))).toBe('09:05')
+    expect(localTimeStr(new Date(2026, 9, 31, 23, 59))).toBe('23:59')
   })
 })
