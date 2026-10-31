@@ -13,12 +13,15 @@ import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { useLivePrices } from '../hooks/useLivePrices'
 import { isValidPrice } from '../lib/priceCache'
-import { AlertIcon, CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, LightbulbIcon, PencilIcon, PlusIcon } from '../components/icons'
+import { AlertIcon, CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, PencilIcon, PlusIcon } from '../components/icons'
 import { AssetLogo } from '../components/ui/AssetLogo'
-import { fixedCostRecurring, inPeriod, perMonth, periodFor, periodLabel, totalsFor } from '../modules/spend/logic'
+import { fixedCostRecurring, inPeriod, perMonth, periodFor, periodLabel } from '../modules/spend/logic'
+import { flowVerdict, livingAverage, livingPace, livingSpend, monthlyFlow } from '../modules/spend/monthlyFlow'
+import { settingsPath } from '../lib/settingsSections'
+import { MonthlyFlowCard } from './dca/MonthlyFlowCard'
 import { useSpend } from '../modules/spend/useSpend'
 import {
-  ASSET_META, buyDateThisPeriod, dcaThisMonth, getHoldingDpsForMonth, isBuyDayOverdue, isBuyDayToday, isConfirmedForPeriod, isDividendReceivedThisMonth, isSkippedForPeriod,
+  ASSET_META, buyDateThisPeriod, totalCash, dcaThisMonth, getHoldingDpsForMonth, isBuyDayOverdue, isBuyDayToday, isConfirmedForPeriod, isDividendReceivedThisMonth, isSkippedForPeriod,
   hasRealPrice, nextBuyDate, shouldConfirmBuy, sortDcaPlans,
 } from '../lib/calc'
 import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
@@ -45,199 +48,38 @@ function ChevronIcon({ open }: { open: boolean }) {
   )
 }
 
-// ─── Budget Bar ──────────────────────────────────────────────────────────────
+// ─── Salary amount (Salary row of the monthly flow) ───────────────────────────
 
-interface BudgetSegment {
-  pct: number
-  amount: number
-  label: string
-  textColor: string
-  bg: string
-  barColor: string
-  isStriped?: boolean
-}
-
-function BudgetBar({ salary, fixed, savings }: { salary: number; fixed: number; savings: number }) {
-  if (salary <= 0) return null
-
-  const totalAllocated = fixed + savings
-  const isOverflow = totalAllocated > salary
-  const cashDrawdown = isOverflow ? totalAllocated - salary : 0
-
-  // Dual-Source Bar:
-  // If isOverflow: total bar scale = totalAllocated (100% of planned deployment)
-  // If not: total bar scale = salary
-  const barScale = isOverflow ? totalAllocated : salary
-  const salaryPct = Math.min(100, (salary / barScale) * 100)
-
-  // Breakdowns from salary
-  const fixedFromSalary = Math.min(fixed, salary)
-  const savingsFromSalary = Math.max(0, Math.min(savings, salary - fixedFromSalary))
-  const remainingSalary = Math.max(0, salary - fixedFromSalary - savingsFromSalary)
-
-  // Striped pattern for cash reserve injection (high contrast in both light & dark mode)
-  const cashBarColor =
-    'repeating-linear-gradient(-45deg, var(--color-brand) 0px, var(--color-brand) 6px, color-mix(in srgb, var(--color-brand) 35%, white) 6px, color-mix(in srgb, var(--color-brand) 35%, white) 12px)'
-
-  const segments: BudgetSegment[] = isOverflow
-    ? [
-        {
-          pct: (fixed / totalAllocated) * 100,
-          amount: fixed,
-          label: 'Fixed',
-          textColor: 'var(--color-loss)',
-          bg: 'var(--color-loss-soft)',
-          barColor: 'var(--color-loss)',
-        },
-        {
-          pct: (savingsFromSalary / totalAllocated) * 100,
-          amount: savingsFromSalary,
-          label: 'Savings (salary)',
-          textColor: 'var(--color-gain)',
-          bg: 'var(--color-gain-soft)',
-          barColor: 'var(--color-cash)',
-        },
-        {
-          pct: (cashDrawdown / totalAllocated) * 100,
-          amount: cashDrawdown,
-          label: 'Cash',
-          textColor: 'var(--color-brand-ink)',
-          bg: 'var(--color-brand-soft)',
-          barColor: cashBarColor,
-          isStriped: true,
-        },
-      ].filter((s) => s.pct > 0)
-    : [
-        {
-          pct: (fixed / salary) * 100,
-          amount: fixed,
-          label: 'Fixed',
-          textColor: 'var(--color-loss)',
-          bg: 'var(--color-loss-soft)',
-          barColor: 'var(--color-loss)',
-        },
-        {
-          pct: (savings / salary) * 100,
-          amount: savings,
-          label: 'Savings',
-          textColor: 'var(--color-gain)',
-          bg: 'var(--color-gain-soft)',
-          barColor: 'var(--color-cash)',
-        },
-        {
-          pct: (remainingSalary / salary) * 100,
-          amount: remainingSalary,
-          label: 'Free',
-          textColor: 'var(--color-ink-faint)',
-          bg: 'var(--color-surface-muted)',
-          barColor: 'var(--color-ink-faint)',
-        },
-      ].filter((s) => s.pct > 0)
-
-  return (
-    <div className="@container mt-4">
-      {/* Labels: a wrapping row when the card is narrow; once wide, each label spans its bar segment */}
-      <div className="mb-2 flex flex-wrap gap-1.5 @min-[26rem]:flex-nowrap @min-[26rem]:gap-0">
-        {segments.map((seg) => (
-          <div
-            key={seg.label}
-            style={{ '--seg-w': `${seg.pct}%` } as React.CSSProperties}
-            className="flex min-w-0 justify-center @min-[26rem]:w-[var(--seg-w)]"
-          >
-            <div
-              className="rounded-xl px-2 py-1.5 text-center min-h-[46px] flex flex-col justify-center max-w-full overflow-hidden"
-              style={{ background: seg.bg }}
-            >
-              <p className="text-xs font-semibold leading-none truncate" style={{ color: seg.textColor }}>
-                {seg.label}
-              </p>
-              <p className="mt-1 font-display text-sm font-extrabold tnum leading-none" style={{ color: seg.textColor }}>
-                {seg.isStriped ? `+${thb(seg.amount)}` : thb(seg.amount)}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Bar */}
-      <div className="flex h-4 overflow-hidden rounded-full bg-surface-muted gap-0.5" role="img" aria-label={`Budget allocation: ${segments.map(s => `${s.label} ${Math.round(s.pct)}%`).join(', ')}`}>
-        {segments.map((seg) => (
-          <div
-            key={seg.label}
-            className="h-full rounded-full transition-all duration-500"
-            style={{
-              width: `${seg.pct}%`,
-              background: seg.barColor,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Salary boundary bracket (Idea 1: Monthly Salary span) */}
-      {isOverflow && (
-        <div className="mt-2 text-xs text-ink-muted">
-          <div
-            style={{ width: `${salaryPct}%` }}
-            className="border-b border-l border-r border-line-strong rounded-b-md pt-1 pb-0.5 text-center transition-all duration-500"
-          >
-            <span className="block truncate px-1 font-semibold text-ink-soft">Monthly Salary ({thb(salary)})</span>
-          </div>
-        </div>
-      )}
-
-      {/* Explanatory summary note */}
-      {isOverflow && (
-        <div className="mt-3 rounded-xl bg-surface-muted px-3 py-2.5 text-xs text-ink-muted">
-          <div className="flex items-center gap-2">
-            <LightbulbIcon className="h-4 w-4 shrink-0 text-ink-muted" />
-            <span className="font-semibold text-ink">Total planned: {thb(totalAllocated)}</span>
-          </div>
-          <div className="ml-6 mt-1 flex flex-col gap-0.5">
-            <span>From salary: <span className="font-semibold text-gain-ink">{thb(savingsFromSalary)}</span></span>
-            <span>From cash reserve: <span className="font-semibold text-link">+{thb(cashDrawdown)}</span></span>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-
-// ─── Inline edit stat (salary) ────────────────────────────────────────────────
-
-function InlineEditStat({ label, value, editing, draft, inputRef, onOpen, onDraftChange, onCommit, onCancel, hint }: {
-  label: string; value: string; editing: boolean; draft: string
+function SalaryAmount({ value, editing, draft, inputRef, onOpen, onDraftChange, onCommit, onCancel }: {
+  value: string; editing: boolean; draft: string
   inputRef: React.RefObject<HTMLInputElement>
   onOpen: () => void; onDraftChange: (v: string) => void
-  onCommit: () => void; onCancel: () => void; hint?: string
+  onCommit: () => void; onCancel: () => void
 }) {
+  if (editing) {
+    return (
+      <span className="flex items-center gap-1">
+        <span className="text-sm font-semibold text-ink-muted">฿</span>
+        <input
+          ref={inputRef} type="number" min="0" value={draft}
+          aria-label="Monthly salary"
+          onChange={(e) => onDraftChange(e.target.value)}
+          onBlur={onCommit}
+          onKeyDown={(e) => { if (e.key === 'Enter') onCommit(); if (e.key === 'Escape') onCancel() }}
+          className="w-28 rounded-lg border border-brand bg-surface px-2 py-1 text-right text-base font-bold tnum text-ink outline-none focus:ring-2 focus:ring-brand/30"
+        />
+      </span>
+    )
+  }
   return (
-    <div>
-      <p className="text-xs font-medium text-ink-muted">{label}</p>
-      {editing ? (
-        <div className="mt-1 flex items-center gap-1.5">
-          <span className="text-sm font-semibold text-ink-muted">฿</span>
-          <input
-            ref={inputRef} type="number" min="0" value={draft}
-            aria-label={label}
-            onChange={(e) => onDraftChange(e.target.value)}
-            onBlur={onCommit}
-            onKeyDown={(e) => { if (e.key === 'Enter') onCommit(); if (e.key === 'Escape') onCancel() }}
-            className="w-36 rounded-lg border border-brand bg-surface px-2.5 py-1 text-base font-bold tnum text-ink outline-none focus:ring-2 focus:ring-brand/30"
-          />
-        </div>
-      ) : (
-        <button
-          onClick={onOpen}
-          aria-label={`Edit ${label}`}
-          className="group -mx-1 mt-1 flex items-center gap-1.5 rounded-lg px-1 py-1 transition-colors hover:bg-surface-muted min-h-[40px]"
-        >
-          <span className="font-display text-xl font-extrabold tnum text-ink leading-none">{value}</span>
-          <PencilIcon className="h-3.5 w-3.5 text-ink-muted opacity-0 transition-opacity group-hover:opacity-100" />
-        </button>
-      )}
-      {hint && !editing && <p className="mt-0.5 text-xs text-ink-faint">{hint}</p>}
-    </div>
+    <button
+      onClick={onOpen}
+      aria-label="Edit monthly salary"
+      className="group -my-1 -mr-1 flex min-h-[32px] items-center gap-1.5 rounded-lg px-1 transition-colors hover:bg-surface-muted cursor-pointer"
+    >
+      <PencilIcon className="h-3.5 w-3.5 text-ink-muted opacity-60 transition-opacity group-hover:opacity-100" />
+      <span className="font-display text-sm font-extrabold tnum text-ink">{value}</span>
+    </button>
   )
 }
 
@@ -361,10 +203,28 @@ export function DcaPlanner() {
   const salaryFromSpend = recurringSalary > 0
   const salary = salaryFromSpend ? recurringSalary : data.monthlyIncome
 
-  // This spending month from Spend: what actually came in and went out
+  // Living: day-to-day spending outside fixed bills, from what Spend actually logged over the last
+  // finished months. Spend's budget may or may not include bills, so it only stands in with no history
   const spendPeriod = periodFor(localDateStr(), spend.settings.cycle)
   const spendMonthTxns = spend.transactions.filter((t) => inPeriod(spendPeriod, t.date))
-  const spendMonth = totalsFor(spendMonthTxns)
+  const spendBudget = spend.settings.monthlyBudget ?? 0
+  const livingAvg = livingAverage(spend.transactions, spend.recurring, spend.settings.cycle)
+  const usualLiving = livingAvg.months > 0 ? livingAvg.average : spendBudget
+  // This month spending faster than usual raises what it needs; slower never lowers it (the month isn't over)
+  const livingSoFar = livingSpend(spendMonthTxns, spend.recurring)
+  const pace = livingPace(livingSoFar, spendPeriod)
+  const aheadOfUsual = pace !== null && usualLiving > 0 && pace > usualLiving * 1.05
+  const living = aheadOfUsual ? pace : usualLiving
+  const budgetLink = <Link to={settingsPath('monthly-budget')} className="font-semibold text-link hover:underline">{spendBudget > 0 ? `Budget ${thb(spendBudget)}` : 'Set a budget'}</Link>
+  const livingNote = aheadOfUsual ? (
+    <span className="text-warn-ink">On pace for this month, above your usual {thb(usualLiving)}</span>
+  ) : livingAvg.months > 0 ? (
+    <>Average of the last {livingAvg.months === 1 ? 'month' : `${livingAvg.months} months`} in Spend · {budgetLink}</>
+  ) : spendBudget > 0 ? (
+    <>Your Spend budget, until there is a month of history · {budgetLink}</>
+  ) : (
+    <>Log spending in Spend to see this · {budgetLink}</>
+  )
 
   // Effective plans considering in-progress draft adjustments
   const rawPlans = sortDcaPlans(data.dcaPlans)
@@ -380,10 +240,6 @@ export function DcaPlanner() {
   // Overall savings total (using draft DCA total when editing)
   const savingsTotal = isEditingPlansMode ? currentTotalDcaAmount : dcaMonth.total
 
-  // Available salary after fixed expenses
-  const availableSalary = Math.max(0, salary - fixedTotal)
-  // Required cash injection if planned DCA exceeds available salary
-  const requiredCashInjection = Math.max(0, savingsTotal - availableSalary)
 
   // Enter edit mode
   const startEditingPlans = () => {
@@ -428,6 +284,8 @@ export function DcaPlanner() {
   const totalPercentSum = currentTotalDcaAmount > 0
     ? plans.reduce((sum, p) => sum + (p.monthlyAmount / currentTotalDcaAmount) * 100, 0)
     : 0
+  // The plan list is already in buy order (sortDcaPlans), so each group is one run of rows
+  const hasGroups = new Set(plans.map(whenGroup)).size > 1
   const isPercentNot100 = plans.length > 0 && Math.abs(totalPercentSum - 100) > 0.5
 
   // Expected dividends for the current month
@@ -461,6 +319,9 @@ export function DcaPlanner() {
   const goldHolding = data.holdings?.find((h) => h.assetClass === 'gold' && isValidPrice(h.price) && hasRealPrice(h))
   const effectiveGoldThbPerGram = goldThbPerGram ?? goldHolding?.price ?? null
   const effectiveUsdThb = usdThb && usdThb > 0 ? usdThb : null
+  const cash = totalCash(data, effectiveUsdThb)
+  const flow = monthlyFlow({ salary, fixed: fixedTotal, living, invest: savingsTotal, cash })
+  const verdict = flowVerdict(flow, cash)
   const [copied, setCopied] = useState(false)
 
   const handleCopyMarkdown = async () => {
@@ -525,13 +386,20 @@ export function DcaPlanner() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column (5 cols): Salary Budget & Fixed Costs */}
         <div className="lg:col-span-5 xl:col-span-4 space-y-6">
-          {/* ── Income + Budget Bar ── */}
+          {/* ── Monthly flow: salary → bills → living → invest ── */}
           <div id="guide-dca-summary">
-            <Card className="animate-rise @container">
-              <div className="flex flex-col items-start gap-3 @min-[19rem]:flex-row @min-[19rem]:justify-between @min-[19rem]:gap-4">
-                <InlineEditStat
-                  label="Monthly salary"
-                  value={salary > 0 ? thb(salary) : '-'}
+            <MonthlyFlowCard
+              flow={flow}
+              verdict={verdict}
+              cash={cash}
+              livingNote={livingNote}
+              livingThisMonth={spendMonthTxns.length > 0 ? livingSoFar : null}
+              periodName={periodLabel(spendPeriod, spend.settings.cycle)}
+              salaryNote={salaryFromSpend ? 'Recurring Salary in Spend' : undefined}
+              onAddSalary={openSalaryEdit}
+              salaryAmount={
+                <SalaryAmount
+                  value={salary > 0 ? thb(salary) : '฿0'}
                   editing={editingSalary}
                   draft={salaryDraft}
                   inputRef={salaryRef}
@@ -539,49 +407,9 @@ export function DcaPlanner() {
                   onDraftChange={setSalaryDraft}
                   onCommit={commitSalary}
                   onCancel={() => setEditingSalary(false)}
-                  hint={salaryFromSpend ? 'From your recurring Salary in Spend' : salary <= 0 ? 'Tap to set your salary' : undefined}
                 />
-                {salary > 0 && fixedTotal + savingsTotal > salary && (
-                  <div className="@min-[19rem]:text-right">
-                    <p className="text-xs font-medium text-ink-muted">Total planned</p>
-                    {/* Same 40px row as the salary value so both numbers share a baseline */}
-                    <p className="mt-1 flex min-h-[40px] items-center font-display text-xl font-extrabold tnum text-ink leading-none @min-[19rem]:justify-end">
-                      {thb(fixedTotal + savingsTotal)}
-                    </p>
-                    <div className="flex flex-col items-start gap-0.5 @min-[19rem]:items-end">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-bold text-link">
-                        +{thb(requiredCashInjection)} from Cash
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {salary > 0 && <BudgetBar salary={salary} fixed={fixedTotal} savings={savingsTotal} />}
-              {spendMonthTxns.length > 0 && (
-                <Link
-                  to="/spend/analysis"
-                  className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-surface-muted/60 px-3 py-2.5 transition-colors hover:bg-surface-muted"
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate text-xs text-ink-muted">Spend · {periodLabel(spendPeriod, spend.settings.cycle)}</span>
-                    <span className={`block font-display text-base font-extrabold tnum ${spendMonth.net < 0 ? 'text-loss-ink' : 'text-ink'}`}>
-                      {spendMonth.net < 0 ? '−' : ''}
-                      {thb(Math.abs(spendMonth.net))} left
-                    </span>
-                    <span className="block truncate text-xs text-ink-muted tnum">
-                      In <span className="text-gain-ink">{thb(spendMonth.income)}</span> · out {thb(spendMonth.expense)}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-sm font-semibold text-brand-ink">Details →</span>
-                </Link>
-              )}
-              {salary <= 0 && (
-                <button onClick={openSalaryEdit} className="mt-4 text-sm font-semibold text-link hover:underline cursor-pointer">
-                  + Add monthly salary to see breakdown
-                </button>
-              )}
-            </Card>
+              }
+            />
           </div>
 
           {/* ── Fixed Costs ── */}
@@ -726,7 +554,9 @@ export function DcaPlanner() {
                     </div>
                   ) : (
                     <ul className="divide-y divide-line">
-                      {plans.map((p) => {
+                      {plans.map((p, i) => {
+                        const group = whenGroup(p)
+                        const showGroup = hasGroups && (i === 0 || whenGroup(plans[i - 1]) !== group)
                         const meta = ASSET_META[p.assetClass]
                         const confirmed = isConfirmedForPeriod(p)
                         const skipped = isSkippedForPeriod(p)
@@ -756,7 +586,11 @@ export function DcaPlanner() {
                           : 0
 
                         return (
-                          <li key={p.id}>
+                          <React.Fragment key={p.id}>
+                          {showGroup && (
+                            <li className="bg-surface-muted/50 px-5 pb-1.5 pt-3 text-xs font-semibold text-ink-muted">{group}</li>
+                          )}
+                          <li>
                             <div
                               role="button"
                               tabIndex={0}
@@ -857,6 +691,7 @@ export function DcaPlanner() {
                               </div>
                             </div>
                           </li>
+                          </React.Fragment>
                         )
                       })}
                     </ul>
@@ -1019,6 +854,11 @@ export function DcaPlanner() {
   }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function whenGroup(p: DcaPlan): string {
+  if (shouldConfirmBuy(p)) return 'Due now'
+  return daysUntil(localDateStr(nextBuyDate(p))) <= 7 ? 'Next 7 days' : 'Later'
+}
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',

@@ -114,10 +114,10 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
     steps: [
       {
         targetId: 'guide-dca-summary',
-        badge: 'Your budget',
-        title: 'Salary & budget',
+        badge: 'This month',
+        title: 'Top up or cut DCA',
         description:
-          'Your regular income and a bar showing how it is split, so you can plan how much to save and invest.',
+          'The answer first: how much to top up from cash this month, and whether DCA has to come down. Below it, salary flows into fixed bills, living costs from Spend and your DCA plans.',
         position: 'bottom',
       },
       {
