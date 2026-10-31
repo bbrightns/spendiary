@@ -5,6 +5,7 @@ import { PageHeader } from '../../../components/layout/PageHeader'
 import { AddButton } from '../../../components/ui/AddButton'
 import { Button } from '../../../components/ui/Button'
 import { EmptyState } from '../../../components/ui/EmptyState'
+import { TextLink } from '../../../components/ui/TextLink'
 import { Modal } from '../../../components/ui/Modal'
 import { PencilIcon, WalletIcon } from '../../../components/icons'
 import { getRandomGreeting, localDateStr, thb } from '../../../lib/format'
@@ -24,6 +25,9 @@ const STATUS: Record<DayStatus, { label: string; stroke: string; chip: string }>
   careful: { label: 'Careful', ...STATUS_TONE.careful },
   over: { label: 'Over today', ...STATUS_TONE.over },
 }
+
+/** Home shows the newest few of a day; the rest are one tap away in Transactions */
+const DAY_LIMIT = 5
 
 const parse = (s: string) => {
   const [y, m, d] = s.split('-').map(Number)
@@ -209,11 +213,18 @@ export function SpendOverview() {
             action={day === today ? <AddButton onClick={() => openQuickAdd()} label="Add transaction" /> : undefined}
           />
         ) : (
-          <div className="mt-1 divide-y divide-line">
-            {dayTxns.map((t) => (
-              <TxnRow key={t.id} txn={t} methods={methods} />
-            ))}
-          </div>
+          <>
+            <div className="mt-1 divide-y divide-line">
+              {dayTxns.slice(0, DAY_LIMIT).map((t) => (
+                <TxnRow key={t.id} txn={t} methods={methods} />
+              ))}
+            </div>
+            {dayTxns.length > DAY_LIMIT && (
+              <div className="mt-2 border-t border-line pt-3 text-center">
+                <TextLink to={`/spend/txns?from=${day}&to=${day}`}>See all {dayTxns.length} →</TextLink>
+              </div>
+            )}
+          </>
         )}
       </Card>
     </>
