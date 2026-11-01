@@ -161,6 +161,11 @@ export interface CashAccount {
   currency?: 'THB' | 'USD'
   /** Purpose / Liquidity bucket */
   category?: CashAccountCategory
+  /**
+   * Closed or no longer used: kept with its history and balance (still in net worth), but folded away on
+   * Spend → Accounts and left out of the pickers for new entries
+   */
+  archived?: boolean
   /** Bank / institution preset key */
   bankPreset?: string
   /** Optional custom color */
@@ -402,6 +407,10 @@ export interface SpendSettings {
   fixedCostsImported?: boolean
   /** Order of the cards on Spend's Home, by card id; unknown or missing ids fall back to the default order */
   homeOrder?: string[]
+  /** Order of the Credit cards and Wallets sections on Accounts ('cards', 'wallets'); cards first when unset */
+  accountsOrder?: string[]
+  /** Order of the cards on Analysis, by card id; unknown or missing ids fall back to the default order */
+  analysisOrder?: string[]
   /** Order of credit cards on Accounts and in pickers, by card id; cards not listed follow in their saved order */
   cardOrder?: string[]
   /** Order of wallets on Accounts and in pickers, by account id; wallets not listed follow in their saved order */

@@ -29,6 +29,8 @@ export interface PayMethod {
   /** Card only: credit left, counting cards sharing its limit and installment holds */
   available?: number
   locked?: boolean
+  /** Wallet only: archived, so pickers leave it out (unless it is the one already picked) */
+  archived?: boolean
 }
 
 function markOccurrence(list: SpendRecurring[], id: string, date: string, key: 'doneDates' | 'skippedDates'): SpendRecurring[] {
@@ -102,7 +104,7 @@ export function useSpend() {
         last4: c.last4,
         available: availableCredit(c, cards, data.liabilities ?? []).left,
       })),
-      ...wallets.map((w) => ({ id: w.id, kind: 'cash' as const, name: w.name, color: w.color, balance: w.balance, locked: w.category === 'locked' })),
+      ...wallets.map((w) => ({ id: w.id, kind: 'cash' as const, name: w.name, color: w.color, balance: w.balance, locked: w.category === 'locked', archived: w.archived })),
     ],
     [cards, wallets, data.liabilities],
   )
@@ -149,12 +151,14 @@ export function useSpend() {
   /**
    * After a wallet's balance was typed in (Edit wallet), record the difference so its statement
    * still adds up. The balance is already saved, so this only adds the entry and moves no money.
+   * Returns the entry's id (to undo it), or nothing when the balance didn't change.
    */
-  function recordBalanceEdit(before: CashAccount | undefined, after: CashAccount) {
+  function recordBalanceEdit(before: CashAccount | undefined, after: CashAccount): string | undefined {
     const input = balanceAdjustment(before, after)
-    if (!input) return
+    if (!input) return undefined
     const txn: SpendTransaction = { ...input, id: newId(), createdAt: new Date().toISOString() }
     setData((prev) => ({ ...prev, spendTransactions: [...(prev.spendTransactions ?? []), txn] }))
+    return txn.id
   }
 
   /** Log many at once (e.g. a statement import) in one update. */
@@ -438,6 +442,26 @@ export function useSpend() {
     })
   }
 
+  /**
+   * Archive a wallet or bring it back. Archiving also drops it as the default and from favorites, so Quick add
+   * never picks it for you.
+   */
+  function setWalletArchived(id: string, archived: boolean) {
+    setData((prev) => ({
+      ...prev,
+      cashAccounts: (prev.cashAccounts ?? []).map((a) => (a.id === id ? { ...a, archived: archived || undefined } : a)),
+      ...(archived
+        ? {
+            spendSettings: {
+              ...prev.spendSettings,
+              defaultAccountId: prev.spendSettings?.defaultAccountId === id ? undefined : prev.spendSettings?.defaultAccountId,
+              favoriteAccountIds: prev.spendSettings?.favoriteAccountIds?.filter((x) => x !== id),
+            },
+          }
+        : {}),
+    }))
+  }
+
   return {
     transactions,
     wallets,
@@ -457,6 +481,7 @@ export function useSpend() {
     addTransaction,
     addTransactions,
     recordBalanceEdit,
+    setWalletArchived,
     updateTransaction,
     removeTransaction,
     patchTransactions,

@@ -460,6 +460,124 @@ export function totalsFor(txns: SpendTransaction[]): MonthTotals {
   return { income, expense, net: income - expense, byCategory }
 }
 
+/**
+ * Spend per subcategory across every category, biggest first, at most `limit`. The same label under two
+ * categories ("Other" under Food and Shopping) stays two rows. Money paid back comes off its subcategory.
+ */
+export function topSubcategories(txns: SpendTransaction[], limit = 5): { categoryId: string; subcategory: string; amount: number; count: number }[] {
+  const rows = new Map<string, { categoryId: string; subcategory: string; amount: number; count: number }>()
+  for (const t of txns) {
+    if (!spendOf(t) || !t.subcategory) continue
+    const categoryId = t.categoryId ?? 'other'
+    const key = `${categoryId}\u0000${t.subcategory}`
+    const row = rows.get(key) ?? { categoryId, subcategory: t.subcategory, amount: 0, count: 0 }
+    row.amount += spendOf(t)
+    if (t.type === 'expense') row.count += 1
+    rows.set(key, row)
+  }
+  return [...rows.values()]
+    .filter((r) => r.amount > 0)
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, limit)
+}
+
+export interface Habit {
+  categoryId: string
+  subcategory: string
+  count: number
+  /** Average price of one buy */
+  avg: number
+  /** Buys and money per 30 days at the pace in view */
+  perMonth: number
+  /** Money over a year at this pace; only once two weeks are in view, before that it guesses too much */
+  perYear?: number
+}
+
+/**
+ * Things bought again and again: subcategories with 3 or more expenses in `txns`, most frequent first
+ * (then the most spent). `days` is how many days `txns` covers so far, for the pace.
+ */
+export function habits(txns: SpendTransaction[], days: number, limit = 5): Habit[] {
+  const rows = new Map<string, { categoryId: string; subcategory: string; count: number; amount: number }>()
+  for (const t of txns) {
+    if (t.type !== 'expense' || !t.subcategory) continue
+    const categoryId = t.categoryId ?? 'other'
+    const key = `${categoryId}\u0000${t.subcategory}`
+    const row = rows.get(key) ?? { categoryId, subcategory: t.subcategory, count: 0, amount: 0 }
+    row.count += 1
+    row.amount += t.amount
+    rows.set(key, row)
+  }
+  const span = Math.max(1, days)
+  return [...rows.values()]
+    .filter((r) => r.count >= 3)
+    .sort((a, b) => b.count - a.count || b.amount - a.amount)
+    .slice(0, limit)
+    .map((r) => ({
+      categoryId: r.categoryId,
+      subcategory: r.subcategory,
+      count: r.count,
+      avg: roundMoney(r.amount / r.count),
+      perMonth: Math.round(((r.count * 30) / span) * 10) / 10,
+      ...(span >= 14 ? { perYear: Math.round((r.amount / span) * 365) } : {}),
+    }))
+}
+
+export type Insight =
+  /** Where spending lands by the period's end at today's pace; with the month's budget when there is one */
+  | { kind: 'pace'; projected: number; budget?: number }
+  /** The category that moved most against the same point last period (+ more, − less) */
+  | { kind: 'mover'; categoryId: string; diff: number }
+  /** The subcategory bought most often */
+  | { kind: 'habit'; label: string; count: number; amount: number }
+
+/**
+ * Up to three plain-language findings for the top of Analysis, most useful first: the pace (only while
+ * the period is running and has a few days behind it), the category that moved most, the habit.
+ * Each is left out when it wouldn't say much: a move under ฿500, a habit of fewer than 3 buys.
+ */
+export function analysisInsights(o: {
+  inRange: SpendTransaction[]
+  /** The previous period up to the same point; none for a year */
+  prevSoFar?: SpendTransaction[]
+  elapsedDays: number
+  totalDays: number
+  current: boolean
+  budget?: number
+}): Insight[] {
+  const out: Insight[] = []
+  const spent = o.inRange.reduce((s, t) => s + spendOf(t), 0)
+  if (o.current && spent > 0 && o.elapsedDays >= Math.min(5, Math.ceil(o.totalDays / 2)) && o.elapsedDays < o.totalDays) {
+    out.push({ kind: 'pace', projected: Math.round((spent / o.elapsedDays) * o.totalDays), ...(o.budget ? { budget: o.budget } : {}) })
+  }
+  if (o.prevSoFar) {
+    const byCat = (txns: SpendTransaction[]) => {
+      const m = new Map<string, number>()
+      for (const t of txns) if (spendOf(t)) m.set(t.categoryId ?? 'other', (m.get(t.categoryId ?? 'other') ?? 0) + spendOf(t))
+      return m
+    }
+    const cur = byCat(o.inRange)
+    const prev = byCat(o.prevSoFar)
+    let best: { categoryId: string; diff: number } | undefined
+    for (const id of new Set([...cur.keys(), ...prev.keys()])) {
+      const diff = roundMoney((cur.get(id) ?? 0) - (prev.get(id) ?? 0))
+      if (!best || Math.abs(diff) > Math.abs(best.diff)) best = { categoryId: id, diff }
+    }
+    if (best && Math.abs(best.diff) >= 500) out.push({ kind: 'mover', ...best })
+  }
+  const habits = new Map<string, { count: number; amount: number }>()
+  for (const t of o.inRange) {
+    if (t.type !== 'expense' || !t.subcategory) continue
+    const h = habits.get(t.subcategory) ?? { count: 0, amount: 0 }
+    h.count += 1
+    h.amount += t.amount
+    habits.set(t.subcategory, h)
+  }
+  const habit = [...habits.entries()].sort((a, b) => b[1].count - a[1].count || b[1].amount - a[1].amount)[0]
+  if (habit && habit[1].count >= 3) out.push({ kind: 'habit', label: habit[0], count: habit[1].count, amount: roundMoney(habit[1].amount) })
+  return out
+}
+
 /** Spend per subcategory label inside one category, biggest first; untagged expenses are left out. */
 export function totalsBySubcategory(txns: SpendTransaction[], categoryId: string): { subcategory: string; amount: number }[] {
   const sub = new Map<string, number>()

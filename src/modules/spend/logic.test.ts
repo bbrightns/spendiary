@@ -41,6 +41,9 @@ import {
   shiftPeriod,
   sortTxns,
   totalsBySubcategory,
+  topSubcategories,
+  analysisInsights,
+  habits,
   categoryBreakdown,
   renameInList,
   renameSubOn,
@@ -77,6 +80,72 @@ describe('sortTxns', () => {
       txn({ id: 'e', date: '2026-10-13', createdAt: '2026-10-13T01:00:00Z' }),
     ]
     expect(sortTxns(rows).map((t) => t.id)).toEqual(['c', 'b', 'd', 'e', 'a'])
+  })
+})
+
+describe('habits', () => {
+  const tea = (amount = 65) => txn({ categoryId: 'drinks', subcategory: 'Milk tea', amount })
+  it('counts repeat buys with their average and yearly pace', () => {
+    const rows = habits([tea(60), tea(70), tea(65), tea(65), txn({ categoryId: 'food', subcategory: 'Sushi', amount: 500 }), txn({ categoryId: 'food', subcategory: 'Sushi', amount: 500 })], 30)
+    // Sushi twice isn't a habit yet
+    expect(rows).toEqual([{ categoryId: 'drinks', subcategory: 'Milk tea', count: 4, avg: 65, perMonth: 4, perYear: 3163 }])
+  })
+
+  it('skips the yearly guess with under two weeks in view', () => {
+    expect(habits([tea(), tea(), tea()], 7)[0]).toMatchObject({ count: 3, perMonth: 12.9 })
+    expect(habits([tea(), tea(), tea()], 7)[0].perYear).toBeUndefined()
+  })
+})
+
+describe('analysisInsights', () => {
+  const base = { elapsedDays: 10, totalDays: 30, current: true }
+  it('projects the pace, names the biggest mover and the habit', () => {
+    const out = analysisInsights({
+      ...base,
+      budget: 25_000,
+      inRange: [
+        txn({ categoryId: 'food', amount: 2000 }),
+        ...[1, 2, 3].map(() => txn({ categoryId: 'drinks', subcategory: 'Milk tea', amount: 65 })),
+      ],
+      prevSoFar: [txn({ categoryId: 'food', amount: 500 }), txn({ categoryId: 'drinks', amount: 100 })],
+    })
+    expect(out).toEqual([
+      { kind: 'pace', projected: 6585, budget: 25_000 },
+      { kind: 'mover', categoryId: 'food', diff: 1500 },
+      { kind: 'habit', label: 'Milk tea', count: 3, amount: 195 },
+    ])
+  })
+
+  it('stays quiet when there is little to say', () => {
+    const inRange = [txn({ categoryId: 'food', subcategory: 'Snack', amount: 300 }), txn({ categoryId: 'food', subcategory: 'Snack', amount: 300 })]
+    // Two days in, a small move, a habit of two
+    expect(analysisInsights({ ...base, elapsedDays: 2, inRange, prevSoFar: [txn({ categoryId: 'food', amount: 200 })] })).toEqual([])
+    // A finished period has no pace
+    expect(analysisInsights({ ...base, current: false, inRange }).some((i) => i.kind === 'pace')).toBe(false)
+  })
+
+  it('reports a category spent less as a negative move', () => {
+    const out = analysisInsights({ ...base, current: false, inRange: [txn({ categoryId: 'food', amount: 100 })], prevSoFar: [txn({ categoryId: 'shopping', amount: 2000 })] })
+    expect(out).toEqual([{ kind: 'mover', categoryId: 'shopping', diff: -2000 }])
+  })
+})
+
+describe('topSubcategories', () => {
+  it('ranks subcategories across categories, keeping same labels apart', () => {
+    const rows = topSubcategories([
+      txn({ categoryId: 'food', subcategory: 'Snack', amount: 60 }),
+      txn({ categoryId: 'food', subcategory: 'Snack', amount: 40 }),
+      txn({ categoryId: 'food', subcategory: 'Sushi', amount: 500 }),
+      txn({ categoryId: 'shopping', subcategory: 'Snack', amount: 30 }),
+      txn({ categoryId: 'food', amount: 999 }),
+      txn({ type: 'income', categoryId: 'food', subcategory: 'Sushi', amount: 200, paidBack: true }),
+    ])
+    expect(rows).toEqual([
+      { categoryId: 'food', subcategory: 'Sushi', amount: 300, count: 1 },
+      { categoryId: 'food', subcategory: 'Snack', amount: 100, count: 2 },
+      { categoryId: 'shopping', subcategory: 'Snack', amount: 30, count: 1 },
+    ])
+    expect(topSubcategories([txn({ categoryId: 'food', subcategory: 'A', amount: 1 }), txn({ categoryId: 'food', subcategory: 'B', amount: 2 })], 1)).toHaveLength(1)
   })
 })
 

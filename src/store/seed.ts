@@ -1117,6 +1117,28 @@ const spendRows: T[] = [
   [40, 'expense', 65, 'drinks', 'c-scb', '#nosetea'],
 ]
 
+/** Subcategories for the demo rows, by note; rows with only a #tag for a note show the subcategory as their title */
+const SUB_BY_NOTE: Record<string, string> = {
+  'Brown sugar milk tea #nosetea': 'Milk tea',
+  'Milk tea #nosetea': 'Milk tea',
+  '#nosetea': 'Milk tea',
+  'BTS #commute': 'BTS',
+  'Grab to airport': 'Grab',
+  'ข้าวมันไก่ #ร้านโปรด': 'Street food',
+  'ก๋วยเตี๋ยวเรือ #ร้านโปรด': 'Street food',
+  '#ร้านโปรด': 'Street food',
+  'Groceries #tops': 'Groceries',
+  'Team lunch #office': 'Lunch',
+  'Uniqlo shirts #clothes': 'Clothes',
+  'Running shoes #fitness': 'Sports',
+}
+const SEED_SUBCATEGORIES: Record<string, string[]> = {
+  food: ['Street food', 'Groceries', 'Lunch'],
+  drinks: ['Milk tea', 'Coffee'],
+  transport: ['BTS', 'Grab'],
+  shopping: ['Clothes', 'Sports'],
+}
+
 let seq = 0
 const mk = (date: string, [, type, amount, categoryId, accountId, note, toAccountId]: T): SpendTransaction => {
   seq += 1
@@ -1129,6 +1151,7 @@ const mk = (date: string, [, type, amount, categoryId, accountId, note, toAccoun
     toAccountId,
     date,
     note,
+    subcategory: note ? SUB_BY_NOTE[note] : undefined,
     tags: parseTags(note),
     createdAt: new Date(`${date}T12:00:00`).toISOString(),
   }
@@ -1232,6 +1255,7 @@ export const seedData: SpendiaryData = {
   spendRecurring,
   spendSettings: {
     cycle: payCycle,
+    subcategories: SEED_SUBCATEGORIES,
     monthlyBudget: 25_000,
     defaultAccountId: 'card-ktc',
     favoriteAccountIds: ['card-ktc', 'c-scb'],

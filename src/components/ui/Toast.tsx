@@ -78,7 +78,8 @@ export function ToastContainer() {
       {toasts.length > 0 && (
         <div
           aria-label="Notifications"
-          className="pointer-events-none fixed bottom-20 left-4 right-4 z-[60] flex flex-col gap-2.5 sm:bottom-6 sm:left-auto sm:right-6 sm:w-96"
+          // Below lg it clears the bottom bar and Spend's raised + button (and the phone's home indicator)
+          className="pointer-events-none fixed bottom-[calc(6.5rem+env(safe-area-inset-bottom,0px))] left-4 right-4 z-[60] flex flex-col gap-2.5 sm:left-auto sm:right-6 sm:w-96 lg:bottom-6"
         >
           {toasts.map((toast) => (
             <ToastElement

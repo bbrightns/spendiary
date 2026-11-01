@@ -13,6 +13,7 @@ import { ModeSwitcher } from '../modules/spend/ModeSwitcher'
 import { useSpendSide } from '../hooks/side'
 import { SIDE_ACTIVE } from '../components/tones'
 import { QuickAddSheet } from '../modules/spend/QuickAddSheet'
+import { AdjustmentSheet } from '../modules/spend/AdjustmentSheet'
 import { QuickAddLink } from '../modules/spend/QuickAddLink'
 import { ImportSheet } from '../modules/spend/ImportSheet'
 import { PayBillSheet } from '../modules/spend/PayBillSheet'
@@ -105,6 +106,7 @@ export function Layout({ children }: { children: ReactNode }) {
       {canEdit ? (
         <>
           <QuickAddSheet />
+          <AdjustmentSheet />
           <QuickAddLink />
           <ImportSheet />
           <PayBillSheet />

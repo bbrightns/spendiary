@@ -6,6 +6,7 @@ import { TransferIcon, getCategory } from './categories'
 import { isInvested } from './invest'
 import { noteTitle, txnFlow } from './logic'
 import { openQuickAdd } from './QuickAddSheet'
+import { openAdjustment } from './AdjustmentSheet'
 import { TONES } from './tones'
 import { useData } from '../../store/DataContext'
 import { accountLabel } from './accountRemoval'
@@ -35,7 +36,9 @@ export function TxnRow({ txn, methods, onTagClick, account }: Props) {
   // A deleted wallet or card keeps its name on past rows ("KBank (deleted)")
   const walletName = (id?: string) => accountLabel(id, methods.find((m) => m.id === id)?.name, removed)
   const from = walletName(txn.accountId)
-  const title = noteTitle(txn.note) || (txn.type === 'transfer' ? 'Transfer' : txn.paidBack ? 'Paid back' : cat?.label ?? 'Other')
+  // No note: the subcategory names it ("Snack"), then the category
+  const noteName = noteTitle(txn.note)
+  const title = noteName || (txn.type !== 'transfer' && txn.subcategory) || (txn.type === 'transfer' ? 'Transfer' : txn.paidBack ? 'Paid back' : cat?.label ?? 'Other')
   // Invest rows say where the money came from, or that no account was picked
   const paidFrom = from ? `from ${from}` : 'no account set'
   const meta = invested
@@ -49,7 +52,8 @@ export function TxnRow({ txn, methods, onTagClick, account }: Props) {
       ? // A loan payment goes to the loan, not to another wallet
         `${from ?? '—'} → ${txn.liabilityId && !txn.toAccountId ? 'loan payment' : walletName(txn.toAccountId) ?? '—'}${txn.alreadyInBalance ? ' · already in balance' : ''}`
       : [
-          cat?.label && txn.subcategory ? `${cat.label} › ${txn.subcategory}` : cat?.label,
+          // The title already says the subcategory when there was no note
+          cat?.label && txn.subcategory && noteName ? `${cat.label} › ${txn.subcategory}` : cat?.label,
           // Early in the line, so it's never the part a long wallet name cuts off
           txn.outsideBudget && 'outside budget',
           txn.paidBack && 'paid back',
@@ -71,17 +75,22 @@ export function TxnRow({ txn, methods, onTagClick, account }: Props) {
     flow !== undefined ? (flow > 0 ? 'text-gain-ink' : 'text-ink') : txn.type === 'income' ? 'text-gain-ink' : txn.type === 'transfer' ? 'text-ink-muted' : 'text-ink'
   // Rows from Invest are edited where they came from: its history
   const sourcePage = txn.source ? '/logs' : null
-  // The quick-add form has no one-sided transfer; typing the balance again is how to change one
-  const readOnly = !sourcePage && !!txn.adjustment
+  // The quick-add form has no one-sided transfer: a typed-in balance opens its undo instead
+  const adjustment = !sourcePage && !!txn.adjustment
 
   return (
     <div className="group py-3">
       <button
         type="button"
-        onClick={() => (sourcePage ? navigate(sourcePage) : readOnly ? undefined : openQuickAdd({ editId: txn.id }))}
-        disabled={readOnly}
-        className="flex w-full min-w-0 items-center gap-3 text-left cursor-pointer disabled:cursor-default rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-        aria-label={sourcePage ? `${title}, ${sign}${thb(txn.amount, true)}, open in Invest` : readOnly ? `${title}, ${sign}${thb(txn.amount, true)}` : `Edit ${title}, ${sign}${thb(txn.amount, true)}`}
+        onClick={() => (sourcePage ? navigate(sourcePage) : adjustment ? openAdjustment(txn.id) : openQuickAdd({ editId: txn.id }))}
+        className="flex w-full min-w-0 items-center gap-3 text-left cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        aria-label={
+          sourcePage
+            ? `${title}, ${sign}${thb(txn.amount, true)}, open in Invest`
+            : adjustment
+              ? `${title}, ${sign}${thb(txn.amount, true)}, undo`
+              : `Edit ${title}, ${sign}${thb(txn.amount, true)}`
+        }
       >
         <span className="relative shrink-0">
           <span
