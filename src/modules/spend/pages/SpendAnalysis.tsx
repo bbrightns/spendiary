@@ -6,7 +6,8 @@ import { SegmentedControl } from '../../../components/ui/SegmentedControl'
 import { localDateStr, thb, thbCompact } from '../../../lib/format'
 import type { SpendTransaction } from '../../../lib/types'
 import { getCategory } from '../categories'
-import { budgetState, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, categoryBreakdown, spendOf, topSubcategories, totalsFor, weekOf, type Period } from '../logic'
+import { SparkleIcon } from '../../../components/icons'
+import { budgetState, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, categoryBreakdown, spendOf, topSubcategories, totalsFor, weekOf, analysisInsights, type Insight, type Period } from '../logic'
 import { MonthStepper } from '../MonthStepper'
 import { ArrangeButton, ReorderSheet } from '../ReorderSheet'
 import { cardOrder, isDefaultOrder, moveInOrder } from '../../../lib/cardOrder'
@@ -151,6 +152,44 @@ function Bars({ data, unit }: { data: Bucket[]; unit: string }) {
   )
 }
 
+/** The top findings in a sentence each, under the page title: what to notice before reading the cards. */
+function InsightLines({ insights, rangeName, current }: { insights: Insight[]; rangeName: string; current: boolean }) {
+  const when = `${current ? 'this' : 'that'} ${rangeName}`
+  const b = (s: string, tone = 'text-ink') => <b className={`font-semibold tnum ${tone}`}>{s}</b>
+  return (
+    <ul className="space-y-0.5">
+      {insights.map((i) => (
+        <li key={i.kind} className="flex items-start gap-1.5">
+          <SparkleIcon className="mt-[3px] h-3.5 w-3.5 shrink-0 text-ink-faint" />
+          <span>
+            {i.kind === 'pace' ? (
+              <>
+                On pace for {b(thb(i.projected))} {when}
+                {i.budget ? (
+                  i.projected > i.budget ? (
+                    <> · {b(`${thb(i.projected - i.budget)} over`, 'text-loss-ink')} your budget</>
+                  ) : (
+                    <> · within your {thb(i.budget)} budget</>
+                  )
+                ) : null}
+              </>
+            ) : i.kind === 'mover' ? (
+              <>
+                {b(getCategory(i.categoryId)?.label ?? 'Other')} {b(`${thb(Math.abs(i.diff))} ${i.diff > 0 ? 'more' : 'less'}`, i.diff > 0 ? SPENT_TONE.text : 'text-gain-ink')} than last{' '}
+                {rangeName} at this point
+              </>
+            ) : (
+              <>
+                {b(i.label)} {i.count}× {when} · {thb(i.amount)}
+              </>
+            )}
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 export function SpendAnalysis() {
   const { transactions, settings, updateSettings } = useSpend()
   const [arrangeOpen, setArrangeOpen] = useState(false)
@@ -170,16 +209,33 @@ export function SpendAnalysis() {
 
   // Same point in the previous period: e.g. the first 12 days of last month vs the first 12 of this one
   const isCurrent = inPeriod(period, today)
-  const compare = useMemo(() => {
-    if (range === 'year') return null
+  const prevSoFar = useMemo(() => {
+    if (range === 'year') return undefined
     const prev = range === 'week' ? weekOf(shiftDate(period.start, -1)) : shiftPeriod(period, -1, settings.cycle)
     const elapsed = isCurrent ? daysBetween(period.start, today) : daysBetween(period.start, period.end)
     const prevUpTo = { start: prev.start, end: shiftDate(prev.start, Math.min(elapsed, daysBetween(prev.start, prev.end))) }
-    const spentPrev = transactions.filter((t) => inPeriod(prevUpTo, t.date)).reduce((s, t) => s + spendOf(t), 0)
+    return transactions.filter((t) => inPeriod(prevUpTo, t.date))
+  }, [range, period, isCurrent, today, transactions, settings.cycle])
+  const compare = useMemo(() => {
+    if (!prevSoFar) return null
+    const spentPrev = prevSoFar.reduce((s, t) => s + spendOf(t), 0)
     return spentPrev > 0 ? totals.expense - spentPrev : null
-  }, [range, period, isCurrent, today, transactions, totals.expense, settings.cycle])
+  }, [prevSoFar, totals.expense])
 
   const elapsedDays = Math.max(1, daysBetween(period.start, isCurrent ? today : period.end) + 1)
+  const insights = useMemo(
+    () =>
+      analysisInsights({
+        inRange,
+        prevSoFar,
+        elapsedDays,
+        totalDays: daysBetween(period.start, period.end) + 1,
+        // The year view is a rolling 12 months, so there is no year end to be on pace for
+        current: isCurrent && range !== 'year',
+        budget: range === 'month' ? settings.monthlyBudget : undefined,
+      }),
+    [inRange, prevSoFar, elapsedDays, period, isCurrent, range, settings.monthlyBudget],
+  )
   const biggest = inRange.filter((t) => t.type === 'expense').sort((a, b) => b.amount - a.amount)[0]
   const topCat = totals.byCategory[0]
   const savingsRate = totals.income > 0 ? (totals.net / totals.income) * 100 : null
@@ -410,7 +466,12 @@ export function SpendAnalysis() {
 
   return (
     <div className="space-y-5">
-      <PageHeader eyebrow="Spend" title="Analysis" action={<ArrangeButton label="Arrange cards" onClick={() => setArrangeOpen(true)} />} />
+      <PageHeader
+        eyebrow="Spend"
+        title="Analysis"
+        subtitle={insights.length > 0 ? <InsightLines insights={insights.slice(0, 2)} rangeName={rangeName} current={isCurrent} /> : undefined}
+        action={<ArrangeButton label="Arrange cards" onClick={() => setArrangeOpen(true)} />}
+      />
 
       <div className="flex flex-wrap items-center gap-3">
         <SegmentedControl

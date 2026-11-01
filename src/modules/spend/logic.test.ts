@@ -42,6 +42,7 @@ import {
   sortTxns,
   totalsBySubcategory,
   topSubcategories,
+  analysisInsights,
   categoryBreakdown,
   renameInList,
   renameSubOn,
@@ -78,6 +79,39 @@ describe('sortTxns', () => {
       txn({ id: 'e', date: '2026-10-13', createdAt: '2026-10-13T01:00:00Z' }),
     ]
     expect(sortTxns(rows).map((t) => t.id)).toEqual(['c', 'b', 'd', 'e', 'a'])
+  })
+})
+
+describe('analysisInsights', () => {
+  const base = { elapsedDays: 10, totalDays: 30, current: true }
+  it('projects the pace, names the biggest mover and the habit', () => {
+    const out = analysisInsights({
+      ...base,
+      budget: 25_000,
+      inRange: [
+        txn({ categoryId: 'food', amount: 2000 }),
+        ...[1, 2, 3].map(() => txn({ categoryId: 'drinks', subcategory: 'Milk tea', amount: 65 })),
+      ],
+      prevSoFar: [txn({ categoryId: 'food', amount: 500 }), txn({ categoryId: 'drinks', amount: 100 })],
+    })
+    expect(out).toEqual([
+      { kind: 'pace', projected: 6585, budget: 25_000 },
+      { kind: 'mover', categoryId: 'food', diff: 1500 },
+      { kind: 'habit', label: 'Milk tea', count: 3, amount: 195 },
+    ])
+  })
+
+  it('stays quiet when there is little to say', () => {
+    const inRange = [txn({ categoryId: 'food', subcategory: 'Snack', amount: 300 }), txn({ categoryId: 'food', subcategory: 'Snack', amount: 300 })]
+    // Two days in, a small move, a habit of two
+    expect(analysisInsights({ ...base, elapsedDays: 2, inRange, prevSoFar: [txn({ categoryId: 'food', amount: 200 })] })).toEqual([])
+    // A finished period has no pace
+    expect(analysisInsights({ ...base, current: false, inRange }).some((i) => i.kind === 'pace')).toBe(false)
+  })
+
+  it('reports a category spent less as a negative move', () => {
+    const out = analysisInsights({ ...base, current: false, inRange: [txn({ categoryId: 'food', amount: 100 })], prevSoFar: [txn({ categoryId: 'shopping', amount: 2000 })] })
+    expect(out).toEqual([{ kind: 'mover', categoryId: 'shopping', diff: -2000 }])
   })
 })
 
