@@ -1,10 +1,10 @@
 import { useNavigate } from 'react-router-dom'
 import type { SpendTransaction } from '../../lib/types'
-import { PortfolioIcon, UndoIcon } from '../../components/icons'
-import { thb } from '../../lib/format'
+import { PortfolioIcon, ScaleIcon, UndoIcon } from '../../components/icons'
+import { thb, thbSigned } from '../../lib/format'
 import { TransferIcon, getCategory } from './categories'
 import { isInvested } from './invest'
-import { noteTitle } from './logic'
+import { noteTitle, txnFlow } from './logic'
 import { openQuickAdd } from './QuickAddSheet'
 import { TONES } from './tones'
 import { useData } from '../../store/DataContext'
@@ -16,6 +16,8 @@ interface Props {
   methods: { id: string; name: string }[]
   /** Called when a #tag chip is tapped (e.g. to filter by it) */
   onTagClick?: (tag: string) => void
+  /** Read from one account's side (its statement): transfers get a sign, and the balance after shows under the amount */
+  account?: { id: string; card?: boolean; after?: number }
 }
 
 /** "2026-10-13" → "13 Oct" */
@@ -24,11 +26,11 @@ const shortDate = (iso: string) => {
   return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
-export function TxnRow({ txn, methods, onTagClick }: Props) {
+export function TxnRow({ txn, methods, onTagClick, account }: Props) {
   const navigate = useNavigate()
   const cat = getCategory(txn.categoryId)
   const invested = isInvested(txn)
-  const Icon = invested ? PortfolioIcon : txn.type === 'transfer' ? TransferIcon : cat?.icon ?? TransferIcon
+  const Icon = invested ? PortfolioIcon : txn.adjustment ? ScaleIcon : txn.type === 'transfer' ? TransferIcon : cat?.icon ?? TransferIcon
   const removed = useData().data.spendSettings?.removedAccounts
   // A deleted wallet or card keeps its name on past rows ("KBank (deleted)")
   const walletName = (id?: string) => accountLabel(id, methods.find((m) => m.id === id)?.name, removed)
@@ -38,7 +40,10 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
   const paidFrom = from ? `from ${from}` : 'no account set'
   const meta = invested
     ? [txn.source === 'buy' ? 'Buy more' : 'DCA', txn.time, paidFrom].filter(Boolean).join(' · ')
-    : txn.source === 'dca'
+    : txn.adjustment
+      ? // A balance typed in on Edit wallet: no other side to name
+        ['Typed in', txn.time, walletName(txn.toAccountId ?? txn.accountId)].filter(Boolean).join(' · ')
+      : txn.source === 'dca'
       ? `Savings DCA · ${from ?? 'no account set'} → ${walletName(txn.toAccountId) ?? '—'}`
       : txn.type === 'transfer'
       ? // A loan payment goes to the loan, not to another wallet
@@ -57,18 +62,26 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
           .filter(Boolean)
           .join(' · ')
 
-  const sign = txn.type === 'income' ? '+' : txn.type === 'expense' ? '−' : ''
-  const amountClass = txn.type === 'income' ? 'text-gain-ink' : txn.type === 'transfer' ? 'text-ink-muted' : 'text-ink'
+  // On a statement every row is money in or out of that account, transfers included; an adjustment
+  // only has the one wallet, so it always reads from that side
+  const side = account?.id ?? (txn.adjustment ? txn.toAccountId ?? txn.accountId : undefined)
+  const flow = side ? txnFlow(txn, side) : undefined
+  const sign = flow !== undefined ? (flow > 0 ? '+' : flow < 0 ? '−' : '') : txn.type === 'income' ? '+' : txn.type === 'expense' ? '−' : ''
+  const amountClass =
+    flow !== undefined ? (flow > 0 ? 'text-gain-ink' : 'text-ink') : txn.type === 'income' ? 'text-gain-ink' : txn.type === 'transfer' ? 'text-ink-muted' : 'text-ink'
   // Rows from Invest are edited where they came from: its history
   const sourcePage = txn.source ? '/logs' : null
+  // The quick-add form has no one-sided transfer; typing the balance again is how to change one
+  const readOnly = !sourcePage && !!txn.adjustment
 
   return (
     <div className="group py-3">
       <button
         type="button"
-        onClick={() => (sourcePage ? navigate(sourcePage) : openQuickAdd({ editId: txn.id }))}
-        className="flex w-full min-w-0 items-center gap-3 text-left cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-        aria-label={sourcePage ? `${title}, ${sign}${thb(txn.amount, true)}, open in Invest` : `Edit ${title}, ${sign}${thb(txn.amount, true)}`}
+        onClick={() => (sourcePage ? navigate(sourcePage) : readOnly ? undefined : openQuickAdd({ editId: txn.id }))}
+        disabled={readOnly}
+        className="flex w-full min-w-0 items-center gap-3 text-left cursor-pointer disabled:cursor-default rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        aria-label={sourcePage ? `${title}, ${sign}${thb(txn.amount, true)}, open in Invest` : readOnly ? `${title}, ${sign}${thb(txn.amount, true)}` : `Edit ${title}, ${sign}${thb(txn.amount, true)}`}
       >
         <span className="relative shrink-0">
           <span
@@ -97,9 +110,16 @@ export function TxnRow({ txn, methods, onTagClick }: Props) {
           </span>
           <span className="block truncate text-xs text-ink-muted">{meta}</span>
         </span>
-        <span className={`shrink-0 text-sm font-bold tnum ${amountClass}`}>
-          {sign}
-          {thb(txn.amount, true)}
+        <span className="shrink-0 text-right">
+          <span className={`block text-sm font-bold tnum ${amountClass}`}>
+            {sign}
+            {thb(txn.amount, true)}
+          </span>
+          {account?.after !== undefined && (
+            <span className="block text-xs text-ink-muted tnum">
+              {account.card ? 'Owed' : 'Bal.'} {thbSigned(account.after, true)}
+            </span>
+          )}
         </span>
       </button>
       {(txn.tags?.length ?? 0) > 0 && (

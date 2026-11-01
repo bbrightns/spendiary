@@ -9,6 +9,10 @@ import {
   categoryUsage,
   sortByUse,
   accountTotals,
+  accountStatement,
+  balanceAdjustment,
+  balanceOn,
+  txnFlow,
   applyOrder,
   moveId,
   activeTagQuery,
@@ -381,6 +385,82 @@ describe('accountTotals', () => {
       'w1',
     )
     expect(t).toMatchObject({ spent: 100, income: 300, net: 200, transferOut: 50, transferIn: 20, count: 4, since: '2026-09-01' })
+  })
+})
+
+describe('accountStatement', () => {
+  // Newest first, as the History page holds them
+  const history = sortTxns([
+    txn({ id: 'salary', type: 'income', accountId: 'w1', amount: 1000, date: '2026-10-30' }),
+    txn({ id: 'topup', type: 'transfer', accountId: 'w1', toAccountId: 'w2', amount: 300, date: '2026-10-25' }),
+    txn({ id: 'lunch', accountId: 'w1', amount: 50, date: '2026-10-25', time: '12:00' }),
+    txn({ id: 'old', accountId: 'w1', amount: 20, date: '2026-10-01', alreadyInBalance: true }),
+    txn({ id: 'other', accountId: 'w2', amount: 999, date: '2026-10-20' }),
+  ])
+
+  it("walks back from today's balance", () => {
+    const s = accountStatement(history, 'w1', 2000)
+    expect(s.after.get('salary')).toBe(2000)
+    expect(s.after.get('lunch')).toBe(1000)
+    expect(s.after.get('topup')).toBe(1050)
+    expect(s.after.has('other')).toBe(false)
+    // Already in the balance: listed, but it moves nothing
+    expect(s.after.get('old')).toBe(1350)
+    expect(s.opening).toBe(1350)
+    expect(s.dayEnd.get('2026-10-25')).toBe(1000)
+  })
+
+  it('reads the balance on any day', () => {
+    const s = accountStatement(history, 'w1', 2000)
+    expect(balanceOn(s, '2026-10-31')).toBe(2000)
+    expect(balanceOn(s, '2026-10-29')).toBe(1000)
+    expect(balanceOn(s, '2026-10-24')).toBe(1350)
+    expect(balanceOn(s, '2026-09-30')).toBe(1350)
+  })
+
+  it('counts a card balance as what is owed', () => {
+    const s = accountStatement(
+      sortTxns([
+        txn({ id: 'pay', type: 'transfer', accountId: 'w1', toAccountId: 'c1', amount: 500, date: '2026-10-27' }),
+        txn({ id: 'buy', accountId: 'c1', amount: 200, date: '2026-10-20' }),
+      ]),
+      'c1',
+      100,
+      true,
+    )
+    expect(s.after.get('pay')).toBe(100)
+    expect(s.after.get('buy')).toBe(600)
+    expect(s.opening).toBe(400)
+  })
+
+  it('records a typed-in balance as a one-sided transfer', () => {
+    const now = new Date(2026, 10, 1, 14, 5)
+    const up = balanceAdjustment({ id: 'w1', balance: 1000 }, { id: 'w1', balance: 1250.5 }, now)
+    expect(up).toMatchObject({ type: 'transfer', amount: 250.5, toAccountId: 'w1', date: '2026-11-01', time: '14:05', adjustment: true })
+    expect(up?.accountId).toBeUndefined()
+    expect(balanceAdjustment({ id: 'w1', balance: 1000 }, { id: 'w1', balance: 600 }, now)).toMatchObject({ amount: 400, accountId: 'w1' })
+    // New account, same balance, a currency switch or a USD account: nothing
+    expect(balanceAdjustment(undefined, { id: 'w1', balance: 600 })).toBeUndefined()
+    expect(balanceAdjustment({ id: 'w1', balance: 600 }, { id: 'w1', balance: 600 })).toBeUndefined()
+    expect(balanceAdjustment({ id: 'w1', balance: 600 }, { id: 'w1', balance: 20, currency: 'USD' })).toBeUndefined()
+    expect(balanceAdjustment({ id: 'w1', balance: 10, currency: 'USD' }, { id: 'w1', balance: 20, currency: 'USD' })).toBeUndefined()
+  })
+
+  it('keeps the statement adding up across a typed-in balance', () => {
+    // 1000 logged, then 300 spent, then the balance typed in as 900 (an untracked +200)
+    const adj = { ...balanceAdjustment({ id: 'w1', balance: 700 }, { id: 'w1', balance: 900 }, new Date(2026, 9, 28, 10, 0))!, id: 'adj', createdAt: '2026-10-28T03:00:00Z' }
+    const s = accountStatement(sortTxns([adj, txn({ id: 'spend', accountId: 'w1', amount: 300, date: '2026-10-20' })]), 'w1', 900)
+    expect(s.after.get('adj')).toBe(900)
+    expect(s.after.get('spend')).toBe(700)
+    expect(s.opening).toBe(1000)
+    expect(accountTotals([adj], 'w1')).toMatchObject({ transferIn: 0, count: 1 })
+  })
+
+  it("signs each row from the account's side", () => {
+    const t = txn({ type: 'transfer', accountId: 'w1', toAccountId: 'w2', amount: 300 })
+    expect(txnFlow(t, 'w1')).toBe(-300)
+    expect(txnFlow(t, 'w2')).toBe(300)
+    expect(txnFlow(txn({ accountId: 'w1', amount: 50 }), 'w1')).toBe(-50)
   })
 })
 

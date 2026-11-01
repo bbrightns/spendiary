@@ -6,7 +6,7 @@ function cx(...parts: (string | false | undefined)[]) {
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
+  variant?: 'primary' | 'secondary' | 'tonal' | 'ghost' | 'danger'
   size?: 'sm' | 'md'
   /** Shows a spinner and blocks clicks (e.g. while a save is being applied). */
   loading?: boolean
@@ -26,6 +26,8 @@ export function Button({
       'bg-primary text-white hover:bg-primary-hover shadow-[var(--shadow-soft)] active:scale-[0.98]',
     secondary:
       'bg-surface text-ink border border-line-strong hover:bg-surface-muted active:scale-[0.98]',
+    // A filled pill that stands off a white sheet; ink at low alpha so it works in both themes
+    tonal: 'bg-ink/[0.07] text-ink hover:bg-ink/[0.12] active:scale-[0.98]',
     ghost: 'text-ink-soft hover:bg-surface-muted',
     danger: 'bg-danger text-white hover:bg-danger-hover active:scale-[0.98]',
   }

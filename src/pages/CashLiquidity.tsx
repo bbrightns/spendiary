@@ -21,6 +21,8 @@ import { rateOrZero } from '../lib/fx'
 import { ListBulletIcon } from '../modules/spend/categories'
 import { otherUsing, recurringUsing } from '../modules/spend/accountRemoval'
 import { RecurringImpact } from '../modules/spend/RecurringImpact'
+import { accountTxnsPath } from '../modules/spend/logic'
+import { useSpend } from '../modules/spend/useSpend'
 import { EditAccountModal } from '../components/forms/EditCashAccountModal'
 import {
   PencilIcon,
@@ -47,9 +49,10 @@ function AccountIcon({ color, bank, className }: { color?: string; bank?: string
 /** The Cash view of Spend → Accounts: every cash account with its liquidity bucket and interest. */
 export function CashLiquidity() {
   const { data, setCashAccounts, usdThb } = useData()
+  const { recordBalanceEdit } = useSpend()
   const { showToast } = useToast()
   const navigate = useNavigate()
-  const openSpendTxns = (name: string) => navigate(`/spend/txns?q=${encodeURIComponent(name.toLowerCase())}`)
+  const openSpendTxns = (id: string) => navigate(accountTxnsPath(id))
 
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<CashAccountCategory | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -183,6 +186,8 @@ export function CashLiquidity() {
     }
     const sorted = sortCashAccounts(updated, rate)
     setCashAccounts(sorted)
+    // A typed-in balance leaves an entry in Spend, so the wallet's statement still adds up
+    recordBalanceEdit(accounts.find((a) => a.id === savedAcc.id), savedAcc)
     setIsEditModalOpen(false)
     setAccountToEdit(null)
     showToast(`Saved account "${savedAcc.name}"`, 'success')
@@ -598,7 +603,7 @@ export function CashLiquidity() {
                           {(a.currency ?? 'THB') === 'THB' ? (
                             <button
                               type="button"
-                              onClick={() => openSpendTxns(a.name)}
+                              onClick={() => openSpendTxns(a.id)}
                               className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted hover:bg-surface hover:text-ink transition-colors cursor-pointer"
                               title="See transactions in Spend"
                               aria-label={`See ${a.name} transactions`}
@@ -725,7 +730,7 @@ export function CashLiquidity() {
           }
           onShowTxns={
             accounts.some((x) => x.id === accountToEdit.id) && (accountToEdit.currency ?? 'THB') === 'THB'
-              ? () => openSpendTxns(accountToEdit.name)
+              ? () => openSpendTxns(accountToEdit.id)
               : undefined
           }
         />
