@@ -6,6 +6,7 @@ import { TransferIcon, getCategory } from './categories'
 import { isInvested } from './invest'
 import { noteTitle, txnFlow } from './logic'
 import { openQuickAdd } from './QuickAddSheet'
+import { openAdjustment } from './AdjustmentSheet'
 import { TONES } from './tones'
 import { useData } from '../../store/DataContext'
 import { accountLabel } from './accountRemoval'
@@ -74,17 +75,22 @@ export function TxnRow({ txn, methods, onTagClick, account }: Props) {
     flow !== undefined ? (flow > 0 ? 'text-gain-ink' : 'text-ink') : txn.type === 'income' ? 'text-gain-ink' : txn.type === 'transfer' ? 'text-ink-muted' : 'text-ink'
   // Rows from Invest are edited where they came from: its history
   const sourcePage = txn.source ? '/logs' : null
-  // The quick-add form has no one-sided transfer; typing the balance again is how to change one
-  const readOnly = !sourcePage && !!txn.adjustment
+  // The quick-add form has no one-sided transfer: a typed-in balance opens its undo instead
+  const adjustment = !sourcePage && !!txn.adjustment
 
   return (
     <div className="group py-3">
       <button
         type="button"
-        onClick={() => (sourcePage ? navigate(sourcePage) : readOnly ? undefined : openQuickAdd({ editId: txn.id }))}
-        disabled={readOnly}
-        className="flex w-full min-w-0 items-center gap-3 text-left cursor-pointer disabled:cursor-default rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-        aria-label={sourcePage ? `${title}, ${sign}${thb(txn.amount, true)}, open in Invest` : readOnly ? `${title}, ${sign}${thb(txn.amount, true)}` : `Edit ${title}, ${sign}${thb(txn.amount, true)}`}
+        onClick={() => (sourcePage ? navigate(sourcePage) : adjustment ? openAdjustment(txn.id) : openQuickAdd({ editId: txn.id }))}
+        className="flex w-full min-w-0 items-center gap-3 text-left cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        aria-label={
+          sourcePage
+            ? `${title}, ${sign}${thb(txn.amount, true)}, open in Invest`
+            : adjustment
+              ? `${title}, ${sign}${thb(txn.amount, true)}, undo`
+              : `Edit ${title}, ${sign}${thb(txn.amount, true)}`
+        }
       >
         <span className="relative shrink-0">
           <span

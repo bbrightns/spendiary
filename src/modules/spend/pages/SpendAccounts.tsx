@@ -21,8 +21,12 @@ import { totalAvailable } from '../credit'
 import { useData } from '../../../store/DataContext'
 import { MethodIcon } from '../PayMethodPicker'
 import { ArrangeButton, ReorderSheet } from '../ReorderSheet'
+import { cardOrder, isDefaultOrder, moveInOrder } from '../../../lib/cardOrder'
 import { DEFAULT_CARD_FILTER, filterCards, isFiltering, readCardFilter, writeCardFilter, type CardFilter, type CardFilterMode } from '../cardFilter'
 import { useSpend, type PayMethod } from '../useSpend'
+
+const ACCOUNT_SECTIONS = ['cards', 'wallets'] as const
+type AccountSection = (typeof ACCOUNT_SECTIONS)[number]
 
 /** 1234 → 1.2K, for the tiny in / out line on a wallet tile. */
 const compact = (v: number) => thbCompact(v).replace(/^฿\s/, '')
@@ -67,7 +71,10 @@ export function SpendAccounts() {
   const [newWallet, setNewWallet] = useState<CashAccount | null>(null)
   const [cardSheet, setCardSheet] = useState<{ open: boolean; card?: SpendCard }>({ open: false })
   const [walletSheet, setWalletSheet] = useState<PayMethod | undefined>()
-  const [arrange, setArrange] = useState<'cards' | 'wallets' | null>(null)
+  const [arrange, setArrange] = useState<'cards' | 'wallets' | 'sections' | null>(null)
+  // Credit cards or wallets first: stacked on phones, left and right columns from md
+  const sectionOrder = cardOrder(ACCOUNT_SECTIONS, settings.accountsOrder)
+  const walletsFirst = sectionOrder[0] === 'wallets'
   const period = useMemo(() => periodFor(localDateStr(), settings.cycle), [settings.cycle])
   const periodName = isCalendar(settings.cycle) ? 'This month' : 'This pay cycle'
   const favs = settings.favoriteAccountIds ?? []
@@ -121,6 +128,7 @@ export function SpendAccounts() {
         eyebrow="Spend"
         title="Accounts"
         subtitle="Every wallet and credit card lives here. Star the ones you use most."
+        action={view === 'pay' ? <ArrangeButton label="Arrange sections" onClick={() => setArrange('sections')} /> : undefined}
       />
 
       <SegmentedControl
@@ -138,7 +146,9 @@ export function SpendAccounts() {
       ) : (
       <>
       {/* md+: card stack on the left, wallets fill the rest */}
-      <div className="space-y-6 md:grid md:grid-cols-[360px_minmax(0,1fr)] md:items-start md:gap-6 md:space-y-0 xl:gap-8">
+      <div
+        className={`flex flex-col gap-6 md:grid md:items-start xl:gap-8 ${walletsFirst ? 'md:grid-cols-[minmax(0,1fr)_360px]' : 'md:grid-cols-[360px_minmax(0,1fr)]'}`}
+      >
         {/* ── Credit cards ── */}
         <section className="space-y-3">
           <div>
@@ -239,7 +249,7 @@ export function SpendAccounts() {
         </section>
 
         {/* ── Wallets ── */}
-        <section className="space-y-3">
+        <section className={`space-y-3 ${walletsFirst ? 'order-first' : ''}`}>
           <div>
             <div className="flex items-center justify-between px-1">
               <h2 className="font-display text-lg font-extrabold text-ink">Wallets</h2>
@@ -364,6 +374,19 @@ export function SpendAccounts() {
       </>
       )}
 
+      <ReorderSheet
+        open={arrange === 'sections'}
+        onClose={() => setArrange(null)}
+        title="Arrange sections"
+        description="Show wallets or credit cards first. On a wide screen the first one sits on the left."
+        items={sectionOrder.map((id) => ({ id, label: id === 'cards' ? 'Credit cards' : 'Wallets' }))}
+        onMove={(id, delta) => {
+          const next = moveInOrder(sectionOrder, id as AccountSection, delta)
+          updateSettings({ accountsOrder: isDefaultOrder(ACCOUNT_SECTIONS, next) ? undefined : next })
+        }}
+        canReset={walletsFirst}
+        onReset={() => updateSettings({ accountsOrder: undefined })}
+      />
       <ReorderSheet
         open={arrange === 'cards'}
         onClose={() => setArrange(null)}

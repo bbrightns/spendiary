@@ -49,7 +49,7 @@ function AccountIcon({ color, bank, className }: { color?: string; bank?: string
 /** The Cash view of Spend → Accounts: every cash account with its liquidity bucket and interest. */
 export function CashLiquidity() {
   const { data, setCashAccounts, usdThb } = useData()
-  const { recordBalanceEdit } = useSpend()
+  const { recordBalanceEdit, removeTransaction } = useSpend()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const openSpendTxns = (id: string) => navigate(accountTxnsPath(id))
@@ -187,10 +187,11 @@ export function CashLiquidity() {
     const sorted = sortCashAccounts(updated, rate)
     setCashAccounts(sorted)
     // A typed-in balance leaves an entry in Spend, so the wallet's statement still adds up
-    recordBalanceEdit(accounts.find((a) => a.id === savedAcc.id), savedAcc)
+    const adjustmentId = recordBalanceEdit(accounts.find((a) => a.id === savedAcc.id), savedAcc)
     setIsEditModalOpen(false)
     setAccountToEdit(null)
-    showToast(`Saved account "${savedAcc.name}"`, 'success')
+    // A mistyped balance can be taken back right here; later, from the entry in Spend's history
+    showToast(`Saved account "${savedAcc.name}"`, 'success', adjustmentId ? { label: 'Undo balance', onClick: () => removeTransaction(adjustmentId) } : undefined)
   }
 
   const deleteAccount = (acc: CashAccount) => {

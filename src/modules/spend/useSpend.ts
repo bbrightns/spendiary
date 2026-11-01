@@ -149,12 +149,14 @@ export function useSpend() {
   /**
    * After a wallet's balance was typed in (Edit wallet), record the difference so its statement
    * still adds up. The balance is already saved, so this only adds the entry and moves no money.
+   * Returns the entry's id (to undo it), or nothing when the balance didn't change.
    */
-  function recordBalanceEdit(before: CashAccount | undefined, after: CashAccount) {
+  function recordBalanceEdit(before: CashAccount | undefined, after: CashAccount): string | undefined {
     const input = balanceAdjustment(before, after)
-    if (!input) return
+    if (!input) return undefined
     const txn: SpendTransaction = { ...input, id: newId(), createdAt: new Date().toISOString() }
     setData((prev) => ({ ...prev, spendTransactions: [...(prev.spendTransactions ?? []), txn] }))
+    return txn.id
   }
 
   /** Log many at once (e.g. a statement import) in one update. */
