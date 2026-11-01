@@ -723,7 +723,8 @@ export function accountTotals(txns: SpendTransaction[], id: string): AccountTota
     if (!out.since || t.date < out.since) out.since = t.date
     if (t.type === 'expense') out.spent += t.amount
     else if (t.type === 'income') out.income += t.amount
-    else {
+    // A typed-in balance isn't money moved between your accounts
+    else if (!t.adjustment) {
       if (from) out.transferOut += t.amount
       if (to) out.transferIn += t.amount
     }
@@ -768,6 +769,30 @@ export function accountStatement(txns: SpendTransaction[], id: string, balance: 
     if (delta) running = roundMoney(card ? running + delta : running - delta)
   }
   return { after, dayEnd, opening: running }
+}
+
+/**
+ * The entry for a balance typed in by hand: the difference as a one-sided transfer, dated now.
+ * Nothing for a new account, an unchanged balance or a change of currency (its old figure was in
+ * another currency), nor for non-THB accounts, which Spend doesn't track.
+ */
+export function balanceAdjustment(
+  before: Pick<CashAccount, 'id' | 'balance' | 'currency'> | undefined,
+  after: Pick<CashAccount, 'id' | 'balance' | 'currency'>,
+  now = new Date(),
+): Omit<SpendTransaction, 'id' | 'createdAt' | 'updatedAt' | 'tags'> | undefined {
+  if (!before || (before.currency ?? 'THB') !== 'THB' || (after.currency ?? 'THB') !== 'THB') return undefined
+  const diff = roundMoney(after.balance - before.balance)
+  if (diff === 0) return undefined
+  return {
+    type: 'transfer',
+    amount: Math.abs(diff),
+    ...(diff > 0 ? { toAccountId: after.id } : { accountId: after.id }),
+    date: localDateStr(now),
+    time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+    note: 'Balance adjusted',
+    adjustment: true,
+  }
 }
 
 /** An account's balance at the end of `date`, from its statement. */

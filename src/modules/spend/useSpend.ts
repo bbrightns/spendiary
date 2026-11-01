@@ -2,10 +2,10 @@ import { useCallback, useMemo } from 'react'
 import { useData } from '../../store/DataContext'
 import { localDateStr, localTimeStr } from '../../lib/format'
 import { newId } from '../../lib/id'
-import type { SpendCard, SpendCustomCategory, SpendGoal, SpendRecurring, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
+import type { CashAccount, SpendCard, SpendCustomCategory, SpendGoal, SpendRecurring, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
 import { SPEND_CATEGORIES } from './categories'
 import { investTransactions } from './invest'
-import { DEFAULT_BILL_REMINDER_DAYS, applyOrder, applyToBalances, cardBill, dueRecurring, parseTags, recurringNote, renameInList, renameSubOn, sortTxns, spendWallets } from './logic'
+import { DEFAULT_BILL_REMINDER_DAYS, applyOrder, applyToBalances, balanceAdjustment, cardBill, dueRecurring, parseTags, recurringNote, renameInList, renameSubOn, sortTxns, spendWallets } from './logic'
 import { availableCredit } from './credit'
 import { accountLabel, trackRemovedMoves } from './accountRemoval'
 
@@ -144,6 +144,17 @@ export function useSpend() {
       ...(fromRecurring ? { spendRecurring: markOccurrence(prev.spendRecurring ?? [], fromRecurring.id, fromRecurring.date, 'doneDates') } : {}),
     }))
     return txn
+  }
+
+  /**
+   * After a wallet's balance was typed in (Edit wallet), record the difference so its statement
+   * still adds up. The balance is already saved, so this only adds the entry and moves no money.
+   */
+  function recordBalanceEdit(before: CashAccount | undefined, after: CashAccount) {
+    const input = balanceAdjustment(before, after)
+    if (!input) return
+    const txn: SpendTransaction = { ...input, id: newId(), createdAt: new Date().toISOString() }
+    setData((prev) => ({ ...prev, spendTransactions: [...(prev.spendTransactions ?? []), txn] }))
   }
 
   /** Log many at once (e.g. a statement import) in one update. */
@@ -445,6 +456,7 @@ export function useSpend() {
     removeRecurring,
     addTransaction,
     addTransactions,
+    recordBalanceEdit,
     updateTransaction,
     removeTransaction,
     patchTransactions,

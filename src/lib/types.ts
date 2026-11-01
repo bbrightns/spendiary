@@ -369,6 +369,12 @@ export interface SpendTransaction {
   source?: 'dividend' | 'dca' | 'buy'
   /** A loan / installment payment: the liability it paid toward */
   liabilityId?: string
+  /**
+   * A new balance typed in for a wallet (Edit wallet): a one-sided transfer for the difference,
+   * `toAccountId` when it went up and `accountId` when it went down. It keeps the wallet's
+   * statement adding up and, as a transfer, never counts as spending or income.
+   */
+  adjustment?: boolean
   /** Logged from a recurring item's occurrence; deleting it puts that occurrence back as due */
   recurring?: { id: string; date: string }
 }

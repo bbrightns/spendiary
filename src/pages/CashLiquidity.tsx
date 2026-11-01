@@ -22,6 +22,7 @@ import { ListBulletIcon } from '../modules/spend/categories'
 import { otherUsing, recurringUsing } from '../modules/spend/accountRemoval'
 import { RecurringImpact } from '../modules/spend/RecurringImpact'
 import { accountTxnsPath } from '../modules/spend/logic'
+import { useSpend } from '../modules/spend/useSpend'
 import { EditAccountModal } from '../components/forms/EditCashAccountModal'
 import {
   PencilIcon,
@@ -48,6 +49,7 @@ function AccountIcon({ color, bank, className }: { color?: string; bank?: string
 /** The Cash view of Spend → Accounts: every cash account with its liquidity bucket and interest. */
 export function CashLiquidity() {
   const { data, setCashAccounts, usdThb } = useData()
+  const { recordBalanceEdit } = useSpend()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const openSpendTxns = (id: string) => navigate(accountTxnsPath(id))
@@ -184,6 +186,8 @@ export function CashLiquidity() {
     }
     const sorted = sortCashAccounts(updated, rate)
     setCashAccounts(sorted)
+    // A typed-in balance leaves an entry in Spend, so the wallet's statement still adds up
+    recordBalanceEdit(accounts.find((a) => a.id === savedAcc.id), savedAcc)
     setIsEditModalOpen(false)
     setAccountToEdit(null)
     showToast(`Saved account "${savedAcc.name}"`, 'success')

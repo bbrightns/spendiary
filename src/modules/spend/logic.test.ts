@@ -10,6 +10,7 @@ import {
   sortByUse,
   accountTotals,
   accountStatement,
+  balanceAdjustment,
   balanceOn,
   txnFlow,
   applyOrder,
@@ -430,6 +431,29 @@ describe('accountStatement', () => {
     expect(s.after.get('pay')).toBe(100)
     expect(s.after.get('buy')).toBe(600)
     expect(s.opening).toBe(400)
+  })
+
+  it('records a typed-in balance as a one-sided transfer', () => {
+    const now = new Date(2026, 10, 1, 14, 5)
+    const up = balanceAdjustment({ id: 'w1', balance: 1000 }, { id: 'w1', balance: 1250.5 }, now)
+    expect(up).toMatchObject({ type: 'transfer', amount: 250.5, toAccountId: 'w1', date: '2026-11-01', time: '14:05', adjustment: true })
+    expect(up?.accountId).toBeUndefined()
+    expect(balanceAdjustment({ id: 'w1', balance: 1000 }, { id: 'w1', balance: 600 }, now)).toMatchObject({ amount: 400, accountId: 'w1' })
+    // New account, same balance, a currency switch or a USD account: nothing
+    expect(balanceAdjustment(undefined, { id: 'w1', balance: 600 })).toBeUndefined()
+    expect(balanceAdjustment({ id: 'w1', balance: 600 }, { id: 'w1', balance: 600 })).toBeUndefined()
+    expect(balanceAdjustment({ id: 'w1', balance: 600 }, { id: 'w1', balance: 20, currency: 'USD' })).toBeUndefined()
+    expect(balanceAdjustment({ id: 'w1', balance: 10, currency: 'USD' }, { id: 'w1', balance: 20, currency: 'USD' })).toBeUndefined()
+  })
+
+  it('keeps the statement adding up across a typed-in balance', () => {
+    // 1000 logged, then 300 spent, then the balance typed in as 900 (an untracked +200)
+    const adj = { ...balanceAdjustment({ id: 'w1', balance: 700 }, { id: 'w1', balance: 900 }, new Date(2026, 9, 28, 10, 0))!, id: 'adj', createdAt: '2026-10-28T03:00:00Z' }
+    const s = accountStatement(sortTxns([adj, txn({ id: 'spend', accountId: 'w1', amount: 300, date: '2026-10-20' })]), 'w1', 900)
+    expect(s.after.get('adj')).toBe(900)
+    expect(s.after.get('spend')).toBe(700)
+    expect(s.opening).toBe(1000)
+    expect(accountTotals([adj], 'w1')).toMatchObject({ transferIn: 0, count: 1 })
   })
 
   it("signs each row from the account's side", () => {

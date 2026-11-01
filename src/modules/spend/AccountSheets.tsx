@@ -335,6 +335,7 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
 
 export function WalletSheet({ wallet, onClose }: { wallet?: PayMethod; onClose: () => void }) {
   const { data, setCashAccounts } = useData()
+  const { recordBalanceEdit } = useSpend()
   const { showToast } = useToast()
   // Editing happens here, in Spend, with the same form Cash & Liquidity uses
   const [editing, setEditing] = useState<CashAccount | null>(null)
@@ -393,6 +394,8 @@ export function WalletSheet({ wallet, onClose }: { wallet?: PayMethod; onClose: 
           onClose={() => setEditing(null)}
           onSave={(saved) => {
             setCashAccounts((data.cashAccounts ?? []).map((a) => (a.id === saved.id ? saved : a)))
+            // A typed-in balance leaves an entry, so the statement still adds up
+            recordBalanceEdit(editing, saved)
             setEditing(null)
             showToast(`Saved "${saved.name}"`, 'success')
           }}
