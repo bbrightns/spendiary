@@ -460,6 +460,27 @@ export function totalsFor(txns: SpendTransaction[]): MonthTotals {
   return { income, expense, net: income - expense, byCategory }
 }
 
+/**
+ * Spend per subcategory across every category, biggest first, at most `limit`. The same label under two
+ * categories ("Other" under Food and Shopping) stays two rows. Money paid back comes off its subcategory.
+ */
+export function topSubcategories(txns: SpendTransaction[], limit = 5): { categoryId: string; subcategory: string; amount: number; count: number }[] {
+  const rows = new Map<string, { categoryId: string; subcategory: string; amount: number; count: number }>()
+  for (const t of txns) {
+    if (!spendOf(t) || !t.subcategory) continue
+    const categoryId = t.categoryId ?? 'other'
+    const key = `${categoryId}\u0000${t.subcategory}`
+    const row = rows.get(key) ?? { categoryId, subcategory: t.subcategory, amount: 0, count: 0 }
+    row.amount += spendOf(t)
+    if (t.type === 'expense') row.count += 1
+    rows.set(key, row)
+  }
+  return [...rows.values()]
+    .filter((r) => r.amount > 0)
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, limit)
+}
+
 /** Spend per subcategory label inside one category, biggest first; untagged expenses are left out. */
 export function totalsBySubcategory(txns: SpendTransaction[], categoryId: string): { subcategory: string; amount: number }[] {
   const sub = new Map<string, number>()

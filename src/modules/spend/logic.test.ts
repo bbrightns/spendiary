@@ -41,6 +41,7 @@ import {
   shiftPeriod,
   sortTxns,
   totalsBySubcategory,
+  topSubcategories,
   categoryBreakdown,
   renameInList,
   renameSubOn,
@@ -77,6 +78,25 @@ describe('sortTxns', () => {
       txn({ id: 'e', date: '2026-10-13', createdAt: '2026-10-13T01:00:00Z' }),
     ]
     expect(sortTxns(rows).map((t) => t.id)).toEqual(['c', 'b', 'd', 'e', 'a'])
+  })
+})
+
+describe('topSubcategories', () => {
+  it('ranks subcategories across categories, keeping same labels apart', () => {
+    const rows = topSubcategories([
+      txn({ categoryId: 'food', subcategory: 'Snack', amount: 60 }),
+      txn({ categoryId: 'food', subcategory: 'Snack', amount: 40 }),
+      txn({ categoryId: 'food', subcategory: 'Sushi', amount: 500 }),
+      txn({ categoryId: 'shopping', subcategory: 'Snack', amount: 30 }),
+      txn({ categoryId: 'food', amount: 999 }),
+      txn({ type: 'income', categoryId: 'food', subcategory: 'Sushi', amount: 200, paidBack: true }),
+    ])
+    expect(rows).toEqual([
+      { categoryId: 'food', subcategory: 'Sushi', amount: 300, count: 1 },
+      { categoryId: 'food', subcategory: 'Snack', amount: 100, count: 2 },
+      { categoryId: 'shopping', subcategory: 'Snack', amount: 30, count: 1 },
+    ])
+    expect(topSubcategories([txn({ categoryId: 'food', subcategory: 'A', amount: 1 }), txn({ categoryId: 'food', subcategory: 'B', amount: 2 })], 1)).toHaveLength(1)
   })
 })
 

@@ -35,7 +35,9 @@ export function TxnRow({ txn, methods, onTagClick, account }: Props) {
   // A deleted wallet or card keeps its name on past rows ("KBank (deleted)")
   const walletName = (id?: string) => accountLabel(id, methods.find((m) => m.id === id)?.name, removed)
   const from = walletName(txn.accountId)
-  const title = noteTitle(txn.note) || (txn.type === 'transfer' ? 'Transfer' : txn.paidBack ? 'Paid back' : cat?.label ?? 'Other')
+  // No note: the subcategory names it ("Snack"), then the category
+  const noteName = noteTitle(txn.note)
+  const title = noteName || (txn.type !== 'transfer' && txn.subcategory) || (txn.type === 'transfer' ? 'Transfer' : txn.paidBack ? 'Paid back' : cat?.label ?? 'Other')
   // Invest rows say where the money came from, or that no account was picked
   const paidFrom = from ? `from ${from}` : 'no account set'
   const meta = invested
@@ -49,7 +51,8 @@ export function TxnRow({ txn, methods, onTagClick, account }: Props) {
       ? // A loan payment goes to the loan, not to another wallet
         `${from ?? '—'} → ${txn.liabilityId && !txn.toAccountId ? 'loan payment' : walletName(txn.toAccountId) ?? '—'}${txn.alreadyInBalance ? ' · already in balance' : ''}`
       : [
-          cat?.label && txn.subcategory ? `${cat.label} › ${txn.subcategory}` : cat?.label,
+          // The title already says the subcategory when there was no note
+          cat?.label && txn.subcategory && noteName ? `${cat.label} › ${txn.subcategory}` : cat?.label,
           // Early in the line, so it's never the part a long wallet name cuts off
           txn.outsideBudget && 'outside budget',
           txn.paidBack && 'paid back',

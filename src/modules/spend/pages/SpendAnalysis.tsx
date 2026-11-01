@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../../../components/layout/PageHeader'
 import { Card } from '../../../components/ui/Card'
@@ -6,14 +6,28 @@ import { SegmentedControl } from '../../../components/ui/SegmentedControl'
 import { localDateStr, thb, thbCompact } from '../../../lib/format'
 import type { SpendTransaction } from '../../../lib/types'
 import { getCategory } from '../categories'
-import { budgetState, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, categoryBreakdown, spendOf, totalsFor, weekOf, type Period } from '../logic'
+import { budgetState, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, categoryBreakdown, spendOf, topSubcategories, totalsFor, weekOf, type Period } from '../logic'
 import { MonthStepper } from '../MonthStepper'
+import { ArrangeButton, ReorderSheet } from '../ReorderSheet'
+import { cardOrder, isDefaultOrder, moveInOrder } from '../../../lib/cardOrder'
 import { SPENT_TONE, TAG_CHIP, TONES } from '../tones'
 import { useSpend } from '../useSpend'
 import { TrendsCard } from '../TrendsCard'
 import { settingsPath } from '../../../lib/settingsSections'
 
 type Range = 'week' | 'month' | 'year'
+
+const ANALYSIS_CARDS = [
+  { id: 'summary', label: 'Spent and income' },
+  { id: 'perDay', label: 'Spent per day' },
+  { id: 'trends', label: 'Trends (month view)' },
+  { id: 'stats', label: 'Quick stats' },
+  { id: 'categories', label: 'By category' },
+  { id: 'subcategories', label: 'Top subcategories' },
+  { id: 'tags', label: 'Top tags' },
+] as const
+type AnalysisCardId = (typeof ANALYSIS_CARDS)[number]['id']
+const ANALYSIS_CARD_IDS: readonly AnalysisCardId[] = ANALYSIS_CARDS.map((c) => c.id)
 
 const parse = (s: string) => {
   const [y, m, d] = s.split('-').map(Number)
@@ -138,7 +152,10 @@ function Bars({ data, unit }: { data: Bucket[]; unit: string }) {
 }
 
 export function SpendAnalysis() {
-  const { transactions, settings } = useSpend()
+  const { transactions, settings, updateSettings } = useSpend()
+  const [arrangeOpen, setArrangeOpen] = useState(false)
+  const order = cardOrder(ANALYSIS_CARD_IDS, settings.analysisOrder)
+  const saveOrder = (next: AnalysisCardId[]) => updateSettings({ analysisOrder: isDefaultOrder(ANALYSIS_CARD_IDS, next) ? undefined : next })
   const today = localDateStr()
   const [range, setRange] = useState<Range>('month')
   const [anchor, setAnchor] = useState(today)
@@ -174,43 +191,14 @@ export function SpendAnalysis() {
     return [...m.entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 5)
   }, [inRange])
 
+  const subTotals = useMemo(() => topSubcategories(inRange), [inRange])
+
   // A deleted category's budget waits until it's restored
   const catBudgets = range === 'month' ? Object.fromEntries(Object.entries(settings.categoryBudgets ?? {}).filter(([id]) => !getCategory(id)?.hidden)) : {}
   const rangeName = range === 'week' ? 'week' : range === 'year' ? 'year' : 'month'
 
-  return (
-    <div className="space-y-5">
-      <PageHeader eyebrow="Spend" title="Analysis" />
-
-      <div className="flex flex-wrap items-center gap-3">
-        <SegmentedControl
-          ariaLabel="Range"
-          fullWidth={false}
-          value={range}
-          onChange={(r) => {
-            setRange(r)
-            setAnchor(today)
-          }}
-          options={[
-            { value: 'week', label: 'Week' },
-            { value: 'month', label: 'Month' },
-            { value: 'year', label: 'Year' },
-          ]}
-        />
-        {range === 'month' ? (
-          <MonthStepper value={period} cycle={settings.cycle} onChange={(p) => setAnchor(p.start)} />
-        ) : (
-          <MonthStepper
-            value={period}
-            label={rangeLabel(range, period)}
-            // Anchor on the period's end so the year view keeps ending on the chosen month
-            step={(p, delta) => (range === 'week' ? weekOf(shiftDate(p.start, 7 * delta)) : yearOf(localDateStr(new Date(parse(p.end).getFullYear() + delta, parse(p.end).getMonth(), 1))))}
-            onChange={(p) => setAnchor(p.end > today ? today : p.end)}
-          />
-        )}
-      </div>
-
-      {/* ── Summary: what went out, against what came in, and how this compares to last time ── */}
+  const cards: Record<AnalysisCardId, ReactNode> = {
+    summary: (
       <Card className="animate-rise">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
@@ -260,16 +248,17 @@ export function SpendAnalysis() {
           </>
         )}
       </Card>
-
+    ),
+    perDay: (
       <Card>
         <h2 className="mb-3 font-display text-lg font-extrabold text-ink">Spent per {range === 'year' ? 'month' : 'day'}</h2>
         <Bars data={data} unit={range === 'year' ? 'month' : 'day'} />
       </Card>
-
-      {range === 'month' && <TrendsCard end={period} txns={transactions} cycle={settings.cycle} />}
-
-      {/* ── Quick stats ── */}
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
+    ),
+    // Month on month only makes sense for a month
+    trends: range === 'month' ? <TrendsCard end={period} txns={transactions} cycle={settings.cycle} /> : null,
+    stats: (
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
         <Card compact>
           <p className="text-xs text-ink-muted">Daily average</p>
           <p className="mt-1 font-display text-lg font-extrabold tnum text-ink">{thb(totals.expense / elapsedDays)}</p>
@@ -284,106 +273,194 @@ export function SpendAnalysis() {
         <Card compact>
           <p className="text-xs text-ink-muted">Biggest expense</p>
           <p className="mt-1 font-display text-lg font-extrabold tnum text-ink">{biggest ? thbCompact(biggest.amount) : '—'}</p>
-          {biggest && <p className="truncate text-xs text-ink-muted">{noteTitle(biggest.note) || getCategory(biggest.categoryId)?.label}</p>}
+          {biggest && <p className="truncate text-xs text-ink-muted">{noteTitle(biggest.note) || biggest.subcategory || getCategory(biggest.categoryId)?.label}</p>}
         </Card>
         <Card compact>
           <p className="text-xs text-ink-muted">Saved of income</p>
           <p className="mt-1 font-display text-lg font-extrabold tnum text-ink">{savingsRate === null ? '—' : `${Math.round(savingsRate)}%`}</p>
         </Card>
       </div>
-
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-        {/* ── By category ── */}
-        <Card>
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="font-display text-lg font-extrabold text-ink">By category</h2>
-            {range === 'month' && (
-              <Link to={settingsPath('category-budgets')} className="text-sm font-semibold text-link hover:underline">
-                Budgets
-              </Link>
-            )}
-          </div>
-          {totals.byCategory.length === 0 && Object.keys(catBudgets).length === 0 ? (
-            <p className="mt-3 text-sm text-ink-muted">No spending in this {rangeName}.</p>
-          ) : (
-            <ul className="mt-4 space-y-3.5">
-              {[
-                ...Object.entries(catBudgets)
-                  // Budgeted categories show even before anything is spent
-                  .filter(([id, b]) => b > 0 && !totals.byCategory.some((c) => c.categoryId === id))
-                  .map(([categoryId]) => ({ categoryId, amount: 0 })),
-                ...totals.byCategory,
-              ]
-                .sort((a, b) => b.amount - a.amount)
-                .map(({ categoryId, amount }) => {
-                  const cat = getCategory(categoryId)
-                  const tone = cat?.tone ?? 'slate'
-                  const Icon = cat?.icon
-                  const b = catBudgets[categoryId] > 0 ? catBudgets[categoryId] : undefined
-                  const state = b ? budgetState(amount, b) : 'ok'
-                  const share = totals.expense > 0 ? (amount / totals.expense) * 100 : 0
-                  const width = b ? Math.min(100, (amount / b) * 100) : share
-                  const subs = categoryBreakdown(inRange, categoryId)
-                  return (
-                    <li key={categoryId}>
-                      <div className="flex items-center justify-between gap-3 text-sm">
-                        <span className="flex min-w-0 items-center gap-2 font-semibold text-ink">
-                          {Icon && (
-                            <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${TONES[tone].chip}`}>
-                              <Icon className="h-4 w-4" />
-                            </span>
-                          )}
-                          <span className="truncate">{cat?.label ?? 'Other'}</span>
-                        </span>
-                        <span className="shrink-0 tnum font-bold text-ink">
-                          {thb(amount)}
-                          <span className="ml-1 text-xs font-semibold text-ink-muted">{b ? `/ ${thb(b)}` : `${Math.round(share)}%`}</span>
-                        </span>
-                      </div>
-                      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-muted">
-                        <div
-                          className={`h-full rounded-full ${state === 'over' ? 'bg-loss' : state === 'near' ? 'bg-warn' : TONES[tone].bar}`}
-                          style={{ width: `${width}%` }}
-                        />
-                      </div>
-                      {subs.length > 0 && (
-                        <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-muted">
-                          {subs.map((s) => (
-                            <span key={s.label} className="tnum">
-                              {s.label} <span className="font-semibold text-ink-soft">{thb(s.amount)}</span>
-                            </span>
-                          ))}
-                        </p>
-                      )}
-                      {b && (
-                        <p className={`mt-1 text-xs tnum ${state === 'over' ? 'font-semibold text-loss-ink' : state === 'near' ? 'font-semibold text-warn-ink' : 'text-ink-muted'}`}>
-                          {state === 'over' ? `Over by ${thb(amount - b)}` : `${thb(b - amount)} left`}
-                        </p>
-                      )}
-                    </li>
-                  )
-                })}
-            </ul>
+    ),
+    categories: (
+      <Card>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-display text-lg font-extrabold text-ink">By category</h2>
+          {range === 'month' && (
+            <Link to={settingsPath('category-budgets')} className="text-sm font-semibold text-link hover:underline">
+              Budgets
+            </Link>
           )}
-        </Card>
+        </div>
+        {totals.byCategory.length === 0 && Object.keys(catBudgets).length === 0 ? (
+          <p className="mt-3 text-sm text-ink-muted">No spending in this {rangeName}.</p>
+        ) : (
+          <ul className="mt-4 space-y-3.5">
+            {[
+              ...Object.entries(catBudgets)
+                // Budgeted categories show even before anything is spent
+                .filter(([id, b]) => b > 0 && !totals.byCategory.some((c) => c.categoryId === id))
+                .map(([categoryId]) => ({ categoryId, amount: 0 })),
+              ...totals.byCategory,
+            ]
+              .sort((a, b) => b.amount - a.amount)
+              .map(({ categoryId, amount }) => {
+                const cat = getCategory(categoryId)
+                const tone = cat?.tone ?? 'slate'
+                const Icon = cat?.icon
+                const b = catBudgets[categoryId] > 0 ? catBudgets[categoryId] : undefined
+                const state = b ? budgetState(amount, b) : 'ok'
+                const share = totals.expense > 0 ? (amount / totals.expense) * 100 : 0
+                const width = b ? Math.min(100, (amount / b) * 100) : share
+                const subs = categoryBreakdown(inRange, categoryId)
+                return (
+                  <li key={categoryId}>
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="flex min-w-0 items-center gap-2 font-semibold text-ink">
+                        {Icon && (
+                          <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${TONES[tone].chip}`}>
+                            <Icon className="h-4 w-4" />
+                          </span>
+                        )}
+                        <span className="truncate">{cat?.label ?? 'Other'}</span>
+                      </span>
+                      <span className="shrink-0 tnum font-bold text-ink">
+                        {thb(amount)}
+                        <span className="ml-1 text-xs font-semibold text-ink-muted">{b ? `/ ${thb(b)}` : `${Math.round(share)}%`}</span>
+                      </span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-muted">
+                      <div
+                        className={`h-full rounded-full ${state === 'over' ? 'bg-loss' : state === 'near' ? 'bg-warn' : TONES[tone].bar}`}
+                        style={{ width: `${width}%` }}
+                      />
+                    </div>
+                    {subs.length > 0 && (
+                      <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-muted">
+                        {subs.map((s) => (
+                          <span key={s.label} className="tnum">
+                            {s.label} <span className="font-semibold text-ink-soft">{thb(s.amount)}</span>
+                          </span>
+                        ))}
+                      </p>
+                    )}
+                    {b && (
+                      <p className={`mt-1 text-xs tnum ${state === 'over' ? 'font-semibold text-loss-ink' : state === 'near' ? 'font-semibold text-warn-ink' : 'text-ink-muted'}`}>
+                        {state === 'over' ? `Over by ${thb(amount - b)}` : `${thb(b - amount)} left`}
+                      </p>
+                    )}
+                  </li>
+                )
+              })}
+          </ul>
+        )}
+      </Card>
+    ),
+    // What the money went on across categories: "Snack" under Food, "Grab" under Transport
+    subcategories: subTotals.length > 0 ? (
+      <Card>
+        <h2 className="font-display text-lg font-extrabold text-ink">Top subcategories</h2>
+        <ul className="mt-3 divide-y divide-line">
+          {subTotals.map((s) => {
+            const cat = getCategory(s.categoryId)
+            const Icon = cat?.icon
+            const share = totals.expense > 0 ? Math.round((s.amount / totals.expense) * 100) : 0
+            return (
+              <li key={`${s.categoryId}-${s.subcategory}`}>
+                <Link
+                  to={`/spend/txns?q=${encodeURIComponent(s.subcategory.toLowerCase())}`}
+                  className="flex items-center gap-3 py-2.5 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${TONES[cat?.tone ?? 'slate'].chip}`}>
+                    {Icon && <Icon className="h-4 w-4" />}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-ink">{s.subcategory}</span>
+                    <span className="block truncate text-xs text-ink-muted tnum">
+                      {cat?.label ?? 'Other'} · {s.count}×
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-right">
+                    <span className="block text-sm font-bold text-ink tnum">{thb(s.amount)}</span>
+                    <span className="block text-xs text-ink-muted tnum">{share}%</span>
+                  </span>
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+      </Card>
+    ) : null,
+    // Only for notes that use #tags; the app no longer asks for them
+    tags: tagTotals.length > 0 ? (
+      <Card>
+        <h2 className="font-display text-lg font-extrabold text-ink">Top tags</h2>
+        <ul className="mt-3 divide-y divide-line">
+          {tagTotals.map(([tag, amount]) => (
+            <li key={tag} className="flex items-center justify-between py-2.5">
+              <Link to={`/spend/txns?q=${encodeURIComponent(`#${tag}`)}`} className={`rounded-full px-2.5 py-1 text-xs font-bold ${TAG_CHIP.idle}`}>
+                #{tag}
+              </Link>
+              <span className="text-sm font-bold text-ink tnum">{thb(amount)}</span>
+            </li>
+          ))}
+        </ul>
+      </Card>
+    ) : null,
+  }
 
-        {/* ── Top tags: only for notes that use #tags; the app no longer asks for them ── */}
-        {tagTotals.length > 0 && (
-          <Card>
-            <h2 className="font-display text-lg font-extrabold text-ink">Top tags</h2>
-            <ul className="mt-3 divide-y divide-line">
-              {tagTotals.map(([tag, amount]) => (
-                <li key={tag} className="flex items-center justify-between py-2.5">
-                  <Link to={`/spend/txns?q=${encodeURIComponent(`#${tag}`)}`} className={`rounded-full px-2.5 py-1 text-xs font-bold ${TAG_CHIP.idle}`}>
-                    #{tag}
-                  </Link>
-                  <span className="text-sm font-bold text-ink tnum">{thb(amount)}</span>
-                </li>
-              ))}
-            </ul>
-          </Card>
+  return (
+    <div className="space-y-5">
+      <PageHeader eyebrow="Spend" title="Analysis" action={<ArrangeButton label="Arrange cards" onClick={() => setArrangeOpen(true)} />} />
+
+      <div className="flex flex-wrap items-center gap-3">
+        <SegmentedControl
+          ariaLabel="Range"
+          fullWidth={false}
+          value={range}
+          onChange={(r) => {
+            setRange(r)
+            setAnchor(today)
+          }}
+          options={[
+            { value: 'week', label: 'Week' },
+            { value: 'month', label: 'Month' },
+            { value: 'year', label: 'Year' },
+          ]}
+        />
+        {range === 'month' ? (
+          <MonthStepper value={period} cycle={settings.cycle} onChange={(p) => setAnchor(p.start)} />
+        ) : (
+          <MonthStepper
+            value={period}
+            label={rangeLabel(range, period)}
+            // Anchor on the period's end so the year view keeps ending on the chosen month
+            step={(p, delta) => (range === 'week' ? weekOf(shiftDate(p.start, 7 * delta)) : yearOf(localDateStr(new Date(parse(p.end).getFullYear() + delta, parse(p.end).getMonth(), 1))))}
+            onChange={(p) => setAnchor(p.end > today ? today : p.end)}
+          />
         )}
       </div>
+
+      {/* Cards in your order; on wide screens they flow down two columns */}
+      <div className="flex flex-col gap-5 lg:block lg:columns-2 lg:gap-5">
+        {order
+          .filter((id) => cards[id])
+          .map((id) => (
+            <div key={id} className="break-inside-avoid lg:mb-5">
+              {cards[id]}
+            </div>
+          ))}
+      </div>
+
+      <ReorderSheet
+        open={arrangeOpen}
+        onClose={() => setArrangeOpen(false)}
+        title="Arrange cards"
+        description="Choose the order of the cards on Analysis. On a wide screen they fill two columns, top to bottom."
+        items={order.map((id) => ({ id, label: ANALYSIS_CARDS.find((c) => c.id === id)?.label ?? id }))}
+        onMove={(id, delta) => saveOrder(moveInOrder(order, id as AnalysisCardId, delta))}
+        canReset={!isDefaultOrder(ANALYSIS_CARD_IDS, order)}
+        onReset={() => saveOrder([...ANALYSIS_CARD_IDS])}
+      />
     </div>
   )
 }

@@ -794,7 +794,7 @@ export function CommandPalette() {
       if (range && (t.date < range.from || t.date > range.to)) continue
       if (!filters.every((f) => amountMatches(f, t.amount))) continue
       const cat = getCategory(t.categoryId)
-      const title = noteTitle(t.note) || (t.type === 'transfer' ? 'Transfer' : cat?.label ?? 'Other')
+      const title = noteTitle(t.note) || t.subcategory || (t.type === 'transfer' ? 'Transfer' : cat?.label ?? 'Other')
       const s = textTerms.length
         ? scoreItem(textTerms, {
             title,
