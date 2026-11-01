@@ -1,13 +1,13 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../../../components/layout/PageHeader'
-import { Card } from '../../../components/ui/Card'
+import { Card, CardHeader } from '../../../components/ui/Card'
 import { SegmentedControl } from '../../../components/ui/SegmentedControl'
 import { localDateStr, thb, thbCompact } from '../../../lib/format'
 import type { SpendTransaction } from '../../../lib/types'
 import { getCategory } from '../categories'
 import { SparkleIcon } from '../../../components/icons'
-import { budgetState, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, categoryBreakdown, spendOf, topSubcategories, totalsFor, weekOf, analysisInsights, type Insight, type Period } from '../logic'
+import { budgetState, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, categoryBreakdown, habits, spendOf, topSubcategories, totalsFor, weekOf, analysisInsights, type Insight, type Period } from '../logic'
 import { MonthStepper } from '../MonthStepper'
 import { ArrangeButton, ReorderSheet } from '../ReorderSheet'
 import { cardOrder, isDefaultOrder, moveInOrder } from '../../../lib/cardOrder'
@@ -25,6 +25,7 @@ const ANALYSIS_CARDS = [
   { id: 'stats', label: 'Quick stats' },
   { id: 'categories', label: 'By category' },
   { id: 'subcategories', label: 'Top subcategories' },
+  { id: 'habits', label: 'Habits' },
   { id: 'tags', label: 'Top tags' },
 ] as const
 type AnalysisCardId = (typeof ANALYSIS_CARDS)[number]['id']
@@ -248,6 +249,12 @@ export function SpendAnalysis() {
   }, [inRange])
 
   const subTotals = useMemo(() => topSubcategories(inRange), [inRange])
+  // The pace counts from when logging began, so a few weeks of history in a 12-month view isn't spread over the year
+  const habitRows = useMemo(() => {
+    const first = transactions.reduce<string | undefined>((m, t) => (!m || t.date < m ? t.date : m), undefined)
+    const from = first && first > period.start ? first : period.start
+    return habits(inRange, daysBetween(from, isCurrent ? today : period.end) + 1)
+  }, [transactions, inRange, period, isCurrent, today])
 
   // A deleted category's budget waits until it's restored
   const catBudgets = range === 'month' ? Object.fromEntries(Object.entries(settings.categoryBudgets ?? {}).filter(([id]) => !getCategory(id)?.hidden)) : {}
@@ -440,6 +447,37 @@ export function SpendAnalysis() {
                     <span className="block text-xs text-ink-muted tnum">{share}%</span>
                   </span>
                 </Link>
+              </li>
+            )
+          })}
+        </ul>
+      </Card>
+    ) : null,
+    // Things bought again and again, and what they come to over a year at this pace
+    habits: habitRows.length > 0 ? (
+      <Card>
+        <CardHeader title="Habits" description={`Bought 3 times or more ${isCurrent ? 'this' : 'that'} ${rangeName}`} />
+        <ul className="mt-3 divide-y divide-line">
+          {habitRows.map((h) => {
+            const cat = getCategory(h.categoryId)
+            const Icon = cat?.icon
+            return (
+              <li key={`${h.categoryId}-${h.subcategory}`} className="flex items-center gap-3 py-2.5">
+                <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${TONES[cat?.tone ?? 'slate'].chip}`}>
+                  {Icon && <Icon className="h-4 w-4" />}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold text-ink">{h.subcategory}</span>
+                  <span className="block truncate text-xs text-ink-muted tnum">
+                    {h.count}× · {thb(h.avg)} each{range !== 'month' && ` · ${h.perMonth}×/month`}
+                  </span>
+                </span>
+                {h.perYear !== undefined && (
+                  <span className="shrink-0 text-right">
+                    <span className={`block text-sm font-bold tnum ${SPENT_TONE.text}`}>≈ {thb(h.perYear)}</span>
+                    <span className="block text-xs text-ink-muted">a year</span>
+                  </span>
+                )}
               </li>
             )
           })}

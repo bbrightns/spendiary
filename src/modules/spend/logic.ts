@@ -481,6 +481,48 @@ export function topSubcategories(txns: SpendTransaction[], limit = 5): { categor
     .slice(0, limit)
 }
 
+export interface Habit {
+  categoryId: string
+  subcategory: string
+  count: number
+  /** Average price of one buy */
+  avg: number
+  /** Buys and money per 30 days at the pace in view */
+  perMonth: number
+  /** Money over a year at this pace; only once two weeks are in view, before that it guesses too much */
+  perYear?: number
+}
+
+/**
+ * Things bought again and again: subcategories with 3 or more expenses in `txns`, most frequent first
+ * (then the most spent). `days` is how many days `txns` covers so far, for the pace.
+ */
+export function habits(txns: SpendTransaction[], days: number, limit = 5): Habit[] {
+  const rows = new Map<string, { categoryId: string; subcategory: string; count: number; amount: number }>()
+  for (const t of txns) {
+    if (t.type !== 'expense' || !t.subcategory) continue
+    const categoryId = t.categoryId ?? 'other'
+    const key = `${categoryId}\u0000${t.subcategory}`
+    const row = rows.get(key) ?? { categoryId, subcategory: t.subcategory, count: 0, amount: 0 }
+    row.count += 1
+    row.amount += t.amount
+    rows.set(key, row)
+  }
+  const span = Math.max(1, days)
+  return [...rows.values()]
+    .filter((r) => r.count >= 3)
+    .sort((a, b) => b.count - a.count || b.amount - a.amount)
+    .slice(0, limit)
+    .map((r) => ({
+      categoryId: r.categoryId,
+      subcategory: r.subcategory,
+      count: r.count,
+      avg: roundMoney(r.amount / r.count),
+      perMonth: Math.round(((r.count * 30) / span) * 10) / 10,
+      ...(span >= 14 ? { perYear: Math.round((r.amount / span) * 365) } : {}),
+    }))
+}
+
 export type Insight =
   /** Where spending lands by the period's end at today's pace; with the month's budget when there is one */
   | { kind: 'pace'; projected: number; budget?: number }

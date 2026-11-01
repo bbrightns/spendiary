@@ -43,6 +43,7 @@ import {
   totalsBySubcategory,
   topSubcategories,
   analysisInsights,
+  habits,
   categoryBreakdown,
   renameInList,
   renameSubOn,
@@ -79,6 +80,20 @@ describe('sortTxns', () => {
       txn({ id: 'e', date: '2026-10-13', createdAt: '2026-10-13T01:00:00Z' }),
     ]
     expect(sortTxns(rows).map((t) => t.id)).toEqual(['c', 'b', 'd', 'e', 'a'])
+  })
+})
+
+describe('habits', () => {
+  const tea = (amount = 65) => txn({ categoryId: 'drinks', subcategory: 'Milk tea', amount })
+  it('counts repeat buys with their average and yearly pace', () => {
+    const rows = habits([tea(60), tea(70), tea(65), tea(65), txn({ categoryId: 'food', subcategory: 'Sushi', amount: 500 }), txn({ categoryId: 'food', subcategory: 'Sushi', amount: 500 })], 30)
+    // Sushi twice isn't a habit yet
+    expect(rows).toEqual([{ categoryId: 'drinks', subcategory: 'Milk tea', count: 4, avg: 65, perMonth: 4, perYear: 3163 }])
+  })
+
+  it('skips the yearly guess with under two weeks in view', () => {
+    expect(habits([tea(), tea(), tea()], 7)[0]).toMatchObject({ count: 3, perMonth: 12.9 })
+    expect(habits([tea(), tea(), tea()], 7)[0].perYear).toBeUndefined()
   })
 })
 
