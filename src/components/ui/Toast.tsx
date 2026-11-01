@@ -1,6 +1,6 @@
 import { useToast, type ToastItem } from '../../store/ToastContext'
 import { ResultOverlay } from './ResultOverlay'
-import { CheckIcon, AlertIcon, SparkleIcon, CloseIcon } from '../icons'
+import { CheckIcon, AlertIcon, InfoIcon, CloseIcon } from '../icons'
 
 const TYPE_CONFIG = {
   success: {
@@ -18,10 +18,11 @@ const TYPE_CONFIG = {
     style: 'border-warn/30 bg-surface text-ink',
     badge: 'bg-warn-soft text-warn-ink',
   },
+  // Plain news (skipped, removed, switched): a neutral "i", not a sparkle that reads as new or AI
   info: {
-    icon: <SparkleIcon className="h-4 w-4 shrink-0 text-link" strokeWidth={2} />,
-    style: 'border-brand/30 bg-surface text-ink',
-    badge: 'bg-brand-soft text-brand-ink',
+    icon: <InfoIcon className="h-4 w-4 shrink-0 text-ink-muted" strokeWidth={2} />,
+    style: 'border-line-strong bg-surface text-ink',
+    badge: 'bg-surface-muted text-ink-muted',
   },
 }
 

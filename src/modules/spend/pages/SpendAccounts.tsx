@@ -33,6 +33,22 @@ const VIEW_OPTIONS = [
   { value: 'cash', label: 'Cash & interest' },
 ] as const
 
+/** About how many em a tile's amount takes without its satang (tabular digits ~0.62em, comma ~0.3em, "฿ " ~0.9em) */
+function amountEms(balance: number): number {
+  if (Math.abs(balance) >= 1_000_000) return 5.4 // "฿ 1.06M", no satang
+  const digits = String(Math.floor(Math.abs(balance))).length
+  return 0.9 + digits * 0.62 + Math.floor((digits - 1) / 3) * 0.3 + (balance < 0 ? 0.6 : 0)
+}
+
+/**
+ * One font size for every wallet tile, set by the longest amount: 18px when it fits, smaller so
+ * the satang (12px, ~20px wide) still show on a third of a phone. The same size keeps a row level.
+ */
+function amountSize(balances: number[]): string {
+  const ems = Math.max(4, ...balances.map(amountEms)) * 1.04
+  return `min(1.125rem, calc((100cqw - 20px) / ${ems.toFixed(2)}))`
+}
+
 export function SpendAccounts() {
   const { transactions, methods, cards, settings, bills, toggleFavorite, updateSettings } = useSpend()
   // Cash & liquidity (bucket, interest, USD accounts) is a second view of the same wallets
@@ -67,6 +83,7 @@ export function SpendAccounts() {
   const hiddenDue = bills.filter((b) => b.amountDue > 0 && (b.status === 'overdue' || b.status === 'due') && hiddenCards.some((c) => c.id === b.card.id)).length
 
   const wallets = methods.filter((m) => m.kind === 'cash')
+  const walletAmountSize = amountSize(wallets.map((w) => w.balance))
   // Locked savings aren't for spending; the rest is ready to use
   const walletTotal = wallets.reduce((s, w) => s + w.balance, 0)
   const lockedTotal = wallets.filter((w) => w.locked).reduce((s, w) => s + w.balance, 0)
@@ -286,11 +303,21 @@ export function SpendAccounts() {
                   >
                     <p className="line-clamp-2 min-w-0 text-xs font-semibold leading-snug text-ink [overflow-wrap:break-word]">{w.name}</p>
 
-                    {/* Whole baht, big; millions go compact. The activity line keeps its height when empty,
-                        so the amounts in a row line up */}
+                    {/* Baht big with satang small and faint; millions go compact. The activity line keeps its
+                        height when empty, so the amounts in a row line up */}
                     <div className="mt-auto min-w-0">
-                      <p className={`truncate font-display text-base @min-[5.75rem]:text-lg font-extrabold leading-tight tracking-tight tnum ${overdrawn ? 'text-loss-ink' : 'text-ink'}`}>
-                        {Math.abs(w.balance) >= 1_000_000 ? thbCompact(w.balance) : thbSigned(w.balance)}
+                      <p
+                        className={`truncate font-display font-extrabold leading-tight tracking-tight tnum ${overdrawn ? 'text-loss-ink' : 'text-ink'}`}
+                        style={{ fontSize: walletAmountSize }}
+                      >
+                        {Math.abs(w.balance) >= 1_000_000 ? (
+                          thbCompact(w.balance)
+                        ) : (
+                          <>
+                            {thbSigned(w.balance, true).slice(0, -3)}
+                            <span className={`text-2xs font-bold ${overdrawn ? 'text-loss-ink/70' : 'text-ink-faint'}`}>{thbSigned(w.balance, true).slice(-3)}</span>
+                          </>
+                        )}
                       </p>
                       <p className="mt-0.5 flex min-h-[1lh] items-center gap-1 truncate text-2xs leading-tight text-ink-faint tnum">
                         {/* Savings you can't spend */}
