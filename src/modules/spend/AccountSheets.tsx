@@ -286,8 +286,8 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
             <p className="mb-2 text-sm font-semibold text-ink-soft">Color</p>
             {/* Live preview: the card face as it shows in the stack */}
             <div
-              className={`mb-3 flex h-14 items-center gap-3 rounded-xl px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] ${CARD_INK.text}`}
-              style={{ background: cardFace(form.color) }}
+              className={`mb-3 flex h-14 items-center gap-3 rounded-xl px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] ${cardFace(form.color).className} ${CARD_INK.text}`}
+              style={cardFace(form.color).style}
             >
               <span className="min-w-0 flex-1 truncate text-sm font-bold">{form.name.trim() || 'Card name'}</span>
               <span className={`shrink-0 text-xs tnum ${CARD_INK.soft}`}>•••• {form.last4 || '0000'}</span>
