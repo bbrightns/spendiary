@@ -732,6 +732,51 @@ export function accountTotals(txns: SpendTransaction[], id: string): AccountTota
   return out
 }
 
+/** The History page filtered to one wallet or card, read as a statement. */
+export const accountTxnsPath = (id: string) => `/spend/txns?account=${encodeURIComponent(id)}`
+
+/** Money into (+) or out of (−) one account, as the row shows it; also for entries already in the balance. */
+export function txnFlow(t: Pick<SpendTransaction, 'type' | 'amount' | 'accountId' | 'toAccountId'>, id: string): number {
+  if (t.type === 'income') return t.accountId === id ? t.amount : 0
+  if (t.type === 'expense') return t.accountId === id ? -t.amount : 0
+  return (t.toAccountId === id ? t.amount : 0) - (t.accountId === id ? t.amount : 0)
+}
+
+export interface AccountStatement {
+  /** Balance (what's owed, for a card) right after each transaction, by transaction id */
+  after: Map<string, number>
+  /** Balance at the end of each day that has a transaction (YYYY-MM-DD) */
+  dayEnd: Map<string, number>
+  /** Balance before the oldest logged transaction: whatever was there, or typed in, before logging began */
+  opening: number
+}
+
+/**
+ * Walk an account's history back from today's balance. `txns` is newest first (`sortTxns`); each
+ * entry's effect is taken off in turn, so the balance after every entry matches what's saved now.
+ * A card's balance is what's owed, which goes up as money leaves it.
+ */
+export function accountStatement(txns: SpendTransaction[], id: string, balance: number, card = false): AccountStatement {
+  const after = new Map<string, number>()
+  const dayEnd = new Map<string, number>()
+  let running = roundMoney(balance)
+  for (const t of txns) {
+    const delta = moneyDeltas(t).get(id)
+    if (delta === undefined && t.accountId !== id && t.toAccountId !== id) continue
+    after.set(t.id, running)
+    if (!dayEnd.has(t.date)) dayEnd.set(t.date, running)
+    if (delta) running = roundMoney(card ? running + delta : running - delta)
+  }
+  return { after, dayEnd, opening: running }
+}
+
+/** An account's balance at the end of `date`, from its statement. */
+export function balanceOn(s: AccountStatement, date: string): number {
+  // dayEnd keeps insertion order, newest day first
+  for (const [d, v] of s.dayEnd) if (d <= date) return v
+  return s.opening
+}
+
 // ── Spending average ─────────────────────────────────────────────────────────
 
 /**

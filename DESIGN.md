@@ -194,6 +194,7 @@ Rules:
 |---|---|
 | `primary` | The one main action. Ink in light, `brand` in dark. |
 | `secondary` | Second choices beside a primary ("Export current data first", "Set budget"). |
+| `tonal` | A row of equal shortcuts inside a sheet, where outlined pills would sink into the white (Spend / Income / Transfer on a wallet). Filled with `ink` at low alpha, no border. |
 | `ghost` | Cancel in a confirm dialog; quiet inline actions. |
 | `danger` | The confirm button of a destructive action. |
 | ~~`success`~~ | Deprecated. Use `primary`. |

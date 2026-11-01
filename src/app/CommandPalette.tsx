@@ -48,7 +48,7 @@ import { openQuickAdd } from '../modules/spend/QuickAddSheet'
 import { openPayBill } from '../modules/spend/PayBillSheet'
 import { openImport } from '../modules/spend/ImportSheet'
 import { ListBulletIcon, RepeatIcon, TransferIcon, getCategory, guessCategory, manageableCategories } from '../modules/spend/categories'
-import { frequencyLabel, goalProgress, noteTitle, periodFor } from '../modules/spend/logic'
+import { accountTxnsPath, frequencyLabel, goalProgress, noteTitle, periodFor } from '../modules/spend/logic'
 import { useSpendSide } from '../hooks/side'
 import { TONES } from '../components/tones'
 import { useSpend } from '../modules/spend/useSpend'
@@ -517,7 +517,7 @@ export function CommandPalette() {
           ic(WalletIcon)
         ),
         iconBox: card ? 'border-transparent' : undefined,
-        run: go(`/spend/txns?q=${encodeURIComponent(m.name.toLowerCase())}`),
+        run: go(accountTxnsPath(m.id)),
       })
     }
 

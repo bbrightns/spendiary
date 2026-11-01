@@ -1136,9 +1136,14 @@ const mk = (date: string, [, type, amount, categoryId, accountId, note, toAccoun
 
 const baseTxns: SpendTransaction[] = [
   ...spendRows.map((r) => mk(inDays(-r[0]), r)),
-  // Salary on each payday: the start of this pay cycle and the one before
-  mk(thisCycle.start, [0, 'income', 110_000, 'salary', 'c-kbank', 'Monthly salary']),
-  mk(lastCycle.start, [0, 'income', 110_000, 'salary', 'c-kbank', 'Monthly salary']),
+  // Salary on each payday (the start of this pay cycle and the one before), then most of it moves
+  // on to savings and the stock account. Wallet balances above are today's, so a wallet's statement
+  // walks back from them: without the moves out, KBank would have started below zero.
+  ...[thisCycle.start, lastCycle.start].flatMap((payday) => [
+    { ...mk(payday, [0, 'income', 110_000, 'salary', 'c-kbank', 'Monthly salary']), time: '09:00' },
+    { ...mk(payday, [0, 'transfer', 70_000, undefined, 'c-kbank', 'Move to savings', 'c-kept']), time: '09:30' },
+    { ...mk(payday, [0, 'transfer', 20_000, undefined, 'c-kbank', 'Fund stock account', 'c-innovestx']), time: '09:35' },
+  ]),
 ]
 
 const chargesOn = (cardId: string, after: string, upTo = '9999-12-31') =>

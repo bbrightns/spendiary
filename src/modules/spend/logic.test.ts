@@ -9,6 +9,9 @@ import {
   categoryUsage,
   sortByUse,
   accountTotals,
+  accountStatement,
+  balanceOn,
+  txnFlow,
   applyOrder,
   moveId,
   activeTagQuery,
@@ -381,6 +384,59 @@ describe('accountTotals', () => {
       'w1',
     )
     expect(t).toMatchObject({ spent: 100, income: 300, net: 200, transferOut: 50, transferIn: 20, count: 4, since: '2026-09-01' })
+  })
+})
+
+describe('accountStatement', () => {
+  // Newest first, as the History page holds them
+  const history = sortTxns([
+    txn({ id: 'salary', type: 'income', accountId: 'w1', amount: 1000, date: '2026-10-30' }),
+    txn({ id: 'topup', type: 'transfer', accountId: 'w1', toAccountId: 'w2', amount: 300, date: '2026-10-25' }),
+    txn({ id: 'lunch', accountId: 'w1', amount: 50, date: '2026-10-25', time: '12:00' }),
+    txn({ id: 'old', accountId: 'w1', amount: 20, date: '2026-10-01', alreadyInBalance: true }),
+    txn({ id: 'other', accountId: 'w2', amount: 999, date: '2026-10-20' }),
+  ])
+
+  it("walks back from today's balance", () => {
+    const s = accountStatement(history, 'w1', 2000)
+    expect(s.after.get('salary')).toBe(2000)
+    expect(s.after.get('lunch')).toBe(1000)
+    expect(s.after.get('topup')).toBe(1050)
+    expect(s.after.has('other')).toBe(false)
+    // Already in the balance: listed, but it moves nothing
+    expect(s.after.get('old')).toBe(1350)
+    expect(s.opening).toBe(1350)
+    expect(s.dayEnd.get('2026-10-25')).toBe(1000)
+  })
+
+  it('reads the balance on any day', () => {
+    const s = accountStatement(history, 'w1', 2000)
+    expect(balanceOn(s, '2026-10-31')).toBe(2000)
+    expect(balanceOn(s, '2026-10-29')).toBe(1000)
+    expect(balanceOn(s, '2026-10-24')).toBe(1350)
+    expect(balanceOn(s, '2026-09-30')).toBe(1350)
+  })
+
+  it('counts a card balance as what is owed', () => {
+    const s = accountStatement(
+      sortTxns([
+        txn({ id: 'pay', type: 'transfer', accountId: 'w1', toAccountId: 'c1', amount: 500, date: '2026-10-27' }),
+        txn({ id: 'buy', accountId: 'c1', amount: 200, date: '2026-10-20' }),
+      ]),
+      'c1',
+      100,
+      true,
+    )
+    expect(s.after.get('pay')).toBe(100)
+    expect(s.after.get('buy')).toBe(600)
+    expect(s.opening).toBe(400)
+  })
+
+  it("signs each row from the account's side", () => {
+    const t = txn({ type: 'transfer', accountId: 'w1', toAccountId: 'w2', amount: 300 })
+    expect(txnFlow(t, 'w1')).toBe(-300)
+    expect(txnFlow(t, 'w2')).toBe(300)
+    expect(txnFlow(txn({ accountId: 'w1', amount: 50 }), 'w1')).toBe(-50)
   })
 })
 

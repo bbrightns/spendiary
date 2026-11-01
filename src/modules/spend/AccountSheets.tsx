@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { TextLink } from '../../components/ui/TextLink'
 import { Modal } from '../../components/ui/Modal'
 import { Button } from '../../components/ui/Button'
 import { FormActions } from '../../components/forms/FormActions'
@@ -10,7 +10,7 @@ import { SwitchVisual } from '../../components/ui/SwitchVisual'
 import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb } from '../../lib/format'
 import type { CashAccount, SpendCard } from '../../lib/types'
-import { accountTotals, cardCycle, unbilledOpening } from './logic'
+import { accountTotals, accountTxnsPath, cardCycle, unbilledOpening } from './logic'
 import { CARD_COLORS, cardFace, inkOn } from './cardColor'
 import { ColorPicker } from '../../components/ui/ColorPicker'
 import { useSpend, type PayMethod } from './useSpend'
@@ -18,6 +18,8 @@ import { openQuickAdd } from './QuickAddSheet'
 import { EditAccountModal } from '../../components/forms/EditCashAccountModal'
 import { useData } from '../../store/DataContext'
 import { FieldWrap } from '../../components/ui/Field'
+import { ArrowDownIcon, ArrowUpIcon, PencilIcon } from '../../components/icons'
+import { TransferIcon } from './categories'
 import { fieldClass } from '../../components/ui/fieldClasses'
 
 export function StarIcon({ filled, className = 'h-4 w-4' }: { filled?: boolean; className?: string }) {
@@ -184,7 +186,7 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
         }
       >
         <div className="space-y-4">
-          {card && <AccountHistory id={card.id} name={card.name} card />}
+          {card && <AccountHistory id={card.id} card />}
           <div className="grid grid-cols-[minmax(0,1fr)_6.5rem] gap-3">
             <FieldWrap label="Card name">
               <input className={inputClass} value={form.name} onChange={(e) => set('name')(e.target.value)} placeholder="KBank Platinum" />
@@ -346,29 +348,30 @@ export function WalletSheet({ wallet, onClose }: { wallet?: PayMethod; onClose: 
             <div className="grid grid-cols-3 gap-2">
               {(
                 [
-                  { type: 'expense', label: 'Spend' },
-                  { type: 'income', label: 'Income' },
-                  { type: 'transfer', label: 'Transfer' },
+                  { type: 'expense', label: 'Spend', Icon: ArrowUpIcon },
+                  { type: 'income', label: 'Income', Icon: ArrowDownIcon },
+                  { type: 'transfer', label: 'Transfer', Icon: TransferIcon },
                 ] as const
               ).map((a) => (
                 <Button
                   key={a.type}
-                  variant="secondary"
+                  variant="tonal"
                   size="sm"
                   onClick={() => {
                     onClose()
                     openQuickAdd({ draft: { type: a.type, accountId: wallet.id } })
                   }}
                 >
+                  <a.Icon className="h-4 w-4" />
                   {a.label}
                 </Button>
               ))}
             </div>
-            <AccountHistory id={wallet.id} name={wallet.name} />
+            <AccountHistory id={wallet.id} />
             <QuickAddPrefs id={wallet.id} />
             {account && (
               <Button
-                variant="secondary"
+                variant="ghost"
                 size="sm"
                 className="w-full"
                 onClick={() => {
@@ -376,6 +379,7 @@ export function WalletSheet({ wallet, onClose }: { wallet?: PayMethod; onClose: 
                   setEditing(account)
                 }}
               >
+                <PencilIcon className="h-4 w-4" />
                 Edit wallet
               </Button>
             )}
@@ -399,9 +403,8 @@ export function WalletSheet({ wallet, onClose }: { wallet?: PayMethod; onClose: 
 }
 
 /** All-time totals for one wallet or card, with a jump to its transactions. */
-function AccountHistory({ id, name, card }: { id: string; name: string; card?: boolean }) {
+function AccountHistory({ id, card }: { id: string; card?: boolean }) {
   const { transactions } = useSpend()
-  const navigate = useNavigate()
   const t = useMemo(() => accountTotals(transactions, id), [transactions, id])
   const since = t.since
     ? new Date(`${t.since}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -432,18 +435,25 @@ function AccountHistory({ id, name, card }: { id: string; name: string; card?: b
           </p>
         </div>
       </div>
-      {t.transferIn + t.transferOut > 0 && (
-        <p className="mt-2 text-xs text-ink-muted tnum">
-          {card ? 'Bill payments' : 'Transfers'}
-          {t.transferIn > 0 && <span className="text-gain-ink"> +{thb(t.transferIn, true)}</span>}
-          {t.transferIn > 0 && t.transferOut > 0 && ' ·'}
-          {t.transferOut > 0 && <> −{thb(t.transferOut, true)}</>}
-        </p>
-      )}
-      {t.count > 0 && (
-        <Button variant="secondary" size="sm" className="mt-3 w-full" onClick={() => navigate(`/spend/txns?q=${encodeURIComponent(name.toLowerCase())}`)}>
-          See transactions
-        </Button>
+      {(t.count > 0 || t.transferIn + t.transferOut > 0) && (
+        <div className="mt-2.5 flex items-center justify-between gap-3">
+          <p className="min-w-0 text-xs text-ink-muted tnum">
+            {t.transferIn + t.transferOut > 0 && (
+              <>
+                {card ? 'Bill payments' : 'Transfers'}
+                {t.transferIn > 0 && <span className="text-gain-ink"> +{thb(t.transferIn, true)}</span>}
+                {t.transferIn > 0 && t.transferOut > 0 && ' ·'}
+                {t.transferOut > 0 && <> −{thb(t.transferOut, true)}</>}
+              </>
+            )}
+          </p>
+          {/* Leaves the sheet: the History page filtered to this account, with its balance after each entry */}
+          {t.count > 0 && (
+            <TextLink to={accountTxnsPath(id)} className="shrink-0">
+              See statement →
+            </TextLink>
+          )}
+        </div>
       )}
     </div>
   )

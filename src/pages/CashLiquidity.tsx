@@ -21,6 +21,7 @@ import { rateOrZero } from '../lib/fx'
 import { ListBulletIcon } from '../modules/spend/categories'
 import { otherUsing, recurringUsing } from '../modules/spend/accountRemoval'
 import { RecurringImpact } from '../modules/spend/RecurringImpact'
+import { accountTxnsPath } from '../modules/spend/logic'
 import { EditAccountModal } from '../components/forms/EditCashAccountModal'
 import {
   PencilIcon,
@@ -49,7 +50,7 @@ export function CashLiquidity() {
   const { data, setCashAccounts, usdThb } = useData()
   const { showToast } = useToast()
   const navigate = useNavigate()
-  const openSpendTxns = (name: string) => navigate(`/spend/txns?q=${encodeURIComponent(name.toLowerCase())}`)
+  const openSpendTxns = (id: string) => navigate(accountTxnsPath(id))
 
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<CashAccountCategory | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -598,7 +599,7 @@ export function CashLiquidity() {
                           {(a.currency ?? 'THB') === 'THB' ? (
                             <button
                               type="button"
-                              onClick={() => openSpendTxns(a.name)}
+                              onClick={() => openSpendTxns(a.id)}
                               className="grid h-8 w-8 place-items-center rounded-lg text-ink-muted hover:bg-surface hover:text-ink transition-colors cursor-pointer"
                               title="See transactions in Spend"
                               aria-label={`See ${a.name} transactions`}
@@ -725,7 +726,7 @@ export function CashLiquidity() {
           }
           onShowTxns={
             accounts.some((x) => x.id === accountToEdit.id) && (accountToEdit.currency ?? 'THB') === 'THB'
-              ? () => openSpendTxns(accountToEdit.name)
+              ? () => openSpendTxns(accountToEdit.id)
               : undefined
           }
         />

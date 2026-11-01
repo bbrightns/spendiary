@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { PageHeader } from '../../../components/layout/PageHeader'
-import { Card } from '../../../components/ui/Card'
+import { Card, CardHeader, Inset } from '../../../components/ui/Card'
+import { IconButton } from '../../../components/ui/IconButton'
 import { AddButton } from '../../../components/ui/AddButton'
 import { Button } from '../../../components/ui/Button'
 import { Modal } from '../../../components/ui/Modal'
@@ -9,11 +10,11 @@ import { EmptyState } from '../../../components/ui/EmptyState'
 import { FilterChip } from '../../../components/ui/FilterChip'
 import { SegmentedControl } from '../../../components/ui/SegmentedControl'
 import { CloseIcon, SearchIcon } from '../../../components/icons'
-import { localDateStr, thb } from '../../../lib/format'
+import { localDateStr, thb, thbSigned } from '../../../lib/format'
 import { dateRangeLabel } from '../../../lib/paletteSearch'
 import type { SpendTransaction, SpendTxnType } from '../../../lib/types'
 import { ListBulletIcon, categoriesFor, getCategory } from '../categories'
-import { inPeriod, periodFor, shiftDate, spendOf, weekOf, type Period } from '../logic'
+import { accountStatement, balanceOn, inPeriod, periodFor, shiftDate, spendOf, txnFlow, weekOf, type AccountStatement, type Period } from '../logic'
 import { MonthStepper } from '../MonthStepper'
 import { openQuickAdd } from '../QuickAddSheet'
 import { TxnRow } from '../TxnRow'
@@ -105,6 +106,14 @@ export function SpendTransactions() {
   const cycle = settings.cycle
   const [params, setParams] = useSearchParams()
   const query = params.get('q') ?? ''
+  // One wallet or card: the page reads as its statement, with the balance after each entry
+  const accountId = params.get('account')
+  const account = accountId ? methods.find((m) => m.id === accountId) : undefined
+  const isCard = account?.kind === 'card'
+  const statement = useMemo(
+    () => (accountId && account ? accountStatement(transactions, accountId, account.balance, isCard) : undefined),
+    [transactions, accountId, account, isCard],
+  )
   // Days from a search ("food ตุลา" in the search bar opens here with from / to)
   const from = params.get('from')
   const to = params.get('to')
@@ -131,6 +140,11 @@ export function SpendTransactions() {
     for (const k of ['q', 'from', 'to']) next.delete(k)
     setParams(next, { replace: true })
   }
+  const clearAccount = () => {
+    const next = new URLSearchParams(params)
+    next.delete('account')
+    setParams(next, { replace: true })
+  }
 
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean)
   // A search looks across every month; browsing without one stays on the chosen range
@@ -145,9 +159,10 @@ export function SpendTransactions() {
       (t) =>
         (days ? inPeriod(days, t.date) : words.length > 0 || !period || inPeriod(period, t.date)) &&
         (type === 'all' || t.type === type) &&
+        (!accountId || t.accountId === accountId || t.toAccountId === accountId) &&
         matches(t, words, walletName),
     )
-  }, [transactions, accountName, period, days, type, query])
+  }, [transactions, accountName, period, days, type, query, accountId])
 
   const groups = useMemo(() => {
     const map = new Map<string, SpendTransaction[]>()
@@ -256,7 +271,22 @@ export function SpendTransactions() {
         }}
       />
 
-      {filtered.length > 0 && (
+      {accountId && (
+        <StatementCard
+          name={accountName(accountId) ?? 'Account'}
+          card={isCard}
+          balance={account?.balance}
+          statement={statement}
+          // A word search looks across every month, so it has no start and end to show
+          span={days ?? (terms.length > 0 ? null : period ?? 'all')}
+          txns={transactions}
+          accountId={accountId}
+          count={filtered.length}
+          onClear={clearAccount}
+        />
+      )}
+
+      {filtered.length > 0 && !accountId && (
         <div className="flex flex-wrap gap-x-5 gap-y-1 px-1 text-sm text-ink-muted tnum">
           <span>
             {filtered.length} {filtered.length === 1 ? 'transaction' : 'transactions'}
@@ -287,18 +317,32 @@ export function SpendTransactions() {
         <div className="space-y-4">
           {groups.map(([date, txns]) => {
             const dayNet = txns.reduce((s, t) => s + (t.type === 'income' ? t.amount : t.type === 'expense' ? -t.amount : 0), 0)
+            const dayEnd = statement?.dayEnd.get(date)
             return (
               <Card key={date} list className="pt-3 pb-1">
                 <div className="flex items-center justify-between border-b border-line pb-2 text-xs font-semibold text-ink-muted">
                   <span>{dayLabel(date, showYear)}</span>
-                  <span className="tnum">
-                    {dayNet > 0 ? '+' : dayNet < 0 ? '−' : ''}
-                    {thb(Math.abs(dayNet), true)}
-                  </span>
+                  {dayEnd !== undefined ? (
+                    // A statement closes each day on the balance, like a bank's
+                    <span className="tnum">
+                      {isCard ? 'Owed' : 'Balance'} <span className="text-ink">{thbSigned(dayEnd, true)}</span>
+                    </span>
+                  ) : (
+                    <span className="tnum">
+                      {dayNet > 0 ? '+' : dayNet < 0 ? '−' : ''}
+                      {thb(Math.abs(dayNet), true)}
+                    </span>
+                  )}
                 </div>
                 <div className="divide-y divide-line">
                   {txns.map((t) => (
-                    <TxnRow key={t.id} txn={t} methods={methods} onTagClick={toggleTag} />
+                    <TxnRow
+                      key={t.id}
+                      txn={t}
+                      methods={methods}
+                      onTagClick={toggleTag}
+                      account={accountId ? { id: accountId, card: isCard, after: statement?.after.get(t.id) } : undefined}
+                    />
                   ))}
                 </div>
               </Card>
@@ -307,6 +351,89 @@ export function SpendTransactions() {
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * One account's statement: its balance at the start and end of what's in view, and the money in
+ * and out between them. Entries already in the balance are listed but move nothing, so they're
+ * left out of in / out and start + in − out always equals the end.
+ */
+function StatementCard({
+  name,
+  card,
+  balance,
+  statement,
+  span,
+  txns,
+  accountId,
+  count,
+  onClear,
+}: {
+  name: string
+  card: boolean
+  /** Today's balance (owed, for a card); unset for a deleted account */
+  balance?: number
+  statement?: AccountStatement
+  /** The days in view; 'all' for everything, null for a word search across every month */
+  span: Period | 'all' | null
+  txns: SpendTransaction[]
+  accountId: string
+  count: number
+  onClear: () => void
+}) {
+  const range = statement && span ? (span === 'all' ? { start: statement.opening, end: balance ?? 0 } : { start: balanceOn(statement, shiftDate(span.start, -1)), end: balanceOn(statement, span.end) }) : null
+  const moves = useMemo(() => {
+    let moneyIn = 0
+    let moneyOut = 0
+    for (const t of txns) {
+      if (t.alreadyInBalance || (span && span !== 'all' && !inPeriod(span, t.date))) continue
+      const f = txnFlow(t, accountId)
+      if (f > 0) moneyIn += f
+      else moneyOut -= f
+    }
+    return { moneyIn, moneyOut }
+  }, [txns, span, accountId])
+  const what = card ? 'Owed' : 'Balance'
+  return (
+    <Card>
+      <CardHeader
+        title={name}
+        description={`${count} ${count === 1 ? 'entry' : 'entries'} · ${card ? 'what you owed' : 'the balance'} after each one`}
+        action={<IconButton icon={<CloseIcon className="h-4 w-4" />} label="Show every account" onClick={onClear} />}
+      />
+      {balance === undefined ? (
+        <p className="mt-3 text-sm text-ink-muted">This account was deleted, so there's no balance to follow.</p>
+      ) : range ? (
+        <Inset className="mt-4 p-3.5">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-ink-muted">{span === 'all' ? (card ? 'Owed at first' : 'Starting balance') : `${what} at start`}</p>
+              <p className="truncate font-display text-lg font-extrabold text-ink tnum">{thbSigned(range.start, true)}</p>
+            </div>
+            <span aria-hidden className="pb-1 text-ink-faint">
+              →
+            </span>
+            <div className="min-w-0 text-right">
+              <p className="text-xs font-semibold text-ink-muted">{span === 'all' ? `${what} now` : `${what} at end`}</p>
+              <p className="truncate font-display text-lg font-extrabold text-ink tnum">{thbSigned(range.end, true)}</p>
+            </div>
+          </div>
+          <p className="mt-2 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-ink-muted tnum">
+            <span>
+              In <b className="font-semibold text-gain-ink">+{thb(moves.moneyIn, true)}</b>
+            </span>
+            <span>
+              Out <b className="font-semibold text-ink">−{thb(moves.moneyOut, true)}</b>
+            </span>
+          </p>
+        </Inset>
+      ) : (
+        <p className="mt-3 text-sm text-ink-muted tnum">
+          {what} now <b className="font-bold text-ink">{thbSigned(balance, true)}</b>
+        </p>
+      )}
+    </Card>
   )
 }
 
