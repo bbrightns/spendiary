@@ -226,7 +226,7 @@ No per-page padding overrides. A card whose inside is a full-bleed chart or tabl
 - **Inset** (`<Inset>`): `rounded-2xl bg-surface-muted p-4`, with no border and no shadow. Use it for a group of figures inside a card, such as portfolio value plus all-time PnL.
 - **Dashed prompt:** `rounded-2xl border border-dashed border-line-strong p-3`. Use it for empty or setup prompts ("Set up bills that repeat").
 
-**Picture tiles are the one exception:** the credit-card stack (`CardStack`) and the wallet tiles on Spend → Accounts draw the object itself (a card face, a wallet), so they keep their own shape and accent ring.
+**Picture tiles are the one exception:** the credit-card stack (`CardStack`) and the wallet tiles on Spend → Accounts draw the object itself (a card face, a wallet), so they keep their own shape and accent ring. A card face never paints the card's color at full strength: `cardFace()` gives the `.card-face` classes in `src/index.css`, which keep the hue at a fixed OKLCH lightness (pastel in light, muted in dark) so the name, digits (`ink-soft`) and star (`warn-ink` when on) pass contrast on every palette color.
 
 **Stat tiles** are a grid of `Card compact`. Each tile has a label (`text-xs font-semibold text-ink-muted`), a value (stat value style), and an optional one-line note. Long values must fit or be shortened (`฿140.0K`). A chip must never overflow its tile.
 
