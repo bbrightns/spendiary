@@ -173,10 +173,11 @@ export function Landing() {
               Try the demo
             </button>
           </div>
+          {/* Right under the pills, so the email form opening below can't pull it away from the demo button */}
+          <p className="mt-3 text-xs text-landing-ink-faint">The demo needs no account. Nothing is saved.</p>
           <div className="mx-auto max-w-sm">
             <EmailCodeSignIn />
           </div>
-          <p className="mt-3 text-xs text-landing-ink-faint">The demo needs no account. Nothing is saved.</p>
 
           {/* Real screens from demo mode; hidden lazy images never load, so each size fetches only its own */}
           <div className="landing-reveal relative mx-auto mt-14 hidden max-w-4xl md:block">
