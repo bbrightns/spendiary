@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { thb, thbSigned } from '../../lib/format'
 import type { SpendCard, SpendTransaction } from '../../lib/types'
 import { StarIcon } from './AccountSheets'
-import { FALLBACK_CARD_COLOR, cardFace, inkOn } from './cardColor'
+import { CARD_INK, CARD_TINT, FALLBACK_CARD_COLOR, cardFace } from './cardColor'
 import { availableCredit } from './credit'
 import { useData } from '../../store/DataContext'
 import { cardCycle, unbilledOpening, upcomingDue } from './logic'
@@ -27,7 +27,7 @@ function shortDate(iso: string): string {
 }
 
 /** The star in front of a card's name, on the front card and on every tab behind it, same column */
-function FavoriteToggle({ on, name, light, onToggle, className = '' }: { on: boolean; name: string; light: boolean; onToggle: () => void; className?: string }) {
+function FavoriteToggle({ on, name, onToggle, className = '' }: { on: boolean; name: string; onToggle: () => void; className?: string }) {
   return (
     <button
       type="button"
@@ -37,7 +37,7 @@ function FavoriteToggle({ on, name, light, onToggle, className = '' }: { on: boo
       }}
       aria-pressed={on}
       aria-label={on ? `Unfavorite ${name}` : `Favorite ${name}`}
-      className={`-mx-2 grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current ${light ? 'hover:bg-white/15' : 'hover:bg-black/10'} ${on ? 'text-gold' : 'opacity-70 hover:opacity-100'} ${className}`}
+      className={`-mx-2 grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current hover:bg-ink/10 ${on ? 'text-gold' : 'opacity-70 hover:opacity-100'} ${className}`}
     >
       <StarIcon filled={on} />
     </button>
@@ -85,7 +85,6 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
 
   const a = info.get(active.id)!
   const color = active.color ?? FALLBACK_CARD_COLOR
-  const ink = inkOn(color)
   // The limit it draws on: shared with its other cards, less installment holds
   const credit = availableCredit(active, cards, loans)
   const held = credit.held
@@ -97,7 +96,6 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
       {behind.map((c, i) => {
         const t = info.get(c.id)!
         const bg = c.color ?? FALLBACK_CARD_COLOR
-        const k = inkOn(bg)
         return (
           <div
             key={c.id}
@@ -110,17 +108,17 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
               setPicked(c.id)
             }}
             aria-label={`Show ${c.name}, owed ${thbSigned(c.balance, true)}${t.open ? `, ${dueText(t.open.daysToDue)}` : ''}`}
-            style={{ background: cardFace(bg), zIndex: i }}
+            style={{ background: cardFace(bg, CARD_TINT.behind), zIndex: i }}
             // Taller than it shows: the next layer covers the bottom, so only ~44px peeks out
-            className={`relative -mb-4 flex h-[60px] w-full items-start gap-3 rounded-t-[var(--radius-card)] px-4 pt-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_-8px_20px_-10px_rgba(0,0,0,0.45)] transition-transform duration-200 cursor-pointer hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:px-5 ${k.text}`}
+            className={`relative -mb-4 flex h-[60px] w-full items-start gap-3 rounded-t-[var(--radius-card)] px-4 pt-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_-8px_20px_-12px_rgba(0,0,0,0.25)] transition-transform duration-200 cursor-pointer hover:-translate-y-1 focus-visible:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:px-5 ${CARD_INK.text}`}
           >
-            <FavoriteToggle on={favoriteIds.includes(c.id)} name={c.name} light={k.light} onToggle={() => onToggleFavorite(c.id)} className="-my-1.5" />
+            <FavoriteToggle on={favoriteIds.includes(c.id)} name={c.name} onToggle={() => onToggleFavorite(c.id)} className="-my-1.5" />
             <span className="flex min-w-0 flex-1 items-baseline gap-2">
               <span className="truncate text-sm font-bold">{c.name}</span>
-              {c.last4 && <span className={`shrink-0 text-xs tnum ${k.soft}`}>•• {c.last4}</span>}
+              {c.last4 && <span className={`shrink-0 text-xs tnum ${CARD_INK.soft}`}>•• {c.last4}</span>}
             </span>
             {t.tone && (
-              <span className={`shrink-0 rounded-full bg-white px-2 py-0.5 text-2xs font-bold ${t.tone === 'loss' ? 'text-loss-ink' : 'text-warn-ink'}`}>
+              <span className={`shrink-0 rounded-full bg-surface px-2 py-0.5 text-2xs font-bold ${t.tone === 'loss' ? 'text-loss-ink' : 'text-warn-ink'}`}>
                 {t.tone === 'loss' ? 'Overdue' : `Due ${shortDate(t.due.date)}`}
               </span>
             )}
@@ -142,18 +140,18 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
         }}
         aria-label={`Edit ${active.name}`}
         style={{ zIndex: behind.length }}
-        className="relative overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.45),var(--shadow-soft)] cursor-pointer transition-shadow hover:shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.45),var(--shadow-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand animate-rise"
+        className="relative overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface shadow-[0_-8px_24px_-14px_rgba(0,0,0,0.25),var(--shadow-soft)] cursor-pointer transition-shadow hover:shadow-[0_-8px_24px_-14px_rgba(0,0,0,0.25),var(--shadow-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand animate-rise"
       >
-        <div className={`flex items-center gap-3 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] sm:px-5 ${ink.text}`} style={{ background: cardFace(color) }}>
-          <FavoriteToggle on={fav} name={active.name} light={ink.light} onToggle={() => onToggleFavorite(active.id)} />
+        <div className={`flex items-center gap-3 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] sm:px-5 ${CARD_INK.text}`} style={{ background: cardFace(color) }}>
+          <FavoriteToggle on={fav} name={active.name} onToggle={() => onToggleFavorite(active.id)} />
           <div className="min-w-0 flex-1">
             <p className="flex min-w-0 items-center text-sm font-bold">
               <span className="truncate">{active.name}</span>
               {defaultId === active.id && (
-                <span className={`ml-1.5 shrink-0 rounded-full px-1.5 py-0.5 text-2xs font-bold ${ink.light ? 'bg-white/20' : 'bg-black/10'}`}>Default</span>
+                <span className={`ml-1.5 shrink-0 rounded-full px-1.5 py-0.5 text-2xs font-bold bg-ink/10`}>Default</span>
               )}
             </p>
-            <p className={`text-xs tnum ${ink.soft}`}>{active.last4 ? `•••• ${active.last4}` : 'Credit card'}</p>
+            <p className={`text-xs tnum ${CARD_INK.soft}`}>{active.last4 ? `•••• ${active.last4}` : 'Credit card'}</p>
           </div>
         </div>
 

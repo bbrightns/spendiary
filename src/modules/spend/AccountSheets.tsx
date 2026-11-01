@@ -11,7 +11,7 @@ import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb } from '../../lib/format'
 import type { CashAccount, SpendCard } from '../../lib/types'
 import { accountTotals, accountTxnsPath, cardCycle, unbilledOpening } from './logic'
-import { CARD_COLORS, cardFace, inkOn } from './cardColor'
+import { CARD_COLORS, CARD_INK, cardFace } from './cardColor'
 import { ColorPicker } from '../../components/ui/ColorPicker'
 import { useSpend, type PayMethod } from './useSpend'
 import { openQuickAdd } from './QuickAddSheet'
@@ -286,11 +286,11 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
             <p className="mb-2 text-sm font-semibold text-ink-soft">Color</p>
             {/* Live preview: the card face as it shows in the stack */}
             <div
-              className={`mb-3 flex h-14 items-center gap-3 rounded-xl px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] ${inkOn(form.color).text}`}
+              className={`mb-3 flex h-14 items-center gap-3 rounded-xl px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] ${CARD_INK.text}`}
               style={{ background: cardFace(form.color) }}
             >
               <span className="min-w-0 flex-1 truncate text-sm font-bold">{form.name.trim() || 'Card name'}</span>
-              <span className={`shrink-0 text-xs tnum ${inkOn(form.color).soft}`}>•••• {form.last4 || '0000'}</span>
+              <span className={`shrink-0 text-xs tnum ${CARD_INK.soft}`}>•••• {form.last4 || '0000'}</span>
             </div>
             <ColorPicker value={form.color} onChange={(hex) => hex && set('color')(hex)} />
           </div>
