@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { PageHeader } from '../../../components/layout/PageHeader'
 import { Card } from '../../../components/ui/Card'
@@ -7,7 +7,7 @@ import { Button } from '../../../components/ui/Button'
 import { SegmentedControl } from '../../../components/ui/SegmentedControl'
 import { CashLiquidity } from '../../../pages/CashLiquidity'
 import { EmptyState } from '../../../components/ui/EmptyState'
-import { CreditCardIcon, LockClosedIcon } from '../../../components/icons'
+import { ChevronDownIcon, CreditCardIcon, LockClosedIcon } from '../../../components/icons'
 import { localDateStr, thb, thbCompact, thbSigned } from '../../../lib/format'
 import type { CashAccount, SpendCard } from '../../../lib/types'
 import { newCashAccount, sortCashAccounts } from '../../../lib/calc'
@@ -26,6 +26,8 @@ import { DEFAULT_CARD_FILTER, filterCards, isFiltering, readCardFilter, writeCar
 import { useSpend, type PayMethod } from '../useSpend'
 
 const ACCOUNT_SECTIONS = ['cards', 'wallets'] as const
+/** Everyday wallets shown before the rest fold behind a "more" tile */
+const EVERYDAY_SHOWN = 6
 type AccountSection = (typeof ACCOUNT_SECTIONS)[number]
 
 /** 1234 → 1.2K, for the tiny in / out line on a wallet tile. */
@@ -121,6 +123,77 @@ export function SpendAccounts() {
     }
     return map
   }, [transactions, period])
+
+  // Everyday wallets up front; savings and archived ones fold away under their own row
+  const [showAllEveryday, setShowAllEveryday] = useState(false)
+  const [openGroups, setOpenGroups] = useState({ savings: false, archived: false })
+  const toggleGroup = (g: 'savings' | 'archived') => setOpenGroups((o) => ({ ...o, [g]: !o[g] }))
+  const active = wallets.filter((w) => !w.archived)
+  const everyday = active.filter((w) => !w.locked)
+  const savings = active.filter((w) => w.locked)
+  const archived = wallets.filter((w) => w.archived)
+  // Past six wallets, show the ones in use (starred, the default, or moved this period) and fold the rest
+  const inUse = everyday.filter((w) => favs.includes(w.id) || settings.defaultAccountId === w.id || flows.has(w.id))
+  const trim = !showAllEveryday && everyday.length > EVERYDAY_SHOWN
+  const shownEveryday = trim ? (inUse.length >= 3 ? inUse : everyday.slice(0, EVERYDAY_SHOWN)) : everyday
+  const hiddenEveryday = everyday.length - shownEveryday.length
+
+  // One wallet tile; archived ones are faded
+  const walletTile = (w: PayMethod) => {
+    const f = flows.get(w.id)
+    const isDefault = settings.defaultAccountId === w.id
+    // Wallets can't really go below zero, so this is almost always a txn logged to the wrong one
+    const overdrawn = w.balance < 0
+    return (
+      <div
+        key={w.id}
+        role="button"
+        tabIndex={0}
+        onClick={() => setWalletSheet(w)}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return
+          e.preventDefault()
+          setWalletSheet(w)
+        }}
+        aria-label={`${w.name}${isDefault ? ', default' : ''}${w.locked ? ', locked savings' : ''}, ${thbSigned(w.balance, true)}${overdrawn ? ', overdrawn' : ''}`}
+        title={`${w.name} · ${thbSigned(w.balance, true)}`}
+        // The wallet's color washes in from the top and is gone before the amount
+        style={w.color ? { background: `linear-gradient(180deg, color-mix(in srgb, ${w.color} 18%, transparent), transparent 60%), var(--color-surface)` } : undefined}
+        className={`@container relative ${w.archived ? 'opacity-60' : ''} flex aspect-square min-w-0 flex-col rounded-2xl border bg-surface p-1.5 min-[370px]:p-2 sm:p-2.5 text-left shadow-[var(--shadow-soft)] transition-all cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+          overdrawn ? 'border-loss/60 ring-1 ring-loss/25' : isDefault ? 'border-brand/60 ring-1 ring-brand/30' : 'border-line'
+        }`}
+      >
+        <p className="line-clamp-2 min-w-0 text-xs font-semibold leading-snug text-ink [overflow-wrap:break-word]">{w.name}</p>
+
+        {/* Baht big with satang small and faint; millions go compact. The activity line keeps its
+            height when empty, so the amounts in a row line up */}
+        <div className="mt-auto min-w-0">
+          <p
+            className={`truncate font-display font-extrabold leading-tight tracking-tight tnum ${overdrawn ? 'text-loss-ink' : 'text-ink'}`}
+            style={{ fontSize: walletAmountSize }}
+          >
+            {Math.abs(w.balance) >= 1_000_000 ? (
+              thbCompact(w.balance)
+            ) : (
+              <>
+                {thbSigned(w.balance, true).slice(0, -3)}
+                <span className={`text-2xs font-bold ${overdrawn ? 'text-loss-ink/70' : 'text-ink-faint'}`}>{thbSigned(w.balance, true).slice(-3)}</span>
+              </>
+            )}
+          </p>
+          <p className="mt-0.5 flex min-h-[1lh] items-center gap-1 truncate text-2xs leading-tight text-ink-faint tnum">
+            {/* Savings you can't spend */}
+            {w.locked && <LockClosedIcon aria-label="Locked" className="h-3 w-3 shrink-0" />}
+            {overdrawn ? (
+              <span className="font-bold text-loss-ink">Overdrawn</span>
+            ) : f ? (
+              <>+{compact(f.in)} · −{compact(f.out)}</>
+            ) : null}
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -284,73 +357,42 @@ export function SpendAccounts() {
               />
             </Card>
           ) : (
-            // Bento: three square tiles a row on phones; wider screens fit as many 120px+ tiles as
-            // the row holds and stretch them to fill it, so there's no empty strip at the sides
-            <div className="grid w-full grid-cols-3 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(120px,1fr))] sm:gap-3 auto-rows-fr">
-              {wallets.map((w) => {
-                const f = flows.get(w.id)
-                const isDefault = settings.defaultAccountId === w.id
-                // Wallets can't really go below zero, so this is almost always a txn logged to the wrong one
-                const overdrawn = w.balance < 0
-                return (
-                  <div
-                    key={w.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setWalletSheet(w)}
-                    onKeyDown={(e) => {
-                      if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return
-                      e.preventDefault()
-                      setWalletSheet(w)
-                    }}
-                    aria-label={`${w.name}${isDefault ? ', default' : ''}${w.locked ? ', locked savings' : ''}, ${thbSigned(w.balance, true)}${overdrawn ? ', overdrawn' : ''}`}
-                    title={`${w.name} · ${thbSigned(w.balance, true)}`}
-                    // The wallet's color washes in from the top and is gone before the amount
-                    style={w.color ? { background: `linear-gradient(180deg, color-mix(in srgb, ${w.color} 18%, transparent), transparent 60%), var(--color-surface)` } : undefined}
-                    className={`@container relative flex aspect-square min-w-0 flex-col rounded-2xl border bg-surface p-1.5 min-[370px]:p-2 sm:p-2.5 text-left shadow-[var(--shadow-soft)] transition-all cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                      overdrawn ? 'border-loss/60 ring-1 ring-loss/25' : isDefault ? 'border-brand/60 ring-1 ring-brand/30' : 'border-line'
-                    }`}
+            <div className="space-y-3">
+              {/* Bento: three square tiles a row on phones; wider screens fit as many 120px+ tiles as
+                  the row holds and stretch them to fill it, so there's no empty strip at the sides */}
+              <div className="grid w-full grid-cols-3 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(120px,1fr))] sm:gap-3 auto-rows-fr">
+                {shownEveryday.map(walletTile)}
+                {/* The rest of the everyday wallets wait behind one tile */}
+                {(hiddenEveryday > 0 || showAllEveryday) && everyday.length > EVERYDAY_SHOWN && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllEveryday((v) => !v)}
+                    className="flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-line-strong text-xs font-bold text-ink-soft transition-colors cursor-pointer hover:bg-surface-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                   >
-                    <p className="line-clamp-2 min-w-0 text-xs font-semibold leading-snug text-ink [overflow-wrap:break-word]">{w.name}</p>
-
-                    {/* Baht big with satang small and faint; millions go compact. The activity line keeps its
-                        height when empty, so the amounts in a row line up */}
-                    <div className="mt-auto min-w-0">
-                      <p
-                        className={`truncate font-display font-extrabold leading-tight tracking-tight tnum ${overdrawn ? 'text-loss-ink' : 'text-ink'}`}
-                        style={{ fontSize: walletAmountSize }}
-                      >
-                        {Math.abs(w.balance) >= 1_000_000 ? (
-                          thbCompact(w.balance)
-                        ) : (
-                          <>
-                            {thbSigned(w.balance, true).slice(0, -3)}
-                            <span className={`text-2xs font-bold ${overdrawn ? 'text-loss-ink/70' : 'text-ink-faint'}`}>{thbSigned(w.balance, true).slice(-3)}</span>
-                          </>
-                        )}
-                      </p>
-                      <p className="mt-0.5 flex min-h-[1lh] items-center gap-1 truncate text-2xs leading-tight text-ink-faint tnum">
-                        {/* Savings you can't spend */}
-                        {w.locked && <LockClosedIcon aria-label="Locked" className="h-3 w-3 shrink-0" />}
-                        {overdrawn ? (
-                          <span className="font-bold text-loss-ink">Overdrawn</span>
-                        ) : f ? (
-                          <>+{compact(f.in)} · −{compact(f.out)}</>
-                        ) : null}
-                      </p>
-                    </div>
-                  </div>
-                )
-              })}
-              <button
-                type="button"
-                onClick={() => setNewWallet(newCashAccount())}
-                // Brand-tinted so it reads as an action in both themes, not as an empty slot
-                className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-brand/40 bg-brand-soft/30 text-xs font-bold text-brand-ink transition-colors cursor-pointer hover:border-brand/70 hover:bg-brand-soft/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-              >
-                <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand text-lg font-bold leading-none text-white shadow-xs">+</span>
-                Add wallet
-              </button>
+                    <ChevronDownIcon className={`h-5 w-5 transition-transform ${showAllEveryday ? 'rotate-180' : ''}`} />
+                    {showAllEveryday ? 'Show less' : `${hiddenEveryday} more`}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setNewWallet(newCashAccount())}
+                  // Brand-tinted so it reads as an action in both themes, not as an empty slot
+                  className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-brand/40 bg-brand-soft/30 text-xs font-bold text-brand-ink transition-colors cursor-pointer hover:border-brand/70 hover:bg-brand-soft/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand text-lg font-bold leading-none text-white shadow-xs">+</span>
+                  Add wallet
+                </button>
+              </div>
+              {savings.length > 0 && (
+                <WalletGroup title="Savings & locked" wallets={savings} open={openGroups.savings} onToggle={() => toggleGroup('savings')}>
+                  <div className="grid w-full grid-cols-3 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(120px,1fr))] sm:gap-3 auto-rows-fr">{savings.map(walletTile)}</div>
+                </WalletGroup>
+              )}
+              {archived.length > 0 && (
+                <WalletGroup title="Archived" wallets={archived} open={openGroups.archived} onToggle={() => toggleGroup('archived')}>
+                  <div className="grid w-full grid-cols-3 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(120px,1fr))] sm:gap-3 auto-rows-fr">{archived.map(walletTile)}</div>
+                </WalletGroup>
+              )}
             </div>
           )}
           <p className="px-1 text-center text-xs text-ink-muted md:text-left">In / out is {periodName.toLowerCase()}. USD accounts are under Cash & interest.</p>
@@ -421,6 +463,28 @@ export function SpendAccounts() {
       />
       <CardSheet open={cardSheet.open} card={cardSheet.card ? cards.find((c) => c.id === cardSheet.card!.id) : undefined} onClose={() => setCardSheet({ open: false })} />
       <WalletSheet wallet={walletSheet} onClose={() => setWalletSheet(undefined)} />
+    </div>
+  )
+}
+
+/** A folded group of wallets (savings, archived): one plain row with their count and total, the tiles when open. */
+function WalletGroup({ title, wallets, open, onToggle, children }: { title: string; wallets: PayMethod[]; open: boolean; onToggle: () => void; children: ReactNode }) {
+  const total = wallets.reduce((s, w) => s + w.balance, 0)
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2 rounded-xl px-1 py-2 text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+      >
+        <span className="text-sm font-semibold text-ink-soft">{title}</span>
+        <span className="min-w-0 flex-1 truncate text-xs text-ink-muted tnum">
+          {wallets.length} {wallets.length === 1 ? 'wallet' : 'wallets'} · {thbSigned(total)}
+        </span>
+        <ChevronDownIcon className={`h-4 w-4 shrink-0 text-ink-muted transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && <div className="mt-2">{children}</div>}
     </div>
   )
 }

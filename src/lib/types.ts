@@ -161,6 +161,11 @@ export interface CashAccount {
   currency?: 'THB' | 'USD'
   /** Purpose / Liquidity bucket */
   category?: CashAccountCategory
+  /**
+   * Closed or no longer used: kept with its history and balance (still in net worth), but folded away on
+   * Spend → Accounts and left out of the pickers for new entries
+   */
+  archived?: boolean
   /** Bank / institution preset key */
   bankPreset?: string
   /** Optional custom color */

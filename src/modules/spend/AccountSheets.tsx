@@ -18,7 +18,7 @@ import { openQuickAdd } from './QuickAddSheet'
 import { EditAccountModal } from '../../components/forms/EditCashAccountModal'
 import { useData } from '../../store/DataContext'
 import { FieldWrap } from '../../components/ui/Field'
-import { ArrowDownIcon, ArrowUpIcon, PencilIcon } from '../../components/icons'
+import { ArrowDownIcon, ArrowUpIcon, PackageIcon, PencilIcon } from '../../components/icons'
 import { TransferIcon } from './categories'
 import { fieldClass } from '../../components/ui/fieldClasses'
 
@@ -335,7 +335,7 @@ export function CardSheet({ open, card, onClose }: CardSheetProps) {
 
 export function WalletSheet({ wallet, onClose }: { wallet?: PayMethod; onClose: () => void }) {
   const { data, setCashAccounts } = useData()
-  const { recordBalanceEdit, removeTransaction } = useSpend()
+  const { recordBalanceEdit, removeTransaction, setWalletArchived } = useSpend()
   const { showToast } = useToast()
   // Editing happens here, in Spend, with the same form Cash & Liquidity uses
   const [editing, setEditing] = useState<CashAccount | null>(null)
@@ -371,18 +371,36 @@ export function WalletSheet({ wallet, onClose }: { wallet?: PayMethod; onClose: 
             <AccountHistory id={wallet.id} />
             <QuickAddPrefs id={wallet.id} />
             {account && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full"
-                onClick={() => {
-                  onClose()
-                  setEditing(account)
-                }}
-              >
-                <PencilIcon className="h-4 w-4" />
-                Edit wallet
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    onClose()
+                    setEditing(account)
+                  }}
+                >
+                  <PencilIcon className="h-4 w-4" />
+                  Edit wallet
+                </Button>
+                {/* Closed or unused: folded away and out of the pickers, history and balance kept */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const archive = !account.archived
+                    setWalletArchived(account.id, archive)
+                    onClose()
+                    showToast(archive ? `Archived "${account.name}"` : `"${account.name}" is back`, 'info', {
+                      label: 'Undo',
+                      onClick: () => setWalletArchived(account.id, !archive),
+                    })
+                  }}
+                >
+                  <PackageIcon className="h-4 w-4" />
+                  {account.archived ? 'Unarchive' : 'Archive'}
+                </Button>
+              </div>
             )}
           </div>
         )}

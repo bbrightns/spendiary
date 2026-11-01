@@ -26,7 +26,8 @@ export function MethodIcon({ method, className = 'h-4 w-4' }: { method: Pick<Pay
 /** One-tap chips for favorites + default, everything else under "Other". */
 export function PayMethodPicker({ label, methods, value, onChange, favoriteIds, defaultId, allowNone, excludeId }: Props) {
   const selectId = useId()
-  const usable = methods.filter((m) => m.id !== excludeId)
+  // An archived wallet only shows when it is the one already picked (editing an old entry)
+  const usable = methods.filter((m) => m.id !== excludeId && (!m.archived || m.id === value))
   const byId = (id?: string) => usable.find((m) => m.id === id)
 
   const pinnedIds: string[] = []
