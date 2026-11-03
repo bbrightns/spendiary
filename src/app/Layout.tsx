@@ -4,6 +4,7 @@ import { BottomNav } from '../components/layout/BottomNav'
 import { Sidebar } from './Sidebar'
 import { Footer } from '../components/layout/Footer'
 import { TestModeBanner } from '../components/layout/TestModeBanner'
+import { NewVersionNotice } from '../components/layout/NewVersionNotice'
 import { FxMissingNotice } from '../components/layout/FxMissingNotice'
 import { SettingsIcon, SearchIcon } from '../components/icons'
 import { CommandPalette, openCommandPalette } from './CommandPalette'
@@ -22,8 +23,8 @@ import { SpendBottomNav } from '../modules/spend/SpendBottomNav'
 import { SheetsPaused } from '../modules/spend/SheetsPaused'
 
 export function Layout({ children }: { children: ReactNode }) {
-  const { user, dataReady, loadError, syncConflict } = useData()
-  const canEdit = dataReady && !loadError && !syncConflict
+  const { user, dataReady, loadError, syncConflict, needsRefresh } = useData()
+  const canEdit = dataReady && !loadError && !syncConflict && !needsRefresh
   const isTestMode = user?.id === 'test-user-local'
   const isSpend = useSpendSide()
   const side = SIDE_ACTIVE[isSpend ? 'spend' : 'invest']
@@ -89,6 +90,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <main id="main-content" className="flex-1 lg:pl-64 transition-all duration-300">
         <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-10 py-6 sm:py-7 pb-28 lg:pb-7 flex flex-col min-h-[calc(100dvh-60px)] lg:min-h-dvh">
           <div className="flex-1">
+            <NewVersionNotice />
             <FxMissingNotice />
             {children}
           </div>
@@ -113,7 +115,7 @@ export function Layout({ children }: { children: ReactNode }) {
           <PayLoanSheet />
         </>
       ) : (
-        <SheetsPaused reason={loadError || syncConflict ? 'problem' : 'loading'} />
+        <SheetsPaused reason={loadError || syncConflict || needsRefresh ? 'problem' : 'loading'} />
       )}
     </div>
   )

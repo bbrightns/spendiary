@@ -44,6 +44,8 @@ export interface DataContextValue {
   loadError: boolean
   /** True when another tab or device saved first. Saving stays off so their changes are not overwritten. */
   syncConflict: boolean
+  /** The cloud data was saved by a newer version of the app: saving is off until this page is refreshed */
+  needsRefresh: boolean
   /** Try the cloud load again after a failure, or load the latest data after a conflict */
   retryLoad: () => void
   user: User | null
@@ -224,7 +226,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [])
   const { user, setUser, authError, setAuthError, loginWithGoogle, sendEmailCode, verifyEmailCode } = useAuth()
   const {
-    syncStatus, setSyncStatus, dataReady, loadError, syncConflict, lastSyncedAt, updateLastSynced,
+    syncStatus, setSyncStatus, dataReady, loadError, syncConflict, needsRefresh, lastSyncedAt, updateLastSynced,
     retryLoad, pushNow, syncReady, lastSynced,
   } = useCloudSync(user, data, setDataState)
 
@@ -342,6 +344,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       dataReady,
       loadError,
       syncConflict,
+      needsRefresh,
       retryLoad,
       lastSyncedAt,
       user,
@@ -480,7 +483,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       removeLocation: (holdingId, locId) => updateData((prev) => holdingActions.removeLocation(prev, holdingId, locId)),
     }),
-    [data, syncStatus, dataReady, loadError, syncConflict, lastSyncedAt, user, authError, usdThb, usdThbAsOf],
+    [data, syncStatus, dataReady, loadError, syncConflict, needsRefresh, lastSyncedAt, user, authError, usdThb, usdThbAsOf],
   )
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>

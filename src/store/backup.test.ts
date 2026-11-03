@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { SpendiaryData } from '../lib/types'
 import { makeBackup, parseBackup } from './backup'
-import { emptyData } from './migrate'
+import { DATA_SCHEMA, emptyData } from './migrate'
 import { recordDividend } from './actions/dividends'
 import { undoHoldingLog } from './actions/holdingLogs'
 
@@ -16,6 +16,14 @@ describe('backups', () => {
     expect(parsed.data.cashAccounts).toEqual(data.cashAccounts)
     expect(parsed.data.lastUpdatedAt).toBeGreaterThan(0)
     expect(parsed.preferences).toEqual({ theme: 'dark' })
+  })
+
+  it('stamps the data schema, and refuses a backup made by a newer version', () => {
+    const backup = makeBackup(data, {})
+    expect(backup.data.dataSchema).toBe(DATA_SCHEMA)
+    expect(parseBackup(JSON.stringify(backup)).ok).toBe(true)
+    const newer = { ...backup, data: { ...backup.data, dataSchema: DATA_SCHEMA + 1 } }
+    expect(parseBackup(JSON.stringify(newer))).toMatchObject({ ok: false })
   })
 
   it('still reads an old export that is just the data', () => {

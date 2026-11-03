@@ -583,6 +583,11 @@ export interface SpendCard {
 }
 
 export interface SpendiaryData {
+  /**
+   * Shape of the saved data, stamped on every save (DATA_SCHEMA in store/migrate.ts). A device whose code
+   * knows an older shape stops saving instead of writing data it doesn't understand.
+   */
+  dataSchema?: number
   /** Display name shown in the Dashboard greeting */
   userName?: string
   /** Liquid cash, broken down by where it's stored. Total cash = sum of balances. */

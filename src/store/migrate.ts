@@ -16,6 +16,18 @@ export const emptyData: SpendiaryData = {
 
 export { newId }
 
+/**
+ * Shape of the saved data this code reads and writes. Raise it whenever older code would misread data
+ * saved by this version: such a device then stops saving and asks for a refresh.
+ * 2: locations for BTC, gold and US stocks; trade entries keep a delta instead of whole snapshots.
+ */
+export const DATA_SCHEMA = 2
+
+/** Saved by a newer version of the app than this one: don't save over it, refresh first */
+export function isFromNewerApp(payload: { dataSchema?: unknown } | null | undefined): boolean {
+  return typeof payload?.dataSchema === 'number' && payload.dataSchema > DATA_SCHEMA
+}
+
 type LegacyPlan = DcaPlan & { monthlyTarget?: number; contributed?: number }
 
 /** Migrate older saved shapes into the current model. */
@@ -77,6 +89,8 @@ export function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
     }
   })
   delete (merged as { cash?: number }).cash
+  // Stamped on save only; the data in memory doesn't carry it
+  delete merged.dataSchema
   merged.liabilities = Array.isArray(merged.liabilities) ? merged.liabilities : []
   // Recurring items whose wallet or card was deleted before the app paused them on delete
   if (Array.isArray(merged.spendRecurring)) merged.spendRecurring = syncRecurringAccounts(merged.spendRecurring, liveAccountIds(merged))

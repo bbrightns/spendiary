@@ -1,7 +1,7 @@
 import type { SpendiaryBackup, SpendiaryData } from '../lib/types'
 import { localDateStr } from '../lib/format'
 import { STORAGE_KEYS } from '../lib/storageKeys'
-import { migrate } from './migrate'
+import { DATA_SCHEMA, isFromNewerApp, migrate } from './migrate'
 import { withLegacyLocations } from './legacyLocations'
 import { validateSpendiaryData } from './validate'
 
@@ -31,7 +31,7 @@ export function makeBackup(data: SpendiaryData, preferences: Preferences): Spend
     schemaVersion: 1,
     exportedAt: new Date().toISOString(),
     // Old location fields too, so the previous version of the app can still restore this file
-    data: withLegacyLocations(data),
+    data: { ...withLegacyLocations(data), dataSchema: DATA_SCHEMA },
     preferences,
   }
 }
@@ -80,7 +80,12 @@ export function parseBackup(jsonString: string): ParsedBackup {
     }
   }
 
-  // 4. Migrate legacy fields
+  // 4. Made by a newer version: this one could misread it
+  if (isFromNewerApp(importedData as SpendiaryData)) {
+    return { ok: false, error: 'This backup was made by a newer version of Spendiary. Refresh the page to get the latest version, then restore it.' }
+  }
+
+  // 5. Migrate legacy fields
   const migrated = migrate(importedData)
   // Stamp lastUpdatedAt so this import wins any cloud conflict resolution
   const stamped: SpendiaryData = { ...migrated, lastUpdatedAt: Date.now() }
