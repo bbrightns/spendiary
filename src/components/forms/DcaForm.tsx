@@ -6,7 +6,7 @@ import { AssetLogo } from '../ui/AssetLogo'
 import { FormActions } from './FormActions'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
-import { ASSET_META } from '../../lib/calc'
+import { ASSET_META, findMatchingHolding } from '../../lib/calc'
 import { searchSecurities, type Security } from '../../lib/securities'
 import type { AssetClass, DcaFrequency, DcaPlan } from '../../lib/types'
 
@@ -145,8 +145,12 @@ export function DcaForm({ open, editing, onClose }: Props) {
   // Resolve BTC/Gold locations from portfolio
   const btcHolding = data.holdings.find((h) => h.assetClass === 'crypto')
   const goldHolding = data.holdings.find((h) => h.assetClass === 'gold')
-  const btcLocations = (form.source === 'portfolio' ? selectedPortfolioHolding?.btcLocations : btcHolding?.btcLocations) ?? []
-  const goldLocations = (form.source === 'portfolio' ? selectedPortfolioHolding?.goldLocations : goldHolding?.goldLocations) ?? []
+  // Editing: the holding this plan buys into (same match the confirm step uses)
+  const editingHolding = editing ? findMatchingHolding(data.holdings, editing) : null
+  const usesOwnHolding = !!editing || form.source === 'portfolio'
+  const locationHolding = editing ? editingHolding : selectedPortfolioHolding
+  const btcLocations = (usesOwnHolding ? locationHolding?.btcLocations : btcHolding?.btcLocations) ?? []
+  const goldLocations = (usesOwnHolding ? locationHolding?.goldLocations : goldHolding?.goldLocations) ?? []
 
   // Where each buy is paid from: a THB account other than the one a savings plan deposits into
   const depositInto = form.source === 'cash' || activeAssetClass === 'cash' ? form.cashAccountId || editing?.cashAccountId : undefined
@@ -202,8 +206,9 @@ export function DcaForm({ open, editing, onClose }: Props) {
       holdingId: isCashSource ? undefined : (editing ? (editing.holdingId || selectedPortfolioHolding?.id) : (form.source === 'portfolio' ? form.holdingId : undefined)),
       cashAccountId: isCashSource ? (form.cashAccountId || editing?.cashAccountId || selectedCashAcc?.id) : undefined,
       payFromAccountId: payFromOptions.some((o) => o.value === form.payFromAccountId) && form.payFromAccountId ? form.payFromAccountId : undefined,
-      btcLocationId: (isBtc && form.btcLocationId) ? form.btcLocationId : undefined,
-      goldLocationId: (isGold && form.goldLocationId) ? form.goldLocationId : undefined,
+      // Drop an id whose location was moved out or deleted
+      btcLocationId: (isBtc && btcLocations.some((l) => l.id === form.btcLocationId)) ? form.btcLocationId : undefined,
+      goldLocationId: (isGold && goldLocations.some((l) => l.id === form.goldLocationId)) ? form.goldLocationId : undefined,
       confirmedDates: editing?.confirmedDates,
       skippedDates: editing?.skippedDates,
     })
@@ -356,6 +361,9 @@ export function DcaForm({ open, editing, onClose }: Props) {
             </div>
           </div>
         )}
+
+        {/* ── EDIT mode: where each buy is stored (BTC / Gold) ── */}
+        {editing && locationPicker}
 
         {/* ── Section A (Cash / Savings Account): Destination ── */}
         {!editing && form.source === 'cash' && (
