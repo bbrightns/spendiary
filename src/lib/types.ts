@@ -236,6 +236,8 @@ export interface HoldingLog {
   source?: AcquisitionSource
   /** Who gave the units, when source is 'received' (e.g. "Brother") */
   receivedFrom?: string
+  /** 'edit' logs: each field the edit changed, as [before, after]; undo reverts these (store/actions/undoEdit.ts) */
+  changes?: Record<string, [before: unknown, after: unknown]>
 }
 
 /** Bought with own money, or received for free (gift / inheritance) at the market value on that day. */

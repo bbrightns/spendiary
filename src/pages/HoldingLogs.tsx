@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, Fragment } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useData } from '../store/DataContext'
+import { planEditUndo } from '../store/actions/undoEdit'
 import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
@@ -934,15 +935,26 @@ export function HoldingLogs() {
         open={!!undoTarget}
         onClose={() => setUndoTarget(null)}
         title={`Undo "${undoTarget?.holdingName}"?`}
-        description="This will revert your portfolio balance and holdings state to before this activity was recorded."
+        description={undoTarget?.action === 'edit'
+          ? 'Puts back only what this edit changed. Buys, sells and later edits stay as they are.'
+          : 'This will revert your portfolio balance and holdings state to before this activity was recorded.'}
         confirmText="Yes, undo activity"
         confirmVariant="danger"
         confirmIcon={<UndoIcon className="h-4 w-4" strokeWidth={2.4} />}
         cancelText="Cancel"
         onConfirm={() => {
           if (undoTarget) {
-            undoHoldingLog(undoTarget.id)
-            showToast(`Undid activity for "${undoTarget.holdingName}"`, 'info')
+            // An edit is undone field by field: say when it can't be, or which fields were changed again since
+            const plan = undoTarget.action === 'edit' && undoTarget.holdingId
+              ? planEditUndo(data.holdings.find((h) => h.id === undoTarget.holdingId), undoTarget)
+              : null
+            if (plan && !plan.ok) {
+              showToast(plan.reason, 'warn')
+            } else {
+              undoHoldingLog(undoTarget.id)
+              const kept = plan?.ok && plan.kept.length > 0 ? ` Kept the ${plan.kept.join(', ')}: changed again since.` : ''
+              showToast(`Undid activity for "${undoTarget.holdingName}".${kept}`, 'info')
+            }
           }
           setUndoTarget(null)
         }}

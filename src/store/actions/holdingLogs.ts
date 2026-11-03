@@ -4,6 +4,7 @@ import { SATS_PER_BTC } from '../../lib/calc'
 import type { DataContextValue } from '../DataContext'
 import { newId } from '../migrate'
 import { revertCashAccountsChange } from '../dataHelpers'
+import { diffHolding, planEditUndo } from './undoEdit'
 import { roundMoney } from '../../lib/money'
 
 /**
@@ -20,6 +21,11 @@ export function addHoldingLog(prev: SpendiaryData, ...[log]: Parameters<DataCont
       ? JSON.parse(JSON.stringify(holding))
       : undefined)
 
+  // An edit keeps exactly which fields it changed, so undo can revert those alone
+  const changes = log.action === 'edit' && !log.changes && previousHoldingState && log.afterHoldingState
+    ? diffHolding(previousHoldingState, log.afterHoldingState)
+    : undefined
+
   return {
     ...prev,
     holdingLogs: [
@@ -29,6 +35,7 @@ export function addHoldingLog(prev: SpendiaryData, ...[log]: Parameters<DataCont
         timestamp: log.timestamp ?? new Date().toISOString(),
         holdingId: log.holdingId ?? holding?.id,
         previousHoldingState,
+        ...(changes ? { changes } : {}),
       },
       ...(prev.holdingLogs ?? []),
     ],
@@ -288,10 +295,10 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
         updatedHoldings = updatedHoldings.filter((h) => h.id !== log.holdingId)
       }
     } else if (log.action === 'edit') {
-      // Revert edit: restore previous holding state
-      if (log.previousHoldingState && hIndex >= 0) {
-        updatedHoldings[hIndex] = log.previousHoldingState
-      }
+      // Revert only what the edit changed, so buys, sells and edits made after it survive
+      const plan = planEditUndo(hIndex >= 0 ? updatedHoldings[hIndex] : undefined, log)
+      if (!plan.ok) return prev
+      updatedHoldings[hIndex] = plan.holding
     }
   }
 
