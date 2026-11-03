@@ -28,9 +28,9 @@ Rules:
 2. Preserve every record. Never merge different tickers, accounts, transactions, or logs just because their names look similar. Numbers must be JSON numbers without commas.
 3. Asset Classes, Cash, and Liabilities (always set "assetClass" on every holding to one of the values below):
    - "fund": Thai stocks, Thai mutual funds, Thai DR/DRx, and SET/MAI assets. Values are THB.
-   - "stock": US stocks and US ETFs. Costs/prices are USD when supplied; also preserve totalThbInvested, totalUsdInvested, and FX data when present.
-   - "crypto": BTC, ETH, SOL, and other tokens. For BTC, preserve btcLocations (satoshi, thbSpent) when available. For other tokens, use fractional units (up to 8 decimal places) with avgCost and price in THB.
-   - "gold": physical gold or gold holdings. Preserve grams/baht-gold and goldLocations (grams, thbSpent) when present.
+   - "stock": US stocks and US ETFs. Costs/prices are USD when supplied; also preserve totalThbInvested, totalUsdInvested, and FX data when present. When the same stock is held at several brokers (e.g. Webull, Dime, IBKR), output ONE holding with "locations": one entry per broker { name, qty (shares), thbSpent, usdSpent }; the qty values must add up to "units".
+   - "crypto": BTC, ETH, SOL, and other tokens. For BTC, preserve where it is kept as "locations" [{ name, qty (in BTC), thbSpent }] when available. For other tokens, use fractional units (up to 8 decimal places) with avgCost and price in THB.
+   - "gold": physical gold or gold holdings. Preserve grams/baht-gold and where it is kept as "locations" [{ name, qty (in grams), thbSpent }] when present.
    - "real_estate": property, land, or a home, valued in THB.
    - "cashAccounts": liquid cash accounts (Thai banks, digital wallets, broker cash). Fields: name (e.g. "KBank", "Dime Save"), balance, currency ("THB" or "USD"), category ("spending", "savings", "emergency", "investment", "other"), and optional annual interestRate (%).
    - "liabilities": debts, loans, credit cards, and installment plans. Fields: name (e.g. "KTC Credit Card", "iPhone installment"), category ("credit_card", "installment", "mortgage", "auto_loan", "personal_loan", "student_loan", "other"), balance (remaining debt amount in THB), and optional monthlyPayment, interestRate (%), dueDay (1-31), isInstallment (boolean), totalInstallments, paidInstallments.
@@ -88,7 +88,11 @@ Expected shape:
         "avgCost": 220,
         "price": 231.4,
         "totalUsdInvested": 2200,
-        "totalThbInvested": 77000
+        "totalThbInvested": 77000,
+        "locations": [
+          { "name": "Webull", "qty": 6, "thbSpent": 46200, "usdSpent": 1320 },
+          { "name": "Dime", "qty": 4, "thbSpent": 30800, "usdSpent": 880 }
+        ]
       }
     ],
     "liabilities": [

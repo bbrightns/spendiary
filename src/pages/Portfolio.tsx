@@ -41,7 +41,8 @@ import {
 } from '../lib/calc'
 import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
 import { InteractivePortfolioChart } from '../components/charts/InteractiveTrendChart'
-import type { AssetClass, BtcLocation, Holding } from '../lib/types'
+import type { AssetClass, Holding, HoldingLocation } from '../lib/types'
+import { assignAllToLocation, formatLocationQty, fromInputQty, hasLocations, locationNoun, toInputQty, visibleLocations } from '../lib/locations'
 import { localDateStr, money, thb, thbCompact, pct } from '../lib/format'
 import { isValidRate } from '../lib/fx'
 import { STORAGE_KEYS } from '../lib/storageKeys'
@@ -82,10 +83,9 @@ export function Portfolio() {
   const {
     data,
     removeHolding,
-    upsertBtcLocation,
-    removeBtcLocation,
-    upsertGoldLocation,
-    removeGoldLocation,
+    upsertHolding,
+    upsertLocation,
+    removeLocation,
     recordPortfolioSnapshot,
   } = useData()
   const { showToast } = useToast()
@@ -175,22 +175,20 @@ export function Portfolio() {
   const menuAnchorRef = useRef<HTMLElement | null>(null)
 
   // Per-pocket (storage location) action menu state
-  const [pocketMenu, setPocketMenu] = useState<{ holding: Holding; locId: string; locName: string; isBtc: boolean } | null>(null)
+  const [pocketMenu, setPocketMenu] = useState<{ holding: Holding; locId: string; locName: string } | null>(null)
   const pocketAnchorRef = useRef<HTMLElement | null>(null)
   const openPocketMenu = useCallback((e: ReactMouseEvent<HTMLButtonElement>, holding: Holding, locId: string) => {
     e.stopPropagation() // keep the same click from hitting the window close-handler
-    const locs = holding.assetClass === 'crypto'
-      ? (holding.btcLocations ?? [])
-      : (holding.goldLocations ?? [])
-    const loc = locs.find((l) => l.id === locId)
+    const loc = (holding.locations ?? []).find((l) => l.id === locId)
     if (!loc) return
     pocketAnchorRef.current = e.currentTarget
-    setPocketMenu({ holding, locId, locName: loc.name, isBtc: holding.assetClass === 'crypto' })
+    setPocketMenu({ holding, locId, locName: loc.name })
   }, [])
 
   const [removeLocConfirmOpen, setRemoveLocConfirmOpen] = useState(false)
-  const [removeLocTarget, setRemoveLocTarget] = useState<{ holdingId: string; locId: string; name: string; isBtc: boolean } | null>(null)
+  const [removeLocTarget, setRemoveLocTarget] = useState<{ holdingId: string; locId: string; name: string } | null>(null)
   const closePocketMenu = useCallback(() => setPocketMenu(null), [])
+  const removeLocNoun = locationNoun(data.holdings.find((h) => h.id === removeLocTarget?.holdingId)?.assetClass)
 
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false)
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null)
@@ -199,9 +197,12 @@ export function Portfolio() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [locEditOpen, setLocEditOpen] = useState(false)
   const [locEditHoldingId, setLocEditHoldingId] = useState<string>('')
-  const [locEditing, setLocEditing] = useState<BtcLocation | import('../lib/types').GoldLocation | null>(null)
+  const [locEditing, setLocEditing] = useState<HoldingLocation | null>(null)
+  const [locEditClass, setLocEditClass] = useState<AssetClass>('crypto')
   const [locName, setLocName] = useState('')
   const [locSatoshi, setLocSatoshi] = useState<number | ''>('')
+  const [locShares, setLocShares] = useState<number | ''>('')
+  const [locUsdSpent, setLocUsdSpent] = useState<number | ''>('')
   const [locGoldUnit, setLocGoldUnit] = useState<'grams' | 'baht'>('grams')
   const [locGrams, setLocGrams] = useState<number | ''>('')
   const [locGoldBaht, setLocGoldBaht] = useState<number | ''>('')
@@ -233,7 +234,7 @@ export function Portfolio() {
       return
     }
     if (locationId) {
-      const loc = (h.btcLocations ?? []).find((l) => l.id === locationId) ?? (h.goldLocations ?? []).find((l) => l.id === locationId)
+      const loc = (h.locations ?? []).find((l) => l.id === locationId)
       if (loc?.isLocked) {
         showToast(`"${loc.name}" is locked. Unlock it first to buy into it.`, 'warn')
         return
@@ -251,7 +252,7 @@ export function Portfolio() {
       return
     }
     if (locationId) {
-      const loc = (h.btcLocations ?? []).find((l) => l.id === locationId) ?? (h.goldLocations ?? []).find((l) => l.id === locationId)
+      const loc = (h.locations ?? []).find((l) => l.id === locationId)
       if (loc?.isLocked) {
         showToast(`"${loc.name}" is locked. Unlock it first to sell from it.`, 'warn')
         return
@@ -291,25 +292,23 @@ export function Portfolio() {
       setBuyOpen(true)
     }
   }
-  function openLocEdit(holdingId: string, loc: BtcLocation | import('../lib/types').GoldLocation) {
+  function openLocEdit(holdingId: string, loc: HoldingLocation) {
     if (loc.isLocked) {
       showToast(`"${loc.name}" is locked. Unlock it first to edit.`, 'warn')
       return
     }
+    const ac = data.holdings.find((h) => h.id === holdingId)?.assetClass ?? 'crypto'
     setLocEditHoldingId(holdingId)
     setLocEditing(loc)
+    setLocEditClass(ac)
     setLocName(loc.name)
     setLocGoldUnit('grams')
     setLocIsLocked(!!loc.isLocked)
-    if ('satoshi' in loc) {
-      setLocSatoshi(loc.satoshi)
-      setLocGrams('')
-      setLocGoldBaht('')
-    } else {
-      setLocGrams(loc.grams)
-      setLocGoldBaht(Number((loc.grams / GRAMS_PER_BAHT_GOLD).toFixed(6)))
-      setLocSatoshi('')
-    }
+    setLocSatoshi(ac === 'crypto' ? toInputQty(ac, loc.qty) : '')
+    setLocGrams(ac === 'gold' ? loc.qty : '')
+    setLocGoldBaht(ac === 'gold' ? Number((loc.qty / GRAMS_PER_BAHT_GOLD).toFixed(6)) : '')
+    setLocShares(ac === 'stock' ? loc.qty : '')
+    setLocUsdSpent(ac === 'stock' ? (loc.usdSpent ?? '') : '')
     setLocThbSpent(loc.thbSpent)
     setLocErrors(false)
     setLocEditOpen(true)
@@ -320,37 +319,48 @@ export function Portfolio() {
       setLocErrors(true)
       return
     }
-    if ('satoshi' in locEditing && (locSatoshi === '' || Number(locSatoshi) < 0)) {
-      setLocErrors(true)
-      return
-    }
     const g = locGoldUnit === 'baht'
       ? (locGoldBaht !== '' ? Number(locGoldBaht) * GRAMS_PER_BAHT_GOLD : 0)
       : Number(locGrams)
-    if (!('satoshi' in locEditing) && g <= 0) {
+    const qty =
+      locEditClass === 'crypto' ? (locSatoshi === '' ? -1 : fromInputQty('crypto', Number(locSatoshi)))
+      : locEditClass === 'gold' ? g
+      : locShares === '' ? -1 : Number(locShares)
+    if (qty < 0 || (locEditClass === 'gold' && g <= 0)) {
       setLocErrors(true)
       return
     }
 
-    if ('satoshi' in locEditing) {
-      upsertBtcLocation(locEditHoldingId, {
-        id: locEditing.id,
-        name: locName.trim(),
-        satoshi: Number(locSatoshi),
-        thbSpent: Number(locThbSpent),
-        isLocked: locIsLocked,
-      })
-    } else {
-      upsertGoldLocation(locEditHoldingId, {
-        id: locEditing.id,
-        name: locName.trim(),
-        grams: g,
-        thbSpent: Number(locThbSpent),
-        isLocked: locIsLocked,
-      })
-    }
-    showToast(`Updated location "${locName.trim()}"`, 'success')
+    upsertLocation(locEditHoldingId, {
+      id: locEditing.id,
+      name: locName.trim(),
+      qty,
+      thbSpent: Number(locThbSpent),
+      ...(locEditClass === 'stock' && locUsdSpent !== '' ? { usdSpent: Number(locUsdSpent) } : {}),
+      isLocked: locIsLocked,
+    })
+    showToast(`Updated ${locationNoun(locEditClass)} "${locName.trim()}"`, 'success')
     setLocEditOpen(false)
+  }
+
+  // "Set broker": the whole holding goes to one named broker / location, ready to split with Move
+  const [assignFor, setAssignFor] = useState<Holding | null>(null)
+  const [assignName, setAssignName] = useState('')
+  const [assignErrors, setAssignErrors] = useState(false)
+  function openSetLocation(h: Holding) {
+    setAssignFor(h)
+    setAssignName('')
+    setAssignErrors(false)
+  }
+  function saveSetLocation() {
+    if (!assignFor || !assignName.trim()) {
+      setAssignErrors(true)
+      return
+    }
+    const live = data.holdings.find((h) => h.id === assignFor.id) ?? assignFor
+    upsertHolding(assignAllToLocation(live, assignName))
+    showToast(`${live.name} is now at ${assignName.trim()}`, 'success')
+    setAssignFor(null)
   }
 
 
@@ -389,8 +399,7 @@ export function Portfolio() {
       const tag = (h.tag || '').toLowerCase()
       if (name.includes(searchLower) || ticker.includes(searchLower) || tag.includes(searchLower)) return true
       if (normSearch && (norm(name).includes(normSearch) || norm(ticker).includes(normSearch) || norm(tag).includes(normSearch))) return true
-      if (h.btcLocations?.some((l) => l.name.toLowerCase().includes(searchLower))) return true
-      if (h.goldLocations?.some((l) => l.name.toLowerCase().includes(searchLower))) return true
+      if (h.locations?.some((l) => l.name.toLowerCase().includes(searchLower))) return true
       return false
     })
     .sort((a, b) => {
@@ -437,7 +446,11 @@ export function Portfolio() {
     const isBtc = h.assetClass === 'crypto'
     const isGold = h.assetClass === 'gold'
     const isRealEstate = h.assetClass === 'real_estate'
-    const isExpandable = isBtc || isGold
+    const isStock = h.assetClass === 'stock'
+    // BTC and gold always open their locations; a US stock once it has brokers
+    const isExpandable = isBtc || isGold || (isStock && hasLocations(h))
+    const noun = locationNoun(h.assetClass)
+    const shownLocs = visibleLocations(h)
     const isExpanded = isExpandable && expandedId === h.id
 
     const badge = (
@@ -468,7 +481,7 @@ export function Portfolio() {
     const pocketMenuButton = (locId: string, locName: string) => (
       <button
         type="button"
-        aria-label={`Actions for location ${locName}`}
+        aria-label={`Actions for ${noun} ${locName}`}
         title={`Actions · ${locName}`}
         onClick={(e) => openPocketMenu(e, h, locId)}
         className={`grid h-8 w-8 shrink-0 place-items-center rounded-full transition-all cursor-pointer active:scale-95 ${
@@ -483,10 +496,8 @@ export function Portfolio() {
 
     // Per-pocket unrealized P/L: current value of the pocket at the holding's
     // live price (THB per BTC / per gram) minus what was actually spent on it.
-    const pocketPnl = (loc: { satoshi?: number; grams?: number; thbSpent: number }) => {
-      const unitsInBtc = isBtc ? (loc.satoshi ?? 0) / SATS_PER_BTC : 0
-      const units = isBtc ? unitsInBtc : (loc.grams ?? 0)
-      const currentValue = units * h.price
+    const pocketPnl = (loc: HoldingLocation) => {
+      const currentValue = loc.qty * h.price
       const pnl = currentValue - loc.thbSpent
       const pnlPct = loc.thbSpent > 0 ? (pnl / loc.thbSpent) * 100 : 0
       return { pnl, pnlPct }
@@ -499,8 +510,8 @@ export function Portfolio() {
           type="button"
           onClick={() => setExpandedId(isExpanded ? null : h.id)}
           aria-expanded={isExpanded}
-          aria-label={isExpanded ? `Collapse ${h.name} storage locations` : `Expand ${h.name} storage locations`}
-          title={isExpanded ? 'Hide storage locations' : 'Show storage locations'}
+          aria-label={isExpanded ? `Collapse ${h.name} ${noun}s` : `Expand ${h.name} ${noun}s`}
+          title={isExpanded ? `Hide ${noun}s` : `Show ${noun}s`}
           className={`grid h-8 w-8 place-items-center rounded-full transition-all cursor-pointer active:scale-95 ${
             isExpanded
               ? 'bg-primary text-white shadow-xs'
@@ -608,16 +619,16 @@ export function Portfolio() {
             isLast ? 'sm:rounded-b-[var(--radius-card)]' : ''
           }`}>
             <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold text-ink-muted">Storage & purchase locations</p>
+              <p className="text-xs font-semibold text-ink-muted">{isStock ? 'Brokers' : 'Storage & purchase locations'}</p>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => openBuy(h)}
                   className="inline-flex items-center gap-1 rounded-md bg-brand-soft px-2 py-1 text-xs font-semibold text-link transition-colors hover:bg-brand hover:text-white cursor-pointer active:scale-95"
-                  title="Buy more / add a new location"
+                  title={`Buy more / add a new ${noun}`}
                 >
                   <PlusIcon className="h-3 w-3" strokeWidth={2.5} />
-                  Add location
+                  {isStock ? 'Add broker' : 'Add location'}
                 </button>
                 <IconButton
                   icon={<PencilIcon className="h-3.5 w-3.5" />}
@@ -629,114 +640,69 @@ export function Portfolio() {
               </div>
             </div>
 
-            {isBtc && (
-              (h.btcLocations ?? []).length === 0
-                ? (
-                  <button
-                    type="button"
-                    onClick={() => openBuy(h)}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong py-2.5 text-sm font-semibold text-link transition-colors hover:bg-brand-soft cursor-pointer active:scale-[0.99]"
-                  >
-                    <PlusIcon className="h-4 w-4" strokeWidth={2.4} />
-                    Add first location (buy)
-                  </button>
-                )
-                : (
-                  <ul className="space-y-1.5">
-                    {(h.btcLocations ?? []).map((loc) => {
-                      const locCostPerBtcThb = loc.satoshi > 0 ? (loc.thbSpent / loc.satoshi) * SATS_PER_BTC : 0
-                      return (
-                        <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-baseline justify-between gap-2">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <p className="truncate text-sm font-semibold text-ink">{loc.name}</p>
-                                {loc.isLocked && (
-                                  <span
-                                    title="Location is locked (protected from selling)"
-                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-2xs font-semibold bg-warn/10 text-warn-ink shrink-0"
-                                  >
-                                    <LockClosedIcon className="h-2.5 w-2.5" />
-                                    <span>Lock</span>
-                                  </span>
-                                )}
-                              </div>
-                              {(() => {
-                                const { pnl, pnlPct } = pocketPnl(loc)
-                                return (
-                                  <span className={`shrink-0 text-xs font-bold tnum ${pnl >= 0 ? 'text-gain-ink' : 'text-loss-ink'}`}>
-                                    {pnl >= 0 ? '+' : '−'}{thb(Math.abs(pnl))}
-                                    <span className="ml-1 font-semibold opacity-70">({pct(pnlPct)})</span>
-                                  </span>
-                                )
-                              })()}
+            {shownLocs.length === 0
+              ? (
+                <button
+                  type="button"
+                  onClick={() => openBuy(h)}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong py-2.5 text-sm font-semibold text-link transition-colors hover:bg-brand-soft cursor-pointer active:scale-[0.99]"
+                >
+                  <PlusIcon className="h-4 w-4" strokeWidth={2.4} />
+                  {`Add first ${noun} (buy)`}
+                </button>
+              )
+              : (
+                <ul className="space-y-1.5">
+                  {shownLocs.map((loc) => {
+                    // Average cost of this pocket: per BTC, per gold baht, or per share in USD
+                    const avgText = loc.qty <= 0
+                      ? ''
+                      : isBtc
+                        ? `avg ${btcPerCoin(loc.thbSpent / loc.qty)}/BTC`
+                        : isGold
+                          ? `avg ${thb((loc.thbSpent / loc.qty) * GRAMS_PER_BAHT_GOLD)}/gold baht`
+                          : loc.usdSpent !== undefined
+                            ? `avg $${(loc.usdSpent / loc.qty).toFixed(2)}/share`
+                            : `avg ${thb(loc.thbSpent / loc.qty)}/share`
+                    const qtyText = isGold
+                      ? `${loc.qty.toFixed(4)} g (${(loc.qty / GRAMS_PER_BAHT_GOLD).toFixed(4)} gold baht)`
+                      : formatLocationQty(h.assetClass, loc.qty)
+                    return (
+                      <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-baseline justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <p className="truncate text-sm font-semibold text-ink">{loc.name}</p>
+                              {loc.isLocked && (
+                                <span
+                                  title={`${isStock ? 'Broker' : 'Location'} is locked (protected from selling)`}
+                                  className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-2xs font-semibold bg-warn/10 text-warn-ink shrink-0"
+                                >
+                                  <LockClosedIcon className="h-2.5 w-2.5" />
+                                  <span>Lock</span>
+                                </span>
+                              )}
                             </div>
-                            <p className="tnum text-xs text-ink-muted">
-                              {loc.satoshi.toLocaleString()} sats · {thb(loc.thbSpent)} spent · avg {btcPerCoin(locCostPerBtcThb)}/BTC
-                            </p>
+                            {(() => {
+                              const { pnl, pnlPct } = pocketPnl(loc)
+                              return (
+                                <span className={`shrink-0 text-xs font-bold tnum ${pnl >= 0 ? 'text-gain-ink' : 'text-loss-ink'}`}>
+                                  {pnl >= 0 ? '+' : '−'}{thb(Math.abs(pnl))}
+                                  <span className="ml-1 font-semibold opacity-70">({pct(pnlPct)})</span>
+                                </span>
+                              )
+                            })()}
                           </div>
-                          {pocketMenuButton(loc.id, loc.name)}
-                        </li>
-                      )
-                    })}
-                  </ul>
-                )
-            )}
-
-            {isGold && (
-              (h.goldLocations ?? []).length === 0
-                ? (
-                  <button
-                    type="button"
-                    onClick={() => openBuy(h)}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong py-2.5 text-sm font-semibold text-link transition-colors hover:bg-brand-soft cursor-pointer active:scale-[0.99]"
-                  >
-                    <PlusIcon className="h-4 w-4" strokeWidth={2.4} />
-                    Add first location (buy)
-                  </button>
-                )
-                : (
-                  <ul className="space-y-1.5">
-                    {(h.goldLocations ?? []).map((loc) => {
-                      const locCostPerBaht = loc.grams > 0 ? (loc.thbSpent / loc.grams) * GRAMS_PER_BAHT_GOLD : 0
-                      const locBaht = loc.grams / GRAMS_PER_BAHT_GOLD
-                      return (
-                        <li key={loc.id} className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-baseline justify-between gap-2">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <p className="truncate text-sm font-semibold text-ink">{loc.name}</p>
-                                {loc.isLocked && (
-                                  <span
-                                    title="Location is locked (protected from selling)"
-                                    className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-2xs font-semibold bg-warn/10 text-warn-ink shrink-0"
-                                  >
-                                    <LockClosedIcon className="h-2.5 w-2.5" />
-                                    <span>Lock</span>
-                                  </span>
-                                )}
-                              </div>
-                              {(() => {
-                                const { pnl, pnlPct } = pocketPnl(loc)
-                                return (
-                                  <span className={`shrink-0 text-xs font-bold tnum ${pnl >= 0 ? 'text-gain-ink' : 'text-loss-ink'}`}>
-                                    {pnl >= 0 ? '+' : '−'}{thb(Math.abs(pnl))}
-                                    <span className="ml-1 font-semibold opacity-70">({pct(pnlPct)})</span>
-                                  </span>
-                                )
-                              })()}
-                            </div>
-                            <p className="tnum text-xs text-ink-muted">
-                              {loc.grams.toFixed(4)} g ({locBaht.toFixed(4)} gold baht) · {thb(loc.thbSpent)} spent · avg {thb(locCostPerBaht)}/gold baht
-                            </p>
-                          </div>
-                          {pocketMenuButton(loc.id, loc.name)}
-                        </li>
-                      )
-                    })}
-                  </ul>
-                )
-            )}
+                          <p className="tnum text-xs text-ink-muted">
+                            {qtyText} · {thb(loc.thbSpent)} spent{avgText ? ` · ${avgText}` : ''}
+                          </p>
+                        </div>
+                        {pocketMenuButton(loc.id, loc.name)}
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
           </div>
         )}
       </li>
@@ -1206,6 +1172,7 @@ export function Portfolio() {
           onSell={openSell}
           onDividend={openDividend}
           onEdit={openEdit}
+          onSetLocation={openSetLocation}
         />
       )}
 
@@ -1268,19 +1235,25 @@ export function Portfolio() {
       <Modal
         open={locEditOpen}
         onClose={() => setLocEditOpen(false)}
-        title="Edit location"
-        description={locEditing && !('satoshi' in locEditing) ? "Update this location's name, grams, or THB spent." : "Update this location's name, satoshi amount, or THB spent."}
+        title={`Edit ${locationNoun(locEditClass)}`}
+        description={
+          locEditClass === 'stock'
+            ? "Update this broker's name, shares, or what you spent."
+            : locEditClass === 'gold'
+              ? "Update this location's name, grams, or THB spent."
+              : "Update this location's name, satoshi amount, or THB spent."
+        }
         footer={<FormActions editing canSave onSave={saveLocEdit} />}
       >
         <div className="space-y-4 pb-2">
           <TextField
-            label="Location name"
+            label={locEditClass === 'stock' ? 'Broker name' : 'Location name'}
             value={locName}
             onChange={setLocName}
-            placeholder="e.g. Ledger"
+            placeholder={locEditClass === 'stock' ? 'e.g. Webull' : 'e.g. Ledger'}
             error={locErrors && !locName.trim() ? 'Required' : undefined}
           />
-          {locEditing && !('satoshi' in locEditing) && (
+          {locEditClass === 'gold' && (
             <div className="space-y-1">
               <label className="text-sm font-medium text-ink-soft">Unit</label>
               <SegmentedControl
@@ -1296,7 +1269,16 @@ export function Portfolio() {
           )}
 
           <div className="grid grid-cols-1 gap-3">
-            {locEditing && 'satoshi' in locEditing ? (
+            {locEditClass === 'stock' ? (
+              <NumberField
+                label="Shares"
+                value={locShares}
+                onChange={setLocShares}
+                placeholder="0"
+                step={0.000001}
+                error={locErrors && (locShares === '' || Number(locShares) < 0) ? 'Required' : undefined}
+              />
+            ) : locEditClass === 'crypto' ? (
               <NumberField
                 label="Satoshi"
                 value={locSatoshi}
@@ -1346,8 +1328,18 @@ export function Portfolio() {
               placeholder="0"
               error={locErrors && (locThbSpent === '' || Number(locThbSpent) < 0) ? 'Required' : undefined}
             />
+            {locEditClass === 'stock' && (
+              <NumberField
+                label="USD spent"
+                hint="for the average cost in $"
+                prefix="$"
+                value={locUsdSpent}
+                onChange={setLocUsdSpent}
+                placeholder="0"
+              />
+            )}
           </div>
-          {locEditing && 'satoshi' in locEditing && Number(locSatoshi) > 0 && Number(locThbSpent) > 0 && (
+          {locEditClass === 'crypto' && Number(locSatoshi) > 0 && Number(locThbSpent) > 0 && (
             <div className="rounded-2xl bg-surface-muted px-3.5 py-2.5 text-xs space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-ink-muted">BTC amount</span>
@@ -1361,7 +1353,7 @@ export function Portfolio() {
               </div>
             </div>
           )}
-          {locEditing && !('satoshi' in locEditing) && Number(locGrams) > 0 && Number(locThbSpent) > 0 && (
+          {locEditClass === 'gold' && Number(locGrams) > 0 && Number(locThbSpent) > 0 && (
             <div className="rounded-2xl bg-surface-muted px-3.5 py-2.5 text-xs space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-ink-muted">Weight in gold baht</span>
@@ -1387,7 +1379,7 @@ export function Portfolio() {
             <div className="flex-1 text-xs">
               <span className="font-semibold text-ink flex items-center gap-1.5">
                 <LockClosedIcon className="h-3.5 w-3.5 text-warn-ink" />
-                Lock this location
+                {`Lock this ${locationNoun(locEditClass)}`}
               </span>
               <p className="text-ink-muted mt-0.5">Protects it from being sold or removed by accident.</p>
             </div>
@@ -1420,21 +1412,39 @@ export function Portfolio() {
         open={removeLocConfirmOpen}
         onClose={() => { setRemoveLocConfirmOpen(false); setRemoveLocTarget(null) }}
         title={`Remove "${removeLocTarget?.name}"?`}
-        description="This removes this storage location and its units from the holding. The history stays in Trades. This cannot be undone."
-        confirmText="Yes, remove location"
+        description={`This removes this ${removeLocNoun} and its units from the holding. The history stays in Trades. This cannot be undone.`}
+        confirmText={`Yes, remove ${removeLocNoun}`}
         confirmVariant="danger"
         confirmIcon={<TrashIcon className="h-4 w-4" strokeWidth={2.2} />}
         cancelText="Cancel"
         onConfirm={() => {
           if (removeLocTarget) {
-            if (removeLocTarget.isBtc) removeBtcLocation(removeLocTarget.holdingId, removeLocTarget.locId)
-            else removeGoldLocation(removeLocTarget.holdingId, removeLocTarget.locId)
-            showToast(`Removed location "${removeLocTarget.name}"`, 'info')
+            removeLocation(removeLocTarget.holdingId, removeLocTarget.locId)
+            showToast(`Removed ${removeLocNoun} "${removeLocTarget.name}"`, 'info')
           }
           setRemoveLocConfirmOpen(false)
           setRemoveLocTarget(null)
         }}
       />
+
+      {/* Set broker / storage location for a whole holding */}
+      <Modal
+        open={assignFor !== null}
+        onClose={() => setAssignFor(null)}
+        title={assignFor?.assetClass === 'stock' ? 'Set broker' : 'Set storage location'}
+        description={assignFor
+          ? `All ${formatLocationQty(assignFor.assetClass, assignFor.units)} of ${assignFor.name} go here. Split them later with Move.`
+          : undefined}
+        footer={<FormActions editing={false} canSave onSave={saveSetLocation} submitLabel="Save" />}
+      >
+        <TextField
+          label={assignFor?.assetClass === 'stock' ? 'Broker name' : 'Location name'}
+          value={assignName}
+          onChange={setAssignName}
+          placeholder={assignFor?.assetClass === 'stock' ? 'e.g. Webull, Dime, IBKR' : 'e.g. Ledger, Home safe'}
+          error={assignErrors && !assignName.trim() ? 'Required' : undefined}
+        />
+      </Modal>
 
       <GuideTour
         isOpen={isRunning}

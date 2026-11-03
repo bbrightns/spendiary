@@ -35,6 +35,32 @@ describe('prepareImport', () => {
     expect(p.sanitizedHoldings[1]).toMatchObject({ avgCostUsd: 200, avgCostThb: 7000, totalThbInvested: 14_000, price: 7000, placeholderPrice: 7000 })
   })
 
+  it('merges the same US stock held at two brokers into one holding with one location each', () => {
+    const p = prepared({ holdings: [
+      { ticker: 'AAPL', assetClass: 'stock', currency: 'USD', units: 6, avgCost: 200, broker: 'Webull' },
+      { ticker: 'AAPL', assetClass: 'stock', currency: 'USD', units: 4, avgCost: 250, broker: 'Dime' },
+    ] })
+    expect(p.sanitizedHoldings).toHaveLength(1)
+    const h = p.sanitizedHoldings[0]
+    expect(h.locations?.map((l) => [l.name, l.qty, l.usdSpent])).toEqual([['Webull', 6, 1200], ['Dime', 4, 1000]])
+    expect(h).toMatchObject({ units: 10, totalUsdInvested: 2200, totalThbInvested: 77_000 })
+  })
+
+  it('keeps a locations list only when it adds up to the units', () => {
+    const ok = prepared({ holdings: [{ ticker: 'AAPL', assetClass: 'stock', currency: 'USD', units: 10, avgCost: 220,
+      locations: [{ name: 'Webull', qty: 6, usdSpent: 1320 }, { name: 'Dime', qty: 4, usdSpent: 880 }] }] })
+    expect(ok.sanitizedHoldings[0].locations).toHaveLength(2)
+    const off = prepared({ holdings: [{ ticker: 'AAPL', assetClass: 'stock', currency: 'USD', units: 10, avgCost: 220,
+      locations: [{ name: 'Webull', qty: 6 }] }] })
+    expect(off.sanitizedHoldings[0].locations).toBeUndefined()
+  })
+
+  it('reads the old BTC wallet fields from an import', () => {
+    const p = prepared({ holdings: [{ ticker: 'BTC', assetClass: 'crypto', units: 0.5, avgCost: 2_000_000,
+      btcLocations: [{ id: 'a', name: 'Ledger', satoshi: 50_000_000, thbSpent: 1_000_000 }] }] })
+    expect(p.sanitizedHoldings[0].locations).toEqual([{ id: 'a', name: 'Ledger', qty: 0.5, thbSpent: 1_000_000 }])
+  })
+
   it('cleans cash accounts and debts', () => {
     const p = prepared({
       cashAccounts: [{ name: 'KBank', balance: '12,500.50' }, { name: '' }],

@@ -1,6 +1,7 @@
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC, type HoldingMetrics } from '../../lib/calc'
 import { rateOrZero } from '../../lib/fx'
 import type { AssetClass } from '../../lib/types'
+import { formatLocationQty, visibleLocations } from '../../lib/locations'
 
 /** The holdings CSV (Portfolio → Export) and the small labels the page shares with it. */
 
@@ -40,7 +41,13 @@ export function portfolioCsvRows(rows: HoldingMetrics[], portfolioValue: number,
     const avgCostThb = h.units > 0 ? h.costBasis / h.units : h.avgCost
 
     let nativeDetails = ''
-    let locationsStr = ''
+    // Wallets, vaults and brokers that still hold something
+    const locationsStr = visibleLocations(h).map((loc) => {
+      const qty = isGold
+        ? `${(loc.qty / GRAMS_PER_BAHT_GOLD).toFixed(4)} gold baht (${loc.qty}g`
+        : `${formatLocationQty(h.assetClass, loc.qty)} (`
+      return `${loc.name}: ${qty}${isGold ? ', ' : ''}฿${loc.thbSpent.toLocaleString()})`
+    }).join('; ')
 
     if (isStock) {
       const avgUsd = h.avgCostUsd ?? (rate > 0 ? h.avgCost / rate : 0)
@@ -59,13 +66,13 @@ export function portfolioCsvRows(rows: HoldingMetrics[], portfolioValue: number,
       nativeDetails = rate > 0
         ? `${sats.toLocaleString()} sats | Avg: $${Math.round(avgCostPerBtcUsd).toLocaleString()}/BTC | Price: $${Math.round(priceUsd).toLocaleString()}/BTC`
         : `${sats.toLocaleString()} sats | Avg: ฿${Math.round(avgCostPerBtc).toLocaleString()}/BTC | Price: ฿${Math.round(h.price).toLocaleString()}/BTC`
-      locationsStr = (h.btcLocations ?? []).map((loc) => `${loc.name}: ${loc.satoshi.toLocaleString()} sats (฿${loc.thbSpent.toLocaleString()})`).join('; ')
+
     } else if (isGold) {
       const bahtGold = h.units / GRAMS_PER_BAHT_GOLD
       const avgCostPerBaht = (h.units > 0 ? h.costBasis / h.units : h.avgCost) * GRAMS_PER_BAHT_GOLD
       const pricePerBaht = h.price * GRAMS_PER_BAHT_GOLD
       nativeDetails = `${bahtGold.toFixed(4)} gold baht | Avg: ฿${Math.round(avgCostPerBaht).toLocaleString()}/gold baht | Price: ฿${Math.round(pricePerBaht).toLocaleString()}/gold baht`
-      locationsStr = (h.goldLocations ?? []).map((loc) => `${loc.name}: ${(loc.grams / GRAMS_PER_BAHT_GOLD).toFixed(4)} gold baht (${loc.grams}g, ฿${loc.thbSpent.toLocaleString()})`).join('; ')
+
     } else if (isFund) {
       nativeDetails = `Avg NAV: ฿${h.avgCost.toFixed(4)} | Current NAV: ฿${h.price.toFixed(4)}`
     } else if (isRealEstate) {

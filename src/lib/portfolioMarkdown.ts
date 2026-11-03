@@ -1,5 +1,6 @@
 import type { SpendiaryData } from './types'
 import { rateOrZero } from './fx'
+import { visibleLocations } from './locations'
 import {
   ASSET_META,
   GRAMS_PER_BAHT_GOLD,
@@ -201,32 +202,35 @@ export function generatePortfolioMarkdown(
     lines.push('')
   }
 
-  // Storage / Custody Locations (Only for BTC & Gold that have custody breakdowns)
-  const holdingsWithLocations = holdings.filter(
-    (h) => (h.btcLocations && h.btcLocations.length > 0) || (h.goldLocations && h.goldLocations.length > 0),
-  )
+  // Storage / custody locations and brokers
+  const holdingsWithLocations = holdings.filter((h) => visibleLocations(h).length > 0)
   if (holdingsWithLocations.length > 0) {
-    lines.push(`## 📍 Storage & Custody Locations`)
+    lines.push(`## 📍 Storage, Custody & Brokers`)
     for (const h of holdingsWithLocations) {
-      if (h.btcLocations && h.btcLocations.length > 0) {
+      const locs = visibleLocations(h)
+      if (h.assetClass === 'crypto') {
         lines.push(`### 🪙 ${h.name} (\`${h.ticker}\`)`)
-        for (const loc of h.btcLocations) {
-          const locCostPerBtc = loc.satoshi > 0 ? (loc.thbSpent / loc.satoshi) * SATS_PER_BTC : 0
+        for (const loc of locs) {
+          const locCostPerBtc = loc.qty > 0 ? loc.thbSpent / loc.qty : 0
           const locCostPerBtcUsd = rate > 0 ? locCostPerBtc / rate : 0
-          lines.push(`- 📍 **${loc.name}**: ${loc.satoshi.toLocaleString()} sats (${(loc.satoshi / SATS_PER_BTC).toFixed(8)} BTC) | Cost: ${fmtMoney(loc.thbSpent, 'THB', 2)} | Avg cost: ${rate > 0 ? `${fmtMoney(locCostPerBtcUsd, 'USD', 0)}/BTC (≈ ${fmtMoney(locCostPerBtc, 'THB', 0)})` : `${fmtMoney(locCostPerBtc, 'THB', 0)}/BTC`}`)
+          lines.push(`- 📍 **${loc.name}**: ${Math.round(loc.qty * SATS_PER_BTC).toLocaleString()} sats (${loc.qty.toFixed(8)} BTC) | Cost: ${fmtMoney(loc.thbSpent, 'THB', 2)} | Avg cost: ${rate > 0 ? `${fmtMoney(locCostPerBtcUsd, 'USD', 0)}/BTC (≈ ${fmtMoney(locCostPerBtc, 'THB', 0)})` : `${fmtMoney(locCostPerBtc, 'THB', 0)}/BTC`}`)
         }
-        lines.push('')
-      }
-      if (h.goldLocations && h.goldLocations.length > 0) {
+      } else if (h.assetClass === 'gold') {
         lines.push(`### 👑 ${h.name} (\`${h.ticker}\`)`)
-        for (const loc of h.goldLocations) {
-          const locBaht = loc.grams / GRAMS_PER_BAHT_GOLD
-          const locCostPerBaht = loc.grams > 0 ? (loc.thbSpent / loc.grams) * GRAMS_PER_BAHT_GOLD : 0
+        for (const loc of locs) {
+          const locBaht = loc.qty / GRAMS_PER_BAHT_GOLD
+          const locCostPerBaht = loc.qty > 0 ? (loc.thbSpent / loc.qty) * GRAMS_PER_BAHT_GOLD : 0
           const locCostXauUsd = goldThbPerBahtToXauUsd(locCostPerBaht, rate)
-          lines.push(`- 📍 **${loc.name}**: ${fmtNum(locBaht, 4)} gold baht (${fmtNum(loc.grams, 4)} g) | Cost: ${fmtMoney(loc.thbSpent, 'THB', 2)} | Avg cost: ${fmtMoney(locCostPerBaht, 'THB', 0)}/gold baht${rate > 0 ? ` (${fmtMoney(locCostXauUsd, 'USD', 0)}/oz)` : ''}`)
+          lines.push(`- 📍 **${loc.name}**: ${fmtNum(locBaht, 4)} gold baht (${fmtNum(loc.qty, 4)} g) | Cost: ${fmtMoney(loc.thbSpent, 'THB', 2)} | Avg cost: ${fmtMoney(locCostPerBaht, 'THB', 0)}/gold baht${rate > 0 ? ` (${fmtMoney(locCostXauUsd, 'USD', 0)}/oz)` : ''}`)
         }
-        lines.push('')
+      } else {
+        lines.push(`### 🏦 ${h.name} (\`${h.ticker}\`)`)
+        for (const loc of locs) {
+          const avgUsd = loc.usdSpent !== undefined && loc.qty > 0 ? loc.usdSpent / loc.qty : undefined
+          lines.push(`- 📍 **${loc.name}**: ${fmtNum(loc.qty, 4)} shares | Cost: ${fmtMoney(loc.thbSpent, 'THB', 2)}${avgUsd !== undefined ? ` | Avg cost: ${fmtMoney(avgUsd, 'USD', 2)}/share` : ''}`)
+        }
       }
+      lines.push('')
     }
   }
 

@@ -279,24 +279,12 @@ export function getDestinationLocation(log: HoldingLog): string | null {
   const prev = log.previousHoldingState
   const curr = log.afterHoldingState
 
-  if (log.assetClass === 'crypto') {
-    const prevLocs = prev?.btcLocations ?? []
-    const currLocs = curr?.btcLocations ?? []
+  if (curr?.locations) {
+    const prevLocs = prev?.locations ?? []
+    const currLocs = curr.locations
     for (const c of currLocs) {
       const p = prevLocs.find((item) => item.id === c.id || item.name === c.name)
-      if (!p || c.satoshi > p.satoshi || c.thbSpent > p.thbSpent) {
-        return c.name
-      }
-    }
-    if (currLocs.length === 1) return currLocs[0].name
-  }
-
-  if (log.assetClass === 'gold') {
-    const prevLocs = prev?.goldLocations ?? []
-    const currLocs = curr?.goldLocations ?? []
-    for (const c of currLocs) {
-      const p = prevLocs.find((item) => item.id === c.id || item.name === c.name)
-      if (!p || c.grams > p.grams || c.thbSpent > p.thbSpent) {
+      if (!p || c.qty > p.qty || c.thbSpent > p.thbSpent) {
         return c.name
       }
     }

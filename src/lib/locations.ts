@@ -228,3 +228,13 @@ export function assignAllToLocation(h: Holding, name: string): Holding {
   }
   return { ...h, locations: [loc] }
 }
+
+/** Value of the "+ New …" option in a location picker */
+export const NEW_LOCATION = '__new__'
+
+/** The id a picker starts on: the preferred one if it exists, else the first location that holds something, else a new one */
+export function initialLocationId(locations: HoldingLocation[], preferredId?: string | null, assetClass?: AssetClass): string {
+  if (preferredId && locations.some((l) => l.id === preferredId)) return preferredId
+  const eps = qtyEpsilon(assetClass)
+  return locations.find((l) => l.qty > eps)?.id ?? locations[0]?.id ?? NEW_LOCATION
+}
