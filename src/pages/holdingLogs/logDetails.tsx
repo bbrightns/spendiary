@@ -1,5 +1,6 @@
 import { GRAMS_PER_BAHT_GOLD, SATS_PER_BTC } from '../../lib/calc'
 import { getCashDiffItems, getLogTransactionDetails } from '../../lib/activitySummary'
+import { logHoldingStates } from '../../lib/logStates'
 import { thb } from '../../lib/format'
 import { rateOrZero } from '../../lib/fx'
 import type { CashAccount, HoldingLog } from '../../lib/types'
@@ -45,8 +46,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
     const tax = log.withholdingTax ?? (log.note.match(/Tax[^:]*:\s*-?฿([0-9,.]+)/i) ? parseFloat(log.note.match(/Tax[^:]*:\s*-?฿([0-9,.]+)/i)![1].replace(/,/g, '')) : null)
     const dps = log.dividendPerShare ?? (log.note.match(/DPS:\s*฿([0-9,.]+)/i) ? parseFloat(log.note.match(/DPS:\s*฿([0-9,.]+)/i)![1].replace(/,/g, '')) : null)
     const gross = log.grossDividend ?? (netDiv !== null && tax !== null ? netDiv + tax : null)
-    const prevHold = log.previousHoldingState
-    const currHold = log.afterHoldingState
+    const { prev: prevHold, curr: currHold } = logHoldingStates(log)
     const holdingUnits = currHold?.units ?? currHold?.totalUnits ?? prevHold?.units ?? prevHold?.totalUnits ?? (gross && dps && dps > 0 ? Math.round(gross / dps) : null)
     const cashAccMatch = log.note.match(/(?:into|เข้า)\s*([^·\n()]+)/i)
     const cashAccName = cashAccMatch ? cashAccMatch[1].trim() : (log.cashAccountId ? cashAccounts?.find((c) => c.id === log.cashAccountId)?.name : undefined)
@@ -101,8 +101,9 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
     )
   }
 
-  const prev = log.previousHoldingState
-  const curr = log.afterHoldingState ?? (log.action === 'sell' && prev ? { ...prev, units: 0, totalUnits: 0, totalThbInvested: 0 } : null)
+  const states = logHoldingStates(log)
+  const prev = states.prev
+  const curr = states.curr ?? (log.action === 'sell' && prev ? { ...prev, units: 0, totalUnits: 0, totalThbInvested: 0 } : null)
 
   if (!prev || !curr) {
     const cashItems = getCashDiffItems(log)

@@ -126,7 +126,7 @@ export function sellHolding(prev: SpendiaryData, ...[params]: Parameters<DataCon
   if (!holding) return prev
 
   const previousHoldingState = JSON.parse(JSON.stringify(holding))
-  const previousCashAccountsState = prev.cashAccounts ? JSON.parse(JSON.stringify(prev.cashAccounts)) : []
+  const soldOff = !(params.remainingHolding && params.remainingHolding.units > 0)
 
   let updatedHoldings: Holding[]
   let restTargets = prev.rebalanceHoldingTargets ?? {}
@@ -167,17 +167,16 @@ export function sellHolding(prev: SpendiaryData, ...[params]: Parameters<DataCon
     realizedPnLPercent: params.realizedPnLPercent,
     fee: params.fee,
     cashAccountId: params.cashAccountId,
-    previousHoldingState,
-    afterHoldingState: params.remainingHolding && params.remainingHolding.units > 0 ? params.remainingHolding : undefined,
-    previousCashAccountsState: params.cashAccountId ? previousCashAccountsState : undefined,
-    afterCashAccountsState: params.cashAccountId ? updatedCashAccounts : undefined,
-    // Exactly what the sale did, for undo: the units and cost that left, and the money that came in
+    // Selling it all removes the holding: keep it whole so undo can bring it back
+    ...(soldOff ? { previousHoldingState } : {}),
+    // Exactly what the sale did, for undo and the trade history: the units and cost that left, and the money that came in
     delta: holdingDelta(
       holding,
-      params.remainingHolding && params.remainingHolding.units > 0 ? params.remainingHolding : undefined,
+      soldOff ? undefined : params.remainingHolding!,
       params.cashAccountId && params.cashDepositAmount && params.cashDepositAmount > 0
         ? [{ accountId: params.cashAccountId, amount: params.cashDepositAmount }]
         : undefined,
+      updatedCashAccounts,
     ),
   }
 
@@ -192,8 +191,6 @@ export function sellHolding(prev: SpendiaryData, ...[params]: Parameters<DataCon
 
 export function buyMoreHolding(prev: SpendiaryData, ...[params]: Parameters<DataContextValue['buyMoreHolding']>): SpendiaryData {
   const holding = prev.holdings.find((h) => h.id === params.updatedHolding.id)
-  const previousHoldingState = holding ? JSON.parse(JSON.stringify(holding)) : undefined
-  const previousCashAccountsState = prev.cashAccounts ? JSON.parse(JSON.stringify(prev.cashAccounts)) : []
 
   const updatedHoldings = prev.holdings.map((h) =>
     h.id === params.updatedHolding.id ? params.updatedHolding : h
@@ -217,17 +214,14 @@ export function buyMoreHolding(prev: SpendiaryData, ...[params]: Parameters<Data
     ticker: params.updatedHolding.ticker,
     assetClass: params.updatedHolding.assetClass,
     note: params.note,
-    previousHoldingState,
-    afterHoldingState: params.updatedHolding,
-    previousCashAccountsState: params.cashAccountId ? previousCashAccountsState : undefined,
-    afterCashAccountsState: params.cashAccountId ? updatedCashAccounts : undefined,
-    // Exactly what the buy did, for undo: the units and cost that came in, and the money that left
+    // Exactly what the buy did, for undo and the trade history: the units and cost that came in, and the money that left
     delta: holdingDelta(
       holding,
       params.updatedHolding,
       params.cashAccountId && params.cashDeductAmount && params.cashDeductAmount > 0
         ? [{ accountId: params.cashAccountId, amount: -params.cashDeductAmount }]
         : undefined,
+      updatedCashAccounts,
     ),
     cashAccountId: params.cashAccountId,
     source: params.source,

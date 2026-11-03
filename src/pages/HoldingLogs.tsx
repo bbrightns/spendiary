@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { planEditUndo } from '../store/actions/undoEdit'
 import { undoHoldingLogChecked } from '../store/actions/holdingLogs'
+import { logHoldingStates } from '../lib/logStates'
 import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
@@ -626,8 +627,8 @@ export function HoldingLogs() {
                     const timeStr = dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
                     const isExpanded = expandedLogId === log.id
                     const hasComparison =
-                      !!(log.previousHoldingState && log.afterHoldingState) ||
-                      (log.action === 'sell' && !!log.previousHoldingState) ||
+                      !!(logHoldingStates(log).prev && logHoldingStates(log).curr) ||
+                      (log.action === 'sell' && !!logHoldingStates(log).prev) ||
                       getCashDiffItems(log).length > 0
 
                     return (

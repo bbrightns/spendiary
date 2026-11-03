@@ -1,4 +1,5 @@
 /** How each activity-log entry is labelled, filtered and described. */
+import { logHoldingStates } from '../../lib/logStates'
 import type { FC } from 'react'
 import type { AssetClass, HoldingLog } from '../../lib/types'
 import type { IconProps } from '../../components/appIcon'
@@ -94,8 +95,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
   }
 
   // edit action
-  const prev = log.previousHoldingState
-  const curr = log.afterHoldingState
+  const { prev, curr } = logHoldingStates(log)
   if (prev && curr) {
     const prevUnits = prev.units ?? prev.totalUnits ?? 0
     const currUnits = curr.units ?? curr.totalUnits ?? 0
@@ -159,8 +159,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
 }
 
 export function getDisplayNote(log: HoldingLog): string {
-  const prev = log.previousHoldingState
-  const curr = log.afterHoldingState
+  const { prev, curr } = logHoldingStates(log)
 
   if (prev && curr && log.action === 'edit') {
     const tickerChanged = !!prev.ticker && !!curr.ticker && prev.ticker !== curr.ticker
@@ -276,8 +275,10 @@ export function getDestinationLocation(log: HoldingLog): string | null {
     return 'Fixed Cost'
   }
 
-  const prev = log.previousHoldingState
-  const curr = log.afterHoldingState
+  const { prev, curr } = logHoldingStates(log)
+
+  // Newer entries name the location they touched
+  if (log.delta?.location?.name) return log.delta.location.name
 
   if (curr?.locations) {
     const prevLocs = prev?.locations ?? []

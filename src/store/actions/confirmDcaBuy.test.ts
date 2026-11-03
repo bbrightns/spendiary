@@ -25,7 +25,7 @@ describe('confirmDcaBuy', () => {
     expect(out.holdings[0]).toMatchObject({ units: 300, totalThbInvested: 7000, avgCost: 7000 / 300, price: 25, updatedAt: '2026-10-10' })
     expect(out.dcaPlans[0].confirmedDates).toEqual(['2026-10-10'])
     expect(out.holdingLogs?.[0]).toMatchObject({ action: 'buy_more', holdingId: 'f1', dcaPlanId: 'p1', dcaDate: '2026-10-10' })
-    expect(out.holdingLogs?.[0].previousHoldingState).toEqual(fund)
+    expect(out.holdingLogs?.[0].delta).toMatchObject({ units: 200, thb: 5000, before: { units: 100, thb: 2000 }, after: { units: 300, thb: 7000 } })
   })
 
   it('adds a US stock buy, keeping the THB and USD cost', () => {

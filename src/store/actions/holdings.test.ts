@@ -52,14 +52,19 @@ describe('sellHolding', () => {
     expect(out.rebalanceHoldingTargets).toEqual({})
   })
 
-  it('logs the sale with the before and after states so it can be undone', () => {
+  it('logs what the sale did (its delta) so it can be undone, without whole snapshots', () => {
     const remaining = holding({ units: 6 })
     const log = sellHolding(state(), { ...sale, remainingHolding: remaining, cashAccountId: 'bank', cashDepositAmount: 100 }).holdingLogs?.[0]
     expect(log).toMatchObject({ action: 'sell', holdingId: 'h1', soldUnits: 4, proceeds: 24000, realizedPnL: 4000, note: 'Sold some' })
-    expect(log?.previousHoldingState).toEqual(holding())
-    expect(log?.afterHoldingState).toEqual(remaining)
-    expect(log?.previousCashAccountsState).toEqual([bank])
-    expect(log?.afterCashAccountsState?.[0].balance).toBe(1100)
+    expect(log?.delta).toMatchObject({
+      units: -4,
+      before: { units: 10, price: 6000 },
+      after: { units: 6, price: 6000 },
+      cash: [{ accountId: 'bank', amount: 100, name: 'Bank', balanceAfter: 1100 }],
+    })
+    expect(log?.previousHoldingState).toBeUndefined()
+    expect(log?.afterHoldingState).toBeUndefined()
+    expect(log?.previousCashAccountsState).toBeUndefined()
   })
 
   it('leaves cash alone and logs no cash states when no account was chosen', () => {
@@ -88,7 +93,8 @@ describe('buyMoreHolding', () => {
     expect(out.holdings).toEqual([updated])
     expect(out.cashAccounts[0].balance).toBe(749.5)
     expect(out.holdingLogs?.[0]).toMatchObject({ action: 'buy_more', holdingId: 'h1', source: 'received', receivedFrom: 'Mum' })
-    expect(out.holdingLogs?.[0].previousHoldingState).toEqual(holding())
+    expect(out.holdingLogs?.[0].delta).toMatchObject({ units: 2, cash: [{ accountId: 'bank', amount: -250.5, balanceAfter: 749.5 }] })
+    expect(out.holdingLogs?.[0].previousHoldingState).toBeUndefined()
   })
 
   it('leaves cash alone when no account was chosen', () => {

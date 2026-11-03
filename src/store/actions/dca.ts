@@ -6,7 +6,7 @@ import { payFromAccount, upsert } from '../dataHelpers'
 import { findMatchingHolding, SATS_PER_BTC } from '../../lib/calc'
 import { roundMoney } from '../../lib/money'
 import { undoHoldingLog } from './holdingLogs'
-import { holdingDelta } from './undoDelta'
+import { holdingDelta, withAccountDetails } from './undoDelta'
 
 /**
  * DCA plans and confirming or skipping their buys.
@@ -122,14 +122,9 @@ export function confirmDcaBuy(
   // Paid from a cash account: its balance goes down, and the log keeps both
   // snapshots so Undo gives the money back
   const paid = payment && payment.amount > 0 && (prev.cashAccounts ?? []).some((a) => a.id === payment.accountId) ? payment : undefined
-  const paidLog = paid
-    ? {
-        paidFromAccountId: paid.accountId,
-        paidAmount: paid.amount,
-        previousCashAccountsState: prev.cashAccounts ?? [],
-        afterCashAccountsState: payFromAccount(prev.cashAccounts ?? [], paid),
-      }
-    : {}
+  // The log keeps only which account paid and how much; its delta says how to give it back
+  const paidLog = paid ? { paidFromAccountId: paid.accountId, paidAmount: paid.amount } : {}
+  const paidCash = paid ? [{ accountId: paid.accountId, amount: -paid.amount }] : []
   const paidAccounts = paid ? { cashAccounts: payFromAccount(prev.cashAccounts ?? [], paid) } : {}
 
   // If this is a Cash Account DCA plan, deposit directly into cash account balance
@@ -172,17 +167,15 @@ export function confirmDcaBuy(
       note: `Deposited ฿${depositAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })} via DCA into ${targetAcc ? targetAcc.name : plan.name}`,
       dcaPlanId: plan.id,
       dcaDate: date,
-      ...(paid ? { paidFromAccountId: paid.accountId, paidAmount: paid.amount } : {}),
-      previousCashAccountsState: oldAccounts,
-      afterCashAccountsState: updatedCashAccounts,
-      // Exactly what moved, for undo: the deposit in, and the payment out
+      ...paidLog,
+      // Exactly what moved, for undo and the trade history: the deposit in, and the payment out
       delta: {
         units: 0,
         thb: 0,
-        cash: [
+        cash: withAccountDetails([
           ...(targetAcc ? [{ accountId: targetAcc.id, amount: depositAmount }] : []),
-          ...(paid ? [{ accountId: paid.accountId, amount: -paid.amount }] : []),
-        ],
+          ...paidCash,
+        ], updatedCashAccounts),
       },
     }
 
@@ -248,7 +241,7 @@ export function confirmDcaBuy(
       dcaPlanId: plan.id,
       dcaDate: date,
       ...paidLog,
-      delta: { units: 0, thb: 0, ...(paid ? { cash: [{ accountId: paid.accountId, amount: -paid.amount }] } : {}) },
+      delta: { units: 0, thb: 0, ...(paid ? { cash: withAccountDetails(paidCash, payFromAccount(prev.cashAccounts ?? [], paid)) } : {}) },
     }
     return {
       ...prev,
@@ -434,16 +427,15 @@ export function confirmDcaBuy(
     assetClass: holding.assetClass,
     note: logNote || `DCA Buy: ${calculatedUnits.toFixed(4)} units @ ฿${pricePerUnit.toLocaleString()} (+฿${plan.monthlyAmount.toLocaleString()})`,
     holdingId: holding.id,
-    previousHoldingState,
-    afterHoldingState: resultingHolding,
     dcaPlanId: plan.id,
     dcaDate: date,
     ...paidLog,
-    // Exactly what this buy did, for undo (a new holding counts as created)
+    // Exactly what this buy did, for undo and the trade history (a new holding counts as created)
     delta: holdingDelta(
       isNewHolding ? undefined : previousHoldingState,
       resultingHolding,
-      paid ? [{ accountId: paid.accountId, amount: -paid.amount }] : undefined,
+      paidCash,
+      paid ? payFromAccount(prev.cashAccounts ?? [], paid) : undefined,
     ),
   }
 

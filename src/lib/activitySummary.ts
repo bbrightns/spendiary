@@ -1,3 +1,4 @@
+import { logCashStates, logHoldingStates } from './logStates'
 import { GRAMS_PER_BAHT_GOLD, SATS_PER_BTC } from './calc'
 import { localDateStr } from './format'
 import { rateOrZero } from './fx'
@@ -29,8 +30,7 @@ export function getCashDiffItems(log: HoldingLog): CashDiffItem[] {
   }
 
   const items: CashDiffItem[] = []
-  const oldAccounts = log.previousCashAccountsState ?? []
-  const newAccounts = log.afterCashAccountsState ?? []
+  const { prev: oldAccounts, curr: newAccounts } = logCashStates(log)
 
   // 1. Check if both before and after states exist
   if (oldAccounts.length > 0 && newAccounts.length > 0) {
@@ -216,8 +216,7 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
   amountThbDisplay: string
   amountThbValue: number | null
 } {
-  const prev = log.previousHoldingState
-  const curr = log.afterHoldingState
+  const { prev, curr } = logHoldingStates(log)
   // Real rate or 0: without one, USD amounts are left out of THB totals and prices stay in THB
   const fx = rateOrZero(usdThb)
   const priceInUsdOrThb = (thbValue: number) => (fx > 0 ? `$${(thbValue / fx).toFixed(2)}` : `฿${thbValue.toFixed(2)}`)

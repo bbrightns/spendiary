@@ -36,7 +36,13 @@ const logOf = (s: SpendiaryData, action: string) => s.holdingLogs!.find((l) => l
 describe('undo with a saved delta', () => {
   it('saves exactly what a buy did, cash included', () => {
     const out = buy(state(), 'f1', 10, 120, true)
-    expect(logOf(out, 'buy_more').delta).toEqual({ units: 10, thb: 120, cash: [{ accountId: 'bank', amount: -120 }] })
+    expect(logOf(out, 'buy_more').delta).toEqual({
+      units: 10,
+      thb: 120,
+      before: { units: 100, thb: 1000, price: 12 },
+      after: { units: 110, thb: 1120, price: 12 },
+      cash: [{ accountId: 'bank', amount: -120, name: 'Bank', currency: 'THB', balanceAfter: 9880 }],
+    })
   })
 
   it('undoes a buy and gives the exact money back, with no note to read', () => {
@@ -120,7 +126,7 @@ describe('undo with a saved delta', () => {
       const s = state({ holdings: [aapl] })
       const left = withLocations(aapl, [{ id: 'w', name: 'Webull', qty: 6, thbSpent: 36_000, usdSpent: 1020 }, aapl.locations![1]])
       const sold = sellHolding(s, { holdingId: 's1', soldUnits: 4, soldPrice: 7000, proceeds: 28_000, realizedPnL: 4000, realizedPnLPercent: 16, note: 'sold', remainingHolding: left })
-      expect(logOf(sold, 'sell').delta?.location).toEqual({ id: 'w', qty: -4, thb: -24_000, usd: -680 })
+      expect(logOf(sold, 'sell').delta?.location).toEqual({ id: 'w', name: 'Webull', qty: -4, thb: -24_000, usd: -680 })
       expect(undoHoldingLog(sold, logOf(sold, 'sell').id).holdings[0].locations?.[0]).toMatchObject({ qty: 10, thbSpent: 60_000, usdSpent: 1700 })
       const gone = removeLocation(sold, 's1', 'w')
       expect(undoHoldingLogChecked(gone, logOf(gone, 'sell').id)).toMatchObject({ ok: false })

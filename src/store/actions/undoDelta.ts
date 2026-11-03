@@ -1,4 +1,4 @@
-import type { CashAccount, Holding, HoldingDelta, HoldingLocation, HoldingLog, SpendiaryData } from '../../lib/types'
+import type { CashAccount, Holding, HoldingDelta, HoldingFigures, HoldingLocation, HoldingLog, SpendiaryData } from '../../lib/types'
 import { qtyEpsilon, roundQty } from '../../lib/locations'
 import { roundMoney } from '../../lib/money'
 
@@ -13,7 +13,13 @@ const units = (h: Holding | undefined) => h?.units ?? h?.totalUnits ?? 0
  * What going from `before` to `after` did to a holding. `before` missing = the holding was created;
  * `after` missing = it was sold off and removed. Cash moves are added by the caller.
  */
-export function holdingDelta(before: Holding | undefined, after: Holding | undefined, cash?: HoldingDelta['cash']): HoldingDelta {
+export function holdingDelta(
+  before: Holding | undefined,
+  after: Holding | undefined,
+  cash?: HoldingDelta['cash'],
+  /** Cash accounts after the change: names and balances for the trade history */
+  accountsAfter?: CashAccount[],
+): HoldingDelta {
   const ac = (after ?? before)?.assetClass
   const usdBefore = before?.totalUsdInvested
   const usdAfter = after?.totalUsdInvested
@@ -24,6 +30,8 @@ export function holdingDelta(before: Holding | undefined, after: Holding | undef
   if (usdBefore !== undefined || usdAfter !== undefined) out.usd = (usdAfter ?? 0) - (usdBefore ?? 0)
   if (!before) out.holdingCreated = true
   if (!after) out.holdingRemoved = true
+  if (before) out.before = figures(before)
+  if (after) out.after = figures(after)
 
   // The one location whose quantity changed
   const prevLocs = before?.locations ?? []
@@ -39,15 +47,34 @@ export function holdingDelta(before: Holding | undefined, after: Holding | undef
     const b = nextLocs.find((l) => l.id === changed[0])
     out.location = {
       id: changed[0],
+      name: (b ?? a)?.name,
       qty: roundQty(ac, (b?.qty ?? 0) - (a?.qty ?? 0)),
       thb: roundMoney((b?.thbSpent ?? 0) - (a?.thbSpent ?? 0)),
       ...(a?.usdSpent !== undefined || b?.usdSpent !== undefined ? { usd: (b?.usdSpent ?? 0) - (a?.usdSpent ?? 0) } : {}),
       ...(!a ? { created: true } : {}),
     }
   }
-  const moved = (cash ?? []).filter((c) => c.amount !== 0)
+  const moved = withAccountDetails((cash ?? []).filter((c) => c.amount !== 0), accountsAfter)
   if (moved.length > 0) out.cash = moved
   return out
+}
+
+/** The numbers of a holding the trade history shows */
+function figures(h: Holding): HoldingFigures {
+  return {
+    units: units(h),
+    thb: h.totalThbInvested ?? units(h) * (h.avgCostThb ?? h.avgCost ?? 0),
+    ...(h.totalUsdInvested !== undefined ? { usd: h.totalUsdInvested } : {}),
+    price: h.price,
+  }
+}
+
+/** Cash moves with each account's name, currency and balance afterwards, for the trade history */
+export function withAccountDetails(cash: NonNullable<HoldingDelta['cash']>, accountsAfter?: CashAccount[]): NonNullable<HoldingDelta['cash']> {
+  return cash.map((c) => {
+    const acc = accountsAfter?.find((a) => a.id === c.accountId)
+    return acc ? { ...c, name: acc.name, currency: acc.currency ?? 'THB', balanceAfter: acc.balance } : c
+  })
 }
 
 export type UndoResult = { ok: true; data: SpendiaryData } | { ok: false; reason: string }

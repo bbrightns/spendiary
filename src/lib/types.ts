@@ -251,13 +251,26 @@ export interface HoldingDelta {
   /** US stocks: USD cost basis added (+) or removed (−) */
   usd?: number
   /** The wallet / vault / broker that changed, and by how much (its own figures, signed) */
-  location?: { id: string; qty: number; thb: number; usd?: number; created?: boolean }
+  location?: { id: string; name?: string; qty: number; thb: number; usd?: number; created?: boolean }
+  /** The holding's figures before and after, for the trade history (missing = it didn't exist) */
+  before?: HoldingFigures
+  after?: HoldingFigures
   /** This entry created the holding */
   holdingCreated?: boolean
   /** This entry sold the whole holding, so it was removed */
   holdingRemoved?: boolean
-  /** Cash that moved with it: + into an account, − out of it (THB or the account's currency) */
-  cash?: { accountId: string; amount: number }[]
+  /** Cash that moved with it: + into an account, − out of it (in the account's currency) */
+  cash?: { accountId: string; amount: number; name?: string; currency?: 'THB' | 'USD'; balanceAfter?: number }[]
+}
+
+/** The few numbers of a holding the trade history shows */
+export interface HoldingFigures {
+  units: number
+  /** Cost basis, THB */
+  thb: number
+  usd?: number
+  /** Price per unit, THB */
+  price: number
 }
 
 /** Bought with own money, or received for free (gift / inheritance) at the market value on that day. */

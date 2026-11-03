@@ -40,9 +40,9 @@ export function addHoldingLog(prev: SpendiaryData, ...[log]: Parameters<DataCont
         id: log.id ?? newId(),
         timestamp: log.timestamp ?? new Date().toISOString(),
         holdingId: log.holdingId ?? holding?.id,
-        previousHoldingState,
+        // An add carries its delta instead of whole snapshots
+        ...(delta ? { previousHoldingState: undefined, afterHoldingState: undefined, delta } : { previousHoldingState }),
         ...(changes ? { changes } : {}),
-        ...(delta ? { delta } : {}),
       },
       ...(prev.holdingLogs ?? []),
     ],
