@@ -1,3 +1,4 @@
+import { logCashStates, logHoldingStates } from '../../lib/logStates'
 import type { CashAccount, SpendTransaction, SpendiaryData } from '../../lib/types'
 import { localDateStr } from '../../lib/format'
 import { roundMoney } from '../../lib/money'
@@ -45,14 +46,16 @@ export function investTransactions(data: SpendiaryData, usdThb: number | null): 
   for (const log of data.holdingLogs ?? []) {
     const at = new Date(log.timestamp)
     const time = Number.isNaN(at.getTime()) ? undefined : `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`
-    const invested = (log.afterHoldingState?.totalThbInvested ?? 0) - (log.previousHoldingState?.totalThbInvested ?? 0)
+    const states = logHoldingStates(log)
+    const cash = logCashStates(log)
+    const invested = log.delta ? log.delta.thb : (states.curr?.totalThbInvested ?? 0) - (states.prev?.totalThbInvested ?? 0)
 
     if (log.dcaPlanId) {
       const plan = plans.get(log.dcaPlanId)
       if (log.assetClass === 'cash') {
         // Savings DCA: money moved into one of your own accounts, so a transfer rather than an investment
         const into = plan?.cashAccountId
-        const deposited = (balanceOf(log.afterCashAccountsState, into) ?? 0) - (balanceOf(log.previousCashAccountsState, into) ?? 0)
+        const deposited = (balanceOf(cash.curr, into) ?? 0) - (balanceOf(cash.prev, into) ?? 0)
         const amount = log.paidAmount ?? deposited
         if (!(amount > 0)) continue
         out.push({
@@ -88,7 +91,7 @@ export function investTransactions(data: SpendiaryData, usdThb: number | null): 
     // Buy more on a holding (not cash accounts): what left the paying account, else what was invested
     if (log.action !== 'buy_more' || log.assetClass === 'cash' || !log.holdingId || log.source === 'received') continue
     const paid = log.cashAccountId
-      ? (balanceOf(log.previousCashAccountsState, log.cashAccountId) ?? 0) - (balanceOf(log.afterCashAccountsState, log.cashAccountId) ?? 0)
+      ? (balanceOf(cash.prev, log.cashAccountId) ?? 0) - (balanceOf(cash.curr, log.cashAccountId) ?? 0)
       : 0
     const amount = paid > 0 ? paid : invested
     if (!(amount > 0)) continue

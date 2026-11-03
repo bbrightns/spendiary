@@ -129,11 +129,32 @@ describe('undoHoldingLog', () => {
   it('undoes a move between storage locations, removing the location it created', () => {
     const btc = {
       id: 'b1', name: 'Bitcoin', ticker: 'BTC', assetClass: 'crypto', units: 0.01, avgCost: 2_000_000, price: 3_000_000, totalThbInvested: 20_000,
-      btcLocations: [{ id: 'ex', name: 'Exchange', satoshi: 1_000_000, thbSpent: 20_000 }],
+      locations: [{ id: 'ex', name: 'Exchange', qty: 0.01, thbSpent: 20_000 }],
     } as Holding
     const moved = transferLocation(state({ holdings: [btc] }), { holdingId: 'b1', fromLocationId: 'ex', newLocationName: 'Ledger', amount: 400_000, fee: 1000 })
     const undone = undoLatest(moved).holdings[0]
-    expect(undone.btcLocations).toEqual([{ id: 'ex', name: 'Exchange', satoshi: 1_000_000, thbSpent: 20_000 }])
+    expect(undone.locations).toEqual([{ id: 'ex', name: 'Exchange', qty: 0.01, thbSpent: 20_000 }])
     expect(undone.units).toBeCloseTo(0.01)
+  })
+
+  it('undoes a sale from one broker, giving that broker its shares and cost back', () => {
+    const locs = [
+      { id: 'w', name: 'Webull', qty: 6, thbSpent: 30_000, usdSpent: 900 },
+      { id: 'd', name: 'Dime', qty: 4, thbSpent: 20_000, usdSpent: 600 },
+    ]
+    const start = state({ holdings: [apple({ locations: locs, totalUsdInvested: 1500 })] })
+    const after = { ...apple(), units: 4, totalUnits: 4, totalThbInvested: 20_000, locations: [{ ...locs[0], qty: 0, thbSpent: 0, usdSpent: 0 }, locs[1]] } as Holding
+    const sold = sellHolding(start, { holdingId: 'h1', remainingHolding: after, soldUnits: 6, soldPrice: 6000, proceeds: 36_000, realizedPnL: 6_000, realizedPnLPercent: 20, note: 'Sold 6 shares from Webull' })
+    const undone = undoLatest(sold).holdings[0]
+    expect(undone.units).toBe(10)
+    expect(undone.locations).toEqual(locs)
+  })
+
+  it('undoes a buy into a new broker, removing the broker it created', () => {
+    const locs = [{ id: 'w', name: 'Webull', qty: 10, thbSpent: 50_000, usdSpent: 1500 }]
+    const start = state({ holdings: [apple({ locations: locs })] })
+    const bought = { ...apple(), units: 12, totalUnits: 12, totalThbInvested: 62_000, locations: [...locs, { id: 'd', name: 'Dime', qty: 2, thbSpent: 12_000, usdSpent: 350 }] } as Holding
+    const out = buyMoreHolding(start, { updatedHolding: bought, note: '+2 shares · Dime' })
+    expect(undoLatest(out).holdings[0].locations).toEqual(locs)
   })
 })

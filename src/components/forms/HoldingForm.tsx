@@ -4,7 +4,8 @@ import { NumberField, SelectField, TextField } from '../ui/Field'
 import { FormActions } from './FormActions'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
-import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC, goldThbPerGramToXauUsd, upsert } from '../../lib/calc'
+import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC, goldThbPerGramToXauUsd } from '../../lib/calc'
+import { assignAllToLocation, buyInto, formatLocationQty, hasLocations, locationNoun, roundQty, totalsFromLocations, visibleLocations } from '../../lib/locations'
 import type { AcquisitionSource, AssetClass, DividendPayoutSchedule, Holding, PlannedAsset } from '../../lib/types'
 import { dateStrToTimestamp, localDateStr, thb } from '../../lib/format'
 import { isValidRate } from '../../lib/fx'
@@ -99,6 +100,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
   const [satoshi, setSatoshi] = useState<number | ''>('')
   const [btcThbSpent, setBtcThbSpent] = useState<number | ''>('')
   const [locationName, setLocationName] = useState('')
+  // New US stock: the broker the whole position starts at (optional)
+  const [brokerName, setBrokerName] = useState('')
 
   // Gold new-holding fields
   const [goldUnit, setGoldUnit] = useState<'grams' | 'baht'>('grams')
@@ -131,6 +134,19 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
   )
   const isUsd = form.assetClass === 'stock'
   const isGold = form.assetClass === 'gold'
+  // Kept at several wallets / brokers: units and cost follow from those, so the form does not edit them
+  const totalsFromLocs = !!editing && hasLocations(editing)
+  const shownLocations = visibleLocations(editing)
+  const locationTotalsNote = editing && totalsFromLocs ? (
+    <div className="rounded-2xl bg-surface-muted p-4 text-sm">
+      <p className="font-semibold text-ink">
+        {formatLocationQty(editing.assetClass, editing.units)} across {shownLocations.length} {locationNoun(editing.assetClass)}{shownLocations.length === 1 ? '' : 's'}
+      </p>
+      <p className="mt-1 text-xs leading-relaxed text-ink-muted">
+        {`Units and cost come from each ${locationNoun(editing.assetClass)}. Change them with Buy, Sell or Move, or edit a ${locationNoun(editing.assetClass)} on the Portfolio page.`}
+      </p>
+    </div>
+  ) : null
   const isRealEstate = form.assetClass === 'real_estate'
 
   // Guard: only reset form when modal freshly opens (false→true),
@@ -267,6 +283,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       setSatoshi('')
       setBtcThbSpent('')
       setLocationName('')
+      setBrokerName('')
       setGrams('')
       setGoldThbSpent('')
       setGoldLocationName('')
@@ -284,6 +301,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       setSatoshi('')
       setBtcThbSpent('')
       setLocationName('')
+      setBrokerName('')
       setGrams('')
       setGoldThbSpent('')
       setGoldLocationName('')
@@ -423,20 +441,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       : null
 
     if (existingBtc) {
-      const newLoc = { name: locName, satoshi: sats, thbSpent: spent }
-      const updatedLocations = upsert(existingBtc.btcLocations ?? [], newLoc)
-      const totalSats = updatedLocations.reduce((s, l) => s + l.satoshi, 0)
-      const totalUnits = totalSats / SATS_PER_BTC
-      const totalThb = parseFloat(updatedLocations.reduce((s, l) => s + l.thbSpent, 0).toFixed(2))
-      const newAvgCostThb = totalUnits > 0 ? totalThb / totalUnits : existingBtc.avgCostThb ?? existingBtc.avgCost
       const mergedHolding: Holding = {
-        ...existingBtc,
-        btcLocations: updatedLocations,
-        units: totalUnits,
-        totalUnits,
-        avgCost: newAvgCostThb,
-        avgCostThb: newAvgCostThb,
-        totalThbInvested: totalThb,
+        ...buyInto(existingBtc, { name: locName }, btcUnits, spent).holding,
         updatedAt: localDateStr(),
       }
       upsertHolding(mergedHolding)
@@ -447,6 +453,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         action: 'add',
         timestamp: dateStrToTimestamp(txDate),
         holdingId: existingBtc.id,
+        // Before the merge, so undo takes only this add back out
+        previousHoldingState: JSON.parse(JSON.stringify(existingBtc)),
         holdingName: 'Bitcoin',
         ticker: 'BTC',
         assetClass: 'crypto',
@@ -473,7 +481,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       // No live price yet: count at cost and say so (see Holding.placeholderPrice)
       price: editing?.price ?? avgCostThb,
       placeholderPrice: editing ? editing.placeholderPrice : avgCostThb,
-      btcLocations: [{ id: newId(), name: locName, satoshi: sats, thbSpent: spent }],
+      locations: [{ id: newId(), name: locName, qty: roundQty('crypto', btcUnits), thbSpent: spent }],
       updatedAt: localDateStr(),
     }
     upsertHolding(savedHolding)
@@ -511,19 +519,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       : null
 
     if (existingGold) {
-      const newLoc = { name: locName, grams: g, thbSpent: spent }
-      const updatedLocations = upsert(existingGold.goldLocations ?? [], newLoc)
-      const totalGrams = updatedLocations.reduce((s, l) => s + l.grams, 0)
-      const totalThb = parseFloat(updatedLocations.reduce((s, l) => s + l.thbSpent, 0).toFixed(2))
-      const newAvgCostThb = totalGrams > 0 ? totalThb / totalGrams : existingGold.avgCostThb ?? existingGold.avgCost
       const mergedHolding: Holding = {
-        ...existingGold,
-        goldLocations: updatedLocations,
-        units: totalGrams,
-        totalUnits: totalGrams,
-        avgCost: newAvgCostThb,
-        avgCostThb: newAvgCostThb,
-        totalThbInvested: totalThb,
+        ...buyInto(existingGold, { name: locName }, g, spent).holding,
         updatedAt: localDateStr(),
       }
       upsertHolding(mergedHolding)
@@ -534,6 +531,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         action: 'add',
         timestamp: dateStrToTimestamp(txDate),
         holdingId: existingGold.id,
+        // Before the merge, so undo takes only this add back out
+        previousHoldingState: JSON.parse(JSON.stringify(existingGold)),
         holdingName: 'Gold',
         ticker: 'XAU',
         assetClass: 'gold',
@@ -560,7 +559,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       // No live price yet: count at cost and say so (see Holding.placeholderPrice)
       price: editing?.price ?? avgCostThb,
       placeholderPrice: editing ? editing.placeholderPrice : avgCostThb,
-      goldLocations: [{ id: newId(), name: locName, grams: g, thbSpent: spent }],
+      locations: [{ id: newId(), name: locName, qty: roundQty('gold', g), thbSpent: spent }],
       updatedAt: localDateStr(),
     }
     upsertHolding(savedHolding)
@@ -592,7 +591,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       (isRealEstate || form.units !== '') &&
       form.avgCost !== '' &&
       (useLivePrice || isUsd || form.price !== '') &&
-      (!isUsd || fxNow > 0)
+      // Kept at brokers: cost comes from them, so no rate is needed to convert it
+      (!isUsd || fxNow > 0 || totalsFromLocs)
     if (!valid) { setShowErrors(true); return }
 
     const cleanTag = form.tag.trim() || undefined
@@ -614,8 +614,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       // Re-saving the same stand-in price keeps it marked; typing a new price makes it real
       placeholderPrice: editing?.placeholderPrice,
       updatedAt: localDateStr(),
-      ...(editing?.btcLocations ? { btcLocations: editing.btcLocations } : {}),
-      ...(editing?.goldLocations ? { goldLocations: editing.goldLocations } : {}),
+      ...(editing?.locations ? { locations: editing.locations } : {}),
       isLocked,
     }
 
@@ -657,6 +656,14 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         avgCost: avgCostThb,
         price: Number(form.price),
       }
+    }
+
+    // Units and cost of a holding kept at several locations come from those locations, never from the form
+    if (editing && totalsFromLocs) {
+      updateObj = { ...updateObj, ...totalsFromLocations(updateObj, editing.locations ?? []) }
+    } else if (!editing && form.assetClass === 'stock' && brokerName.trim() && unitsNum > 0) {
+      // A new US stock with its broker named: the whole position starts at that broker
+      updateObj = assignAllToLocation(updateObj, brokerName)
     }
 
     const canPayDividend = form.assetClass === 'fund' || form.assetClass === 'stock'
@@ -1114,7 +1121,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         {/* ── BTC: edit ── */}
         {isBtc && editing && (
           <>
-            <div>
+            {totalsFromLocs ? locationTotalsNote : <div>
               <NumberField
                 label="BTC held (decimal)"
                 value={form.units}
@@ -1128,16 +1135,16 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                   ≈ {Math.round(Number(form.units) * SATS_PER_BTC).toLocaleString()} sats
                 </p>
               )}
-            </div>
+            </div>}
             <div className="grid grid-cols-1 gap-3 ">
-              <NumberField
+              {!totalsFromLocs && <NumberField
                 label="Avg cost / BTC"
                 prefix="฿"
                 value={form.avgCost}
                 error={showErrors && form.avgCost === '' ? 'Cost is required' : undefined}
                 onChange={(avgCost) => setForm((f) => ({ ...f, avgCost }))}
                 placeholder="0"
-              />
+              />}
               <div>
                 <p className="mb-1.5 text-sm font-medium text-ink-muted">Current price / BTC</p>
                 <div className="flex h-10 items-center gap-2 rounded-xl bg-surface-muted px-3">
@@ -1265,7 +1272,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         {/* ── Gold: edit ── */}
         {isGold && editing && (
           <>
-            <div>
+            {totalsFromLocs ? locationTotalsNote : <div>
               <NumberField
                 label="Weight held (grams)"
                 value={form.units}
@@ -1279,9 +1286,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                   ≈ {(Number(form.units) / GRAMS_PER_BAHT_GOLD).toFixed(4)} gold baht
                 </p>
               )}
-            </div>
+            </div>}
             <div className="grid grid-cols-1 gap-3 ">
-              <div>
+              {!totalsFromLocs && <div>
                 <NumberField
                   label="Avg cost / gram"
                   prefix="฿"
@@ -1295,7 +1302,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                     ≈ {thb(Number(form.avgCost) * GRAMS_PER_BAHT_GOLD)} / gold baht
                   </p>
                 )}
-              </div>
+              </div>}
               <div>
                 <NumberField
                   label="Current price / gram"
@@ -1323,7 +1330,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
               <div className="rounded-2xl bg-surface-muted p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold text-link">THB investment summary</p>
-                  {!isEditingThb && (
+                  {!isEditingThb && !totalsFromLocs && (
                     <button
                       type="button"
                       onClick={() => setIsEditingThb(true)}
@@ -1415,8 +1422,10 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
               {/* Card B: USD Position Details (USD Focus - Editable) */}
               <div className="rounded-2xl border border-line p-4 space-y-4">
                 <p className="text-xs font-bold text-link">USD position details</p>
-                
-                <NumberField
+
+                {totalsFromLocs && locationTotalsNote}
+
+                {!totalsFromLocs && <NumberField
                   label="Total shares held"
                   value={form.units}
                   suffix="shares"
@@ -1426,9 +1435,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                   placeholder="0"
                   step={0.0001}
                   allowString
-                />
+                />}
 
-                <NumberField
+                {!totalsFromLocs && <NumberField
                   label="Average cost per share (USD)"
                   prefix="$"
                   value={form.avgCost}
@@ -1438,7 +1447,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                   placeholder="0"
                   step={0.01}
                   allowString
-                />
+                />}
 
                 {editing ? (
                   <div>
@@ -1462,7 +1471,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                   />
                 )}
 
-                <NumberField
+                {!totalsFromLocs && <NumberField
                   label="Applied FX rate (USD/THB)"
                   value={fxRateInput}
                   error={showErrors && fxRateInput === '' ? 'FX rate is required' : undefined}
@@ -1471,7 +1480,17 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
                   placeholder="Your broker's rate"
                   step={0.0001}
                   allowString
-                />
+                />}
+
+                {!editing && form.assetClass === 'stock' && (
+                  <TextField
+                    label="Broker"
+                    hint="optional"
+                    value={brokerName}
+                    onChange={setBrokerName}
+                    placeholder="e.g. Webull, Dime, IBKR"
+                  />
+                )}
               </div>
             </>
           ) : (

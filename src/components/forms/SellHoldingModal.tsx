@@ -7,7 +7,8 @@ import { BUY_SELL_SEGMENT_OPTIONS } from './BuyMoreForm'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, hasRealPrice, holdingMetrics } from '../../lib/calc'
-import type { BtcLocation, GoldLocation, Holding } from '../../lib/types'
+import type { Holding } from '../../lib/types'
+import { formatLocationQty, hasLocations, qtyEpsilon, takeFromLocation, visibleLocations, withLocations } from '../../lib/locations'
 import { dateStrToTimestamp, thb, localDateStr } from '../../lib/format'
 import { isValidRate } from '../../lib/fx'
 import { TransactionDateField } from './TransactionDateField'
@@ -59,7 +60,8 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
 
   // BTC-specific State
   const [satoshi, setSatoshi] = useState<number | ''>('')
-  const [btcLocationId, setBtcLocationId] = useState<string>('')
+  // Wallet, vault or broker the sale comes from (when the holding has locations)
+  const [sellLocId, setSellLocId] = useState<string>('')
   const [btcThbProceeds, setBtcThbProceeds] = useState<number | ''>('')
 
   // Gold-specific State (remembers last choice)
@@ -74,7 +76,6 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
   })
   const [goldGrams, setGoldGrams] = useState<number | ''>('')
   const [goldBaht, setGoldBaht] = useState<number | ''>('')
-  const [goldLocationId, setGoldLocationId] = useState<string>('')
   const [goldThbProceeds, setGoldThbProceeds] = useState<number | ''>('')
 
   const handleGoldUnitChange = (unit: 'grams' | 'baht') => {
@@ -93,6 +94,10 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
       setTxDate(localDateStr())
       setShowErrors(false)
       setCashAccountId('none')
+      // The locked-to location, else the first unlocked one that holds something
+      const locs = visibleLocations(holding)
+      const lockedTo = lockedLocationId ? (holding.locations ?? []).find((l) => l.id === lockedLocationId) : undefined
+      setSellLocId(lockedTo?.id ?? locs.find((l) => !l.isLocked)?.id ?? locs[0]?.id ?? '')
       setIsCustomProceeds(false)
       setCustomProceeds('')
       setCustomFee('')
@@ -107,18 +112,10 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
       } else if (holding.assetClass === 'crypto') {
         setSatoshi('')
         setBtcThbProceeds('')
-        const locs = holding.btcLocations ?? []
-        const locked = lockedLocationId ? locs.find((l) => l.id === lockedLocationId) : undefined
-        const firstUnlocked = locs.find((l) => !l.isLocked)
-        setBtcLocationId(locked ? locked.id : (firstUnlocked?.id ?? locs[0]?.id ?? ''))
       } else if (holding.assetClass === 'gold') {
         setGoldGrams('')
         setGoldBaht('')
         setGoldThbProceeds('')
-        const locs = holding.goldLocations ?? []
-        const locked = lockedLocationId ? locs.find((l) => l.id === lockedLocationId) : undefined
-        const firstUnlocked = locs.find((l) => !l.isLocked)
-        setGoldLocationId(locked ? locked.id : (firstUnlocked?.id ?? locs[0]?.id ?? ''))
       } else {
         setUnits('')
         setPrice(knownPrice > 0 ? knownPrice : '')
@@ -135,10 +132,17 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
   const avgCostPerUnitThb = currentUnits > 0 ? currentCostBasis / currentUnits : (holding.avgCostThb ?? holding.avgCost ?? 0)
   // Pocket-locked title name ('' when unlocked or the pocket no longer exists → selector stays visible as fallback)
   const lockedSellLocName = lockedLocationId
-    ? ((holding.btcLocations ?? []).find((l) => l.id === lockedLocationId)?.name
-      ?? (holding.goldLocations ?? []).find((l) => l.id === lockedLocationId)?.name
-      ?? '')
+    ? ((holding.locations ?? []).find((l) => l.id === lockedLocationId)?.name ?? '')
     : ''
+  // Locations to sell from: those holding something, plus the one locked to
+  const sellLocs = (holding.locations ?? []).filter((l) => l.qty > qtyEpsilon(holding.assetClass) || l.id === lockedLocationId)
+  const sellLoc = hasLocations(holding) ? sellLocs.find((l) => l.id === sellLocId) : undefined
+  /** Location to sell from, as select options (locked ones can't be picked) */
+  const sellLocOptions = sellLocs.map((l) => ({
+    value: l.id,
+    label: `${l.name}${l.isLocked ? ' (locked)' : ''} (${formatLocationQty(holding.assetClass, l.qty)}${holding.assetClass === 'gold' ? ` · ${(l.qty / GRAMS_PER_BAHT_GOLD).toFixed(2)} gold baht` : ''} · ฿${l.thbSpent.toLocaleString()})`,
+    disabled: l.isLocked,
+  }))
 
   // Cash Account options
   const cashAccountOptions = [
@@ -155,19 +159,18 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     setCustomProceeds('')
     setCustomFee('')
     if (isBtc) {
-      const loc = (holding.btcLocations ?? []).find((l) => l.id === btcLocationId)
-      const availableSats = loc ? loc.satoshi : Math.round(currentUnits * SATS_PER_BTC)
+      const availableSats = Math.round((sellLoc ? sellLoc.qty : currentUnits) * SATS_PER_BTC)
       setSatoshi(availableSats > 0 ? availableSats : '')
       setBtcThbProceeds('')
     } else if (isGold) {
-      const loc = (holding.goldLocations ?? []).find((l) => l.id === goldLocationId)
-      const availableGrams = loc ? loc.grams : currentUnits
+      const availableGrams = sellLoc ? sellLoc.qty : currentUnits
       const g = Number(availableGrams.toFixed(4))
       setGoldGrams(g > 0 ? g : '')
       setGoldBaht(g > 0 ? Number((g / GRAMS_PER_BAHT_GOLD).toFixed(4)) : '')
       setGoldThbProceeds('')
     } else if (isStock) {
-      setStockShares(currentUnits > 0 ? currentUnits : '')
+      const available = sellLoc ? sellLoc.qty : currentUnits
+      setStockShares(available > 0 ? available : '')
     } else {
       setUnits(currentUnits > 0 ? currentUnits : '')
     }
@@ -184,18 +187,19 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     </button>
   )
 
-  const handleBtcLocationChange = (newLocId: string) => {
-    setBtcLocationId(newLocId)
+  const handleSellLocationChange = (newLocId: string) => {
+    setSellLocId(newLocId)
     setSatoshi('')
     setBtcThbProceeds('')
-  }
-
-  const handleGoldLocationChange = (newLocId: string) => {
-    setGoldLocationId(newLocId)
     setGoldGrams('')
     setGoldBaht('')
     setGoldThbProceeds('')
+    setStockShares('')
   }
+
+  /** Takes the sold quantity out of the chosen location, with that location's share of the cost */
+  const takeSold = (qty: number) =>
+    sellLoc && qty > 0 ? takeFromLocation(holding.assetClass, holding.locations ?? [], sellLoc.id, qty) : null
 
   // Calculate sell outcomes per asset type
   let sellUnitsCount = 0
@@ -210,25 +214,27 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     sellUnitsCount = sShares
     const proceedsUsd = sShares * sPriceUsd
     grossProceedsThb = proceedsUsd * sFx
-    costBasisSoldThb = sShares * avgCostPerUnitThb
-    isValid = sShares > 0 && sShares <= currentUnits + 0.0001 && sPriceUsd > 0 && sFx > 0
+    // From a broker: its own average cost; otherwise the holding's
+    const available = sellLoc ? sellLoc.qty : currentUnits
+    costBasisSoldThb = takeSold(Math.min(sShares, available))?.costThb ?? sShares * avgCostPerUnitThb
+    isValid = sShares > 0 && sShares <= available + 0.0001 && sPriceUsd > 0 && sFx > 0
   } else if (isBtc) {
-    const loc = (holding.btcLocations ?? []).find((l) => l.id === btcLocationId)
-    const availableSats = loc ? loc.satoshi : Math.round(currentUnits * SATS_PER_BTC)
+    const availableSats = Math.round((sellLoc ? sellLoc.qty : currentUnits) * SATS_PER_BTC)
     const sSats = Number(satoshi) || 0
     sellUnitsCount = sSats / SATS_PER_BTC
     grossProceedsThb = Number(btcThbProceeds) || 0
-    const locCostBasis = loc ? (loc.satoshi > 0 ? (loc.thbSpent / loc.satoshi) * sSats : 0) : sSats * (avgCostPerUnitThb / SATS_PER_BTC)
-    costBasisSoldThb = locCostBasis
+    costBasisSoldThb = sellLoc
+      ? (takeSold(Math.min(sSats, availableSats) / SATS_PER_BTC)?.costThb ?? 0)
+      : sSats * (avgCostPerUnitThb / SATS_PER_BTC)
     isValid = sSats > 0 && sSats <= availableSats && grossProceedsThb > 0
   } else if (isGold) {
-    const loc = (holding.goldLocations ?? []).find((l) => l.id === goldLocationId)
-    const availableGrams = loc ? loc.grams : currentUnits
+    const availableGrams = sellLoc ? sellLoc.qty : currentUnits
     const sGrams = Number(goldGrams) || 0
     sellUnitsCount = sGrams
     grossProceedsThb = Number(goldThbProceeds) || 0
-    const locCostBasis = loc ? (loc.grams > 0 ? (loc.thbSpent / loc.grams) * sGrams : 0) : sGrams * avgCostPerUnitThb
-    costBasisSoldThb = locCostBasis
+    costBasisSoldThb = sellLoc
+      ? (takeSold(Math.min(sGrams, availableGrams))?.costThb ?? 0)
+      : sGrams * avgCostPerUnitThb
     isValid = sGrams > 0 && sGrams <= availableGrams + 0.0001 && grossProceedsThb > 0
   } else {
     const u = Number(units) || 0
@@ -261,11 +267,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     isValid = isValid && totalProceedsThb > 0
   }
 
-  const isCurrentLocLocked = isBtc
-    ? !!(holding.btcLocations ?? []).find((l) => l.id === btcLocationId)?.isLocked
-    : isGold
-    ? !!(holding.goldLocations ?? []).find((l) => l.id === goldLocationId)?.isLocked
-    : false
+  const isCurrentLocLocked = !!sellLoc?.isLocked
 
   if (holding.isLocked || isCurrentLocLocked) {
     isValid = false
@@ -306,7 +308,11 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
       const sFx = Number(stockFxRate) || rate
       soldPriceDisplay = sPriceUsd * sFx
 
-      if (!isFullSell) {
+      const taken = takeSold(sShares)
+      if (!isFullSell && taken) {
+        // From a broker: totals follow from all brokers, each keeping its own THB and USD cost
+        remainingHolding = { ...withLocations(holding, taken.locations), price: sPriceUsd * sFx, updatedAt: localDateStr(new Date()) }
+      } else if (!isFullSell) {
         const remainingCostBasis = Math.max(0, currentCostBasis - costBasisSoldThb)
         remainingHolding = {
           ...holding,
@@ -322,39 +328,16 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
       const feeNote = effectiveFee > 0 ? ` · Fee: ฿${effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''
       const pnlSign = realizedPnL >= 0 ? '+' : ''
       const pnlWord = 'Realized PnL'
-      note = `Sold ${sShares.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${sPriceUsd.toFixed(2)} (FX ${sFx.toFixed(2)})${feeNote} · Proceeds: ฿${totalProceedsThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · ${pnlWord}: ${pnlSign}฿${realizedPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${pnlSign}${realizedPnLPercent.toFixed(1)}%)${cashNoteSuffix}`
+      note = `Sold ${sShares.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares${sellLoc ? ` from ${sellLoc.name}` : ''} @ $${sPriceUsd.toFixed(2)} (FX ${sFx.toFixed(2)})${feeNote} · Proceeds: ฿${totalProceedsThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · ${pnlWord}: ${pnlSign}฿${realizedPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${pnlSign}${realizedPnLPercent.toFixed(1)}%)${cashNoteSuffix}`
     } else if (isBtc) {
       const sSats = Number(satoshi)
-      const loc = (holding.btcLocations ?? []).find((l) => l.id === btcLocationId)
-      const locName = loc ? loc.name : 'Wallet'
+      const locName = sellLoc ? sellLoc.name : 'Wallet'
       soldPriceDisplay = sellUnitsCount > 0 ? totalProceedsThb / sellUnitsCount : holding.price
 
       if (!isFullSell) {
-        let updatedLocs: BtcLocation[] = holding.btcLocations ?? []
-        if (loc) {
-          updatedLocs = updatedLocs.map((l) => {
-            if (l.id !== loc.id) return l
-            const remSats = Math.max(0, l.satoshi - sSats)
-            const remSpent = Math.max(0, l.thbSpent - costBasisSoldThb)
-            return { ...l, satoshi: remSats, thbSpent: remSpent }
-          }).filter((l) => l.satoshi > 0)
-        }
-        const totalSatsAfter = updatedLocs.reduce((s, l) => s + l.satoshi, 0)
-        const totalThbAfter = updatedLocs.reduce((s, l) => s + l.thbSpent, 0)
-        const u = totalSatsAfter / SATS_PER_BTC
-        const avg = u > 0 ? totalThbAfter / u : holding.avgCost
-
-        remainingHolding = {
-          ...holding,
-          btcLocations: updatedLocs,
-          units: u,
-          totalUnits: u,
-          totalThbInvested: totalThbAfter,
-          avgCost: avg,
-          avgCostThb: avg,
-          price: soldPriceDisplay,
-          updatedAt: localDateStr(new Date()),
-        }
+        const taken = takeSold(sSats / SATS_PER_BTC)
+        const after = taken ? withLocations(holding, taken.locations) : holding
+        remainingHolding = { ...after, price: soldPriceDisplay, updatedAt: localDateStr(new Date()) }
       }
 
       const feeNote = effectiveFee > 0 ? ` · Fee: ฿${effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''
@@ -364,35 +347,13 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     } else if (isGold) {
       const sGrams = Number(goldGrams)
       const sBaht = Number((sGrams / GRAMS_PER_BAHT_GOLD).toFixed(4))
-      const loc = (holding.goldLocations ?? []).find((l) => l.id === goldLocationId)
-      const locName = loc ? loc.name : 'Location'
+      const locName = sellLoc ? sellLoc.name : 'Location'
       soldPriceDisplay = sGrams > 0 ? totalProceedsThb / sGrams : holding.price
 
       if (!isFullSell) {
-        let updatedLocs: GoldLocation[] = holding.goldLocations ?? []
-        if (loc) {
-          updatedLocs = updatedLocs.map((l) => {
-            if (l.id !== loc.id) return l
-            const remGrams = Math.max(0, l.grams - sGrams)
-            const remSpent = Math.max(0, l.thbSpent - costBasisSoldThb)
-            return { ...l, grams: remGrams, thbSpent: remSpent }
-          }).filter((l) => l.grams > 0)
-        }
-        const totalGramsAfter = updatedLocs.reduce((s, l) => s + l.grams, 0)
-        const totalThbAfter = updatedLocs.reduce((s, l) => s + l.thbSpent, 0)
-        const avg = totalGramsAfter > 0 ? totalThbAfter / totalGramsAfter : holding.avgCost
-
-        remainingHolding = {
-          ...holding,
-          goldLocations: updatedLocs,
-          units: totalGramsAfter,
-          totalUnits: totalGramsAfter,
-          totalThbInvested: totalThbAfter,
-          avgCost: avg,
-          avgCostThb: avg,
-          price: soldPriceDisplay,
-          updatedAt: localDateStr(new Date()),
-        }
+        const taken = takeSold(sGrams)
+        const after = taken ? withLocations(holding, taken.locations) : holding
+        remainingHolding = { ...after, price: soldPriceDisplay, updatedAt: localDateStr(new Date()) }
       }
 
       const feeNote = effectiveFee > 0 ? ` · Fee: ฿${effectiveFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''
@@ -514,18 +475,40 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
               {thb(holdingMetrics(holding).marketValue)}
             </span>
           </div>
+          {sellLoc && (
+            <div className="mt-1 flex items-center justify-between text-xs">
+              <span className="text-ink-muted">At {sellLoc.name}</span>
+              <span className="font-semibold tnum text-ink-soft">{formatLocationQty(holding.assetClass, sellLoc.qty)}</span>
+            </div>
+          )}
         </div>
 
         {/* Inputs per Asset Class */}
         {isStock ? (
           <div className="grid grid-cols-1 gap-3">
+            {sellLocs.length > 0 && !lockedSellLocName && (
+              <div className="space-y-1">
+                <SelectField
+                  label="Sell from broker"
+                  value={sellLocId}
+                  onChange={handleSellLocationChange}
+                  options={sellLocOptions}
+                />
+                {sellLoc && sellLoc.qty > 0 && sellLoc.usdSpent !== undefined && (
+                  <div className="flex items-center justify-between text-xs px-1 text-ink-muted">
+                    <span>Average cost at this broker: <strong className="text-ink-soft font-semibold">${(sellLoc.usdSpent / sellLoc.qty).toFixed(2)}/share</strong></span>
+                    <span className="text-xs text-ink-faint">*Profit or loss is based on this broker only</span>
+                  </div>
+                )}
+              </div>
+            )}
             <NumberField
               label="Shares to sell"
               value={stockShares}
               rightElement={renderMaxButton()}
               error={
-                showErrors && (stockShares === '' || Number(stockShares) <= 0 || Number(stockShares) > currentUnits + 0.0001)
-                  ? `Enter 0 < shares ≤ ${currentUnits.toLocaleString()}`
+                showErrors && (stockShares === '' || Number(stockShares) <= 0 || Number(stockShares) > (sellLoc ? sellLoc.qty : currentUnits) + 0.0001)
+                  ? `Enter 0 < shares ≤ ${(sellLoc ? sellLoc.qty : currentUnits).toLocaleString()}`
                   : undefined
               }
               onChange={(val) => setStockShares(val === '' ? '' : Number(val))}
@@ -554,24 +537,20 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
           </div>
         ) : isBtc ? (
           <div className="grid grid-cols-1 gap-3">
-            {(holding.btcLocations ?? []).length > 0 && (
+            {sellLocs.length > 0 && (
               <div className="space-y-1">
                 {!lockedSellLocName && (
                   <SelectField
                     label="Sell from location"
-                    value={btcLocationId}
-                    onChange={handleBtcLocationChange}
-                    options={(holding.btcLocations ?? []).map((l) => ({
-                      value: l.id,
-                      label: `${l.name}${l.isLocked ? ' (locked)' : ''} (${l.satoshi.toLocaleString()} sats · ฿${l.thbSpent.toLocaleString()})`,
-                      disabled: l.isLocked,
-                    }))}
+                    value={sellLocId}
+                    onChange={handleSellLocationChange}
+                    options={sellLocOptions}
                   />
                 )}
                 {(() => {
-                  const loc = (holding.btcLocations ?? []).find((l) => l.id === btcLocationId)
-                  if (!loc || loc.satoshi <= 0) return null
-                  const avgBtcThb = (loc.thbSpent / loc.satoshi) * SATS_PER_BTC
+                  const loc = sellLoc
+                  if (!loc || loc.qty <= 0) return null
+                  const avgBtcThb = loc.thbSpent / loc.qty
                   return (
                     <div className="flex items-center justify-between text-xs px-1 text-ink-muted">
                       <span>Average cost of this location: <strong className="text-ink-soft font-semibold">฿{Math.round(avgBtcThb).toLocaleString()}/BTC</strong></span>
@@ -618,25 +597,21 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
           </div>
         ) : isGold ? (
           <div className="grid grid-cols-1 gap-3">
-            {(holding.goldLocations ?? []).length > 0 && (
+            {sellLocs.length > 0 && (
               <div className="space-y-1">
                 {!lockedSellLocName && (
                   <SelectField
                     label="Sell from location"
-                    value={goldLocationId}
-                    onChange={handleGoldLocationChange}
-                    options={(holding.goldLocations ?? []).map((l) => ({
-                      value: l.id,
-                      label: `${l.name}${l.isLocked ? ' (locked)' : ''} (${l.grams.toFixed(4)}g · ${(l.grams / GRAMS_PER_BAHT_GOLD).toFixed(2)} gold baht · ฿${l.thbSpent.toLocaleString()})`,
-                      disabled: l.isLocked,
-                    }))}
+                    value={sellLocId}
+                    onChange={handleSellLocationChange}
+                    options={sellLocOptions}
                   />
                 )}
                 {(() => {
-                  const loc = (holding.goldLocations ?? []).find((l) => l.id === goldLocationId)
-                  if (!loc || loc.grams <= 0) return null
-                  const avgPerBaht = (loc.thbSpent / loc.grams) * GRAMS_PER_BAHT_GOLD
-                  const avgPerGram = loc.thbSpent / loc.grams
+                  const loc = sellLoc
+                  if (!loc || loc.qty <= 0) return null
+                  const avgPerBaht = (loc.thbSpent / loc.qty) * GRAMS_PER_BAHT_GOLD
+                  const avgPerGram = loc.thbSpent / loc.qty
                   return (
                     <div className="flex items-center justify-between text-xs px-1 text-ink-muted">
                       <span>Average cost of this location: <strong className="text-ink-soft font-semibold">฿{Math.round(avgPerBaht).toLocaleString()}/gold baht</strong> <span className="text-ink-faint font-normal">(฿{Math.round(avgPerGram).toLocaleString()}/g)</span></span>

@@ -1,4 +1,5 @@
 /** How each activity-log entry is labelled, filtered and described. */
+import { logHoldingStates } from '../../lib/logStates'
 import type { FC } from 'react'
 import type { AssetClass, HoldingLog } from '../../lib/types'
 import type { IconProps } from '../../components/appIcon'
@@ -94,8 +95,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
   }
 
   // edit action
-  const prev = log.previousHoldingState
-  const curr = log.afterHoldingState
+  const { prev, curr } = logHoldingStates(log)
   if (prev && curr) {
     const prevUnits = prev.units ?? prev.totalUnits ?? 0
     const currUnits = curr.units ?? curr.totalUnits ?? 0
@@ -159,8 +159,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
 }
 
 export function getDisplayNote(log: HoldingLog): string {
-  const prev = log.previousHoldingState
-  const curr = log.afterHoldingState
+  const { prev, curr } = logHoldingStates(log)
 
   if (prev && curr && log.action === 'edit') {
     const tickerChanged = !!prev.ticker && !!curr.ticker && prev.ticker !== curr.ticker
@@ -276,27 +275,17 @@ export function getDestinationLocation(log: HoldingLog): string | null {
     return 'Fixed Cost'
   }
 
-  const prev = log.previousHoldingState
-  const curr = log.afterHoldingState
+  const { prev, curr } = logHoldingStates(log)
 
-  if (log.assetClass === 'crypto') {
-    const prevLocs = prev?.btcLocations ?? []
-    const currLocs = curr?.btcLocations ?? []
+  // Newer entries name the location they touched
+  if (log.delta?.location?.name) return log.delta.location.name
+
+  if (curr?.locations) {
+    const prevLocs = prev?.locations ?? []
+    const currLocs = curr.locations
     for (const c of currLocs) {
       const p = prevLocs.find((item) => item.id === c.id || item.name === c.name)
-      if (!p || c.satoshi > p.satoshi || c.thbSpent > p.thbSpent) {
-        return c.name
-      }
-    }
-    if (currLocs.length === 1) return currLocs[0].name
-  }
-
-  if (log.assetClass === 'gold') {
-    const prevLocs = prev?.goldLocations ?? []
-    const currLocs = curr?.goldLocations ?? []
-    for (const c of currLocs) {
-      const p = prevLocs.find((item) => item.id === c.id || item.name === c.name)
-      if (!p || c.grams > p.grams || c.thbSpent > p.thbSpent) {
+      if (!p || c.qty > p.qty || c.thbSpent > p.thbSpent) {
         return c.name
       }
     }

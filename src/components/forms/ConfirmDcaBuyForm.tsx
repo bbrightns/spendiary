@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { SegmentedControl } from '../ui/SegmentedControl'
-import { NumberField, SelectField, TextField } from '../ui/Field'
+import { NumberField, SelectField } from '../ui/Field'
 import { Button } from '../ui/Button'
 import { useData } from '../../store/DataContext'
 import { useToast, type ResultDetail } from '../../store/ToastContext'
 import type { DcaPlan } from '../../lib/types'
 import { localDateStr, thb } from '../../lib/format'
 import { isValidRate } from '../../lib/fx'
+import { hasLocations, initialLocationId, locationNoun, NEW_LOCATION } from '../../lib/locations'
+import { LocationSelect } from './LocationSelect'
 import { findMatchingHolding, GRAMS_PER_BAHT_GOLD, hasRealPrice, nextBuyDate, priceGap } from '../../lib/calc'
 import { fetchStockPricesUsd } from '../../lib/prices'
 import { BuyPreview } from './BuyPreview'
@@ -85,8 +87,9 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const isFund  = !isCash && assetClass === 'fund'
   // The real USD/THB rate, or 0 when none has loaded: then the FX field starts empty and must be filled in
   const rate = isValidRate(usdThb) ? usdThb : 0
-  const btcLocations = holding?.btcLocations ?? []
-  const goldLocations = holding?.goldLocations ?? []
+  const locations = holding?.locations ?? []
+  // BTC and gold always go into a location; a US stock picks a broker once it has brokers
+  const usesLocation = isBtc || isGold || (isStock && hasLocations(holding))
 
   const targetCashAccount = plan?.cashAccountId
     ? data.cashAccounts.find((a) => a.id === plan.cashAccountId)
@@ -137,18 +140,8 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     // Crypto initialization
     setSats('')
 
-    // Location selection initialization
-    let preferredId = '__new__'
-    if (isBtc) {
-      preferredId = plan.btcLocationId && btcLocations.some((l) => l.id === plan.btcLocationId)
-        ? plan.btcLocationId
-        : btcLocations.length > 0 ? btcLocations[0].id : '__new__'
-    } else if (isGold) {
-      preferredId = plan.goldLocationId && goldLocations.some((l) => l.id === plan.goldLocationId)
-        ? plan.goldLocationId
-        : goldLocations.length > 0 ? goldLocations[0].id : '__new__'
-    }
-    setSelectedLocId(preferredId)
+    // Location selection initialization: the plan's own location, else the first one holding something
+    setSelectedLocId(initialLocationId(initialMatched?.locations ?? [], plan.locationId, plan.assetClass))
     setNewLocName('')
   }, [open, plan])
 
@@ -159,17 +152,16 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   // --------------------------------------------------------------------------
   // Target Holding / Location Subtitle Resolution
   // --------------------------------------------------------------------------
-  const selectedBtcLoc = btcLocations.find((l) => l.id === selectedLocId)
-  const selectedGoldLoc = goldLocations.find((l) => l.id === selectedLocId)
+  const selectedLoc = locations.find((l) => l.id === selectedLocId)
 
-  const resolvedLocationName = selectedLocId === '__new__'
-    ? newLocName.trim() || 'New Location'
-    : (isBtc ? selectedBtcLoc?.name : selectedGoldLoc?.name) ?? holding?.name ?? plan.name
+  const resolvedLocationName = selectedLocId === NEW_LOCATION
+    ? newLocName.trim() || `New ${locationNoun(assetClass)}`
+    : selectedLoc?.name ?? holding?.name ?? plan.name
 
   const logName = isCash ? (targetCashAccount?.name ?? plan.name) : (holding?.name ?? plan.name)
   const targetSubtitleText = isCash
     ? (targetCashAccount?.name ?? plan.name)
-    : (isBtc || isGold)
+    : usesLocation
       ? resolvedLocationName
       : holding?.name ?? plan.name
 
@@ -212,8 +204,8 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const satsNum = Number(sats) || 0
   const btcImpliedPriceThbPerBtc = satsNum > 0 ? (amountThbNum / satsNum) * SATS_PER_BTC : 0
 
-  const btcCurrentTotalSats = holding?.units ? Math.round(holding.units * SATS_PER_BTC) : btcLocations.reduce((s, l) => s + l.satoshi, 0)
-  const btcCurrentTotalThb  = holding?.totalThbInvested ?? btcLocations.reduce((s, l) => s + l.thbSpent, 0)
+  const btcCurrentTotalSats = holding?.units ? Math.round(holding.units * SATS_PER_BTC) : Math.round(locations.reduce((s, l) => s + l.qty, 0) * SATS_PER_BTC)
+  const btcCurrentTotalThb  = holding?.totalThbInvested ?? locations.reduce((s, l) => s + l.thbSpent, 0)
 
   const btcNewTotalSats = btcCurrentTotalSats + satsNum
   const btcNewTotalThbInvested = btcCurrentTotalThb + amountThbNum
@@ -246,8 +238,8 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     goldGramsToAdd = goldImpliedPricePerGram > 0 ? amountThbNum / goldImpliedPricePerGram : 0
   }
 
-  const goldCurrentTotalGrams = holding?.units ?? goldLocations.reduce((s, l) => s + l.grams, 0)
-  const goldCurrentTotalThb = holding?.totalThbInvested ?? goldLocations.reduce((s, l) => s + l.thbSpent, 0)
+  const goldCurrentTotalGrams = holding?.units ?? locations.reduce((s, l) => s + l.qty, 0)
+  const goldCurrentTotalThb = holding?.totalThbInvested ?? locations.reduce((s, l) => s + l.thbSpent, 0)
 
   const goldNewTotalGrams = goldCurrentTotalGrams + goldGramsToAdd
   const goldNewTotalThbInvested = goldCurrentTotalThb + amountThbNum
@@ -296,8 +288,8 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
   const depositGone = isCash ? goneName(plan?.cashAccountId) : undefined
   const payFromGone = goneName(plan?.payFromAccountId)
 
-  const locValid = !(isBtc || isGold) ||
-    (selectedLocId !== '__new__') ||
+  const locValid = !usesLocation ||
+    (selectedLocId !== NEW_LOCATION) ||
     (newLocName.trim().length > 0)
 
   // Paint the spinner first, then apply the buy — instant feedback and no double-confirm
@@ -362,6 +354,12 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     const payment = payFromId && amountThbNum > 0 ? { accountId: payFromId, amount: amountThbNum } : undefined
 
     const resolvedTargetId = targetHoldingId !== '__new__' ? (holding?.id ?? targetHoldingId) : undefined
+    // Where this buy goes: the picked location, or a new one by name
+    const location = !usesLocation
+      ? undefined
+      : selectedLocId === NEW_LOCATION
+        ? { name: newLocName.trim() }
+        : { id: selectedLocId }
     const undo = {
       label: 'Undo',
       onClick: () => {
@@ -375,7 +373,6 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         p.id,
         amountThbNum,
         today,
-        undefined,
         undefined,
         undefined,
         undefined,
@@ -400,8 +397,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         undefined,
         undefined,
         undefined,
-        undefined,
-        undefined,
+        location,
         {
           unitsBought: stockUnitsBoughtNum,
           amountSpentThb: amountThbNum,
@@ -423,7 +419,6 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         fundImpliedNav,
         undefined,
         undefined,
-        undefined,
         {
           unitsBought: fundUnitsNum,
           amountSpentThb: amountThbNum,
@@ -435,23 +430,6 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         payment,
       )
     } else if (isGold) {
-      const goldLocUpdate = selectedLocId === '__new__'
-        ? {
-            name: newLocName.trim(),
-            grams: goldGramsToAdd,
-            thbSpent: amountThbNum,
-          }
-        : (() => {
-            const existing = goldLocations.find((l) => l.id === selectedLocId)
-            return existing
-              ? {
-                  id: existing.id,
-                  name: existing.name,
-                  grams: existing.grams + goldGramsToAdd,
-                  thbSpent: existing.thbSpent + amountThbNum,
-                }
-              : undefined
-          })()
       confirmDcaBuy(
         p.id,
         goldImpliedPricePerGram,
@@ -459,8 +437,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         undefined,
         undefined,
         undefined,
-        undefined,
-        goldLocUpdate,
+        location,
         undefined,
         undefined,
         resolvedTargetId,
@@ -472,23 +449,6 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         payment,
       )
     } else if (isBtc) {
-      const btcLocUpdate = selectedLocId === '__new__'
-        ? {
-            name: newLocName.trim(),
-            satoshi: satsNum,
-            thbSpent: amountThbNum,
-          }
-        : (() => {
-            const existing = btcLocations.find((l) => l.id === selectedLocId)
-            return existing
-              ? {
-                  id: existing.id,
-                  name: existing.name,
-                  satoshi: existing.satoshi + satsNum,
-                  thbSpent: existing.thbSpent + amountThbNum,
-                }
-              : undefined
-          })()
       confirmDcaBuy(
         p.id,
         btcImpliedPriceThbPerBtc,
@@ -496,8 +456,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         undefined,
         undefined,
         undefined,
-        btcLocUpdate,
-        undefined,
+        location,
         undefined,
         undefined,
         resolvedTargetId,
@@ -519,7 +478,6 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         undefined,
         undefined,
         undefined,
-        undefined,
         resolvedTargetId,
         undefined,
         undefined,
@@ -530,7 +488,6 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
         p.id,
         0,
         today,
-        undefined,
         undefined,
         undefined,
         undefined,
@@ -548,16 +505,17 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     onClose()
   }
 
-  // Options for Storage / Location Dropdowns
-  const btcLocationOptions = [
-    ...btcLocations.map((l) => ({ value: l.id, label: l.name })),
-    { value: '__new__', label: '+ New location…' },
-  ]
-
-  const goldLocationOptions = [
-    ...goldLocations.map((l) => ({ value: l.id, label: l.name })),
-    { value: '__new__', label: '+ New location…' },
-  ]
+  const locationPicker = (
+    <LocationSelect
+      assetClass={assetClass}
+      locations={locations}
+      value={selectedLocId}
+      onChange={setSelectedLocId}
+      newName={newLocName}
+      onNewNameChange={setNewLocName}
+      error={showErrors && !locValid ? `${locationNoun(assetClass) === 'broker' ? 'Broker' : 'Location'} name required` : undefined}
+    />
+  )
 
   return (
     <Modal
@@ -585,7 +543,13 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
           <SelectField
             label="Target holding in portfolio"
             value={targetHoldingId}
-            onChange={setTargetHoldingId}
+            onChange={(id) => {
+              setTargetHoldingId(id)
+              // Locations belong to a holding: start over on the new one's
+              const next = data.holdings.find((h) => h.id === id)
+              setSelectedLocId(initialLocationId(next?.locations ?? [], plan.locationId, plan.assetClass))
+              setNewLocName('')
+            }}
             options={[
               ...data.holdings
                 .filter((h) => !assetClass || h.assetClass === assetClass)
@@ -771,6 +735,8 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               )}
             </div>
 
+            {usesLocation && locationPicker}
+
             <BuyPreview
               paid={thb(amountThbNum)}
               got={hasValidStock ? `${fmtNum(stockUnitsBoughtNum, 4)} shares` : undefined}
@@ -809,22 +775,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               error={showErrors && satsNum <= 0 ? 'Sats bought required (> 0)' : undefined}
             />
 
-            <SelectField
-              label="Storage / location"
-              value={selectedLocId}
-              onChange={setSelectedLocId}
-              options={btcLocationOptions}
-            />
-
-            {selectedLocId === '__new__' && (
-              <TextField
-                label="New location name"
-                value={newLocName}
-                onChange={setNewLocName}
-                placeholder="e.g. Binance, Cold Wallet..."
-                error={showErrors && !locValid ? 'Location name required' : undefined}
-              />
-            )}
+            {locationPicker}
 
             <BuyPreview
               paid={thb(amountThbNum)}
@@ -933,22 +884,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
               />
             )}
 
-            <SelectField
-              label="Storage / location"
-              value={selectedLocId}
-              onChange={setSelectedLocId}
-              options={goldLocationOptions}
-            />
-
-            {selectedLocId === '__new__' && (
-              <TextField
-                label="New location name"
-                value={newLocName}
-                onChange={setNewLocName}
-                placeholder="e.g. Home safe, Bank vault..."
-                error={showErrors && !locValid ? 'Location name required' : undefined}
-              />
-            )}
+            {locationPicker}
 
             <BuyPreview
               paid={thb(amountThbNum)}

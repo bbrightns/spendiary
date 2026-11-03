@@ -6,7 +6,7 @@ import {
   ArrowDownRight as LArrowDownRight, ArrowLeftRight, ArrowUpRight as LArrowUpRight, Bell, Calendar, CalendarSync, Car,
   ChartPie, Check, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, CircleHelp, Clock, Coins, Command, Copy,
   CreditCard, Database, Download, Ellipsis, FlaskConical, HandCoins, House, Info, Keyboard, Layers, LayoutGrid, List,
-  Lock, LockOpen, LogOut, Minus, Pencil, Plus, Receipt, ReceiptText, Scale, Search, Settings, ShoppingBag, Sparkle,
+  Lock, LockOpen, LogOut, Minus, RotateCw, Pencil, Plus, Receipt, ReceiptText, Scale, Search, Settings, ShoppingBag, Sparkle,
   Sparkles, Table, Tag, Target, Trash2, TreePalm, TrendingUp, TriangleAlert, Undo, Upload, Wallet, X,
   ArrowDown, ArrowDownToLine, ArrowUp, Banknote, Gift, Hourglass, Landmark, Lightbulb, Package, Star, TrendingDown,
 } from 'lucide-react'
@@ -74,6 +74,7 @@ export const TagIcon = appIcon(Tag, 'TagIcon')
 export const BellIcon = appIcon(Bell, 'BellIcon')
 export const DatabaseIcon = appIcon(Database, 'DatabaseIcon')
 export const InfoIcon = appIcon(Info, 'InfoIcon')
+export const RefreshIcon = appIcon(RotateCw, 'RefreshIcon')
 /** The four-point star with a small cross (AI, highlights) */
 export const SparkleIcon = appIcon(Sparkles, 'SparkleIcon')
 /** A single four-point star */

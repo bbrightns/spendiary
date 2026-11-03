@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Holding, SpendiaryData } from '../lib/types'
-import { justImportedFixedCosts, migrate } from './migrate'
+import { DATA_SCHEMA, isFromNewerApp, justImportedFixedCosts, migrate } from './migrate'
 
 /** Old saved data can be missing almost anything, so tests feed migrate() loose shapes */
 const legacy = (raw: Record<string, unknown>) => raw as unknown as SpendiaryData & { cash?: number }
@@ -71,7 +71,7 @@ describe('migrate', () => {
   })
 
   it('totals a crypto holding from its wallet locations', () => {
-    const btc = holding({ assetClass: 'crypto', btcLocations: [{ id: 'l1', thbSpent: 300 }, { id: 'l2', thbSpent: 700 }] as Holding['btcLocations'] })
+    const btc = holding({ assetClass: 'crypto', locations: [{ id: 'l1', thbSpent: 300 }, { id: 'l2', thbSpent: 700 }] as Holding['locations'] })
     expect(migrate(legacy({ holdings: [btc] })).holdings[0].totalThbInvested).toBe(1000)
   })
 
@@ -113,5 +113,18 @@ describe('justImportedFixedCosts', () => {
     const after = migrate(before)
     expect(justImportedFixedCosts(before, after)).toBe(true)
     expect(justImportedFixedCosts(after, migrate(after))).toBe(false)
+  })
+
+  it('drops the saved data schema stamp from the data in memory', () => {
+    expect(migrate(legacy({ dataSchema: 2 }))).not.toHaveProperty('dataSchema')
+  })
+})
+
+describe('isFromNewerApp', () => {
+  it('flags data saved by a newer version only', () => {
+    expect(isFromNewerApp({ dataSchema: DATA_SCHEMA + 1 })).toBe(true)
+    expect(isFromNewerApp({ dataSchema: DATA_SCHEMA })).toBe(false)
+    expect(isFromNewerApp({})).toBe(false)
+    expect(isFromNewerApp(null)).toBe(false)
   })
 })

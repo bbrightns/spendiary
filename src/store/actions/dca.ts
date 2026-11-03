@@ -1,10 +1,12 @@
-import type { BtcLocation, GoldLocation, Holding, HoldingLog, SpendiaryData } from '../../lib/types'
+import type { Holding, HoldingLog, SpendiaryData } from '../../lib/types'
+import { buyInto, findLocation } from '../../lib/locations'
 import type { DataContextValue } from '../DataContext'
 import { newId } from '../migrate'
 import { payFromAccount, upsert } from '../dataHelpers'
-import { findMatchingHolding } from '../../lib/calc'
+import { findMatchingHolding, SATS_PER_BTC } from '../../lib/calc'
 import { roundMoney } from '../../lib/money'
 import { undoHoldingLog } from './holdingLogs'
+import { holdingDelta, withAccountDetails } from './undoDelta'
 
 /**
  * DCA plans and confirming or skipping their buys.
@@ -110,7 +112,7 @@ export function undoDcaBuy(prev: SpendiaryData, ...[planId, date]: Parameters<Da
 export function confirmDcaBuy(
   prev: SpendiaryData,
   ...[
-    planId, pricePerUnit, date, overrideUnits, overrideAvgCost, overridePrice, btcLocationUpdate, goldLocationUpdate,
+    planId, pricePerUnit, date, overrideUnits, overrideAvgCost, overridePrice, location,
     stockUpdate, fundUpdate, targetHoldingId, btcUpdate, goldUpdate, payment,
   ]: Parameters<DataContextValue['confirmDcaBuy']>
 ): SpendiaryData {
@@ -120,14 +122,9 @@ export function confirmDcaBuy(
   // Paid from a cash account: its balance goes down, and the log keeps both
   // snapshots so Undo gives the money back
   const paid = payment && payment.amount > 0 && (prev.cashAccounts ?? []).some((a) => a.id === payment.accountId) ? payment : undefined
-  const paidLog = paid
-    ? {
-        paidFromAccountId: paid.accountId,
-        paidAmount: paid.amount,
-        previousCashAccountsState: prev.cashAccounts ?? [],
-        afterCashAccountsState: payFromAccount(prev.cashAccounts ?? [], paid),
-      }
-    : {}
+  // The log keeps only which account paid and how much; its delta says how to give it back
+  const paidLog = paid ? { paidFromAccountId: paid.accountId, paidAmount: paid.amount } : {}
+  const paidCash = paid ? [{ accountId: paid.accountId, amount: -paid.amount }] : []
   const paidAccounts = paid ? { cashAccounts: payFromAccount(prev.cashAccounts ?? [], paid) } : {}
 
   // If this is a Cash Account DCA plan, deposit directly into cash account balance
@@ -170,9 +167,16 @@ export function confirmDcaBuy(
       note: `Deposited ฿${depositAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })} via DCA into ${targetAcc ? targetAcc.name : plan.name}`,
       dcaPlanId: plan.id,
       dcaDate: date,
-      ...(paid ? { paidFromAccountId: paid.accountId, paidAmount: paid.amount } : {}),
-      previousCashAccountsState: oldAccounts,
-      afterCashAccountsState: updatedCashAccounts,
+      ...paidLog,
+      // Exactly what moved, for undo and the trade history: the deposit in, and the payment out
+      delta: {
+        units: 0,
+        thb: 0,
+        cash: withAccountDetails([
+          ...(targetAcc ? [{ accountId: targetAcc.id, amount: depositAmount }] : []),
+          ...paidCash,
+        ], updatedCashAccounts),
+      },
     }
 
     return {
@@ -193,7 +197,7 @@ export function confirmDcaBuy(
   let holdingsList = prev.holdings
 
   // Auto-create holding if needed when location or buy detail is provided
-  if (!holding && (stockUpdate || fundUpdate || btcLocationUpdate || goldLocationUpdate || (pricePerUnit > 0 && (plan.assetClass === 'gold' || plan.assetClass === 'crypto' || plan.assetClass === 'stock' || plan.assetClass === 'fund')))) {
+  if (!holding && (stockUpdate || fundUpdate || btcUpdate || goldUpdate || (pricePerUnit > 0 && (plan.assetClass === 'gold' || plan.assetClass === 'crypto' || plan.assetClass === 'stock' || plan.assetClass === 'fund')))) {
     const createdHolding: Holding = {
       id: newId(),
       name: plan.name,
@@ -208,8 +212,6 @@ export function confirmDcaBuy(
       avgCost: pricePerUnit,
       price: pricePerUnit,
       updatedAt: date,
-      btcLocations: [],
-      goldLocations: [],
     }
     holding = createdHolding
     holdingsList = [...prev.holdings, createdHolding]
@@ -239,6 +241,7 @@ export function confirmDcaBuy(
       dcaPlanId: plan.id,
       dcaDate: date,
       ...paidLog,
+      delta: { units: 0, thb: 0, ...(paid ? { cash: withAccountDetails(paidCash, payFromAccount(prev.cashAccounts ?? [], paid)) } : {}) },
     }
     return {
       ...prev,
@@ -264,8 +267,6 @@ export function confirmDcaBuy(
   if (!isFinite(newAvgCost) || isNaN(newAvgCost)) newAvgCost = holding.avgCost
   const finalPrice = overridePrice !== undefined ? overridePrice : pricePerUnit
 
-  let finalBtcLocations = holding.btcLocations
-  let finalGoldLocations = holding.goldLocations
   let updatedFields: Partial<Holding> = {}
   let logNote = ''
 
@@ -279,29 +280,28 @@ export function confirmDcaBuy(
     const currentThbInvested = holding.totalThbInvested ?? currentUnits * (holding.avgCostThb ?? holding.avgCost ?? 0)
     const currentUsdInvested = holding.totalUsdInvested ?? currentUnits * (holding.avgCostUsd ?? (fxRate > 0 ? (holding.avgCost ?? 0) / fxRate : 0))
 
-    const newTotalUnits = currentUnits + unitsBought
-    const newTotalThbInvested = roundMoney(currentThbInvested + amountSpentThb)
-    const newTotalUsdInvested = currentUsdInvested + usdSpentThisTx
+    // Totals before this buy, with the USD cost filled in for holdings saved without it
+    const base: Holding = { ...holding, units: currentUnits, totalThbInvested: currentThbInvested, totalUsdInvested: currentUsdInvested }
+    const bought = buyInto(base, location, unitsBought, amountSpentThb, usdSpentThisTx).holding
 
-    const newAvgCostUsd = newTotalUnits > 0 ? newTotalUsdInvested / newTotalUnits : (holding.avgCostUsd ?? 0)
-    const newAvgCostThb = newTotalUnits > 0 ? newTotalThbInvested / newTotalUnits : (holding.avgCostThb ?? holding.avgCost ?? 0)
-
-    newUnits = newTotalUnits
-    newAvgCost = newAvgCostThb
+    newUnits = bought.units
+    newAvgCost = bought.avgCost
     calculatedUnits = unitsBought
 
     updatedFields = {
-      units: newTotalUnits,
-      totalUnits: newTotalUnits,
-      totalThbInvested: newTotalThbInvested,
-      totalUsdInvested: newTotalUsdInvested,
-      avgCostUsd: newAvgCostUsd,
-      avgCostThb: newAvgCostThb,
-      avgCost: newAvgCostThb,
+      units: bought.units,
+      totalUnits: bought.units,
+      totalThbInvested: bought.totalThbInvested,
+      totalUsdInvested: bought.totalUsdInvested,
+      avgCostUsd: bought.avgCostUsd,
+      avgCostThb: bought.avgCostThb,
+      avgCost: bought.avgCost,
       price: pricePerShareThb > 0 ? pricePerShareThb : holding.price,
+      ...(bought.locations ? { locations: bought.locations } : {}),
     }
 
-    logNote = `DCA Buy: ${unitsBought} shares @ $${pricePerShareUsd.toFixed(2)}/share (+฿${amountSpentThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
+    const brokerName = bought.locations ? findLocation(bought.locations, location ?? {})?.name : undefined
+    logNote = `DCA Buy: ${unitsBought} shares @ $${pricePerShareUsd.toFixed(2)}/share (+฿${amountSpentThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})${brokerName ? ` · ${brokerName}` : ''}`
   } else if (fundUpdate) {
     const { unitsBought, amountSpentThb, nav } = fundUpdate
     const currentUnits = holding.units ?? holding.totalUnits ?? 0
@@ -325,61 +325,47 @@ export function confirmDcaBuy(
     }
 
     logNote = `DCA Buy: ${unitsBought} units @ ฿${nav.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}/unit (+฿${amountSpentThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
-  } else if (holding.assetClass === 'crypto' && btcLocationUpdate) {
-    finalBtcLocations = upsert(holding.btcLocations ?? [], btcLocationUpdate)
-    const totalSats = finalBtcLocations.reduce((s: number, l: BtcLocation) => s + l.satoshi, 0)
-    const totalThb = roundMoney(finalBtcLocations.reduce((s: number, l: BtcLocation) => s + l.thbSpent, 0))
-    newUnits = totalSats / 100_000_000
-    newAvgCost = newUnits > 0 ? totalThb / newUnits : holding.avgCost
-    if (!isFinite(newAvgCost) || isNaN(newAvgCost)) newAvgCost = holding.avgCost
+  } else if (holding.assetClass === 'crypto' && btcUpdate && btcUpdate.satsBought > 0) {
+    const { satsBought, amountSpentThb: amountSpent } = btcUpdate
+    const bought = buyInto(holding, location, satsBought / SATS_PER_BTC, amountSpent)
+    newUnits = bought.holding.units
+    newAvgCost = bought.holding.avgCost
+    calculatedUnits = satsBought / SATS_PER_BTC
 
-    const existingLoc = btcLocationUpdate.id ? holding.btcLocations?.find((l) => l.id === btcLocationUpdate.id) : undefined
-    const satsBought = (btcUpdate && typeof btcUpdate.satsBought === 'number' && btcUpdate.satsBought > 0)
-      ? btcUpdate.satsBought
-      : (existingLoc ? btcLocationUpdate.satoshi - existingLoc.satoshi : btcLocationUpdate.satoshi)
-    const amountSpent = (btcUpdate && typeof btcUpdate.amountSpentThb === 'number' && btcUpdate.amountSpentThb > 0)
-      ? btcUpdate.amountSpentThb
-      : (existingLoc ? btcLocationUpdate.thbSpent - existingLoc.thbSpent : btcLocationUpdate.thbSpent)
-    calculatedUnits = satsBought / 100_000_000
-
-    const impliedBtcPrice = satsBought > 0 ? (amountSpent / satsBought) * 100_000_000 : (pricePerUnit > 0 ? pricePerUnit : holding.price)
+    const impliedBtcPrice = (amountSpent / satsBought) * SATS_PER_BTC
 
     updatedFields = {
-      totalThbInvested: totalThb,
+      totalThbInvested: bought.holding.totalThbInvested,
       totalUnits: newUnits,
       units: newUnits,
       avgCostThb: newAvgCost,
       avgCost: newAvgCost,
       price: impliedBtcPrice > 0 ? impliedBtcPrice : holding.price,
+      ...(bought.holding.locations ? { locations: bought.holding.locations } : {}),
     }
 
-    const btcLocName = btcLocationUpdate.name || existingLoc?.name
+    const btcLocName = bought.locationId ? bought.holding.locations?.find((l) => l.id === bought.locationId)?.name : undefined
     logNote = `DCA Buy: ${satsBought.toLocaleString()} sats @ ฿${Math.round(impliedBtcPrice).toLocaleString()}/BTC (+฿${amountSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})${btcLocName ? ` · ${btcLocName}` : ''}`
-  } else if (holding.assetClass === 'gold' && goldLocationUpdate) {
-    finalGoldLocations = upsert(holding.goldLocations ?? [], goldLocationUpdate)
-    const totalGrams = finalGoldLocations.reduce((s: number, l: GoldLocation) => s + l.grams, 0)
-    const totalThb = roundMoney(finalGoldLocations.reduce((s: number, l: GoldLocation) => s + l.thbSpent, 0))
-    newUnits = totalGrams
-    newAvgCost = newUnits > 0 ? totalThb / newUnits : holding.avgCost
-    if (!isFinite(newAvgCost) || isNaN(newAvgCost)) newAvgCost = holding.avgCost
-
-    const existingLoc = goldLocationUpdate.id ? holding.goldLocations?.find((l) => l.id === goldLocationUpdate.id) : undefined
-    const gramsBought = goldUpdate?.gramsBought ?? (existingLoc ? goldLocationUpdate.grams - existingLoc.grams : goldLocationUpdate.grams)
-    const amountSpent = goldUpdate?.amountSpentThb ?? (existingLoc ? goldLocationUpdate.thbSpent - existingLoc.thbSpent : goldLocationUpdate.thbSpent)
+  } else if (holding.assetClass === 'gold' && goldUpdate && goldUpdate.gramsBought > 0) {
+    const { gramsBought, amountSpentThb: amountSpent } = goldUpdate
+    const bought = buyInto(holding, location, gramsBought, amountSpent)
+    newUnits = bought.holding.units
+    newAvgCost = bought.holding.avgCost
     calculatedUnits = gramsBought
 
-    const impliedPricePerGram = gramsBought > 0 ? amountSpent / gramsBought : pricePerUnit
+    const impliedPricePerGram = amountSpent / gramsBought
 
     updatedFields = {
-      totalThbInvested: totalThb,
+      totalThbInvested: bought.holding.totalThbInvested,
       totalUnits: newUnits,
       units: newUnits,
       avgCostThb: newAvgCost,
       avgCost: newAvgCost,
       price: impliedPricePerGram > 0 ? impliedPricePerGram : holding.price,
+      ...(bought.holding.locations ? { locations: bought.holding.locations } : {}),
     }
 
-    const goldLocName = goldLocationUpdate.name || existingLoc?.name
+    const goldLocName = bought.locationId ? bought.holding.locations?.find((l) => l.id === bought.locationId)?.name : undefined
     logNote = `DCA Buy: ${gramsBought.toFixed(4)} g @ ฿${impliedPricePerGram.toFixed(2)}/g (+฿${amountSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})${goldLocName ? ` · ${goldLocName}` : ''}`
   } else if (holding.assetClass === 'fund') {
     const currentUnits = holding.units ?? holding.totalUnits ?? 0
@@ -416,9 +402,6 @@ export function confirmDcaBuy(
     logNote = `DCA Buy: ${calculatedUnits.toFixed(8)} units @ ฿${pricePerUnit.toFixed(8)}/unit (+฿${spentThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
   }
 
-  const isBtcWithLocations = holding.assetClass === 'crypto' && (finalBtcLocations?.length ?? 0) > 0
-  const isGoldWithLocations = holding.assetClass === 'gold' && (finalGoldLocations?.length ?? 0) > 0
-
   const resultingHolding: Holding = {
     ...holding,
     units: newUnits,
@@ -427,8 +410,6 @@ export function confirmDcaBuy(
     price: finalPrice,
     updatedAt: date,
     ...updatedFields,
-    ...(isBtcWithLocations ? { btcLocations: finalBtcLocations } : {}),
-    ...(isGoldWithLocations ? { goldLocations: finalGoldLocations } : {}),
   }
 
   const resolvedHoldingId = holding.id
@@ -446,11 +427,16 @@ export function confirmDcaBuy(
     assetClass: holding.assetClass,
     note: logNote || `DCA Buy: ${calculatedUnits.toFixed(4)} units @ ฿${pricePerUnit.toLocaleString()} (+฿${plan.monthlyAmount.toLocaleString()})`,
     holdingId: holding.id,
-    previousHoldingState,
-    afterHoldingState: resultingHolding,
     dcaPlanId: plan.id,
     dcaDate: date,
     ...paidLog,
+    // Exactly what this buy did, for undo and the trade history (a new holding counts as created)
+    delta: holdingDelta(
+      isNewHolding ? undefined : previousHoldingState,
+      resultingHolding,
+      paidCash,
+      paid ? payFromAccount(prev.cashAccounts ?? [], paid) : undefined,
+    ),
   }
 
   return {

@@ -86,15 +86,9 @@ export function Rebalance() {
   const getRebalanceUnits = (h: Holding) => {
     if (!excludeSafeHaven) return h.units
     if (h.isLocked) return 0
-    if (h.assetClass === 'crypto' && h.btcLocations) {
-      const lockedSats = h.btcLocations.filter((l) => l.isLocked).reduce((sum, l) => sum + l.satoshi, 0)
-      return Math.max(0, h.units - (lockedSats / 100_000_000))
-    }
-    if (h.assetClass === 'gold' && h.goldLocations) {
-      const lockedGrams = h.goldLocations.filter((l) => l.isLocked).reduce((sum, l) => sum + l.grams, 0)
-      return Math.max(0, h.units - lockedGrams)
-    }
-    return h.units
+    // Locked wallets / brokers stay out of the rebalance
+    const locked = (h.locations ?? []).filter((l) => l.isLocked).reduce((sum, l) => sum + l.qty, 0)
+    return Math.max(0, h.units - locked)
   }
 
   const activeHoldings = data.holdings

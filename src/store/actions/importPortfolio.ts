@@ -1,4 +1,6 @@
-import type { BtcLocation, CashAccount, DebtCategory, GoldLocation, Holding, HoldingLog, Liability, SpendiaryData } from '../../lib/types'
+import type { CashAccount, DebtCategory, Holding, HoldingLocation, HoldingLog, Liability, SpendiaryData } from '../../lib/types'
+import { addToLocation, hasLocations, roundQty, sumQty, withLocations } from '../../lib/locations'
+import { upgradeHolding } from '../legacyLocations'
 import type { DataContextValue, ImportPortfolioAndCashResult } from '../DataContext'
 import { newId } from '../migrate'
 import { parseCleanNumber } from '../validate'
@@ -97,10 +99,7 @@ export function prepareImport(
       price = rawPrice > 0 ? rawPrice : avgCostThb
     }
 
-    const btcLocations = Array.isArray(r.btcLocations) ? (r.btcLocations as BtcLocation[]) : undefined
-    const goldLocations = Array.isArray(r.goldLocations) ? (r.goldLocations as GoldLocation[]) : undefined
-
-    sanitizedHoldings.push({
+    const holding: Holding = {
       id: typeof r.id === 'string' && r.id && r.id !== 'optional' ? r.id : newId(),
       ticker,
       name,
@@ -116,9 +115,23 @@ export function prepareImport(
       // No price in the file: counted at cost, marked as having no real price
       ...(rawPrice > 0 ? {} : { placeholderPrice: price }),
       updatedAt: today,
-      ...(btcLocations ? { btcLocations } : {}),
-      ...(goldLocations ? { goldLocations } : {}),
-    })
+    }
+    const locations = importedLocations(r, holding)
+    const withLocs = locations ? withLocations(holding, locations) : holding
+
+    // The same ticker held at several brokers / wallets: one holding with one location per row
+    const twin = locations
+      ? sanitizedHoldings.findIndex((e) => e.assetClass === assetClass && e.ticker.toUpperCase() === ticker.toUpperCase() && hasLocations(e))
+      : -1
+    if (twin >= 0) {
+      const merged = (withLocs.locations ?? []).reduce(
+        (acc, l) => addToLocation(assetClass, acc, { name: l.name }, l.qty, l.thbSpent, l.usdSpent).locations,
+        sanitizedHoldings[twin].locations ?? [],
+      )
+      sanitizedHoldings[twin] = withLocations(sanitizedHoldings[twin], merged)
+    } else {
+      sanitizedHoldings.push(withLocs)
+    }
   }
 
   const sanitizedCash: CashAccount[] = []
@@ -219,7 +232,12 @@ export function applyImport(
         (e) => e.ticker.toUpperCase() === h.ticker.toUpperCase() && e.assetClass === h.assetClass,
       )
       if (idx >= 0) {
-        existing[idx] = { ...existing[idx], ...h, id: existing[idx].id }
+        const merged: Holding = { ...existing[idx], ...h, id: existing[idx].id }
+        // Locations kept from before must still add up to the imported units, or they would contradict them
+        if (!h.locations && hasLocations(merged) && Math.abs(sumQty(merged.assetClass, merged.locations ?? []) - merged.units) > 1e-6) {
+          delete merged.locations
+        }
+        existing[idx] = merged
       } else {
         existing.push(h)
       }
@@ -266,4 +284,47 @@ export function applyImport(
     liabilities: (sanitizedLiabilities.length > 0 || mode === 'replace') ? nextLiabilities : (prev.liabilities ?? []),
     holdingLogs: [logEntry, ...(prev.holdingLogs ?? [])],
   }
+}
+
+/**
+ * Where an imported holding is kept, when the row says so:
+ * `locations` [{ name, qty, thbSpent, usdSpent }], the old `btcLocations` / `goldLocations`,
+ * or a single `broker` / `location` name holding the whole row.
+ * Only kept when the quantities add up to the row's units; otherwise the units win and locations are dropped.
+ */
+function importedLocations(r: Record<string, unknown>, h: Holding): HoldingLocation[] | undefined {
+  const ac = h.assetClass
+  let locs: HoldingLocation[] | undefined
+  if (Array.isArray(r.locations)) {
+    locs = r.locations
+      .filter((l): l is Record<string, unknown> => typeof l === 'object' && l !== null && typeof (l as { name?: unknown }).name === 'string')
+      .map((l) => {
+        const qty = roundQty(ac, parseCleanNumber(l.qty ?? l.units ?? l.shares, 0))
+        const share = h.units > 0 ? qty / h.units : 0
+        const usd = typeof l.usdSpent === 'number' ? l.usdSpent : h.totalUsdInvested !== undefined ? h.totalUsdInvested * share : undefined
+        return {
+          id: newId(),
+          name: String(l.name).trim(),
+          qty,
+          thbSpent: typeof l.thbSpent === 'number' ? l.thbSpent : roundMoney((h.totalThbInvested ?? 0) * share),
+          ...(ac === 'stock' && usd !== undefined ? { usdSpent: usd } : {}),
+        }
+      })
+      .filter((l) => l.name && l.qty > 0)
+  } else if (Array.isArray(r.btcLocations) || Array.isArray(r.goldLocations)) {
+    locs = upgradeHolding({ ...h, btcLocations: r.btcLocations, goldLocations: r.goldLocations } as Holding).locations
+  } else {
+    const name = typeof r.broker === 'string' ? r.broker.trim() : typeof r.location === 'string' ? r.location.trim() : ''
+    if (name && h.units > 0) {
+      locs = [{
+        id: newId(),
+        name,
+        qty: roundQty(ac, h.units),
+        thbSpent: h.totalThbInvested ?? 0,
+        ...(ac === 'stock' && h.totalUsdInvested !== undefined ? { usdSpent: h.totalUsdInvested } : {}),
+      }]
+    }
+  }
+  if (!locs || locs.length === 0) return undefined
+  return Math.abs(sumQty(ac, locs) - h.units) <= Math.max(1e-6, h.units * 1e-6) ? locs : undefined
 }

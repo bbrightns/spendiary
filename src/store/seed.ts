@@ -168,6 +168,10 @@ const baseSeed: SpendiaryData = {
       avgCostThb: 6150,
       totalThbInvested: 215_250,
       totalUsdInvested: 6_125,
+      locations: [
+        { id: 'aapl-loc-webull', name: 'Webull', qty: 20, thbSpent: 123_000, usdSpent: 3_500 },
+        { id: 'aapl-loc-dime', name: 'Dime!', qty: 15, thbSpent: 92_250, usdSpent: 2_625 },
+      ],
       paysDividend: true,
       expectedDps: 9.1,
       dividendMonths: [2, 5, 8, 11],
@@ -220,10 +224,10 @@ const baseSeed: SpendiaryData = {
       avgCost: 2_150_000,
       price: 2_920_000,
       totalThbInvested: 1_118_000,
-      btcLocations: [
-        { id: 'btc-loc-1', name: 'ColdCard / Hardware Wallet', satoshi: 32_000_000, thbSpent: 688_000 },
-        { id: 'btc-loc-2', name: 'Bitkub Exchange', satoshi: 12_000_000, thbSpent: 258_000 },
-        { id: 'btc-loc-3', name: 'Binance', satoshi: 8_000_000, thbSpent: 172_000 },
+      locations: [
+        { id: 'btc-loc-1', name: 'ColdCard / Hardware Wallet', qty: 0.32, thbSpent: 688_000 },
+        { id: 'btc-loc-2', name: 'Bitkub Exchange', qty: 0.12, thbSpent: 258_000 },
+        { id: 'btc-loc-3', name: 'Binance', qty: 0.08, thbSpent: 172_000 },
       ],
       updatedAt: today,
     },
@@ -239,9 +243,9 @@ const baseSeed: SpendiaryData = {
       avgCost: 2800, // ~42,683 ฿/gold baht
       price: 3150,   // ~48,018 ฿/gold baht
       totalThbInvested: 85_366,
-      goldLocations: [
-        { id: 'gold-loc-1', name: 'Hua Seng Heng (HSH Gold Now)', grams: 15.244, thbSpent: 42_500 },
-        { id: 'gold-loc-2', name: 'Mae Thong Suk (MTS Gold Saving)', grams: 15.244, thbSpent: 42_866 },
+      locations: [
+        { id: 'gold-loc-1', name: 'Hua Seng Heng (HSH Gold Now)', qty: 15.244, thbSpent: 42_500 },
+        { id: 'gold-loc-2', name: 'Mae Thong Suk (MTS Gold Saving)', qty: 15.244, thbSpent: 42_866 },
       ],
       updatedAt: today,
     },
@@ -274,7 +278,7 @@ const baseSeed: SpendiaryData = {
       monthlyAmount: 300,
       dayOfMonth: 1,
       holdingId: 'h-btc',
-      btcLocationId: 'btc-loc-1',
+      locationId: 'btc-loc-1',
       confirmedDates: [inDays(-1), inDays(-2), inDays(-3)],
     },
     {
@@ -286,7 +290,7 @@ const baseSeed: SpendiaryData = {
       monthlyAmount: 2_500,
       dayOfMonth: 1, // Every Monday
       holdingId: 'h-gold',
-      goldLocationId: 'gold-loc-1',
+      locationId: 'gold-loc-1',
       confirmedDates: [inDays(-7), inDays(-14)],
     },
     {
@@ -517,10 +521,10 @@ const baseSeed: SpendiaryData = {
         avgCost: 2_150_000,
         price: 2_920_000,
         totalThbInvested: 1_225_500,
-        btcLocations: [
-          { id: 'btc-loc-1', name: 'ColdCard / Hardware Wallet', satoshi: 32_000_000, thbSpent: 688_000 },
-          { id: 'btc-loc-2', name: 'Bitkub Exchange', satoshi: 12_000_000, thbSpent: 258_000 },
-          { id: 'btc-loc-3', name: 'Binance', satoshi: 13_000_000, thbSpent: 279_500 },
+        locations: [
+          { id: 'btc-loc-1', name: 'ColdCard / Hardware Wallet', qty: 0.32, thbSpent: 688_000 },
+          { id: 'btc-loc-2', name: 'Bitkub Exchange', qty: 0.12, thbSpent: 258_000 },
+          { id: 'btc-loc-3', name: 'Binance', qty: 0.13, thbSpent: 279_500 },
         ],
         updatedAt: today,
       },
@@ -534,10 +538,10 @@ const baseSeed: SpendiaryData = {
         avgCost: 2_150_000,
         price: 2_920_000,
         totalThbInvested: 1_118_000,
-        btcLocations: [
-          { id: 'btc-loc-1', name: 'ColdCard / Hardware Wallet', satoshi: 32_000_000, thbSpent: 688_000 },
-          { id: 'btc-loc-2', name: 'Bitkub Exchange', satoshi: 12_000_000, thbSpent: 258_000 },
-          { id: 'btc-loc-3', name: 'Binance', satoshi: 8_000_000, thbSpent: 172_000 },
+        locations: [
+          { id: 'btc-loc-1', name: 'ColdCard / Hardware Wallet', qty: 0.32, thbSpent: 688_000 },
+          { id: 'btc-loc-2', name: 'Bitkub Exchange', qty: 0.12, thbSpent: 258_000 },
+          { id: 'btc-loc-3', name: 'Binance', qty: 0.08, thbSpent: 172_000 },
         ],
         updatedAt: today,
       },
@@ -568,9 +572,9 @@ const baseSeed: SpendiaryData = {
         avgCost: 2800,
         price: 3150,
         totalThbInvested: 106_708,
-        goldLocations: [
-          { id: 'gold-loc-1', name: 'Hua Seng Heng (HSH Gold Now)', grams: 22.866, thbSpent: 63_842 },
-          { id: 'gold-loc-2', name: 'Mae Thong Suk (MTS Gold Saving)', grams: 15.244, thbSpent: 42_866 },
+        locations: [
+          { id: 'gold-loc-1', name: 'Hua Seng Heng (HSH Gold Now)', qty: 22.866, thbSpent: 63_842 },
+          { id: 'gold-loc-2', name: 'Mae Thong Suk (MTS Gold Saving)', qty: 15.244, thbSpent: 42_866 },
         ],
         updatedAt: today,
       },
@@ -584,9 +588,9 @@ const baseSeed: SpendiaryData = {
         avgCost: 2800,
         price: 3150,
         totalThbInvested: 85_366,
-        goldLocations: [
-          { id: 'gold-loc-1', name: 'Hua Seng Heng (HSH Gold Now)', grams: 15.244, thbSpent: 42_500 },
-          { id: 'gold-loc-2', name: 'Mae Thong Suk (MTS Gold Saving)', grams: 15.244, thbSpent: 42_866 },
+        locations: [
+          { id: 'gold-loc-1', name: 'Hua Seng Heng (HSH Gold Now)', qty: 15.244, thbSpent: 42_500 },
+          { id: 'gold-loc-2', name: 'Mae Thong Suk (MTS Gold Saving)', qty: 15.244, thbSpent: 42_866 },
         ],
         updatedAt: today,
       },
@@ -606,7 +610,7 @@ const baseSeed: SpendiaryData = {
       realizedPnL: 8850,
       realizedPnLPercent: 28.8,
       cashAccountId: 'c-dime-fcd',
-      note: 'Sold 5 shares @ $226.29 (FX 35.00) · Proceeds: ฿39,600.00 · Realized PnL: +฿8,850.00 (+28.8%) · Deposited to Dime! FCD (US dollars, 5.0%)',
+      note: 'Sold 5 shares from Dime! @ $226.29 (FX 35.00) · Proceeds: ฿39,600.00 · Realized PnL: +฿8,850.00 (+28.8%) · Deposited to Dime! FCD (US dollars, 5.0%)',
       previousHoldingState: {
         id: 'h-aapl',
         name: 'Apple Inc.',
@@ -620,6 +624,10 @@ const baseSeed: SpendiaryData = {
         avgCostThb: 6150,
         totalThbInvested: 246_000,
         totalUsdInvested: 7_000,
+        locations: [
+          { id: 'aapl-loc-webull', name: 'Webull', qty: 20, thbSpent: 123_000, usdSpent: 3_500 },
+          { id: 'aapl-loc-dime', name: 'Dime!', qty: 20, thbSpent: 123_000, usdSpent: 3_500 },
+        ],
         paysDividend: true,
         expectedDps: 9.1,
         dividendMonths: [2, 5, 8, 11],
@@ -639,6 +647,10 @@ const baseSeed: SpendiaryData = {
         avgCostThb: 6150,
         totalThbInvested: 215_250,
         totalUsdInvested: 6_125,
+        locations: [
+          { id: 'aapl-loc-webull', name: 'Webull', qty: 20, thbSpent: 123_000, usdSpent: 3_500 },
+          { id: 'aapl-loc-dime', name: 'Dime!', qty: 15, thbSpent: 92_250, usdSpent: 2_625 },
+        ],
         paysDividend: true,
         expectedDps: 9.1,
         dividendMonths: [2, 5, 8, 11],
@@ -707,8 +719,8 @@ const baseSeed: SpendiaryData = {
         avgCost: 2812,
         price: 3150,
         totalThbInvested: 42_866,
-        goldLocations: [
-          { id: 'gold-loc-2', name: 'Mae Thong Suk (MTS Gold Saving)', grams: 15.244, thbSpent: 42_866 },
+        locations: [
+          { id: 'gold-loc-2', name: 'Mae Thong Suk (MTS Gold Saving)', qty: 15.244, thbSpent: 42_866 },
         ],
         updatedAt: today,
       },
@@ -722,9 +734,9 @@ const baseSeed: SpendiaryData = {
         avgCost: 2800,
         price: 3150,
         totalThbInvested: 85_366,
-        goldLocations: [
-          { id: 'gold-loc-1', name: 'Hua Seng Heng (HSH Gold Now)', grams: 15.244, thbSpent: 42_500 },
-          { id: 'gold-loc-2', name: 'Mae Thong Suk (MTS Gold Saving)', grams: 15.244, thbSpent: 42_866 },
+        locations: [
+          { id: 'gold-loc-1', name: 'Hua Seng Heng (HSH Gold Now)', qty: 15.244, thbSpent: 42_500 },
+          { id: 'gold-loc-2', name: 'Mae Thong Suk (MTS Gold Saving)', qty: 15.244, thbSpent: 42_866 },
         ],
         updatedAt: today,
       },
@@ -749,9 +761,9 @@ const baseSeed: SpendiaryData = {
         avgCost: 2_150_000,
         price: 2_920_000,
         totalThbInvested: 946_000,
-        btcLocations: [
-          { id: 'btc-loc-1', name: 'ColdCard / Hardware Wallet', satoshi: 32_000_000, thbSpent: 688_000 },
-          { id: 'btc-loc-2', name: 'Bitkub Exchange', satoshi: 12_000_000, thbSpent: 258_000 },
+        locations: [
+          { id: 'btc-loc-1', name: 'ColdCard / Hardware Wallet', qty: 0.32, thbSpent: 688_000 },
+          { id: 'btc-loc-2', name: 'Bitkub Exchange', qty: 0.12, thbSpent: 258_000 },
         ],
         updatedAt: today,
       },
@@ -765,10 +777,10 @@ const baseSeed: SpendiaryData = {
         avgCost: 2_150_000,
         price: 2_920_000,
         totalThbInvested: 1_118_000,
-        btcLocations: [
-          { id: 'btc-loc-1', name: 'ColdCard / Hardware Wallet', satoshi: 32_000_000, thbSpent: 688_000 },
-          { id: 'btc-loc-2', name: 'Bitkub Exchange', satoshi: 12_000_000, thbSpent: 258_000 },
-          { id: 'btc-loc-3', name: 'Binance', satoshi: 8_000_000, thbSpent: 172_000 },
+        locations: [
+          { id: 'btc-loc-1', name: 'ColdCard / Hardware Wallet', qty: 0.32, thbSpent: 688_000 },
+          { id: 'btc-loc-2', name: 'Bitkub Exchange', qty: 0.12, thbSpent: 258_000 },
+          { id: 'btc-loc-3', name: 'Binance', qty: 0.08, thbSpent: 172_000 },
         ],
         updatedAt: today,
       },

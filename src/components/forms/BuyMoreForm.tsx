@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { SegmentedControl, type SegmentOption } from '../ui/SegmentedControl'
-import { NumberField, TextField, SelectField } from '../ui/Field'
+import { NumberField, SelectField } from '../ui/Field'
 import { FormActions } from './FormActions'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
-import { ASSET_META, GRAMS_PER_BAHT_GOLD, applyBuy, goldThbPerGramToXauUsd, hasRealPrice, holdingMetrics, upsert } from '../../lib/calc'
-import type { AcquisitionSource, BtcLocation, GoldLocation, Holding } from '../../lib/types'
+import { ASSET_META, GRAMS_PER_BAHT_GOLD, applyBuy, goldThbPerGramToXauUsd, hasRealPrice, holdingMetrics } from '../../lib/calc'
+import { buyInto, hasLocations, initialLocationId, NEW_LOCATION } from '../../lib/locations'
+import { LocationSelect } from './LocationSelect'
+import type { AcquisitionSource, Holding } from '../../lib/types'
 import { dateStrToTimestamp, money, thb, localDateStr } from '../../lib/format'
 import { isValidRate, rateOrZero } from '../../lib/fx'
 import { isValidPrice } from '../../lib/priceCache'
@@ -85,6 +87,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
   // BTC-specific state
   const [satoshi, setSatoshi] = useState<number | ''>('')
   const [thbSpent, setThbSpent] = useState<number | ''>('')
+  // Wallet, vault or broker the buy goes into (BTC, gold, and US stocks that have brokers)
   const [locationId, setLocationId] = useState('')
   const [newLocationName, setNewLocationName] = useState('')
 
@@ -93,8 +96,6 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
   const [goldGrams, setGoldGrams] = useState<number | ''>('')
   const [goldBaht, setGoldBaht] = useState<number | ''>('')
   const [goldThbSpent, setGoldThbSpent] = useState<number | ''>('')
-  const [goldLocationId, setGoldLocationId] = useState('')
-  const [goldNewLocationName, setGoldNewLocationName] = useState('')
 
   // US Stock-specific state
   const [amountSpentThb, setAmountSpentThb] = useState<number | string | ''>('')
@@ -116,7 +117,9 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
   const isStock = holding?.assetClass === 'stock'
   // Real rate or 0 (never a stand-in value): the FX field is required, so USD maths waits for a typed rate
   const rate = rateOrZero(usdThb)
-  const existingLocations = holding?.btcLocations ?? []
+  const existingLocations = holding?.locations ?? []
+  /** Where the buy goes: the picked location, or a new one by name */
+  const buyTarget = locationId === NEW_LOCATION ? { name: newLocationName.trim() } : { id: locationId }
 
   // Guard: only reset form when modal *freshly opens* (false→true),
   // not when holding changes mid-session due to live price ticks.
@@ -298,18 +301,12 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
     setReceivedFrom('')
     setSatoshi('')
     setThbSpent('')
-    const btcLocs = holding.btcLocations ?? []
-    const lockedBtc = lockedLocationId ? btcLocs.find((l) => l.id === lockedLocationId) : undefined
-    setLocationId(lockedBtc ? lockedBtc.id : (btcLocs[0]?.id ?? '__new__'))
+    setLocationId(initialLocationId(holding.locations ?? [], lockedLocationId, holding.assetClass))
     setNewLocationName('')
     setGoldUnit('grams')
     setGoldGrams('')
     setGoldBaht('')
     setGoldThbSpent('')
-    const goldLocs = holding.goldLocations ?? []
-    const lockedGold = lockedLocationId ? goldLocs.find((l) => l.id === lockedLocationId) : undefined
-    setGoldLocationId(lockedGold ? lockedGold.id : (goldLocs[0]?.id ?? '__new__'))
-    setGoldNewLocationName('')
     // Pre-fill price: USD for stocks, THB for funds, not used for BTC.
     // Only a real price is offered; a cost stand-in (no price yet) leaves it for the user to type.
     if (!isBtc && !hasRealPrice(holding)) {
@@ -392,13 +389,30 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
     />
   )
 
+  // Brokers for a US stock only once it has some; BTC and gold always go into a location
+  const stockUsesBroker = isStock && hasLocations(holding)
+  const brokerMissing = stockUsesBroker && locationId === NEW_LOCATION && !newLocationName.trim()
+  const locationPicker = (
+    <LocationSelect
+      assetClass={holding.assetClass}
+      locations={existingLocations}
+      value={locationId}
+      onChange={setLocationId}
+      newName={newLocationName}
+      onNewNameChange={setNewLocationName}
+      showQty
+      error={showErrors && locationId === NEW_LOCATION && !newLocationName.trim() ? 'Required' : undefined}
+    />
+  )
+  const lockedName = lockedLocationId ? existingLocations.find((l) => l.id === lockedLocationId)?.name : undefined
+
   // ── Gold path ──
   if (isGold) {
-    const goldExistingLocations = holding.goldLocations ?? []
-    const isNewGoldLoc = goldLocationId === '__new__'
+    const goldExistingLocations = existingLocations
+    const isNewGoldLoc = locationId === NEW_LOCATION
     const goldLocName = isNewGoldLoc
-      ? goldNewLocationName.trim()
-      : (goldExistingLocations.find((l) => l.id === goldLocationId)?.name ?? '')
+      ? newLocationName.trim()
+      : (goldExistingLocations.find((l) => l.id === locationId)?.name ?? '')
     const g = goldUnit === 'baht'
       ? (goldBaht !== '' ? Number(goldBaht) * GRAMS_PER_BAHT_GOLD : 0)
       : Number(goldGrams)
@@ -408,43 +422,16 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
       goldThbSpent !== '' && spent > 0 &&
       goldLocName.length > 0
     const impliedPrice = g > 0 ? spent / g : 0
-    const totalGrams = goldExistingLocations.reduce((s, l) => s + l.grams, 0)
+    const totalGrams = holding.units ?? 0
     const totalBaht = totalGrams / GRAMS_PER_BAHT_GOLD
 
-    const goldLocOptions = [
-      ...goldExistingLocations.map((l) => ({ value: l.id, label: l.name })),
-      { value: '__new__', label: '+ New location…' },
-    ]
     const lockedGoldLocName = lockedLocationId
       ? (goldExistingLocations.find((l) => l.id === lockedLocationId)?.name ?? '')
       : ''
 
     function saveGold() {
       if (!goldValid) { setShowErrors(true); return }
-      const existingLoc = isNewGoldLoc ? null : goldExistingLocations.find((l) => l.id === goldLocationId)
-      let updatedLocations: GoldLocation[]
-      if (existingLoc) {
-        updatedLocations = upsert(goldExistingLocations, {
-          id: existingLoc.id,
-          name: existingLoc.name,
-          grams: existingLoc.grams + g,
-          thbSpent: existingLoc.thbSpent + spent,
-        })
-      } else {
-        updatedLocations = upsert(goldExistingLocations, { name: goldLocName, grams: g, thbSpent: spent })
-      }
-      const totalGrams = updatedLocations.reduce((s, l) => s + l.grams, 0)
-      const totalThb = updatedLocations.reduce((s, l) => s + l.thbSpent, 0)
-      const avgCost = totalGrams > 0 ? totalThb / totalGrams : holding!.avgCost
-      const afterHoldingState: Holding = {
-        ...holding!,
-        goldLocations: updatedLocations,
-        units: totalGrams,
-        totalUnits: totalGrams,
-        avgCost,
-        totalThbInvested: totalThb,
-        avgCostThb: avgCost,
-      }
+      const afterHoldingState = buyInto(holding!, buyTarget, g, spent).holding
       const bahtAmount = (g / GRAMS_PER_BAHT_GOLD).toFixed(4)
       buyMoreHolding({
         updatedHolding: afterHoldingState,
@@ -495,24 +482,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
             </div>
           </div>
 
-          {lockedLocationId && !isNewGoldLoc ? null : (
-            <SelectField
-              label="Location"
-              value={goldLocationId}
-              onChange={setGoldLocationId}
-              options={goldLocOptions}
-            />
-          )}
-
-          {goldLocationId === '__new__' && (
-            <TextField
-              label="Location name"
-              value={goldNewLocationName}
-              onChange={setGoldNewLocationName}
-              placeholder="e.g. Home safe, Bank vault, Hua Seng Heng"
-              error={showErrors && !goldNewLocationName.trim() ? 'Required' : undefined}
-            />
-          )}
+          {lockedLocationId && !isNewGoldLoc ? null : locationPicker}
 
           {/* Unit selector tab */}
           <div className="space-y-1">
@@ -609,7 +579,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
 
   // ── BTC path ──
   if (isBtc) {
-    const isNew = locationId === '__new__'
+    const isNew = locationId === NEW_LOCATION
     const locName = isNew
       ? newLocationName.trim()
       : (existingLocations.find((l) => l.id === locationId)?.name ?? '')
@@ -621,43 +591,15 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
     const spent = Number(thbSpent)
     const btcAmount = sats / SATS_PER_BTC
     const impliedPrice = btcAmount > 0 ? spent / btcAmount : 0
-    const totalSats = existingLocations.reduce((s, l) => s + l.satoshi, 0)
+    const totalSats = Math.round((holding.units ?? 0) * SATS_PER_BTC)
 
-    const locationOptions = [
-      ...existingLocations.map((l) => ({ value: l.id, label: l.name })),
-      { value: '__new__', label: '+ New location…' },
-    ]
     const lockedBtcLocName = lockedLocationId
       ? (existingLocations.find((l) => l.id === lockedLocationId)?.name ?? '')
       : ''
 
     function saveBtc() {
       if (!btcValid) { setShowErrors(true); return }
-      const existingLoc = isNew ? null : existingLocations.find((l) => l.id === locationId)
-      let updatedLocations: BtcLocation[]
-      if (existingLoc) {
-        updatedLocations = upsert(existingLocations, {
-          id: existingLoc.id,
-          name: existingLoc.name,
-          satoshi: existingLoc.satoshi + sats,
-          thbSpent: existingLoc.thbSpent + spent,
-        })
-      } else {
-        updatedLocations = upsert(existingLocations, { name: locName, satoshi: sats, thbSpent: spent })
-      }
-      const totalSatsAfter = updatedLocations.reduce((s, l) => s + l.satoshi, 0)
-      const totalThb = updatedLocations.reduce((s, l) => s + l.thbSpent, 0)
-      const units = totalSatsAfter / 100_000_000
-      const avgCost = units > 0 ? totalThb / units : holding!.avgCost
-      const afterHoldingState: Holding = {
-        ...holding!,
-        btcLocations: updatedLocations,
-        units,
-        totalUnits: units,
-        avgCost,
-        totalThbInvested: totalThb,
-        avgCostThb: avgCost,
-      }
+      const afterHoldingState = buyInto(holding!, buyTarget, sats / SATS_PER_BTC, spent).holding
       buyMoreHolding({
         updatedHolding: afterHoldingState,
         cashAccountId: payFromId,
@@ -707,24 +649,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
             </div>
           </div>
 
-          {lockedLocationId && !isNew ? null : (
-            <SelectField
-              label="Location"
-              value={locationId}
-              onChange={setLocationId}
-              options={locationOptions}
-            />
-          )}
-
-          {locationId === '__new__' && (
-            <TextField
-              label="Location name"
-              value={newLocationName}
-              onChange={setNewLocationName}
-              placeholder="e.g. Ledger, Binance, Coinbase"
-              error={showErrors && !newLocationName.trim() ? 'Required' : undefined}
-            />
-          )}
+          {lockedLocationId && !isNew ? null : locationPicker}
 
           <div className="grid grid-cols-1 gap-3 ">
             <NumberField
@@ -780,7 +705,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
 
   function save() {
     if (isStock) {
-      if (!validStock) { setShowErrors(true); return }
+      if (!validStock || brokerMissing) { setShowErrors(true); return }
       const unitsBoughtNum = Number(sharesBought)
       const priceUsdNum = Number(priceUsd)
       const fxRateNum = Number(fxRate)
@@ -791,34 +716,16 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
       const currentThbInvested = holding!.totalThbInvested ?? (currentUnits * (holding!.avgCostThb ?? holding!.avgCost ?? 0))
       const currentUsdInvested = holding!.totalUsdInvested ?? (currentUnits * (holding!.avgCostUsd ?? (rate > 0 ? (holding!.avgCost ?? 0) / rate : 0)))
 
-      const newTotalUnits = currentUnits + unitsBoughtNum
-      const newTotalThbInvested = currentThbInvested + amountSpentThbNum
-      const newTotalUsdInvested = currentUsdInvested + usdSpentThisTx
-
-      const newAvgCostUsd = newTotalUnits > 0 ? newTotalUsdInvested / newTotalUnits : 0
-      const newAvgCostThb = newTotalUnits > 0 ? newTotalThbInvested / newTotalUnits : 0
-
-      const next = {
-        units: newTotalUnits,
-        avgCost: newAvgCostThb,
-        price: priceUsdNum * fxRateNum,
-        updatedAt: localDateStr(new Date()),
-      }
-
-      const extra = {
-        totalUnits: newTotalUnits,
-        totalThbInvested: newTotalThbInvested,
-        totalUsdInvested: newTotalUsdInvested,
-        avgCostUsd: newAvgCostUsd,
-        avgCostThb: newAvgCostThb,
-      }
-
-      const updated = { ...holding!, ...next, ...extra }
+      // Totals before this buy, with the USD cost filled in for holdings saved without it
+      const base: Holding = { ...holding!, units: currentUnits, totalThbInvested: currentThbInvested, totalUsdInvested: currentUsdInvested }
+      const bought = buyInto(base, stockUsesBroker ? buyTarget : undefined, unitsBoughtNum, amountSpentThbNum, usdSpentThisTx).holding
+      const updated: Holding = { ...bought, price: priceUsdNum * fxRateNum, updatedAt: localDateStr(new Date()) }
+      const brokerName = stockUsesBroker ? (lockedName ?? (locationId === NEW_LOCATION ? newLocationName.trim() : existingLocations.find((l) => l.id === locationId)?.name)) : undefined
       buyMoreHolding({
         updatedHolding: updated,
         cashAccountId: payFromId,
         cashDeductAmount: payFromId ? amountSpentThbNum : undefined,
-        note: `+${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${priceUsdNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/unit${noteSuffix}`,
+        note: `+${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${priceUsdNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/unit${brokerName ? ` · ${brokerName}` : ''}${noteSuffix}`,
         timestamp: dateStrToTimestamp(txDate),
         ...sourceParams,
       })
@@ -857,7 +764,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
       open={open}
       onClose={onClose}
       title={modalTitle}
-      description={`${holding.name} · ${
+      description={`${holding.name}${lockedName && stockUsesBroker ? ` · at ${lockedName}` : ''} · ${
         isStock
           ? usdThb
             ? `price in USD, converted at ฿${rate.toFixed(2)}/USD.`
@@ -913,6 +820,8 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
             </span>
           </div>
         </div>
+
+        {stockUsesBroker && !lockedName && locationPicker}
 
         {isStock ? (
           <div className="grid grid-cols-1 gap-3">

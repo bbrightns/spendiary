@@ -50,6 +50,12 @@ const SYNC_PROBLEM_COPY = {
       "Your data was saved from another tab or device after this one opened. We didn't save here, so nothing was overwritten. Load the latest version, then redo your last change.",
     action: 'Load latest',
   },
+  outdated: {
+    title: 'A newer version saved your data',
+    description:
+      'Your data was saved by a newer version of Spendiary than this page. We paused saving here so nothing gets overwritten. Refresh to get the latest version.',
+    action: 'Refresh',
+  },
   slow: {
     title: 'Still loading your data',
     description:
@@ -102,7 +108,7 @@ function SpendSettingsRedirect() {
 
 // 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
 function AppContent() {
-  const { user, dataReady, loadError, syncConflict, retryLoad } = useData()
+  const { user, dataReady, loadError, syncConflict, needsRefresh, retryLoad } = useData()
   const { pathname } = useLocation()
 
   // Safety net: if the load stalls (silent network), offer a retry after a while instead of a skeleton forever.
@@ -129,7 +135,9 @@ function AppContent() {
     <Layout>
       <ScrollToTop />
       {/* Hold back the pages until the first load finishes, so users never see fake empty states */}
-      {loadError || syncConflict ? (
+      {needsRefresh ? (
+        <SyncProblemScreen kind="outdated" onRetry={() => window.location.reload()} />
+      ) : loadError || syncConflict ? (
         <SyncProblemScreen kind={loadError ? 'loadError' : 'conflict'} onRetry={retryLoad} />
       ) : !dataReady ? (
         loadTimedOut ? <SyncProblemScreen kind="slow" onRetry={retrySlowLoad} /> : <PageLoadingFallback />

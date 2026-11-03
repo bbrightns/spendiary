@@ -5,7 +5,8 @@ import type { SpendiaryData } from '../lib/types'
 import { seedData } from './seed'
 import { resolveRemoteLoad } from './remoteLoad'
 import { interpretSave, lockHeaders, type SaveMode, type SaveOutcome } from './remoteSave'
-import { emptyData, justImportedFixedCosts, migrate } from './migrate'
+import { DATA_SCHEMA, emptyData, isFromNewerApp, justImportedFixedCosts, migrate } from './migrate'
+import { withLegacyLocations } from './legacyLocations'
 import { STORAGE_KEYS } from '../lib/storageKeys'
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
@@ -25,6 +26,8 @@ export function useCloudSync(
   const [dataReady, setDataReady] = useState(false)
   const [loadError, setLoadError] = useState(false)
   const [syncConflict, setSyncConflict] = useState(false)
+  // The cloud data was saved by a newer version of the app: this one must not save over it
+  const [needsRefresh, setNeedsRefresh] = useState(false)
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.lastSyncedTime)
     return stored ? new Date(stored) : null
@@ -85,6 +88,14 @@ export function useCloudSync(
         console.error('Could not load remote data; saving is paused until a retry succeeds')
         setSyncStatus('error')
         setLoadError(true)
+        return
+      }
+
+      if (result.kind === 'loaded' && isFromNewerApp(result.payload as SpendiaryData)) {
+        // Saved by a newer version: this code could misread it, so saving stays off until a refresh
+        console.error('Cloud data was saved by a newer version of Spendiary; saving is paused until this page is refreshed')
+        setSyncStatus('error')
+        setNeedsRefresh(true)
         return
       }
 
@@ -169,7 +180,8 @@ export function useCloudSync(
     const run = async (): Promise<SaveOutcome> => {
       const { exists, updatedAt } = remoteStamp.current
       const mode: SaveMode = force ? 'force' : exists ? 'update' : 'insert'
-      const row = { payload, updated_at: new Date().toISOString() }
+      // Old location fields too, for devices still on the previous version (legacyLocations.ts)
+      const row = { payload: { ...withLegacyLocations(payload), dataSchema: DATA_SCHEMA }, updated_at: new Date().toISOString() }
       const table = supabase.from('user_data')
       const query =
         mode === 'force'
@@ -273,6 +285,7 @@ export function useCloudSync(
     dataReady,
     loadError,
     syncConflict,
+    needsRefresh,
     lastSyncedAt,
     updateLastSynced,
     retryLoad,

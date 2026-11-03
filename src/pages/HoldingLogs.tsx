@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, Fragment } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useData } from '../store/DataContext'
+import { planEditUndo } from '../store/actions/undoEdit'
+import { undoHoldingLogChecked } from '../store/actions/holdingLogs'
+import { logHoldingStates } from '../lib/logStates'
 import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
@@ -624,8 +627,8 @@ export function HoldingLogs() {
                     const timeStr = dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
                     const isExpanded = expandedLogId === log.id
                     const hasComparison =
-                      !!(log.previousHoldingState && log.afterHoldingState) ||
-                      (log.action === 'sell' && !!log.previousHoldingState) ||
+                      !!(logHoldingStates(log).prev && logHoldingStates(log).curr) ||
+                      (log.action === 'sell' && !!logHoldingStates(log).prev) ||
                       getCashDiffItems(log).length > 0
 
                     return (
@@ -934,15 +937,27 @@ export function HoldingLogs() {
         open={!!undoTarget}
         onClose={() => setUndoTarget(null)}
         title={`Undo "${undoTarget?.holdingName}"?`}
-        description="This will revert your portfolio balance and holdings state to before this activity was recorded."
+        description={undoTarget?.action === 'edit'
+          ? 'Puts back only what this edit changed. Buys, sells and later edits stay as they are.'
+          : 'This will revert your portfolio balance and holdings state to before this activity was recorded.'}
         confirmText="Yes, undo activity"
         confirmVariant="danger"
         confirmIcon={<UndoIcon className="h-4 w-4" strokeWidth={2.4} />}
         cancelText="Cancel"
         onConfirm={() => {
           if (undoTarget) {
-            undoHoldingLog(undoTarget.id)
-            showToast(`Undid activity for "${undoTarget.holdingName}"`, 'info')
+            // Say why when it can't be undone (nothing changes then), and which edited fields were changed again since
+            const check = undoHoldingLogChecked(data, undoTarget.id)
+            const plan = undoTarget.action === 'edit' && undoTarget.holdingId
+              ? planEditUndo(data.holdings.find((h) => h.id === undoTarget.holdingId), undoTarget)
+              : null
+            if (!check.ok) {
+              showToast(check.reason, 'warn')
+            } else {
+              undoHoldingLog(undoTarget.id)
+              const kept = plan?.ok && plan.kept.length > 0 ? ` Kept the ${plan.kept.join(', ')}: changed again since.` : ''
+              showToast(`Undid activity for "${undoTarget.holdingName}".${kept}`, 'info')
+            }
           }
           setUndoTarget(null)
         }}
