@@ -60,7 +60,8 @@ export function totalsFromLocations(h: Holding, locs: HoldingLocation[]): Partia
     avgCost: avg,
     avgCostThb: avg,
   }
-  if (h.assetClass === 'stock' && locs.some((l) => typeof l.usdSpent === 'number')) {
+  // USD cost only when every broker knows its own; a partial sum would understate it
+  if (h.assetClass === 'stock' && locs.length > 0 && locs.every((l) => typeof l.usdSpent === 'number')) {
     const totalUsd = locs.reduce((s, l) => s + (l.usdSpent ?? 0), 0)
     out.totalUsdInvested = totalUsd
     out.avgCostUsd = units > 0 ? totalUsd / units : h.avgCostUsd
@@ -106,7 +107,8 @@ export function addToLocation(
               ...l,
               qty: roundQty(assetClass, l.qty + qty),
               thbSpent: roundMoney(l.thbSpent + thbSpent),
-              ...(usdSpent !== undefined ? { usdSpent: (l.usdSpent ?? 0) + usdSpent } : {}),
+              // A broker that never knew its USD cost stays unknown, unless it was empty
+              ...(usdSpent !== undefined && (l.usdSpent !== undefined || l.qty <= 0) ? { usdSpent: (l.usdSpent ?? 0) + usdSpent } : {}),
             },
       ),
     }
@@ -198,10 +200,12 @@ export function buyInto(
 ): { holding: Holding; locationId?: string } {
   const ac = h.assetClass
   const units = h.units ?? h.totalUnits ?? 0
-  const named = !!target && (!!target.id || !!target.name?.trim())
-  if (named && (hasLocations(h) || units <= qtyEpsilon(ac))) {
-    const existing = findLocation(h.locations ?? [], target!)
-    const r = addToLocation(ac, h.locations ?? [], { id: existing?.id ?? target!.id, name: existing?.name ?? target!.name ?? '' }, qty, thbSpent, usdSpent)
+  // With locations, a buy must land in one so they keep adding up: the one named, else the first that holds something
+  const fallback = hasLocations(h) ? visibleLocations(h)[0] ?? h.locations?.[0] : undefined
+  const existing = (target ? findLocation(h.locations ?? [], target) : undefined) ?? (target?.name?.trim() ? undefined : fallback)
+  const name = existing?.name ?? target?.name?.trim() ?? ''
+  if (name && (hasLocations(h) || units <= qtyEpsilon(ac))) {
+    const r = addToLocation(ac, h.locations ?? [], { id: existing?.id ?? target?.id, name }, qty, thbSpent, usdSpent)
     return { holding: withLocations(h, r.locations), locationId: r.locationId }
   }
   const newUnits = roundQty(ac, units + qty)
@@ -224,8 +228,10 @@ export function assignAllToLocation(h: Holding, name: string): Holding {
     name: name.trim(),
     qty: roundQty(h.assetClass, units),
     thbSpent: roundMoney(h.totalThbInvested ?? units * (h.avgCostThb ?? h.avgCost ?? 0)),
-    ...(h.assetClass === 'stock' ? { usdSpent: h.totalUsdInvested ?? units * (h.avgCostUsd ?? 0) } : {}),
   }
+  // USD cost only when the holding knows it; a made-up 0 would wipe its USD average later
+  const usd = h.totalUsdInvested ?? (h.avgCostUsd !== undefined ? units * h.avgCostUsd : undefined)
+  if (h.assetClass === 'stock' && usd !== undefined && usd > 0) loc.usdSpent = usd
   return { ...h, locations: [loc] }
 }
 

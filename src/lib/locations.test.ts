@@ -46,6 +46,13 @@ describe('buyInto', () => {
     expect(holding.locations?.find((l) => l.id === locationId)?.name).toBe('Dime')
   })
 
+  it('puts a buy with no location named into the first one, so the locations keep adding up', () => {
+    const h = withLocations(stock(), [{ id: 'w', name: 'Webull', qty: 10, thbSpent: 60_000, usdSpent: 1_700 }])
+    const { holding } = buyInto(h, undefined, 1, 7000, 200)
+    expect(holding.locations).toEqual([{ id: 'w', name: 'Webull', qty: 11, thbSpent: 67_000, usdSpent: 1_900 }])
+    expect(holding.units).toBe(11)
+  })
+
   it('only adds to the totals when the holding has units but no locations yet', () => {
     const { holding, locationId } = buyInto(stock(), { name: 'Dime' }, 2, 14_000, 400)
     expect(holding.locations).toBeUndefined()
@@ -61,6 +68,13 @@ describe('buyInto', () => {
 })
 
 describe('assignAllToLocation', () => {
+  it('leaves out the USD cost when the holding never knew it', () => {
+    const noUsd = stock({ totalUsdInvested: undefined, avgCostUsd: undefined })
+    const h = withLocations(noUsd, assignAllToLocation(noUsd, 'Dime').locations ?? [])
+    expect(h.locations?.[0].usdSpent).toBeUndefined()
+    expect(h.totalUsdInvested).toBeUndefined()
+  })
+
   it('puts the whole holding and its cost into one broker', () => {
     expect(assignAllToLocation(stock(), ' Webull ').locations).toEqual([
       expect.objectContaining({ name: 'Webull', qty: 10, thbSpent: 60_000, usdSpent: 1_700 }),

@@ -587,7 +587,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       (isRealEstate || form.units !== '') &&
       form.avgCost !== '' &&
       (useLivePrice || isUsd || form.price !== '') &&
-      (!isUsd || fxNow > 0)
+      // Kept at brokers: cost comes from them, so no rate is needed to convert it
+      (!isUsd || fxNow > 0 || totalsFromLocs)
     if (!valid) { setShowErrors(true); return }
 
     const cleanTag = form.tag.trim() || undefined

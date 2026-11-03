@@ -543,7 +543,13 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
           <SelectField
             label="Target holding in portfolio"
             value={targetHoldingId}
-            onChange={setTargetHoldingId}
+            onChange={(id) => {
+              setTargetHoldingId(id)
+              // Locations belong to a holding: start over on the new one's
+              const next = data.holdings.find((h) => h.id === id)
+              setSelectedLocId(initialLocationId(next?.locations ?? [], plan.locationId, plan.assetClass))
+              setNewLocName('')
+            }}
             options={[
               ...data.holdings
                 .filter((h) => !assetClass || h.assetClass === assetClass)

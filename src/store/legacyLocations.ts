@@ -82,11 +82,24 @@ function upgradeLog(log: HoldingLog): HoldingLog {
   }
 }
 
+/**
+ * A US stock's brokers that no longer add up to its units were changed by a device on the previous
+ * version (it knows nothing of brokers and only moved the units). Its units are the newer truth, so the
+ * brokers go; the user sets them again. BTC and gold are not touched: their old fields carry such edits.
+ */
+function dropStaleBrokers(h: Holding): Holding {
+  if (h.assetClass !== 'stock' || !h.locations?.length) return h
+  const sum = h.locations.reduce((s, l) => s + l.qty, 0)
+  if (Math.abs(sum - (h.units ?? 0)) <= 1e-6) return h
+  const { locations: _l, ...rest } = h
+  return rest
+}
+
 /** Old location fields → `locations` / `locationId`, in holdings, plans and undo snapshots. Safe to run twice. */
 export function upgradeLocations(data: SpendiaryData): SpendiaryData {
   return {
     ...data,
-    holdings: (data.holdings ?? []).map(upgradeHolding),
+    holdings: (data.holdings ?? []).map((h) => dropStaleBrokers(upgradeHolding(h))),
     dcaPlans: (data.dcaPlans ?? []).map(upgradePlan),
     ...(Array.isArray(data.holdingLogs) ? { holdingLogs: data.holdingLogs.map(upgradeLog) } : {}),
   }

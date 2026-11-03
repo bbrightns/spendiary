@@ -71,6 +71,14 @@ describe('upgradeLocations', () => {
     expect(out.dcaPlans[0].locationId).toBe('ex')
   })
 
+  it('drops US stock brokers that an older device made stale by changing the units', () => {
+    const aapl = { id: 's1', name: 'Apple', ticker: 'AAPL', assetClass: 'stock', units: 12, avgCost: 6000, price: 7000,
+      locations: [{ id: 'w', name: 'Webull', qty: 10, thbSpent: 60_000 }] } as Holding
+    expect(upgradeLocations(data({ holdings: [aapl] })).holdings[0].locations).toBeUndefined()
+    const inStep = { ...aapl, units: 10 }
+    expect(upgradeLocations(data({ holdings: [inStep] })).holdings[0].locations).toHaveLength(1)
+  })
+
   it('writes the old fields next to the new ones for older devices', () => {
     const saved = withLegacyLocations(upgradeLocations(data())) as unknown as { holdings: Record<string, unknown>[]; dcaPlans: Record<string, unknown>[] }
     expect(saved.holdings[0].btcLocations).toEqual((oldBtc as unknown as Record<string, unknown>).btcLocations)
