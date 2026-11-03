@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, Fragment } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { planEditUndo } from '../store/actions/undoEdit'
+import { undoHoldingLogChecked } from '../store/actions/holdingLogs'
 import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card } from '../components/ui/Card'
@@ -944,12 +945,13 @@ export function HoldingLogs() {
         cancelText="Cancel"
         onConfirm={() => {
           if (undoTarget) {
-            // An edit is undone field by field: say when it can't be, or which fields were changed again since
+            // Say why when it can't be undone (nothing changes then), and which edited fields were changed again since
+            const check = undoHoldingLogChecked(data, undoTarget.id)
             const plan = undoTarget.action === 'edit' && undoTarget.holdingId
               ? planEditUndo(data.holdings.find((h) => h.id === undoTarget.holdingId), undoTarget)
               : null
-            if (plan && !plan.ok) {
-              showToast(plan.reason, 'warn')
+            if (!check.ok) {
+              showToast(check.reason, 'warn')
             } else {
               undoHoldingLog(undoTarget.id)
               const kept = plan?.ok && plan.kept.length > 0 ? ` Kept the ${plan.kept.join(', ')}: changed again since.` : ''

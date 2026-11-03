@@ -6,6 +6,7 @@ import { payFromAccount, upsert } from '../dataHelpers'
 import { findMatchingHolding, SATS_PER_BTC } from '../../lib/calc'
 import { roundMoney } from '../../lib/money'
 import { undoHoldingLog } from './holdingLogs'
+import { holdingDelta } from './undoDelta'
 
 /**
  * DCA plans and confirming or skipping their buys.
@@ -174,6 +175,15 @@ export function confirmDcaBuy(
       ...(paid ? { paidFromAccountId: paid.accountId, paidAmount: paid.amount } : {}),
       previousCashAccountsState: oldAccounts,
       afterCashAccountsState: updatedCashAccounts,
+      // Exactly what moved, for undo: the deposit in, and the payment out
+      delta: {
+        units: 0,
+        thb: 0,
+        cash: [
+          ...(targetAcc ? [{ accountId: targetAcc.id, amount: depositAmount }] : []),
+          ...(paid ? [{ accountId: paid.accountId, amount: -paid.amount }] : []),
+        ],
+      },
     }
 
     return {
@@ -238,6 +248,7 @@ export function confirmDcaBuy(
       dcaPlanId: plan.id,
       dcaDate: date,
       ...paidLog,
+      delta: { units: 0, thb: 0, ...(paid ? { cash: [{ accountId: paid.accountId, amount: -paid.amount }] } : {}) },
     }
     return {
       ...prev,
@@ -428,6 +439,12 @@ export function confirmDcaBuy(
     dcaPlanId: plan.id,
     dcaDate: date,
     ...paidLog,
+    // Exactly what this buy did, for undo (a new holding counts as created)
+    delta: holdingDelta(
+      isNewHolding ? undefined : previousHoldingState,
+      resultingHolding,
+      paid ? [{ accountId: paid.accountId, amount: -paid.amount }] : undefined,
+    ),
   }
 
   return {

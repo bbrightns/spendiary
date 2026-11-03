@@ -4,6 +4,7 @@ import type { DataContextValue } from '../DataContext'
 import { newId } from '../migrate'
 import { upsert } from '../dataHelpers'
 import { roundMoney } from '../../lib/money'
+import { holdingDelta } from './undoDelta'
 
 /**
  * Holdings and their wallet / storage locations.
@@ -170,6 +171,14 @@ export function sellHolding(prev: SpendiaryData, ...[params]: Parameters<DataCon
     afterHoldingState: params.remainingHolding && params.remainingHolding.units > 0 ? params.remainingHolding : undefined,
     previousCashAccountsState: params.cashAccountId ? previousCashAccountsState : undefined,
     afterCashAccountsState: params.cashAccountId ? updatedCashAccounts : undefined,
+    // Exactly what the sale did, for undo: the units and cost that left, and the money that came in
+    delta: holdingDelta(
+      holding,
+      params.remainingHolding && params.remainingHolding.units > 0 ? params.remainingHolding : undefined,
+      params.cashAccountId && params.cashDepositAmount && params.cashDepositAmount > 0
+        ? [{ accountId: params.cashAccountId, amount: params.cashDepositAmount }]
+        : undefined,
+    ),
   }
 
   return {
@@ -212,6 +221,14 @@ export function buyMoreHolding(prev: SpendiaryData, ...[params]: Parameters<Data
     afterHoldingState: params.updatedHolding,
     previousCashAccountsState: params.cashAccountId ? previousCashAccountsState : undefined,
     afterCashAccountsState: params.cashAccountId ? updatedCashAccounts : undefined,
+    // Exactly what the buy did, for undo: the units and cost that came in, and the money that left
+    delta: holdingDelta(
+      holding,
+      params.updatedHolding,
+      params.cashAccountId && params.cashDeductAmount && params.cashDeductAmount > 0
+        ? [{ accountId: params.cashAccountId, amount: -params.cashDeductAmount }]
+        : undefined,
+    ),
     cashAccountId: params.cashAccountId,
     source: params.source,
     receivedFrom: params.receivedFrom,

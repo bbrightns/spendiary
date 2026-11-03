@@ -1,10 +1,11 @@
-import type { SpendiaryData, Holding, HoldingLocation } from '../../lib/types'
+import type { SpendiaryData, Holding, HoldingLocation, HoldingLog } from '../../lib/types'
 import { qtyEpsilon, roundQty } from '../../lib/locations'
 import { SATS_PER_BTC } from '../../lib/calc'
 import type { DataContextValue } from '../DataContext'
 import { newId } from '../migrate'
 import { revertCashAccountsChange } from '../dataHelpers'
 import { diffHolding, planEditUndo } from './undoEdit'
+import { holdingDelta, undoHoldingDelta, type UndoResult } from './undoDelta'
 import { roundMoney } from '../../lib/money'
 
 /**
@@ -26,6 +27,11 @@ export function addHoldingLog(prev: SpendiaryData, ...[log]: Parameters<DataCont
     ? diffHolding(previousHoldingState, log.afterHoldingState)
     : undefined
 
+  // An add keeps exactly what it put in: a new holding, or units merged into an existing one
+  const delta = log.action === 'add' && !log.delta && log.afterHoldingState
+    ? holdingDelta(previousHoldingState, log.afterHoldingState)
+    : undefined
+
   return {
     ...prev,
     holdingLogs: [
@@ -36,6 +42,7 @@ export function addHoldingLog(prev: SpendiaryData, ...[log]: Parameters<DataCont
         holdingId: log.holdingId ?? holding?.id,
         previousHoldingState,
         ...(changes ? { changes } : {}),
+        ...(delta ? { delta } : {}),
       },
       ...(prev.holdingLogs ?? []),
     ],
@@ -74,12 +81,58 @@ export function updateHoldingLog(prev: SpendiaryData, ...[logId, patch]: Paramet
 }
 
 export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataContextValue['undoHoldingLog']>): SpendiaryData {
+  const r = undoHoldingLogChecked(prev, logId)
+  return r.ok ? r.data : prev
+}
+
+/** Undo one log entry, or say why it can't be undone (then nothing changes and the entry stays) */
+export function undoHoldingLogChecked(prev: SpendiaryData, logId: string): UndoResult {
   const logs = prev.holdingLogs ?? []
   const log = logs.find((l) => l.id === logId)
-  if (!log) return prev
+  if (!log) return { ok: false, reason: 'This entry no longer exists.' }
 
-  let updatedHoldings = [...prev.holdings]
+  // ── 1–2. Holdings and cash: newer entries reverse their saved delta; older ones work it out from snapshots ──
+  const reverted = log.delta ? undoHoldingDelta(prev, log) : undoFromSnapshots(prev, log)
+  if (!reverted.ok) return reverted
+  const updatedHoldings = reverted.data.holdings
+  const updatedCashAccounts = reverted.data.cashAccounts ?? []
   let updatedPlans = [...prev.dcaPlans]
+
+  // ── 3. Revert DCA plan confirmations if linked ──
+  if (log.dcaPlanId && log.dcaDate) {
+    updatedPlans = updatedPlans.map((p) => {
+      if (p.id !== log.dcaPlanId) return p
+      return {
+        ...p,
+        confirmedDates: (p.confirmedDates ?? []).filter((d) => d !== log.dcaDate),
+        skippedDates: (p.skippedDates ?? []).filter((d) => d !== log.dcaDate),
+      }
+    })
+  }
+
+  // ── 4. Remove this log entry ──
+  const updatedLogs = logs.filter((l) => l.id !== logId)
+  let updatedDividendRecords = prev.dividendRecords ?? []
+  if (log.action === 'dividend' && log.dividendRecordId) {
+    updatedDividendRecords = updatedDividendRecords.filter((r) => r.id !== log.dividendRecordId)
+  }
+
+  return {
+    ok: true,
+    data: {
+      ...prev,
+      holdings: updatedHoldings,
+      dcaPlans: updatedPlans,
+      cashAccounts: updatedCashAccounts,
+      dividendRecords: updatedDividendRecords,
+      holdingLogs: updatedLogs,
+    },
+  }
+}
+
+/** Older entries without a saved delta: holdings and cash worked out from their before/after snapshots */
+function undoFromSnapshots(prev: SpendiaryData, log: HoldingLog): UndoResult {
+  let updatedHoldings = [...prev.holdings]
   let updatedCashAccounts = prev.cashAccounts ? [...prev.cashAccounts] : []
 
   // ── 1. Revert Cash Account Changes (Delta-based) ──
@@ -297,38 +350,12 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
     } else if (log.action === 'edit') {
       // Revert only what the edit changed, so buys, sells and edits made after it survive
       const plan = planEditUndo(hIndex >= 0 ? updatedHoldings[hIndex] : undefined, log)
-      if (!plan.ok) return prev
+      if (!plan.ok) return { ok: false, reason: plan.reason }
       updatedHoldings[hIndex] = plan.holding
     }
   }
 
-  // ── 3. Revert DCA plan confirmations if linked ──
-  if (log.dcaPlanId && log.dcaDate) {
-    updatedPlans = updatedPlans.map((p) => {
-      if (p.id !== log.dcaPlanId) return p
-      return {
-        ...p,
-        confirmedDates: (p.confirmedDates ?? []).filter((d) => d !== log.dcaDate),
-        skippedDates: (p.skippedDates ?? []).filter((d) => d !== log.dcaDate),
-      }
-    })
-  }
-
-  // ── 4. Remove this log entry ──
-  const updatedLogs = logs.filter((l) => l.id !== logId)
-  let updatedDividendRecords = prev.dividendRecords ?? []
-  if (log.action === 'dividend' && log.dividendRecordId) {
-    updatedDividendRecords = updatedDividendRecords.filter((r) => r.id !== log.dividendRecordId)
-  }
-
-  return {
-    ...prev,
-    holdings: updatedHoldings,
-    dcaPlans: updatedPlans,
-    cashAccounts: updatedCashAccounts,
-    dividendRecords: updatedDividendRecords,
-    holdingLogs: updatedLogs,
-  }
+  return { ok: true, data: { ...prev, holdings: updatedHoldings, cashAccounts: updatedCashAccounts } }
 }
 
 /** Undo of a sale: the location that shrank in the logged sale gets the units and cost back */

@@ -453,6 +453,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         action: 'add',
         timestamp: dateStrToTimestamp(txDate),
         holdingId: existingBtc.id,
+        // Before the merge, so undo takes only this add back out
+        previousHoldingState: JSON.parse(JSON.stringify(existingBtc)),
         holdingName: 'Bitcoin',
         ticker: 'BTC',
         assetClass: 'crypto',
@@ -529,6 +531,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         action: 'add',
         timestamp: dateStrToTimestamp(txDate),
         holdingId: existingGold.id,
+        // Before the merge, so undo takes only this add back out
+        previousHoldingState: JSON.parse(JSON.stringify(existingGold)),
         holdingName: 'Gold',
         ticker: 'XAU',
         assetClass: 'gold',

@@ -238,6 +238,26 @@ export interface HoldingLog {
   receivedFrom?: string
   /** 'edit' logs: each field the edit changed, as [before, after]; undo reverts these (store/actions/undoEdit.ts) */
   changes?: Record<string, [before: unknown, after: unknown]>
+  /** add / buy / sell logs: exactly what this entry changed; undo reverses it (store/actions/undoDelta.ts) */
+  delta?: HoldingDelta
+}
+
+/** What one buy, sale or add did to a holding and to cash accounts, signed (+ in, − out) */
+export interface HoldingDelta {
+  /** Units added (+) or sold (−), in the holding's own unit */
+  units: number
+  /** Cost basis added (+) or removed (−), THB */
+  thb: number
+  /** US stocks: USD cost basis added (+) or removed (−) */
+  usd?: number
+  /** The wallet / vault / broker that changed, and by how much (its own figures, signed) */
+  location?: { id: string; qty: number; thb: number; usd?: number; created?: boolean }
+  /** This entry created the holding */
+  holdingCreated?: boolean
+  /** This entry sold the whole holding, so it was removed */
+  holdingRemoved?: boolean
+  /** Cash that moved with it: + into an account, − out of it (THB or the account's currency) */
+  cash?: { accountId: string; amount: number }[]
 }
 
 /** Bought with own money, or received for free (gift / inheritance) at the market value on that day. */
