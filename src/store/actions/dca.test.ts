@@ -38,7 +38,7 @@ describe('undoDcaBuy', () => {
   const fundPlan = { id: 'p2', name: 'S&P 500', ticker: 'SPX', assetClass: 'fund', monthlyAmount: 1000, dayOfMonth: 1, holdingId: 'h1' } as DcaPlan
   const start = (): SpendiaryData => ({ ...emptyData, dcaPlans: [fundPlan], holdings: [fund], cashAccounts: [bank], holdingLogs: [] })
   const buy = (s: SpendiaryData) =>
-    confirmDcaBuy(s, 'p2', 100, '2026-10-18', undefined, undefined, 100, undefined, undefined, undefined,
+    confirmDcaBuy(s, 'p2', 100, '2026-10-18', undefined, undefined, 100, undefined, undefined,
       { unitsBought: 10, amountSpentThb: 1000, nav: 100 }, 'h1', undefined, undefined, { accountId: 'bank', amount: 1000 })
 
   it('puts the holding, the cash and the plan back', () => {

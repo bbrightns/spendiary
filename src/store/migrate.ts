@@ -2,6 +2,7 @@ import type { DcaPlan, SpendiaryData } from '../lib/types'
 import { importFixedCosts } from '../modules/spend/migrate'
 import { liveAccountIds, syncRecurringAccounts } from '../modules/spend/accountRemoval'
 import { newId } from '../lib/id'
+import { upgradeLocations } from './legacyLocations'
 
 export const emptyData: SpendiaryData = {
   cashAccounts: [],
@@ -19,7 +20,8 @@ type LegacyPlan = DcaPlan & { monthlyTarget?: number; contributed?: number }
 
 /** Migrate older saved shapes into the current model. */
 export function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
-  const merged = { ...emptyData, ...raw }
+  // Old BTC / gold location fields → `locations` first, so everything below reads the new shape
+  const merged = upgradeLocations({ ...emptyData, ...raw } as SpendiaryData) as SpendiaryData & { cash?: number }
   if (typeof merged.monthlyIncome !== 'number') merged.monthlyIncome = 0
   if (!Array.isArray(merged.cashAccounts)) merged.cashAccounts = []
   if (merged.rebalanceMode !== 'class' && merged.rebalanceMode !== 'holding') merged.rebalanceMode = 'class'
@@ -56,10 +58,8 @@ export function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
     const units = h.units ?? h.totalUnits ?? 0
     let totalThb = h.totalThbInvested
     if (typeof totalThb !== 'number') {
-      if (h.assetClass === 'crypto' && h.btcLocations && h.btcLocations.length > 0) {
-        totalThb = h.btcLocations.reduce((s, l) => s + l.thbSpent, 0)
-      } else if (h.assetClass === 'gold' && h.goldLocations && h.goldLocations.length > 0) {
-        totalThb = h.goldLocations.reduce((s, l) => s + l.thbSpent, 0)
+      if (h.locations && h.locations.length > 0) {
+        totalThb = h.locations.reduce((s, l) => s + l.thbSpent, 0)
       } else {
         totalThb = units * (h.avgCostThb ?? h.avgCost ?? 0)
       }

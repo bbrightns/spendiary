@@ -1,26 +1,21 @@
 export type AssetClass = 'fund' | 'stock' | 'crypto' | 'gold' | 'real_estate' | 'cash'
 export type InvestAssetClass = 'fund' | 'stock' | 'crypto' | 'gold' | 'real_estate'
 
-export interface BtcLocation {
+/**
+ * One place a holding is kept: a wallet or vault for BTC and gold, a broker for US stocks.
+ * The holding's units and cost are the sums of its locations (src/lib/locations.ts).
+ */
+export interface HoldingLocation {
   id: string
-  /** e.g. "Binance", "Ledger", "Coinbase" */
+  /** e.g. "Ledger", "Hua Seng Heng", "Webull", "Dime" */
   name: string
-  /** Satoshi held at this location */
-  satoshi: number
-  /** Total THB spent at this location */
+  /** Quantity held here, in the holding's own unit: BTC, grams or shares */
+  qty: number
+  /** Total THB spent on what is held here */
   thbSpent: number
-  /** Whether this cold-storage pocket is locked to prevent accidental sales */
-  isLocked?: boolean
-}
-
-export interface GoldLocation {
-  id: string
-  name: string
-  /** Grams held at this location */
-  grams: number
-  /** Total THB spent at this location */
-  thbSpent: number
-  /** Whether this cold-storage pocket is locked to prevent accidental sales */
+  /** US stocks: total USD spent on what is held here, so each broker keeps its own $ average */
+  usdSpent?: number
+  /** Locked pockets cannot be sold from or moved out of */
   isLocked?: boolean
 }
 
@@ -55,10 +50,8 @@ export interface Holding {
   placeholderPrice?: number
   /** ISO date the price was last updated */
   updatedAt?: string
-  /** BTC sub-breakdown by location (only for assetClass === 'crypto') */
-  btcLocations?: BtcLocation[]
-  /** Gold sub-breakdown by location (only for assetClass === 'gold') */
-  goldLocations?: GoldLocation[]
+  /** Where it is kept, for BTC, gold and US stocks; when set, units and cost are the sums of these */
+  locations?: HoldingLocation[]
   /** Whether this holding pays dividends */
   paysDividend?: boolean
   /** Expected dividend per share (in THB or USD based on holding) */
@@ -118,10 +111,8 @@ export interface DcaPlan {
   dayOfMonth: number
   /** Linked portfolio holding id — set when created from "From my portfolio" */
   holdingId?: string
-  /** For BTC plans: preferred location id to add sats to when confirming */
-  btcLocationId?: string
-  /** For Gold plans: preferred location id to add grams to when confirming */
-  goldLocationId?: string
+  /** Location (wallet, vault or broker) each confirmed buy goes into by default */
+  locationId?: string
   /** For Cash plans: linked cash account id to deposit funds into when confirming */
   cashAccountId?: string
   /** Cash account each buy is paid from by default (balance goes down on confirm); unset = not tracked */
@@ -250,7 +241,7 @@ export interface HoldingLog {
 /** Bought with own money, or received for free (gift / inheritance) at the market value on that day. */
 export type AcquisitionSource = 'bought' | 'received'
 
-/** Details of moving a holding between its own storage locations (units are sats for BTC, grams for gold). */
+/** Details of moving a holding between its own locations (amounts are sats for BTC, grams for gold, shares for stocks). */
 export interface LocationTransfer {
   fromLocationId: string
   fromName: string
@@ -258,7 +249,7 @@ export interface LocationTransfer {
   toName: string
   /** True when the destination location was created by this transfer */
   destCreated: boolean
-  unit: 'sats' | 'grams'
+  unit: 'sats' | 'grams' | 'shares'
   /** Amount that left the source location */
   amount: number
   /** Network / handling fee that disappeared in transit (same unit) */
@@ -267,6 +258,8 @@ export interface LocationTransfer {
   received: number
   /** Cost basis (THB) that travelled with the coins */
   costMoved: number
+  /** US stocks: USD cost basis that travelled with the shares */
+  costMovedUsd?: number
 }
 
 export interface FixedCostItem {

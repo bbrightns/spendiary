@@ -6,6 +6,7 @@ import { seedData } from './seed'
 import { resolveRemoteLoad } from './remoteLoad'
 import { interpretSave, lockHeaders, type SaveMode, type SaveOutcome } from './remoteSave'
 import { emptyData, justImportedFixedCosts, migrate } from './migrate'
+import { withLegacyLocations } from './legacyLocations'
 import { STORAGE_KEYS } from '../lib/storageKeys'
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
@@ -169,7 +170,8 @@ export function useCloudSync(
     const run = async (): Promise<SaveOutcome> => {
       const { exists, updatedAt } = remoteStamp.current
       const mode: SaveMode = force ? 'force' : exists ? 'update' : 'insert'
-      const row = { payload, updated_at: new Date().toISOString() }
+      // Old location fields too, for devices still on the previous version (legacyLocations.ts)
+      const row = { payload: withLegacyLocations(payload), updated_at: new Date().toISOString() }
       const table = supabase.from('user_data')
       const query =
         mode === 'force'

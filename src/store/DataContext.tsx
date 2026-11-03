@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import type { AcquisitionSource, BtcLocation, CashAccount, DcaPlan, DividendRecord, GoldLocation, Holding, HoldingLog, InvestAssetClass, Liability, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
+import type { AcquisitionSource, CashAccount, DcaPlan, DividendRecord, Holding, HoldingLocation, HoldingLog, InvestAssetClass, Liability, PlannedAsset, RebalanceMode, RetirementSettings, SpendiaryData, Transfer } from '../lib/types'
 import { isValidRate, readCachedUsdThb, writeCachedUsdThb, type UsdThbRate } from '../lib/fx'
 import { fetchUsdThb } from '../lib/prices'
 import { seedData } from './seed'
@@ -73,7 +73,7 @@ export interface DataContextValue {
   upsertHolding: (holding: Omit<Holding, 'id'> & { id?: string }) => void
   removeHolding: (id: string) => void
   toggleHoldingLock: (id: string) => void
-  toggleLocationLock: (holdingId: string, locationId: string, isBtc: boolean) => void
+  toggleLocationLock: (holdingId: string, locationId: string) => void
   transferLocation: (params: {
     holdingId: string
     fromLocationId: string
@@ -127,8 +127,8 @@ export interface DataContextValue {
     overrideUnits?: number,
     overrideAvgCost?: number,
     overridePrice?: number,
-    btcLocationUpdate?: Omit<BtcLocation, 'id'> & { id?: string },
-    goldLocationUpdate?: Omit<GoldLocation, 'id'> & { id?: string },
+    /** Wallet, vault or broker this buy goes into: an existing one by id, or a new one by name */
+    location?: { id?: string; name?: string },
     stockUpdate?: {
       unitsBought: number
       amountSpentThb: number
@@ -175,10 +175,9 @@ export interface DataContextValue {
   /** ISO timestamp of the last successful cloud sync, or null */
   lastSyncedAt: Date | null
 
-  upsertBtcLocation: (holdingId: string, loc: Omit<BtcLocation, 'id'> & { id?: string }) => void
-  removeBtcLocation: (holdingId: string, locId: string) => void
-  upsertGoldLocation: (holdingId: string, loc: Omit<GoldLocation, 'id'> & { id?: string }) => void
-  removeGoldLocation: (holdingId: string, locId: string) => void
+  /** Adds or edits a wallet / vault / broker; the holding's units and cost follow from its locations */
+  upsertLocation: (holdingId: string, loc: Omit<HoldingLocation, 'id'> & { id?: string }) => void
+  removeLocation: (holdingId: string, locId: string) => void
 
   /** Download the current data as a dated JSON file (browser download). */
   exportData: () => void
@@ -371,7 +370,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       removeHolding: (id) => updateData((prev) => holdingActions.removeHolding(prev, id)),
       toggleHoldingLock: (id) => updateData((prev) => holdingActions.toggleHoldingLock(prev, id)),
       transferLocation: (params) => updateData((prev) => holdingActions.transferLocation(prev, params)),
-      toggleLocationLock: (holdingId, locationId, isBtc) => updateData((prev) => holdingActions.toggleLocationLock(prev, holdingId, locationId, isBtc)),
+      toggleLocationLock: (holdingId, locationId) => updateData((prev) => holdingActions.toggleLocationLock(prev, holdingId, locationId)),
 
       reorderHoldings: (ids) => updateData((prev) => holdingActions.reorderHoldings(prev, ids)),
 
@@ -401,8 +400,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         overrideUnits,
         overrideAvgCost,
         overridePrice,
-        btcLocationUpdate,
-        goldLocationUpdate,
+        location,
         stockUpdate,
         fundUpdate,
         targetHoldingId,
@@ -412,8 +410,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       ) =>
         updateData((prev) =>
           dcaActions.confirmDcaBuy(
-            prev, planId, pricePerUnit, date, overrideUnits, overrideAvgCost, overridePrice, btcLocationUpdate,
-            goldLocationUpdate, stockUpdate, fundUpdate, targetHoldingId, btcUpdate, goldUpdate, payment,
+            prev, planId, pricePerUnit, date, overrideUnits, overrideAvgCost, overridePrice, location,
+            stockUpdate, fundUpdate, targetHoldingId, btcUpdate, goldUpdate, payment,
           ),
         ),
 
@@ -478,13 +476,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
       },
 
-      upsertBtcLocation: (holdingId, loc) => updateData((prev) => holdingActions.upsertBtcLocation(prev, holdingId, loc)),
+      upsertLocation: (holdingId, loc) => updateData((prev) => holdingActions.upsertLocation(prev, holdingId, loc)),
 
-      removeBtcLocation: (holdingId, locId) => updateData((prev) => holdingActions.removeBtcLocation(prev, holdingId, locId)),
-
-      upsertGoldLocation: (holdingId, loc) => updateData((prev) => holdingActions.upsertGoldLocation(prev, holdingId, loc)),
-
-      removeGoldLocation: (holdingId, locId) => updateData((prev) => holdingActions.removeGoldLocation(prev, holdingId, locId)),
+      removeLocation: (holdingId, locId) => updateData((prev) => holdingActions.removeLocation(prev, holdingId, locId)),
     }),
     [data, syncStatus, dataReady, loadError, syncConflict, lastSyncedAt, user, authError, usdThb, usdThbAsOf],
   )

@@ -1,4 +1,6 @@
-import type { SpendiaryData, Holding } from '../../lib/types'
+import type { SpendiaryData, Holding, HoldingLocation } from '../../lib/types'
+import { qtyEpsilon, roundQty } from '../../lib/locations'
+import { SATS_PER_BTC } from '../../lib/calc'
 import type { DataContextValue } from '../DataContext'
 import { newId } from '../migrate'
 import { revertCashAccountsChange } from '../dataHelpers'
@@ -172,64 +174,10 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
         const newTotalThb = roundMoney((current.totalThbInvested ?? 0) + costBasisSold)
         const newAvgCost = newUnits > 0 ? newTotalThb / newUnits : current.avgCost
 
-        // Restore gold location if applicable
-        let updatedGoldLocs = current.goldLocations ? [...current.goldLocations] : undefined
-        if (current.assetClass === 'gold' && log.previousHoldingState?.goldLocations) {
-          const prevLocs = log.previousHoldingState.goldLocations
-          const afterLocs = log.afterHoldingState?.goldLocations ?? []
-          const candidate = prevLocs.find((pl) => {
-            const al = afterLocs.find((a) => a.id === pl.id)
-            return !al || pl.grams > al.grams
-          }) ?? prevLocs[0]
-
-          if (candidate) {
-            const locId = candidate.id
-            const locName = candidate.name
-            const existingLoc = updatedGoldLocs?.find((l) => l.id === locId || l.name === locName)
-            if (existingLoc) {
-              updatedGoldLocs = (updatedGoldLocs ?? []).map((l) =>
-                l.id === existingLoc.id
-                  ? { ...l, grams: l.grams + soldUnits, thbSpent: roundMoney(l.thbSpent + costBasisSold) }
-                  : l
-              )
-            } else {
-              updatedGoldLocs = [
-                ...(updatedGoldLocs ?? []),
-                { id: locId || newId(), name: locName, grams: soldUnits, thbSpent: costBasisSold, isLocked: candidate.isLocked },
-              ]
-            }
-          }
-        }
-
-        // Restore BTC location if applicable
-        let updatedBtcLocs = current.btcLocations ? [...current.btcLocations] : undefined
-        if (current.assetClass === 'crypto' && log.previousHoldingState?.btcLocations) {
-          const soldSats = Math.round(soldUnits * 100_000_000)
-          const prevLocs = log.previousHoldingState.btcLocations
-          const afterLocs = log.afterHoldingState?.btcLocations ?? []
-          const candidate = prevLocs.find((pl) => {
-            const al = afterLocs.find((a) => a.id === pl.id)
-            return !al || pl.satoshi > al.satoshi
-          }) ?? prevLocs[0]
-
-          if (candidate) {
-            const locId = candidate.id
-            const locName = candidate.name
-            const existingLoc = updatedBtcLocs?.find((l) => l.id === locId || l.name === locName)
-            if (existingLoc) {
-              updatedBtcLocs = (updatedBtcLocs ?? []).map((l) =>
-                l.id === existingLoc.id
-                  ? { ...l, satoshi: l.satoshi + soldSats, thbSpent: roundMoney(l.thbSpent + costBasisSold) }
-                  : l
-              )
-            } else {
-              updatedBtcLocs = [
-                ...(updatedBtcLocs ?? []),
-                { id: locId || newId(), name: locName, satoshi: soldSats, thbSpent: costBasisSold, isLocked: candidate.isLocked },
-              ]
-            }
-          }
-        }
+        // Put the units and cost back into the location they were sold from
+        const updatedLocs = current.locations && log.previousHoldingState?.locations
+          ? restoreSoldLocation(current, log.previousHoldingState.locations, log.afterHoldingState?.locations ?? [], soldUnits, costBasisSold)
+          : undefined
 
         updatedHoldings[hIndex] = {
           ...current,
@@ -238,8 +186,7 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
           totalThbInvested: newTotalThb,
           avgCost: newAvgCost,
           avgCostThb: newAvgCost,
-          ...(updatedGoldLocs ? { goldLocations: updatedGoldLocs } : {}),
-          ...(updatedBtcLocs ? { btcLocations: updatedBtcLocs } : {}),
+          ...(updatedLocs ? { locations: updatedLocs } : {}),
         }
       } else {
         // Holding was completely removed (e.g. 100% sold) -> restore holding
@@ -276,44 +223,10 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
         const newTotalThb = Math.max(0, roundMoney((current.totalThbInvested ?? 0) - addedCost))
         const newAvgCost = newUnits > 0 ? newTotalThb / newUnits : current.avgCost
 
-        // Adjust gold location if applicable
-        let updatedGoldLocs = current.goldLocations ? [...current.goldLocations] : undefined
-        if (current.assetClass === 'gold' && updatedGoldLocs && log.afterHoldingState?.goldLocations) {
-          const afterLocs = log.afterHoldingState.goldLocations
-          const prevLocs = log.previousHoldingState?.goldLocations ?? []
-          const targetLoc = afterLocs.find((al) => {
-            const pl = prevLocs.find((p) => p.id === al.id)
-            return !pl || al.grams > pl.grams
-          })
-          if (targetLoc) {
-            updatedGoldLocs = updatedGoldLocs.map((l) => {
-              if (l.id !== targetLoc.id && l.name !== targetLoc.name) return l
-              const remG = Math.max(0, l.grams - boughtUnits)
-              const remS = Math.max(0, roundMoney(l.thbSpent - addedCost))
-              return { ...l, grams: remG, thbSpent: remS }
-            }).filter((l) => l.grams > 0.0001)
-          }
-        }
-
-        // Adjust btc location if applicable
-        let updatedBtcLocs = current.btcLocations ? [...current.btcLocations] : undefined
-        if (current.assetClass === 'crypto' && updatedBtcLocs && log.afterHoldingState?.btcLocations) {
-          const boughtSats = Math.round(boughtUnits * 100_000_000)
-          const afterLocs = log.afterHoldingState.btcLocations
-          const prevLocs = log.previousHoldingState?.btcLocations ?? []
-          const targetLoc = afterLocs.find((al) => {
-            const pl = prevLocs.find((p) => p.id === al.id)
-            return !pl || al.satoshi > pl.satoshi
-          })
-          if (targetLoc) {
-            updatedBtcLocs = updatedBtcLocs.map((l) => {
-              if (l.id !== targetLoc.id && l.name !== targetLoc.name) return l
-              const remSats = Math.max(0, l.satoshi - boughtSats)
-              const remSpent = Math.max(0, roundMoney(l.thbSpent - addedCost))
-              return { ...l, satoshi: remSats, thbSpent: remSpent }
-            }).filter((l) => l.satoshi > 0)
-          }
-        }
+        // Take the units and cost back out of the location the buy went into
+        const updatedLocs = current.locations && log.afterHoldingState?.locations
+          ? reverseBoughtLocation(current, log.previousHoldingState?.locations ?? [], log.afterHoldingState.locations, boughtUnits, addedCost)
+          : undefined
 
         updatedHoldings[hIndex] = {
           ...current,
@@ -322,8 +235,7 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
           totalThbInvested: newTotalThb,
           avgCost: newAvgCost,
           avgCostThb: newAvgCost,
-          ...(updatedGoldLocs ? { goldLocations: updatedGoldLocs } : {}),
-          ...(updatedBtcLocs ? { btcLocations: updatedBtcLocs } : {}),
+          ...(updatedLocs ? { locations: updatedLocs } : {}),
         }
       }
     } else if (log.action === 'transfer') {
@@ -331,26 +243,33 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
       const t = log.transfer
       if (t && hIndex >= 0) {
         const current = updatedHoldings[hIndex]
-        const adjust = <T extends { id: string; thbSpent: number }>(locs: T[], key: 'satoshi' | 'grams'): T[] =>
-          locs
-            .map((l) => {
-              const qty = l as unknown as Record<string, number>
-              if (l.id === t.fromLocationId) {
-                return { ...l, [key]: qty[key] + t.amount, thbSpent: roundMoney(l.thbSpent + t.costMoved) }
+        // Logged amounts are sats for BTC; locations keep the holding's own unit
+        const toQty = (n: number) => (t.unit === 'sats' ? n / SATS_PER_BTC : n)
+        const ac = current.assetClass
+        const locs = (current.locations ?? [])
+          .map((l) => {
+            if (l.id === t.fromLocationId) {
+              return {
+                ...l,
+                qty: roundQty(ac, l.qty + toQty(t.amount)),
+                thbSpent: roundMoney(l.thbSpent + t.costMoved),
+                ...(l.usdSpent !== undefined && t.costMovedUsd !== undefined ? { usdSpent: l.usdSpent + t.costMovedUsd } : {}),
               }
-              if (l.id === t.toLocationId) {
-                return {
-                  ...l,
-                  [key]: Math.max(0, qty[key] - t.received),
-                  thbSpent: Math.max(0, roundMoney(l.thbSpent - t.costMoved)),
-                }
+            }
+            if (l.id === t.toLocationId) {
+              return {
+                ...l,
+                qty: Math.max(0, roundQty(ac, l.qty - toQty(t.received))),
+                thbSpent: Math.max(0, roundMoney(l.thbSpent - t.costMoved)),
+                ...(l.usdSpent !== undefined && t.costMovedUsd !== undefined ? { usdSpent: Math.max(0, l.usdSpent - t.costMovedUsd) } : {}),
               }
-              return l
-            })
-            // A location that only existed because of this transfer goes away with it
-            .filter((l) => !(t.destCreated && l.id === t.toLocationId && (l as unknown as Record<string, number>)[key] <= 0))
+            }
+            return l
+          })
+          // A location that only existed because of this transfer goes away with it
+          .filter((l) => !(t.destCreated && l.id === t.toLocationId && l.qty <= qtyEpsilon(ac)))
 
-        const feeUnits = t.unit === 'sats' ? t.fee / 100_000_000 : t.fee
+        const feeUnits = toQty(t.fee)
         const newUnits = (current.units ?? current.totalUnits ?? 0) + feeUnits
         const totalThb = current.totalThbInvested ?? 0
         const newAvg = newUnits > 0 ? totalThb / newUnits : current.avgCost
@@ -360,8 +279,7 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
           totalUnits: newUnits,
           avgCost: newAvg,
           avgCostThb: newAvg,
-          ...(current.btcLocations && t.unit === 'sats' ? { btcLocations: adjust(current.btcLocations, 'satoshi') } : {}),
-          ...(current.goldLocations && t.unit === 'grams' ? { goldLocations: adjust(current.goldLocations, 'grams') } : {}),
+          ...(current.locations ? { locations: locs } : {}),
         }
       }
     } else if (log.action === 'add') {
@@ -404,4 +322,77 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
     dividendRecords: updatedDividendRecords,
     holdingLogs: updatedLogs,
   }
+}
+
+/** Undo of a sale: the location that shrank in the logged sale gets the units and cost back */
+function restoreSoldLocation(
+  current: Holding,
+  prevLocs: HoldingLocation[],
+  afterLocs: HoldingLocation[],
+  soldUnits: number,
+  costBasisSold: number,
+): HoldingLocation[] {
+  const ac = current.assetClass
+  const candidate = prevLocs.find((pl) => {
+    const al = afterLocs.find((a) => a.id === pl.id)
+    return !al || pl.qty > al.qty
+  }) ?? prevLocs[0]
+  const locs = current.locations ?? []
+  if (!candidate) return locs
+  const after = afterLocs.find((a) => a.id === candidate.id)
+  const usdBack = candidate.usdSpent !== undefined ? candidate.usdSpent - (after?.usdSpent ?? 0) : undefined
+  const existing = locs.find((l) => l.id === candidate.id || l.name === candidate.name)
+  if (existing) {
+    return locs.map((l) =>
+      l.id !== existing.id
+        ? l
+        : {
+            ...l,
+            qty: roundQty(ac, l.qty + soldUnits),
+            thbSpent: roundMoney(l.thbSpent + costBasisSold),
+            ...(usdBack !== undefined ? { usdSpent: (l.usdSpent ?? 0) + usdBack } : {}),
+          },
+    )
+  }
+  return [
+    ...locs,
+    {
+      id: candidate.id,
+      name: candidate.name,
+      qty: roundQty(ac, soldUnits),
+      thbSpent: roundMoney(costBasisSold),
+      ...(usdBack !== undefined ? { usdSpent: usdBack } : {}),
+      ...(candidate.isLocked ? { isLocked: true } : {}),
+    },
+  ]
+}
+
+/** Undo of a buy: the location that grew in the logged buy gives the units and cost back; one the buy created goes away */
+function reverseBoughtLocation(
+  current: Holding,
+  prevLocs: HoldingLocation[],
+  afterLocs: HoldingLocation[],
+  boughtUnits: number,
+  addedCost: number,
+): HoldingLocation[] {
+  const ac = current.assetClass
+  const locs = current.locations ?? []
+  const target = afterLocs.find((al) => {
+    const pl = prevLocs.find((p) => p.id === al.id)
+    return !pl || al.qty > pl.qty
+  })
+  if (!target) return locs
+  const before = prevLocs.find((p) => p.id === target.id)
+  const usdAdded = target.usdSpent !== undefined ? target.usdSpent - (before?.usdSpent ?? 0) : undefined
+  return locs
+    .map((l) => {
+      if (l.id !== target.id && l.name !== target.name) return l
+      return {
+        ...l,
+        qty: Math.max(0, roundQty(ac, l.qty - boughtUnits)),
+        thbSpent: Math.max(0, roundMoney(l.thbSpent - addedCost)),
+        ...(usdAdded !== undefined && l.usdSpent !== undefined ? { usdSpent: Math.max(0, l.usdSpent - usdAdded) } : {}),
+      }
+    })
+    .filter((l) => !(!before && (l.id === target.id || l.name === target.name) && l.qty <= qtyEpsilon(ac)))
 }

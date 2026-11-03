@@ -3,17 +3,15 @@ import type { CashAccount, Holding, SpendiaryData } from '../../lib/types'
 import { emptyData } from '../migrate'
 import {
   buyMoreHolding,
-  removeBtcLocation,
-  removeGoldLocation,
   removeHolding,
+  removeLocation,
   reorderHoldings,
   sellHolding,
   toggleHoldingLock,
   toggleLocationLock,
   transferLocation,
-  upsertBtcLocation,
-  upsertGoldLocation,
   upsertHolding,
+  upsertLocation,
 } from './holdings'
 
 const holding = (over: Partial<Holding> = {}): Holding =>
@@ -133,38 +131,45 @@ describe('upsertHolding / toggleHoldingLock / reorderHoldings', () => {
 })
 
 describe('storage locations', () => {
-  const btc = (locs: Holding['btcLocations']) =>
-    holding({ id: 'b1', assetClass: 'crypto', units: 0, avgCost: 1, totalThbInvested: 0, btcLocations: locs })
-  const gold = (locs: Holding['goldLocations']) =>
-    holding({ id: 'g1', assetClass: 'gold', units: 0, avgCost: 1, totalThbInvested: 0, goldLocations: locs })
+  const btc = (locs: Holding['locations']) =>
+    holding({ id: 'b1', assetClass: 'crypto', units: 0, avgCost: 1, totalThbInvested: 0, locations: locs })
+  const gold = (locs: Holding['locations']) =>
+    holding({ id: 'g1', assetClass: 'gold', units: 0, avgCost: 1, totalThbInvested: 0, locations: locs })
 
   it('recomputes BTC units and average cost from its locations', () => {
-    const start = state({ holdings: [btc([{ id: 'a', name: 'A', satoshi: 50_000_000, thbSpent: 1_000_000 }])] })
-    const out = upsertBtcLocation(start, 'b1', { name: 'B', satoshi: 50_000_000, thbSpent: 2_000_000 })
+    const start = state({ holdings: [btc([{ id: 'a', name: 'A', qty: 0.5, thbSpent: 1_000_000 }])] })
+    const out = upsertLocation(start, 'b1', { name: 'B', qty: 0.5, thbSpent: 2_000_000 })
     expect(out.holdings[0]).toMatchObject({ units: 1, totalUnits: 1, avgCost: 3_000_000, totalThbInvested: 3_000_000 })
-    expect(removeBtcLocation(out, 'b1', 'a').holdings[0]).toMatchObject({ units: 0.5, avgCost: 4_000_000 })
+    expect(removeLocation(out, 'b1', 'a').holdings[0]).toMatchObject({ units: 0.5, avgCost: 4_000_000 })
   })
 
   it('recomputes gold grams and average cost, and keeps locked locations', () => {
-    const start = state({ holdings: [gold([{ id: 'a', name: 'Safe', grams: 15.244, thbSpent: 40_000, isLocked: true }])] })
-    const out = upsertGoldLocation(start, 'g1', { name: 'Shop', grams: 15.244, thbSpent: 44_000 })
+    const start = state({ holdings: [gold([{ id: 'a', name: 'Safe', qty: 15.244, thbSpent: 40_000, isLocked: true }])] })
+    const out = upsertLocation(start, 'g1', { name: 'Shop', qty: 15.244, thbSpent: 44_000 })
     expect(out.holdings[0].units).toBeCloseTo(30.488)
     expect(out.holdings[0].avgCost).toBeCloseTo(84_000 / 30.488)
-    expect(removeGoldLocation(out, 'g1', 'a').holdings[0].goldLocations).toHaveLength(2)
+    expect(removeLocation(out, 'g1', 'a').holdings[0].locations).toHaveLength(2)
+  })
+
+  it('keeps the USD cost of each US stock broker', () => {
+    const aapl = holding({ id: 's1', units: 0, totalThbInvested: 0, locations: [{ id: 'w', name: 'Webull', qty: 10, thbSpent: 60_000, usdSpent: 1_700 }] })
+    const out = upsertLocation(state({ holdings: [aapl] }), 's1', { name: 'Dime', qty: 5, thbSpent: 33_000, usdSpent: 950 })
+    expect(out.holdings[0]).toMatchObject({ units: 15, totalThbInvested: 93_000, totalUsdInvested: 2_650 })
+    expect(out.holdings[0].avgCostUsd).toBeCloseTo(2_650 / 15)
   })
 
   it('toggles a location lock', () => {
-    const start = state({ holdings: [btc([{ id: 'a', name: 'A', satoshi: 1, thbSpent: 1 }])] })
-    expect(toggleLocationLock(start, 'b1', 'a', true).holdings[0].btcLocations?.[0].isLocked).toBe(true)
+    const start = state({ holdings: [btc([{ id: 'a', name: 'A', qty: 0.00000001, thbSpent: 1 }])] })
+    expect(toggleLocationLock(start, 'b1', 'a').holdings[0].locations?.[0].isLocked).toBe(true)
   })
 })
 
 describe('transferLocation', () => {
   const btc = holding({
     id: 'b1', name: 'Bitcoin', assetClass: 'crypto', units: 0.01, avgCost: 2_000_000, totalThbInvested: 20_000,
-    btcLocations: [
-      { id: 'ex', name: 'Exchange', satoshi: 1_000_000, thbSpent: 20_000 },
-      { id: 'cold', name: 'Ledger', satoshi: 0, thbSpent: 0, isLocked: true },
+    locations: [
+      { id: 'ex', name: 'Exchange', qty: 0.01, thbSpent: 20_000 },
+      { id: 'cold', name: 'Ledger', qty: 0, thbSpent: 0, isLocked: true },
     ],
   })
   const start = state({ holdings: [btc] })
@@ -174,31 +179,45 @@ describe('transferLocation', () => {
   it('moves coins and their share of the cost; the fee lowers the units', () => {
     const out = move({ toLocationId: 'cold', fee: 1000 })
     const h = out.holdings[0]
-    expect(h.btcLocations).toEqual([
-      { id: 'ex', name: 'Exchange', satoshi: 600_000, thbSpent: 12_000 },
-      { id: 'cold', name: 'Ledger', satoshi: 399_000, thbSpent: 8000, isLocked: true },
+    expect(h.locations).toEqual([
+      { id: 'ex', name: 'Exchange', qty: 0.006, thbSpent: 12_000 },
+      { id: 'cold', name: 'Ledger', qty: 0.00399, thbSpent: 8000, isLocked: true },
     ])
     expect(h.units).toBeCloseTo(0.00999)
     expect(h.avgCost).toBeCloseTo(20_000 / 0.00999)
-    expect(out.holdingLogs?.[0].transfer).toMatchObject({ amount: 400_000, fee: 1000, received: 399_000, costMoved: 8000, destCreated: false })
+    expect(out.holdingLogs?.[0].transfer).toMatchObject({ unit: 'sats', amount: 400_000, fee: 1000, received: 399_000, costMoved: 8000, destCreated: false })
   })
 
   it('finds an existing location by name, ignoring case', () => {
     const out = move({ newLocationName: 'ledger' })
-    expect(out.holdings[0].btcLocations).toHaveLength(2)
+    expect(out.holdings[0].locations).toHaveLength(2)
     expect(out.holdingLogs?.[0].transfer?.toLocationId).toBe('cold')
   })
 
   it('creates a new location when the name is new', () => {
     const out = move({ newLocationName: 'Trezor' })
-    expect(out.holdings[0].btcLocations?.[2]).toMatchObject({ name: 'Trezor', satoshi: 400_000, thbSpent: 8000 })
+    expect(out.holdings[0].locations?.[2]).toMatchObject({ name: 'Trezor', qty: 0.004, thbSpent: 8000 })
     expect(out.holdingLogs?.[0].transfer?.destCreated).toBe(true)
   })
 
   it('moves the exact remaining cost when everything moves', () => {
     const out = move({ amount: 1_000_000, toLocationId: 'cold' })
-    expect(out.holdings[0].btcLocations?.[0]).toMatchObject({ satoshi: 0, thbSpent: 0 })
-    expect(out.holdings[0].btcLocations?.[1]).toMatchObject({ satoshi: 1_000_000, thbSpent: 20_000 })
+    expect(out.holdings[0].locations?.[0]).toMatchObject({ qty: 0, thbSpent: 0 })
+    expect(out.holdings[0].locations?.[1]).toMatchObject({ qty: 0.01, thbSpent: 20_000 })
+  })
+
+  it('moves US shares between brokers with their THB and USD cost', () => {
+    const aapl = holding({
+      id: 's1', units: 10, totalThbInvested: 60_000, totalUsdInvested: 1_700,
+      locations: [{ id: 'w', name: 'Webull', qty: 10, thbSpent: 60_000, usdSpent: 1_700 }],
+    })
+    const out = transferLocation(state({ holdings: [aapl] }), { holdingId: 's1', fromLocationId: 'w', newLocationName: 'Dime', amount: 4 })
+    expect(out.holdings[0].locations).toEqual([
+      { id: 'w', name: 'Webull', qty: 6, thbSpent: 36_000, usdSpent: 1_020 },
+      expect.objectContaining({ name: 'Dime', qty: 4, thbSpent: 24_000, usdSpent: 680 }),
+    ])
+    expect(out.holdings[0]).toMatchObject({ units: 10, totalThbInvested: 60_000, totalUsdInvested: 1_700 })
+    expect(out.holdingLogs?.[0].transfer).toMatchObject({ unit: 'shares', amount: 4, costMovedUsd: 680 })
   })
 
   it('refuses impossible moves', () => {

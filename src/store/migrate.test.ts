@@ -71,7 +71,7 @@ describe('migrate', () => {
   })
 
   it('totals a crypto holding from its wallet locations', () => {
-    const btc = holding({ assetClass: 'crypto', btcLocations: [{ id: 'l1', thbSpent: 300 }, { id: 'l2', thbSpent: 700 }] as Holding['btcLocations'] })
+    const btc = holding({ assetClass: 'crypto', locations: [{ id: 'l1', thbSpent: 300 }, { id: 'l2', thbSpent: 700 }] as Holding['locations'] })
     expect(migrate(legacy({ holdings: [btc] })).holdings[0].totalThbInvested).toBe(1000)
   })
 

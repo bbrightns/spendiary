@@ -129,11 +129,11 @@ describe('undoHoldingLog', () => {
   it('undoes a move between storage locations, removing the location it created', () => {
     const btc = {
       id: 'b1', name: 'Bitcoin', ticker: 'BTC', assetClass: 'crypto', units: 0.01, avgCost: 2_000_000, price: 3_000_000, totalThbInvested: 20_000,
-      btcLocations: [{ id: 'ex', name: 'Exchange', satoshi: 1_000_000, thbSpent: 20_000 }],
+      locations: [{ id: 'ex', name: 'Exchange', qty: 0.01, thbSpent: 20_000 }],
     } as Holding
     const moved = transferLocation(state({ holdings: [btc] }), { holdingId: 'b1', fromLocationId: 'ex', newLocationName: 'Ledger', amount: 400_000, fee: 1000 })
     const undone = undoLatest(moved).holdings[0]
-    expect(undone.btcLocations).toEqual([{ id: 'ex', name: 'Exchange', satoshi: 1_000_000, thbSpent: 20_000 }])
+    expect(undone.locations).toEqual([{ id: 'ex', name: 'Exchange', qty: 0.01, thbSpent: 20_000 }])
     expect(undone.units).toBeCloseTo(0.01)
   })
 })
