@@ -5,6 +5,7 @@ import { buyMoreHolding, sellHolding, transferLocation } from './holdings'
 import {
   addHoldingLog,
   canUndoLog,
+  isSameBalanceEdit,
   removeHoldingLog,
   removeHoldingLogs,
   undoHoldingLog,
@@ -158,6 +159,29 @@ describe('undoHoldingLog', () => {
     const bought = { ...apple(), units: 12, totalUnits: 12, totalThbInvested: 62_000, locations: [...locs, { id: 'd', name: 'Dime', qty: 2, thbSpent: 12_000, usdSpent: 350 }] } as Holding
     const out = buyMoreHolding(start, { updatedHolding: bought, note: '+2 shares · Dime' })
     expect(undoLatest(out).holdings[0].locations).toEqual(locs)
+  })
+})
+
+describe('a balance typed in on a wallet', () => {
+  const edit = log({
+    action: 'edit', holdingName: 'Cash Accounts', ticker: 'CASH', assetClass: 'cash',
+    previousCashAccountsState: [bank], afterCashAccountsState: [{ ...bank, balance: 15_000 }],
+  })
+  const adjustment = { id: 't', type: 'transfer', amount: 5000, accountId: 'bank', adjustment: true, createdAt: '2026-10-01T09:00:01.000Z' } as SpendTransaction
+
+  it('goes back once, taking its Spend entry with it', () => {
+    const d = state({ cashAccounts: [{ ...bank, balance: 15_000 }], holdingLogs: [edit], spendTransactions: [adjustment, { ...adjustment, id: 'other', amount: 1 }] })
+    const undone = undoLatest(d)
+    expect(undone.cashAccounts[0].balance).toBe(20_000)
+    expect(undone.spendTransactions!.map((t) => t.id)).toEqual(['other'])
+  })
+
+  it('matches only the same change, saved together', () => {
+    expect(isSameBalanceEdit(edit, adjustment)).toBe(true)
+    expect(isSameBalanceEdit(edit, { ...adjustment, amount: 4000 })).toBe(false)
+    expect(isSameBalanceEdit(edit, { ...adjustment, accountId: undefined, toAccountId: 'bank' })).toBe(false)
+    expect(isSameBalanceEdit(edit, { ...adjustment, createdAt: '2026-10-02T09:00:00.000Z' })).toBe(false)
+    expect(isSameBalanceEdit(edit, { ...adjustment, adjustment: undefined })).toBe(false)
   })
 })
 

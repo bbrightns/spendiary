@@ -1,4 +1,4 @@
-import type { SpendiaryData, Holding, HoldingLocation, HoldingLog } from '../../lib/types'
+import type { SpendiaryData, SpendTransaction, Holding, HoldingLocation, HoldingLog } from '../../lib/types'
 import { qtyEpsilon, roundQty } from '../../lib/locations'
 import { SATS_PER_BTC } from '../../lib/calc'
 import type { DataContextValue } from '../DataContext'
@@ -83,6 +83,23 @@ export function updateHoldingLog(prev: SpendiaryData, ...[logId, patch]: Paramet
 export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataContextValue['undoHoldingLog']>): SpendiaryData {
   const r = undoHoldingLogChecked(prev, logId)
   return r.ok ? r.data : prev
+}
+
+/**
+ * A balance typed in on a wallet leaves two records of one change: this Cash Accounts log and a
+ * "Balance adjusted" entry in Spend (saved together). Undoing either must remove the other, or
+ * the other's undo would move the money a second time.
+ */
+export function isSameBalanceEdit(log: HoldingLog, txn: SpendTransaction): boolean {
+  const before = log.previousCashAccountsState
+  const after = log.afterCashAccountsState
+  if (!txn.adjustment || log.action !== 'edit' || log.assetClass !== 'cash' || log.dcaPlanId || !before || !after) return false
+  if (Math.abs(new Date(txn.createdAt).getTime() - new Date(log.timestamp).getTime()) > 60_000) return false
+  return after.some((a) => {
+    const was = before.find((b) => b.id === a.id)
+    const diff = was ? roundMoney(a.balance - was.balance) : 0
+    return diff !== 0 && Math.abs(diff) === txn.amount && (diff > 0 ? txn.toAccountId : txn.accountId) === a.id
+  })
 }
 
 /**
@@ -191,6 +208,8 @@ export function undoHoldingLogChecked(prev: SpendiaryData, logId: string): UndoR
       cashAccounts: updatedCashAccounts,
       dividendRecords: updatedDividendRecords,
       holdingLogs: updatedLogs,
+      // The balance is already back, so its Spend entry just goes
+      ...(prev.spendTransactions ? { spendTransactions: prev.spendTransactions.filter((t) => !isSameBalanceEdit(log, t)) } : {}),
     },
   }
 }

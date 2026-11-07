@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { useData } from '../../store/DataContext'
 import { localDateStr, localTimeStr } from '../../lib/format'
+import { isSameBalanceEdit } from '../../store/actions/holdingLogs'
 import { newId } from '../../lib/id'
 import type { CashAccount, SpendCard, SpendCustomCategory, SpendGoal, SpendRecurring, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
 import { SPEND_CATEGORIES } from './categories'
@@ -264,6 +265,8 @@ export function useSpend() {
         ...prev,
         ...moveMoney(prev, [[old, -1]]),
         spendTransactions: list.filter((t) => t.id !== id),
+        // Undoing a typed-in balance also clears its entry in Trades, which could undo it a second time
+        ...(old.adjustment ? { holdingLogs: (prev.holdingLogs ?? []).filter((l) => !isSameBalanceEdit(l, old)) } : {}),
         // A bill marked paid comes back as due once its transaction is gone
         ...(old.recurring ? { spendRecurring: unmarkOccurrence(prev.spendRecurring ?? [], old.recurring.id, old.recurring.date, 'doneDates') } : {}),
       }
