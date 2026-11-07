@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import type { CashAccount, DividendRecord, Holding, HoldingLog, SpendiaryData } from '../../lib/types'
+import type { CashAccount, DividendRecord, Holding, HoldingLog, SpendTransaction, SpendiaryData } from '../../lib/types'
 import { emptyData } from '../migrate'
 import { buyMoreHolding, sellHolding, transferLocation } from './holdings'
 import {
   addHoldingLog,
+  canUndoLog,
+  isSameBalanceEdit,
   removeHoldingLog,
   removeHoldingLogs,
   undoHoldingLog,
+  undoHoldingLogChecked,
   updateHoldingLog,
   updateHoldingLogTimestamp,
 } from './holdingLogs'
@@ -156,5 +159,164 @@ describe('undoHoldingLog', () => {
     const bought = { ...apple(), units: 12, totalUnits: 12, totalThbInvested: 62_000, locations: [...locs, { id: 'd', name: 'Dime', qty: 2, thbSpent: 12_000, usdSpent: 350 }] } as Holding
     const out = buyMoreHolding(start, { updatedHolding: bought, note: '+2 shares · Dime' })
     expect(undoLatest(out).holdings[0].locations).toEqual(locs)
+  })
+})
+
+describe('a balance typed in on a wallet', () => {
+  const edit = log({
+    action: 'edit', holdingName: 'Cash Accounts', ticker: 'CASH', assetClass: 'cash',
+    previousCashAccountsState: [bank], afterCashAccountsState: [{ ...bank, balance: 15_000 }],
+  })
+  const adjustment = { id: 't', type: 'transfer', amount: 5000, accountId: 'bank', adjustment: true, createdAt: '2026-10-01T09:00:01.000Z' } as SpendTransaction
+
+  it('goes back once, taking its Spend entry with it', () => {
+    const d = state({ cashAccounts: [{ ...bank, balance: 15_000 }], holdingLogs: [edit], spendTransactions: [adjustment, { ...adjustment, id: 'other', amount: 1 }] })
+    const undone = undoLatest(d)
+    expect(undone.cashAccounts[0].balance).toBe(20_000)
+    expect(undone.spendTransactions!.map((t) => t.id)).toEqual(['other'])
+  })
+
+  it('matches only the same change, saved together', () => {
+    expect(isSameBalanceEdit(edit, adjustment)).toBe(true)
+    expect(isSameBalanceEdit(edit, { ...adjustment, amount: 4000 })).toBe(false)
+    expect(isSameBalanceEdit(edit, { ...adjustment, accountId: undefined, toAccountId: 'bank' })).toBe(false)
+    expect(isSameBalanceEdit(edit, { ...adjustment, createdAt: '2026-10-02T09:00:00.000Z' })).toBe(false)
+    expect(isSameBalanceEdit(edit, { ...adjustment, adjustment: undefined })).toBe(false)
+  })
+})
+
+describe('undo never loses or invents money', () => {
+  const refusal = (d: SpendiaryData) => {
+    const r = undoHoldingLogChecked(d, d.holdingLogs![0].id)
+    return r.ok ? null : r.reason
+  }
+
+  it('keeps a buy paid from a deleted account: the money has nowhere to go back to', () => {
+    const bought = buyMoreHolding(state(), { updatedHolding: apple({ units: 12, totalThbInvested: 62_000 }), cashAccountId: 'bank', cashDeductAmount: 12_000, note: '' })
+    const deleted = { ...bought, cashAccounts: [] }
+    expect(refusal(deleted)).toMatch(/deleted/)
+    expect(undoLatest(deleted)).toBe(deleted)
+  })
+
+  it('keeps a sale paid into a deleted account: the units would come back with the money still counted', () => {
+    const sold = state({ cashAccounts: [], holdingLogs: [log({ action: 'sell', holdingId: 'h1', cashAccountId: 'bank', proceeds: 100, soldUnits: 1 })] })
+    expect(refusal(sold)).toMatch(/deleted/)
+  })
+
+  it('takes all of an old sale back out, even past zero, rather than keeping money that was never there', () => {
+    const sold = state({
+      cashAccounts: [{ ...bank, balance: 45_000 }],
+      holdingLogs: [log({ action: 'sell', holdingId: 'h1', cashAccountId: 'bank', proceeds: 146_000, realizedPnL: 0, soldUnits: 1 })],
+    })
+    expect(undoLatest(sold).cashAccounts[0].balance).toBe(-101_000)
+  })
+
+  it('takes all of an old dividend back out, even past zero', () => {
+    const paid = state({ cashAccounts: [{ ...bank, balance: 50 }], holdingLogs: [log({ action: 'dividend', cashAccountId: 'bank', netDividend: 90 })] })
+    expect(undoLatest(paid).cashAccounts[0].balance).toBe(-40)
+  })
+
+  it('keeps an old buy when most of those units were sold since', () => {
+    const d = state({
+      holdings: [apple({ units: 1 })],
+      holdingLogs: [log({ action: 'buy_more', holdingId: 'h1', cashAccountId: 'bank', previousHoldingState: apple({ units: 0 }), afterHoldingState: apple({ units: 5 }) })],
+    })
+    expect(refusal(d)).toMatch(/below zero/)
+  })
+
+  it('keeps an old buy that saved no after state: the cash would return and the units stay', () => {
+    const d = state({ holdingLogs: [log({ action: 'buy_more', holdingId: 'h1', cashAccountId: 'bank', note: '฿5,000 spent', previousHoldingState: apple() })] })
+    expect(refusal(d)).toMatch(/details/)
+  })
+
+  it('keeps an old sale whose holding is gone with no saved details', () => {
+    const d = state({ holdings: [], holdingLogs: [log({ action: 'sell', holdingId: 'gone', cashAccountId: 'bank', proceeds: 100, soldUnits: 1 })] })
+    expect(refusal(d)).toMatch(/details/)
+  })
+
+  it('keeps a typed-in balance already undone in Spend, so it can\'t go back twice', () => {
+    const was: CashAccount = { ...bank, balance: 15_000 }
+    const edit = log({
+      timestamp: '2026-11-05T09:00:00.000Z', action: 'edit', holdingName: 'Cash Accounts', ticker: 'CASH', assetClass: 'cash',
+      previousCashAccountsState: [bank], afterCashAccountsState: [was],
+    })
+    expect(refusal(state({ holdingLogs: [edit] }))).toMatch(/already/)
+    // USD accounts never get a Spend entry
+    const usd = { ...edit, previousCashAccountsState: [{ ...bank, currency: 'USD' as const }], afterCashAccountsState: [{ ...was, currency: 'USD' as const }] }
+    expect(refusal(state({ cashAccounts: [{ ...was, currency: 'USD' }], holdingLogs: [usd] }))).toBeNull()
+  })
+
+  it('still pairs a typed-in balance with its Spend entry after the date was changed', () => {
+    const edit = log({
+      timestamp: '2026-11-05T09:00:00.000Z', action: 'edit', holdingName: 'Cash Accounts', ticker: 'CASH', assetClass: 'cash',
+      previousCashAccountsState: [bank], afterCashAccountsState: [{ ...bank, balance: 15_000 }],
+    })
+    const txn = { id: 't', type: 'transfer', amount: 5000, accountId: 'bank', adjustment: true, createdAt: '2026-11-05T09:00:01.000Z' } as SpendTransaction
+    const redated = updateHoldingLog(state({ holdingLogs: [edit] }), 'l1', { timestamp: '2026-10-20T09:00:00.000Z' }).holdingLogs![0]
+    expect(isSameBalanceEdit(redated, txn)).toBe(true)
+    const again = updateHoldingLogTimestamp(state({ holdingLogs: [redated] }), 'l1', '2026-10-25T09:00:00.000Z').holdingLogs![0]
+    expect(isSameBalanceEdit(again, txn)).toBe(true)
+  })
+})
+
+describe('entries undo must refuse', () => {
+  const refused = (d: SpendiaryData, id = d.holdingLogs![0].id) => {
+    const r = undoHoldingLogChecked(d, id)
+    return r.ok ? null : r.reason
+  }
+
+  it.each([
+    ['a DCA plan change', { action: 'edit', holdingName: 'DCA Plan: Apple', ticker: 'DCA' }],
+    ['an AI import', { action: 'add', holdingName: 'AI Import (2 holdings)', ticker: 'IMPORT' }],
+    ['a debt payment', { action: 'edit', holdingName: 'Liability: Car', ticker: 'DEBT', assetClass: 'cash' }],
+    ['a note', { action: 'note', holdingId: 'h1' }],
+  ] as [string, Partial<HoldingLog>][])('keeps %s: it has nothing to put back', (_, over) => {
+    const entry = log(over)
+    expect(canUndoLog(entry)).toBe(false)
+    expect(refused(state({ holdingLogs: [entry] }))).toMatch(/nothing to put back/)
+  })
+
+  it('still undoes a skipped DCA buy, which only names a plan and a date', () => {
+    const skip = log({ action: 'edit', ticker: 'DCA', dcaPlanId: 'p1', dcaDate: '2026-10-10' })
+    const d = state({
+      dcaPlans: [{ id: 'p1', name: 'Apple', assetClass: 'stock', monthlyAmount: 5000, dayOfMonth: 10, skippedDates: ['2026-10-10'] }],
+      holdingLogs: [skip],
+    })
+    expect(canUndoLog(skip)).toBe(true)
+    expect(undoLatest(d).dcaPlans[0].skippedDates).toEqual([])
+  })
+
+  it('keeps a move when the coins have left where they went', () => {
+    const btc = {
+      id: 'b1', name: 'Bitcoin', ticker: 'BTC', assetClass: 'crypto', units: 0.01, avgCost: 2_000_000, price: 3_000_000, totalThbInvested: 20_000,
+      locations: [{ id: 'ex', name: 'Exchange', qty: 0.01, thbSpent: 20_000 }],
+    } as Holding
+    const moved = transferLocation(state({ holdings: [btc] }), { holdingId: 'b1', fromLocationId: 'ex', newLocationName: 'Ledger', amount: 400_000, fee: 0 })
+    const ledger = moved.holdings[0].locations!.find((l) => l.name === 'Ledger')!
+    const spent = { ...moved, holdings: [{ ...moved.holdings[0], locations: moved.holdings[0].locations!.map((l) => (l.id === ledger.id ? { ...l, qty: 0.001 } : l)) }] }
+    expect(refused(spent)).toMatch(/moved to Ledger/)
+    expect(undoLatest(spent)).toBe(spent)
+  })
+
+  it('keeps an old add once the holding was traded after it', () => {
+    const d = state({
+      holdingLogs: [
+        log({ id: 'buy', action: 'buy_more', holdingId: 'h1', timestamp: '2026-10-02T09:00:00.000Z' }),
+        log({ id: 'add', action: 'add', holdingId: 'h1' }),
+      ],
+    })
+    expect(refused(d, 'add')).toMatch(/traded after/)
+  })
+
+  it('keeps a new account once Spend entries use it', () => {
+    const added: CashAccount = { id: 'new', name: 'New', balance: 100 }
+    const entry = log({
+      action: 'add', holdingName: 'Cash Accounts', ticker: 'CASH', assetClass: 'cash',
+      previousCashAccountsState: [bank], afterCashAccountsState: [bank, added],
+    })
+    const unused = state({ cashAccounts: [bank, added], holdingLogs: [entry] })
+    expect(undoLatest(unused).cashAccounts).toEqual([bank])
+    const used = { ...unused, spendTransactions: [{ id: 't', accountId: 'new' } as SpendTransaction] }
+    expect(refused(used)).toMatch(/used since/)
   })
 })

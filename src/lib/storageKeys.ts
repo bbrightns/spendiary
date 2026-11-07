@@ -7,7 +7,7 @@ export const STORAGE_KEYS = {
   // Preferences (also carried in backups)
   theme: 'spendiary.theme',
   pnlDisplay: 'spendiary_pnl_display',
-  logsViewMode: 'spendiary_logs_view_mode',
+  tradesRecentSearches: 'spendiary_trades_recent_searches',
   goldSellUnit: 'spendiary_gold_sell_unit',
   rebalanceExcludeSafeHaven: 'spendiary_rebalance_exclude_safe_haven',
 

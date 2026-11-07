@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import type { SpendTransaction } from '../../lib/types'
 import { PortfolioIcon, ScaleIcon, UndoIcon } from '../../components/icons'
+import { EntryRow } from '../../components/ui/EntryRow'
 import { thb, thbSigned } from '../../lib/format'
 import { TransferIcon, getCategory } from './categories'
 import { isInvested } from './invest'
@@ -79,20 +80,17 @@ export function TxnRow({ txn, methods, onTagClick, account }: Props) {
   const adjustment = !sourcePage && !!txn.adjustment
 
   return (
-    <div className="group py-3">
-      <button
-        type="button"
-        onClick={() => (sourcePage ? navigate(sourcePage) : adjustment ? openAdjustment(txn.id) : openQuickAdd({ editId: txn.id }))}
-        className="flex w-full min-w-0 items-center gap-3 text-left cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-        aria-label={
-          sourcePage
-            ? `${title}, ${sign}${thb(txn.amount, true)}, open in Invest`
-            : adjustment
-              ? `${title}, ${sign}${thb(txn.amount, true)}, undo`
-              : `Edit ${title}, ${sign}${thb(txn.amount, true)}`
-        }
-      >
-        <span className="relative shrink-0">
+    <EntryRow
+      onClick={() => (sourcePage ? navigate(sourcePage) : adjustment ? openAdjustment(txn.id) : openQuickAdd({ editId: txn.id }))}
+      ariaLabel={
+        sourcePage
+          ? `${title}, ${sign}${thb(txn.amount, true)}, open in Invest`
+          : adjustment
+            ? `${title}, ${sign}${thb(txn.amount, true)}, undo`
+            : `Edit ${title}, ${sign}${thb(txn.amount, true)}`
+      }
+      icon={
+        <>
           <span
             className={`grid h-10 w-10 place-items-center rounded-xl ${
               invested ? TONES.indigo.chip : txn.type === 'transfer' ? TONES.sky.chip : TONES[cat?.tone ?? 'slate'].chip
@@ -109,28 +107,15 @@ export function TxnRow({ txn, methods, onTagClick, account }: Props) {
               <UndoIcon className="h-2.5 w-2.5" strokeWidth={3} />
             </span>
           )}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="flex min-w-0 items-center gap-1.5">
-            <span className="truncate text-sm font-semibold text-ink">{title}</span>
-            {txn.source && (
-              <span className={`shrink-0 rounded-full px-1.5 py-px text-2xs font-bold ${TONES.indigo.chip}`}>Invest</span>
-            )}
-          </span>
-          <span className="block truncate text-xs text-ink-muted">{meta}</span>
-        </span>
-        <span className="shrink-0 text-right">
-          <span className={`block text-sm font-bold tnum ${amountClass}`}>
-            {sign}
-            {thb(txn.amount, true)}
-          </span>
-          {account?.after !== undefined && (
-            <span className="block text-xs text-ink-muted tnum">
-              {account.card ? 'Owed' : 'Bal.'} {thbSigned(account.after, true)}
-            </span>
-          )}
-        </span>
-      </button>
+        </>
+      }
+      title={title}
+      badge={txn.source && <span className={`shrink-0 rounded-full px-1.5 py-px text-2xs font-bold ${TONES.indigo.chip}`}>Invest</span>}
+      meta={meta}
+      amount={`${sign}${thb(txn.amount, true)}`}
+      amountClass={amountClass}
+      sub={account?.after !== undefined ? `${account.card ? 'Owed' : 'Bal.'} ${thbSigned(account.after, true)}` : undefined}
+    >
       {(txn.tags?.length ?? 0) > 0 && (
         <div className="mt-1.5 flex flex-wrap gap-1 pl-[52px]">
           {txn.tags!.map((tag) =>
@@ -151,6 +136,6 @@ export function TxnRow({ txn, methods, onTagClick, account }: Props) {
           )}
         </div>
       )}
-    </div>
+    </EntryRow>
   )
 }

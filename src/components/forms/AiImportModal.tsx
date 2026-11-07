@@ -135,7 +135,6 @@ Expected shape:
   },
   "preferences": {
     "theme": "light",
-    "logsViewMode": "table",
     "goldSellUnit": "grams"
   }
 }

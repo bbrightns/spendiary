@@ -203,6 +203,8 @@ export interface DividendRecord {
 export interface HoldingLog {
   id: string
   timestamp: string        // ISO datetime
+  /** When it was really saved, once `timestamp` has been changed */
+  savedAt?: string
   action: 'add' | 'buy_more' | 'edit' | 'sell' | 'dividend' | 'note' | 'transfer'
   holdingName: string
   ticker: string
@@ -637,7 +639,6 @@ export interface SpendiaryData {
 export interface SpendiaryBackupPreferences {
   theme?: 'light' | 'dark' | 'system'
   pnlDisplay?: 'pct' | 'thb'
-  logsViewMode?: 'table' | 'timeline'
   goldSellUnit?: 'grams' | 'baht'
 }
 

@@ -4,18 +4,15 @@ import { PageHeader } from '../../../components/layout/PageHeader'
 import { Card, CardHeader, Inset } from '../../../components/ui/Card'
 import { IconButton } from '../../../components/ui/IconButton'
 import { AddButton } from '../../../components/ui/AddButton'
-import { Button } from '../../../components/ui/Button'
-import { Modal } from '../../../components/ui/Modal'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import { FilterChip } from '../../../components/ui/FilterChip'
-import { SegmentedControl } from '../../../components/ui/SegmentedControl'
-import { CloseIcon, SearchIcon } from '../../../components/icons'
+import { CloseIcon } from '../../../components/icons'
 import { localDateStr, thb, thbSigned } from '../../../lib/format'
 import { dateRangeLabel } from '../../../lib/paletteSearch'
 import type { SpendTransaction, SpendTxnType } from '../../../lib/types'
 import { ListBulletIcon, categoriesFor, getCategory } from '../categories'
-import { accountStatement, balanceOn, inPeriod, periodFor, shiftDate, spendOf, txnFlow, weekOf, type AccountStatement, type Period } from '../logic'
-import { MonthStepper } from '../MonthStepper'
+import { ActiveSearch, EMPTY_TITLE, HistoryRangeBar, HistorySearchSheet, dayLabel, rangePeriod, type Range, type SearchContext } from '../history'
+import { accountStatement, balanceOn, inPeriod, shiftDate, spendOf, txnFlow, type AccountStatement, type Period } from '../logic'
 import { openQuickAdd } from '../QuickAddSheet'
 import { TxnRow } from '../TxnRow'
 import { useSpend } from '../useSpend'
@@ -30,49 +27,6 @@ const TYPE_FILTERS: { value: TypeFilter; label: string }[] = [
   { value: 'income', label: 'Income' },
   { value: 'transfer', label: 'Transfers' },
 ]
-
-type Range = 'day' | 'week' | 'month' | 'year' | 'all'
-
-const RANGES: { value: Range; label: string }[] = [
-  { value: 'day', label: 'Day' },
-  { value: 'week', label: 'Week' },
-  { value: 'month', label: 'Month' },
-  { value: 'year', label: 'Year' },
-  { value: 'all', label: 'All' },
-]
-
-const EMPTY_TITLE: Record<Range, string> = {
-  day: 'Nothing logged this day',
-  week: 'Nothing logged this week',
-  month: 'Nothing logged this month',
-  year: 'Nothing logged this year',
-  all: 'Nothing logged yet',
-}
-
-/** Calendar year (Jan–Dec) containing `date` */
-const yearOf = (date: string): Period => ({ start: `${date.slice(0, 4)}-01-01`, end: `${date.slice(0, 4)}-12-31` })
-
-/** Step a day, week or year; months go through MonthStepper's own pay-cycle aware step */
-function stepRange(range: Range, p: Period, delta: 1 | -1): Period {
-  if (range === 'day') {
-    const d = shiftDate(p.start, delta)
-    return { start: d, end: d }
-  }
-  if (range === 'week') return weekOf(shiftDate(p.start, 7 * delta))
-  return yearOf(`${Number(p.start.slice(0, 4)) + delta}-01-01`)
-}
-
-function rangeLabel(range: Range, p: Period): string | undefined {
-  const short = (s: string, opts: Intl.DateTimeFormatOptions) => {
-    const [y, m, d] = s.split('-').map(Number)
-    return new Date(y, m - 1, d).toLocaleDateString('en-GB', opts)
-  }
-  if (range === 'day') return short(p.start, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
-  if (range === 'week')
-    return `${short(p.start, { day: 'numeric', month: 'short' })} – ${short(p.end, { day: 'numeric', month: 'short', year: 'numeric' })}`
-  if (range === 'year') return p.start.slice(0, 4)
-  return undefined
-}
 
 /**
  * Search terms starting with # match a tag (or the note text, for non-tags like `#7-11`);
@@ -89,16 +43,6 @@ function matches(t: SpendTransaction, terms: string[], walletName: (id?: string)
       ? (t.tags ?? []).some((tag) => tag.startsWith(term.slice(1))) || (t.note ?? '').toLowerCase().includes(term)
       : haystack.includes(term),
   )
-}
-
-function dayLabel(date: string, withYear = false): string {
-  const [y, m, d] = date.split('-').map(Number)
-  const dt = new Date(y, m - 1, d)
-  const today = new Date()
-  const yesterday = new Date(Date.now() - 86_400_000)
-  if (dt.toDateString() === today.toDateString()) return 'Today'
-  if (dt.toDateString() === yesterday.toDateString()) return 'Yesterday'
-  return dt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', ...(withYear ? { year: 'numeric' } : {}) })
 }
 
 export function SpendTransactions() {
@@ -120,13 +64,7 @@ export function SpendTransactions() {
   const days: Period | null = useMemo(() => (from && to ? { start: from, end: to } : null), [from, to])
   const [range, setRange] = useState<Range>('month')
   const [anchor, setAnchor] = useState(localDateStr())
-  const period: Period | null = useMemo(() => {
-    if (range === 'all') return null
-    if (range === 'day') return { start: anchor, end: anchor }
-    if (range === 'week') return weekOf(anchor)
-    if (range === 'year') return yearOf(anchor)
-    return periodFor(anchor, cycle)
-  }, [range, anchor, cycle])
+  const period = useMemo(() => rangePeriod(range, anchor, cycle), [range, anchor, cycle])
   const [type, setType] = useState<TypeFilter>('all')
 
   const setQuery = (q: string) => {
@@ -188,59 +126,24 @@ export function SpendTransactions() {
         className="mb-0"
         subtitle={
           searching ? (
-            // Active search replaces the month: it looks across every month
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setSearchOpen(true)}
-                className="inline-flex max-w-[16rem] items-center gap-2 rounded-full border border-brand/40 bg-brand-soft px-3.5 py-2 text-sm font-bold text-brand-ink cursor-pointer"
-              >
-                <SearchIcon className="h-4 w-4 shrink-0" />
-                <span className="truncate">{[query, days && dateRangeLabel({ from: days.start, to: days.end })].filter(Boolean).join(' · ')}</span>
-              </button>
-              <button
-                type="button"
-                onClick={clearSearch}
-                aria-label="Clear search"
-                className="grid h-9 w-9 place-items-center rounded-full border border-line bg-surface text-ink-muted hover:text-ink cursor-pointer"
-              >
-                <CloseIcon className="h-4 w-4" />
-              </button>
-            </div>
+            <ActiveSearch
+              label={[query, days && dateRangeLabel({ from: days.start, to: days.end })].filter(Boolean).join(' · ')}
+              onOpen={() => setSearchOpen(true)}
+              onClear={clearSearch}
+            />
           ) : (
-            <div className="flex flex-wrap items-center gap-2">
-              <SegmentedControl
-                ariaLabel="Range"
-                size="sm"
-                shape="pill"
-                fullWidth={false}
-                value={range}
-                onChange={(r) => {
-                  setRange(r)
-                  setAnchor(localDateStr())
-                }}
-                options={RANGES}
-              />
-              {period &&
-                (range === 'month' ? (
-                  <MonthStepper value={period} cycle={cycle} onChange={(p) => setAnchor(p.start)} />
-                ) : (
-                  <MonthStepper
-                    value={period}
-                    label={rangeLabel(range, period)}
-                    step={(p, delta) => stepRange(range, p, delta)}
-                    onChange={(p) => setAnchor(p.start)}
-                  />
-                ))}
-              <button
-                type="button"
-                onClick={() => setSearchOpen(true)}
-                aria-label="Search transactions"
-                className="grid h-10 w-10 place-items-center rounded-full border border-line bg-surface text-ink-muted shadow-xs hover:text-ink cursor-pointer"
-              >
-                <SearchFilterIcon className="h-[18px] w-[18px]" />
-              </button>
-            </div>
+            <HistoryRangeBar
+              range={range}
+              period={period}
+              cycle={cycle}
+              onRangeChange={(r) => {
+                setRange(r)
+                setAnchor(localDateStr())
+              }}
+              onAnchorChange={setAnchor}
+              onSearch={() => setSearchOpen(true)}
+              searchLabel="Search transactions"
+            />
           )
         }
         action={
@@ -259,17 +162,21 @@ export function SpendTransactions() {
         ))}
       </div>
 
-      <SearchSheet
+      <HistorySearchSheet
         open={searchOpen}
         initial={query}
-        transactions={transactions}
-        walletName={(id) => accountName(id) ?? ''}
+        recentKey={STORAGE_KEYS.spendRecentSearches}
+        placeholder="Notes, categories or wallets"
+        ariaLabel="Search transactions"
+        countFor={(words) => transactions.filter((t) => matches(t, words, (id) => accountName(id) ?? '')).length}
         onClose={() => setSearchOpen(false)}
         onApply={(q) => {
           setQuery(q)
           setSearchOpen(false)
         }}
-      />
+      >
+        {(search) => <SearchSuggestions transactions={transactions} search={search} />}
+      </HistorySearchSheet>
 
       {accountId && (
         <StatementCard
@@ -437,67 +344,9 @@ function StatementCard({
   )
 }
 
-/** Magnifier with filter lines, so it reads differently from the header's command search */
-function SearchFilterIcon(p: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" className={p.className}>
-      <circle cx="10" cy="10" r="6" />
-      <path d="m19 19-4.2-4.2" />
-      <path d="M7.5 8.5h5M8.5 11.5h3" />
-    </svg>
-  )
-}
-
-const RECENT_KEY = STORAGE_KEYS.spendRecentSearches
-
-function readRecent(): string[] {
-  try {
-    const v = JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]')
-    return Array.isArray(v) ? v.filter((x) => typeof x === 'string').slice(0, 5) : []
-  } catch {
-    return []
-  }
-}
-
-function saveRecent(q: string) {
-  try {
-    localStorage.setItem(RECENT_KEY, JSON.stringify([q, ...readRecent().filter((x) => x !== q)].slice(0, 5)))
-  } catch {
-    // storage unavailable — recent searches just won't be remembered
-  }
-}
-
-function SearchSheet({
-  open,
-  initial,
-  transactions,
-  walletName,
-  onClose,
-  onApply,
-}: {
-  open: boolean
-  initial: string
-  transactions: SpendTransaction[]
-  /** A wallet or card's name, including deleted ones */
-  walletName: (id?: string) => string
-  onClose: () => void
-  onApply: (q: string) => void
-}) {
-  const [q, setQ] = useState('')
-  const [recent, setRecent] = useState<string[]>([])
-  const [lastOpen, setLastOpen] = useState(false)
-  if (open !== lastOpen) {
-    setLastOpen(open)
-    if (open) {
-      setQ(initial)
-      setRecent(readRecent())
-    }
-  }
-
-  const words = q.toLowerCase().split(/\s+/).filter(Boolean)
-  // The word being typed; empty right after a space (e.g. once a tag was picked)
-  const last = /\s$/.test(q) ? '' : words[words.length - 1] ?? ''
-  const count = words.length ? transactions.filter((t) => matches(t, words, walletName)).length : 0
+/** Tags and categories to pick from while searching */
+function SearchSuggestions({ transactions, search }: { transactions: SpendTransaction[]; search: SearchContext }) {
+  const { words, last, setQ, apply } = search
 
   // Tags with how often and how much, narrowed by what's being typed
   const tagStats = useMemo(() => {
@@ -526,11 +375,6 @@ function SearchSheet({
             c.keywords.some((k) => k.toLowerCase().startsWith(last)),
         )
 
-  const apply = (value: string) => {
-    const v = value.trim()
-    if (v) saveRecent(v)
-    onApply(v)
-  }
   const pickTag = (tag: string) => {
     // Replace a half-typed tag, otherwise add it
     const base = last.startsWith('#') ? words.slice(0, -1) : words
@@ -538,90 +382,47 @@ function SearchSheet({
   }
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="Search"
-      size="md"
-      footer={
-        <Button data-modal-submit className="w-full" onClick={() => apply(q)}>
-          {words.length ? `Show ${count} ${count === 1 ? 'result' : 'results'}` : 'Show all'}
-        </Button>
-      }
-    >
-      <div className="space-y-5">
-        <div className="flex h-12 items-center gap-2 rounded-xl border border-line-strong bg-surface-muted focus-within:bg-surface px-3.5 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
-          <SearchIcon className="h-4 w-4 shrink-0 text-ink-faint" />
-          <input
-            type="text"
-            autoFocus
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Notes, categories or wallets"
-            aria-label="Search transactions"
-            className="w-full bg-transparent text-base text-ink outline-none placeholder:text-ink-faint"
-          />
-          {q && (
-            <button type="button" onClick={() => setQ('')} aria-label="Clear" className="text-ink-muted hover:text-ink cursor-pointer">
-              <CloseIcon className="h-4 w-4" />
-            </button>
-          )}
+    <>
+      {shownTags.length > 0 && (
+        <div>
+          <p className="mb-2 text-sm font-semibold text-ink-soft">Tags</p>
+          <div className="flex flex-wrap gap-1.5">
+            {shownTags.map(([tag, s]) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => pickTag(tag)}
+                className={`rounded-full px-3 py-1.5 text-xs font-bold cursor-pointer ${TAG_CHIP.idle}`}
+              >
+                #{tag}
+                <span className="ml-1.5 font-semibold opacity-70 tnum">
+                  {s.n}× {s.amount > 0 ? `· ${thb(s.amount)}` : ''}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
+      )}
 
-        {recent.length > 0 && !q && (
-          <div>
-            <p className="mb-2 text-sm font-semibold text-ink-soft">Recent</p>
-            <div className="flex flex-wrap gap-1.5">
-              {recent.map((r) => (
-                <button key={r} type="button" onClick={() => apply(r)} className="rounded-full bg-surface-muted px-3 py-1.5 text-xs font-semibold text-ink-soft hover:text-ink cursor-pointer">
-                  {r}
-                </button>
-              ))}
-            </div>
+      {shownCats.length > 0 && (
+        <div>
+          <p className="mb-2 text-sm font-semibold text-ink-soft">Categories</p>
+          <div className="flex flex-wrap gap-1.5">
+            {shownCats.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                // Replace the half-typed word with the category, then search
+                onClick={() => apply([...words.slice(0, last ? -1 : undefined), c.label.toLowerCase()].join(' '))}
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold cursor-pointer ${TONES[c.tone].chip}`}
+              >
+                <c.icon className="h-3.5 w-3.5" />
+                {c.label}
+              </button>
+            ))}
           </div>
-        )}
-
-        {shownTags.length > 0 && (
-          <div>
-            <p className="mb-2 text-sm font-semibold text-ink-soft">Tags</p>
-            <div className="flex flex-wrap gap-1.5">
-              {shownTags.map(([tag, s]) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => pickTag(tag)}
-                  className={`rounded-full px-3 py-1.5 text-xs font-bold cursor-pointer ${TAG_CHIP.idle}`}
-                >
-                  #{tag}
-                  <span className="ml-1.5 font-semibold opacity-70 tnum">
-                    {s.n}× {s.amount > 0 ? `· ${thb(s.amount)}` : ''}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {shownCats.length > 0 && (
-          <div>
-            <p className="mb-2 text-sm font-semibold text-ink-soft">Categories</p>
-            <div className="flex flex-wrap gap-1.5">
-              {shownCats.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  // Replace the half-typed word with the category, then search
-                  onClick={() => apply([...words.slice(0, last ? -1 : undefined), c.label.toLowerCase()].join(' '))}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold cursor-pointer ${TONES[c.tone].chip}`}
-                >
-                  <c.icon className="h-3.5 w-3.5" />
-                  {c.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </Modal>
+        </div>
+      )}
+    </>
   )
 }

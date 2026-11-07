@@ -1,4 +1,4 @@
-import type { SpendiaryData, Holding, HoldingLocation, HoldingLog } from '../../lib/types'
+import type { SpendiaryData, SpendTransaction, Holding, HoldingLocation, HoldingLog } from '../../lib/types'
 import { qtyEpsilon, roundQty } from '../../lib/locations'
 import { SATS_PER_BTC } from '../../lib/calc'
 import type { DataContextValue } from '../DataContext'
@@ -64,9 +64,13 @@ export function removeHoldingLogs(prev: SpendiaryData, ...[logIds]: Parameters<D
   }
 }
 
+/** A new date for an entry; `savedAt` keeps when it was really saved, to find its Spend twin */
+const redated = (l: HoldingLog, timestamp: string): HoldingLog =>
+  timestamp === l.timestamp ? l : { ...l, timestamp, savedAt: l.savedAt ?? l.timestamp }
+
 export function updateHoldingLogTimestamp(prev: SpendiaryData, ...[logId, timestamp]: Parameters<DataContextValue['updateHoldingLogTimestamp']>): SpendiaryData {
   const logs = prev.holdingLogs ?? []
-  const updatedLogs = logs.map((l) => (l.id === logId ? { ...l, timestamp } : l))
+  const updatedLogs = logs.map((l) => (l.id === logId ? redated(l, timestamp) : l))
   return {
     ...prev,
     holdingLogs: updatedLogs,
@@ -76,7 +80,7 @@ export function updateHoldingLogTimestamp(prev: SpendiaryData, ...[logId, timest
 export function updateHoldingLog(prev: SpendiaryData, ...[logId, patch]: Parameters<DataContextValue['updateHoldingLog']>): SpendiaryData {
   return {
     ...prev,
-    holdingLogs: (prev.holdingLogs ?? []).map((l) => (l.id === logId ? { ...l, ...patch } : l)),
+    holdingLogs: (prev.holdingLogs ?? []).map((l) => (l.id === logId ? { ...(patch.timestamp ? redated(l, patch.timestamp) : l), ...patch } : l)),
   }
 }
 
@@ -85,11 +89,133 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
   return r.ok ? r.data : prev
 }
 
+/**
+ * A balance typed in on a wallet leaves two records of one change: this Cash Accounts log and a
+ * "Balance adjusted" entry in Spend (saved together). Undoing either must remove the other, or
+ * the other's undo would move the money a second time.
+ */
+export function isSameBalanceEdit(log: HoldingLog, txn: SpendTransaction): boolean {
+  const before = log.previousCashAccountsState
+  const after = log.afterCashAccountsState
+  if (!txn.adjustment || log.action !== 'edit' || log.assetClass !== 'cash' || log.dcaPlanId || !before || !after) return false
+  if (Math.abs(new Date(txn.createdAt).getTime() - new Date(log.savedAt ?? log.timestamp).getTime()) > 60_000) return false
+  return after.some((a) => {
+    const was = before.find((b) => b.id === a.id)
+    const diff = was ? roundMoney(a.balance - was.balance) : 0
+    return diff !== 0 && Math.abs(diff) === txn.amount && (diff > 0 ? txn.toAccountId : txn.accountId) === a.id
+  })
+}
+
+/** Typed-in balances have left a Spend entry since this release */
+const BALANCE_ENTRIES_FROM = Date.parse('2026-11-01T11:56:08Z')
+
+/** A THB balance typed in since then: one that must have a Spend entry (USD accounts never do) */
+function typedInThb(log: HoldingLog): boolean {
+  const before = log.previousCashAccountsState
+  const after = log.afterCashAccountsState
+  if (log.action !== 'edit' || log.assetClass !== 'cash' || log.dcaPlanId || !before || !after) return false
+  if (new Date(log.savedAt ?? log.timestamp).getTime() < BALANCE_ENTRIES_FROM) return false
+  return after.some((a) => {
+    const was = before.find((b) => b.id === a.id)
+    return !!was && (a.currency ?? 'THB') === 'THB' && (was.currency ?? 'THB') === 'THB' && roundMoney(a.balance - was.balance) !== 0
+  })
+}
+
+const unitsOf = (h: Holding | undefined) => h?.units ?? h?.totalUnits ?? 0
+
+/**
+ * Whether an entry saved anything to put back. A DCA plan change, an AI import, a debt entry or a
+ * note only records what happened: "undoing" one would hide the record and change nothing.
+ */
+export function canUndoLog(log: HoldingLog): boolean {
+  const planDate = Boolean(log.dcaPlanId && log.dcaDate)
+  // Older confirmed DCA buys were saved as notes
+  if (log.action === 'note') return planDate
+  return Boolean(log.delta || log.holdingId || log.cashAccountId || log.previousCashAccountsState || log.dividendRecordId || planDate)
+}
+
+/** Why undoing this entry would lose or invent something, checked before anything changes */
+function undoBlockedReason(prev: SpendiaryData, log: HoldingLog): string | null {
+  if (!canUndoLog(log)) return 'This entry only records what happened, so there is nothing to put back.'
+
+  // Holdings would change while the money stays put
+  const moved = log.delta?.cash ?? (log.cashAccountId && ['sell', 'buy_more', 'dividend'].includes(log.action) ? [{ accountId: log.cashAccountId, name: undefined }] : [])
+  const gone = moved.find((c) => !prev.cashAccounts?.some((a) => a.id === c.accountId))
+  if (gone) return `${gone.name ?? 'The account it used'} was deleted, so the money can't go back. Undo that deletion first.`
+
+  // Entries with a delta say the rest themselves (undoHoldingDelta)
+  if (log.delta) return null
+
+  const holding = log.holdingId ? prev.holdings.find((h) => h.id === log.holdingId) : undefined
+  if (log.holdingId && !holding && (log.action === 'buy_more' || log.action === 'transfer')) {
+    return `"${log.holdingName}" is no longer in your portfolio, so this can't be undone.`
+  }
+
+  // Older trades put back only what their snapshots saved: without them the cash would move and the units wouldn't
+  if (log.action === 'sell' && !holding && !log.previousHoldingState) {
+    return `"${log.holdingName}" is gone and this older entry saved no details, so the sale can't be undone.`
+  }
+  if (log.action === 'buy_more' && holding) {
+    if (!log.afterHoldingState) return 'This older entry saved no details of what it bought, so it can\'t be undone.'
+    const bought = unitsOf(log.afterHoldingState) - unitsOf(log.previousHoldingState)
+    if (unitsOf(holding) < bought - qtyEpsilon(holding.assetClass)) {
+      return `Undoing this would leave ${log.holdingName} below zero, because some of it was sold or moved since.`
+    }
+  }
+
+  // A move: the coins must still be where they went, and the place they came from must still exist
+  if (log.action === 'transfer' && log.transfer && holding?.locations) {
+    const t = log.transfer
+    const toQty = (n: number) => (t.unit === 'sats' ? n / SATS_PER_BTC : n)
+    if (!holding.locations.some((l) => l.id === t.fromLocationId)) {
+      return `${t.fromName} was removed since, so there is nowhere to move this back to.`
+    }
+    const dest = holding.locations.find((l) => l.id === t.toLocationId)
+    if (!dest || dest.qty < toQty(t.received) - qtyEpsilon(holding.assetClass)) {
+      return `Some of what moved to ${t.toName} was sold or moved on since, so this move can't be undone.`
+    }
+  }
+
+  // Older adds saved no delta, so undoing one removes the whole holding, later trades included
+  if (log.action === 'add' && holding) {
+    const added = new Date(log.timestamp).getTime()
+    const tradedSince = (prev.holdingLogs ?? []).some(
+      (l) =>
+        l.id !== log.id &&
+        l.holdingId === log.holdingId &&
+        (l.action === 'buy_more' || l.action === 'sell' || l.action === 'transfer') &&
+        new Date(l.timestamp).getTime() >= added,
+    )
+    if (tradedSince) return `"${log.holdingName}" was traded after it was added. Undo those trades first.`
+  }
+
+  // Undoing a new account removes it: not once its balance moved or Spend entries point at it
+  const before = log.previousCashAccountsState
+  const after = log.afterCashAccountsState
+  if (!log.dcaPlanId && log.assetClass === 'cash' && before && after) {
+    for (const added of after.filter((a) => !before.some((b) => b.id === a.id))) {
+      const now = prev.cashAccounts?.find((c) => c.id === added.id)
+      if (!now) continue
+      const used = now.balance !== added.balance || (prev.spendTransactions ?? []).some((t) => t.accountId === added.id || t.toAccountId === added.id)
+      if (used) return `"${now.name}" has been used since it was added, so it can't be removed this way.`
+    }
+  }
+
+  // Undone in Spend before the two were linked: its entry is gone but this one stayed
+  if (typedInThb(log) && !(prev.spendTransactions ?? []).some((t) => isSameBalanceEdit(log, t))) {
+    return 'This balance change was already undone in Spend, so undoing it here would move the money twice. Delete this entry instead.'
+  }
+
+  return null
+}
+
 /** Undo one log entry, or say why it can't be undone (then nothing changes and the entry stays) */
 export function undoHoldingLogChecked(prev: SpendiaryData, logId: string): UndoResult {
   const logs = prev.holdingLogs ?? []
   const log = logs.find((l) => l.id === logId)
   if (!log) return { ok: false, reason: 'This entry no longer exists.' }
+  const blocked = undoBlockedReason(prev, log)
+  if (blocked) return { ok: false, reason: blocked }
 
   // ── 1–2. Holdings and cash: newer entries reverse their saved delta; older ones work it out from snapshots ──
   const reverted = log.delta ? undoHoldingDelta(prev, log) : undoFromSnapshots(prev, log)
@@ -126,6 +252,8 @@ export function undoHoldingLogChecked(prev: SpendiaryData, logId: string): UndoR
       cashAccounts: updatedCashAccounts,
       dividendRecords: updatedDividendRecords,
       holdingLogs: updatedLogs,
+      // The balance is already back, so its Spend entry just goes
+      ...(prev.spendTransactions ? { spendTransactions: prev.spendTransactions.filter((t) => !isSameBalanceEdit(log, t)) } : {}),
     },
   }
 }
@@ -145,7 +273,7 @@ function undoFromSnapshots(prev: SpendiaryData, log: HoldingLog): UndoResult {
     if (log.cashAccountId && log.proceeds && log.proceeds > 0) {
       updatedCashAccounts = updatedCashAccounts.map((c) =>
         c.id === log.cashAccountId
-          ? { ...c, balance: roundMoney(Math.max(0, c.balance - log.proceeds!)) }
+          ? { ...c, balance: roundMoney(c.balance - log.proceeds!) }
           : c
       )
     }
@@ -183,7 +311,7 @@ function undoFromSnapshots(prev: SpendiaryData, log: HoldingLog): UndoResult {
     if (log.cashAccountId && log.netDividend && log.netDividend > 0) {
       updatedCashAccounts = updatedCashAccounts.map((c) =>
         c.id === log.cashAccountId
-          ? { ...c, balance: roundMoney(Math.max(0, c.balance - log.netDividend!)) }
+          ? { ...c, balance: roundMoney(c.balance - log.netDividend!) }
           : c
       )
     }

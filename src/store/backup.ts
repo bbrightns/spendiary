@@ -14,11 +14,9 @@ export function readPreferences(): Preferences {
   try {
     const theme = localStorage.getItem(STORAGE_KEYS.theme)
     const pnlDisplay = localStorage.getItem(STORAGE_KEYS.pnlDisplay)
-    const logsViewMode = localStorage.getItem(STORAGE_KEYS.logsViewMode)
     const goldSellUnit = localStorage.getItem(STORAGE_KEYS.goldSellUnit)
     if (theme === 'light' || theme === 'dark' || theme === 'system') preferences.theme = theme
     if (pnlDisplay === 'pct' || pnlDisplay === 'thb') preferences.pnlDisplay = pnlDisplay
-    if (logsViewMode === 'table' || logsViewMode === 'timeline') preferences.logsViewMode = logsViewMode
     if (goldSellUnit === 'grams' || goldSellUnit === 'baht') preferences.goldSellUnit = goldSellUnit
   } catch {
     // Preferences are optional; financial data remains exportable if storage is unavailable.
@@ -95,10 +93,9 @@ export function parseBackup(jsonString: string): ParsedBackup {
 /** Put the backup's preferences back on this device; best effort. */
 export function applyPreferences(preferences: Preferences) {
   try {
-    const { theme, pnlDisplay, logsViewMode, goldSellUnit } = preferences
+    const { theme, pnlDisplay, goldSellUnit } = preferences
     if (theme) localStorage.setItem(STORAGE_KEYS.theme, theme)
     if (pnlDisplay) localStorage.setItem(STORAGE_KEYS.pnlDisplay, pnlDisplay)
-    if (logsViewMode) localStorage.setItem(STORAGE_KEYS.logsViewMode, logsViewMode)
     if (goldSellUnit) localStorage.setItem(STORAGE_KEYS.goldSellUnit, goldSellUnit)
   } catch {
     // Preference restoration is best effort and must not invalidate the import.

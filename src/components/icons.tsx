@@ -7,7 +7,7 @@ import {
   ChartPie, Check, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, CircleHelp, Clock, Coins, Command, Copy,
   CreditCard, Database, Download, Ellipsis, FlaskConical, HandCoins, House, Info, Keyboard, Layers, LayoutGrid, List,
   Lock, LockOpen, LogOut, Minus, RotateCw, Pencil, Plus, Receipt, ReceiptText, Scale, Search, Settings, ShoppingBag, Sparkle,
-  Sparkles, Table, Tag, Target, Trash2, TreePalm, TrendingUp, TriangleAlert, Undo, Upload, Wallet, X,
+  Sparkles, Tag, Target, Trash2, TreePalm, TrendingUp, TriangleAlert, Undo, Upload, Wallet, X,
   ArrowDown, ArrowDownToLine, ArrowUp, Banknote, Gift, Hourglass, Landmark, Lightbulb, Package, Star, TrendingDown,
 } from 'lucide-react'
 import { appIcon } from './appIcon'
@@ -59,7 +59,6 @@ export const AlertIcon = appIcon(TriangleAlert, 'AlertIcon')
 export const HelpCircleIcon = appIcon(CircleHelp, 'HelpCircleIcon')
 export const SettingsIcon = appIcon(Settings, 'SettingsIcon')
 export const ScaleIcon = appIcon(Scale, 'ScaleIcon')
-export const TableIcon = appIcon(Table, 'TableIcon')
 export const ListIcon = appIcon(List, 'ListIcon')
 export const GroupIcon = appIcon(Layers, 'GroupIcon')
 export const HomeIcon = appIcon(House, 'HomeIcon')

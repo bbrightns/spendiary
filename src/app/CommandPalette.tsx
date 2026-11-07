@@ -857,7 +857,7 @@ export function CommandPalette() {
         keywords: [],
         group: 'Invest history',
         icon: <span className="text-xs font-bold text-link">{l.ticker.slice(0, 2).toUpperCase()}</span>,
-        run: go(`/logs?search=${encodeURIComponent(l.ticker)}`),
+        run: go(`/logs?q=${encodeURIComponent(l.ticker)}`),
         score: s - 0.1 + (inSpend ? 0 : 0.2),
       })
     }
