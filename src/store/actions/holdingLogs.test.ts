@@ -185,6 +185,80 @@ describe('a balance typed in on a wallet', () => {
   })
 })
 
+describe('undo never loses or invents money', () => {
+  const refusal = (d: SpendiaryData) => {
+    const r = undoHoldingLogChecked(d, d.holdingLogs![0].id)
+    return r.ok ? null : r.reason
+  }
+
+  it('keeps a buy paid from a deleted account: the money has nowhere to go back to', () => {
+    const bought = buyMoreHolding(state(), { updatedHolding: apple({ units: 12, totalThbInvested: 62_000 }), cashAccountId: 'bank', cashDeductAmount: 12_000, note: '' })
+    const deleted = { ...bought, cashAccounts: [] }
+    expect(refusal(deleted)).toMatch(/deleted/)
+    expect(undoLatest(deleted)).toBe(deleted)
+  })
+
+  it('keeps a sale paid into a deleted account: the units would come back with the money still counted', () => {
+    const sold = state({ cashAccounts: [], holdingLogs: [log({ action: 'sell', holdingId: 'h1', cashAccountId: 'bank', proceeds: 100, soldUnits: 1 })] })
+    expect(refusal(sold)).toMatch(/deleted/)
+  })
+
+  it('takes all of an old sale back out, even past zero, rather than keeping money that was never there', () => {
+    const sold = state({
+      cashAccounts: [{ ...bank, balance: 45_000 }],
+      holdingLogs: [log({ action: 'sell', holdingId: 'h1', cashAccountId: 'bank', proceeds: 146_000, realizedPnL: 0, soldUnits: 1 })],
+    })
+    expect(undoLatest(sold).cashAccounts[0].balance).toBe(-101_000)
+  })
+
+  it('takes all of an old dividend back out, even past zero', () => {
+    const paid = state({ cashAccounts: [{ ...bank, balance: 50 }], holdingLogs: [log({ action: 'dividend', cashAccountId: 'bank', netDividend: 90 })] })
+    expect(undoLatest(paid).cashAccounts[0].balance).toBe(-40)
+  })
+
+  it('keeps an old buy when most of those units were sold since', () => {
+    const d = state({
+      holdings: [apple({ units: 1 })],
+      holdingLogs: [log({ action: 'buy_more', holdingId: 'h1', cashAccountId: 'bank', previousHoldingState: apple({ units: 0 }), afterHoldingState: apple({ units: 5 }) })],
+    })
+    expect(refusal(d)).toMatch(/below zero/)
+  })
+
+  it('keeps an old buy that saved no after state: the cash would return and the units stay', () => {
+    const d = state({ holdingLogs: [log({ action: 'buy_more', holdingId: 'h1', cashAccountId: 'bank', note: '฿5,000 spent', previousHoldingState: apple() })] })
+    expect(refusal(d)).toMatch(/details/)
+  })
+
+  it('keeps an old sale whose holding is gone with no saved details', () => {
+    const d = state({ holdings: [], holdingLogs: [log({ action: 'sell', holdingId: 'gone', cashAccountId: 'bank', proceeds: 100, soldUnits: 1 })] })
+    expect(refusal(d)).toMatch(/details/)
+  })
+
+  it('keeps a typed-in balance already undone in Spend, so it can\'t go back twice', () => {
+    const was: CashAccount = { ...bank, balance: 15_000 }
+    const edit = log({
+      timestamp: '2026-11-05T09:00:00.000Z', action: 'edit', holdingName: 'Cash Accounts', ticker: 'CASH', assetClass: 'cash',
+      previousCashAccountsState: [bank], afterCashAccountsState: [was],
+    })
+    expect(refusal(state({ holdingLogs: [edit] }))).toMatch(/already/)
+    // USD accounts never get a Spend entry
+    const usd = { ...edit, previousCashAccountsState: [{ ...bank, currency: 'USD' as const }], afterCashAccountsState: [{ ...was, currency: 'USD' as const }] }
+    expect(refusal(state({ cashAccounts: [{ ...was, currency: 'USD' }], holdingLogs: [usd] }))).toBeNull()
+  })
+
+  it('still pairs a typed-in balance with its Spend entry after the date was changed', () => {
+    const edit = log({
+      timestamp: '2026-11-05T09:00:00.000Z', action: 'edit', holdingName: 'Cash Accounts', ticker: 'CASH', assetClass: 'cash',
+      previousCashAccountsState: [bank], afterCashAccountsState: [{ ...bank, balance: 15_000 }],
+    })
+    const txn = { id: 't', type: 'transfer', amount: 5000, accountId: 'bank', adjustment: true, createdAt: '2026-11-05T09:00:01.000Z' } as SpendTransaction
+    const redated = updateHoldingLog(state({ holdingLogs: [edit] }), 'l1', { timestamp: '2026-10-20T09:00:00.000Z' }).holdingLogs![0]
+    expect(isSameBalanceEdit(redated, txn)).toBe(true)
+    const again = updateHoldingLogTimestamp(state({ holdingLogs: [redated] }), 'l1', '2026-10-25T09:00:00.000Z').holdingLogs![0]
+    expect(isSameBalanceEdit(again, txn)).toBe(true)
+  })
+})
+
 describe('entries undo must refuse', () => {
   const refused = (d: SpendiaryData, id = d.holdingLogs![0].id) => {
     const r = undoHoldingLogChecked(d, id)

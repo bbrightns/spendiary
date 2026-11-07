@@ -35,6 +35,7 @@ import { getTradeRow, matchesTrade, tickerOf, tradeTotals } from './holdingLogs/
 type ActionFilter = (typeof ACTION_FILTERS)[number]['key']
 
 const dayOf = (log: HoldingLog) => localDateStr(new Date(log.timestamp))
+const signedMoney = (n: number, currency?: 'THB' | 'USD') => `${n < 0 ? '−' : ''}${money(Math.abs(n), currency, true)}`
 
 function matchesAction(log: HoldingLog, filter: ActionFilter): boolean {
   if (filter === 'all') return true
@@ -236,8 +237,9 @@ export function HoldingLogs() {
   // The balances this undo moves, shown before it happens
   const undoCash = undoCheck?.ok
     ? (undoCheck.data.cashAccounts ?? []).flatMap((after) => {
-        const before = data.cashAccounts?.find((c) => c.id === after.id)
-        return before && before.balance !== after.balance ? [{ id: after.id, name: after.name, from: before.balance, to: after.balance, currency: after.currency }] : []
+        // An account this undo brings back starts from nothing
+        const from = data.cashAccounts?.find((c) => c.id === after.id)?.balance ?? 0
+        return from !== after.balance ? [{ id: after.id, name: after.name, from, to: after.balance, currency: after.currency }] : []
       })
     : []
 
@@ -523,6 +525,12 @@ export function HoldingLogs() {
                 </div>
               )}
 
+              {paidFromName(undoTarget) && undoCash.length === 0 && (
+                <div className="rounded-xl border border-warn/30 bg-warn/10 p-3 text-xs text-ink-muted leading-relaxed">
+                  This older entry didn't save which account paid, so no money goes back. Add it to {paidFromName(undoTarget)} yourself.
+                </div>
+              )}
+
               <Inset className="space-y-2.5">
                 <div className="flex items-center gap-3">
                   <TradeTile log={undoTarget} />
@@ -536,7 +544,7 @@ export function HoldingLogs() {
                   <div key={c.id} className="flex items-center justify-between gap-3 border-t border-line pt-2.5 text-xs">
                     <span className="min-w-0 truncate font-semibold text-ink-muted">{c.name}</span>
                     <span className="shrink-0 tnum text-ink">
-                      {money(c.from, c.currency, true)} → <b className="font-bold">{money(c.to, c.currency, true)}</b>
+                      {signedMoney(c.from, c.currency)} → <b className="font-bold">{signedMoney(c.to, c.currency)}</b>
                     </span>
                   </div>
                 ))}

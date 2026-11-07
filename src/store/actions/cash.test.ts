@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { CashAccount, SpendiaryData } from '../../lib/types'
+import type { CashAccount, SpendTransaction, SpendiaryData } from '../../lib/types'
 import { emptyData } from '../migrate'
 import { setCashAccounts, setMonthlyIncome, setUserName } from './cash'
 import { undoHoldingLog } from './holdingLogs'
@@ -40,7 +40,8 @@ describe('setCashAccounts', () => {
   it('undoes only its own change, keeping later balance moves', () => {
     const edited = setCashAccounts(state(), [{ ...bank, balance: 1500 }])
     // A Spend expense moves the balance after the edit
-    const later = { ...edited, cashAccounts: [{ ...bank, balance: 1400 }] }
+    const entry = { id: 't', type: 'transfer', amount: 500, toAccountId: 'bank', adjustment: true, createdAt: edited.holdingLogs![0].timestamp } as SpendTransaction
+    const later = { ...edited, cashAccounts: [{ ...bank, balance: 1400 }], spendTransactions: [entry] }
     const undone = undoHoldingLog(later, edited.holdingLogs![0].id)
     expect(undone.cashAccounts).toEqual([{ ...bank, balance: 900 }])
     expect(undone.holdingLogs).toEqual([])
