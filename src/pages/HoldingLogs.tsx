@@ -1,50 +1,45 @@
-import { useEffect, useRef, useState, Fragment } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useData } from '../store/DataContext'
 import { planEditUndo } from '../store/actions/undoEdit'
-import { undoHoldingLogChecked } from '../store/actions/holdingLogs'
-import { logHoldingStates } from '../lib/logStates'
+import { canUndoLog, undoHoldingLogChecked } from '../store/actions/holdingLogs'
 import { useToast } from '../store/ToastContext'
 import { PageHeader } from '../components/layout/PageHeader'
-import { Card } from '../components/ui/Card'
-import { TextLink } from '../components/ui/TextLink'
+import { Card, Inset } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { Modal } from '../components/ui/Modal'
 import { DropdownChip } from '../components/ui/DropdownChip'
+import { FilterChip } from '../components/ui/FilterChip'
 import { Popover, PopoverOption } from '../components/ui/Popover'
-import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import { ASSET_META } from '../lib/calc'
-import { getCashDiffItems, getLogTransactionDetails } from '../lib/activitySummary'
-import { dateStrToTimestamp, localDateStr, thb } from '../lib/format'
+import { getLogTransactionDetails } from '../lib/activitySummary'
+import { dateStrToTimestamp, localDateStr, money, thb } from '../lib/format'
 import type { AcquisitionSource, AssetClass, HoldingLog } from '../lib/types'
 import { logTookCash, noteForSource, paidFromName } from '../lib/acquisition'
 import { AcquisitionSourceField } from '../components/forms/AcquisitionSourceField'
 import { FormActions } from '../components/forms/FormActions'
-import { ClockIcon, CloseIcon, DotsHorizontalIcon, DownloadIcon, ListIcon, LockClosedIcon, PencilIcon, SearchIcon, TableIcon, TrashIcon, UndoIcon, WalletIcon } from '../components/icons'
+import { ClockIcon, DotsHorizontalIcon, DownloadIcon, LockClosedIcon, SearchIcon, TrashIcon, UndoIcon } from '../components/icons'
 import { TransactionDateField } from '../components/forms/TransactionDateField'
 import { STORAGE_KEYS } from '../lib/storageKeys'
 import { buildCsv, downloadCsv } from '../lib/csv'
-import { getLogActionMeta, getDisplayNote, getDestinationLocation, ASSET_FILTERS, getLogAssetLabel, ACTION_FILTERS, isAcquisitionLog } from './holdingLogs/logMeta'
+import { ActiveSearch, EMPTY_TITLE, HistoryRangeBar, HistorySearchSheet, dayLabel, rangePeriod, type Range, type SearchContext } from '../modules/spend/history'
+import { inPeriod } from '../modules/spend/logic'
+import { getLogActionMeta, getDisplayNote, getDestinationLocation, ASSET_FILTERS, ACTION_FILTERS, isAcquisitionLog } from './holdingLogs/logMeta'
 import { renderLogDetails } from './holdingLogs/logDetails'
+import { TradeRow, TradeTile } from './holdingLogs/TradeRow'
+import { getTradeRow, matchesTrade, tickerOf, tradeTotals } from './holdingLogs/tradeView'
 
+type ActionFilter = (typeof ACTION_FILTERS)[number]['key']
 
+const dayOf = (log: HoldingLog) => localDateStr(new Date(log.timestamp))
 
-const DATE_PRESETS = [
-  { key: 'all', label: 'All time' },
-  { key: 'month', label: 'This month' },
-  { key: '30d', label: 'Last 30 days' },
-  { key: 'year', label: 'This year' },
-  { key: 'custom', label: 'Custom range…' },
-] as const
-
-/** "2026-10-12" → "12 Oct" for the date chip */
-function shortDate(day: string): string {
-  const [y, m, d] = day.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+function matchesAction(log: HoldingLog, filter: ActionFilter): boolean {
+  if (filter === 'all') return true
+  if (filter === 'buy') return log.action === 'add' || log.action === 'buy_more'
+  return log.action === filter
 }
 
 export function HoldingLogs() {
@@ -60,9 +55,9 @@ export function HoldingLogs() {
   } = usePageGuide('logs')
   const { data, removeHoldingLog, removeHoldingLogs, undoHoldingLog, updateHoldingLog, usdThb } = useData()
   const { showToast } = useToast()
-  const rawLogs = data.holdingLogs ?? []
-  const logs = [...rawLogs].sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  const logs = useMemo(
+    () => [...(data.holdingLogs ?? [])].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
+    [data.holdingLogs],
   )
 
   const [undoTarget, setUndoTarget] = useState<HoldingLog | null>(null)
@@ -71,6 +66,7 @@ export function HoldingLogs() {
   const [editTimeValue, setEditTimeValue] = useState<string>('')
   const [editSource, setEditSource] = useState<AcquisitionSource>('bought')
   const [editReceivedFrom, setEditReceivedFrom] = useState('')
+  const [detailsOpen, setDetailsOpen] = useState(false)
   function startEditDate(log: HoldingLog) {
     setEditingDateLog(log)
     const dt = new Date(log.timestamp)
@@ -78,6 +74,7 @@ export function HoldingLogs() {
     setEditTimeValue(dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
     setEditSource(log.source ?? 'bought')
     setEditReceivedFrom(log.receivedFrom ?? '')
+    setDetailsOpen(false)
   }
 
   function closeEdit() {
@@ -104,30 +101,57 @@ export function HoldingLogs() {
     closeEdit()
   }
 
+  /** Says why right away when an entry can't be undone; otherwise asks first */
+  function requestUndo(log: HoldingLog) {
+    const check = undoHoldingLogChecked(data, log.id)
+    if (check.ok) setUndoTarget(log)
+    else showToast(check.reason, 'warn')
+  }
+
   const [assetFilter, setAssetFilter] = useState<AssetClass | 'all'>('all')
-  const [actionFilter, setActionFilter] = useState<'all' | 'buy' | 'sell' | 'dividend' | 'transfer' | 'edit'>('all')
-  const [searchQuery, setSearchQuery] = useState('')
-  // Opened from the search bar with ?search=BTC: start filtered to it
-  const [searchParams] = useSearchParams()
-  useEffect(() => {
-    const q = searchParams.get('search')
-    if (q) setSearchQuery(q)
-  }, [searchParams])
-  const [datePreset, setDatePreset] = useState<'all' | 'month' | '30d' | 'year' | 'custom'>('all')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
-  const [viewMode, setViewMode] = useState<'table' | 'timeline'>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.logsViewMode)
-    if (saved === 'timeline' || saved === 'table') return saved
-    return 'timeline'
-  })
-  const [expandedLogId, setExpandedLogId] = useState<string | null>(null)
-  const [expandedDetails, setExpandedDetails] = useState<Set<string>>(new Set())
+  const [actionFilter, setActionFilter] = useState<ActionFilter>('all')
+  const [range, setRange] = useState<Range>('month')
+  const [anchor, setAnchor] = useState(localDateStr())
+  const period = useMemo(() => rangePeriod(range, anchor), [range, anchor])
+  const [searchOpen, setSearchOpen] = useState(false)
+
+  // Opened from the search bar with ?q=BTC: start filtered to it
+  const [params, setParams] = useSearchParams()
+  const query = params.get('q') ?? ''
+  const setQuery = (q: string) => {
+    const next = new URLSearchParams(params)
+    if (q) next.set('q', q)
+    else next.delete('q')
+    setParams(next, { replace: true })
+  }
+  // A search looks across every month; browsing without one stays on the chosen range
+  const searching = query.trim() !== ''
+  const showYear = searching || range === 'all'
+
+  const filtered = useMemo(() => {
+    const terms = query.toLowerCase().split(/\s+/).filter(Boolean)
+    return logs.filter(
+      (l) =>
+        (terms.length > 0 || !period || inPeriod(period, dayOf(l))) &&
+        (assetFilter === 'all' || l.assetClass === assetFilter) &&
+        matchesAction(l, actionFilter) &&
+        matchesTrade(l, terms),
+    )
+  }, [logs, period, assetFilter, actionFilter, query])
+
+  const groups = useMemo(() => {
+    const map = new Map<string, HoldingLog[]>()
+    for (const l of filtered) map.set(dayOf(l), [...(map.get(dayOf(l)) ?? []), l])
+    return [...map.entries()]
+  }, [filtered])
+
+  const totals = useMemo(() => tradeTotals(filtered, usdThb), [filtered, usdThb])
+
   const [selectedLogIds, setSelectedLogIds] = useState<Set<string>>(new Set())
-  // Selecting, re-dating and undoing only appear while editing, to keep the list calm
-  const [editMode, setEditMode] = useState(false)
-  const toggleEditMode = () => {
-    setEditMode((v) => !v)
+  // Choosing entries to delete is rare, so its checkboxes stay out of the list until asked for
+  const [selecting, setSelecting] = useState(false)
+  const toggleSelecting = () => {
+    setSelecting((v) => !v)
     setSelectedLogIds(new Set())
   }
   const [showBatchDeleteConfirm, setShowBatchDeleteConfirm] = useState(false)
@@ -141,100 +165,17 @@ export function HoldingLogs() {
     })
   }
 
-  const toggleAllVisibleLogs = () => {
-    setSelectedLogIds((prev) => {
-      const next = new Set(prev)
-      if (allVisibleSelected) filtered.forEach((log) => next.delete(log.id))
-      else filtered.forEach((log) => next.add(log.id))
-      return next
-    })
-  }
+  const allVisibleSelected = filtered.length > 0 && filtered.every((log) => selectedLogIds.has(log.id))
+  const toggleAllVisibleLogs = () => setSelectedLogIds(allVisibleSelected ? new Set() : new Set(filtered.map((log) => log.id)))
 
-
-  const toggleDetails = (logId: string) => {
-    setExpandedDetails((prev) => {
-      const next = new Set(prev)
-      if (next.has(logId)) next.delete(logId)
-      else next.add(logId)
-      return next
-    })
-  }
-
-  const handleViewModeChange = (mode: 'table' | 'timeline') => {
-    setViewMode(mode)
-    localStorage.setItem(STORAGE_KEYS.logsViewMode, mode)
-    setSelectedLogIds(new Set())
-  }
-
-  // Inclusive local-date bounds (YYYY-MM-DD) for the selected date preset
-  const dateBounds = (() => {
-    const now = new Date()
-    if (datePreset === 'month') return { from: localDateStr(new Date(now.getFullYear(), now.getMonth(), 1)), to: '' }
-    if (datePreset === '30d') {
-      const d = new Date(now)
-      d.setDate(d.getDate() - 29)
-      return { from: localDateStr(d), to: '' }
-    }
-    if (datePreset === 'year') return { from: localDateStr(new Date(now.getFullYear(), 0, 1)), to: '' }
-    if (datePreset === 'custom') return { from: dateFrom, to: dateTo }
-    return { from: '', to: '' }
-  })()
-  const hasDateFilter = datePreset !== 'all' && (dateBounds.from !== '' || dateBounds.to !== '')
-  const dateChipLabel = datePreset !== 'custom'
-    ? (DATE_PRESETS.find((p) => p.key === datePreset)?.label ?? 'Date')
-    : dateFrom && dateTo
-      ? `${shortDate(dateFrom)} – ${shortDate(dateTo)}`
-      : dateFrom
-        ? `From ${shortDate(dateFrom)}`
-        : dateTo
-          ? `Until ${shortDate(dateTo)}`
-          : 'Custom range'
-  const anyFilter = Boolean(searchQuery || assetFilter !== 'all' || actionFilter !== 'all' || hasDateFilter)
+  const anyFilter = assetFilter !== 'all' || actionFilter !== 'all' || searching
   const resetFilters = () => {
-    setSearchQuery('')
+    setQuery('')
     setAssetFilter('all')
     setActionFilter('all')
-    setDatePreset('all')
-    setDateFrom('')
-    setDateTo('')
   }
   const [moreOpen, setMoreOpen] = useState(false)
   const moreBtnRef = useRef<HTMLButtonElement>(null)
-
-  const filtered = logs.filter((l) => {
-    if (assetFilter !== 'all' && l.assetClass !== assetFilter) return false
-    if (hasDateFilter) {
-      const day = localDateStr(new Date(l.timestamp))
-      if (dateBounds.from && day < dateBounds.from) return false
-      if (dateBounds.to && day > dateBounds.to) return false
-    }
-    if (actionFilter !== 'all') {
-      if (actionFilter === 'buy') {
-        if (l.action !== 'add' && l.action !== 'buy_more') return false
-      } else if (l.action !== actionFilter) {
-        return false
-      }
-    }
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase()
-      const loc = getDestinationLocation(l)?.toLowerCase() || ''
-      const actionMeta = getLogActionMeta(l)
-      const match =
-        l.ticker?.toLowerCase().includes(q) ||
-        l.holdingName.toLowerCase().includes(q) ||
-        l.note.toLowerCase().includes(q) ||
-        l.assetClass.toLowerCase().includes(q) ||
-        actionMeta.label.toLowerCase().includes(q) ||
-        loc.includes(q)
-      if (!match) return false
-    }
-
-    return true
-  })
-
-  const selectedVisibleCount = filtered.filter((log) => selectedLogIds.has(log.id)).length
-  const allVisibleSelected = filtered.length > 0 && filtered.every((log) => selectedLogIds.has(log.id))
 
   const handleExportCsv = () => {
     if (filtered.length === 0) {
@@ -291,178 +232,82 @@ export function HoldingLogs() {
     showToast(`Exported ${filtered.length} transaction${filtered.length === 1 ? '' : 's'} to CSV`, 'success')
   }
 
-  // Group by date
-  const groups: { date: string; entries: typeof filtered }[] = []
-  for (const log of filtered) {
-    const date = new Date(log.timestamp).toLocaleDateString('en-GB', {
-      weekday: 'short', day: 'numeric', month: 'long', year: 'numeric',
-    })
-    const last = groups[groups.length - 1]
-    if (last && last.date === date) {
-      last.entries.push(log)
-    } else {
-      groups.push({ date, entries: [log] })
-    }
-  }
-
-  // Helper to render before -> after comparison details
+  const undoCheck = undoTarget ? undoHoldingLogChecked(data, undoTarget.id) : null
+  // The balances this undo moves, shown before it happens
+  const undoCash = undoCheck?.ok
+    ? (undoCheck.data.cashAccounts ?? []).flatMap((after) => {
+        const before = data.cashAccounts?.find((c) => c.id === after.id)
+        return before && before.balance !== after.balance ? [{ id: after.id, name: after.name, from: before.balance, to: after.balance, currency: after.currency }] : []
+      })
+    : []
 
   return (
-    <>
-      <PageHeader
-        eyebrow="Invest"
-        title="Trades"
-        subtitle={
-          <>
-            Every buy, sale, dividend and edit on your holdings. Day-to-day money is in{' '}
-            <TextLink to="/spend/txns">Spend → Transactions</TextLink>.
-          </>
-        }
-        onStartGuide={startTour}
-      />
-
-      {/* Toolbar: Search + view switcher + ⋯ menu, then Date / Asset / Action dropdown chips */}
-      <div id="guide-logs-header" className="mb-5 space-y-2.5">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 min-w-0">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-ink-faint">
-              <SearchIcon className="h-4 w-4" />
-            </div>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search logs…"
-              title="Search by ticker, asset, note or wallet"
-              aria-label="Search activity"
-              className="h-10 w-full rounded-xl border border-line-strong bg-surface-muted focus:bg-surface pl-9 pr-8 text-sm text-ink placeholder:text-ink-faint outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15"
-            />
-            {searchQuery && (
+    <div className="space-y-4">
+      <div id="guide-logs-header" className="space-y-4">
+        <PageHeader
+          eyebrow="Invest"
+          title="Trades"
+          className="mb-0"
+          onStartGuide={startTour}
+          subtitle={
+            searching ? (
+              <ActiveSearch label={query} onOpen={() => setSearchOpen(true)} onClear={() => setQuery('')} />
+            ) : (
+              <HistoryRangeBar
+                range={range}
+                period={period}
+                onRangeChange={(r) => {
+                  setRange(r)
+                  setAnchor(localDateStr())
+                }}
+                onAnchorChange={setAnchor}
+                onSearch={() => setSearchOpen(true)}
+                searchLabel="Search trades"
+              />
+            )
+          }
+          action={
+            <>
+              {/* ⋯ menu: Export CSV and bulk delete, used far less than the filters */}
               <button
+                ref={moreBtnRef}
                 type="button"
-                onClick={() => setSearchQuery('')}
-                aria-label="Clear search"
-                className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-ink-faint hover:text-ink cursor-pointer"
+                onClick={() => setMoreOpen((v) => !v)}
+                aria-label="More actions"
+                title="More actions"
+                aria-haspopup="dialog"
+                aria-expanded={moreOpen}
+                className="grid h-10 w-10 place-items-center rounded-full border border-line bg-surface text-ink-muted shadow-xs transition-colors hover:text-ink cursor-pointer"
               >
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-surface-muted">
-                  <CloseIcon className="h-3 w-3" strokeWidth={2.4} />
-                </span>
+                <DotsHorizontalIcon className="h-[18px] w-[18px]" />
               </button>
-            )}
-          </div>
+              <Popover open={moreOpen} onClose={() => setMoreOpen(false)} anchorRef={moreBtnRef} title="Actions" align="right">
+                <PopoverOption
+                  icon={<DownloadIcon className="h-4 w-4" />}
+                  disabled={filtered.length === 0}
+                  hint={filtered.length === 0 ? 'No results' : `${filtered.length}`}
+                  onClick={() => {
+                    setMoreOpen(false)
+                    handleExportCsv()
+                  }}
+                >
+                  Export CSV
+                </PopoverOption>
+                <PopoverOption
+                  icon={<TrashIcon className="h-4 w-4" />}
+                  onClick={() => {
+                    setMoreOpen(false)
+                    toggleSelecting()
+                  }}
+                >
+                  {selecting ? 'Done selecting' : 'Select to delete'}
+                </PopoverOption>
+              </Popover>
+            </>
+          }
+        />
 
-          {/* View Switcher */}
-          <SegmentedControl
-            shape="rounded"
-            size="sm"
-            fullWidth={false}
-            value={viewMode}
-            onChange={(v) => handleViewModeChange(v as 'table' | 'timeline')}
-            options={[
-              { value: 'table', label: <span className="sr-only">Table</span>, icon: <TableIcon className="h-4 w-4" />, title: 'Table statement view' },
-              { value: 'timeline', label: <span className="sr-only">Timeline</span>, icon: <ListIcon className="h-4 w-4" />, title: 'Timeline feed view' },
-            ]}
-            ariaLabel="Choose table or timeline view"
-            className="shrink-0"
-          />
-
-          {/* ⋯ menu: Export CSV and Edit, used far less than the filters */}
-          <button
-            ref={moreBtnRef}
-            type="button"
-            onClick={() => setMoreOpen((v) => !v)}
-            aria-label="More actions"
-            title="More actions"
-            aria-haspopup="dialog"
-            aria-expanded={moreOpen}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-line bg-surface text-ink-muted transition-colors hover:text-ink hover:bg-surface-muted cursor-pointer"
-          >
-            <DotsHorizontalIcon className="h-[18px] w-[18px]" />
-          </button>
-          <Popover open={moreOpen} onClose={() => setMoreOpen(false)} anchorRef={moreBtnRef} title="Actions" align="right">
-            <PopoverOption
-              icon={<DownloadIcon className="h-4 w-4" />}
-              disabled={filtered.length === 0}
-              hint={filtered.length === 0 ? 'No results' : `${filtered.length}`}
-              onClick={() => {
-                setMoreOpen(false)
-                handleExportCsv()
-              }}
-            >
-              Export CSV
-            </PopoverOption>
-            <PopoverOption
-              icon={<PencilIcon className="h-4 w-4" />}
-              onClick={() => {
-                setMoreOpen(false)
-                toggleEditMode()
-              }}
-            >
-              {editMode ? 'Done editing' : 'Edit entries'}
-            </PopoverOption>
-          </Popover>
-        </div>
-
-        {/* Filter chips + result count */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <DropdownChip
-            title="Date range"
-            label={datePreset === 'all' ? 'Date' : dateChipLabel}
-            active={datePreset !== 'all'}
-            onClear={() => {
-              setDatePreset('all')
-              setDateFrom('')
-              setDateTo('')
-            }}
-          >
-            {(close) => (
-              <>
-                {DATE_PRESETS.map((p) => (
-                  <PopoverOption
-                    key={p.key}
-                    selected={datePreset === p.key}
-                    onClick={() => {
-                      setDatePreset(p.key)
-                      if (p.key !== 'custom') close()
-                    }}
-                  >
-                    {p.label}
-                  </PopoverOption>
-                ))}
-                {/* Custom range: the sheet stays open to pick the two dates */}
-                {datePreset === 'custom' && (
-                  <div className="mt-1 space-y-2 border-t border-line/60 px-3 pt-3 pb-1">
-                    <div className="grid items-end grid-cols-2 gap-2">
-                      <label className="space-y-1 text-xs font-medium text-ink-faint">
-                        <span>From</span>
-                        <input
-                          type="date"
-                          value={dateFrom}
-                          max={dateTo || undefined}
-                          onChange={(e) => setDateFrom(e.target.value)}
-                          className="h-9 w-full rounded-lg border border-line-strong bg-surface-muted focus:bg-surface px-2 text-sm text-ink"
-                        />
-                      </label>
-                      <label className="space-y-1 text-xs font-medium text-ink-faint">
-                        <span>To</span>
-                        <input
-                          type="date"
-                          value={dateTo}
-                          min={dateFrom || undefined}
-                          onChange={(e) => setDateTo(e.target.value)}
-                          className="h-9 w-full rounded-lg border border-line-strong bg-surface-muted focus:bg-surface px-2 text-sm text-ink"
-                        />
-                      </label>
-                    </div>
-                    <Button variant="primary" size="sm" onClick={close} className="w-full cursor-pointer">
-                      Done
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
-          </DropdownChip>
-
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
           <DropdownChip
             title="Asset type"
             label={assetFilter === 'all' ? 'Asset' : (ASSET_FILTERS.find((f) => f.key === assetFilter)?.label ?? 'Asset')}
@@ -484,81 +329,75 @@ export function HoldingLogs() {
               ))
             }
           </DropdownChip>
+          {ACTION_FILTERS.map((f) => (
+            <FilterChip key={f.key} active={actionFilter === f.key} onClick={() => setActionFilter(f.key)}>
+              {f.label}
+            </FilterChip>
+          ))}
+        </div>
+      </div>
 
-          <DropdownChip
-            title="Action"
-            label={actionFilter === 'all' ? 'Action' : (ACTION_FILTERS.find((f) => f.key === actionFilter)?.label ?? 'Action')}
-            active={actionFilter !== 'all'}
-            onClear={() => setActionFilter('all')}
-          >
-            {(close) =>
-              ACTION_FILTERS.map((f) => (
-                <PopoverOption
-                  key={f.key}
-                  selected={actionFilter === f.key}
-                  onClick={() => {
-                    setActionFilter(f.key)
-                    close()
-                  }}
-                >
-                  {f.key === 'all' ? 'All actions' : f.label}
-                </PopoverOption>
-              ))
-            }
-          </DropdownChip>
+      <HistorySearchSheet
+        open={searchOpen}
+        initial={query}
+        recentKey={STORAGE_KEYS.tradesRecentSearches}
+        placeholder="Assets, notes or wallets"
+        ariaLabel="Search trades"
+        countFor={(words) => logs.filter((l) => matchesTrade(l, words)).length}
+        onClose={() => setSearchOpen(false)}
+        onApply={(q) => {
+          setQuery(q)
+          setSearchOpen(false)
+        }}
+      >
+        {(search) => <AssetSuggestions logs={logs} search={search} />}
+      </HistorySearchSheet>
 
-          <div className="ml-auto flex items-center gap-2 pl-1 text-xs text-ink-muted">
-            <span>
-              {filtered.length}
-              {anyFilter && <span className="text-ink-faint"> of {logs.length}</span>}
-              {' '}{filtered.length === 1 && !anyFilter ? 'transaction' : 'transactions'}
-            </span>
-            {anyFilter && (
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="font-medium text-link hover:underline cursor-pointer"
-              >
-                Reset
-              </button>
+      {/* Bulk delete bar: says the list is selectable and holds Delete + Done */}
+      {selecting && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand/20 bg-brand/5 px-3 py-2 text-sm">
+          <span className="font-semibold text-link tnum">
+            {selectedLogIds.size > 0 ? `${selectedLogIds.size} selected` : 'Pick entries to remove from history'}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={toggleAllVisibleLogs} className="cursor-pointer">
+              {allVisibleSelected ? 'Clear' : 'Select all'}
+            </Button>
+            {selectedLogIds.size > 0 && (
+              <Button variant="danger" size="sm" onClick={() => setShowBatchDeleteConfirm(true)} className="cursor-pointer">
+                <TrashIcon className="h-3.5 w-3.5" />
+                Delete
+              </Button>
             )}
+            <Button variant="primary" size="sm" onClick={toggleSelecting} className="cursor-pointer">
+              Done
+            </Button>
           </div>
         </div>
+      )}
 
-        {/* Edit mode bar: says the list is editable and holds bulk delete + Done */}
-        {editMode && (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand/20 bg-brand/5 px-3 py-2 text-sm">
-            <span className="font-semibold text-link">
-              {selectedVisibleCount > 0 ? `${selectedLogIds.size} selected` : 'Editing: select, re-date or undo'}
+      {filtered.length > 0 && (
+        <div className="flex flex-wrap gap-x-5 gap-y-1 px-1 text-sm text-ink-muted tnum">
+          <span>
+            {filtered.length} {filtered.length === 1 ? 'entry' : 'entries'}
+          </span>
+          {totals.bought > 0 && (
+            <span>
+              Bought <b className="font-bold text-ink">{thb(totals.bought, true)}</b>
             </span>
-            <div className="flex items-center gap-2">
-              {selectedVisibleCount > 0 && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedLogIds(new Set())}
-                    className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-ink-muted hover:bg-surface-muted hover:text-ink cursor-pointer"
-                  >
-                    Clear
-                  </button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => setShowBatchDeleteConfirm(true)}
-                    className="cursor-pointer"
-                  >
-                    <TrashIcon className="h-3.5 w-3.5" />
-                    Delete
-                  </Button>
-                </>
-              )}
-              <Button variant="primary" size="sm" onClick={toggleEditMode} className="cursor-pointer">
-                Done
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+          {totals.sold > 0 && (
+            <span>
+              Sold <b className="font-bold text-ink">{thb(totals.sold, true)}</b>
+            </span>
+          )}
+          {totals.dividends > 0 && (
+            <span>
+              Dividends <b className="font-bold text-gain-ink">{thb(totals.dividends, true)}</b>
+            </span>
+          )}
+        </div>
+      )}
 
       <div id="guide-logs-list">
         {logs.length === 0 ? (
@@ -570,350 +409,53 @@ export function HoldingLogs() {
               accent="var(--color-brand)"
             />
           </Card>
-        ) : filtered.length === 0 ? (
+        ) : groups.length === 0 ? (
           <Card className="card-bleed-mobile">
             <EmptyState
-              icon={<SearchIcon className="h-7 w-7" />}
-              title="No transactions match your search"
-              description="Try adjusting your keywords or clearing the active filters."
+              icon={anyFilter ? <SearchIcon className="h-7 w-7" /> : <ClockIcon className="h-7 w-7" />}
+              title={anyFilter ? 'No matches' : EMPTY_TITLE[range]}
+              description={anyFilter ? 'Try another word or clear the filters.' : 'Older entries are still here.'}
               accent="var(--color-brand)"
               action={
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={resetFilters}
+                  onClick={anyFilter ? resetFilters : () => setRange('all')}
                   className="mt-2 cursor-pointer"
                 >
-                  Clear all filters
+                  {anyFilter ? 'Clear all filters' : 'Show all'}
                 </Button>
               }
             />
           </Card>
-        ) : viewMode === 'table' ? (
-          <Card padded={false} className="card-bleed-wide overflow-hidden border-0 shadow-none !bg-transparent">
-            <div className="logs-table-shell overflow-x-auto">
-              <table className="logs-table w-full text-left text-sm min-w-[980px]">
-                <thead>
-                  <tr className="logs-table-head text-xs font-bold text-ink-muted">
-                    {editMode && (
-                    <th className="logs-table-cell logs-table-check text-center">
-                      <input
-                        type="checkbox"
-                        checked={allVisibleSelected}
-                        onChange={toggleAllVisibleLogs}
-                        aria-label="Select all visible logs"
-                        className="h-4 w-4 rounded border-line-strong accent-brand"
-                      />
-                    </th>
-                    )}
-                    <th className="logs-table-cell logs-table-date">Date & time</th>
-                    <th className="logs-table-cell logs-table-action">Action</th>
-                    <th className="logs-table-cell logs-table-asset">Asset / ticker</th>
-                    <th className="logs-table-cell logs-table-metric text-right">Price / NAV</th>
-                    <th className="logs-table-cell logs-table-metric text-right">Shares / qty</th>
-                    <th className="logs-table-cell logs-table-metric text-right">Amount (THB)</th>
-                    <th className="logs-table-cell logs-table-location">Location</th>
-                    <th className="logs-table-cell logs-table-note min-w-[220px]">Note</th>
-                    {editMode && <th className="logs-table-cell logs-table-actions text-center">Edit</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((log) => {
-                    const actionMeta = getLogActionMeta(log)
-                    const locName = getDestinationLocation(log)
-                    const tx = getLogTransactionDetails(log, usdThb)
-                    const dt = new Date(log.timestamp)
-                    const dateStr = dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-                    const timeStr = dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-                    const isExpanded = expandedLogId === log.id
-                    const hasComparison =
-                      !!(logHoldingStates(log).prev && logHoldingStates(log).curr) ||
-                      (log.action === 'sell' && !!logHoldingStates(log).prev) ||
-                      getCashDiffItems(log).length > 0
-
-                    return (
-                      <Fragment key={log.id}>
-                        <tr
-                          onClick={() => {
-                            if (hasComparison) {
-                              setExpandedLogId(isExpanded ? null : log.id)
-                            }
-                          }}
-                          className={`logs-table-row transition-colors ${
-                            hasComparison ? 'cursor-pointer' : ''
-                          } ${isExpanded ? 'is-expanded' : ''}`}
-                        >
-                          {editMode && (
-                          <td className="logs-table-cell logs-table-check text-center align-top">
-                            <input
-                              type="checkbox"
-                              checked={selectedLogIds.has(log.id)}
-                              onChange={() => toggleLogSelection(log.id)}
-                              onClick={(e) => e.stopPropagation()}
-                              aria-label={`Select ${log.holdingName}`}
-                              className="mt-1 h-4 w-4 rounded border-line-strong accent-brand"
-                            />
-                          </td>
-                          )}
-                          <td
-                            className={`logs-table-cell logs-table-date whitespace-nowrap group/date ${editMode ? 'cursor-pointer' : ''}`}
-                            onClick={editMode ? (e) => {
-                              e.stopPropagation()
-                              startEditDate(log)
-                            } : undefined}
-                            title={editMode ? 'Click to edit transaction' : undefined}
-                          >
-                            <div className="logs-table-date-main tnum flex items-center gap-1.5">
-                              <span>{dateStr}</span>
-                              {editMode && <PencilIcon className="h-2.5 w-2.5 opacity-70 text-link" />}
-                            </div>
-                            <div className="logs-table-time tnum">{timeStr}</div>
-                          </td>
-                          <td className="logs-table-cell logs-table-action whitespace-nowrap">
-                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-2xs font-bold tracking-[0.02em] ${actionMeta.style}`}>
-                              {actionMeta.label}
-                            </span>
-                          </td>
-                          <td className="logs-table-cell logs-table-asset">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="logs-table-asset-name text-ink">{log.holdingName}</span>
-                              {log.ticker && log.ticker !== 'CASH' && log.ticker !== 'FIXED' && log.ticker !== 'DCA' && (
-                                <span className="logs-table-ticker">
-                                  {log.ticker}
-                                </span>
-                              )}
-                            </div>
-                            <span
-                              className="logs-table-asset-type inline-block mt-1"
-                              style={{
-                                color:
-                                  log.ticker === 'FIXED'
-                                    ? '#f59e0b'
-                                    : (ASSET_META[log.assetClass]?.color ?? '#6366f1'),
-                              }}
-                            >
-                              {getLogAssetLabel(log)}
-                            </span>
-                          </td>
-                          <td className="logs-table-cell logs-table-metric text-right whitespace-nowrap tnum font-semibold text-ink">
-                            {tx.priceDisplay}
-                          </td>
-                          <td
-                            className={`logs-table-cell logs-table-metric text-right whitespace-nowrap tnum font-bold ${
-                              tx.sharesDisplay.startsWith('+')
-                                ? 'text-gain-ink'
-                                : tx.sharesDisplay.startsWith('-')
-                                ? 'text-loss-ink'
-                                : 'text-link'
-                            }`}
-                          >
-                            <div>{tx.sharesDisplay}</div>
-                            {tx.sharesDisplaySecondary && (
-                              <div className="text-2xs font-normal text-ink-faint tracking-tight mt-0.5">
-                                {tx.sharesDisplaySecondary}
-                              </div>
-                            )}
-                          </td>
-                          <td className="logs-table-cell logs-table-metric text-right whitespace-nowrap tnum">
-                            <div className="logs-table-amount font-semibold text-ink">
-                              {tx.amountThbDisplay}
-                            </div>
-                            {log.action === 'sell' && log.realizedPnL !== undefined && (
-                              <div
-                                className={`logs-table-delta text-xs font-bold mt-1 ${
-                                  log.realizedPnL >= 0 ? 'text-gain-ink' : 'text-loss-ink'
-                                }`}
-                              >
-                                {log.realizedPnL >= 0 ? '+' : ''}{thb(log.realizedPnL)}
-                                {log.realizedPnLPercent !== undefined && (
-                                  <span className="font-normal opacity-90 ml-1">
-                                    ({log.realizedPnLPercent >= 0 ? '+' : ''}{log.realizedPnLPercent.toFixed(1)}%)
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </td>
-                          <td className="logs-table-cell logs-table-location whitespace-nowrap">
-                            {locName ? (
-                              <span className="logs-table-location-badge inline-flex items-center gap-1.5">
-                                <WalletIcon className="h-3 w-3" />
-                                {locName}
-                              </span>
-                            ) : (
-                              <span className="text-ink-faint text-xs">-</span>
-                            )}
-                          </td>
-                          <td className="logs-table-cell logs-table-note text-xs text-ink-muted">
-                            <div className="flex items-center gap-1.5">
-                              <span className="logs-table-note-text truncate" title={getDisplayNote(log)}>
-                                {getDisplayNote(log)}
-                              </span>
-                              {hasComparison && (
-                                <span
-                                  className="logs-table-diff text-xs font-medium shrink-0"
-                                  title="Click a row to see before and after"
-                                >
-                                  {isExpanded ? '▲ Hide' : '▼ Diff'}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          {editMode && (
-                          <td className="logs-table-cell logs-table-actions text-center whitespace-nowrap">
-                            <div className="flex items-center justify-center gap-1">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  startEditDate(log)
-                                }}
-                                title="Edit transaction"
-                                aria-label={`Edit date for ${log.holdingName}`}
-                                className="rounded-lg p-1.5 text-ink-muted hover:text-ink hover:bg-surface-muted transition-colors cursor-pointer"
-                              >
-                                <PencilIcon className="h-3.5 w-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setUndoTarget(log)
-                                }}
-                                aria-label={`Undo activity for ${log.holdingName}`}
-                                className="rounded-lg px-2 py-1 text-xs font-bold text-loss-ink hover:bg-loss/10 transition-colors cursor-pointer"
-                              >
-                                Undo
-                              </button>
-                            </div>
-                          </td>
-                          )}
-                        </tr>
-                        {isExpanded && (
-                          <tr className="bg-surface-muted/20 border-b border-line">
-                            <td colSpan={editMode ? 10 : 8} className="p-4 pl-8 sm:pl-12">
-                              <div className="max-w-xl">
-                                <p className="text-xs font-bold text-ink-muted mb-1">
-                                  State comparison (before → after)
-                                </p>
-                                {renderLogDetails(log, { cashAccounts: data.cashAccounts, usdThb, detailsOpen: expandedDetails.has(log.id), onToggleDetails: () => toggleDetails(log.id) })}
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </Fragment>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Card>
         ) : (
-          <div className="space-y-6">
-            {groups.map((group) => (
-              <div key={group.date}>
-                <p className="mb-3 px-1 text-base sm:text-lg font-extrabold text-ink tracking-tight">{group.date}</p>
-                <Card className="card-bleed-mobile" padded={false}>
-                  <ul className="divide-y divide-line">
-                  {group.entries.map((log) => {
-                    const locName = getDestinationLocation(log)
-                    const actionMeta = getLogActionMeta(log)
-                    return (
-                      <li key={log.id} className={`px-4 py-3.5 sm:px-5 sm:py-4 transition-colors hover:bg-surface-muted/30 ${selectedLogIds.has(log.id) ? 'bg-brand/5' : ''}`}>
-                        {/* Header Row: Icon + Title & Badges + Time & Actions */}
-                        <div className="flex items-start justify-between gap-2.5">
-                          {/* Left: Asset Icon + Holding Info */}
-                          <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
-                            {editMode && (
-                            <input
-                              type="checkbox"
-                              checked={selectedLogIds.has(log.id)}
-                              onChange={() => toggleLogSelection(log.id)}
-                              aria-label={`Select ${log.holdingName}`}
-                              className="mt-2 h-4 w-4 shrink-0 rounded border-line-strong accent-brand"
-                            />
-                            )}
-                            <span
-                              className="mt-0.5 grid h-8 w-8 sm:h-9 sm:w-9 shrink-0 place-items-center rounded-xl text-sm font-bold shadow-xs"
-                              style={{
-                                color: ASSET_META[log.assetClass]?.color ?? '#6366f1',
-                                background: `color-mix(in srgb, ${ASSET_META[log.assetClass]?.color ?? '#6366f1'} 14%, transparent)`,
-                              }}
-                            >
-                              <actionMeta.icon className="h-4 w-4" />
-                            </span>
-                            <div className="min-w-0">
-                              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                                <span className="text-sm sm:text-base font-bold text-ink">{log.holdingName}</span>
-                                {log.ticker && log.ticker !== 'CASH' && log.ticker !== 'FIXED' && log.ticker !== 'DCA' && (
-                                  <span className="rounded-md bg-surface-muted px-1.5 py-0.5 text-xs font-medium text-ink-muted">
-                                    {log.ticker}
-                                  </span>
-                                )}
-                                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${actionMeta.style}`}>
-                                  {actionMeta.label}
-                                </span>
-                                {locName && (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 border border-brand/20 px-2 py-0.5 text-xs font-semibold text-link">
-                                    <WalletIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                                    {locName}
-                                  </span>
-                                )}
-                              </div>
-                              {getDisplayNote(log) ? (
-                                <p className="mt-1 text-xs sm:text-sm font-medium text-ink-muted leading-relaxed">
-                                  {getDisplayNote(log)}
-                                </p>
-                              ) : null}
-                            </div>
-                          </div>
-
-                          {/* Right: Time + Edit Date pencil + Undo */}
-                          <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
-                            {editMode ? (
-                              <button
-                                type="button"
-                                onClick={() => startEditDate(log)}
-                                className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-medium text-ink-faint hover:text-link hover:bg-brand/5 transition-colors cursor-pointer"
-                                title="Edit transaction"
-                              >
-                                <time>
-                                  {new Date(log.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                                </time>
-                                <PencilIcon className="h-2.5 w-2.5 opacity-70" />
-                              </button>
-                            ) : (
-                              <time className="px-1.5 py-1 text-xs font-medium text-ink-faint">
-                                {new Date(log.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                              </time>
-                            )}
-                            {editMode && (
-                              <button
-                                type="button"
-                                onClick={() => setUndoTarget(log)}
-                                aria-label={`Undo activity for ${log.holdingName}`}
-                                className="rounded-lg px-2 py-1 text-xs font-bold text-loss-ink/85 hover:text-loss-ink hover:bg-loss/10 transition-colors cursor-pointer"
-                              >
-                                Undo
-                              </button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Body: State comparison / Unified Summary Strip */}
-                        {renderLogDetails(log, { cashAccounts: data.cashAccounts, usdThb, detailsOpen: expandedDetails.has(log.id), onToggleDetails: () => toggleDetails(log.id) }) && (
-                          <div className="mt-2.5 sm:ml-11">
-                            {renderLogDetails(log, { cashAccounts: data.cashAccounts, usdThb, detailsOpen: expandedDetails.has(log.id), onToggleDetails: () => toggleDetails(log.id) })}
-                          </div>
-                        )}
-                      </li>
-                    )
-                  })}
-                </ul>
+          <div className="space-y-4">
+            {groups.map(([date, entries]) => (
+              <Card key={date} list className="card-bleed-mobile pt-3 pb-1">
+                <div className="flex items-center justify-between border-b border-line pb-2 text-xs font-semibold text-ink-muted">
+                  <span>{dayLabel(date, showYear)}</span>
+                  <span className="tnum">
+                    {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
+                  </span>
+                </div>
+                <div className="divide-y divide-line">
+                  {entries.map((log) => (
+                    <TradeRow
+                      key={log.id}
+                      log={log}
+                      usdThb={usdThb}
+                      onOpen={() => startEditDate(log)}
+                      onUndo={() => requestUndo(log)}
+                      selecting={selecting}
+                      selected={selectedLogIds.has(log.id)}
+                      onToggleSelected={() => toggleLogSelection(log.id)}
+                    />
+                  ))}
+                </div>
               </Card>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
       </div>
 
       <ConfirmModal
@@ -932,37 +474,35 @@ export function HoldingLogs() {
         }}
       />
 
-      {/* Custom Undo Confirmation Modal */}
       <ConfirmModal
         open={!!undoTarget}
         onClose={() => setUndoTarget(null)}
-        title={`Undo "${undoTarget?.holdingName}"?`}
+        title="Undo this entry?"
         description={undoTarget?.action === 'edit'
           ? 'Puts back only what this edit changed. Buys, sells and later edits stay as they are.'
-          : 'This will revert your portfolio balance and holdings state to before this activity was recorded.'}
-        confirmText="Yes, undo activity"
-        confirmVariant="danger"
+          : 'Puts your holdings and cash back to how they were without this entry. Later entries stay as they are.'}
+        confirmText="Undo entry"
+        confirmVariant="primary"
         confirmIcon={<UndoIcon className="h-4 w-4" strokeWidth={2.4} />}
-        cancelText="Cancel"
         onConfirm={() => {
           if (undoTarget) {
             // Say why when it can't be undone (nothing changes then), and which edited fields were changed again since
-            const check = undoHoldingLogChecked(data, undoTarget.id)
             const plan = undoTarget.action === 'edit' && undoTarget.holdingId
               ? planEditUndo(data.holdings.find((h) => h.id === undoTarget.holdingId), undoTarget)
               : null
-            if (!check.ok) {
-              showToast(check.reason, 'warn')
+            if (undoCheck && !undoCheck.ok) {
+              showToast(undoCheck.reason, 'warn')
             } else {
               undoHoldingLog(undoTarget.id)
               const kept = plan?.ok && plan.kept.length > 0 ? ` Kept the ${plan.kept.join(', ')}: changed again since.` : ''
-              showToast(`Undid activity for "${undoTarget.holdingName}".${kept}`, 'info')
+              showToast(`Undid "${getTradeRow(undoTarget, usdThb).title}".${kept}`, 'info')
             }
           }
           setUndoTarget(null)
         }}
       >
         {undoTarget && (() => {
+          const view = getTradeRow(undoTarget, usdThb)
           const undoMeta = getLogActionMeta(undoTarget)
           const linkedHolding = undoTarget.holdingId
             ? data.holdings.find((h) => h.id === undoTarget.holdingId)
@@ -983,37 +523,24 @@ export function HoldingLogs() {
                 </div>
               )}
 
-              <div className="rounded-2xl bg-surface-muted p-4 space-y-2.5">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span
-                      className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs font-bold"
-                      style={{
-                        color: ASSET_META[undoTarget.assetClass]?.color ?? '#6366f1',
-                        background: `color-mix(in srgb, ${ASSET_META[undoTarget.assetClass]?.color ?? '#6366f1'} 14%, transparent)`,
-                      }}
-                    >
-                      <undoMeta.icon className="h-4 w-4" />
-                    </span>
-                    <span className="font-bold text-sm text-ink truncate">{undoTarget.holdingName}</span>
-                    {undoTarget.ticker && undoTarget.ticker !== 'CASH' && undoTarget.ticker !== 'FIXED' && undoTarget.ticker !== 'DCA' && (
-                      <span className="rounded-md bg-surface px-1.5 py-0.5 text-xs font-medium text-ink-muted">
-                        {undoTarget.ticker}
-                      </span>
-                    )}
+              <Inset className="space-y-2.5">
+                <div className="flex items-center gap-3">
+                  <TradeTile log={undoTarget} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-ink">{view.title}</p>
+                    <p className="truncate text-xs text-ink-muted">{view.meta}</p>
                   </div>
-                  <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ${undoMeta.style}`}>
-                    {undoMeta.label}
-                  </span>
+                  <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ${undoMeta.style}`}>{undoMeta.label}</span>
                 </div>
-                <p className="text-xs font-medium text-ink-muted leading-relaxed">{getDisplayNote(undoTarget)}</p>
-                <time className="block text-xs text-ink-faint">
-                  {new Date(undoTarget.timestamp).toLocaleString('en-GB', {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  })}
-                </time>
-              </div>
+                {undoCash.map((c) => (
+                  <div key={c.id} className="flex items-center justify-between gap-3 border-t border-line pt-2.5 text-xs">
+                    <span className="min-w-0 truncate font-semibold text-ink-muted">{c.name}</span>
+                    <span className="shrink-0 tnum text-ink">
+                      {money(c.from, c.currency, true)} → <b className="font-bold">{money(c.to, c.currency, true)}</b>
+                    </span>
+                  </div>
+                ))}
+              </Inset>
             </div>
           )
         })()}
@@ -1026,7 +553,9 @@ export function HoldingLogs() {
         const canChangeSource = isAcquisitionLog(log)
         const tookCash = canChangeSource && logTookCash(log)
         const payer = tookCash ? (log.dcaPlanId ? 'a DCA plan' : paidFromName(log) ?? 'a cash account') : ''
-        const showTicker = log.ticker && !['CASH', 'FIXED', 'DCA'].includes(log.ticker)
+        const ticker = tickerOf(log)
+        const undoable = canUndoLog(log)
+        const details = renderLogDetails(log, { cashAccounts: data.cashAccounts, usdThb, detailsOpen, onToggleDetails: () => setDetailsOpen((v) => !v) })
         return (
           <Modal
             open
@@ -1059,12 +588,35 @@ export function HoldingLogs() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <span className="truncate text-sm font-bold text-ink">{log.holdingName}</span>
-                    {showTicker && <span className="shrink-0 text-xs font-medium text-ink-muted">{log.ticker}</span>}
+                    {ticker && <span className="shrink-0 text-xs font-medium text-ink-muted">{ticker}</span>}
                   </div>
                   <p className="truncate text-xs text-ink-muted">{getDisplayNote(log) || meta.label}</p>
                 </div>
                 <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ${meta.style}`}>{meta.label}</span>
               </div>
+
+              {details && <div>{details}</div>}
+
+              {/* Undo reverses the entry; the bin below only takes it off this list */}
+              {undoable ? (
+                <div className="space-y-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      closeEdit()
+                      requestUndo(log)
+                    }}
+                    className="w-full cursor-pointer"
+                  >
+                    <UndoIcon className="h-4 w-4" />
+                    Undo this entry
+                  </Button>
+                  <p className="text-xs text-ink-muted">Undo puts back what this entry changed. The bin only removes it from this list.</p>
+                </div>
+              ) : (
+                <p className="rounded-xl bg-surface-muted px-3 py-2.5 text-xs text-ink-muted">This entry only records what happened, so it has nothing to undo.</p>
+              )}
 
               {/* When */}
               <div className="space-y-3">
@@ -1115,6 +667,45 @@ export function HoldingLogs() {
         onClose={endTour}
         onFinish={finishTour}
       />
-    </>
+    </div>
+  )
+}
+
+/** Assets from the entries, to search by tapping */
+function AssetSuggestions({ logs, search }: { logs: HoldingLog[]; search: SearchContext }) {
+  const { words, last, apply } = search
+  const assets = useMemo(() => {
+    const m = new Map<string, { label: string; n: number }>()
+    for (const l of logs) {
+      const ticker = tickerOf(l)
+      if (!ticker) continue
+      const a = m.get(ticker) ?? { label: l.holdingName, n: 0 }
+      a.n += 1
+      m.set(ticker, a)
+    }
+    return [...m.entries()].sort((a, b) => b[1].n - a[1].n)
+  }, [logs])
+  const shown = assets
+    .filter(([ticker, a]) => !last || ticker.toLowerCase().startsWith(last) || a.label.toLowerCase().includes(last))
+    .slice(0, 10)
+  if (shown.length === 0) return null
+  return (
+    <div>
+      <p className="mb-2 text-sm font-semibold text-ink-soft">Assets</p>
+      <div className="flex flex-wrap gap-1.5">
+        {shown.map(([ticker, a]) => (
+          <button
+            key={ticker}
+            type="button"
+            // Replace the half-typed word with the ticker, then search
+            onClick={() => apply([...words.slice(0, last ? -1 : undefined), ticker.toLowerCase()].join(' '))}
+            className="rounded-full bg-surface-muted px-3 py-1.5 text-xs font-semibold text-ink-soft hover:text-ink cursor-pointer"
+          >
+            {ticker}
+            <span className="ml-1.5 font-semibold opacity-70 tnum">{a.n}×</span>
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }

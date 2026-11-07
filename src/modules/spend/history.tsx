@@ -22,6 +22,14 @@ const RANGES: { value: Range; label: string }[] = [
   { value: 'all', label: 'All' },
 ]
 
+export const EMPTY_TITLE: Record<Range, string> = {
+  day: 'Nothing logged this day',
+  week: 'Nothing logged this week',
+  month: 'Nothing logged this month',
+  year: 'Nothing logged this year',
+  all: 'Nothing logged yet',
+}
+
 /** Calendar year (Jan–Dec) containing `date` */
 const yearOf = (date: string): Period => ({ start: `${date.slice(0, 4)}-01-01`, end: `${date.slice(0, 4)}-12-31` })
 

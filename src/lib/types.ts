@@ -637,7 +637,6 @@ export interface SpendiaryData {
 export interface SpendiaryBackupPreferences {
   theme?: 'light' | 'dark' | 'system'
   pnlDisplay?: 'pct' | 'thb'
-  logsViewMode?: 'table' | 'timeline'
   goldSellUnit?: 'grams' | 'baht'
 }
 

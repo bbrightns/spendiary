@@ -221,17 +221,17 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
       {
         targetId: 'guide-logs-header',
         badge: 'Filters',
-        title: 'Filter transactions',
+        title: 'Find an entry',
         description:
-          'Show only one asset group or one kind of activity, like buys, price updates or edits.',
+          'Step through days, months or years, search every month, or show one asset group or one kind of activity.',
         position: 'bottom',
       },
       {
         targetId: 'guide-logs-list',
         badge: 'Details',
-        title: 'Activity timeline',
+        title: 'Your history by day',
         description:
-          'Check dates, cost, units and every change, with an Undo button to reverse an entry any time.',
+          'Tap an entry for its details and to change its date. The undo arrow on the row reverses it.',
         position: 'top',
       },
     ],

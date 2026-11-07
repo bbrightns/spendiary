@@ -53,7 +53,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
 
     return (
       <div className="rounded-2xl bg-surface-muted p-4 space-y-2.5">
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {/* Col 1: net dividend */}
           <div className="flex flex-col min-w-0">
             <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
@@ -68,7 +68,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
           </div>
 
           {/* Col 2: tax withheld */}
-          <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
+          <div className="flex flex-col min-w-0 sm:border-l sm:border-line/60 sm:pl-3">
             <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
               <span className="truncate">Tax withheld (10%)</span>
             </span>
@@ -83,7 +83,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
           </div>
 
           {/* Col 3: dividend per share */}
-          <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
+          <div className="flex flex-col min-w-0 sm:border-l sm:border-line/60 sm:pl-3">
             <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
               <span className="truncate">Dividend per share</span>
             </span>
@@ -428,7 +428,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
         return (
           <>
             {/* ── Unified 3-Column Strip for Sell ── */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {/* Col 1: amount received */}
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
@@ -443,7 +443,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
               </div>
 
               {/* Col 2: sold */}
-              <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
+              <div className="flex flex-col min-w-0 sm:border-l sm:border-line/60 sm:pl-3">
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                   <span className="truncate">Sold</span>
                 </span>
@@ -461,7 +461,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
               </div>
 
               {/* Col 3: profit / loss */}
-              <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
+              <div className="flex flex-col min-w-0 sm:border-l sm:border-line/60 sm:pl-3">
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                   <span className="truncate">{isGain ? 'Net profit' : 'Loss'}</span>
                 </span>
@@ -623,7 +623,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
         return (
           <>
             {/* ── Unified 3-Column Strip for Buy / Add ── */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {/* Col 1: amount bought */}
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
@@ -638,7 +638,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
               </div>
 
               {/* Col 2: units received */}
-              <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
+              <div className="flex flex-col min-w-0 sm:border-l sm:border-line/60 sm:pl-3">
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                   <span className="truncate">Units received</span>
                 </span>
@@ -656,7 +656,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
               </div>
 
               {/* Col 3: purchase price */}
-              <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
+              <div className="flex flex-col min-w-0 sm:border-l sm:border-line/60 sm:pl-3">
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                   <span className="truncate">{isReceived ? 'Price that day' : 'Buy price'}</span>
                 </span>
@@ -774,7 +774,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
 
         if (isPriceOnly) {
           return (
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {/* Col 1: old price */}
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
@@ -789,7 +789,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
               </div>
 
               {/* Col 2: new price */}
-              <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
+              <div className="flex flex-col min-w-0 sm:border-l sm:border-line/60 sm:pl-3">
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                   <span className="truncate">New price</span>
                 </span>
@@ -802,7 +802,7 @@ export function renderLogDetails(log: HoldingLog, { cashAccounts, usdThb, detail
               </div>
 
               {/* Col 3: change */}
-              <div className="flex flex-col min-w-0 border-l border-line/60 pl-2 sm:pl-3">
+              <div className="flex flex-col min-w-0 sm:border-l sm:border-line/60 sm:pl-3">
                 <span className="text-xs font-bold text-ink-muted flex items-center gap-1 truncate">
                   <span className="truncate">Change</span>
                 </span>

@@ -233,7 +233,8 @@ No per-page padding overrides. A card whose inside is a full-bleed chart or tabl
 **Attention cards** (Spend Home's "3 payments due"): `TodayStack` is the only pattern for "something needs you". It is a tinted `rounded-2xl` row with an icon tile, a title, a meta line and a `Review` pill. Invest uses the same component.
 
 ### 6.3 List rows
-This is the Spend row (`TxnRow`, `RecurringDue`), used on both sides:
+This is the Spend row, drawn by `EntryRow` (`src/components/ui/EntryRow.tsx`) for `TxnRow` and Trades' `TradeRow`, and by `RecurringDue`. History pages share the rest through `src/modules/spend/history.tsx`: the range bar, day labels and search sheet.
+
 - **Left:** a 40px icon tile (`h-10 w-10 rounded-xl`), tinted with the category tone or the asset accent at about 11%.
 - **Middle:** the title (row title style, truncates) over a meta line (`text-xs text-ink-muted`; warn or loss colour only for a due state).
 - **Right:** the amount (`text-sm font-bold tnum`) and/or one action.

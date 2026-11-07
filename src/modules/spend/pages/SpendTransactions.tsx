@@ -11,7 +11,7 @@ import { localDateStr, thb, thbSigned } from '../../../lib/format'
 import { dateRangeLabel } from '../../../lib/paletteSearch'
 import type { SpendTransaction, SpendTxnType } from '../../../lib/types'
 import { ListBulletIcon, categoriesFor, getCategory } from '../categories'
-import { ActiveSearch, HistoryRangeBar, HistorySearchSheet, dayLabel, rangePeriod, type Range, type SearchContext } from '../history'
+import { ActiveSearch, EMPTY_TITLE, HistoryRangeBar, HistorySearchSheet, dayLabel, rangePeriod, type Range, type SearchContext } from '../history'
 import { accountStatement, balanceOn, inPeriod, shiftDate, spendOf, txnFlow, type AccountStatement, type Period } from '../logic'
 import { openQuickAdd } from '../QuickAddSheet'
 import { TxnRow } from '../TxnRow'
@@ -27,14 +27,6 @@ const TYPE_FILTERS: { value: TypeFilter; label: string }[] = [
   { value: 'income', label: 'Income' },
   { value: 'transfer', label: 'Transfers' },
 ]
-
-const EMPTY_TITLE: Record<Range, string> = {
-  day: 'Nothing logged this day',
-  week: 'Nothing logged this week',
-  month: 'Nothing logged this month',
-  year: 'Nothing logged this year',
-  all: 'Nothing logged yet',
-}
 
 /**
  * Search terms starting with # match a tag (or the note text, for non-tags like `#7-11`);
