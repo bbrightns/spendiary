@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import type { CashAccount, DividendRecord, Holding, HoldingLog, SpendiaryData } from '../../lib/types'
+import type { CashAccount, DividendRecord, Holding, HoldingLog, SpendTransaction, SpendiaryData } from '../../lib/types'
 import { emptyData } from '../migrate'
 import { buyMoreHolding, sellHolding, transferLocation } from './holdings'
 import {
   addHoldingLog,
+  canUndoLog,
   removeHoldingLog,
   removeHoldingLogs,
   undoHoldingLog,
+  undoHoldingLogChecked,
   updateHoldingLog,
   updateHoldingLogTimestamp,
 } from './holdingLogs'
@@ -156,5 +158,67 @@ describe('undoHoldingLog', () => {
     const bought = { ...apple(), units: 12, totalUnits: 12, totalThbInvested: 62_000, locations: [...locs, { id: 'd', name: 'Dime', qty: 2, thbSpent: 12_000, usdSpent: 350 }] } as Holding
     const out = buyMoreHolding(start, { updatedHolding: bought, note: '+2 shares · Dime' })
     expect(undoLatest(out).holdings[0].locations).toEqual(locs)
+  })
+})
+
+describe('entries undo must refuse', () => {
+  const refused = (d: SpendiaryData, id = d.holdingLogs![0].id) => {
+    const r = undoHoldingLogChecked(d, id)
+    return r.ok ? null : r.reason
+  }
+
+  it.each([
+    ['a DCA plan change', { action: 'edit', holdingName: 'DCA Plan: Apple', ticker: 'DCA' }],
+    ['an AI import', { action: 'add', holdingName: 'AI Import (2 holdings)', ticker: 'IMPORT' }],
+    ['a debt payment', { action: 'edit', holdingName: 'Liability: Car', ticker: 'DEBT', assetClass: 'cash' }],
+    ['a note', { action: 'note', holdingId: 'h1' }],
+  ] as [string, Partial<HoldingLog>][])('keeps %s: it has nothing to put back', (_, over) => {
+    const entry = log(over)
+    expect(canUndoLog(entry)).toBe(false)
+    expect(refused(state({ holdingLogs: [entry] }))).toMatch(/nothing to put back/)
+  })
+
+  it('still undoes a skipped DCA buy, which only names a plan and a date', () => {
+    const skip = log({ action: 'edit', ticker: 'DCA', dcaPlanId: 'p1', dcaDate: '2026-10-10' })
+    const d = state({
+      dcaPlans: [{ id: 'p1', name: 'Apple', assetClass: 'stock', monthlyAmount: 5000, dayOfMonth: 10, skippedDates: ['2026-10-10'] }],
+      holdingLogs: [skip],
+    })
+    expect(canUndoLog(skip)).toBe(true)
+    expect(undoLatest(d).dcaPlans[0].skippedDates).toEqual([])
+  })
+
+  it('keeps a move when the coins have left where they went', () => {
+    const btc = {
+      id: 'b1', name: 'Bitcoin', ticker: 'BTC', assetClass: 'crypto', units: 0.01, avgCost: 2_000_000, price: 3_000_000, totalThbInvested: 20_000,
+      locations: [{ id: 'ex', name: 'Exchange', qty: 0.01, thbSpent: 20_000 }],
+    } as Holding
+    const moved = transferLocation(state({ holdings: [btc] }), { holdingId: 'b1', fromLocationId: 'ex', newLocationName: 'Ledger', amount: 400_000, fee: 0 })
+    const ledger = moved.holdings[0].locations!.find((l) => l.name === 'Ledger')!
+    const spent = { ...moved, holdings: [{ ...moved.holdings[0], locations: moved.holdings[0].locations!.map((l) => (l.id === ledger.id ? { ...l, qty: 0.001 } : l)) }] }
+    expect(refused(spent)).toMatch(/moved to Ledger/)
+    expect(undoLatest(spent)).toBe(spent)
+  })
+
+  it('keeps an old add once the holding was traded after it', () => {
+    const d = state({
+      holdingLogs: [
+        log({ id: 'buy', action: 'buy_more', holdingId: 'h1', timestamp: '2026-10-02T09:00:00.000Z' }),
+        log({ id: 'add', action: 'add', holdingId: 'h1' }),
+      ],
+    })
+    expect(refused(d, 'add')).toMatch(/traded after/)
+  })
+
+  it('keeps a new account once Spend entries use it', () => {
+    const added: CashAccount = { id: 'new', name: 'New', balance: 100 }
+    const entry = log({
+      action: 'add', holdingName: 'Cash Accounts', ticker: 'CASH', assetClass: 'cash',
+      previousCashAccountsState: [bank], afterCashAccountsState: [bank, added],
+    })
+    const unused = state({ cashAccounts: [bank, added], holdingLogs: [entry] })
+    expect(undoLatest(unused).cashAccounts).toEqual([bank])
+    const used = { ...unused, spendTransactions: [{ id: 't', accountId: 'new' } as SpendTransaction] }
+    expect(refused(used)).toMatch(/used since/)
   })
 })

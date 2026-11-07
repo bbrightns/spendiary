@@ -85,11 +85,76 @@ export function undoHoldingLog(prev: SpendiaryData, ...[logId]: Parameters<DataC
   return r.ok ? r.data : prev
 }
 
+/**
+ * Whether an entry saved anything to put back. A DCA plan change, an AI import, a debt entry or a
+ * note only records what happened: "undoing" one would hide the record and change nothing.
+ */
+export function canUndoLog(log: HoldingLog): boolean {
+  const planDate = Boolean(log.dcaPlanId && log.dcaDate)
+  // Older confirmed DCA buys were saved as notes
+  if (log.action === 'note') return planDate
+  return Boolean(log.delta || log.holdingId || log.cashAccountId || log.previousCashAccountsState || log.dividendRecordId || planDate)
+}
+
+/** Why undoing this entry would lose or invent something, checked before anything changes */
+function undoBlockedReason(prev: SpendiaryData, log: HoldingLog): string | null {
+  if (!canUndoLog(log)) return 'This entry only records what happened, so there is nothing to put back.'
+  // Entries with a delta say why themselves (undoHoldingDelta)
+  if (log.delta) return null
+
+  const holding = log.holdingId ? prev.holdings.find((h) => h.id === log.holdingId) : undefined
+  if (log.holdingId && !holding && (log.action === 'buy_more' || log.action === 'transfer')) {
+    return `"${log.holdingName}" is no longer in your portfolio, so this can't be undone.`
+  }
+
+  // A move: the coins must still be where they went, and the place they came from must still exist
+  if (log.action === 'transfer' && log.transfer && holding?.locations) {
+    const t = log.transfer
+    const toQty = (n: number) => (t.unit === 'sats' ? n / SATS_PER_BTC : n)
+    if (!holding.locations.some((l) => l.id === t.fromLocationId)) {
+      return `${t.fromName} was removed since, so there is nowhere to move this back to.`
+    }
+    const dest = holding.locations.find((l) => l.id === t.toLocationId)
+    if (!dest || dest.qty < toQty(t.received) - qtyEpsilon(holding.assetClass)) {
+      return `Some of what moved to ${t.toName} was sold or moved on since, so this move can't be undone.`
+    }
+  }
+
+  // Older adds saved no delta, so undoing one removes the whole holding, later trades included
+  if (log.action === 'add' && holding) {
+    const added = new Date(log.timestamp).getTime()
+    const tradedSince = (prev.holdingLogs ?? []).some(
+      (l) =>
+        l.id !== log.id &&
+        l.holdingId === log.holdingId &&
+        (l.action === 'buy_more' || l.action === 'sell' || l.action === 'transfer') &&
+        new Date(l.timestamp).getTime() >= added,
+    )
+    if (tradedSince) return `"${log.holdingName}" was traded after it was added. Undo those trades first.`
+  }
+
+  // Undoing a new account removes it: not once its balance moved or Spend entries point at it
+  const before = log.previousCashAccountsState
+  const after = log.afterCashAccountsState
+  if (!log.dcaPlanId && log.assetClass === 'cash' && before && after) {
+    for (const added of after.filter((a) => !before.some((b) => b.id === a.id))) {
+      const now = prev.cashAccounts?.find((c) => c.id === added.id)
+      if (!now) continue
+      const used = now.balance !== added.balance || (prev.spendTransactions ?? []).some((t) => t.accountId === added.id || t.toAccountId === added.id)
+      if (used) return `"${now.name}" has been used since it was added, so it can't be removed this way.`
+    }
+  }
+
+  return null
+}
+
 /** Undo one log entry, or say why it can't be undone (then nothing changes and the entry stays) */
 export function undoHoldingLogChecked(prev: SpendiaryData, logId: string): UndoResult {
   const logs = prev.holdingLogs ?? []
   const log = logs.find((l) => l.id === logId)
   if (!log) return { ok: false, reason: 'This entry no longer exists.' }
+  const blocked = undoBlockedReason(prev, log)
+  if (blocked) return { ok: false, reason: blocked }
 
   // ── 1–2. Holdings and cash: newer entries reverse their saved delta; older ones work it out from snapshots ──
   const reverted = log.delta ? undoHoldingDelta(prev, log) : undoFromSnapshots(prev, log)
