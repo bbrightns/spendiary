@@ -45,7 +45,7 @@ export function BuyPreview({ paid, got, total, totalSub, warning, details = [] }
       )}
 
       {details.length > 0 && (
-        <div className="-mb-2 mt-3 border-t border-line pt-1">
+        <div className="-mb-3 mt-3 border-t border-line">
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -56,7 +56,7 @@ export function BuyPreview({ paid, got, total, totalSub, warning, details = [] }
             <ChevronDownIcon className={`h-4 w-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
           </button>
           {open && (
-            <dl className="space-y-1.5 pb-3 pt-1 text-xs">
+            <dl className="space-y-1.5 pb-4 pt-1 text-xs">
               {details.map((d) => (
                 <div key={d.label} className="flex items-baseline justify-between gap-3">
                   <dt className="text-ink-muted">{d.label}</dt>
