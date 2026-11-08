@@ -180,6 +180,8 @@ export function QuickAddSheet() {
         setSplit(false)
         setMonths(10)
       }
+      // Closing doesn't blur the amount, so the operator buttons start hidden again
+      setAmountActive(false)
       setOpen(true)
     }
     window.addEventListener(OPEN_EVENT, onOpen)
