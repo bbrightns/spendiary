@@ -10,7 +10,7 @@ interface Props {
   onChange: (date: string) => void
   label?: string
   hint?: string
-  /** With `onTimeChange`, a time-of-day field (HH:mm) sits beside the date, or below it on narrow screens */
+  /** With `onTimeChange`, a time-of-day field (HH:mm) sits beside the date when this field is wide enough, else below it */
   time?: string
   onTimeChange?: (time: string) => void
 }
@@ -30,45 +30,48 @@ export function TransactionDateField({
     'h-11 w-full rounded-xl border border-line-strong bg-surface-muted focus:bg-surface px-3.5 text-base text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/15'
 
   return (
-    <div className={onTimeChange ? 'grid gap-x-3 gap-y-3 sm:grid-cols-[minmax(0,1fr)_9.5rem]' : undefined}>
-      <div>
-        <div className="mb-1.5 flex items-center justify-between gap-2">
-          <span className="text-sm font-semibold text-ink-soft">{label}</span>
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => onChange(today)}
-              aria-pressed={value === today}
-              className={`${CHIP} ${value === today ? CHIP_ON : CHIP_OFF}`}
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange(yesterday)}
-              aria-pressed={value === yesterday}
-              className={`${CHIP} ${value === yesterday ? CHIP_ON : CHIP_OFF}`}
-            >
-              Yesterday
-            </button>
+    // Container query, not `sm:`: a 460px modal on a tablet is on a wide screen but has phone-width room
+    <div className={onTimeChange ? '@container' : undefined}>
+      <div className={onTimeChange ? 'grid gap-x-3 gap-y-3 @md:grid-cols-[minmax(0,1fr)_9.5rem]' : undefined}>
+        <div className="min-w-0">
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <span className="text-sm font-semibold text-ink-soft">{label}</span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => onChange(today)}
+                aria-pressed={value === today}
+                className={`${CHIP} ${value === today ? CHIP_ON : CHIP_OFF}`}
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange(yesterday)}
+                aria-pressed={value === yesterday}
+                className={`${CHIP} ${value === yesterday ? CHIP_ON : CHIP_OFF}`}
+              >
+                Yesterday
+              </button>
+            </div>
           </div>
+          <input
+            type="date"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className={fieldClass}
+          />
+          {hint && <p className="mt-1 text-xs text-ink-muted">{hint}</p>}
         </div>
-        <input
-          type="date"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={fieldClass}
-        />
-        {hint && <p className="mt-1 text-xs text-ink-muted">{hint}</p>}
+        {onTimeChange && (
+          <div className="min-w-0">
+            <div className="mb-1.5 flex h-[22px] items-center">
+              <span className="text-sm font-semibold text-ink-soft">Time</span>
+            </div>
+            <input type="time" value={time ?? ''} onChange={(e) => onTimeChange(e.target.value)} aria-label="Time of day" className={fieldClass} />
+          </div>
+        )}
       </div>
-      {onTimeChange && (
-        <div>
-          <div className="mb-1.5 flex h-[22px] items-center">
-            <span className="text-sm font-semibold text-ink-soft">Time</span>
-          </div>
-          <input type="time" value={time ?? ''} onChange={(e) => onTimeChange(e.target.value)} aria-label="Time of day" className={fieldClass} />
-        </div>
-      )}
     </div>
   )
 }
