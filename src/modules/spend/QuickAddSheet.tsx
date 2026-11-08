@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Modal } from '../../components/ui/Modal'
+import { Button } from '../../components/ui/Button'
 import { SegmentedControl } from '../../components/ui/SegmentedControl'
 import { FormActions } from '../../components/forms/FormActions'
 import { TransactionDateField } from '../../components/forms/TransactionDateField'
@@ -19,6 +20,7 @@ import { paidDetail } from './billPaid'
 import { firstInstallmentDue, installmentAmount } from './loans'
 import { SHEET_EVENTS } from './sheetEvents'
 import { AlertIcon } from '../../components/icons'
+import { OPERATORS, appendOperator, cleanAmountInput, evalAmount, hasOperator, settleAmount } from './amountExpr'
 
 const OPEN_EVENT = SHEET_EVENTS.quickAdd
 
@@ -52,6 +54,14 @@ const AMOUNT_COLOR: Record<SpendTxnType, string> = {
   income: 'text-gain-ink',
   transfer: 'text-brand-ink',
 }
+
+const OPERATOR_LABEL: Record<(typeof OPERATORS)[number], string> = { '+': 'Plus', '−': 'Minus', '×': 'Times', '÷': 'Divided by' }
+
+/** Keeps focus (and the phone keyboard) in the amount while an operator button is tapped */
+const keepFocus = (e: { preventDefault: () => void }) => e.preventDefault()
+
+/** Smaller type as a sum gets longer, so it stays on one line in a phone-wide sheet */
+const amountSize = (len: number) => (len > 13 ? 'text-3xl' : len > 9 ? 'text-4xl' : 'text-5xl')
 
 const NO_WALLET = NOT_TRACKED
 
@@ -114,6 +124,8 @@ export function QuickAddSheet() {
   // Editing a loan payment: its transfer goes to the loan, so there's no "to" wallet to pick
   const [loanPayment, setLoanPayment] = useState(false)
   const amountRef = useRef<HTMLInputElement>(null)
+  // The amount or its operator buttons have focus: the buttons show
+  const [amountActive, setAmountActive] = useState(false)
 
   // Latest values for the event listener without re-subscribing on every keystroke
   const stateRef = useRef({ transactions, methods, settings })
@@ -181,12 +193,14 @@ export function QuickAddSheet() {
     return () => window.clearTimeout(t)
   }, [open])
 
-  const value = Number(amount.replace(/,/g, ''))
+  // The amount can be a sum ("120+45"); everything below works with its result
+  const isSum = hasOperator(amount)
+  const value = evalAmount(amount) ?? NaN
   const amountValid = Number.isFinite(value) && value > 0
   const transferValid =
     type !== 'transfer' || (loanPayment ? accountId !== NO_WALLET : accountId !== NO_WALLET && toAccountId !== NO_WALLET && accountId !== toAccountId)
   const canSave = amountValid && transferValid
-  const saveHint = !amountValid ? 'Enter an amount' : !transferValid ? (loanPayment ? 'Pick the account you pay from' : 'Pick two different accounts') : undefined
+  const saveHint = !amountValid ? (isSum && Number.isFinite(value) ? 'The sum must be more than ฿0' : 'Enter an amount') : !transferValid ? (loanPayment ? 'Pick the account you pay from' : 'Pick two different accounts') : undefined
   // Installments: a new card expense of ฿1,000 or more (not editing, not a recurring bill)
   const card = cards.find((c) => c.id === accountId)
   const canSplit = !editId && !fromRecurring && type === 'expense' && !!card && amountValid && value >= 1000
@@ -360,23 +374,75 @@ export function QuickAddSheet() {
         <div className="space-y-5">
           <SegmentedControl options={TYPE_OPTIONS} value={type} onChange={changeType} ariaLabel="Transaction type" />
 
-          {/* Amount */}
-          <label className="block text-center">
-            <span className="sr-only">Amount in baht</span>
-            <div className="flex items-baseline justify-center gap-1.5">
-              <span className={`font-display text-3xl font-extrabold ${amount ? 'text-ink-muted' : 'text-ink-faint'}`}>฿</span>
-              <input
-                ref={amountRef}
-                inputMode="decimal"
-                autoComplete="off"
-                placeholder="0"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value.replace(/[^\d.,]/g, ''))}
-                className={`w-full max-w-[14ch] bg-transparent text-center font-display text-5xl font-extrabold tracking-tight tnum outline-none placeholder:text-ink-faint/50 ${AMOUNT_COLOR[type]}`}
-                style={{ width: `${Math.max(2, amount.length + 1)}ch` }}
-              />
-            </div>
-          </label>
+          {/* Amount: a plain number or a short sum, worked out when you leave the field */}
+          <div
+            onFocus={() => setAmountActive(true)}
+            onBlur={(e) => {
+              if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
+              setAmountActive(false)
+              setAmount(settleAmount)
+            }}
+          >
+            <label className="block text-center">
+              <span className="sr-only">Amount in baht</span>
+              <div className="flex min-w-0 items-baseline justify-center gap-1.5">
+                <span className={`shrink-0 font-display text-3xl font-extrabold ${amount ? 'text-ink-muted' : 'text-ink-faint'}`}>฿</span>
+                <input
+                  ref={amountRef}
+                  inputMode="decimal"
+                  autoComplete="off"
+                  placeholder="0"
+                  value={amount}
+                  onChange={(e) => setAmount(cleanAmountInput(e.target.value))}
+                  aria-describedby={isSum ? 'quick-add-sum' : undefined}
+                  className={`min-w-0 max-w-[20ch] bg-transparent text-center font-display ${amountSize(amount.length)} font-extrabold tracking-tight tnum outline-none placeholder:text-ink-faint/50 ${AMOUNT_COLOR[type]}`}
+                  style={{ width: `min(${Math.max(2, amount.length + 1)}ch, 100%)` }}
+                />
+              </div>
+            </label>
+            {isSum && (
+              <p id="quick-add-sum" aria-live="polite" className="mt-1 text-center text-sm font-semibold text-ink-muted tnum">
+                {Number.isNaN(value) ? 'Check the sum' : `= ${thbSigned(value, !Number.isInteger(value))}`}
+              </p>
+            )}
+            {amountActive && (
+              <div role="group" aria-label="Add a sum" className="mt-3 flex justify-center gap-2">
+                {OPERATORS.map((op) => (
+                  <Button
+                    key={op}
+                    type="button"
+                    variant="tonal"
+                    size="sm"
+                    aria-label={OPERATOR_LABEL[op]}
+                    className="min-w-12"
+                    onPointerDown={keepFocus}
+                    onMouseDown={keepFocus}
+                    onClick={() => {
+                      setAmount((a) => appendOperator(a, op))
+                      amountRef.current?.focus()
+                    }}
+                  >
+                    <span aria-hidden className="text-lg leading-none">{op}</span>
+                  </Button>
+                ))}
+                <Button
+                  type="button"
+                  variant="tonal"
+                  size="sm"
+                  aria-label="Work out the sum"
+                  className="min-w-12"
+                  onPointerDown={keepFocus}
+                  onMouseDown={keepFocus}
+                  onClick={() => {
+                    setAmount(settleAmount)
+                    amountRef.current?.focus()
+                  }}
+                >
+                  <span aria-hidden className="text-lg leading-none">=</span>
+                </Button>
+              </div>
+            )}
+          </div>
 
           {overdraw && (
             <p role="status" className="-mt-2 flex gap-2 rounded-xl border border-warn/30 bg-warn-soft px-3 py-2 text-xs leading-snug text-ink-soft">
