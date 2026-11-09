@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom'
-import { INVEST_HOME, SPEND_HOME, SPEND_ROOT, isMovedToSpend, isSpendPath } from '../lib/routes'
+import { INVEST_HOME, SPEND_HOME, SPEND_ROOT, isInvestPage, isSpendPath } from '../lib/routes'
 import { STORAGE_KEYS } from '../lib/storageKeys'
 
 export const LAST_INVEST_KEY = STORAGE_KEYS.lastInvestPath
@@ -34,8 +34,9 @@ export function lastPathFor(spend: boolean): string {
   // remapped (/spend) or fail the side check (/ now belongs to Spend) and fall back to home
   const path = saved === SPEND_ROOT ? SPEND_HOME : saved
   const bare = path?.split(/[?#]/)[0] ?? ''
-  // A page that moved to Spend would redirect there and land you on the wrong side
-  const valid = !!path && path.startsWith('/') && isSpendPath(bare) === spend && !isMovedToSpend(bare)
+  // Invest only goes back to a page that still exists there: a removed or moved page would redirect
+  // to Spend (and Settings would keep Spend highlighted), so the switch would look dead
+  const valid = !!path && path.startsWith('/') && (spend ? isSpendPath(bare) : isInvestPage(bare))
   return valid ? path! : spend ? SPEND_HOME : INVEST_HOME
 }
 

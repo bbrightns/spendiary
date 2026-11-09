@@ -14,9 +14,25 @@ export function isSpendPath(pathname: string): boolean {
 /** Cash & liquidity lives on Spend → Accounts as its own view (one home for every wallet) */
 export const SPEND_CASH = `${SPEND_ROOT}/accounts?view=cash`
 
-/** Old Invest paths that now redirect into Spend; a saved "last Invest page" pointing at one goes to Invest home instead */
-const MOVED_TO_SPEND = ['/cash', '/cashflow/cash', '/debts', '/cashflow/debts']
+/**
+ * Every page on the Invest side, as routed in App.tsx. Keep the two in step: switching to Invest
+ * only returns to a saved page listed here. A saved page that no longer exists (or moved to Spend)
+ * would hit the catch-all and bounce you back to Spend home, and Spend never overwrites the saved
+ * Invest page, so the switch would stay broken on that device.
+ */
+const INVEST_PAGES = [
+  INVEST_HOME,
+  '/portfolio',
+  '/rebalance',
+  '/dca',
+  '/dividends',
+  '/cashflow/dca',
+  '/cashflow/dividends',
+  '/retirement',
+  '/logs',
+  '/logs/summary',
+]
 
-export function isMovedToSpend(pathname: string): boolean {
-  return MOVED_TO_SPEND.includes(pathname)
+export function isInvestPage(pathname: string): boolean {
+  return INVEST_PAGES.includes(pathname)
 }
