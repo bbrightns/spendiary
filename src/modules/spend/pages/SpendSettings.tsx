@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Card } from '../../../components/ui/Card'
 import { Button } from '../../../components/ui/Button'
 import { ConfirmModal } from '../../../components/ui/ConfirmModal'
-import { DownloadIcon, TrashIcon, UploadIcon } from '../../../components/icons'
+import { CheckCircleIcon, CheckIcon, DownloadIcon, TrashIcon, UploadIcon } from '../../../components/icons'
 import { DataAction, DataCard, DataRow } from '../../../components/ui/DataCard'
 import { SegmentedControl } from '../../../components/ui/SegmentedControl'
 import { NumberField } from '../../../components/ui/Field'
@@ -122,6 +122,12 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
   const bigChanged = bigRule !== null && JSON.stringify(bigRule) !== JSON.stringify(savedBig)
   // What it comes to with the saved budget and this spending month
   const bigFrom = bigRule ? bigExpenseThreshold(bigRule, settings.monthlyBudget ?? 0, periodFor(today, settings.cycle)) : undefined
+  // The rule Quick add uses now, said above the tabs: the selected tab is only what is being edited
+  const savedBigFrom = bigExpenseThreshold(savedBig, settings.monthlyBudget ?? 0, periodFor(today, settings.cycle))
+  const savedBigText =
+    savedBig.mode === 'days'
+      ? `${savedBig.days} ${savedBig.days === 1 ? 'day' : 'days'} of budget${savedBigFrom !== undefined ? ` (${thb(Math.ceil(savedBigFrom))} now)` : ''}`
+      : `a fixed ${thb(savedBig.amount)}`
 
   const budgetNum = Number(budget.replace(/,/g, ''))
   const budgetValid = budget === '' || (Number.isFinite(budgetNum) && budgetNum >= 0)
@@ -339,13 +345,21 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
           title="Big expenses"
           description="Quick add asks whether a big expense, like a trip or a wedding gift, should stay out of the daily budget, so it doesn't use up the days after it."
         >
+          <p role="status" className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-ink-soft tnum">
+            <CheckCircleIcon aria-hidden className="h-4 w-4 shrink-0 text-gain-ink" />
+            <span>
+              In use: <b className="font-semibold text-ink">{savedBigText}</b>
+            </span>
+            {bigChanged && <span className="font-semibold text-warn-ink">· not saved yet</span>}
+          </p>
           <SegmentedControl
             ariaLabel="When Quick add asks"
             value={bigMode}
             onChange={setBigMode}
             options={[
-              { value: 'days', label: 'Days of budget' },
-              { value: 'amount', label: 'Fixed amount' },
+              // The tick marks the mode in use, whichever tab is open
+              { value: 'days', label: 'Days of budget', icon: savedBig.mode === 'days' ? <CheckIcon aria-label="In use" className="h-4 w-4" /> : undefined },
+              { value: 'amount', label: 'Fixed amount', icon: savedBig.mode === 'amount' ? <CheckIcon aria-label="In use" className="h-4 w-4" /> : undefined },
             ]}
           />
           {bigMode === 'days' ? (
