@@ -7,7 +7,7 @@ import { localDateStr, thb, thbCompact } from '../../../lib/format'
 import type { SpendTransaction } from '../../../lib/types'
 import { getCategory } from '../categories'
 import { SparkleIcon } from '../../../components/icons'
-import { budgetState, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, categoryBreakdown, habits, spendOf, topSubcategories, totalsFor, weekOf, analysisInsights, type Insight, type Period } from '../logic'
+import { budgetState, countsInBudget, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, categoryBreakdown, habits, spendOf, topSubcategories, totalsFor, weekOf, analysisInsights, type Insight, type Period } from '../logic'
 import { MonthStepper } from '../MonthStepper'
 import { ArrangeButton, ReorderSheet } from '../ReorderSheet'
 import { cardOrder, isDefaultOrder, moveInOrder } from '../../../lib/cardOrder'
@@ -167,12 +167,14 @@ function InsightLines({ insights, rangeName, current }: { insights: Insight[]; r
               <>
                 On pace for {b(thb(i.projected))} {when}
                 {i.budget ? (
-                  i.projected > i.budget ? (
-                    <> · {b(`${thb(i.projected - i.budget)} over`, 'text-loss-ink')} your budget</>
+                  // The budget doesn't cover what was kept outside it
+                  i.projected - (i.outside ?? 0) > i.budget ? (
+                    <> · {b(`${thb(i.projected - (i.outside ?? 0) - i.budget)} over`, 'text-loss-ink')} your budget</>
                   ) : (
                     <> · within your {thb(i.budget)} budget</>
                   )
                 ) : null}
+                {i.outside && i.outside > 0 ? <> · includes {thb(i.outside)} kept outside the budget</> : null}
               </>
             ) : i.kind === 'mover' ? (
               <>
@@ -257,6 +259,8 @@ export function SpendAnalysis() {
   }, [transactions, inRange, period, isCurrent, today])
 
   // A deleted category's budget waits until it's restored
+  // A category's limit is measured without the one-offs kept outside the budget, like the monthly budget
+  const inBudgetByCat = useMemo(() => new Map(totalsFor(inRange.filter(countsInBudget)).byCategory.map((c) => [c.categoryId, c.amount])), [inRange])
   const catBudgets = range === 'month' ? Object.fromEntries(Object.entries(settings.categoryBudgets ?? {}).filter(([id]) => !getCategory(id)?.hidden)) : {}
   const rangeName = range === 'week' ? 'week' : range === 'year' ? 'year' : 'month'
 
@@ -371,10 +375,13 @@ export function SpendAnalysis() {
                 const tone = cat?.tone ?? 'slate'
                 const Icon = cat?.icon
                 const b = catBudgets[categoryId] > 0 ? catBudgets[categoryId] : undefined
-                const state = b ? budgetState(amount, b) : 'ok'
+                // With a limit, the row shows what the limit covers and says what was kept outside it
+                const used = b ? inBudgetByCat.get(categoryId) ?? 0 : amount
+                const outside = b ? Math.max(0, Math.round(amount - used)) : 0
+                const state = b ? budgetState(used, b) : 'ok'
                 const share = totals.expense > 0 ? (amount / totals.expense) * 100 : 0
-                const width = b ? Math.min(100, (amount / b) * 100) : share
-                const subs = categoryBreakdown(inRange, categoryId)
+                const width = b ? Math.min(100, (used / b) * 100) : share
+                const subs = categoryBreakdown(b ? inRange.filter(countsInBudget) : inRange, categoryId)
                 return (
                   <li key={categoryId}>
                     <div className="flex items-center justify-between gap-3 text-sm">
@@ -387,7 +394,7 @@ export function SpendAnalysis() {
                         <span className="truncate">{cat?.label ?? 'Other'}</span>
                       </span>
                       <span className="shrink-0 tnum font-bold text-ink">
-                        {thb(amount)}
+                        {thb(used)}
                         <span className="ml-1 text-xs font-semibold text-ink-muted">{b ? `/ ${thb(b)}` : `${Math.round(share)}%`}</span>
                       </span>
                     </div>
@@ -408,9 +415,10 @@ export function SpendAnalysis() {
                     )}
                     {b && (
                       <p className={`mt-1 text-xs tnum ${state === 'over' ? 'font-semibold text-loss-ink' : state === 'near' ? 'font-semibold text-warn-ink' : 'text-ink-muted'}`}>
-                        {state === 'over' ? `Over by ${thb(amount - b)}` : `${thb(b - amount)} left`}
+                        {state === 'over' ? `Over by ${thb(used - b)}` : `${thb(b - used)} left`}
                       </p>
                     )}
+                    {outside > 0 && <p className="mt-1 text-xs text-ink-muted tnum">Plus {thb(outside)} kept outside the budget</p>}
                   </li>
                 )
               })}

@@ -1,4 +1,4 @@
-import type { CashAccount, PayCycle, SpendCard, SpendGoal, SpendRecurring, SpendTransaction } from '../../lib/types'
+import type { BigExpenseRule, CashAccount, PayCycle, SpendCard, SpendGoal, SpendRecurring, SpendTransaction } from '../../lib/types'
 import { localDateStr, thb } from '../../lib/format'
 import { roundMoney } from '../../lib/money'
 
@@ -524,8 +524,12 @@ export function habits(txns: SpendTransaction[], days: number, limit = 5): Habit
 }
 
 export type Insight =
-  /** Where spending lands by the period's end at today's pace; with the month's budget when there is one */
-  | { kind: 'pace'; projected: number; budget?: number }
+  /**
+   * Where spending lands by the period's end at today's pace; with the month's budget when there is one.
+   * One-offs kept outside the budget are added as they are, not stretched over the days left, and `outside`
+   * says how much of `projected` they are (left out when none), so the budget is compared without them.
+   */
+  | { kind: 'pace'; projected: number; budget?: number; outside?: number }
   /** The category that moved most against the same point last period (+ more, − less) */
   | { kind: 'mover'; categoryId: string; diff: number }
   /** The subcategory bought most often */
@@ -548,7 +552,11 @@ export function analysisInsights(o: {
   const out: Insight[] = []
   const spent = o.inRange.reduce((s, t) => s + spendOf(t), 0)
   if (o.current && spent > 0 && o.elapsedDays >= Math.min(5, Math.ceil(o.totalDays / 2)) && o.elapsedDays < o.totalDays) {
-    out.push({ kind: 'pace', projected: Math.round((spent / o.elapsedDays) * o.totalDays), ...(o.budget ? { budget: o.budget } : {}) })
+    // A one-off kept outside the budget isn't a daily habit: stretching it over the month would claim far more
+    const inBudget = o.inRange.filter(countsInBudget).reduce((s, t) => s + spendOf(t), 0)
+    const outside = Math.round(spent - inBudget)
+    const projected = Math.round(Math.max(0, (inBudget / o.elapsedDays) * o.totalDays)) + outside
+    out.push({ kind: 'pace', projected, ...(o.budget ? { budget: o.budget } : {}), ...(outside !== 0 ? { outside } : {}) })
   }
   if (o.prevSoFar) {
     const byCat = (txns: SpendTransaction[]) => {
@@ -766,16 +774,41 @@ export interface DayAllowance {
   overBy: number
 }
 
-/** Counts against the budget: expenses, except one-offs kept outside it, and money paid back (as a minus) */
-export const countsInBudget = (t: SpendTransaction) => (t.type === 'expense' && !t.outsideBudget) || isPaidBack(t)
+/**
+ * Counts against the budget: expenses and money paid back (as a minus), except one-offs kept outside it.
+ * Money paid back for a one-off kept outside is marked the same way, so it doesn't give the budget back
+ * money it never took.
+ */
+export const countsInBudget = (t: SpendTransaction) => (t.type === 'expense' || isPaidBack(t)) && !t.outsideBudget
 
 const periodDays = (p: Period) => Math.round((parse(p.end).getTime() - parse(p.start).getTime()) / 86_400_000) + 1
 
 /** The budget's usual day: the monthly budget spread evenly over the period */
 export const usualDay = (budget: number, period: Period) => budget / periodDays(period)
 
-/** One expense this big (five usual days) is worth asking whether it belongs in the daily budget */
-export const isBigExpense = (amount: number, budget: number, period: Period) => budget > 0 && amount >= usualDay(budget, period) * 5
+/** What Quick add asks from when the user hasn't chosen: two of the budget's usual days */
+export const DEFAULT_BIG_EXPENSE_RULE: BigExpenseRule = { mode: 'days', days: 2 }
+
+/** The saved rule, or the default when there is none or it is damaged (the saved data comes from the cloud) */
+export function bigExpenseRule(saved?: unknown): BigExpenseRule {
+  const r = saved as { mode?: unknown; days?: unknown; amount?: unknown } | null | undefined
+  const positive = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n) && n > 0
+  if (r?.mode === 'days' && positive(r.days)) return { mode: 'days', days: r.days }
+  if (r?.mode === 'amount' && positive(r.amount)) return { mode: 'amount', amount: r.amount }
+  return DEFAULT_BIG_EXPENSE_RULE
+}
+
+/** The smallest expense that asks, in THB; none without a budget, as there is no daily budget to keep it out of */
+export function bigExpenseThreshold(rule: BigExpenseRule, budget: number, period: Period): number | undefined {
+  if (!(budget > 0)) return undefined
+  return rule.mode === 'days' ? usualDay(budget, period) * rule.days : rule.amount
+}
+
+/** An expense this big is worth asking whether it belongs in the daily budget */
+export function isBigExpense(amount: number, budget: number, period: Period, rule: BigExpenseRule = DEFAULT_BIG_EXPENSE_RULE): boolean {
+  const from = bigExpenseThreshold(rule, budget, period)
+  return from !== undefined && amount >= from
+}
 
 /**
  * Locked each morning: (budget − spent before today) ÷ days left including today.
