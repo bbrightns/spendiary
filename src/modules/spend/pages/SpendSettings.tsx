@@ -358,6 +358,8 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
               value={bigDays}
               onChange={setBigDays}
               error={bigDaysOk ? undefined : 'Whole days, 1 to 31'}
+              // What the days come to right now, beside the label, so it shows while typing
+              hint={(settings.monthlyBudget ?? 0) > 0 ? (bigFrom !== undefined ? `= ${thb(Math.ceil(bigFrom))} now` : undefined) : 'Needs a monthly budget'}
             />
           ) : (
             <NumberField
