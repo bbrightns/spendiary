@@ -130,8 +130,16 @@ export function BuyTrendSheet({ open, onClose, holding: holdingProp, plan }: Buy
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted">
                 <span className="inline-flex items-center gap-1.5"><span className="h-0.5 w-4 rounded-full bg-ink-soft" />Average</span>
                 {current && <span className="inline-flex items-center gap-1.5"><span className="w-4 border-t-2 border-dashed border-invest" />Now</span>}
-                <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-ink-muted" />DCA buy</span>
-                <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full border-2 border-ink-muted" />Other buy</span>
+                {current ? (
+                  <>
+                    <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-gain" />Bought below now</span>
+                    <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-loss" />Above now</span>
+                  </>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-invest" />Buy</span>
+                )}
+                <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full border-2 border-ink-muted" />Not from DCA</span>
+                <span>Bigger dot = more money</span>
                 {trend.sells.length > 0 && <span>▼ Sale</span>}
               </div>
             </div>

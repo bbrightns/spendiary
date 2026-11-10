@@ -29,7 +29,7 @@ import { Button } from '../components/ui/Button'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import { BanknoteIcon, CheckIcon, ChevronDownIcon, CoinsIcon, CopyIcon, DotsHorizontalIcon, DownloadIcon, GroupIcon, ListIcon, LockClosedIcon, PencilIcon, PlusIcon, PortfolioIcon, TrashIcon } from '../components/icons'
+import { BanknoteIcon, BuyTrendIcon, CheckIcon, ChevronDownIcon, CoinsIcon, CopyIcon, DotsHorizontalIcon, DownloadIcon, GroupIcon, ListIcon, LockClosedIcon, PencilIcon, PlusIcon, PortfolioIcon, TrashIcon } from '../components/icons'
 import {
   ASSET_META,
   GRAMS_PER_BAHT_GOLD,
@@ -632,6 +632,13 @@ export function Portfolio() {
                   <PlusIcon className="h-3 w-3" strokeWidth={2.5} />
                   {isStock ? 'Add broker' : 'Add location'}
                 </button>
+                <IconButton
+                  icon={<BuyTrendIcon className="h-3.5 w-3.5" />}
+                  label={`Buy trend of ${h.name}`}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setTrendHolding(h)}
+                />
                 <IconButton
                   icon={<PencilIcon className="h-3.5 w-3.5" />}
                   label={`Edit holding ${h.name}`}

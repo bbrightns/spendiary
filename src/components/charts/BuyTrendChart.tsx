@@ -67,7 +67,8 @@ export function BuyTrendChart({ points, sells, avg, current, active, onActive }:
     const x = (date: string) => PAD.left + ((dayNum(date) - x0) / (x1 - x0)) * iW
     const y = (price: number) => PAD.top + (1 - (price - y0) / (y1 - y0)) * iH
     const maxThb = Math.max(...points.map((p) => p.thb))
-    const r = (thbAmount: number) => 3.5 + 4.5 * Math.sqrt(thbAmount / (maxThb || 1))
+    // 2.5–5px: big enough to tap near, small enough that a busy month stays readable
+    const r = (thbAmount: number) => 2.5 + 2.5 * Math.sqrt(thbAmount / (maxThb || 1))
     return { x, y, r, y0, y1 }
   }, [points, sells, current, W])
 
