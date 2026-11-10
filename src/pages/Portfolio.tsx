@@ -10,6 +10,7 @@ import { Card, Inset } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { AddButton } from '../components/ui/AddButton'
 import { DonutChart } from '../components/charts/DonutChart'
+import { BuyTrendSheet } from '../components/charts/BuyTrendSheet'
 import { NoPricePill, PnLPill, PnLText, UnpricedNote } from '../components/ui/PnL'
 import { HoldingForm } from '../components/forms/HoldingForm'
 import { BuyMoreForm } from '../components/forms/BuyMoreForm'
@@ -28,7 +29,7 @@ import { Button } from '../components/ui/Button'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
-import { BanknoteIcon, CheckIcon, ChevronDownIcon, CoinsIcon, CopyIcon, DotsHorizontalIcon, DownloadIcon, GroupIcon, ListIcon, LockClosedIcon, PencilIcon, PlusIcon, PortfolioIcon, TrashIcon } from '../components/icons'
+import { BanknoteIcon, BuyTrendIcon, CheckIcon, ChevronDownIcon, CoinsIcon, CopyIcon, DotsHorizontalIcon, DownloadIcon, GroupIcon, ListIcon, LockClosedIcon, PencilIcon, PlusIcon, PortfolioIcon, TrashIcon } from '../components/icons'
 import {
   ASSET_META,
   GRAMS_PER_BAHT_GOLD,
@@ -264,6 +265,7 @@ export function Portfolio() {
     setLockedLocationId(locationId ?? null)
     setSellOpen(true)
   }
+  const [trendHolding, setTrendHolding] = useState<Holding | null>(null)
   const [dividendOpen, setDividendOpen] = useState(false)
   const [dividendHolding, setDividendHolding] = useState<Holding | null>(null)
   const openDividend = (h: Holding) => {
@@ -630,6 +632,13 @@ export function Portfolio() {
                   <PlusIcon className="h-3 w-3" strokeWidth={2.5} />
                   {isStock ? 'Add broker' : 'Add location'}
                 </button>
+                <IconButton
+                  icon={<BuyTrendIcon className="h-3.5 w-3.5" />}
+                  label={`Buy trend of ${h.name}`}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setTrendHolding(h)}
+                />
                 <IconButton
                   icon={<PencilIcon className="h-3.5 w-3.5" />}
                   label={`Edit holding ${h.name}`}
@@ -1171,6 +1180,7 @@ export function Portfolio() {
           onBuy={openBuy}
           onSell={openSell}
           onDividend={openDividend}
+          onTrend={setTrendHolding}
           onEdit={openEdit}
           onSetLocation={openSetLocation}
         />
@@ -1222,6 +1232,7 @@ export function Portfolio() {
         fromLocationId={moveTarget?.locId ?? null}
         onClose={() => setMoveTarget(null)}
       />
+      <BuyTrendSheet open={trendHolding !== null} holding={trendHolding} onClose={() => setTrendHolding(null)} />
       <ConfirmDividendModal
         open={dividendOpen}
         holding={dividendHolding}
