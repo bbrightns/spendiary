@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Modal } from '../ui/Modal'
-import { SegmentedControl, type SegmentOption } from '../ui/SegmentedControl'
+import { SegmentedControl } from '../ui/SegmentedControl'
+import { BUY_SELL_SEGMENT_OPTIONS } from './buySellOptions'
 import { NumberField, SelectField } from '../ui/Field'
 import { FormActions } from './FormActions'
 import { useData } from '../../store/DataContext'
@@ -14,21 +15,6 @@ import { isValidRate, rateOrZero } from '../../lib/fx'
 import { isValidPrice } from '../../lib/priceCache'
 import { TransactionDateField } from './TransactionDateField'
 import { AcquisitionSourceField } from './AcquisitionSourceField'
-
-export const BUY_SELL_SEGMENT_OPTIONS: SegmentOption<'buy' | 'sell'>[] = [
-  {
-    value: 'buy',
-    label: '+ Buy more',
-    activeClassName: 'bg-gain-strong text-white shadow-sm',
-    inactiveClassName: 'text-gain-ink hover:bg-gain/10',
-  },
-  {
-    value: 'sell',
-    label: '− Sell',
-    activeClassName: 'bg-danger text-white shadow-sm',
-    inactiveClassName: 'text-loss-ink hover:bg-loss/10',
-  },
-]
 
 interface Props {
   open: boolean
@@ -331,6 +317,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         setPrice(holding.price)
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- resets only when the form opens or the holding changes; a live rate tick must not wipe what was typed
   }, [open, holding])
 
   if (!holding) return null

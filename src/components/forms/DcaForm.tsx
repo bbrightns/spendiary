@@ -99,6 +99,7 @@ export function DcaForm({ open, editing, onClose }: Props) {
     }
     setSuggestions([])
     setShowErrors(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- defaults are picked once when the form opens; later data changes must not reset what was typed
   }, [open, editing])
 
   // When holding selection changes, sync name + ticker + assetClass + reset location

@@ -55,7 +55,8 @@ export function Dividends() {
   const currentYear = now.getFullYear()
   const currentMonth = now.getMonth() + 1 // 1-12
 
-  const records = data.dividendRecords ?? []
+  // Memoised so the fallback [] is not a new array each render, which would re-run every memo below
+  const records = useMemo(() => data.dividendRecords ?? [], [data.dividendRecords])
 
   // KPI Calculations
   const thisYearRecords = useMemo(() => {

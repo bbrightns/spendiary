@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useData } from '../store/DataContext'
-import { openPayLoan, useUndoLoanPayment } from '../modules/spend/PayLoanSheet'
+import { openPayLoan } from '../modules/spend/sheetEvents'
+import { useUndoLoanPayment } from '../modules/spend/useUndoLoanPayment'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card, CardHeader, Inset } from '../components/ui/Card'
 import { TextLink } from '../components/ui/TextLink'
@@ -91,15 +92,27 @@ export function Dashboard() {
       })),
     [alloc],
   )
-  const cash = useMemo(() => totalCash(data, usdThb), [data.cashAccounts, usdThb])
-  const debts = useMemo(() => totalLiabilities(data), [data.liabilities, data.spendCards])
+  // Each helper gets only the fields its memo lists: the Pick<> in calc.ts makes a helper that starts
+  // reading another field fail to compile here, instead of leaving the number stale
+  const cash = useMemo(() => totalCash({ cashAccounts: data.cashAccounts }, usdThb), [data.cashAccounts, usdThb])
+  const debts = useMemo(
+    () => totalLiabilities({ liabilities: data.liabilities, spendCards: data.spendCards }),
+    [data.liabilities, data.spendCards],
+  )
   // Spend credit cards counted in the total (those not already tracked in Debts)
   const countedCards = useMemo(() => (data.spendCards ?? []).filter((c) => !c.excludeFromNetWorth && c.balance > 0), [data.spendCards])
   const cardsOwed = countedCards.reduce((s, c) => s + c.balance, 0)
-  const monthlyDebt = useMemo(() => totalMonthlyDebtPayment(data), [data.liabilities])
+  const monthlyDebt = useMemo(() => totalMonthlyDebtPayment({ liabilities: data.liabilities }), [data.liabilities])
   const grossAssets = portfolio.value + cash
   const debtRatio = grossAssets > 0 ? (debts / grossAssets) * 100 : (debts > 0 ? 100 : 0)
-  const nw = useMemo(() => netWorth(data, usdThb), [data.cashAccounts, data.holdings, data.liabilities, data.spendCards, usdThb])
+  const nw = useMemo(
+    () =>
+      netWorth(
+        { cashAccounts: data.cashAccounts, holdings: data.holdings, liabilities: data.liabilities, spendCards: data.spendCards },
+        usdThb,
+      ),
+    [data.cashAccounts, data.holdings, data.liabilities, data.spendCards, usdThb],
+  )
   const cashInterest = useMemo(
     () => calculateAnnualCashInterest(data.cashAccounts, usdThb),
     [data.cashAccounts, usdThb],

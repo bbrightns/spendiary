@@ -3,7 +3,7 @@ import { Modal } from '../ui/Modal'
 import { SegmentedControl } from '../ui/SegmentedControl'
 import { NumberField, SelectField } from '../ui/Field'
 import { FormActions } from './FormActions'
-import { BUY_SELL_SEGMENT_OPTIONS } from './BuyMoreForm'
+import { BUY_SELL_SEGMENT_OPTIONS } from './buySellOptions'
 import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, hasRealPrice, holdingMetrics } from '../../lib/calc'
@@ -122,6 +122,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
       }
     }
     wasOpen.current = open
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- lockedLocationId is only read on the open transition (wasOpen guard), like the rest of the reset
   }, [open, holding, rate])
 
   if (!holding) return null

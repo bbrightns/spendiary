@@ -83,7 +83,8 @@ export function CashLiquidity() {
   // A USD account's yearly interest: in THB with a real rate, otherwise in USD (never ฿0)
   const yearlyInterest = (currency: string | undefined, interestInOwnCurrency: number, annualEarnedThb: number) =>
     currency === 'USD' && rate <= 0 ? money(interestInOwnCurrency, 'USD') : thb(annualEarnedThb)
-  const accounts = data.cashAccounts ?? []
+  // Memoised so the fallback [] is not a new array each render, which would re-run every memo below
+  const accounts = useMemo(() => data.cashAccounts ?? [], [data.cashAccounts])
 
   // Net worth & total cash
   const currentNetWorth = useMemo(() => netWorth(data, usdThb), [data, usdThb])

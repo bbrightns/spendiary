@@ -7,7 +7,7 @@ import { DotsHorizontalIcon, PlusIcon } from '../../components/icons'
 import { isLiabilityActionableThisMonth } from '../../lib/calc'
 import { useData } from '../../store/DataContext'
 import { spendAccountsItem, spendLoansItem, spendMoreItems, spendOverviewItem, spendRecurringItem, spendSettingsItem, spendTxnsItem } from './nav'
-import { openQuickAdd } from './QuickAddSheet'
+import { openQuickAdd } from './sheetEvents'
 import { SIDE_ACTIVE } from './tones'
 import { useSpend } from './useSpend'
 

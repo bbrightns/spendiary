@@ -4,13 +4,9 @@ import { thbSigned } from '../../lib/format'
 import { useToast } from '../../store/ToastContext'
 import { txnFlow } from './logic'
 import { useSpend } from './useSpend'
+import { SHEET_EVENTS } from './sheetEvents'
 
-const OPEN_EVENT = 'spendiary:open-adjustment'
-
-/** Ask to undo a "Balance adjusted" entry (rows open this instead of Quick add). */
-export function openAdjustment(id: string) {
-  window.dispatchEvent(new CustomEvent<string>(OPEN_EVENT, { detail: id }))
-}
+const OPEN_EVENT = SHEET_EVENTS.adjustment
 
 /**
  * Undo a balance typed in on Edit wallet: the entry goes and the wallet moves back by the same

@@ -13,11 +13,6 @@ import { SHEET_EVENTS } from './sheetEvents'
 
 const OPEN_EVENT = SHEET_EVENTS.import
 
-/** Open the statement import sheet from anywhere. */
-export function openImport() {
-  window.dispatchEvent(new CustomEvent(OPEN_EVENT))
-}
-
 const SHOWN = 100
 
 /** "🍜 Food" → "Food": category names from other apps often start with an emoji. */

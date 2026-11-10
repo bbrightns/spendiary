@@ -926,7 +926,7 @@ export function sortCashAccounts<T extends { name: string; balance: number | str
   })
 }
 
-export function totalCash(data: SpendiaryData, usdThb?: number | null): number {
+export function totalCash(data: Pick<SpendiaryData, 'cashAccounts'>, usdThb?: number | null): number {
   const rate = rateOrZero(usdThb)
   return data.cashAccounts.reduce((sum, a) => {
     const isUsd = a.currency === 'USD'
@@ -1080,7 +1080,7 @@ export const DEBT_CATEGORIES: Record<
 }
 
 /** Total outstanding liabilities in THB */
-export function totalLiabilities(data: SpendiaryData): number {
+export function totalLiabilities(data: Pick<SpendiaryData, 'liabilities' | 'spendCards'>): number {
   const debts = (data.liabilities ?? []).reduce((sum, l) => sum + (Number(l.balance) || 0), 0)
   // Spend credit cards count too, unless one is already tracked in Debts
   const cards = (data.spendCards ?? [])
@@ -1090,7 +1090,7 @@ export function totalLiabilities(data: SpendiaryData): number {
 }
 
 /** Total monthly debt service / installment payments in THB */
-export function totalMonthlyDebtPayment(data: SpendiaryData): number {
+export function totalMonthlyDebtPayment(data: Pick<SpendiaryData, 'liabilities'>): number {
   return (data.liabilities ?? []).reduce((sum, l) => sum + (Number(l.monthlyPayment) || 0), 0)
 }
 
@@ -1294,7 +1294,10 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
 /* --------------------------- Net worth -------------------------- */
 
 /** Net worth is total assets (cash + portfolio) minus total liabilities. */
-export function netWorth(data: SpendiaryData, usdThb?: number | null): number {
+export function netWorth(
+  data: Pick<SpendiaryData, 'cashAccounts' | 'holdings' | 'liabilities' | 'spendCards'>,
+  usdThb?: number | null,
+): number {
   return totalCash(data, usdThb) + portfolioValue(data.holdings) - totalLiabilities(data)
 }
 

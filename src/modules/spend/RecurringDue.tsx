@@ -5,30 +5,14 @@ import { TextLink } from '../../components/ui/TextLink'
 import { CheckIcon } from '../../components/icons'
 import { useToast } from '../../store/ToastContext'
 import { localDateStr, thb, thbExact } from '../../lib/format'
-import type { SpendRecurring } from '../../lib/types'
-import { RepeatIcon, TransferIcon, getCategory } from './categories'
+import { RepeatIcon } from './categories'
+import { recurringAmountClass, recurringLook, shortDay } from './recurringLook'
 import { doneWord, nextOccurrence, recurringSign } from './logic'
 import { paidDetail } from './billPaid'
-import { openQuickAdd } from './QuickAddSheet'
-import { TONES } from './tones'
+import { openQuickAdd } from './sheetEvents'
 import { recurringInput, useSpend } from './useSpend'
 
 const UPCOMING_DAYS = 7
-
-export const shortDay = (iso: string) => {
-  const [y, m, d] = iso.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
-}
-
-/** Icon and color for a recurring item: its category's, or the transfer look */
-export function recurringLook(rec: Pick<SpendRecurring, 'type' | 'categoryId'>) {
-  if (rec.type === 'transfer') return { Icon: TransferIcon, tone: TONES.sky.chip }
-  const cat = getCategory(rec.categoryId)
-  return { Icon: cat?.icon ?? RepeatIcon, tone: TONES[cat?.tone ?? 'slate'].chip }
-}
-
-/** Amount color for a recurring item */
-export const recurringAmountClass = (type: SpendRecurring['type']) => (type === 'income' ? 'text-gain-ink' : type === 'transfer' ? 'text-ink-muted' : 'text-ink')
 
 const daysFrom = (today: string, iso: string) => {
   const p = (s: string) => {

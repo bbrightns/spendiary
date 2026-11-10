@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { SpendTxnType } from '../../lib/types'
-import { openQuickAdd } from './QuickAddSheet'
+import { openQuickAdd } from './sheetEvents'
 
 /** The query that opens Quick Add on load; the installed app's shortcuts point here (see manifest). */
 export const QUICK_ADD_PARAM = 'add'
