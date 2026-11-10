@@ -122,6 +122,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
       }
     }
     wasOpen.current = open
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- lockedLocationId is only read on the open transition (wasOpen guard), like the rest of the reset
   }, [open, holding, rate])
 
   if (!holding) return null

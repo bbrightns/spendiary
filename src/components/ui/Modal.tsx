@@ -126,7 +126,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
       if (openStack.length === 0) document.body.style.overflow = ''
       previouslyFocused?.focus()
     }
-  }, [open])
+  }, [open, titleId])
 
   if (!open) return null
 

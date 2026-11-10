@@ -331,6 +331,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         setPrice(holding.price)
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- resets only when the form opens or the holding changes; a live rate tick must not wipe what was typed
   }, [open, holding])
 
   if (!holding) return null
