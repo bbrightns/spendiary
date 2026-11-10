@@ -4,7 +4,7 @@
  */
 import {
   ArrowDownRight as LArrowDownRight, ArrowLeftRight, ArrowUpRight as LArrowUpRight, Bell, Calendar, CalendarSync, Car,
-  ChartPie, Check, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, CircleHelp, Clock, Coins, Command, Copy,
+  ChartLine, ChartPie, Check, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, CircleHelp, Clock, Coins, Command, Copy,
   CreditCard, Database, Download, Ellipsis, FlaskConical, HandCoins, House, Info, Keyboard, Layers, LayoutGrid, List,
   Lock, LockOpen, LogOut, Minus, RotateCw, Pencil, Plus, Receipt, ReceiptText, Scale, Search, Settings, ShoppingBag, Sparkle,
   Sparkles, Tag, Target, Trash2, TreePalm, TrendingUp, TriangleAlert, Undo, Upload, Wallet, X,
@@ -90,6 +90,8 @@ export const PackageIcon = appIcon(Package, 'PackageIcon')
 export const LandmarkIcon = appIcon(Landmark, 'LandmarkIcon')
 export const TrendUpIcon = appIcon(TrendingUp, 'TrendUpIcon')
 export const TrendDownIcon = appIcon(TrendingDown, 'TrendDownIcon')
+/** Buy trend: each buy's price against the average and today */
+export const BuyTrendIcon = appIcon(ChartLine, 'BuyTrendIcon')
 export const LightbulbIcon = appIcon(Lightbulb, 'LightbulbIcon')
 export const HourglassIcon = appIcon(Hourglass, 'HourglassIcon')
 export const StarIcon = appIcon(Star, 'StarIcon')

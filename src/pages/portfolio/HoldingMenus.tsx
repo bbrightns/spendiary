@@ -4,20 +4,22 @@ import { useToast } from '../../store/ToastContext'
 import type { Holding, HoldingLocation } from '../../lib/types'
 import { hasLocations, locationNoun, supportsLocations } from '../../lib/locations'
 import { Popover, PopoverDivider, PopoverOption } from '../../components/ui/Popover'
-import { CashflowIcon, DividendIcon, LockClosedIcon, LockOpenIcon, MinusIcon, PencilIcon, PlusIcon, TrashIcon } from '../../components/icons'
+import { BuyTrendIcon, CashflowIcon, DividendIcon, LockClosedIcon, LockOpenIcon, MinusIcon, PencilIcon, PlusIcon, TrashIcon } from '../../components/icons'
 
 const ICON = 'h-4 w-4'
 /** Shown on an action while its holding or location is locked */
 const LOCKED = 'Locked'
 
-/** The ⋯ menu of a holding row: lock, buy, sell, record a dividend, edit. */
-export function HoldingActionMenu({ holding, anchorRef, onClose, onBuy, onSell, onDividend, onEdit, onSetLocation }: {
+/** The ⋯ menu of a holding row: lock, buy, sell, record a dividend, see the buy trend, edit. */
+export function HoldingActionMenu({ holding, anchorRef, onClose, onBuy, onSell, onDividend, onTrend, onEdit, onSetLocation }: {
   holding: Holding
   anchorRef: RefObject<HTMLElement | null>
   onClose: () => void
   onBuy: (h: Holding) => void
   onSell: (h: Holding) => void
   onDividend: (h: Holding) => void
+  /** Where each buy was made, against the average and today's price */
+  onTrend: (h: Holding) => void
   onEdit: (h: Holding) => void
   /** Name the broker / wallet that holds this whole holding, before splitting it */
   onSetLocation?: (h: Holding) => void
@@ -55,6 +57,9 @@ export function HoldingActionMenu({ holding, anchorRef, onClose, onBuy, onSell, 
           Record dividend
         </PopoverOption>
       )}
+      <PopoverOption icon={<BuyTrendIcon className={ICON} />} onClick={run(onTrend)}>
+        Buy trend
+      </PopoverOption>
       <PopoverDivider />
       {onSetLocation && supportsLocations(holding.assetClass) && !hasLocations(holding) && holding.units > 0 && (
         <PopoverOption icon={<CashflowIcon className={ICON} />} disabled={locked} hint={locked ? LOCKED : undefined} onClick={run(onSetLocation)}>

@@ -8,12 +8,14 @@ import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { DcaForm } from '../components/forms/DcaForm'
 import { ConfirmDcaBuyForm } from '../components/forms/ConfirmDcaBuyForm'
+import { BuyTrendSheet } from '../components/charts/BuyTrendSheet'
+import { IconButton } from '../components/ui/IconButton'
 import { ConfirmDividendModal } from '../components/forms/ConfirmDividendModal'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { useLivePrices } from '../hooks/useLivePrices'
 import { isValidPrice } from '../lib/priceCache'
-import { CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, PencilIcon, PlusIcon } from '../components/icons'
+import { BuyTrendIcon, CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, PencilIcon, PlusIcon } from '../components/icons'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { fixedCostRecurring, inPeriod, perMonth, periodFor, periodLabel } from '../modules/spend/logic'
 import { flowVerdict, livingAverage, livingPace, livingSpend, monthlyFlow } from '../modules/spend/monthlyFlow'
@@ -178,6 +180,9 @@ export function DcaPlanner() {
       setSearchParams(newParams, { replace: true })
     }
   }, [searchParams, setSearchParams])
+
+  // Buy trend of one plan
+  const [trendPlan, setTrendPlan] = useState<DcaPlan | null>(null)
 
   // Log buy form
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -542,6 +547,16 @@ export function DcaPlanner() {
                                     </div>
                                   )}
                               </div>
+                              {p.assetClass !== 'cash' && !p.cashAccountId && (
+                                <IconButton
+                                  size="sm"
+                                  icon={<BuyTrendIcon className="h-4 w-4" />}
+                                  label={`Buy trend of ${p.name}`}
+                                  onClick={(e) => { e.stopPropagation(); setTrendPlan(p) }}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  className="shrink-0"
+                                />
+                              )}
                             </div>
                           </li>
                           </React.Fragment>
@@ -730,6 +745,7 @@ export function DcaPlanner() {
           canReset={!isDefaultOrder(DCA_CARD_IDS, order)}
           onReset={() => saveOrder([...DCA_CARD_IDS])}
         />
+        <BuyTrendSheet open={trendPlan !== null} plan={trendPlan} onClose={() => setTrendPlan(null)} />
         <ConfirmDcaBuyForm
           open={confirmOpen}
           plan={confirming}

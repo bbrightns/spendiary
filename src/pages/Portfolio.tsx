@@ -10,6 +10,7 @@ import { Card, Inset } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { AddButton } from '../components/ui/AddButton'
 import { DonutChart } from '../components/charts/DonutChart'
+import { BuyTrendSheet } from '../components/charts/BuyTrendSheet'
 import { NoPricePill, PnLPill, PnLText, UnpricedNote } from '../components/ui/PnL'
 import { HoldingForm } from '../components/forms/HoldingForm'
 import { BuyMoreForm } from '../components/forms/BuyMoreForm'
@@ -264,6 +265,7 @@ export function Portfolio() {
     setLockedLocationId(locationId ?? null)
     setSellOpen(true)
   }
+  const [trendHolding, setTrendHolding] = useState<Holding | null>(null)
   const [dividendOpen, setDividendOpen] = useState(false)
   const [dividendHolding, setDividendHolding] = useState<Holding | null>(null)
   const openDividend = (h: Holding) => {
@@ -1171,6 +1173,7 @@ export function Portfolio() {
           onBuy={openBuy}
           onSell={openSell}
           onDividend={openDividend}
+          onTrend={setTrendHolding}
           onEdit={openEdit}
           onSetLocation={openSetLocation}
         />
@@ -1222,6 +1225,7 @@ export function Portfolio() {
         fromLocationId={moveTarget?.locId ?? null}
         onClose={() => setMoveTarget(null)}
       />
+      <BuyTrendSheet open={trendHolding !== null} holding={trendHolding} onClose={() => setTrendHolding(null)} />
       <ConfirmDividendModal
         open={dividendOpen}
         holding={dividendHolding}
