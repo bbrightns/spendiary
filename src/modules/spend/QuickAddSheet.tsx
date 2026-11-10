@@ -9,7 +9,7 @@ import { useData } from '../../store/DataContext'
 import { localDateStr, localTimeStr, thb, thbExact, thbSigned } from '../../lib/format'
 import type { SpendSettings, SpendTransaction, SpendTxnType } from '../../lib/types'
 import { categoriesFor, getCategory } from './categories'
-import { doneWord, isBigExpense, noteTitle, periodFor, walletOverdraw } from './logic'
+import { bigExpenseRule, doneWord, inPeriod, isBigExpense, noteTitle, periodFor, walletOverdraw } from './logic'
 import { TYPE_ACTIVE } from './tones'
 import { useSpend, type PayMethod, type SpendTxnInput } from './useSpend'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
@@ -227,18 +227,28 @@ export function QuickAddSheet() {
       )
     : undefined
   const overdrawName = overdraw && methods.find((m) => m.id === overdraw.accountId)?.name
-  // A big one-off (five of the budget's usual days) asks whether it belongs in the daily budget.
-  // An entry already kept out keeps the switch, so it can be put back.
-  const big = amountValid && isBigExpense(value, settings.monthlyBudget ?? 0, periodFor(date, settings.cycle))
-  const wasOutside = !!editId && !!transactions.find((t) => t.id === editId)?.outsideBudget
-  const offerOutside = type === 'expense' && !splitting && (big || wasOutside)
-  // Hidden again (amount lowered, type changed): it doesn't apply
-  const keepOut = offerOutside && outside
   const isPaidBack = type === 'income' && paidBack
+  // A big one-off (from the amount or days of budget chosen in Settings) asks whether it belongs in the daily budget.
+  // An entry already kept out, or switched on here, keeps the switch, so it can be put back and never vanishes unseen
+  // when the amount is lowered.
+  const spendPeriod = periodFor(date, settings.cycle)
+  const big = amountValid && isBigExpense(value, settings.monthlyBudget ?? 0, spendPeriod, bigExpenseRule(settings.bigExpenseRule))
+  const wasOutside = !!editId && !!transactions.find((t) => t.id === editId)?.outsideBudget
+  // Money paid back for a one-off kept outside the budget must stay outside too, or it would give the budget money
+  // back that it never spent. Asked only when such a one-off exists that month (not per category, so picking a
+  // category below never makes the switch appear and push the picker down under the finger).
+  const repaysOutside =
+    isPaidBack && transactions.some((t) => t.type === 'expense' && t.outsideBudget && inPeriod(spendPeriod, t.date))
+  const offerOutside =
+    (type === 'expense' && !splitting && (big || wasOutside || outside)) || (isPaidBack && (repaysOutside || wasOutside || outside))
+  // Hidden again (type changed): it doesn't apply
+  const keepOut = offerOutside && outside
   // Paid back money comes off a spending category, so it picks from those
   const togglePaidBack = () => {
     const next = !paidBack
     setPaidBack(next)
+    // The switch means something else for money paid back
+    setOutside(false)
     const kind = next ? 'expense' : 'income'
     if (getCategory(categoryId)?.type !== kind) {
       setCategoryId(categoriesFor(kind)[0]?.id ?? '')
@@ -249,6 +259,8 @@ export function QuickAddSheet() {
   const changeType = (t: SpendTxnType) => {
     setType(t)
     setPaidBack(false)
+    // Tapping the type it already has changes nothing, so a switch already on stays on
+    if (t !== type) setOutside(false)
     if (t !== 'transfer' && getCategory(categoryId)?.type !== t) {
       setCategoryId(categoriesFor(t)[0]?.id ?? '')
       setSubcategory('')
@@ -457,28 +469,6 @@ export function QuickAddSheet() {
             </p>
           )}
 
-          {offerOutside && (
-            <button
-              type="button"
-              role="switch"
-              aria-checked={outside}
-              onClick={() => setOutside((v) => !v)}
-              className={`-mt-2 flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition-colors cursor-pointer ${
-                outside ? 'border-brand/40 bg-brand-soft/40' : 'border-line hover:bg-surface-muted/50'
-              }`}
-            >
-              <span>
-                <span className="block text-sm font-bold text-ink">Keep out of the daily budget</span>
-                <span className="block text-xs text-ink-muted">
-                  {outside
-                    ? "Counts in totals and Analysis, not in what's left each day"
-                    : 'A one-off, like a trip or a big buy? Today and the rest of the month stay usable'}
-                </span>
-              </span>
-              <SwitchVisual on={outside} />
-            </button>
-          )}
-
           {type === 'income' && (
             <button
               type="button"
@@ -498,6 +488,32 @@ export function QuickAddSheet() {
                 </span>
               </span>
               <SwitchVisual on={paidBack} />
+            </button>
+          )}
+
+          {offerOutside && (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={outside}
+              onClick={() => setOutside((v) => !v)}
+              className={`-mt-2 flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition-colors cursor-pointer ${
+                outside ? 'border-brand/40 bg-brand-soft/40' : 'border-line hover:bg-surface-muted/50'
+              }`}
+            >
+              <span>
+                <span className="block text-sm font-bold text-ink">{isPaidBack ? 'Repays a one-off kept outside the budget' : 'Keep out of the daily budget'}</span>
+                <span className="block text-xs text-ink-muted">
+                  {isPaidBack
+                    ? outside
+                      ? "Stays outside too, so the budget isn't given money it never spent"
+                      : 'Leave off if it repays everyday spending'
+                    : outside
+                      ? "Counts in totals and Analysis, not in what's left each day"
+                      : 'A one-off, like a trip or a big buy? Today and the rest of the month stay usable'}
+                </span>
+              </span>
+              <SwitchVisual on={outside} />
             </button>
           )}
 

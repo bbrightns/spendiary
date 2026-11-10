@@ -5,10 +5,11 @@ import { ConfirmModal } from '../../../components/ui/ConfirmModal'
 import { DownloadIcon, TrashIcon, UploadIcon } from '../../../components/icons'
 import { DataAction, DataCard, DataRow } from '../../../components/ui/DataCard'
 import { SegmentedControl } from '../../../components/ui/SegmentedControl'
+import { NumberField } from '../../../components/ui/Field'
 import { useToast } from '../../../store/ToastContext'
 import { localDateStr, thb, thbExact } from '../../../lib/format'
-import type { PayCycle, WeekendShift } from '../../../lib/types'
-import { DEFAULT_BILL_REMINDER_DAYS, isCalendar, periodFor, periodLabel, upcomingPaydays } from '../logic'
+import type { BigExpenseRule, PayCycle, WeekendShift } from '../../../lib/types'
+import { DEFAULT_BIG_EXPENSE_RULE, DEFAULT_BILL_REMINDER_DAYS, bigExpenseRule, bigExpenseThreshold, isCalendar, periodFor, periodLabel, upcomingPaydays, usualDay } from '../logic'
 import { useSpend } from '../useSpend'
 import { categoriesFor, getCategory } from '../categories'
 import { openImport } from '../ImportSheet'
@@ -106,6 +107,21 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
   const catTotal = Object.entries(catParsed).reduce((s, [id, n]) => (getCategory(id)?.hidden ? s : s + n), 0)
   const catOverMonthly = !!settings.monthlyBudget && catTotal > settings.monthlyBudget
   const catChanged = JSON.stringify(catParsed) !== JSON.stringify(Object.fromEntries(Object.entries(settings.categoryBudgets ?? {}).filter(([, n]) => n > 0)))
+
+  // When Quick add asks about a big expense: each mode keeps its own number, so switching back and forth loses nothing
+  const savedBig = bigExpenseRule(settings.bigExpenseRule)
+  const [bigMode, setBigMode] = useState<BigExpenseRule['mode']>(savedBig.mode)
+  const [bigDays, setBigDays] = useState(String(savedBig.mode === 'days' ? savedBig.days : 2))
+  const [bigAmount, setBigAmount] = useState(savedBig.mode === 'amount' ? String(savedBig.amount) : '1000')
+  const bigDaysNum = Number(bigDays)
+  const bigAmountNum = Number(bigAmount)
+  const bigDaysOk = bigDays !== '' && Number.isInteger(bigDaysNum) && bigDaysNum >= 1 && bigDaysNum <= 31
+  const bigAmountOk = bigAmount !== '' && Number.isFinite(bigAmountNum) && bigAmountNum > 0
+  const bigValid = bigMode === 'days' ? bigDaysOk : bigAmountOk
+  const bigRule: BigExpenseRule | null = !bigValid ? null : bigMode === 'days' ? { mode: 'days', days: bigDaysNum } : { mode: 'amount', amount: bigAmountNum }
+  const bigChanged = bigRule !== null && JSON.stringify(bigRule) !== JSON.stringify(savedBig)
+  // What it comes to with the saved budget and this spending month
+  const bigFrom = bigRule ? bigExpenseThreshold(bigRule, settings.monthlyBudget ?? 0, periodFor(today, settings.cycle)) : undefined
 
   const budgetNum = Number(budget.replace(/,/g, ''))
   const budgetValid = budget === '' || (Number.isFinite(budgetNum) && budgetNum >= 0)
@@ -309,6 +325,68 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
               onClick={() => {
                 updateSettings({ monthlyBudget: budget === '' || budgetNum === 0 ? undefined : budgetNum })
                 showToast(budget === '' ? 'Budget turned off' : `Budget set to ${thbExact(budgetNum)}`)
+              }}
+            >
+              Save
+            </Button>
+          </div>
+        </Section>
+      )}
+
+      {only === 'budgets' && (
+        <Section
+          id="big-expense"
+          title="Big expenses"
+          description="Quick add asks whether a big expense, like a trip or a wedding gift, should stay out of the daily budget, so it doesn't use up the days after it."
+        >
+          <SegmentedControl
+            ariaLabel="When Quick add asks"
+            value={bigMode}
+            onChange={setBigMode}
+            options={[
+              { value: 'days', label: 'Days of budget' },
+              { value: 'amount', label: 'Fixed amount' },
+            ]}
+          />
+          {bigMode === 'days' ? (
+            <NumberField
+              label="Ask from"
+              suffix="days"
+              step={1}
+              min={1}
+              max={31}
+              value={bigDays}
+              onChange={setBigDays}
+              error={bigDaysOk ? undefined : 'Whole days, 1 to 31'}
+              // What the days come to right now, beside the label, so it shows while typing
+              hint={bigFrom !== undefined ? `= ${thb(Math.ceil(bigFrom))} now` : undefined}
+            />
+          ) : (
+            <NumberField
+              label="Ask from"
+              prefix="฿"
+              value={bigAmount}
+              onChange={setBigAmount}
+              error={bigAmountOk ? undefined : 'Enter an amount above 0'}
+            />
+          )}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* The amount it comes to sits beside the field; this line only says where it comes from */}
+            <p className="text-xs text-ink-muted tnum">
+              {(settings.monthlyBudget ?? 0) > 0
+                ? bigMode === 'days'
+                  ? `A usual day is ${thb(Math.round(usualDay(settings.monthlyBudget ?? 0, periodFor(today, settings.cycle))))}, your budget spread over this month.`
+                  : null
+                : 'Set a monthly budget first. Without one there is no daily budget, so Quick add never asks.'}
+            </p>
+            <Button
+              size="sm"
+              disabled={!bigChanged}
+              onClick={() => {
+                if (!bigRule) return
+                // The default isn't stored, so it can still change later
+                updateSettings({ bigExpenseRule: JSON.stringify(bigRule) === JSON.stringify(DEFAULT_BIG_EXPENSE_RULE) ? undefined : bigRule })
+                showToast('Big expense rule saved')
               }}
             >
               Save

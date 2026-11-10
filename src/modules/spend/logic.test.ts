@@ -32,6 +32,10 @@ import {
   spendOf,
   totalsFor,
   isBigExpense,
+  bigExpenseRule,
+  bigExpenseThreshold,
+  countsInBudget,
+  DEFAULT_BIG_EXPENSE_RULE,
   usualDay,
   dueRecurring,
   occurrencesBetween,
@@ -114,6 +118,16 @@ describe('analysisInsights', () => {
       { kind: 'mover', categoryId: 'food', diff: 1500 },
       { kind: 'habit', label: 'Milk tea', count: 3, amount: 195 },
     ])
+  })
+
+  it('does not stretch a one-off kept outside the budget over the month, nor count it against the budget', () => {
+    const out = analysisInsights({
+      ...base,
+      budget: 25_000,
+      inRange: [txn({ amount: 1000 }), txn({ amount: 10_000, outsideBudget: true })],
+    })
+    // 1,000 in 10 days is 3,000 for the month, plus the 10,000 as it is
+    expect(out).toEqual([{ kind: 'pace', projected: 13_000, budget: 25_000, outside: 10_000 }])
   })
 
   it('stays quiet when there is little to say', () => {
@@ -434,10 +448,63 @@ describe('big one-off expenses', () => {
     expect(usualDay(3100, p)).toBe(100)
   })
 
-  it('calls an expense of five usual days or more big, and nothing big without a budget', () => {
-    expect(isBigExpense(499, 3100, p)).toBe(false)
-    expect(isBigExpense(500, 3100, p)).toBe(true)
+  it('calls an expense of two usual days or more big unless a rule says otherwise, and nothing big without a budget', () => {
+    expect(isBigExpense(199, 3100, p)).toBe(false)
+    expect(isBigExpense(200, 3100, p)).toBe(true)
     expect(isBigExpense(1_000_000, 0, p)).toBe(false)
+  })
+
+  it('follows a days rule, scaled by the budget', () => {
+    const five = { mode: 'days', days: 5 } as const
+    expect(isBigExpense(499, 3100, p, five)).toBe(false)
+    expect(isBigExpense(500, 3100, p, five)).toBe(true)
+    // A bigger budget raises the bar: 5 usual days of 6,200 is 1,000
+    expect(isBigExpense(999, 6200, p, five)).toBe(false)
+    expect(isBigExpense(1000, 6200, p, five)).toBe(true)
+  })
+
+  it('follows a fixed amount, whatever the budget', () => {
+    const fixed = { mode: 'amount', amount: 1000 } as const
+    expect(isBigExpense(999, 3100, p, fixed)).toBe(false)
+    expect(isBigExpense(1000, 3100, p, fixed)).toBe(true)
+    expect(isBigExpense(1000, 310_000, p, fixed)).toBe(true)
+  })
+
+  it('asks about nothing without a budget, even from a fixed amount: there is no daily budget to keep it out of', () => {
+    expect(isBigExpense(5000, 0, p, { mode: 'amount', amount: 1000 })).toBe(false)
+    expect(bigExpenseThreshold({ mode: 'amount', amount: 1000 }, 0, p)).toBeUndefined()
+    expect(bigExpenseThreshold({ mode: 'days', days: 2 }, 3100, p)).toBe(200)
+    expect(bigExpenseThreshold({ mode: 'amount', amount: 1000 }, 3100, p)).toBe(1000)
+  })
+
+  it('reads a saved rule, falling back to the default when it is missing or damaged', () => {
+    expect(bigExpenseRule({ mode: 'days', days: 3 })).toEqual({ mode: 'days', days: 3 })
+    expect(bigExpenseRule({ mode: 'amount', amount: 1500 })).toEqual({ mode: 'amount', amount: 1500 })
+    for (const bad of [undefined, null, 'days', {}, { mode: 'days', days: 0 }, { mode: 'days', days: '3' }, { mode: 'amount', amount: -5 }, { mode: 'amount', amount: NaN }, { mode: 'weeks', days: 2 }]) {
+      expect(bigExpenseRule(bad)).toEqual(DEFAULT_BIG_EXPENSE_RULE)
+    }
+  })
+})
+
+describe('what counts in the budget', () => {
+  it('counts expenses and money paid back, but not one-offs kept outside it nor what repays them', () => {
+    expect(countsInBudget(txn({}))).toBe(true)
+    expect(countsInBudget(txn({ outsideBudget: true }))).toBe(false)
+    expect(countsInBudget(txn({ type: 'income', paidBack: true }))).toBe(true)
+    expect(countsInBudget(txn({ type: 'income', paidBack: true, outsideBudget: true }))).toBe(false)
+    expect(countsInBudget(txn({ type: 'income' }))).toBe(false)
+    expect(countsInBudget(txn({ type: 'transfer' }))).toBe(false)
+  })
+
+  it("doesn't give the day money back for a one-off kept outside the budget", () => {
+    const p = { start: '2026-10-01', end: '2026-10-31' }
+    const outside = txn({ amount: 4000, date: '2026-10-06', outsideBudget: true })
+    const repaid = (extra: Partial<SpendTransaction>) => txn({ type: 'income', paidBack: true, amount: 3000, date: '2026-10-07', ...extra })
+    const withRepay = (r: SpendTransaction) => dayAllowance(3100, p, [outside, r], '2026-10-22').allowance
+    // Marked outside too: nothing was spent from the budget, so 3,100 over the 10 days left
+    expect(withRepay(repaid({ outsideBudget: true }))).toBe(310)
+    // Not marked (it repaid everyday spending): the 3,000 comes off what was spent, as before
+    expect(withRepay(repaid({}))).toBe(610)
   })
 })
 

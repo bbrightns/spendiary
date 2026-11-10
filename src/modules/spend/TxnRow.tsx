@@ -53,8 +53,9 @@ export function TxnRow({ txn, methods, onTagClick, account }: Props) {
       ? // A loan payment goes to the loan, not to another wallet
         `${from ?? '—'} → ${txn.liabilityId && !txn.toAccountId ? 'loan payment' : walletName(txn.toAccountId) ?? '—'}${txn.alreadyInBalance ? ' · already in balance' : ''}`
       : [
-          // The title already says the subcategory when there was no note
-          cat?.label && txn.subcategory && noteName ? `${cat.label} › ${txn.subcategory}` : cat?.label,
+          // Always "Food › Snack" when a subcategory is picked, even if the title already says it (no note):
+          // otherwise a title from the note and one from the subcategory look the same
+          cat?.label && txn.subcategory ? `${cat.label} › ${txn.subcategory}` : cat?.label,
           // Early in the line, so it's never the part a long wallet name cuts off
           txn.outsideBudget && 'outside budget',
           txn.paidBack && 'paid back',

@@ -420,9 +420,17 @@ export interface RemovedAccount {
   pending?: number
 }
 
+/**
+ * When Quick add asks whether an expense belongs in the daily budget: from so many of the budget's usual
+ * days (the monthly budget spread over the spending month), or from a fixed amount in THB
+ */
+export type BigExpenseRule = { mode: 'days'; days: number } | { mode: 'amount'; amount: number }
+
 export interface SpendSettings {
   /** Monthly spending budget in THB, drives the "per day left" readout */
   monthlyBudget?: number
+  /** When a big expense asks to be kept out of the daily budget; 2 usual days when unset */
+  bigExpenseRule?: BigExpenseRule
   /** Payment method (cash account or card id) preselected in Quick Add */
   defaultAccountId?: string
   /** Payment methods pinned as one-tap chips in Quick Add */

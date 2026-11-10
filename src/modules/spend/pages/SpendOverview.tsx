@@ -72,11 +72,11 @@ export function SpendOverview() {
     let outside = 0
     for (const t of transactions) {
       if (!inPeriod(period, t.date)) continue
-      // Money paid back (a split bill) counts as a minus
+      // Money paid back (a split bill) counts as a minus, on either side
       if (countsInBudget(t)) spent += spendOf(t)
-      else if (t.type === 'expense') outside += t.amount
+      else outside += spendOf(t)
     }
-    return { spentPeriod: Math.max(0, spent), outsidePeriod: outside }
+    return { spentPeriod: Math.max(0, spent), outsidePeriod: Math.max(0, outside) }
   }, [transactions, period])
 
   // Last 7 days ending today, with what was spent each day
