@@ -14,7 +14,7 @@ import { accountTotals, accountTxnsPath, cardCycle, unbilledOpening } from './lo
 import { CARD_COLORS, CARD_INK, cardFace } from './cardColor'
 import { ColorPicker } from '../../components/ui/ColorPicker'
 import { useSpend, type PayMethod } from './useSpend'
-import { openQuickAdd } from './QuickAddSheet'
+import { openQuickAdd } from './sheetEvents'
 import { EditAccountModal } from '../../components/forms/EditCashAccountModal'
 import { useData } from '../../store/DataContext'
 import { FieldWrap } from '../../components/ui/Field'

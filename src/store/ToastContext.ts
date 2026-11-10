@@ -1,5 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
-import { newId } from '../lib/id'
+import { createContext, useContext } from 'react'
 
 export type ToastType = 'success' | 'info' | 'error' | 'warn'
 
@@ -68,65 +67,11 @@ interface ToastContextValue {
   hideResult: (onlyIfLoading?: boolean) => void
 }
 
-const ToastContext = createContext<ToastContextValue | null>(null)
-
-const DEFAULT_TITLES: Record<Exclude<ResultStatus, 'loading'>, string> = {
-  success: 'Done!',
-  error: 'Something went wrong',
-  info: 'All set',
-  warn: 'Heads up',
-}
-
-const newToastId = (prefix: string) => `${prefix}-${newId()}`
-
-export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toasts, setToasts] = useState<ToastItem[]>([])
-  const [result, setResult] = useState<ResultState | null>(null)
-
-  const dismissToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id))
-  }, [])
-
-  const showResult = useCallback((next: Omit<ResultState, 'id'>) => {
-    setResult({ ...next, id: newToastId('result') })
-  }, [])
-
-  const hideResult = useCallback((onlyIfLoading = false) => {
-    setResult((prev) => (onlyIfLoading && prev && prev.status !== 'loading' ? prev : null))
-  }, [])
-
-  const showToast = useCallback(
-    (message: string, type: ToastType = 'success', action?: ToastAction, options?: ToastOptions) => {
-      if (type === 'error' || options?.celebrate || options?.popup) {
-        const status: ResultStatus = type
-        setResult({
-          id: newToastId('result'),
-          status,
-          title: options?.title ?? DEFAULT_TITLES[status],
-          message,
-          confetti: !!options?.celebrate && status === 'success',
-          action,
-          detail: options?.detail,
-        })
-        return
-      }
-
-      const id = newToastId('toast')
-      setToasts((prev) => [...prev, { id, message, type, action }])
-      setTimeout(() => dismissToast(id), action ? 6000 : 3500)
-    },
-    [dismissToast],
-  )
-
-  return (
-    <ToastContext.Provider value={{ toasts, result, showToast, dismissToast, showResult, hideResult }}>
-      {children}
-    </ToastContext.Provider>
-  )
-}
+/** Filled in by ToastProvider (ToastProvider.tsx) */
+export const toastContext = createContext<ToastContextValue | null>(null)
 
 export function useToast() {
-  const ctx = useContext(ToastContext)
+  const ctx = useContext(toastContext)
   if (!ctx) {
     throw new Error('useToast must be used within a ToastProvider')
   }

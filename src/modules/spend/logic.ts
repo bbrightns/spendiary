@@ -1046,3 +1046,11 @@ export function sortByUse(ids: string[], transactions: SpendTransaction[]): stri
     .sort((a, b) => b.n - a.n || a.i - b.i)
     .map((x) => x.id)
 }
+
+/** "due in 3 days", "due today", "2 days overdue" */
+export function dueText(days: number): string {
+  if (days < 0) return `${-days} ${days === -1 ? 'day' : 'days'} overdue`
+  if (days === 0) return 'due today'
+  if (days === 1) return 'due tomorrow'
+  return `due in ${days} days`
+}

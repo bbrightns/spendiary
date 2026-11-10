@@ -6,17 +6,12 @@ import { localDateStr, localTimeStr, thb, thbSigned } from '../../lib/format'
 import { getCategory } from './categories'
 import { cardPaidDetail } from './billPaid'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
-import { DEFAULT_MIN_PAYMENT_PERCENT, cardCycle, minimumPayment, noteTitle } from './logic'
+import { DEFAULT_MIN_PAYMENT_PERCENT, cardCycle, dueText, minimumPayment, noteTitle } from './logic'
 import { useSpend } from './useSpend'
 import { TONES } from './tones'
 import { SHEET_EVENTS } from './sheetEvents'
 
 const OPEN_EVENT = SHEET_EVENTS.payBill
-
-/** Open the "Pay bill" sheet for a credit card from anywhere in the app. */
-export function openPayBill(cardId: string) {
-  window.dispatchEvent(new CustomEvent<string>(OPEN_EVENT, { detail: cardId }))
-}
 
 const short = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number)
@@ -25,13 +20,6 @@ const short = (iso: string) => {
 const nextDay = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number)
   return localDateStr(new Date(y, m - 1, d + 1))
-}
-
-export function dueText(days: number): string {
-  if (days < 0) return `${-days} ${days === -1 ? 'day' : 'days'} overdue`
-  if (days === 0) return 'due today'
-  if (days === 1) return 'due tomorrow'
-  return `due in ${days} days`
 }
 
 export function PayBillSheet() {

@@ -13,28 +13,6 @@ import { SHEET_EVENTS } from './sheetEvents'
 
 const OPEN_EVENT = SHEET_EVENTS.payLoan
 
-/** Open the "Pay" sheet for a loan or installment plan from anywhere in the app. */
-export function openPayLoan(liabilityId: string) {
-  window.dispatchEvent(new CustomEvent<string>(OPEN_EVENT, { detail: liabilityId }))
-}
-
-/**
- * Undo a loan's latest payment: its balance and installment count go back, and the Spend
- * transaction it logged (if any) is removed so the wallet gets the money back too.
- */
-export function useUndoLoanPayment() {
-  const { data, undoLiabilityPayment } = useData()
-  const { transactions, removeTransaction } = useSpend()
-  return (liabilityId: string) => {
-    // Only the transaction from that payment's day: one paid outside the app logged nothing,
-    // and an older month's payment must stay
-    const paidOn = (data.liabilities ?? []).find((l) => l.id === liabilityId)?.lastPaidDate
-    const logged = paidOn ? transactions.find((t) => t.liabilityId === liabilityId && t.date === paidOn) : undefined
-    if (logged) removeTransaction(logged.id)
-    undoLiabilityPayment(liabilityId)
-  }
-}
-
 /**
  * One step to pay a loan: the amount, the wallet it came from, done. The loan's balance and the
  * wallet move together, and one Undo reverses both. An installment purchase counts as spending;

@@ -44,9 +44,7 @@ import {
   CreditCardIcon,
   CoinsIcon,
 } from '../components/icons'
-import { openQuickAdd } from '../modules/spend/QuickAddSheet'
-import { openPayBill } from '../modules/spend/PayBillSheet'
-import { openImport } from '../modules/spend/ImportSheet'
+import { openQuickAdd, openPayBill, openImport } from '../modules/spend/sheetEvents'
 import { ListBulletIcon, RepeatIcon, TransferIcon, getCategory, guessCategory, manageableCategories } from '../modules/spend/categories'
 import { accountTxnsPath, frequencyLabel, goalProgress, noteTitle, periodFor } from '../modules/spend/logic'
 import { useSpendSide } from '../hooks/side'
@@ -56,14 +54,6 @@ import { IS_MAC, isSearchShortcut } from '../lib/shortcut'
 import { STORAGE_KEYS } from '../lib/storageKeys'
 import { settingsPath } from '../lib/settingsSections'
 import { SPEND_CASH } from '../lib/routes'
-
-export function openCommandPalette() {
-  window.dispatchEvent(new CustomEvent('spendiary:open-command-palette'))
-}
-
-export function openShortcutsGuide() {
-  window.dispatchEvent(new CustomEvent('spendiary:open-shortcuts-guide'))
-}
 
 type Group =
   | 'Search tips'
