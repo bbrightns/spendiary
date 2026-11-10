@@ -413,6 +413,7 @@ export function CommandPalette() {
           ['spending-month', 'Spending month / payday', 'Count from the 1st or from payday', ['payday', 'pay cycle', 'salary day', 'เงินเดือนออก', 'รอบเดือน']],
           ['monthly-budget', 'Monthly budget', 'What you plan to spend each month', ['budget', 'limit', 'งบ', 'งบประมาณ']],
           ['categories', 'Categories', 'Add, rename or change icons', ['category', 'categories', 'icon', 'หมวด', 'หมวดหมู่']],
+          ['big-expense', 'Big expenses', 'When Quick add asks to keep one out of the daily budget', ['big', 'one-off', 'outside budget', 'wedding', 'trip', 'งานแต่ง', 'ก้อนใหญ่']],
           ['category-budgets', 'Budget per category', 'Limits per category', ['budget', 'category', 'limit', 'งบหมวด']],
           ['bill-reminders', 'Bill reminders', 'Days before a card bill or loan is due', ['reminder', 'loan', 'card', 'bill', 'due', 'แจ้งเตือน']],
           ['quick-add', 'Default payment method', 'Picked for you in Quick add; category chips or tiles', ['default', 'payment', 'quick add', 'wallet', 'ค่าเริ่มต้น', 'category style', 'chips', 'tiles']],

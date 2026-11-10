@@ -32,6 +32,7 @@ const ANCHOR_SECTION: Record<string, SettingsSectionId> = {
   spend: 'month',
   'spending-month': 'month',
   'monthly-budget': 'budgets',
+  'big-expense': 'budgets',
   'category-budgets': 'budgets',
   categories: 'categories',
   'bill-reminders': 'quick',
