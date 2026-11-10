@@ -5,8 +5,8 @@ import { StarIcon } from './AccountSheets'
 import { CARD_INK, FALLBACK_CARD_COLOR, cardFace } from './cardColor'
 import { availableCredit } from './credit'
 import { useData } from '../../store/DataContext'
-import { cardCycle, unbilledOpening, upcomingDue } from './logic'
-import { dueText, openPayBill } from './PayBillSheet'
+import { cardCycle, unbilledOpening, upcomingDue, dueText } from './logic'
+import { openPayBill } from './sheetEvents'
 import type { useSpend } from './useSpend'
 
 type Bill = ReturnType<typeof useSpend>['bills'][number]

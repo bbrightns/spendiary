@@ -11,37 +11,18 @@ import type { SpendSettings, SpendTransaction, SpendTxnType } from '../../lib/ty
 import { categoriesFor, getCategory } from './categories'
 import { bigExpenseRule, doneWord, inPeriod, isBigExpense, noteTitle, periodFor, walletOverdraw } from './logic'
 import { TYPE_ACTIVE } from './tones'
-import { useSpend, type PayMethod, type SpendTxnInput } from './useSpend'
+import { useSpend, type PayMethod } from './useSpend'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { SwitchVisual } from '../../components/ui/SwitchVisual'
 import { CategoryPicker } from './CategoryPicker'
 import { NoteField } from './NoteField'
 import { paidDetail } from './billPaid'
 import { firstInstallmentDue, installmentAmount } from './loans'
-import { SHEET_EVENTS } from './sheetEvents'
+import { SHEET_EVENTS, type QuickAddDetail } from './sheetEvents'
 import { AlertIcon } from '../../components/icons'
 import { OPERATORS, appendOperator, cleanAmountInput, evalAmount, hasOperator, settleAmount } from './amountExpr'
 
 const OPEN_EVENT = SHEET_EVENTS.quickAdd
-
-interface OpenDetail {
-  type?: SpendTxnType
-  /** Edit an existing transaction */
-  editId?: string
-  /** Start a new entry from these values (e.g. a recurring bill) */
-  prefill?: SpendTxnInput
-  /** A new entry with some fields filled in (the rest use the usual defaults), e.g. from the command palette */
-  draft?: Partial<Pick<SpendTxnInput, 'type' | 'amount' | 'note' | 'categoryId' | 'accountId'>>
-  /** A line under the title explaining why the sheet opened (new entries only) */
-  hint?: string
-  /** Saving marks this recurring occurrence as done */
-  recurring?: { id: string; date: string; name: string }
-}
-
-/** Open the Quick Add sheet from anywhere in the app. */
-export function openQuickAdd(detail: OpenDetail = {}) {
-  window.dispatchEvent(new CustomEvent<OpenDetail>(OPEN_EVENT, { detail }))
-}
 
 const TYPE_OPTIONS = [
   { value: 'expense' as const, label: 'Expense', activeClassName: TYPE_ACTIVE.expense },
@@ -102,7 +83,7 @@ export function QuickAddSheet() {
 
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
-  const [fromRecurring, setFromRecurring] = useState<OpenDetail['recurring'] | null>(null)
+  const [fromRecurring, setFromRecurring] = useState<QuickAddDetail['recurring'] | null>(null)
   const [type, setType] = useState<SpendTxnType>('expense')
   const [amount, setAmount] = useState('')
   const [categoryId, setCategoryId] = useState('food')
@@ -133,7 +114,7 @@ export function QuickAddSheet() {
 
   useEffect(() => {
     function onOpen(e: Event) {
-      const detail = (e as CustomEvent<OpenDetail>).detail ?? {}
+      const detail = (e as CustomEvent<QuickAddDetail>).detail ?? {}
       const { transactions: txns, methods: ms, settings: st } = stateRef.current
       const existing = detail.editId ? txns.find((t) => t.id === detail.editId) : undefined
       // Editing fills from the saved transaction; a recurring occurrence fills from its template

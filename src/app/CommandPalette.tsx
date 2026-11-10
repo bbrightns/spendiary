@@ -44,9 +44,7 @@ import {
   CreditCardIcon,
   CoinsIcon,
 } from '../components/icons'
-import { openQuickAdd } from '../modules/spend/QuickAddSheet'
-import { openPayBill } from '../modules/spend/PayBillSheet'
-import { openImport } from '../modules/spend/ImportSheet'
+import { openQuickAdd, openPayBill, openImport } from '../modules/spend/sheetEvents'
 import { ListBulletIcon, RepeatIcon, TransferIcon, getCategory, guessCategory, manageableCategories } from '../modules/spend/categories'
 import { accountTxnsPath, frequencyLabel, goalProgress, noteTitle, periodFor } from '../modules/spend/logic'
 import { useSpendSide } from '../hooks/side'
@@ -56,14 +54,6 @@ import { IS_MAC, isSearchShortcut } from '../lib/shortcut'
 import { STORAGE_KEYS } from '../lib/storageKeys'
 import { settingsPath } from '../lib/settingsSections'
 import { SPEND_CASH } from '../lib/routes'
-
-export function openCommandPalette() {
-  window.dispatchEvent(new CustomEvent('spendiary:open-command-palette'))
-}
-
-export function openShortcutsGuide() {
-  window.dispatchEvent(new CustomEvent('spendiary:open-shortcuts-guide'))
-}
 
 type Group =
   | 'Search tips'
@@ -203,6 +193,8 @@ export function CommandPalette() {
   const navigate = useNavigate()
   const { data, exportData } = useData()
   const spend = useSpend()
+  // Read off the object so the search memo can list it (a spend.accountName() call would make it depend on all of spend)
+  const accountName = spend.accountName
   const { theme, setTheme } = useTheme()
   const { showToast } = useToast()
 
@@ -788,7 +780,7 @@ export function CommandPalette() {
         if (s > 0) ranked.push({ ...it, score: s + boost(it) })
       }
     }
-    const methodName = (id?: string) => spend.accountName(id) ?? ''
+    const methodName = (id?: string) => accountName(id) ?? ''
     const txnHits: Ranked[] = []
     const hits: SpendTransaction[] = []
     for (const t of spend.transactions) {
@@ -895,7 +887,7 @@ export function CommandPalette() {
         }
       : undefined
     return { results: ranked, summary }
-  }, [query, items, usage, recent, inSpend, spend.transactions, spend.methods, spend.cards, spend.bills, spend.settings.categoryBudgets, spend.settings.cycle, data.holdingLogs, data.dividendRecords, navigate, go])
+  }, [query, items, usage, recent, inSpend, spend.transactions, spend.cards, spend.bills, spend.settings.categoryBudgets, spend.settings.cycle, accountName, data.holdingLogs, data.dividendRecords, navigate, go])
 
   // ── Group: best groups first, a few rows each, with counts ──
   const { rows, counts } = useMemo(() => {

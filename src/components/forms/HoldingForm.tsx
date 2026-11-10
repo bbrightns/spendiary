@@ -316,6 +316,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       setDefaultCashAccountId(data.cashAccounts[0]?.id ?? '')
     }
     setShowErrors(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fxRateInput left out so clearing the field does not refill it; liveFx follows usdThb, which is listed
   }, [open, editing, initialPlannedAsset, initialSection, usdThb, data.cashAccounts])
 
   // Interactive handlers for dynamic dual-currency and FX rate recalculations

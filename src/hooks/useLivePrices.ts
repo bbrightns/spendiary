@@ -125,6 +125,7 @@ export function useLivePrices() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one interval per mount; refresh reads holdings through dataRef, so the first refresh never goes stale
   }, [])
 
   return { status, lastUpdated, usdThb, goldThbPerGram, errorMsg, refresh }

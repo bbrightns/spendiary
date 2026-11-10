@@ -143,6 +143,7 @@ export function ConfirmDcaBuyForm({ open, plan, onClose }: Props) {
     // Location selection initialization: the plan's own location, else the first one holding something
     setSelectedLocId(initialLocationId(initialMatched?.locations ?? [], plan.locationId, plan.assetClass))
     setNewLocName('')
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- resets only when the form opens or the plan changes; new holdings or a rate tick must not wipe what was typed
   }, [open, plan])
 
   if (!plan) return null

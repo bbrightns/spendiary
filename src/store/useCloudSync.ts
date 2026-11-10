@@ -173,6 +173,7 @@ export function useCloudSync(
       setDataState(emptyData)
       updateLastSynced(null)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loads once per sign-in; setDataState is a stable setter and fetchRemoteData guards itself with loadSeq
   }, [user])
 
   /** Saves to the cloud under the optimistic lock (see remoteSave.ts), after any save already in flight */
@@ -250,6 +251,7 @@ export function useCloudSync(
       saveLocked(user.id, data, serialised)
     }, 2000)
     return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- saveLocked is rebuilt every render; listing it would restart the 2-second save timer on every render
   }, [data, user])
 
   /** Saves now, skipping the 2-second wait and the lock: restoring a backup replaces the cloud data on purpose */

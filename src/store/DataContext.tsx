@@ -483,6 +483,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       removeLocation: (holdingId, locId) => updateData((prev) => holdingActions.removeLocation(prev, holdingId, locId)),
     }),
+    // The auth and sync actions are rebuilt every render but only read user (listed), refs and setters
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- listing them would rebuild the context value and re-render every consumer on every render
     [data, syncStatus, dataReady, loadError, syncConflict, needsRefresh, lastSyncedAt, user, authError, usdThb, usdThbAsOf],
   )
 

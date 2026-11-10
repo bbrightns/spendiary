@@ -1,6 +1,7 @@
 import { Composition } from 'remotion'
 import { SpendPromo, PROMO_FRAMES } from './SpendPromo'
-import { SpendiaryIntro, calculateIntroMetadata, type IntroProps } from './Intro'
+import { SpendiaryIntro } from './Intro'
+import { calculateIntroMetadata, type IntroProps } from './introTiming'
 
 export function Root() {
   return (
