@@ -377,7 +377,7 @@ export function Retirement() {
   const gap                 = projectedInvestment - corpusNeeded
   const onTrack             = gap >= 0
 
-  const totalCashVal = useMemo(() => totalCash(data, usdThb), [data.cashAccounts, usdThb])
+  const totalCashVal = useMemo(() => totalCash({ cashAccounts: data.cashAccounts }, usdThb), [data.cashAccounts, usdThb])
   const currentNetWorth = summary.value + totalCashVal
   const monthlySpendVal = Number(monthlySpend) || 0
   const runwayYears = monthlySpendVal > 0 ? (currentNetWorth / (monthlySpendVal * 12)) : null
