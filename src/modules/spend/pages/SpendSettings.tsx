@@ -358,8 +358,8 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
             onChange={setBigMode}
             options={[
               // The tick marks the mode in use, whichever tab is open
-              { value: 'days', label: 'Days of budget', icon: savedBig.mode === 'days' ? <CheckIcon aria-label="In use" className="h-4 w-4" /> : undefined },
-              { value: 'amount', label: 'Fixed amount', icon: savedBig.mode === 'amount' ? <CheckIcon aria-label="In use" className="h-4 w-4" /> : undefined },
+              { value: 'days', label: 'Days of budget', icon: savedBig.mode === 'days' ? <CheckIcon aria-label="In use" className="h-4 w-4 text-gain-ink" strokeWidth={3} /> : undefined },
+              { value: 'amount', label: 'Fixed amount', icon: savedBig.mode === 'amount' ? <CheckIcon aria-label="In use" className="h-4 w-4 text-gain-ink" strokeWidth={3} /> : undefined },
             ]}
           />
           {bigMode === 'days' ? (
