@@ -9,7 +9,7 @@ import { NumberField } from '../../../components/ui/Field'
 import { useToast } from '../../../store/ToastContext'
 import { localDateStr, thb, thbExact } from '../../../lib/format'
 import type { BigExpenseRule, PayCycle, WeekendShift } from '../../../lib/types'
-import { DEFAULT_BIG_EXPENSE_RULE, DEFAULT_BILL_REMINDER_DAYS, bigExpenseRule, bigExpenseThreshold, isCalendar, periodFor, periodLabel, upcomingPaydays } from '../logic'
+import { DEFAULT_BIG_EXPENSE_RULE, DEFAULT_BILL_REMINDER_DAYS, bigExpenseRule, bigExpenseThreshold, isCalendar, periodFor, periodLabel, upcomingPaydays, usualDay } from '../logic'
 import { useSpend } from '../useSpend'
 import { categoriesFor, getCategory } from '../categories'
 import { openImport } from '../ImportSheet'
@@ -359,7 +359,7 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
               onChange={setBigDays}
               error={bigDaysOk ? undefined : 'Whole days, 1 to 31'}
               // What the days come to right now, beside the label, so it shows while typing
-              hint={(settings.monthlyBudget ?? 0) > 0 ? (bigFrom !== undefined ? `= ${thb(Math.ceil(bigFrom))} now` : undefined) : 'Needs a monthly budget'}
+              hint={bigFrom !== undefined ? `= ${thb(Math.ceil(bigFrom))} now` : undefined}
             />
           ) : (
             <NumberField
@@ -371,11 +371,12 @@ export function SpendSettingsSections({ only }: { only: SpendSettingsPart }) {
             />
           )}
           <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* The amount it comes to sits beside the field; this line only says where it comes from */}
             <p className="text-xs text-ink-muted tnum">
               {(settings.monthlyBudget ?? 0) > 0
-                ? bigFrom !== undefined
-                  ? `${bigMode === 'days' ? `A usual day is ${thb(Math.round(bigFrom / bigDaysNum))}, the budget spread over the month. ` : ''}Asks for an expense of ${thb(Math.ceil(bigFrom))} or more.`
-                  : 'Enter a number to see where it asks.'
+                ? bigMode === 'days'
+                  ? `A usual day is ${thb(Math.round(usualDay(settings.monthlyBudget ?? 0, periodFor(today, settings.cycle))))}, your budget spread over this month.`
+                  : null
                 : 'Set a monthly budget first. Without one there is no daily budget, so Quick add never asks.'}
             </p>
             <Button
