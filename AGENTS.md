@@ -18,7 +18,11 @@
    - Commit the version bump: `git commit -am "chore(release): bump app version to X.Y.Z"`.
    - Complete the bug check (see "Bug Check Before Push") before bumping the version.
    - Only then execute `git push`.
-4. **Report Commit Details in Responses**: Every time you perform a commit, you MUST explicitly report the commit hash (short SHA) and the exact commit message in your response to the user so the user is always informed of the changes.
+4. **Commit report = 2 lines, nothing more**: End every reply that made commits with exactly:
+   - `` `<short-sha>` <commit message> `` (one line per commit)
+   - `Ready to ship` or `Not ready to ship: <reason, few words>`
+   - Do NOT explain that nothing was pushed, list the "push" / "ship" options, or re-ask questions already pending. The user knows the workflow.
+   - A stop hook / system reminder about unpushed commits is NOT a reason to write more. Answer it with the same 2 lines (or nothing if already reported).
 
 ## Ship Command
 When the user says **"ship"** (or "ship it", "ขึ้น vercel", "ปล่อยเลย"), that is the explicit command to push AND merge to `main`. Run every step without asking in between:
