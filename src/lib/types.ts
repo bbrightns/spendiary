@@ -412,6 +412,11 @@ export interface SpendTransaction {
   adjustment?: boolean
   /** Logged from a recurring item's occurrence; deleting it puts that occurrence back as due */
   recurring?: { id: string; date: string }
+  /**
+   * Card charges only: the statement closing date (YYYY-MM-DD) it billed on, when the bank posted
+   * it on a later statement than its date implies. `date` stays the day it was spent, for reports.
+   */
+  statement?: string
 }
 
 export interface RemovedAccount {

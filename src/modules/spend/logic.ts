@@ -209,6 +209,54 @@ export function cardCycle(card: Pick<SpendCard, 'statementDay' | 'dueDay'>, toda
 
 // ── Card bills ───────────────────────────────────────────────────────────────
 
+/** Charges made this many days up to a statement day may still post on the next one */
+export const NEAR_CUTOFF_DAYS = 3
+
+/** The statement (its closing date) a charge made on `date` lands on by date alone. */
+export function statementFor(card: Pick<SpendCard, 'statementDay' | 'dueDay'>, date: string): string {
+  const cyc = cardCycle(card, parse(date))
+  return cyc.lastStatement === date ? date : cyc.nextStatement
+}
+
+/** The statement after the one closing on `statement`. */
+export function followingStatement(card: Pick<SpendCard, 'statementDay' | 'dueDay'>, statement: string): string {
+  return cardCycle(card, parse(addDays(statement, 1))).nextStatement
+}
+
+/** The date a card charge counts on for its bill: the later statement it was moved to, else the day it was made. */
+export function billDate(t: Pick<SpendTransaction, 'date' | 'statement'>): string {
+  return t.statement && t.statement > t.date ? t.statement : t.date
+}
+
+/** Made in the last few days up to its statement day, so the bank may bill it on the next one. */
+export function isNearCutoff(card: Pick<SpendCard, 'statementDay' | 'dueDay'>, date: string): boolean {
+  return date > addDays(statementFor(card, date), -NEAR_CUTOFF_DAYS)
+}
+
+/**
+ * The fewest charges whose net adds up to `gap` (to the satang), to explain why the app's bill is
+ * higher than the bank's. Undefined when none do, or there are too many to try every mix.
+ */
+export function chargesMatching(items: SpendTransaction[], gap: number, maxItems = 12): SpendTransaction[] | undefined {
+  const target = Math.round(gap * 100)
+  if (target <= 0 || items.length === 0 || items.length > maxItems) return undefined
+  const cents = items.map((x) => Math.round((x.type === 'income' ? -x.amount : x.amount) * 100))
+  let best: number | undefined
+  for (let mask = 1; mask < 1 << items.length; mask++) {
+    let sum = 0
+    for (let i = 0; i < items.length; i++) if (mask & (1 << i)) sum += cents[i]
+    if (sum !== target) continue
+    if (best === undefined || popCount(mask) < popCount(best)) best = mask
+  }
+  return best === undefined ? undefined : items.filter((_, i) => best! & (1 << i))
+}
+
+function popCount(n: number): number {
+  let c = 0
+  for (; n; n &= n - 1) c++
+  return c
+}
+
 export const DEFAULT_BILL_REMINDER_DAYS = 5
 export const DEFAULT_MIN_PAYMENT_PERCENT = 8
 
@@ -234,6 +282,13 @@ export interface CardBill {
   statementTotal: number
   /** Charges and refunds in the statement window, newest first */
   items: SpendTransaction[]
+  /**
+   * Charges and refunds made in the last few days up to the statement day, newest first, whether
+   * they're on this bill or were moved to the next one (`statement` === `nextStatement`)
+   */
+  nearCutoff: SpendTransaction[]
+  /** The statement after this bill's, where a late-posted charge goes */
+  nextStatement: string
   /** Payments into the card since the statement closed */
   paidSoFar: number
   /** Paid toward this statement before it closed (beyond what the previous bill needed) */
@@ -262,10 +317,13 @@ export function cardBill(card: SpendCard, txns: SpendTransaction[], reminderDays
   const onCard = txns.filter((x) => x.accountId === card.id && (x.type === 'expense' || x.type === 'income'))
   const net = (x: SpendTransaction) => (x.type === 'expense' ? x.amount : -x.amount)
 
-  const items = onCard.filter((x) => x.date > prevStatement && x.date <= cyc.lastStatement).sort((a, b) => b.date.localeCompare(a.date))
+  // A charge the bank posted on a later statement counts on that one, by billDate
+  const items = onCard.filter((x) => billDate(x) > prevStatement && billDate(x) <= cyc.lastStatement).sort((a, b) => b.date.localeCompare(a.date))
   const statementTotal = items.reduce((s, x) => s + net(x), 0)
   // Charges since the last statement, plus an opening amount typed in as not billed yet
-  const sinceStatement = onCard.filter((x) => x.date > cyc.lastStatement).reduce((s, x) => s + net(x), 0) + unbilledOpening(card, cyc.lastStatement)
+  const sinceStatement = onCard.filter((x) => billDate(x) > cyc.lastStatement).reduce((s, x) => s + net(x), 0) + unbilledOpening(card, cyc.lastStatement)
+  const cutoffFrom = addDays(cyc.lastStatement, -NEAR_CUTOFF_DAYS)
+  const nearCutoff = onCard.filter((x) => x.date > cutoffFrom && x.date <= cyc.lastStatement).sort((a, b) => b.date.localeCompare(a.date))
   const payments = txns.filter((x) => x.type === 'transfer' && x.toAccountId === card.id)
   const paidSoFar = payments.filter((x) => x.date > cyc.lastStatement).reduce((s, x) => s + x.amount, 0)
   // Payments during the statement window settle the previous bill first; the rest was paid early
@@ -286,6 +344,8 @@ export function cardBill(card: SpendCard, txns: SpendTransaction[], reminderDays
     amountDue,
     statementTotal,
     items,
+    nearCutoff,
+    nextStatement: cyc.nextStatement,
     paidSoFar,
     paidEarly,
     other: roundMoney(amountDue + paidSoFar + paidEarly - statementTotal),
