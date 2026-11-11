@@ -9,7 +9,9 @@ import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
 import { DEFAULT_MIN_PAYMENT_PERCENT, cardCycle, dueText, minimumPayment, noteTitle } from './logic'
 import { useSpend } from './useSpend'
 import { TONES } from './tones'
-import { SHEET_EVENTS } from './sheetEvents'
+import { SHEET_EVENTS, openMatchStatement } from './sheetEvents'
+import { SegmentedControl } from '../../components/ui/SegmentedControl'
+import { Button } from '../../components/ui/Button'
 
 const OPEN_EVENT = SHEET_EVENTS.payBill
 
@@ -23,7 +25,7 @@ const nextDay = (iso: string) => {
 }
 
 export function PayBillSheet() {
-  const { bills, methods, settings, addTransaction, removeTransaction } = useSpend()
+  const { bills, methods, settings, addTransaction, removeTransaction, setBillStatement } = useSpend()
   const { showToast } = useToast()
   const [cardId, setCardId] = useState<string | null>(null)
   // full: the closed statement · all: everything owed now, this cycle included (paying early)
@@ -101,6 +103,15 @@ export function PayBillSheet() {
   const statusClass =
     bill?.status === 'overdue' ? 'text-loss-ink' : bill?.status === 'due' ? 'text-warn-ink' : 'text-ink-muted'
   const items = bill ? (showAll ? bill.items : bill.items.slice(0, 5)) : []
+  // From the statement closing until it's due: the time to check it against the bank's bill
+  const checking = !!bill && bill.daysToDue >= 0
+  const near = checking ? bill.nearCutoff : []
+  const canMatch = checking && (due > 0 || bill.items.length > 0)
+  const match = () => {
+    if (!bill) return
+    close()
+    openMatchStatement(bill.card.id)
+  }
 
   return (
     <Modal
@@ -181,6 +192,54 @@ export function PayBillSheet() {
                   <span className="tnum">{thb(owed - due, true)}</span>
                 </div>
               )}
+            </div>
+          )}
+
+          {canMatch && (
+            <Button variant="secondary" size="sm" className="-mt-2 w-full" onClick={match}>
+              Match with bank statement
+            </Button>
+          )}
+
+          {/* Charges made just before the cut-off: the bank may bill them on the next statement */}
+          {near.length > 0 && (
+            <div className="rounded-2xl border border-line p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-bold text-ink">Near the cut-off</p>
+                <span className="rounded-full bg-warn-soft px-2.5 py-0.5 text-xs font-bold text-warn-ink">May post next bill</span>
+              </div>
+              <p className="mt-0.5 text-xs text-ink-muted">Made in the last few days before {short(bill.to)}. Move any the bank billed later.</p>
+              <ul className="mt-2 divide-y divide-line">
+                {near.map((t) => {
+                  const cat = getCategory(t.categoryId)
+                  const later = t.statement === bill.nextStatement
+                  return (
+                    <li key={t.id} className="space-y-2 py-2.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-semibold text-ink">{noteTitle(t.note) || t.subcategory || cat?.label}</span>
+                          <span className="block text-xs text-ink-muted">{short(t.date)}</span>
+                        </span>
+                        <span className={`shrink-0 text-sm font-bold tnum ${t.type === 'income' ? 'text-gain-ink' : 'text-ink'}`}>
+                          {t.type === 'income' ? '−' : ''}
+                          {thb(t.amount, true)}
+                        </span>
+                      </div>
+                      <SegmentedControl
+                        ariaLabel={`Which bill ${noteTitle(t.note) || cat?.label || 'this charge'} is on`}
+                        size="xs"
+                        shape="pill"
+                        value={later ? 'next' : 'this'}
+                        onChange={(v) => setBillStatement([t.id], v === 'next' ? bill.nextStatement : undefined)}
+                        options={[
+                          { value: 'this', label: `This bill · ${short(bill.to)}` },
+                          { value: 'next', label: `Next bill · ${short(bill.nextStatement)}` },
+                        ]}
+                      />
+                    </li>
+                  )
+                })}
+              </ul>
             </div>
           )}
 

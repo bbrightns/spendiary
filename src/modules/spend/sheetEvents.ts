@@ -8,6 +8,7 @@ export const SHEET_EVENTS = {
   payBill: 'spendiary:open-pay-bill',
   payLoan: 'spendiary:open-pay-loan',
   adjustment: 'spendiary:open-adjustment',
+  matchStatement: 'spendiary:open-match-statement',
 } as const
 
 // The open functions live here, not in the sheet files, so those files export only components
@@ -50,4 +51,9 @@ export function openPayLoan(liabilityId: string) {
 /** Ask to undo a "Balance adjusted" entry (rows open this instead of Quick add). */
 export function openAdjustment(id: string) {
   window.dispatchEvent(new CustomEvent<string>(SHEET_EVENTS.adjustment, { detail: id }))
+}
+
+/** Check a card's last bill against the total on the bank's statement. */
+export function openMatchStatement(cardId: string) {
+  window.dispatchEvent(new CustomEvent<string>(SHEET_EVENTS.matchStatement, { detail: cardId }))
 }
