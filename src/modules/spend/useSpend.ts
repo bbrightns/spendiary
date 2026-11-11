@@ -245,6 +245,19 @@ export function useSpend() {
     }))
   }
 
+  /**
+   * Bill card charges on `statement` (a later statement than their date implies), or back on
+   * their own date with undefined. Only which bill they count toward changes: no balance moves.
+   */
+  function setBillStatement(ids: string[], statement: string | undefined) {
+    const set = new Set(ids)
+    const now = new Date().toISOString()
+    setData((prev) => ({
+      ...prev,
+      spendTransactions: (prev.spendTransactions ?? []).map((t) => (set.has(t.id) ? { ...t, statement, updatedAt: now } : t)),
+    }))
+  }
+
   /** Delete every Spend transaction, putting wallet and card balances back as if each had been deleted one by one. */
   function clearTransactions(): number {
     const count = (data.spendTransactions ?? []).length
@@ -488,6 +501,7 @@ export function useSpend() {
     updateTransaction,
     removeTransaction,
     patchTransactions,
+    setBillStatement,
     clearTransactions,
     upsertCard,
     removeCard,
