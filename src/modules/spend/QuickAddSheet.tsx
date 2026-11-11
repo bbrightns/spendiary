@@ -9,7 +9,7 @@ import { useData } from '../../store/DataContext'
 import { localDateStr, localTimeStr, thb, thbExact, thbSigned } from '../../lib/format'
 import type { SpendSettings, SpendTransaction, SpendTxnType } from '../../lib/types'
 import { categoriesFor, getCategory } from './categories'
-import { bigExpenseRule, doneWord, inPeriod, isBigExpense, noteTitle, periodFor, walletOverdraw } from './logic'
+import { bigExpenseRule, doneWord, followingStatement, inPeriod, isBigExpense, isNearCutoff, noteTitle, periodFor, statementFor, walletOverdraw } from './logic'
 import { TYPE_ACTIVE } from './tones'
 import { useSpend, type PayMethod } from './useSpend'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
@@ -94,6 +94,8 @@ export function QuickAddSheet() {
   const [subcategory, setSubcategory] = useState('')
   const [note, setNote] = useState('')
   const [alreadyIn, setAlreadyIn] = useState(false)
+  // Card charge the bank posted on a later statement (see SpendTransaction.statement)
+  const [statement, setStatement] = useState<string | undefined>()
   // A one-off kept out of the daily budget (offered only for big expenses)
   const [outside, setOutside] = useState(false)
   // Income that is someone paying you back: it lowers an expense category instead of counting as income
@@ -135,6 +137,7 @@ export function QuickAddSheet() {
         setSubcategory(source.subcategory ?? '')
         setNote(source.note ?? '')
         setAlreadyIn(!!existing?.alreadyInBalance)
+        setStatement(existing?.statement)
         setOutside(!!existing?.outsideBudget)
         setPaidBack(!!existing?.paidBack)
         setSplit(false)
@@ -156,6 +159,7 @@ export function QuickAddSheet() {
         setSubcategory('')
         setNote(draft.note ?? '')
         setAlreadyIn(false)
+        setStatement(undefined)
         setOutside(false)
         setPaidBack(false)
         setSplit(false)
@@ -188,6 +192,11 @@ export function QuickAddSheet() {
   const card = cards.find((c) => c.id === accountId)
   const canSplit = !editId && !fromRecurring && type === 'expense' && !!card && amountValid && value >= 1000
   const splitting = canSplit && split
+  // Which bill a card charge lands on: by its date, or the next one when made just before the cut-off
+  const naturalStatement = card ? statementFor(card, date) : ''
+  const laterStatement = card ? followingStatement(card, naturalStatement) : ''
+  const billsLater = !!card && statement === laterStatement
+  const showBillsOn = !!card && type !== 'transfer' && !splitting && (isNearCutoff(card, date) || billsLater)
   const perMonth = splitting ? installmentAmount(value, months) : 0
   const firstDue = splitting && card ? firstInstallmentDue(card, date) : ''
   // A past date may already be in the balance the wallet / card shows today
@@ -306,6 +315,8 @@ export function QuickAddSheet() {
       // Always set, so an edit can clear it
       outsideBudget: keepOut ? true : undefined,
       paidBack: isPaidBack ? true : undefined,
+      // Always set, so an edit can clear it (or drop one left stale by a new date or card)
+      statement: showBillsOn && billsLater ? laterStatement : undefined,
     }
     if (editId) {
       updateTransaction(editId, input)
@@ -582,6 +593,30 @@ export function QuickAddSheet() {
           )}
 
           <TransactionDateField value={date} onChange={setDate} time={time} onTimeChange={setTime} />
+
+          {showBillsOn && (
+            <div className="-mt-2 space-y-1.5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-semibold text-ink-soft">Bills on</span>
+                <span className="rounded-full bg-warn-soft px-2.5 py-0.5 text-xs font-bold text-warn-ink">Near the cut-off</span>
+              </div>
+              <SegmentedControl
+                ariaLabel="Bills on"
+                size="sm"
+                value={billsLater ? 'next' : 'date'}
+                onChange={(v) => setStatement(v === 'next' ? laterStatement : undefined)}
+                options={[
+                  { value: 'date', label: `${shortDue(naturalStatement)} bill` },
+                  { value: 'next', label: `${shortDue(laterStatement)} bill` },
+                ]}
+              />
+              <p className="text-xs text-ink-muted">
+                {billsLater
+                  ? 'Posted late by the bank. Reports still count it on its own date.'
+                  : 'Pick the next bill if the bank posted it after the cut-off.'}
+              </p>
+            </div>
+          )}
 
           {backdated && touchesBalance && (
             <button

@@ -26,6 +26,11 @@ import {
   minimumPayment,
   applyToBalances,
   cardBill,
+  billDate,
+  chargesMatching,
+  followingStatement,
+  isNearCutoff,
+  statementFor,
   unbilledOpening,
   cardCycle,
   dayAllowance,
@@ -315,6 +320,65 @@ describe('cardCycle and cardBill', () => {
     expect(bill.amountDue).toBe(1000)
     expect(bill.statementTotal).toBe(1000)
     expect(bill.status).toBe('due')
+  })
+})
+
+describe('charges the bank posted on a later statement', () => {
+  // Statement day 25, due day 10. Bill closed 25 Nov, looked at on 27 Nov
+  const grab = txn({ id: 'grab', accountId: 'card', amount: 340, date: '2026-11-24' })
+  const shell = txn({ id: 'shell', accountId: 'card', amount: 900, date: '2026-11-25' })
+  const tops = txn({ id: 'tops', accountId: 'card', amount: 1000, date: '2026-11-10' })
+  const later = txn({ id: 'later', accountId: 'card', amount: 200, date: '2026-11-26' })
+  const c = card({ balance: 2440 })
+
+  it('finds the statement a date lands on, and the one after', () => {
+    expect(statementFor(c, '2026-11-25')).toBe('2026-11-25')
+    expect(statementFor(c, '2026-11-26')).toBe('2026-12-25')
+    expect(statementFor(c, '2026-11-01')).toBe('2026-11-25')
+    expect(followingStatement(c, '2026-11-25')).toBe('2026-12-25')
+    expect(followingStatement(card({ statementDay: 31 }), '2027-01-31')).toBe('2027-02-28')
+  })
+  it('flags only the last 3 days up to the statement day', () => {
+    expect(isNearCutoff(c, '2026-11-25')).toBe(true)
+    expect(isNearCutoff(c, '2026-11-23')).toBe(true)
+    expect(isNearCutoff(c, '2026-11-22')).toBe(false)
+    expect(isNearCutoff(c, '2026-11-26')).toBe(false)
+  })
+  it('without a statement set, bills by date (same as before)', () => {
+    const bill = cardBill(c, [grab, shell, tops, later], 5, '2026-11-27')
+    expect(bill.statementTotal).toBe(2240)
+    expect(bill.amountDue).toBe(2240)
+    expect(bill.nearCutoff.map((x) => x.id)).toEqual(['shell', 'grab'])
+    expect(bill.nextStatement).toBe('2026-12-25')
+  })
+  it('a charge moved to the next statement leaves this bill but keeps its date', () => {
+    const moved = { ...grab, statement: '2026-12-25' }
+    const bill = cardBill(c, [moved, shell, tops, later], 5, '2026-11-27')
+    expect(bill.statementTotal).toBe(1900)
+    expect(bill.amountDue).toBe(1900)
+    expect(bill.items.map((x) => x.id)).not.toContain('grab')
+    // Still listed near the cut-off, so it can be moved back
+    expect(bill.nearCutoff.map((x) => x.id)).toContain('grab')
+    expect(billDate(moved)).toBe('2026-12-25')
+  })
+  it('a moved charge shows up on the next bill once that one closes', () => {
+    const moved = { ...grab, statement: '2026-12-25' }
+    const bill = cardBill(card({ balance: 540 }), [moved, later], 5, '2026-12-26')
+    expect(bill.items.map((x) => x.id).sort()).toEqual(['grab', 'later'])
+  })
+  it('ignores a statement on or before the date (stale after the date was changed)', () => {
+    expect(billDate({ date: '2026-11-24', statement: '2026-10-25' })).toBe('2026-11-24')
+    expect(billDate({ date: '2026-11-24', statement: '2026-11-24' })).toBe('2026-11-24')
+  })
+  it('finds the fewest charges adding up to the gap', () => {
+    expect(chargesMatching([grab, shell], 1240)?.map((x) => x.id)).toEqual(['grab', 'shell'])
+    expect(chargesMatching([grab, shell, tops], 900)?.map((x) => x.id)).toEqual(['shell'])
+    expect(chargesMatching([grab, shell], 500)).toBeUndefined()
+    expect(chargesMatching([grab, shell], 0)).toBeUndefined()
+    expect(chargesMatching([grab, shell], -340)).toBeUndefined()
+    const refund = txn({ id: 'refund', type: 'income', accountId: 'card', amount: 100, date: '2026-11-25' })
+    expect(chargesMatching([grab, refund], 240)?.map((x) => x.id)).toEqual(['grab', 'refund'])
+    expect(chargesMatching([txn({ amount: 0.1 }), txn({ amount: 0.2 })], 0.3)).toHaveLength(2)
   })
 })
 

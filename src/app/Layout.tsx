@@ -18,6 +18,7 @@ import { QuickAddSheet } from '../modules/spend/QuickAddSheet'
 import { AdjustmentSheet } from '../modules/spend/AdjustmentSheet'
 import { QuickAddLink } from '../modules/spend/QuickAddLink'
 import { ImportSheet } from '../modules/spend/ImportSheet'
+import { MatchStatementSheet } from '../modules/spend/MatchStatementSheet'
 import { PayBillSheet } from '../modules/spend/PayBillSheet'
 import { PayLoanSheet } from '../modules/spend/PayLoanSheet'
 import { SpendBottomNav } from '../modules/spend/SpendBottomNav'
@@ -113,6 +114,7 @@ export function Layout({ children }: { children: ReactNode }) {
           <QuickAddLink />
           <ImportSheet />
           <PayBillSheet />
+          <MatchStatementSheet />
           <PayLoanSheet />
         </>
       ) : (
