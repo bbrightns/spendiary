@@ -13,7 +13,7 @@
     "render:intro-music": "remotion render src/index.ts IntroMusic out/spendiary-intro-music.mp4"
   },
   "dependencies": {
-    "@remotion/cli": "^4.0.290",
+    "@remotion/cli": "^4.0.539",
     "@remotion/google-fonts": "^4.0.290",
     "puppeteer": "^23.11.1",
     "react": "^18.3.1",
