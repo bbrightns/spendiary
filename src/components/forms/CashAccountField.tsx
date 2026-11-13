@@ -49,7 +49,7 @@ export function CashAccountField({ label, accounts, value, onChange, direction, 
         </p>
       )}
       {account && amount === null && !error && (
-        <p className="text-xs text-warn">USD/THB rate not loaded yet: this USD account can't be charged until it is.</p>
+        <p className="text-xs text-warn-ink">USD/THB rate not loaded yet: this USD account can't be charged until it is.</p>
       )}
     </div>
   )
