@@ -49,6 +49,19 @@ export function recurringNote(rec: Pick<SpendRecurring, 'name' | 'note'>): strin
   return `${name} ${note}`
 }
 
+/** Add `#tag ` to the end of a note, or take it out (every spelling of it) if it's already there. */
+export function toggleTag(note: string, tag: string): string {
+  const t = tag.toLowerCase()
+  if (parseTags(note).includes(t))
+    return note
+      .replace(TAG_RE, (m, found: string) => (found.toLowerCase() === t ? '' : m))
+      .replace(/[ \t]{2,}/g, ' ')
+      .trim()
+  const base = note.trimEnd()
+  // A space after it, so the note doesn't read as a tag still being typed
+  return `${base}${base ? ' ' : ''}#${t} `
+}
+
 /** The half-typed `#tag` at the very end of a note (without the #), or null if the user isn't typing one. */
 export function activeTagQuery(note: string): string | null {
   const m = /(?:^|\s)#([^\s#]*)$/u.exec(note)
