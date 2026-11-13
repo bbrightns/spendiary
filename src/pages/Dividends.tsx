@@ -6,13 +6,13 @@ import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { ConfirmDividendModal } from '../components/forms/ConfirmDividendModal'
-import { HoldingForm } from '../components/forms/HoldingForm'
+import { DividendSetupModal } from '../components/forms/DividendSetupModal'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
 import { thb } from '../lib/format'
-import { getHoldingAnnualDividend, getHoldingDpsForMonth, isDividendReceivedThisMonth } from '../lib/calc'
-import { CalendarIcon, CheckCircleIcon, ChevronDownIcon, CoinsIcon, PlusIcon, TrashIcon } from '../components/icons'
+import { THAI_MONTHS_SHORT, getHoldingAnnualDividend, getHoldingDpsForMonth, isDividendReceivedThisMonth } from '../lib/calc'
+import { CalendarIcon, CheckCircleIcon, ChevronDownIcon, ChevronRightIcon, CoinsIcon, PlusIcon, TrashIcon } from '../components/icons'
 import type { DividendRecord, Holding } from '../lib/types'
 
 const MONTH_NAMES = [
@@ -27,7 +27,8 @@ export function Dividends() {
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null)
   const [selectedDps, setSelectedDps] = useState<number | undefined>(undefined)
-  const [editingHolding, setEditingHolding] = useState<Holding | null>(null)
+  // Dividend setup sheet: a holding to edit, null to pick one, undefined when closed
+  const [setupHolding, setSetupHolding] = useState<Holding | null | undefined>(undefined)
 
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -277,7 +278,7 @@ export function Dividends() {
                     No dividends due in {MONTH_NAMES[currentMonth - 1]}
                   </p>
                   <p className="text-xs text-ink-faint mt-1">
-                    You can set the months a stock pays in its details, or tap "+ Record dividend" at any time.
+                    Set the months a stock pays under "Dividend stocks" below, or tap "+ Record dividend" at any time.
                   </p>
                 </div>
               ) : (
@@ -327,7 +328,7 @@ export function Dividends() {
                                   <span className="text-line">|</span>
                                   <button
                                     type="button"
-                                    onClick={() => setEditingHolding(h)}
+                                    onClick={() => setSetupHolding(h)}
                                     className="inline-flex items-center text-link hover:text-brand-ink font-semibold hover:underline cursor-pointer transition-colors"
                                   >
                                     Edit dividend
@@ -402,7 +403,77 @@ export function Dividends() {
           )}
         </Card>
 
-        {/* ── Section 2: Dividend Payout History ── */}
+        {/* ── Section 2: Holdings set up to pay dividends ── */}
+        <Card className="card-bleed-mobile animate-rise" padded={false}>
+          <div className="flex items-center justify-between gap-3 p-5 border-b border-line">
+            <div className="min-w-0">
+              <h2 className="font-display text-lg font-extrabold text-ink">Dividend stocks</h2>
+              <p className="text-xs text-ink-muted mt-0.5">
+                Funds and stocks you expect a dividend from, and when
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setSetupHolding(null)}
+              className="h-9 gap-1.5 shrink-0"
+            >
+              <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
+              <span>Set up</span>
+            </Button>
+          </div>
+
+          {dividendHoldings.length === 0 ? (
+            <div className="p-8">
+              <EmptyState
+                icon={<CalendarIcon className="h-8 w-8 text-ink-muted" />}
+                title="No dividend stocks yet"
+                description="Pick a fund or stock you hold and set the months it pays, to see what to expect each month."
+                action={
+                  <Button variant="primary" size="sm" onClick={() => setSetupHolding(null)} className="h-9 gap-1.5">
+                    <PlusIcon className="h-4 w-4" strokeWidth={2.2} />
+                    <span>Set up a dividend</span>
+                  </Button>
+                }
+              />
+            </div>
+          ) : (
+            <ul className="divide-y divide-line">
+              {dividendHoldings.map((h) => {
+                const months = [...(h.dividendMonths ?? [])].sort((a, b) => a - b)
+                const annualNet = getHoldingAnnualDividend(h) * 0.90
+                return (
+                  <li key={h.id}>
+                    <button
+                      type="button"
+                      onClick={() => setSetupHolding(h)}
+                      className="flex w-full items-center gap-3 p-3.5 sm:px-5 text-left hover:bg-surface-muted/50 transition-colors cursor-pointer"
+                    >
+                      <AssetLogo name={h.name} assetClass={h.assetClass} size="md" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-ink">
+                          {h.ticker} <span className="font-normal text-ink-muted">{h.name}</span>
+                        </p>
+                        <p className="truncate text-xs text-ink-muted">
+                          {months.length > 0 ? months.map((m) => THAI_MONTHS_SHORT[m - 1]).join(', ') : 'No months set'}
+                        </p>
+                      </div>
+                      {annualNet > 0 && (
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-semibold text-gain-ink tnum">~{thb(annualNet)}</p>
+                          <p className="text-xs text-ink-muted">per year</p>
+                        </div>
+                      )}
+                      <ChevronRightIcon className="h-4 w-4 shrink-0 text-ink-muted" />
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </Card>
+
+        {/* ── Section 3: Dividend Payout History ── */}
         <Card className="card-bleed-mobile animate-rise" padded={false}>
           <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-line">
             <div>
@@ -564,12 +635,11 @@ export function Dividends() {
         }}
       />
 
-      {/* ── Edit Holding Modal (View & Edit Dividend Details) ── */}
-      <HoldingForm
-        open={Boolean(editingHolding)}
-        editing={editingHolding ? (data.holdings.find((item) => item.id === editingHolding.id) ?? editingHolding) : null}
-        initialSection="dividend"
-        onClose={() => setEditingHolding(null)}
+      {/* ── Dividend setup: months, dividend per share, cash account ── */}
+      <DividendSetupModal
+        open={setupHolding !== undefined}
+        holding={setupHolding ? (data.holdings.find((item) => item.id === setupHolding.id) ?? setupHolding) : null}
+        onClose={() => setSetupHolding(undefined)}
       />
 
       {/* ── Delete Confirmation Modal ── */}
