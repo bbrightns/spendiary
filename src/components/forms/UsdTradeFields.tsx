@@ -131,7 +131,7 @@ export function UsdTradeFields(p: Props) {
             {' at '}
             <span className="tnum">{rateText(t.fx)}</span>
             {t.fxFromAmounts && ' (from your amounts)'}
-            {t.sharesEstimated && ` · ≈ ${t.shares} shares at today's rate`}
+            {t.sharesEstimated && ` · ≈ ${t.shares} share${t.shares === 1 ? '' : 's'} at today's rate`}
           </span>
           {p.currency === 'USD' && !showRateField && (
             <button
