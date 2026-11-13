@@ -210,7 +210,7 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
                 openPayBill(active.id)
               }}
               // A bill to pay is the card's main action: a filled button. Paying early stays quiet
-              className={`mt-3 flex min-h-11 w-full items-center justify-between gap-3 rounded-full px-4 py-2.5 text-sm font-semibold cursor-pointer transition-colors ${
+              className={`mt-3 flex min-h-11 w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold cursor-pointer transition-colors ${
                 a.open ? 'bg-primary text-white hover:bg-primary-hover shadow-[var(--shadow-soft)]' : 'border border-line text-ink hover:bg-surface-muted/60'
               }`}
             >
