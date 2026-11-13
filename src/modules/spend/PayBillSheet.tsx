@@ -103,10 +103,10 @@ export function PayBillSheet() {
   const statusClass =
     bill?.status === 'overdue' ? 'text-loss-ink' : bill?.status === 'due' ? 'text-warn-ink' : 'text-ink-muted'
   const items = bill ? (showAll ? bill.items : bill.items.slice(0, 5)) : []
-  // From the statement closing until it's due: the time to check it against the bank's bill
-  const checking = !!bill && bill.daysToDue >= 0
-  const near = checking ? bill.nearCutoff : []
-  const canMatch = checking && (due > 0 || bill.items.length > 0)
+  // Late posts matter while the last bill is still open: before it's due, or unpaid (overdue included)
+  const near = bill && (bill.daysToDue >= 0 || due > 0) ? bill.nearCutoff : []
+  // Any closed statement can be checked against the bank's, even after it's been paid
+  const canMatch = !!bill && (due > 0 || bill.items.length > 0)
   const match = () => {
     if (!bill) return
     close()
