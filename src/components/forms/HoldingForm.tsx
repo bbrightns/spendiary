@@ -6,22 +6,21 @@ import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { ASSET_META, GRAMS_PER_BAHT_GOLD, SATS_PER_BTC, goldThbPerGramToXauUsd } from '../../lib/calc'
 import { assignAllToLocation, buyInto, formatLocationQty, hasLocations, locationNoun, roundQty, totalsFromLocations, visibleLocations } from '../../lib/locations'
-import type { AcquisitionSource, AssetClass, DividendPayoutSchedule, Holding, PlannedAsset } from '../../lib/types'
+import type { AcquisitionSource, AssetClass, Holding, PlannedAsset } from '../../lib/types'
 import { dateStrToTimestamp, localDateStr, thb } from '../../lib/format'
 import { isValidRate } from '../../lib/fx'
+import { canPayDividend } from '../../lib/dividendSchedule'
 import { newId } from '../../lib/id'
 import { searchSecurities, type Security } from '../../lib/securities'
 import { fetchStockQuote, searchStocksRemote } from '../../lib/prices'
-import { CheckIcon, ChevronDownIcon, PencilIcon, LockClosedIcon } from '../icons'
+import { CheckIcon, PencilIcon, LockClosedIcon } from '../icons'
 import { TransactionDateField } from './TransactionDateField'
 import { AcquisitionSourceField } from './AcquisitionSourceField'
-import { DividendSection } from './holdingForm/DividendSection'
 
 interface Props {
   open: boolean
   editing: Holding | null
   initialPlannedAsset?: PlannedAsset | null
-  initialSection?: 'general' | 'dividend'
   onClose: () => void
 }
 
@@ -66,13 +65,9 @@ const blank = {
   price: '' as number | string | '',
 }
 
-export function HoldingForm({ open, editing, initialPlannedAsset, initialSection, onClose }: Props) {
+export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Props) {
   const { data, upsertHolding, removeHolding, removePlannedAsset, addHoldingLog, usdThb } = useData()
   const { showToast } = useToast()
-
-  // Collapsible sections state
-  const [isGeneralExpanded, setIsGeneralExpanded] = useState(true)
-  const [isDividendExpanded, setIsDividendExpanded] = useState(true)
 
   // Safe-Haven Lock
   const [isLocked, setIsLocked] = useState(false)
@@ -109,12 +104,6 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
   const [goldBaht, setGoldBaht] = useState<number | ''>('')
   const [goldThbSpent, setGoldThbSpent] = useState<number | ''>('')
   const [goldLocationName, setGoldLocationName] = useState('')
-
-  // Dividend tracking fields (fund & stock)
-  const [paysDividend, setPaysDividend] = useState(false)
-  const [dividendMonths, setDividendMonths] = useState<number[]>([])
-  const [payoutDpsMap, setPayoutDpsMap] = useState<Record<number, number | string>>({})
-  const [defaultCashAccountId, setDefaultCashAccountId] = useState<string>('')
 
   // Backdated transaction date
   const [txDate, setTxDate] = useState<string>(localDateStr())
@@ -207,14 +196,6 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
     setSource('bought')
     setReceivedFrom('')
 
-    if (initialSection === 'dividend') {
-      setIsGeneralExpanded(false)
-      setIsDividendExpanded(true)
-    } else {
-      setIsGeneralExpanded(true)
-      setIsDividendExpanded(true)
-    }
-
     if (editing) {
       // A US stock's fields are in USD: convert from THB only with a real rate, else leave them empty
       // to be filled in (putting the THB figure in a USD field would save it 30x too high)
@@ -249,27 +230,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         setIsEditingThb(false)
       }
 
-      setPaysDividend(Boolean(editing.paysDividend))
-      setDividendMonths(editing.dividendMonths ?? [])
-      setDefaultCashAccountId(editing.defaultCashAccountId ?? '')
       setIsLocked(Boolean(editing.isLocked))
-
-      const initialMap: Record<number, number | string> = {}
-      if (editing.dividendPayouts && editing.dividendPayouts.length > 0) {
-        editing.dividendPayouts.forEach((p) => {
-          initialMap[p.month] = p.dps
-        })
-      } else if (editing.dividendMonths && editing.dividendMonths.length > 0) {
-        const legacyDps = typeof editing.expectedDps === 'number' && editing.expectedDps > 0
-          ? editing.expectedDps
-          : (parseFloat(String(editing.expectedDps ?? '')) || '')
-        editing.dividendMonths.forEach((m) => {
-          initialMap[m] = legacyDps
-        })
-      } else if (typeof editing.expectedDps === 'number' && editing.expectedDps > 0) {
-        initialMap[1] = editing.expectedDps
-      }
-      setPayoutDpsMap(initialMap)
     } else if (initialPlannedAsset) {
       setForm({
         name: initialPlannedAsset.name,
@@ -291,10 +252,6 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       setThbInvestedInput('')
       setIsThbInvestedManuallyEdited(false)
       setIsEditingThb(false)
-      setPaysDividend(false)
-      setDividendMonths([])
-      setPayoutDpsMap({})
-      setDefaultCashAccountId(data.cashAccounts[0]?.id ?? '')
       setIsLocked(false)
     } else {
       setForm(blank)
@@ -310,14 +267,10 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       setIsThbInvestedManuallyEdited(false)
       setIsEditingThb(false)
       setIsLocked(false)
-      setPaysDividend(false)
-      setDividendMonths([])
-      setPayoutDpsMap({})
-      setDefaultCashAccountId(data.cashAccounts[0]?.id ?? '')
     }
     setShowErrors(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fxRateInput left out so clearing the field does not refill it; liveFx follows usdThb, which is listed
-  }, [open, editing, initialPlannedAsset, initialSection, usdThb, data.cashAccounts])
+  }, [open, editing, initialPlannedAsset, usdThb])
 
   // Interactive handlers for dynamic dual-currency and FX rate recalculations
   const handleSharesChange = (newUnits: number | string | '') => {
@@ -667,40 +620,16 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       updateObj = assignAllToLocation(updateObj, brokerName)
     }
 
-    const canPayDividend = form.assetClass === 'fund' || form.assetClass === 'stock'
-    if (canPayDividend && paysDividend && dividendMonths.length > 0) {
-      const cleanPayouts: DividendPayoutSchedule[] = dividendMonths
-        .map((m) => {
-          const raw = payoutDpsMap[m]
-          const num = typeof raw === 'number' ? raw : parseFloat(String(raw ?? ''))
-          return {
-            month: m,
-            dps: isNaN(num) ? 0 : Math.max(0, num),
-          }
-        })
-        .sort((a, b) => a.month - b.month)
-
-      const totalDpsSum = cleanPayouts.reduce((sum, p) => sum + p.dps, 0)
-      const avgRoundDps = cleanPayouts.length > 0
-        ? Number((totalDpsSum / cleanPayouts.length).toFixed(4))
-        : 0
-
+    // Dividends are set up on the Dividends page: keep what the holding already has,
+    // unless it is now a class that cannot pay one
+    if (editing && canPayDividend(form) && editing.paysDividend) {
       updateObj = {
         ...updateObj,
         paysDividend: true,
-        dividendMonths: dividendMonths.slice().sort((a, b) => a - b),
-        dividendPayouts: cleanPayouts,
-        expectedDps: avgRoundDps > 0 ? avgRoundDps : undefined,
-        defaultCashAccountId: defaultCashAccountId || undefined,
-      }
-    } else {
-      updateObj = {
-        ...updateObj,
-        paysDividend: false,
-        expectedDps: undefined,
-        dividendMonths: undefined,
-        dividendPayouts: undefined,
-        defaultCashAccountId: undefined,
+        dividendMonths: editing.dividendMonths,
+        dividendPayouts: editing.dividendPayouts,
+        expectedDps: editing.expectedDps,
+        defaultCashAccountId: editing.defaultCashAccountId,
       }
     }
 
@@ -862,38 +791,6 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       }
     >
       <div className="space-y-4">
-        {/* Accordion 1: General info */}
-        <div className="rounded-2xl border border-line bg-surface overflow-hidden shadow-2xs">
-          <button
-            type="button"
-            onClick={() => setIsGeneralExpanded((v) => !v)}
-            className="w-full flex items-center justify-between p-3.5 sm:p-4 text-left bg-surface-muted transition-colors cursor-pointer select-none"
-            aria-expanded={isGeneralExpanded}
-          >
-            <div className="flex items-center gap-2 min-w-0 pr-2">
-              <span className="text-sm font-bold text-ink truncate">
-                General info
-              </span>
-              {!isGeneralExpanded && (form.name || form.ticker) && (
-                <span className="hidden sm:inline-flex items-center rounded-md bg-surface-muted px-2 py-0.5 text-xs font-medium text-ink-muted truncate max-w-[200px]">
-                  {form.ticker ? `${form.ticker} · ` : ''}{form.name || 'Holding'}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {!isGeneralExpanded && (
-                <span className="text-xs text-link font-medium">Tap to view / edit</span>
-              )}
-              <ChevronDownIcon
-                className={`h-4 w-4 text-ink-muted transition-transform duration-200 ${
-                  isGeneralExpanded ? 'rotate-180' : ''
-                }`}
-              />
-            </div>
-          </button>
-
-          {isGeneralExpanded && (
-            <div className="p-3.5 sm:p-4 pt-1 space-y-4 border-t border-line/60">
               {/* Asset class — always first */}
         <SelectField
           label="Asset class"
@@ -1526,28 +1423,6 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
               </div>
             </>
           )
-        )}
-            </div>
-          )}
-        </div>
-
-        {/* Accordion 2: Dividend tracking (optional for funds and stocks) */}
-        {(form.assetClass === 'fund' || form.assetClass === 'stock') && (
-          <DividendSection
-            isStock={form.assetClass === 'stock'}
-            units={Number(form.units) || 0}
-            expanded={isDividendExpanded}
-            setExpanded={setIsDividendExpanded}
-            paysDividend={paysDividend}
-            setPaysDividend={setPaysDividend}
-            dividendMonths={dividendMonths}
-            setDividendMonths={setDividendMonths}
-            payoutDpsMap={payoutDpsMap}
-            setPayoutDpsMap={setPayoutDpsMap}
-            cashAccounts={data.cashAccounts}
-            defaultCashAccountId={defaultCashAccountId}
-            setDefaultCashAccountId={setDefaultCashAccountId}
-          />
         )}
 
         {/* Safe-Haven Lock Toggle */}
