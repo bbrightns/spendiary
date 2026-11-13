@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronDownIcon } from '../../components/icons'
 import { categoriesFor, getCategory, type SpendCategory } from './categories'
 import { CategorySheet } from './CategorySheet'
-import { moveId } from './logic'
+import { foldChips, moveId, sortSubsByUse } from './logic'
 import { ReorderSheet } from './ReorderSheet'
 import { TONES } from './tones'
 import { KEEP_CATEGORY, useCategoryUsage, useRemoveCategory } from './useRemoveCategory'
@@ -15,6 +15,10 @@ export type CategoryLayout = 'chips' | 'tiles'
 
 /** Tiles shown before "more": one row, the user's first five (Edit → Arrange sets the order) */
 const COLLAPSED = 5
+/** Subcategory chips fold to this many rows; a pick from further down takes the last slot */
+const SUB_ROWS = 2
+/** Tailwind gap-1.5 between subcategory chips */
+const SUB_GAP = 6
 
 interface Props {
   type: 'expense' | 'income'
@@ -33,7 +37,7 @@ interface Props {
  * pick one, add a new one, or Edit to rename / restyle (tap), remove (×) and arrange categories, and rename (tap) or remove (×) subcategories.
  */
 export function CategoryPicker({ type, value, onChange, subcategory, onSubcategoryChange, layout, fallback }: Props) {
-  const { settings, updateSettings, subcategories, addSubcategory, removeSubcategory, renameSubcategory } = useSpend()
+  const { settings, transactions, updateSettings, subcategories, addSubcategory, removeSubcategory, renameSubcategory } = useSpend()
   const { showToast } = useToast()
   const removeCategory = useRemoveCategory()
   const usageOf = useCategoryUsage()
@@ -47,16 +51,62 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
   const [newSub, setNewSub] = useState('')
   const [renaming, setRenaming] = useState<string | null>(null)
   const [renameText, setRenameText] = useState('')
+  const [subExpanded, setSubExpanded] = useState(false)
+  // Chip widths from an invisible copy, so the fold can work out what fits in two rows
+  const subBox = useRef<HTMLDivElement>(null)
+  const subMeasure = useRef<HTMLDivElement>(null)
+  const [subSizes, setSubSizes] = useState<{ width: number; chips: number[]; add: number } | null>(null)
   const tiles = (layout ?? settings.categoryLayout ?? 'tiles') === 'tiles'
 
-  // Offered subcategories for the chosen category, plus the one already picked if it was since removed
+  // Offered subcategories for the chosen category, most used first, plus the one already picked if it was since removed
   const subChoices = useMemo(() => {
-    const list = subcategories(value)
+    const list = sortSubsByUse(subcategories(value), value, transactions)
     return subcategory && !list.includes(subcategory) ? [...list, subcategory] : list
-  }, [subcategories, value, subcategory])
+  }, [subcategories, value, subcategory, transactions])
+
+  // By content: `subcategories` is a new function each render, so the list is a new array each time too
+  const subKey = subChoices.join('\u0000')
+  useLayoutEffect(() => {
+    const box = subBox.current
+    const measure = subMeasure.current
+    if (!box || !measure) return setSubSizes(null)
+    const read = () => {
+      const widths = [...measure.children].map((el) => el.getBoundingClientRect().width)
+      const next = { width: box.clientWidth, chips: widths.slice(0, -1), add: widths[widths.length - 1] ?? 0 }
+      setSubSizes((prev) =>
+        prev && prev.width === next.width && prev.add === next.add && prev.chips.length === next.chips.length && prev.chips.every((w, i) => w === next.chips[i])
+          ? prev
+          : next,
+      )
+    }
+    read()
+    const ro = new ResizeObserver(read)
+    ro.observe(box)
+    // Its size changes too once a web font (Thai) loads
+    ro.observe(measure)
+    return () => ro.disconnect()
+  }, [subKey])
+
+  // Folded: the chips that fit in two rows (Add always last); undefined when everything fits
+  const subFold =
+    subSizes && !editing && subSizes.chips.length === subChoices.length
+      ? foldChips({
+          widths: subSizes.chips,
+          width: subSizes.width,
+          gap: SUB_GAP,
+          rows: SUB_ROWS,
+          // The new-subcategory field is w-32
+          trailing: addingSub ? 128 : subSizes.add,
+          keep: subcategory ? subChoices.indexOf(subcategory) : undefined,
+        })
+      : undefined
+  const subShown = subFold && !subExpanded ? subFold.map((i) => subChoices[i]) : subChoices
 
   const pick = (id: string) => {
-    if (id !== value) onSubcategoryChange('')
+    if (id !== value) {
+      onSubcategoryChange('')
+      setSubExpanded(false)
+    }
     onChange(id)
     // Fold the grid back so the subcategories sit right under it; the pick stays in view
     setExpanded(false)
@@ -256,8 +306,17 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
               {current.label} <span className="font-medium">· subcategory (optional)</span>
             </span>
           </p>
-          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Subcategory">
-            {subChoices.map((s) => {
+          <div ref={subBox} className="relative flex flex-wrap items-center gap-1.5" role="group" aria-label="Subcategory">
+            {/* Invisible copy at full size (bold, like a picked chip) that the fold measures */}
+            <div ref={subMeasure} aria-hidden="true" className="pointer-events-none invisible absolute left-0 top-0 flex w-max gap-1.5">
+              {subChoices.map((s) => (
+                <span key={s} className="inline-flex h-8 items-center whitespace-nowrap rounded-full border px-3 text-xs font-bold">
+                  {s}
+                </span>
+              ))}
+              <span className="inline-flex h-8 items-center whitespace-nowrap rounded-full border px-3 text-xs font-semibold">+ Add</span>
+            </div>
+            {subShown.map((s) => {
               const on = s === subcategory
               if (renaming === s)
                 return (
@@ -343,6 +402,17 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
               </button>
             )}
           </div>
+          {subFold && (
+            <button
+              type="button"
+              aria-expanded={subExpanded}
+              onClick={() => setSubExpanded((v) => !v)}
+              className={`mt-2 flex min-h-8 w-full items-center justify-center gap-1 rounded-xl border border-dashed border-current/40 text-xs font-semibold transition-colors cursor-pointer hover:bg-surface/60 ${TONES[tone].ink}`}
+            >
+              {subExpanded ? 'Show less' : `Show ${subChoices.length - subFold.length} more`}
+              <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform ${subExpanded ? 'rotate-180' : ''}`} strokeWidth={2} aria-hidden="true" />
+            </button>
+          )}
         </div>
       )}
 
