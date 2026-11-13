@@ -3,7 +3,7 @@ import { NumberField } from '../ui/Field'
 import { SegmentedControl } from '../ui/SegmentedControl'
 import { PencilIcon } from '../icons'
 import { money } from '../../lib/format'
-import { fxLooksOff, type TradeCurrency, type UsdTrade } from '../../lib/usdTrade'
+import { fieldNumber, fxLooksOff, type TradeCurrency, type UsdTrade } from '../../lib/usdTrade'
 
 type Value = number | string | ''
 
@@ -48,8 +48,26 @@ const rateText = (fx: number) => `฿${fx.toFixed(2)}/USD`
 export function UsdTradeFields(p: Props) {
   const labels = LABELS[p.kind]
   const [editRate, setEditRate] = useState(false)
-  const showRateField = editRate || p.fx !== '' || p.liveFx <= 0
+  // The rate is automatic (today's, or from the amounts) until one is typed; with no rate loaded, a USD trade needs one
+  const rateTyped = fieldNumber(p.fx) > 0
+  const showRateField = editRate || p.fx !== '' || (p.currency === 'USD' && p.liveFx <= 0)
   const t = p.trade
+  const rateSource = rateTyped ? 'your rate' : "today's rate"
+  // THB trade with both shares and a rate typed: the shares win, but say when the two disagree
+  const sharesAtRate = p.currency === 'THB' && rateTyped && fieldNumber(p.shares) > 0 && fieldNumber(p.priceUsd) > 0 && fieldNumber(p.amountThb) > 0
+    ? fieldNumber(p.amountThb) / fieldNumber(p.fx) / fieldNumber(p.priceUsd)
+    : null
+  const sharesMismatch = sharesAtRate !== null && Math.abs(sharesAtRate - fieldNumber(p.shares)) / fieldNumber(p.shares) > 0.005
+  const useAutoRate = () => { p.onFxChange(''); setEditRate(false) }
+  const editRateButton = (
+    <button
+      type="button"
+      onClick={() => setEditRate(true)}
+      className="inline-flex items-center gap-1 font-semibold text-link hover:underline cursor-pointer"
+    >
+      <PencilIcon className="h-3 w-3" /> Enter my own rate
+    </button>
+  )
   const required = (v: Value) => (p.showErrors && !(Number(String(v).replace(/,/g, '')) > 0) ? 'Required (> 0)' : undefined)
 
   const sharesField = (
@@ -110,19 +128,29 @@ export function UsdTradeFields(p: Props) {
         {priceField}
       </div>
 
-      {p.currency === 'USD' && showRateField && (
+      {showRateField && (
         <NumberField
           label="FX rate (THB per USD)"
-          hint={p.liveFx > 0 ? `today ${p.liveFx.toFixed(2)}` : undefined}
+          hint={p.currency === 'THB' ? 'works out the shares' : p.liveFx > 0 ? `auto: today ${p.liveFx.toFixed(2)}` : undefined}
           value={p.fx}
           onChange={p.onFxChange}
-          error={p.showErrors && p.liveFx <= 0 && !(Number(p.fx) > 0) ? 'Required: no USD/THB rate loaded yet' : undefined}
+          error={p.showErrors && p.currency === 'USD' && p.liveFx <= 0 && !rateTyped ? 'Required: no USD/THB rate loaded yet' : undefined}
           placeholder={p.liveFx > 0 ? p.liveFx.toFixed(2) : "Your broker's rate"}
-          step={0.01}
+          step={0.0001}
+          rightElement={p.liveFx > 0 ? (
+            <button
+              type="button"
+              onClick={useAutoRate}
+              className="rounded-md border border-line bg-surface-muted px-2 py-0.5 text-xs font-bold text-ink-muted hover:text-link cursor-pointer"
+              title="Go back to the automatic rate"
+            >
+              Auto
+            </button>
+          ) : undefined}
         />
       )}
 
-      {t && (
+      {t ? (
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl bg-surface-muted px-3 py-2 text-xs text-ink-muted">
           <span>
             <span className="font-semibold tnum text-ink">{money(t.usd, 'USD', true)}</span>
@@ -130,19 +158,19 @@ export function UsdTradeFields(p: Props) {
             <span className="tnum">{money(t.thb, 'THB', true)}</span>
             {' at '}
             <span className="tnum">{rateText(t.fx)}</span>
-            {t.fxFromAmounts && ' (from your amounts)'}
-            {t.sharesEstimated && ` · ≈ ${t.shares} share${t.shares === 1 ? '' : 's'} at today's rate`}
+            {t.fxFromAmounts ? ' (from your amounts)' : ` (${rateSource})`}
+            {t.sharesEstimated && ` · ≈ ${t.shares} share${t.shares === 1 ? '' : 's'}`}
           </span>
-          {p.currency === 'USD' && !showRateField && (
-            <button
-              type="button"
-              onClick={() => setEditRate(true)}
-              className="inline-flex items-center gap-1 font-semibold text-link hover:underline cursor-pointer"
-            >
-              <PencilIcon className="h-3 w-3" /> Edit rate
-            </button>
-          )}
+          {!showRateField && editRateButton}
         </div>
+      ) : (
+        !showRateField && <div className="text-xs">{editRateButton}</div>
+      )}
+
+      {sharesMismatch && sharesAtRate !== null && (
+        <p className="text-xs text-warn-ink">
+          At {rateText(fieldNumber(p.fx))} that is ≈ {Number(sharesAtRate.toFixed(4))} shares. The shares you typed are kept, and the rate comes from your amounts.
+        </p>
       )}
 
       {t && p.currency === 'THB' && fxLooksOff(t.fx, p.liveFx) && (
