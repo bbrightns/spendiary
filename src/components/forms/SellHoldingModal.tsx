@@ -12,6 +12,8 @@ import { formatLocationQty, hasLocations, qtyEpsilon, takeFromLocation, visibleL
 import { dateStrToTimestamp, thb, localDateStr } from '../../lib/format'
 import { isValidRate } from '../../lib/fx'
 import { TransactionDateField } from './TransactionDateField'
+import { CashAccountField } from './CashAccountField'
+import { amountInAccountCurrency, type TradeAmount } from '../../lib/cashPayment'
 import { LockClosedIcon, PencilIcon, UndoIcon } from '../icons'
 import { STORAGE_KEYS } from '../../lib/storageKeys'
 
@@ -145,15 +147,6 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     disabled: l.isLocked,
   }))
 
-  // Cash Account options
-  const cashAccountOptions = [
-    { value: 'none', label: 'None · Do not deposit to cash' },
-    ...(data.cashAccounts ?? []).map((c) => ({
-      value: c.id,
-      label: `${c.name} (${c.currency === 'USD' ? '$' : '฿'}${c.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`,
-    })),
-  ]
-
   // Sell All (100%) applicator
   const handleSellAll = () => {
     setIsCustomProceeds(false)
@@ -268,6 +261,13 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     isValid = isValid && totalProceedsThb > 0
   }
 
+  // What the sale puts into the chosen account, in its own currency: a US stock pays out USD
+  // (the net proceeds at the trade's own rate), anything else converts at today's rate for a USD account
+  const stockFx = Number(stockFxRate) || rate
+  const depositTo = cashAccountId !== 'none' ? data.cashAccounts.find((c) => c.id === cashAccountId) : undefined
+  const depositTrade: TradeAmount = { thb: totalProceedsThb, ...(isStock && stockFx > 0 ? { usd: totalProceedsThb / stockFx } : {}) }
+  const depositAmount = amountInAccountCurrency(depositTo, depositTrade, rate)
+
   const isCurrentLocLocked = !!sellLoc?.isLocked
 
   if (holding.isLocked || isCurrentLocLocked) {
@@ -291,7 +291,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
 
   // Handle Save Sell
   const handleSave = () => {
-    if (!isValid) {
+    if (!isValid || (depositTo && depositAmount === null)) {
       setShowErrors(true)
       return
     }
@@ -392,8 +392,8 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
       realizedPnLPercent,
       fee: effectiveFee > 0 ? effectiveFee : undefined,
       remainingHolding,
-      cashAccountId: cashAccountId !== 'none' ? cashAccountId : undefined,
-      cashDepositAmount: cashAccountId !== 'none' ? totalProceedsThb : undefined,
+      cashAccountId: depositTo?.id,
+      cashDepositAmount: depositTo ? depositAmount ?? undefined : undefined,
       note,
       timestamp: dateStrToTimestamp(txDate),
     })
@@ -723,11 +723,14 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
 
         {/* Cash Deposit Selection */}
         <div className="pt-1">
-          <SelectField
+          <CashAccountField
             label="Deposit the money into a cash account"
+            accounts={data.cashAccounts ?? []}
             value={cashAccountId}
             onChange={setCashAccountId}
-            options={cashAccountOptions}
+            direction="deposit"
+            amount={totalProceedsThb > 0 ? depositAmount : 0}
+            showErrors={showErrors}
           />
         </div>
 
