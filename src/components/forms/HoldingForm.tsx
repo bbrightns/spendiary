@@ -16,6 +16,8 @@ import { CheckIcon, ChevronDownIcon, PencilIcon, LockClosedIcon } from '../icons
 import { TransactionDateField } from './TransactionDateField'
 import { AcquisitionSourceField } from './AcquisitionSourceField'
 import { DividendSection } from './holdingForm/DividendSection'
+import { CashAccountField } from './CashAccountField'
+import { amountInAccountCurrency, type TradeAmount } from '../../lib/cashPayment'
 
 interface Props {
   open: boolean
@@ -127,6 +129,15 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
   const fromName = receivedFrom.trim()
   const receivedSuffix = isReceived ? ` · Received${fromName ? ` from ${fromName}` : ''}` : ''
   const sourceLogFields = isReceived ? { source: 'received' as const, receivedFrom: fromName || undefined } : {}
+
+  // New holdings bought with own money: the cash account the money comes out of ('none' = not tracked)
+  const [payCashAccountId, setPayCashAccountId] = useState('none')
+  const payFrom = !editing && !isReceived && payCashAccountId !== 'none'
+    ? data.cashAccounts.find((c) => c.id === payCashAccountId)
+    : undefined
+  /** The payment for a trade, in the paying account's currency; null when a USD account needs a rate that isn't known */
+  const paymentFor = (trade: TradeAmount) => amountInAccountCurrency(payFrom, trade, liveFx)
+  const paidSuffix = payFrom ? ` · Paid from ${payFrom.name}` : ''
 
   const isBtc = form.assetClass === 'crypto' && (
     form.ticker.trim().toUpperCase() === 'BTC' ||
@@ -316,6 +327,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       setDefaultCashAccountId(data.cashAccounts[0]?.id ?? '')
     }
     setShowErrors(false)
+    setPayCashAccountId('none')
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fxRateInput left out so clearing the field does not refill it; liveFx follows usdThb, which is listed
   }, [open, editing, initialPlannedAsset, initialSection, usdThb, data.cashAccounts])
 
@@ -432,7 +444,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
     const sats = Number(satoshi)
     const spent = Number(btcThbSpent)
     const locName = locationName.trim()
-    if (sats <= 0 || spent <= 0 || !locName) { setShowErrors(true); return }
+    const pay = paymentFor({ thb: spent })
+    if (sats <= 0 || spent <= 0 || !locName || (payFrom && pay === null)) { setShowErrors(true); return }
+    const payment = payFrom && pay ? { accountId: payFrom.id, amount: pay } : undefined
 
     const btcUnits = sats / SATS_PER_BTC
 
@@ -459,8 +473,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         holdingName: 'Bitcoin',
         ticker: 'BTC',
         assetClass: 'crypto',
-        note: `${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} ${spentWord} · ${locName} (merged into existing)${receivedSuffix}`,
+        note: `${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} ${spentWord} · ${locName} (merged into existing)${receivedSuffix}${paidSuffix}`,
         afterHoldingState: mergedHolding,
+        payment,
         ...sourceLogFields,
       })
       onClose()
@@ -496,8 +511,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       holdingName: 'Bitcoin',
       ticker: 'BTC',
       assetClass: 'crypto',
-      note: `${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} ${spentWord} · ${locName}${receivedSuffix}`,
+      note: `${sats.toLocaleString()} sats · ฿${spent.toLocaleString()} ${spentWord} · ${locName}${receivedSuffix}${paidSuffix}`,
       afterHoldingState: savedHolding,
+      payment,
       ...sourceLogFields,
     })
     onClose()
@@ -510,7 +526,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       : Number(grams)
     const spent = Number(goldThbSpent)
     const locName = goldLocationName.trim()
-    if (g <= 0 || spent <= 0 || !locName) { setShowErrors(true); return }
+    const pay = paymentFor({ thb: spent })
+    if (g <= 0 || spent <= 0 || !locName || (payFrom && pay === null)) { setShowErrors(true); return }
+    const payment = payFrom && pay ? { accountId: payFrom.id, amount: pay } : undefined
 
     const bahtAmount = (g / GRAMS_PER_BAHT_GOLD).toFixed(4)
 
@@ -537,8 +555,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         holdingName: 'Gold',
         ticker: 'XAU',
         assetClass: 'gold',
-        note: `${g.toFixed(4)} g (${bahtAmount} gold baht) · ฿${spent.toLocaleString()} ${spentWord} · ${locName} (merged into existing)${receivedSuffix}`,
+        note: `${g.toFixed(4)} g (${bahtAmount} gold baht) · ฿${spent.toLocaleString()} ${spentWord} · ${locName} (merged into existing)${receivedSuffix}${paidSuffix}`,
         afterHoldingState: mergedHolding,
+        payment,
         ...sourceLogFields,
       })
       onClose()
@@ -574,8 +593,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       holdingName: 'Gold',
       ticker: 'XAU',
       assetClass: 'gold',
-      note: `${g.toFixed(4)} g (${bahtAmount} gold baht) · ฿${spent.toLocaleString()} ${spentWord} · ${locName}${receivedSuffix}`,
+      note: `${g.toFixed(4)} g (${bahtAmount} gold baht) · ฿${spent.toLocaleString()} ${spentWord} · ${locName}${receivedSuffix}${paidSuffix}`,
       afterHoldingState: savedHolding,
+      payment,
       ...sourceLogFields,
     })
     onClose()
@@ -704,6 +724,11 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       }
     }
 
+    // A new holding paid from a cash account: its cost, in that account's currency (a US stock pays its USD cost)
+    const pay = paymentFor({ thb: updateObj.totalThbInvested ?? 0, ...(isUsd ? { usd: updateObj.totalUsdInvested } : {}) })
+    if (payFrom && pay === null) { setShowErrors(true); return }
+    const payment = payFrom && pay ? { accountId: payFrom.id, amount: pay } : undefined
+
     const savedHolding = updateObj
     upsertHolding(savedHolding)
     if (!editing && initialPlannedAsset?.id) {
@@ -771,7 +796,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
         ? changes.join(' · ')
         : `Updated holding details`
     } else {
-      logNote = `${unitsNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ ${isUsd ? `$${avgCostInput.toLocaleString()}` : `฿${avgCostInput.toLocaleString()}`}/unit${receivedSuffix}`
+      logNote = `${unitsNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ ${isUsd ? `$${avgCostInput.toLocaleString()}` : `฿${avgCostInput.toLocaleString()}`}/unit${receivedSuffix}${paidSuffix}`
     }
 
     addHoldingLog({
@@ -784,6 +809,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
       note: logNote,
       previousHoldingState: editing ? JSON.parse(JSON.stringify(editing)) : undefined,
       afterHoldingState: savedHolding,
+      ...(payment ? { payment } : {}),
       ...sourceLogFields,
     })
     showToast(editing ? `Updated ${name}` : `${name} is now in your portfolio.`, 'success', undefined, { popup: !editing, title: 'Holding added!' })
@@ -791,6 +817,15 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
   }
 
   // Derived previews
+  /** What the new holding cost, for the payment line: BTC and gold from their spent fields, a US stock in USD and THB */
+  const newUsdCost = isUsd ? (Number(form.units) || 0) * (Number(form.avgCost) || 0) : 0
+  const newTrade: TradeAmount = isBtc
+    ? { thb: Number(btcThbSpent) || 0 }
+    : isGold
+      ? { thb: Number(goldThbSpent) || 0 }
+      : isUsd
+        ? { thb: Number(thbInvestedInput) || newUsdCost * fxNow, usd: newUsdCost }
+        : { thb: (form.assetClass === 'real_estate' && form.units === '' ? 1 : Number(form.units) || 0) * (Number(form.avgCost) || 0) }
   const sats = Number(satoshi)
   const btcSpent = Number(btcThbSpent)
   const btcAmount = sats > 0 ? sats / SATS_PER_BTC : 0
@@ -1530,6 +1565,19 @@ export function HoldingForm({ open, editing, initialPlannedAsset, initialSection
             </div>
           )}
         </div>
+
+        {/* New holding bought with own money: where the money came from */}
+        {!editing && !isReceived && (
+          <CashAccountField
+            label="Take the payment from a cash account"
+            accounts={data.cashAccounts ?? []}
+            value={payCashAccountId}
+            onChange={setPayCashAccountId}
+            direction="pay"
+            amount={newTrade.thb > 0 ? paymentFor(newTrade) : 0}
+            showErrors={showErrors}
+          />
+        )}
 
         {/* Accordion 2: Dividend tracking (optional for funds and stocks) */}
         {(form.assetClass === 'fund' || form.assetClass === 'stock') && (
