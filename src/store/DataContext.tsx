@@ -112,7 +112,12 @@ export interface DataContextValue {
     source?: AcquisitionSource
     receivedFrom?: string
   }) => void
-  addHoldingLog: (log: Omit<HoldingLog, 'id' | 'timestamp'> & { id?: string; timestamp?: string }) => void
+  addHoldingLog: (log: Omit<HoldingLog, 'id' | 'timestamp'> & {
+    id?: string
+    timestamp?: string
+    /** An add paid from a cash account: the amount, in that account's currency, comes out of it (undo puts it back) */
+    payment?: { accountId: string; amount: number }
+  }) => void
   removeHoldingLog: (logId: string) => void
   removeHoldingLogs: (logIds: string[]) => void
   undoHoldingLog: (logId: string) => void

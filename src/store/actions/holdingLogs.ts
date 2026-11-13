@@ -12,7 +12,8 @@ import { roundMoney } from '../../lib/money'
  * The activity log of holding changes, including undoing a logged change.
  * Each action takes the current data plus the arguments useData() exposes and returns the next data.
  */
-export function addHoldingLog(prev: SpendiaryData, ...[log]: Parameters<DataContextValue['addHoldingLog']>): SpendiaryData {
+export function addHoldingLog(prev: SpendiaryData, ...[params]: Parameters<DataContextValue['addHoldingLog']>): SpendiaryData {
+  const { payment, ...log } = params
   const holding = log.holdingId
     ? prev.holdings.find((h) => h.id === log.holdingId)
     : prev.holdings.find((h) => h.ticker === log.ticker)
@@ -27,19 +28,35 @@ export function addHoldingLog(prev: SpendiaryData, ...[log]: Parameters<DataCont
     ? diffHolding(previousHoldingState, log.afterHoldingState)
     : undefined
 
-  // An add keeps exactly what it put in: a new holding, or units merged into an existing one
+  // An add paid from a cash account takes the money out of it (only an add can carry a payment)
+  const paid = log.action === 'add' && payment && payment.amount > 0
+    && (prev.cashAccounts ?? []).some((c) => c.id === payment.accountId)
+    ? payment
+    : undefined
+  const cashAccounts = paid
+    ? (prev.cashAccounts ?? []).map((c) => (c.id === paid.accountId ? { ...c, balance: roundMoney(c.balance - paid.amount) } : c))
+    : prev.cashAccounts
+
+  // An add keeps exactly what it put in: a new holding, or units merged into an existing one, and the money that left
   const delta = log.action === 'add' && !log.delta && log.afterHoldingState
-    ? holdingDelta(previousHoldingState, log.afterHoldingState)
+    ? holdingDelta(
+        previousHoldingState,
+        log.afterHoldingState,
+        paid ? [{ accountId: paid.accountId, amount: -paid.amount }] : undefined,
+        cashAccounts,
+      )
     : undefined
 
   return {
     ...prev,
+    cashAccounts,
     holdingLogs: [
       {
         ...log,
         id: log.id ?? newId(),
         timestamp: log.timestamp ?? new Date().toISOString(),
         holdingId: log.holdingId ?? holding?.id,
+        ...(paid ? { cashAccountId: paid.accountId } : {}),
         // An add carries its delta instead of whole snapshots
         ...(delta ? { previousHoldingState: undefined, afterHoldingState: undefined, delta } : { previousHoldingState }),
         ...(changes ? { changes } : {}),

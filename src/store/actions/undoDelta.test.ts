@@ -143,3 +143,37 @@ describe('undo with a saved delta', () => {
     expect(back.dcaPlans[0].confirmedDates).toEqual([])
   })
 })
+
+describe('an add paid from a cash account', () => {
+  const wallet: CashAccount = { id: 'usd', name: 'USD wallet', balance: 5_000, currency: 'USD' }
+  const aapl = { id: 's1', name: 'Apple', ticker: 'AAPL', assetClass: 'stock', units: 10, totalUnits: 10, avgCost: 3_500, avgCostThb: 3_500, price: 3_500, totalThbInvested: 35_000, totalUsdInvested: 1_000 } as Holding
+  const paidAdd = (s: SpendiaryData, accountId: string, amount: number) =>
+    addHoldingLog(upsertHolding(s, aapl), {
+      action: 'add', holdingId: aapl.id, holdingName: 'Apple', ticker: 'AAPL', assetClass: 'stock', note: 'Added',
+      afterHoldingState: aapl, payment: { accountId, amount },
+    })
+
+  it('takes the amount out of the account and records it in the delta', () => {
+    const out = paidAdd(state({ cashAccounts: [bank, wallet] }), 'usd', 1_000)
+    expect(out.cashAccounts.find((c) => c.id === 'usd')!.balance).toBe(4_000)
+    expect(out.cashAccounts.find((c) => c.id === 'bank')!.balance).toBe(10_000)
+    const log = logOf(out, 'add')
+    expect(log.cashAccountId).toBe('usd')
+    expect(log.delta!.cash).toEqual([{ accountId: 'usd', amount: -1_000, name: 'USD wallet', currency: 'USD', balanceAfter: 4_000 }])
+    expect(log).not.toHaveProperty('payment')
+  })
+
+  it('puts the money back on undo', () => {
+    const out = paidAdd(state({ cashAccounts: [bank, wallet] }), 'usd', 1_000)
+    const back = undoHoldingLog(out, logOf(out, 'add').id)
+    expect(back.holdings.find((h) => h.id === 's1')).toBeUndefined()
+    expect(back.cashAccounts.find((c) => c.id === 'usd')!.balance).toBe(5_000)
+  })
+
+  it('ignores a payment from an account that does not exist', () => {
+    const out = paidAdd(state(), 'gone', 1_000)
+    expect(out.cashAccounts).toEqual([bank])
+    expect(logOf(out, 'add').delta!.cash).toBeUndefined()
+    expect(logOf(out, 'add').cashAccountId).toBeUndefined()
+  })
+})
