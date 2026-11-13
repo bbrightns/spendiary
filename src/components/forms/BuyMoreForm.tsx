@@ -16,6 +16,8 @@ import { isValidPrice } from '../../lib/priceCache'
 import { TransactionDateField } from './TransactionDateField'
 import { AcquisitionSourceField } from './AcquisitionSourceField'
 import { CashAccountField } from './CashAccountField'
+import { UsdTradeFields } from './UsdTradeFields'
+import { fieldNumber, resolveUsdTrade, type TradeCurrency } from '../../lib/usdTrade'
 import { amountInAccountCurrency, type TradeAmount } from '../../lib/cashPayment'
 
 interface Props {
@@ -28,12 +30,6 @@ interface Props {
 }
 
 const SATS_PER_BTC = 100_000_000
-
-function formatToMaxDecimals(val: number | string, maxDecimals: number): string {
-  const num = Number(val)
-  if (isNaN(num) || val === '') return ''
-  return Number(num.toFixed(maxDecimals)).toString()
-}
 
 function formatCostOrFx(val: number | string): string {
   const num = Number(val)
@@ -90,7 +86,8 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
   const [fxRate, setFxRate] = useState<number | string | ''>('')
   const [priceUsd, setPriceUsd] = useState<number | string | ''>('')
   const [sharesBought, setSharesBought] = useState<number | string | ''>('')
-  const [lastFocused, setLastFocused] = useState<'thb' | 'shares'>('thb')
+  // Without a paying account (or a USD/THB one deciding it): which currency the money moved in
+  const [paidIn, setPaidIn] = useState<TradeCurrency>('USD')
 
   // Backdated transaction date
   const [txDate, setTxDate] = useState<string>(localDateStr())
@@ -119,163 +116,6 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
   const cost = valid ? Number(units) * priceInThb : 0
   const label = holding?.assetClass === 'fund' ? 'units' : 'shares'
 
-  const fxRateNum = Number(fxRate) || rate
-  const priceUsdNum = Number(priceUsd) || (holding && rate > 0 && hasRealPrice(holding) ? holding.price / rate : 0)
-  const amountSpentThbNum = Number(amountSpentThb)
-  const sharesBoughtNum = Number(sharesBought)
-  const validStock =
-    amountSpentThb !== '' &&
-    amountSpentThbNum > 0 &&
-    fxRate !== '' &&
-    fxRateNum > 0 &&
-    priceUsd !== '' &&
-    priceUsdNum > 0 &&
-    sharesBought !== '' &&
-    sharesBoughtNum > 0
-
-  const stockCurrentUnits = holding ? (holding.units ?? holding.totalUnits ?? 0) : 0
-  const stockPrevThbInvested = holding
-    ? (holding.totalThbInvested ??
-      stockCurrentUnits * (holding.avgCostThb ?? holding.avgCost ?? 0))
-    : 0
-  const stockNewTotalUnits = stockCurrentUnits + sharesBoughtNum
-  const stockNewTotalThbInvested = stockPrevThbInvested + amountSpentThbNum
-
-  function handleAmountSpentThbChange(val: number | string | '') {
-    setAmountSpentThb(val)
-    setLastFocused('thb')
-    if (val === '' || Number(val) <= 0) {
-      setSharesBought('')
-      return
-    }
-    const valNum = Number(val)
-    const currentFxRate = Number(fxRate) || rate
-    const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 && hasRealPrice(holding) ? holding.price / rate : 1)
-    if (currentFxRate > 0 && currentPriceUsd > 0) {
-      const usdSpent = valNum / currentFxRate
-      const shares = usdSpent / currentPriceUsd
-      setSharesBought(Number(shares.toFixed(4)))
-    } else {
-      setSharesBought('')
-    }
-  }
-
-  function handleSharesBoughtChange(val: number | string | '') {
-    setSharesBought(val)
-    setLastFocused('shares')
-    if (val === '' || Number(val) <= 0) {
-      setAmountSpentThb('')
-      return
-    }
-    const valNum = Number(val)
-    const currentFxRate = Number(fxRate) || rate
-    const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 && hasRealPrice(holding) ? holding.price / rate : 1)
-    if (currentFxRate > 0 && currentPriceUsd > 0) {
-      const usdSpent = valNum * currentPriceUsd
-      const thbSpentVal = usdSpent * currentFxRate
-      setAmountSpentThb(Number(thbSpentVal.toFixed(2)))
-    } else {
-      setAmountSpentThb('')
-    }
-  }
-
-  function handleFxRateChange(val: number | string | '') {
-    setFxRate(val)
-    if (val === '' || Number(val) <= 0) return
-    const valNum = Number(val)
-    const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 && hasRealPrice(holding) ? holding.price / rate : 1)
-    if (lastFocused === 'thb' && amountSpentThb !== '' && Number(amountSpentThb) > 0) {
-      const usdSpent = Number(amountSpentThb) / valNum
-      const shares = usdSpent / currentPriceUsd
-      setSharesBought(Number(shares.toFixed(4)))
-    } else if (lastFocused === 'shares' && sharesBought !== '' && Number(sharesBought) > 0) {
-      const usdSpent = Number(sharesBought) * currentPriceUsd
-      const thbSpentVal = usdSpent * valNum
-      setAmountSpentThb(Number(thbSpentVal.toFixed(2)))
-    }
-  }
-
-  function handlePriceUsdChange(val: number | string | '') {
-    setPriceUsd(val)
-    if (val === '' || Number(val) <= 0) return
-    const valNum = Number(val)
-    const currentFxRate = Number(fxRate) || rate
-    if (lastFocused === 'thb' && amountSpentThb !== '' && Number(amountSpentThb) > 0) {
-      const usdSpent = Number(amountSpentThb) / currentFxRate
-      const shares = usdSpent / valNum
-      setSharesBought(Number(shares.toFixed(4)))
-    } else if (lastFocused === 'shares' && sharesBought !== '' && Number(sharesBought) > 0) {
-      const usdSpent = Number(sharesBought) * valNum
-      const thbSpentVal = usdSpent * currentFxRate
-      setAmountSpentThb(Number(thbSpentVal.toFixed(2)))
-    }
-  }
-
-  const handleAmountSpentThbBlur = () => {
-    if (amountSpentThb !== '') {
-      const formatted = Number(Number(amountSpentThb).toFixed(2))
-      setAmountSpentThb(formatted)
-      const currentFxRate = Number(fxRate) || rate
-      const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 && hasRealPrice(holding) ? holding.price / rate : 1)
-      if (currentFxRate > 0 && currentPriceUsd > 0) {
-        const usdSpent = formatted / currentFxRate
-        const shares = usdSpent / currentPriceUsd
-        setSharesBought(Number(shares.toFixed(4)))
-      }
-    }
-  }
-
-  const handleSharesBoughtBlur = () => {
-    if (sharesBought !== '') {
-      const formatted = formatToMaxDecimals(sharesBought, 4)
-      setSharesBought(formatted)
-      const formattedNum = Number(formatted)
-      const currentFxRate = Number(fxRate) || rate
-      const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 && hasRealPrice(holding) ? holding.price / rate : 1)
-      if (currentFxRate > 0 && currentPriceUsd > 0) {
-        const usdSpent = formattedNum * currentPriceUsd
-        const thbSpentVal = usdSpent * currentFxRate
-        setAmountSpentThb(Number(thbSpentVal.toFixed(2)))
-      }
-    }
-  }
-
-  const handleFxRateBlur = () => {
-    if (fxRate !== '') {
-      const formatted = formatCostOrFx(fxRate)
-      setFxRate(formatted)
-      const formattedNum = Number(formatted)
-      const currentPriceUsd = Number(priceUsd) || (holding && rate > 0 && hasRealPrice(holding) ? holding.price / rate : 1)
-      if (lastFocused === 'thb' && amountSpentThb !== '' && Number(amountSpentThb) > 0) {
-        const usdSpent = Number(amountSpentThb) / formattedNum
-        const shares = usdSpent / currentPriceUsd
-        setSharesBought(Number(shares.toFixed(4)))
-      } else if (lastFocused === 'shares' && sharesBought !== '' && Number(sharesBought) > 0) {
-        const usdSpent = Number(sharesBought) * currentPriceUsd
-        const thbSpentVal = usdSpent * formattedNum
-        setAmountSpentThb(Number(thbSpentVal.toFixed(2)))
-      }
-    }
-  }
-
-  const handlePriceUsdBlur = () => {
-    if (priceUsd !== '') {
-      const formatted = formatCostOrFx(priceUsd)
-      setPriceUsd(formatted)
-      const formattedNum = Number(formatted)
-      const currentFxRate = Number(fxRate) || rate
-      if (lastFocused === 'thb' && amountSpentThb !== '' && Number(amountSpentThb) > 0) {
-        const usdSpent = Number(amountSpentThb) / currentFxRate
-        const shares = usdSpent / formattedNum
-        setSharesBought(Number(shares.toFixed(4)))
-      } else if (lastFocused === 'shares' && sharesBought !== '' && Number(sharesBought) > 0) {
-        const usdSpent = Number(sharesBought) * formattedNum
-        const thbSpentVal = usdSpent * currentFxRate
-        setAmountSpentThb(Number(thbSpentVal.toFixed(2)))
-      }
-    }
-  }
-
   // ALL useEffects at top level — no hooks after conditional returns
   useEffect(() => {
     const justOpened = !wasOpen.current && open
@@ -285,6 +125,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
     setUnits('')
     setShowErrors(false)
     setCashAccountId('none')
+    setPaidIn('USD')
     setSource('bought')
     setReceivedFrom('')
     setSatoshi('')
@@ -299,22 +140,20 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
     // Only a real price is offered; a cost stand-in (no price yet) leaves it for the user to type.
     if (!isBtc && !hasRealPrice(holding)) {
       setPrice('')
-      if (isStock && rate > 1) {
-        setFxRate(formatCostOrFx(rate))
+      if (isStock) {
+        setFxRate('')
         setPriceUsd('')
         setAmountSpentThb('')
         setSharesBought('')
-        setLastFocused('thb')
       }
     } else if (!isBtc) {
       if (isStock && rate > 1) {
         const usdPrice = Number((holding.price / rate).toFixed(4))
         setPrice(usdPrice)
-        setFxRate(formatCostOrFx(rate))
+        setFxRate('')
         setPriceUsd(formatCostOrFx(usdPrice))
         setAmountSpentThb('')
         setSharesBought('')
-        setLastFocused('thb')
       } else {
         setPrice(holding.price)
       }
@@ -329,6 +168,21 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
   const payFrom = payFromId ? data.cashAccounts.find((c) => c.id === payFromId) : undefined
   /** What this buy takes out of the paying account, in that account's currency (null: a USD account and no rate) */
   const payAmount = (trade: TradeAmount) => amountInAccountCurrency(payFrom, trade, rate)
+
+  // US stocks: the paying account's currency decides which numbers are asked for (a gift is valued in USD)
+  const tradeCurrency: TradeCurrency = isReceived ? 'USD' : payFrom ? (payFrom.currency ?? 'THB') : paidIn
+  const stockTrade = isStock
+    ? resolveUsdTrade({
+        currency: tradeCurrency,
+        shares: fieldNumber(sharesBought),
+        priceUsd: fieldNumber(priceUsd),
+        amountThb: fieldNumber(amountSpentThb),
+        fx: fieldNumber(fxRate),
+        liveFx: rate,
+      })
+    : null
+  const stockCurrentUnits = holding.units ?? holding.totalUnits ?? 0
+  const stockPrevThbInvested = holding.totalThbInvested ?? stockCurrentUnits * (holding.avgCostThb ?? holding.avgCost ?? 0)
   const fromName = receivedFrom.trim()
   /** Note tail: who it came from, or which account paid */
   const noteSuffix = isReceived
@@ -694,13 +548,11 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
 
   function save() {
     if (isStock) {
-      const unitsBoughtNum = Number(sharesBought)
-      const priceUsdNum = Number(priceUsd)
-      const fxRateNum = Number(fxRate)
-      const amountSpentThbNum = Number(amountSpentThb)
-      const usdSpentThisTx = unitsBoughtNum * priceUsdNum
-      const pay = payAmount({ thb: amountSpentThbNum, usd: usdSpentThisTx })
-      if (!validStock || brokerMissing || (payFromId && pay === null)) { setShowErrors(true); return }
+      const t = stockTrade
+      const pay = t ? payAmount({ thb: t.thb, usd: t.usd }) : null
+      if (!t || brokerMissing || (payFromId && pay === null)) { setShowErrors(true); return }
+      const unitsBoughtNum = t.shares
+      const priceUsdNum = t.priceUsd
 
       const currentUnits = holding!.units ?? holding!.totalUnits ?? 0
       const currentThbInvested = holding!.totalThbInvested ?? (currentUnits * (holding!.avgCostThb ?? holding!.avgCost ?? 0))
@@ -708,8 +560,9 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
 
       // Totals before this buy, with the USD cost filled in for holdings saved without it
       const base: Holding = { ...holding!, units: currentUnits, totalThbInvested: currentThbInvested, totalUsdInvested: currentUsdInvested }
-      const bought = buyInto(base, stockUsesBroker ? buyTarget : undefined, unitsBoughtNum, amountSpentThbNum, usdSpentThisTx).holding
-      const updated: Holding = { ...bought, price: priceUsdNum * fxRateNum, updatedAt: localDateStr(new Date()) }
+      const bought = buyInto(base, stockUsesBroker ? buyTarget : undefined, unitsBoughtNum, t.thb, t.usd).holding
+      // The market price in THB at today's rate (the trade's own rate when none is loaded)
+      const updated: Holding = { ...bought, price: priceUsdNum * (rate > 0 ? rate : t.fx), updatedAt: localDateStr(new Date()) }
       const brokerName = stockUsesBroker ? (lockedName ?? (locationId === NEW_LOCATION ? newLocationName.trim() : existingLocations.find((l) => l.id === locationId)?.name)) : undefined
       buyMoreHolding({
         updatedHolding: updated,
@@ -765,10 +618,10 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
       footer={
         <FormActions
           editing={false}
-          canSave={isStock ? validStock : valid}
+          canSave={isStock ? stockTrade !== null : valid}
           onSave={save}
           submitLabel="Add to holding"
-          hint={isStock ? 'Fill in the amount, rate, price and shares' : 'Enter the units and price'}
+          hint={isStock ? (tradeCurrency === 'USD' ? 'Enter the shares and price' : 'Enter the amount and price') : 'Enter the units and price'}
         />
       }
     >
@@ -814,50 +667,27 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
 
         {stockUsesBroker && !lockedName && locationPicker}
 
+        {cashField(isStock ? { thb: stockTrade?.thb ?? 0, usd: stockTrade?.usd } : { thb: cost })}
+
         {isStock ? (
-          <div className="grid grid-cols-1 gap-3">
-            <NumberField
-              label={isReceived ? 'Value when received (THB)' : 'Amount Spent (THB)'}
-              prefix="฿"
-              value={amountSpentThb}
-              error={showErrors && (amountSpentThb === '' || Number(amountSpentThb) <= 0) ? 'Required (> 0)' : undefined}
-              onChange={handleAmountSpentThbChange}
-              onBlur={handleAmountSpentThbBlur}
-              placeholder="0"
-              allowString
-            />
-            <NumberField
-              label="Applied FX rate (USD/THB)"
-              value={fxRate}
-              error={showErrors && (fxRate === '' || Number(fxRate) <= 0) ? 'Required (> 0)' : undefined}
-              onChange={handleFxRateChange}
-              onBlur={handleFxRateBlur}
-              placeholder="Your broker's rate"
-              step={0.01}
-              allowString
-            />
-            <NumberField
-              label="Price / unit (USD)"
-              prefix="$"
-              value={priceUsd}
-              error={showErrors && (priceUsd === '' || Number(priceUsd) <= 0) ? 'Required (> 0)' : undefined}
-              onChange={handlePriceUsdChange}
-              onBlur={handlePriceUsdBlur}
-              placeholder="0"
-              step={0.01}
-              allowString
-            />
-            <NumberField
-              label={isReceived ? 'Shares Received' : 'Shares Bought'}
-              value={sharesBought}
-              error={showErrors && (sharesBought === '' || Number(sharesBought) <= 0) ? 'Required (> 0)' : undefined}
-              onChange={handleSharesBoughtChange}
-              onBlur={handleSharesBoughtBlur}
-              placeholder="0"
-              step={0.0001}
-              allowString
-            />
-          </div>
+          <UsdTradeFields
+            kind="buy"
+            currency={tradeCurrency}
+            onCurrencyChange={!isReceived && !payFrom ? setPaidIn : undefined}
+            shares={sharesBought}
+            onSharesChange={setSharesBought}
+            priceUsd={priceUsd}
+            onPriceUsdChange={setPriceUsd}
+            amountThb={amountSpentThb}
+            onAmountThbChange={setAmountSpentThb}
+            fx={fxRate}
+            onFxChange={setFxRate}
+            liveFx={rate}
+            trade={stockTrade}
+            showErrors={showErrors}
+            sharesLabel={isReceived ? 'Shares received' : undefined}
+            priceLabel={isReceived ? 'Price / share on the day (USD)' : undefined}
+          />
         ) : (
           <div className="grid grid-cols-1 gap-3">
             <NumberField
@@ -880,9 +710,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
           </div>
         )}
 
-        {cashField(isStock ? { thb: amountSpentThbNum, usd: sharesBoughtNum * priceUsdNum } : { thb: cost })}
-
-        {isStock && validStock && (
+        {isStock && stockTrade && (
           <div
             className="rounded-2xl border px-4 py-3 space-y-1.5"
             style={{
@@ -893,23 +721,21 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
             <div className="flex items-center justify-between text-sm">
               <span className="text-ink-soft">{isReceived ? 'Value received' : 'Transaction Cost'}</span>
               <span className="font-semibold tnum text-ink">
-                ฿{amountSpentThbNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
-                <span className="text-ink-muted">
-                  (${ (amountSpentThbNum / fxRateNum).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })
-                </span>
+                {thb(stockTrade.thb, true)}{' '}
+                <span className="text-ink-muted">({money(stockTrade.usd, 'USD', true)})</span>
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-ink-soft">Shares added</span>
-              <span className="font-semibold tnum text-ink">+{sharesBoughtNum.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} shares</span>
+              <span className="font-semibold tnum text-ink">+{stockTrade.shares.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} shares</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-ink-soft">New total shares</span>
-              <span className="font-semibold tnum text-ink">{stockNewTotalUnits.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} shares</span>
+              <span className="font-semibold tnum text-ink">{(stockCurrentUnits + stockTrade.shares).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })} shares</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-ink-soft">New total THB invested</span>
-              <span className="font-semibold tnum text-ink">฿{stockNewTotalThbInvested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span className="font-semibold tnum text-ink">{thb(stockPrevThbInvested + stockTrade.thb, true)}</span>
             </div>
           </div>
         )}
