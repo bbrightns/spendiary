@@ -15,8 +15,8 @@ export type CategoryLayout = 'chips' | 'tiles'
 
 /** Tiles shown before "more": one row, the user's first five (Edit → Arrange sets the order) */
 const COLLAPSED = 5
-/** Subcategory chips fold to this many rows; a pick from further down takes the last slot */
-const SUB_ROWS = 2
+/** Subcategory chips fold to one row (with Add); a pick from further down takes the last slot */
+const SUB_ROWS = 1
 /** Tailwind gap-1.5 between subcategory chips */
 const SUB_GAP = 6
 
@@ -52,7 +52,7 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
   const [renaming, setRenaming] = useState<string | null>(null)
   const [renameText, setRenameText] = useState('')
   const [subExpanded, setSubExpanded] = useState(false)
-  // Chip widths from an invisible copy, so the fold can work out what fits in two rows
+  // Chip widths from an invisible copy, so the fold can work out what fits in one row
   const subBox = useRef<HTMLDivElement>(null)
   const subMeasure = useRef<HTMLDivElement>(null)
   const [subSizes, setSubSizes] = useState<{ width: number; chips: number[]; add: number } | null>(null)
@@ -87,7 +87,7 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
     return () => ro.disconnect()
   }, [subKey])
 
-  // Folded: the chips that fit in two rows (Add always last); undefined when everything fits
+  // Folded: the chips that fit in one row (Add always last); undefined when everything fits
   const subFold =
     subSizes && !editing && subSizes.chips.length === subChoices.length
       ? foldChips({

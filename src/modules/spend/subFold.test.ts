@@ -34,4 +34,8 @@ describe('foldChips', () => {
   it('leaves the picked chip alone when it is already in view', () => {
     expect(foldChips({ ...base, widths: [50, 50, 50, 50, 50], keep: 1 })).toEqual([0, 1, 2])
   })
+  it('folds to one row with the trailing chip', () => {
+    expect(foldChips({ ...base, rows: 1, widths: [30, 30, 30, 30] })).toEqual([0, 1])
+    expect(foldChips({ ...base, rows: 1, widths: [30, 30, 30, 30], keep: 3 })).toEqual([0, 3])
+  })
 })
