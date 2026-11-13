@@ -17,6 +17,8 @@ import { CheckIcon, PencilIcon, LockClosedIcon } from '../icons'
 import { TransactionDateField } from './TransactionDateField'
 import { AcquisitionSourceField } from './AcquisitionSourceField'
 import { CashAccountField } from './CashAccountField'
+import { UsdTradeFields } from './UsdTradeFields'
+import { fieldNumber, resolveUsdTrade, type TradeCurrency } from '../../lib/usdTrade'
 import { amountInAccountCurrency, type TradeAmount } from '../../lib/cashPayment'
 
 interface Props {
@@ -127,12 +129,26 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
   /** The payment for a trade, in the paying account's currency; null when a USD account needs a rate that isn't known */
   const paymentFor = (trade: TradeAmount) => amountInAccountCurrency(payFrom, trade, liveFx)
   const paidSuffix = payFrom ? ` · Paid from ${payFrom.name}` : ''
+  // A new US stock: the paying account's currency decides the fields (no account: the toggle; a gift: USD)
+  const [paidIn, setPaidIn] = useState<TradeCurrency>('USD')
 
   const isBtc = form.assetClass === 'crypto' && (
     form.ticker.trim().toUpperCase() === 'BTC' ||
     form.name.toLowerCase().includes('bitcoin')
   )
   const isUsd = form.assetClass === 'stock'
+  const isNewUsd = isUsd && !editing
+  const addCurrency: TradeCurrency = isReceived ? 'USD' : payFrom ? (payFrom.currency ?? 'THB') : paidIn
+  const newStockTrade = isNewUsd
+    ? resolveUsdTrade({
+        currency: addCurrency,
+        shares: fieldNumber(form.units),
+        priceUsd: fieldNumber(form.avgCost),
+        amountThb: fieldNumber(thbInvestedInput),
+        fx: fieldNumber(fxRateInput),
+        liveFx,
+      })
+    : null
   const isGold = form.assetClass === 'gold'
   // Kept at several wallets / brokers: units and cost follow from those, so the form does not edit them
   const totalsFromLocs = !!editing && hasLocations(editing)
@@ -259,7 +275,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
       setGrams('')
       setGoldThbSpent('')
       setGoldLocationName('')
-      setFxRateInput(usdThb ? formatCostOrFx(usdThb) : '')
+      // A new holding's rate starts as today's ('' ), so only a rate typed by hand is kept
+      setFxRateInput('')
       setThbInvestedInput('')
       setIsThbInvestedManuallyEdited(false)
       setIsEditingThb(false)
@@ -273,7 +290,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
       setGrams('')
       setGoldThbSpent('')
       setGoldLocationName('')
-      setFxRateInput(usdThb ? formatCostOrFx(usdThb) : '')
+      // A new holding's rate starts as today's ('' ), so only a rate typed by hand is kept
+      setFxRateInput('')
       setThbInvestedInput('')
       setIsThbInvestedManuallyEdited(false)
       setIsEditingThb(false)
@@ -281,6 +299,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
     }
     setShowErrors(false)
     setPayCashAccountId('none')
+    setPaidIn('USD')
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fxRateInput left out so clearing the field does not refill it; liveFx follows usdThb, which is listed
   }, [open, editing, initialPlannedAsset, usdThb])
 
@@ -559,9 +578,10 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
     const livePrice = editing?.price
     const useLivePrice = (isBtc || isUsd) && editing
     const isRealEstate = form.assetClass === 'real_estate'
-    const unitsNum = isRealEstate && form.units === '' ? 1 : Number(form.units)
-    const valid =
-      form.name.trim() !== '' &&
+    // A new US stock takes its shares, cost and THB cost from the trade its currency resolves to
+    const t = newStockTrade
+    const unitsNum = t ? t.shares : isRealEstate && form.units === '' ? 1 : Number(form.units)
+    const valid = isNewUsd ? form.name.trim() !== '' && t !== null : form.name.trim() !== '' &&
       (isRealEstate || form.units !== '') &&
       form.avgCost !== '' &&
       (useLivePrice || isUsd || form.price !== '') &&
@@ -572,7 +592,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
     const cleanTag = form.tag.trim() || undefined
     const name = form.name.trim()
     const ticker = form.ticker.trim() || (isRealEstate ? 'PROPERTY' : name.slice(0, 4).toUpperCase())
-    const avgCostInput = Number(form.avgCost)
+    const avgCostInput = t ? t.priceUsd : Number(form.avgCost)
 
     const targetId = editing?.id ?? newId()
     let updateObj: Holding = {
@@ -594,7 +614,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
 
     if (isUsd) {
       const fxRateVal = fxNow
-      let totalThbInvested = parseFloat((Number(thbInvestedInput) || 0).toFixed(2))
+      let totalThbInvested = t ? t.thb : parseFloat((Number(thbInvestedInput) || 0).toFixed(2))
       // Never silently save a zero cost basis for a position that has shares and a cost:
       // an emptied/stale THB field would otherwise wipe the real basis (e.g. from a DCA buy).
       if (totalThbInvested <= 0 && unitsNum > 0 && avgCostInput > 0) {
@@ -747,13 +767,12 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
 
   // Derived previews
   /** What the new holding cost, for the payment line: BTC and gold from their spent fields, a US stock in USD and THB */
-  const newUsdCost = isUsd ? (Number(form.units) || 0) * (Number(form.avgCost) || 0) : 0
   const newTrade: TradeAmount = isBtc
     ? { thb: Number(btcThbSpent) || 0 }
     : isGold
       ? { thb: Number(goldThbSpent) || 0 }
       : isUsd
-        ? { thb: Number(thbInvestedInput) || newUsdCost * fxNow, usd: newUsdCost }
+        ? { thb: newStockTrade?.thb ?? 0, usd: newStockTrade?.usd }
         : { thb: (form.assetClass === 'real_estate' && form.units === '' ? 1 : Number(form.units) || 0) * (Number(form.avgCost) || 0) }
   const sats = Number(satoshi)
   const btcSpent = Number(btcThbSpent)
@@ -766,12 +785,25 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
   const goldSpent = Number(goldThbSpent)
   const goldImpliedPrice = goldGrams > 0 && goldSpent > 0 ? goldSpent / goldGrams : 0
 
+  // New holding bought with own money: where the money came from (a US stock shows it above its fields)
+  const payField = (
+    <CashAccountField
+      label="Take the payment from a cash account"
+      accounts={data.cashAccounts ?? []}
+      value={payCashAccountId}
+      onChange={setPayCashAccountId}
+      direction="pay"
+      amount={newTrade.thb > 0 ? paymentFor(newTrade) : 0}
+      showErrors={showErrors}
+    />
+  )
+
   // Derived values for US Stock dual-currency cards
-  const sharesInputVal = Number(form.units) || 0
+  const sharesInputVal = isNewUsd ? newStockTrade?.shares ?? 0 : Number(form.units) || 0
   const avgCostUsdVal = Number(form.avgCost) || 0
   const fxRateVal = fxNow
 
-  const totalThbInvestedVal = Number(Number(thbInvestedInput).toFixed(2)) || 0
+  const totalThbInvestedVal = isNewUsd ? newStockTrade?.thb ?? 0 : Number(Number(thbInvestedInput).toFixed(2)) || 0
 
   // The live price in USD needs a real rate; null shows a dash instead of a guess
   const livePriceUsd = editing && liveFx > 0 ? Number((editing.price / liveFx).toFixed(4)) : null
@@ -1259,11 +1291,35 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
         {!isBtc && !isGold && (
           isUsd ? (
             <>
+              {isNewUsd && (
+                <>
+                  {!isReceived && payField}
+                  <UsdTradeFields
+                    kind="add"
+                    currency={addCurrency}
+                    onCurrencyChange={!isReceived && !payFrom ? setPaidIn : undefined}
+                    shares={form.units}
+                    onSharesChange={(units) => setForm((f) => ({ ...f, units: String(units) }))}
+                    priceUsd={form.avgCost}
+                    onPriceUsdChange={(avgCost) => setForm((f) => ({ ...f, avgCost: String(avgCost) }))}
+                    amountThb={thbInvestedInput}
+                    onAmountThbChange={setThbInvestedInput}
+                    fx={fxRateInput}
+                    onFxChange={setFxRateInput}
+                    liveFx={liveFx}
+                    trade={newStockTrade}
+                    showErrors={showErrors}
+                    sharesLabel={isReceived ? 'Shares received' : undefined}
+                    priceLabel={isReceived ? 'Price / share on the day (USD)' : undefined}
+                  />
+                </>
+              )}
+
               {/* Card A: THB Investment Summary (Total THB Invested has a subtle edit option, rest read-only) */}
               <div className="rounded-2xl bg-surface-muted p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold text-link">THB investment summary</p>
-                  {!isEditingThb && !totalsFromLocs && (
+                  {editing && !isEditingThb && !totalsFromLocs && (
                     <button
                       type="button"
                       onClick={() => setIsEditingThb(true)}
@@ -1358,7 +1414,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
 
                 {totalsFromLocs && locationTotalsNote}
 
-                {!totalsFromLocs && <NumberField
+                {!totalsFromLocs && !isNewUsd && <NumberField
                   label="Total shares held"
                   value={form.units}
                   suffix="shares"
@@ -1370,7 +1426,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                   allowString
                 />}
 
-                {!totalsFromLocs && <NumberField
+                {!totalsFromLocs && !isNewUsd && <NumberField
                   label="Average cost per share (USD)"
                   prefix="$"
                   value={form.avgCost}
@@ -1404,7 +1460,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                   />
                 )}
 
-                {!totalsFromLocs && <NumberField
+                {!totalsFromLocs && !isNewUsd && <NumberField
                   label="Applied FX rate (USD/THB)"
                   value={fxRateInput}
                   error={showErrors && fxRateInput === '' ? 'FX rate is required' : undefined}
@@ -1461,17 +1517,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
         )}
 
         {/* New holding bought with own money: where the money came from */}
-        {!editing && !isReceived && (
-          <CashAccountField
-            label="Take the payment from a cash account"
-            accounts={data.cashAccounts ?? []}
-            value={payCashAccountId}
-            onChange={setPayCashAccountId}
-            direction="pay"
-            amount={newTrade.thb > 0 ? paymentFor(newTrade) : 0}
-            showErrors={showErrors}
-          />
-        )}
+        {!editing && !isReceived && !isUsd && payField}
 
         {/* Safe-Haven Lock Toggle */}
         <label className="flex items-center gap-3 rounded-2xl border border-line bg-surface-muted/50 p-3.5 sm:p-4 cursor-pointer hover:bg-surface-muted transition-colors">
