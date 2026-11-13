@@ -1,22 +1,17 @@
 import type { Dispatch, SetStateAction } from 'react'
-import { NumberField, SelectField } from '../../ui/Field'
-import { ChevronDownIcon } from '../../icons'
-import { useToast } from '../../../store/ToastContext'
-import { THAI_MONTHS_SHORT } from '../../../lib/calc'
-import type { CashAccount } from '../../../lib/types'
+import { NumberField, SelectField } from '../ui/Field'
+import { useToast } from '../../store/ToastContext'
+import { THAI_MONTHS_SHORT } from '../../lib/calc'
+import type { CashAccount } from '../../lib/types'
 
-/** The "Dividends & payouts" accordion of the holding form (funds and stocks). */
-export function DividendSection({
-  isStock, units, expanded, setExpanded, paysDividend, setPaysDividend, dividendMonths, setDividendMonths,
+/** Payout months, dividend per share and the cash account a fund or stock pays into. */
+export function DividendScheduleFields({
+  isStock, units, dividendMonths, setDividendMonths,
   payoutDpsMap, setPayoutDpsMap, cashAccounts, defaultCashAccountId, setDefaultCashAccountId,
 }: {
   isStock: boolean
   /** Units held, for the yearly estimate */
   units: number
-  expanded: boolean
-  setExpanded: Dispatch<SetStateAction<boolean>>
-  paysDividend: boolean
-  setPaysDividend: (on: boolean) => void
   dividendMonths: number[]
   setDividendMonths: Dispatch<SetStateAction<number[]>>
   payoutDpsMap: Record<number, number | string>
@@ -82,65 +77,7 @@ export function DividendSection({
 
 
   return (
-    <div className="rounded-2xl border border-line bg-surface overflow-hidden shadow-2xs">
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between p-3.5 sm:p-4 text-left bg-surface-muted transition-colors cursor-pointer select-none"
-        aria-expanded={expanded}
-      >
-        <div className="flex items-center gap-2 min-w-0 pr-2">
-          <span className="text-sm font-bold text-ink truncate">
-            Dividends & payouts
-          </span>
-          <span
-            className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium shrink-0 ${
-              paysDividend
-                ? 'bg-gain/10 text-gain-ink font-bold'
-                : 'bg-surface-muted text-ink-muted'
-            }`}
-          >
-            {paysDividend ? `${dividendMonths.length} per year` : 'Off'}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {!expanded && (
-            <span className="text-xs text-link font-medium">Tap to view / edit</span>
-          )}
-          <ChevronDownIcon
-            className={`h-4 w-4 text-ink-muted transition-transform duration-200 ${
-              expanded ? 'rotate-180' : ''
-            }`}
-          />
-        </div>
-      </button>
-
-      {expanded && (
-        <div className="p-3.5 sm:p-4 pt-1 space-y-3 border-t border-line/60">
-          <div className="flex items-center justify-between gap-2 pt-1">
-            <label className="flex items-center gap-2 cursor-pointer select-none min-w-0">
-              <input
-                type="checkbox"
-                checked={paysDividend}
-                onChange={(e) => setPaysDividend(e.target.checked)}
-                className="h-4 w-4 rounded-md border-line text-gain-ink focus:ring-gain/30 shrink-0"
-              />
-              <div className="min-w-0">
-                <span className="text-sm font-bold text-ink flex items-center gap-1.5 whitespace-nowrap">
-                  Track dividends
-                </span>
-                <p className="text-xs text-ink-muted truncate">
-                  Turn on dividend tracking to estimate your income
-                </p>
-              </div>
-            </label>
-            <span className="text-xs font-medium text-ink-muted whitespace-nowrap shrink-0">
-              (optional)
-            </span>
-          </div>
-
-      {paysDividend && (
-        <div className="space-y-4 pt-2 border-t border-line/60">
+        <div className="space-y-4">
           {/* 12 Months selection pills */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2 whitespace-nowrap">
@@ -185,7 +122,7 @@ export function DividendSection({
           {dividendMonths.length === 0 ? (
             <div className="rounded-xl border border-dashed border-line bg-surface/40 p-3 text-center">
               <p className="text-xs text-ink-muted">
-                Tap the months above that it pays a dividend
+                Tap the months it pays a dividend
               </p>
             </div>
           ) : (
@@ -273,9 +210,5 @@ export function DividendSection({
             onChange={setDefaultCashAccountId}
           />
         </div>
-      )}
-      </div>
-    )}
-    </div>
   )
 }
