@@ -69,3 +69,9 @@ export function fxLooksOff(fx: number, liveFx: number, tolerance = 0.05): boolea
   if (!pos(fx) || !isValidRate(liveFx)) return false
   return Math.abs(fx - liveFx) / liveFx > tolerance
 }
+
+/** A form field's value as a number: '' or junk is 0, thousands separators are ignored */
+export function fieldNumber(value: number | string | ''): number {
+  const n = Number(String(value).replace(/,/g, ''))
+  return Number.isFinite(n) ? n : 0
+}

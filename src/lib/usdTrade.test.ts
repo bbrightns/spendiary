@@ -64,3 +64,13 @@ describe('fxLooksOff', () => {
     expect(fxLooksOff(35, 0)).toBe(false)
   })
 })
+
+describe('fieldNumber', () => {
+  it('reads typed values', async () => {
+    const { fieldNumber } = await import('./usdTrade')
+    expect(fieldNumber('')).toBe(0)
+    expect(fieldNumber('1,234.5')).toBe(1_234.5)
+    expect(fieldNumber(7)).toBe(7)
+    expect(fieldNumber('abc')).toBe(0)
+  })
+})
