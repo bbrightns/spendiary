@@ -31,3 +31,13 @@ describe('dividends keep the cash balance in whole satang', () => {
     expect(removeDividendRecord(paid, 'd1').cashAccounts[0].balance).toBe(0.1)
   })
 })
+
+// Current behaviour, kept on purpose until it's decided (docs/overnight-report-2026-11-15.md, "Needs decision")
+describe('removing a dividend whose money was already spent', () => {
+  it('stops the account at 0 instead of going negative', () => {
+    const paid = recordDividend(state(0), record(100), 'd1')
+    const spent = { ...paid, cashAccounts: [{ ...paid.cashAccounts[0], balance: 20 }] }
+    expect(removeDividendRecord(spent, 'd1').cashAccounts[0].balance).toBe(0)
+  })
+})
+
