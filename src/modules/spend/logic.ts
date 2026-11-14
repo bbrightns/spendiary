@@ -234,6 +234,25 @@ export function statementFor(card: Pick<SpendCard, 'statementDay' | 'dueDay'>, d
   return cyc.lastStatement === date ? date : cyc.nextStatement
 }
 
+/**
+ * Whether a charge billed on `statement` (its closing date) can still be split into installments:
+ * its bill hasn't closed yet, or it closed on the last statement and isn't due yet.
+ */
+export function canConvertCharge(card: Pick<SpendCard, 'statementDay' | 'dueDay'>, statement: string, today = localDateStr()): boolean {
+  const cyc = cardCycle(card, parse(today))
+  return statement > cyc.lastStatement || (statement === cyc.lastStatement && today <= cyc.lastStatementDue)
+}
+
+/**
+ * The billing cycle a date falls in: from the day after one statement closes up to the next
+ * closing day, both counted. A card's statement reads by this, like the bank's.
+ */
+export function cardStatementPeriod(card: Pick<SpendCard, 'statementDay' | 'dueDay'>, date: string): Period {
+  const end = statementFor(card, date)
+  const prev = cardCycle(card, parse(addDays(end, -1))).lastStatement
+  return { start: addDays(prev, 1), end }
+}
+
 /** The statement after the one closing on `statement`. */
 export function followingStatement(card: Pick<SpendCard, 'statementDay' | 'dueDay'>, statement: string): string {
   return cardCycle(card, parse(addDays(statement, 1))).nextStatement

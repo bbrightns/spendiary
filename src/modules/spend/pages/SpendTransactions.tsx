@@ -13,7 +13,7 @@ import type { SpendTransaction, SpendTxnType } from '../../../lib/types'
 import { ListBulletIcon, categoriesFor, getCategory } from '../categories'
 import { ActiveSearch, HistoryRangeBar, HistorySearchSheet, type SearchContext } from '../history'
 import { EMPTY_TITLE, dayLabel, rangePeriod, type Range } from '../historyRange'
-import { accountStatement, balanceOn, inPeriod, shiftDate, spendOf, txnFlow, type AccountStatement, type Period } from '../logic'
+import { accountStatement, balanceOn, cardStatementPeriod, inPeriod, shiftDate, spendOf, txnFlow, type AccountStatement, type Period } from '../logic'
 import { openQuickAdd } from '../sheetEvents'
 import { TxnRow } from '../TxnRow'
 import { useSpend } from '../useSpend'
@@ -47,7 +47,7 @@ function matches(t: SpendTransaction, terms: string[], walletName: (id?: string)
 }
 
 export function SpendTransactions() {
-  const { transactions, methods, accountName, settings } = useSpend()
+  const { transactions, methods, cards, accountName, settings } = useSpend()
   const cycle = settings.cycle
   const [params, setParams] = useSearchParams()
   const query = params.get('q') ?? ''
@@ -55,6 +55,9 @@ export function SpendTransactions() {
   const accountId = params.get('account')
   const account = accountId ? methods.find((m) => m.id === accountId) : undefined
   const isCard = account?.kind === 'card'
+  // A card's month is its billing cycle, so a bill paid after the statement sits in the list with its charges
+  const card = isCard ? cards.find((c) => c.id === accountId) : undefined
+  const cardMonth = useMemo(() => (card ? (date: string) => cardStatementPeriod(card, date) : undefined), [card])
   const statement = useMemo(
     () => (accountId && account ? accountStatement(transactions, accountId, account.balance, isCard) : undefined),
     [transactions, accountId, account, isCard],
@@ -65,7 +68,10 @@ export function SpendTransactions() {
   const days: Period | null = useMemo(() => (from && to ? { start: from, end: to } : null), [from, to])
   const [range, setRange] = useState<Range>('month')
   const [anchor, setAnchor] = useState(localDateStr())
-  const period = useMemo(() => rangePeriod(range, anchor, cycle), [range, anchor, cycle])
+  const period = useMemo(
+    () => (cardMonth && range === 'month' ? cardMonth(anchor) : rangePeriod(range, anchor, cycle)),
+    [cardMonth, range, anchor, cycle],
+  )
   const [type, setType] = useState<TypeFilter>('all')
 
   const setQuery = (q: string) => {
@@ -83,6 +89,8 @@ export function SpendTransactions() {
     const next = new URLSearchParams(params)
     next.delete('account')
     setParams(next, { replace: true })
+    // Leaving a card's current cycle lands on the current month, not the one its first day falls in
+    if (cardMonth && period && inPeriod(period, localDateStr())) setAnchor(localDateStr())
   }
 
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean)
@@ -144,6 +152,7 @@ export function SpendTransactions() {
               onAnchorChange={setAnchor}
               onSearch={() => setSearchOpen(true)}
               searchLabel="Search transactions"
+              monthOf={cardMonth}
             />
           )
         }

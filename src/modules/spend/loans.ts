@@ -47,6 +47,15 @@ export function firstInstallmentDue(card: Pick<SpendCard, 'statementDay' | 'dueD
   return localDateStr(due)
 }
 
+/**
+ * A converted charge posts installment 1 right away, so the plan's next payment is due on its due
+ * day next month (YYYY-MM-DD), clamped to short months.
+ */
+export function nextMonthDue(dueDay: number, today = localDateStr()): string {
+  const [y, m] = today.split('-').map(Number)
+  return localDateStr(new Date(y, m, Math.min(dueDay, new Date(y, m + 1, 0).getDate())))
+}
+
 /** One installment, rounded down to the satang; the last payment picks up the remainder. */
 export const installmentAmount = (total: number, months: number) => Math.floor((total / months) * 100) / 100
 

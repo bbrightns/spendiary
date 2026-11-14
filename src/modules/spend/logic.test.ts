@@ -9,6 +9,7 @@ import {
   categoryUsage,
   sortByUse,
   accountTotals,
+  cardStatementPeriod,
   accountStatement,
   balanceAdjustment,
   balanceOn,
@@ -569,6 +570,23 @@ describe('what counts in the budget', () => {
     expect(withRepay(repaid({ outsideBudget: true }))).toBe(310)
     // Not marked (it repaid everyday spending): the 3,000 comes off what was spent, as before
     expect(withRepay(repaid({}))).toBe(610)
+  })
+})
+
+describe('cardStatementPeriod', () => {
+  const card = { statementDay: 25, dueDay: 10 }
+  it('runs from the day after one statement to the next closing day', () => {
+    expect(cardStatementPeriod(card, '2026-11-14')).toEqual({ start: '2026-10-26', end: '2026-11-25' })
+    expect(cardStatementPeriod(card, '2026-10-27')).toEqual({ start: '2026-10-26', end: '2026-11-25' })
+  })
+  it('puts the closing day in the cycle it closes', () => {
+    expect(cardStatementPeriod(card, '2026-11-25')).toEqual({ start: '2026-10-26', end: '2026-11-25' })
+    expect(cardStatementPeriod(card, '2026-11-26')).toEqual({ start: '2026-11-26', end: '2026-12-25' })
+  })
+  it('follows a statement day clamped in a short month', () => {
+    const late = { statementDay: 30, dueDay: 15 }
+    expect(cardStatementPeriod(late, '2027-02-20')).toEqual({ start: '2027-01-31', end: '2027-02-28' })
+    expect(cardStatementPeriod(late, '2027-03-01')).toEqual({ start: '2027-03-01', end: '2027-03-30' })
   })
 })
 
