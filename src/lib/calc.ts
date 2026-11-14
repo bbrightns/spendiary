@@ -1169,7 +1169,9 @@ export function isLiabilityFirstDueNextMonth(l: Liability, now: Date = new Date(
   // Check registration/creation date
   const recordDateStr = l.createdAt || l.updatedAt
   if (recordDateStr) {
-    const recordDate = new Date(recordDateStr)
+    // A plain YYYY-MM-DD is a local day: new Date() would read it as UTC, the day before west of Greenwich
+    const [ry, rm, rd] = localDay(recordDateStr).split('-').map(Number)
+    const recordDate = new Date(ry, rm - 1, rd)
     const isThisMonth =
       recordDate.getFullYear() === now.getFullYear() &&
       recordDate.getMonth() === now.getMonth()
@@ -1239,8 +1241,10 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
   }
 
   const currentDay = now.getDate()
+  // A due day this month doesn't have (the 31st in November) falls on its last day
+  const dueDay = getEffectiveDayOfMonth(l.dueDay, now.getFullYear(), now.getMonth())
 
-  if (currentDay === l.dueDay) {
+  if (currentDay === dueDay) {
     return {
       status: 'due_today',
       label: 'Due today',
@@ -1251,7 +1255,8 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
 
   // If first payment is scheduled for next month (e.g. registered on 18th with dueDay 1)
   if (isLiabilityFirstDueNextMonth(l, now)) {
-    const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, l.dueDay)
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    const nextMonthDate = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), getEffectiveDayOfMonth(l.dueDay, nextMonth.getFullYear(), nextMonth.getMonth()))
     const todayZero = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const diffMs = nextMonthDate.getTime() - todayZero.getTime()
     const daysLeft = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)))
@@ -1259,25 +1264,25 @@ export function getLiabilityDueStatus(l: Liability, now: Date = new Date()): Lia
 
     return {
       status: 'pending',
-      label: `In ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} (${nextMonthName} ${l.dueDay})`,
+      label: `In ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} (${nextMonthName} ${nextMonthDate.getDate()})`,
       badgeClass: 'bg-surface-muted text-ink-muted border border-line/40',
       daysLeft,
     }
   }
 
-  if (currentDay > l.dueDay) {
+  if (currentDay > dueDay) {
     return {
       status: 'overdue',
-      label: `Overdue (due on the ${l.dueDay})`,
+      label: `Overdue (due on the ${dueDay})`,
       badgeClass: 'bg-loss/15 text-loss-ink border border-loss/30',
     }
   }
 
-  const daysLeft = l.dueDay - currentDay
+  const daysLeft = dueDay - currentDay
   if (daysLeft <= 3) {
     return {
       status: 'due_soon',
-      label: `In ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} (on the ${l.dueDay})`,
+      label: `In ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} (on the ${dueDay})`,
       badgeClass: 'bg-warn/15 text-warn-ink border border-warn/25',
       daysLeft,
     }

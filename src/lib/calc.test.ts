@@ -451,3 +451,28 @@ describe('getLiabilityDueStatus', () => {
     expect(getLiabilityDueStatus(l, NOW)).toMatchObject({ status: 'pending', daysLeft: 22, label: 'In 22 days (Nov 5)' })
   })
 })
+
+describe('a due day the month does not have', () => {
+  const at = (iso: string) => new Date(`${iso}T12:00:00`)
+  const l = debt({ dueDay: 31, createdAt: '2026-01-01' })
+
+  it('is due on the last day of a shorter month', () => {
+    // November has 30 days: the 30th is the due day, not "1 day before the 31st"
+    expect(getLiabilityDueStatus(l, at('2026-11-30'))).toMatchObject({ status: 'due_today', daysLeft: 0 })
+    expect(getLiabilityDueStatus(debt({ dueDay: 30, createdAt: '2026-01-01' }), at('2027-02-28')).status).toBe('due_today')
+  })
+
+  it('counts the days to the last day of the month', () => {
+    expect(getLiabilityDueStatus(l, at('2026-11-28'))).toMatchObject({ status: 'due_soon', daysLeft: 2, label: 'In 2 days (on the 30)' })
+  })
+
+  it('still reads the 31st in a month that has one', () => {
+    expect(getLiabilityDueStatus(l, at('2026-12-31')).status).toBe('due_today')
+    expect(getLiabilityDueStatus(l, at('2026-12-29'))).toMatchObject({ status: 'due_soon', daysLeft: 2 })
+  })
+
+  it('points at the last day of a short next month', () => {
+    const next = debt({ dueDay: 30, firstDueDate: '2027-02-28', createdAt: '2027-01-31' })
+    expect(getLiabilityDueStatus(next, at('2027-01-31'))).toMatchObject({ status: 'pending', daysLeft: 28, label: 'In 28 days (Feb 28)' })
+  })
+})
