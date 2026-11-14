@@ -15,8 +15,9 @@ export function exchangeToUsd(prev: SpendiaryData, ...[params]: Parameters<DataC
   if (!to || to.currency !== 'USD' || !(params.thb > 0) || !(params.usd > 0)) return prev
   const from = params.fromAccountId ? accounts.find((a) => a.id === params.fromAccountId && (a.currency ?? 'THB') === 'THB') : undefined
 
-  // What the dollars already there cost: as saved, as typed now, or nothing when there are none
-  const opening = to.thbCost ?? (params.openingThbCost !== undefined && params.openingThbCost >= 0 ? params.openingThbCost : to.balance <= 0 ? 0 : undefined)
+  // What the dollars already there cost: as typed now (it may correct the saved one), as saved, or nothing when there are none
+  const typed = params.openingThbCost !== undefined && params.openingThbCost >= 0 ? params.openingThbCost : undefined
+  const opening = typed ?? to.thbCost ?? (to.balance <= 0 ? 0 : undefined)
   const toAfter = moveUsd({ ...to, thbCost: opening }, params.usd, params.thb)
 
   const record: FxExchange = {

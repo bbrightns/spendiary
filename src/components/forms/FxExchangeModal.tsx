@@ -17,6 +17,8 @@ interface Props {
   open: boolean
   /** The USD account the dollars go into, as saved */
   account: CashAccount
+  /** What the dollars already there cost, when the form showing the account has it (typed, maybe not saved yet) */
+  openingThbCost?: number
   onClose: () => void
   /** After saving: what changed on the account, so a form showing it can follow */
   onDone?: (change: { usd: number; thb: number; thbCost: number | undefined }) => void
@@ -26,7 +28,7 @@ interface Props {
  * Baht exchanged into a USD account: any two of baht paid, dollars received and the rate.
  * The account keeps what its dollars cost, so stocks bought from it cost the rate really paid.
  */
-export function FxExchangeModal({ open, account, onClose, onDone }: Props) {
+export function FxExchangeModal({ open, account, openingThbCost, onClose, onDone }: Props) {
   const { data, usdThb, exchangeToUsd } = useData()
   const { showToast } = useToast()
   const [fromId, setFromId] = useState('none')
@@ -41,15 +43,15 @@ export function FxExchangeModal({ open, account, onClose, onDone }: Props) {
   const thbAccounts = (data.cashAccounts ?? []).filter((a) => (a.currency ?? 'THB') === 'THB' && (!a.archived || a.id === fromId))
   const from = thbAccounts.find((a) => a.id === fromId)
   // Dollars already in the account with no known cost: ask once, else they count at today's rate
-  const needsOpening = account.thbCost === undefined && account.balance > 0
+  const needsOpening = openingThbCost === undefined && account.thbCost === undefined && account.balance > 0
   const live = isValidRate(usdThb) ? usdThb : 0
   const openingFallback = live > 0 ? Math.round(account.balance * live * 100) / 100 : undefined
-  const opening = needsOpening ? (fieldNumber(openingCost) > 0 ? fieldNumber(openingCost) : openingFallback) : undefined
+  const opening = openingThbCost ?? (needsOpening ? (fieldNumber(openingCost) > 0 ? fieldNumber(openingCost) : openingFallback) : undefined)
 
   const save = () => {
     if (!ex) { setShowErrors(true); return }
     exchangeToUsd({ fromAccountId: from?.id, toAccountId: account.id, thb: ex.thb, usd: ex.usd, date, openingThbCost: opening })
-    const base = account.thbCost ?? opening ?? (account.balance <= 0 ? 0 : undefined)
+    const base = opening ?? account.thbCost ?? (account.balance <= 0 ? 0 : undefined)
     onDone?.({ usd: ex.usd, thb: ex.thb, thbCost: base === undefined ? undefined : Math.round((base + ex.thb) * 100) / 100 })
     showToast(`Exchanged ${money(ex.thb, 'THB', true)} → ${money(ex.usd, 'USD', true)}`, 'success')
     onClose()

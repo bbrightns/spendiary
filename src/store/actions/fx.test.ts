@@ -32,6 +32,11 @@ describe('exchangeToUsd', () => {
     expect(acc(out, 'fcd').thbCost).toBe(17_600)
   })
 
+  it('lets a typed cost correct the saved one', () => {
+    const out = exchangeToUsd(state({ balance: 5_000, thbCost: 175_000 }), { toAccountId: 'fcd', thb: 36_000, usd: 1_000, openingThbCost: 170_000, date: 'd' })
+    expect(acc(out, 'fcd').thbCost).toBe(206_000)
+  })
+
   it('keeps the cost unknown when dollars were there and no cost was given', () => {
     const out = exchangeToUsd(state({ balance: 421.06 }), { toAccountId: 'fcd', thb: 3_400, usd: 100, date: 'd' })
     expect([acc(out, 'fcd').balance, acc(out, 'fcd').thbCost]).toEqual([521.06, undefined])

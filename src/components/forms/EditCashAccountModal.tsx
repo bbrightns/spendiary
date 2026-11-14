@@ -424,6 +424,8 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
       <FxExchangeModal
         open={exchangeOpen}
         account={stored}
+        // The cost as this form shows it, typed or not saved yet
+        openingThbCost={thbCost !== '' ? Math.max(0, costNum) : undefined}
         onClose={() => setExchangeOpen(false)}
         onDone={(change) => {
           // Follow the saved account so a later Save doesn't undo the exchange
