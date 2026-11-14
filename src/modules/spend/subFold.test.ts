@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { SpendTransaction } from '../../lib/types'
-import { foldChips, sortSubsByUse, wrapRows } from './logic'
+import { foldChips, sortSubsByUse, toggleTag, wrapRows } from './logic'
 
 const txn = (categoryId: string, subcategory?: string) => ({ categoryId, subcategory }) as SpendTransaction
 
@@ -37,5 +37,17 @@ describe('foldChips', () => {
   it('folds to one row with the trailing chip', () => {
     expect(foldChips({ ...base, rows: 1, widths: [30, 30, 30, 30] })).toEqual([0, 1])
     expect(foldChips({ ...base, rows: 1, widths: [30, 30, 30, 30], keep: 3 })).toEqual([0, 3])
+  })
+})
+
+describe('toggleTag', () => {
+  it('appends a tag with one space', () => {
+    expect(toggleTag('', 'lunch')).toBe('#lunch ')
+    expect(toggleTag('Rice  ', 'lunch')).toBe('Rice #lunch ')
+  })
+  it('takes a tag out, any spelling, and tidies spaces', () => {
+    expect(toggleTag('Rice #Lunch with team', 'lunch')).toBe('Rice with team')
+    expect(toggleTag('#lunch ', 'lunch')).toBe('')
+    expect(toggleTag('Rice #lunchbox', 'lunch')).toBe('Rice #lunchbox #lunch ')
   })
 })

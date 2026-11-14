@@ -12,6 +12,10 @@ import { formatLocationQty, hasLocations, qtyEpsilon, takeFromLocation, visibleL
 import { dateStrToTimestamp, thb, localDateStr } from '../../lib/format'
 import { isValidRate } from '../../lib/fx'
 import { TransactionDateField } from './TransactionDateField'
+import { CashAccountField } from './CashAccountField'
+import { UsdTradeFields } from './UsdTradeFields'
+import { fieldNumber, resolveUsdTrade, type TradeCurrency } from '../../lib/usdTrade'
+import { amountInAccountCurrency, type TradeAmount } from '../../lib/cashPayment'
 import { LockClosedIcon, PencilIcon, UndoIcon } from '../icons'
 import { STORAGE_KEYS } from '../../lib/storageKeys'
 
@@ -54,9 +58,14 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
   const [customFee, setCustomFee] = useState<number | ''>('')
 
   // Stock-specific State
-  const [stockShares, setStockShares] = useState<number | ''>('')
-  const [stockPriceUsd, setStockPriceUsd] = useState<number | ''>('')
-  const [stockFxRate, setStockFxRate] = useState<number | ''>('')
+  const [stockShares, setStockShares] = useState<number | string | ''>('')
+  const [stockPriceUsd, setStockPriceUsd] = useState<number | string | ''>('')
+  // '' = today's rate (USD sale) or the rate from the amounts (THB sale)
+  const [stockFxRate, setStockFxRate] = useState<number | string | ''>('')
+  // THB sale: the baht that arrived
+  const [stockAmountThb, setStockAmountThb] = useState<number | string | ''>('')
+  // No account picked: which currency the money arrived in
+  const [receivedIn, setReceivedIn] = useState<TradeCurrency>('USD')
 
   // BTC-specific State
   const [satoshi, setSatoshi] = useState<number | ''>('')
@@ -108,7 +117,9 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
         setStockShares('')
         const defaultUsdPrice = rate > 0 ? Number((knownPrice / rate).toFixed(2)) : 0
         setStockPriceUsd(defaultUsdPrice > 0 ? defaultUsdPrice : '')
-        setStockFxRate(rate > 0 ? rate : '')
+        setStockFxRate('')
+        setStockAmountThb('')
+        setReceivedIn('USD')
       } else if (holding.assetClass === 'crypto') {
         setSatoshi('')
         setBtcThbProceeds('')
@@ -144,15 +155,6 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     label: `${l.name}${l.isLocked ? ' (locked)' : ''} (${formatLocationQty(holding.assetClass, l.qty)}${holding.assetClass === 'gold' ? ` · ${(l.qty / GRAMS_PER_BAHT_GOLD).toFixed(2)} gold baht` : ''} · ฿${l.thbSpent.toLocaleString()})`,
     disabled: l.isLocked,
   }))
-
-  // Cash Account options
-  const cashAccountOptions = [
-    { value: 'none', label: 'None · Do not deposit to cash' },
-    ...(data.cashAccounts ?? []).map((c) => ({
-      value: c.id,
-      label: `${c.name} (${c.currency === 'USD' ? '$' : '฿'}${c.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`,
-    })),
-  ]
 
   // Sell All (100%) applicator
   const handleSellAll = () => {
@@ -202,6 +204,23 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
   const takeSold = (qty: number) =>
     sellLoc && qty > 0 ? takeFromLocation(holding.assetClass, holding.locations ?? [], sellLoc.id, qty) : null
 
+  // The account the money goes into; for a US stock its currency picks the fields (no account: the toggle)
+  const depositTo = cashAccountId !== 'none' ? data.cashAccounts.find((c) => c.id === cashAccountId) : undefined
+  const stockCurrency: TradeCurrency = depositTo ? (depositTo.currency ?? 'THB') : receivedIn
+  const stockTrade = isStock && fieldNumber(stockShares) > 0
+    ? resolveUsdTrade({
+        currency: stockCurrency,
+        shares: fieldNumber(stockShares),
+        priceUsd: fieldNumber(stockPriceUsd),
+        amountThb: fieldNumber(stockAmountThb),
+        fx: fieldNumber(stockFxRate),
+        liveFx: rate,
+      })
+    : null
+  // A THB sale's amount is already what arrived, after fees: nothing to adjust
+  const canAdjust = !(isStock && stockCurrency === 'THB')
+  const adjusting = isCustomProceeds && canAdjust
+
   // Calculate sell outcomes per asset type
   let sellUnitsCount = 0
   let grossProceedsThb = 0
@@ -209,16 +228,14 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
   let isValid = false
 
   if (isStock) {
-    const sShares = Number(stockShares) || 0
-    const sPriceUsd = Number(stockPriceUsd) || 0
-    const sFx = Number(stockFxRate) || rate
+    // A sale always names its shares, so a THB sale gets its rate from the amount received
+    const sShares = fieldNumber(stockShares)
     sellUnitsCount = sShares
-    const proceedsUsd = sShares * sPriceUsd
-    grossProceedsThb = proceedsUsd * sFx
+    grossProceedsThb = stockTrade?.thb ?? 0
     // From a broker: its own average cost; otherwise the holding's
     const available = sellLoc ? sellLoc.qty : currentUnits
     costBasisSoldThb = takeSold(Math.min(sShares, available))?.costThb ?? sShares * avgCostPerUnitThb
-    isValid = sShares > 0 && sShares <= available + 0.0001 && sPriceUsd > 0 && sFx > 0
+    isValid = sShares > 0 && sShares <= available + 0.0001 && stockTrade !== null
   } else if (isBtc) {
     const availableSats = Math.round((sellLoc ? sellLoc.qty : currentUnits) * SATS_PER_BTC)
     const sSats = Number(satoshi) || 0
@@ -250,13 +267,13 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
   let totalProceedsThb = grossProceedsThb
   let effectiveFee = 0
 
-  if (isCustomProceeds && customProceeds !== '') {
+  if (adjusting && customProceeds !== '') {
     const cVal = Number(customProceeds)
     if (!isNaN(cVal) && cVal >= 0) {
       totalProceedsThb = cVal
       effectiveFee = Math.max(0, grossProceedsThb - totalProceedsThb)
     }
-  } else if (isCustomProceeds && customFee !== '') {
+  } else if (adjusting && customFee !== '') {
     const fVal = Number(customFee)
     if (!isNaN(fVal) && fVal >= 0) {
       effectiveFee = fVal
@@ -264,9 +281,15 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     }
   }
 
-  if (isCustomProceeds) {
+  if (adjusting) {
     isValid = isValid && totalProceedsThb > 0
   }
+
+  // What the sale puts into the chosen account, in its own currency: a US stock pays out USD
+  // (the net proceeds at the trade's own rate), anything else converts at today's rate for a USD account
+  const stockFx = stockTrade?.fx ?? 0
+  const depositTrade: TradeAmount = { thb: totalProceedsThb, ...(isStock && stockFx > 0 ? { usd: totalProceedsThb / stockFx } : {}) }
+  const depositAmount = amountInAccountCurrency(depositTo, depositTrade, rate)
 
   const isCurrentLocLocked = !!sellLoc?.isLocked
 
@@ -291,7 +314,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
 
   // Handle Save Sell
   const handleSave = () => {
-    if (!isValid) {
+    if (!isValid || (depositTo && depositAmount === null)) {
       setShowErrors(true)
       return
     }
@@ -304,9 +327,9 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     let soldPriceDisplay = 0
 
     if (isStock) {
-      const sShares = Number(stockShares)
-      const sPriceUsd = Number(stockPriceUsd)
-      const sFx = Number(stockFxRate) || rate
+      const sShares = stockTrade!.shares
+      const sPriceUsd = stockTrade!.priceUsd
+      const sFx = stockTrade!.fx
       soldPriceDisplay = sPriceUsd * sFx
 
       const taken = takeSold(sShares)
@@ -392,8 +415,8 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
       realizedPnLPercent,
       fee: effectiveFee > 0 ? effectiveFee : undefined,
       remainingHolding,
-      cashAccountId: cashAccountId !== 'none' ? cashAccountId : undefined,
-      cashDepositAmount: cashAccountId !== 'none' ? totalProceedsThb : undefined,
+      cashAccountId: depositTo?.id,
+      cashDepositAmount: depositTo ? depositAmount ?? undefined : undefined,
       note,
       timestamp: dateStrToTimestamp(txDate),
     })
@@ -484,6 +507,17 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
           )}
         </div>
 
+        {/* Where the money goes first: for a US stock it decides which numbers are asked for */}
+        <CashAccountField
+          label="Deposit the money into a cash account"
+          accounts={data.cashAccounts ?? []}
+          value={cashAccountId}
+          onChange={setCashAccountId}
+          direction="deposit"
+          amount={totalProceedsThb > 0 ? depositAmount : 0}
+          showErrors={showErrors}
+        />
+
         {/* Inputs per Asset Class */}
         {isStock ? (
           <div className="grid grid-cols-1 gap-3">
@@ -503,38 +537,28 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                 )}
               </div>
             )}
-            <NumberField
-              label="Shares to sell"
-              value={stockShares}
-              rightElement={renderMaxButton()}
-              error={
-                showErrors && (stockShares === '' || Number(stockShares) <= 0 || Number(stockShares) > (sellLoc ? sellLoc.qty : currentUnits) + 0.0001)
+            <UsdTradeFields
+              kind="sell"
+              currency={stockCurrency}
+              onCurrencyChange={depositTo ? undefined : setReceivedIn}
+              shares={stockShares}
+              onSharesChange={setStockShares}
+              priceUsd={stockPriceUsd}
+              onPriceUsdChange={setStockPriceUsd}
+              amountThb={stockAmountThb}
+              onAmountThbChange={setStockAmountThb}
+              fx={stockFxRate}
+              onFxChange={setStockFxRate}
+              liveFx={rate}
+              trade={stockTrade}
+              showErrors={showErrors}
+              sharesRightElement={renderMaxButton()}
+              sharesError={
+                showErrors && (fieldNumber(stockShares) <= 0 || fieldNumber(stockShares) > (sellLoc ? sellLoc.qty : currentUnits) + 0.0001)
                   ? `Enter 0 < shares ≤ ${(sellLoc ? sellLoc.qty : currentUnits).toLocaleString()}`
                   : undefined
               }
-              onChange={(val) => setStockShares(val === '' ? '' : Number(val))}
-              placeholder="0"
-              step={0.0001}
             />
-            <div className="grid items-end grid-cols-2 gap-3">
-              <NumberField
-                label="Sell price (USD)"
-                prefix="$"
-                value={stockPriceUsd}
-                error={showErrors && (stockPriceUsd === '' || Number(stockPriceUsd) <= 0) ? 'Required (> 0)' : undefined}
-                onChange={(val) => setStockPriceUsd(val === '' ? '' : Number(val))}
-                placeholder="0.00"
-                step={0.01}
-              />
-              <NumberField
-                label="FX rate (USD/THB)"
-                value={stockFxRate}
-                error={showErrors && (stockFxRate === '' || Number(stockFxRate) <= 0) ? 'Required' : undefined}
-                onChange={(val) => setStockFxRate(val === '' ? '' : Number(val))}
-                placeholder="Your broker's rate"
-                step={0.01}
-              />
-            </div>
           </div>
         ) : isBtc ? (
           <div className="grid grid-cols-1 gap-3">
@@ -721,15 +745,6 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
           </div>
         )}
 
-        {/* Cash Deposit Selection */}
-        <div className="pt-1">
-          <SelectField
-            label="Deposit the money into a cash account"
-            value={cashAccountId}
-            onChange={setCashAccountId}
-            options={cashAccountOptions}
-          />
-        </div>
 
         {/* Live Preview Card */}
         {sellUnitsCount > 0 && grossProceedsThb > 0 && (
@@ -746,7 +761,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
                 <span className="text-ink-soft shrink-0">Total you receive</span>
                 <div className="flex items-center gap-2">
                   <span className="font-bold tnum text-ink text-sm">{thb(totalProceedsThb)}</span>
-                  {!isCustomProceeds ? (
+                  {!canAdjust ? null : !isCustomProceeds ? (
                     <button
                       type="button"
                       onClick={() => {
@@ -779,7 +794,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
               </div>
 
               {/* Custom Net Proceeds & Fee Input Drawer */}
-              {isCustomProceeds && (
+              {adjusting && (
                 <div className="rounded-2xl bg-surface-muted p-4 space-y-2.5 text-left">
                   <div className="flex items-center justify-between text-xs text-ink-muted">
                     <span>Sale value at market price: <strong className="text-ink font-semibold tnum">{thb(grossProceedsThb)}</strong></span>
