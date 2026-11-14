@@ -2,18 +2,20 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../../../components/layout/PageHeader'
 import { Card, CardHeader } from '../../../components/ui/Card'
+import { TextLink } from '../../../components/ui/TextLink'
 import { SegmentedControl } from '../../../components/ui/SegmentedControl'
-import { localDateStr, thb, thbCompact } from '../../../lib/format'
+import { localDateStr, thb } from '../../../lib/format'
 import type { SpendTransaction } from '../../../lib/types'
 import { getCategory } from '../categories'
-import { SparkleIcon } from '../../../components/icons'
-import { budgetState, countsInBudget, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, categoryBreakdown, habits, spendOf, topSubcategories, totalsFor, weekOf, analysisInsights, type Insight, type Period } from '../logic'
+import { ChevronDownIcon, SparkleIcon } from '../../../components/icons'
+import { budgetState, countsInBudget, noteTitle, inPeriod, periodFor, shiftDate, shiftPeriod, categoryBreakdown, habits, spendOf, totalsFor, weekOf, analysisInsights, type Insight, type Period } from '../logic'
 import { MonthStepper } from '../MonthStepper'
 import { ArrangeButton, ReorderSheet } from '../ReorderSheet'
 import { cardOrder, isDefaultOrder, moveInOrder } from '../../../lib/cardOrder'
 import { SPENT_TONE, TAG_CHIP, TONES } from '../tones'
 import { useSpend } from '../useSpend'
 import { TrendsCard } from '../TrendsCard'
+import { TxnRow } from '../TxnRow'
 import { settingsPath } from '../../../lib/settingsSections'
 
 type Range = 'week' | 'month' | 'year'
@@ -22,9 +24,7 @@ const ANALYSIS_CARDS = [
   { id: 'summary', label: 'Spent and income' },
   { id: 'perDay', label: 'Spent per day' },
   { id: 'trends', label: 'Trends (month view)' },
-  { id: 'stats', label: 'Quick stats' },
   { id: 'categories', label: 'By category' },
-  { id: 'subcategories', label: 'Top subcategories' },
   { id: 'habits', label: 'Habits' },
   { id: 'tags', label: 'Top tags' },
 ] as const
@@ -89,13 +89,22 @@ function buckets(range: Range, p: Period, txns: SpendTransaction[], today: strin
   })
 }
 
-function Bars({ data, unit }: { data: Bucket[]; unit: string }) {
+/** The first and last day a bar covers: one day, or a whole month in the year view */
+const bucketSpan = (key: string): Period =>
+  key.length === 7 ? { start: `${key}-01`, end: localDateStr(new Date(parse(`${key}-01`).getFullYear(), parse(`${key}-01`).getMonth() + 1, 0)) } : { start: key, end: key }
+
+const bucketName = (key: string) =>
+  key.length === 7
+    ? parse(`${key}-01`).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+    : parse(key).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+
+function Bars({ data, unit, selected, onSelect }: { data: Bucket[]; unit: string; selected: string | null; onSelect: (key: string | null) => void }) {
   const [hover, setHover] = useState<string | null>(null)
   const past = data.filter((b) => !b.future)
   const max = Math.max(1, ...data.map((b) => b.spent))
   const avg = past.length ? past.reduce((s, b) => s + b.spent, 0) / past.length : 0
   const top = past.reduce<Bucket | null>((m, b) => (!m || b.spent > m.spent ? b : m), null)
-  const shown = data.find((b) => b.key === hover) ?? top
+  const shown = data.find((b) => b.key === (hover ?? selected)) ?? top
 
   return (
     <div>
@@ -103,12 +112,9 @@ function Bars({ data, unit }: { data: Bucket[]; unit: string }) {
         <span className="text-ink-muted">
           avg <b className="font-bold text-ink tnum">{thb(avg)}</b> / {unit}
         </span>
-        {shown && shown.spent > 0 && (
+        {shown && (shown.spent > 0 || shown.key === selected) && (
           <span className="text-ink-muted tnum">
-            {shown.key.length === 7
-              ? parse(`${shown.key}-01`).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
-              : parse(shown.key).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}{' '}
-            <b className="font-bold text-ink">{thb(shown.spent)}</b>
+            {bucketName(shown.key)} <b className="font-bold text-ink">{thb(shown.spent)}</b>
           </span>
         )}
       </div>
@@ -116,25 +122,32 @@ function Bars({ data, unit }: { data: Bucket[]; unit: string }) {
         <div className="pointer-events-none absolute inset-x-0 border-t border-dashed border-line-strong" style={{ bottom: `${(avg / max) * 100}%` }} />
         {data.map((b) => {
           const isTop = top?.key === b.key && b.spent > 0
+          const isSelected = selected === b.key
           return (
             <button
               key={b.key}
               type="button"
+              disabled={b.future}
               onMouseEnter={() => setHover(b.key)}
               onFocus={() => setHover(b.key)}
-              onClick={() => setHover(b.key)}
-              aria-label={`${b.key}: ${thb(b.spent)}`}
-              className="flex h-full flex-1 flex-col justify-end cursor-pointer"
+              onBlur={() => setHover(null)}
+              // A second tap on the same bar closes its list
+              onClick={() => onSelect(isSelected ? null : b.key)}
+              aria-label={`${bucketName(b.key)}: ${thb(b.spent)}, show transactions`}
+              aria-pressed={isSelected}
+              className="flex h-full flex-1 flex-col justify-end cursor-pointer disabled:cursor-default"
             >
               <span
                 className={`block w-full rounded-md transition-[height] duration-500 ${
                   b.future
                     ? 'bg-surface-muted/50'
-                    : isTop
-                      ? SPENT_TONE.bar
-                      : hover === b.key
-                        ? 'bg-brand/60'
-                        : TONES.slate.bar
+                    : isSelected
+                      ? 'bg-brand'
+                      : isTop
+                        ? SPENT_TONE.bar
+                        : hover === b.key
+                          ? 'bg-brand/60'
+                          : TONES.slate.bar
                 }`}
                 style={{ height: `${b.future ? 4 : Math.max(3, (b.spent / max) * 100)}%` }}
               />
@@ -144,11 +157,38 @@ function Bars({ data, unit }: { data: Bucket[]; unit: string }) {
       </div>
       <div className="mt-1 flex gap-[3px]">
         {data.map((b) => (
-          <span key={b.key} className="flex-1 text-center text-2xs text-ink-muted">
+          <span key={b.key} className={`flex-1 text-center text-2xs ${selected === b.key ? 'font-bold text-ink' : 'text-ink-muted'}`}>
             {b.label}
           </span>
         ))}
       </div>
+    </div>
+  )
+}
+
+/** Rows shown under a tapped bar or category before "See all" */
+const PEEK_LIMIT = 6
+
+/** Expenses in a slice of the period, biggest first, like a card statement; past the limit, History takes over */
+function TxnPeek({ caption, rows, methods, seeAll }: { caption: string; rows: SpendTransaction[]; methods: { id: string; name: string }[]; seeAll: string }) {
+  const sorted = [...rows].sort((a, b) => spendOf(b) - spendOf(a))
+  return (
+    <div className="mt-3 border-t border-line pt-3">
+      <p className="text-xs font-semibold text-ink-muted tnum">
+        {caption} · {sorted.length === 0 ? 'nothing spent' : `${sorted.length} ${sorted.length === 1 ? 'expense' : 'expenses'}, biggest first`}
+      </p>
+      {sorted.length > 0 && (
+        <div className="mt-1 divide-y divide-line">
+          {sorted.slice(0, PEEK_LIMIT).map((t) => (
+            <TxnRow key={t.id} txn={t} methods={methods} />
+          ))}
+        </div>
+      )}
+      {sorted.length > PEEK_LIMIT && (
+        <div className="mt-2 border-t border-line pt-3 text-center">
+          <TextLink to={seeAll}>See all {sorted.length} in History →</TextLink>
+        </div>
+      )}
     </div>
   )
 }
@@ -194,13 +234,23 @@ function InsightLines({ insights, rangeName, current }: { insights: Insight[]; r
 }
 
 export function SpendAnalysis() {
-  const { transactions, settings, updateSettings } = useSpend()
+  const { transactions, methods, settings, updateSettings } = useSpend()
   const [arrangeOpen, setArrangeOpen] = useState(false)
   const order = cardOrder(ANALYSIS_CARD_IDS, settings.analysisOrder)
   const saveOrder = (next: AnalysisCardId[]) => updateSettings({ analysisOrder: isDefaultOrder(ANALYSIS_CARD_IDS, next) ? undefined : next })
+  // Only ids of cards that still exist count, so a removed card can't keep "Reset" showing
+  const hidden = (settings.analysisHidden ?? []).filter((id): id is AnalysisCardId => ANALYSIS_CARD_IDS.includes(id as AnalysisCardId))
+  const toggleHidden = (id: AnalysisCardId) => {
+    const next = hidden.includes(id) ? hidden.filter((h) => h !== id) : [...hidden, id]
+    updateSettings({ analysisHidden: next.length ? next : undefined })
+  }
   const today = localDateStr()
   const [range, setRange] = useState<Range>('month')
   const [anchor, setAnchor] = useState(today)
+  // The bar tapped in "Spent per day"; keyed by period so moving to another week or month clears it
+  const [picked, setPicked] = useState<{ key: string; period: string } | null>(null)
+  // The category row opened in "By category", the same way
+  const [openCat, setOpenCat] = useState<{ id: string; period: string } | null>(null)
 
   const period: Period = useMemo(
     () => (range === 'week' ? weekOf(anchor) : range === 'year' ? yearOf(anchor) : periodFor(anchor, settings.cycle)),
@@ -209,6 +259,9 @@ export function SpendAnalysis() {
   const inRange = useMemo(() => transactions.filter((t) => inPeriod(period, t.date)), [transactions, period])
   const totals = useMemo(() => totalsFor(inRange), [inRange])
   const data = useMemo(() => buckets(range, period, transactions, today), [range, period, transactions, today])
+  const periodKey = `${range}:${period.start}`
+  const selectedBar = picked?.period === periodKey ? picked.key : null
+  const openCatId = openCat?.period === periodKey ? openCat.id : null
 
   // Same point in the previous period: e.g. the first 12 days of last month vs the first 12 of this one
   const isCurrent = inPeriod(period, today)
@@ -240,8 +293,6 @@ export function SpendAnalysis() {
     [inRange, prevSoFar, elapsedDays, period, isCurrent, range, settings.monthlyBudget],
   )
   const biggest = inRange.filter((t) => t.type === 'expense').sort((a, b) => b.amount - a.amount)[0]
-  const topCat = totals.byCategory[0]
-  const savingsRate = totals.income > 0 ? (totals.net / totals.income) * 100 : null
   const spentPct = totals.income > 0 ? Math.max(0, (totals.expense / totals.income) * 100) : 0
   const over = totals.income > 0 && totals.net < 0
   const tagTotals = useMemo(() => {
@@ -250,7 +301,6 @@ export function SpendAnalysis() {
     return [...m.entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 5)
   }, [inRange])
 
-  const subTotals = useMemo(() => topSubcategories(inRange), [inRange])
   // The pace counts from when logging began, so a few weeks of history in a 12-month view isn't spread over the year
   const habitRows = useMemo(() => {
     const first = transactions.reduce<string | undefined>((m, t) => (!m || t.date < m ? t.date : m), undefined)
@@ -284,6 +334,13 @@ export function SpendAnalysis() {
             {totals.income === 0 && <p className="mt-0.5 text-xs text-ink-muted">None logged this {rangeName}</p>}
           </div>
         </div>
+        {biggest && (
+          <p className="mt-3 flex min-w-0 items-baseline gap-1.5 text-xs text-ink-muted">
+            <span className="shrink-0">Biggest expense</span>
+            <b className="shrink-0 font-bold text-ink tnum">{thb(biggest.amount)}</b>
+            <span className="truncate">· {noteTitle(biggest.note, biggest.subcategory) || getCategory(biggest.categoryId)?.label}</span>
+          </p>
+        )}
 
         {/* Where the income went: spent vs. left; past 100% the whole bar turns red */}
         {totals.income > 0 && (
@@ -319,35 +376,26 @@ export function SpendAnalysis() {
     perDay: (
       <Card>
         <h2 className="mb-3 font-display text-lg font-extrabold text-ink">Spent per {range === 'year' ? 'month' : 'day'}</h2>
-        <Bars data={data} unit={range === 'year' ? 'month' : 'day'} />
+        <Bars
+          data={data}
+          unit={range === 'year' ? 'month' : 'day'}
+          selected={selectedBar}
+          onSelect={(key) => setPicked(key ? { key, period: periodKey } : null)}
+        />
+        {selectedBar ? (
+          <TxnPeek
+            caption={bucketName(selectedBar)}
+            rows={inRange.filter((t) => spendOf(t) !== 0 && inPeriod(bucketSpan(selectedBar), t.date))}
+            methods={methods}
+            seeAll={`/spend/txns?from=${bucketSpan(selectedBar).start}&to=${bucketSpan(selectedBar).end}`}
+          />
+        ) : (
+          <p className="mt-3 text-xs text-ink-muted">Tap a bar to see what you bought.</p>
+        )}
       </Card>
     ),
     // Month on month only makes sense for a month
     trends: range === 'month' ? <TrendsCard end={period} txns={transactions} cycle={settings.cycle} /> : null,
-    stats: (
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
-        <Card compact>
-          <p className="text-xs text-ink-muted">Daily average</p>
-          <p className="mt-1 font-display text-lg font-extrabold tnum text-ink">{thb(totals.expense / elapsedDays)}</p>
-        </Card>
-        <Card compact>
-          <p className="text-xs text-ink-muted">Top category</p>
-          <p className={`mt-1 truncate font-display text-lg font-extrabold ${SPENT_TONE.text}`}>
-            {topCat ? getCategory(topCat.categoryId)?.label ?? 'Other' : '—'}
-          </p>
-          {topCat && <p className="text-xs text-ink-muted tnum">{thb(topCat.amount)}</p>}
-        </Card>
-        <Card compact>
-          <p className="text-xs text-ink-muted">Biggest expense</p>
-          <p className="mt-1 font-display text-lg font-extrabold tnum text-ink">{biggest ? thbCompact(biggest.amount) : '—'}</p>
-          {biggest && <p className="truncate text-xs text-ink-muted">{noteTitle(biggest.note, biggest.subcategory) || getCategory(biggest.categoryId)?.label}</p>}
-        </Card>
-        <Card compact>
-          <p className="text-xs text-ink-muted">Saved of income</p>
-          <p className="mt-1 font-display text-lg font-extrabold tnum text-ink">{savingsRate === null ? '—' : `${Math.round(savingsRate)}%`}</p>
-        </Card>
-      </div>
-    ),
     categories: (
       <Card>
         <div className="flex items-center justify-between gap-3">
@@ -382,43 +430,60 @@ export function SpendAnalysis() {
                 const share = totals.expense > 0 ? (amount / totals.expense) * 100 : 0
                 const width = b ? Math.min(100, (used / b) * 100) : share
                 const subs = categoryBreakdown(b ? inRange.filter(countsInBudget) : inRange, categoryId)
+                const isOpen = openCatId === categoryId
                 return (
                   <li key={categoryId}>
-                    <div className="flex items-center justify-between gap-3 text-sm">
-                      <span className="flex min-w-0 items-center gap-2 font-semibold text-ink">
-                        {Icon && (
-                          <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${TONES[tone].chip}`}>
-                            <Icon className="h-4 w-4" />
-                          </span>
-                        )}
-                        <span className="truncate">{cat?.label ?? 'Other'}</span>
-                      </span>
-                      <span className="shrink-0 tnum font-bold text-ink">
-                        {thb(used)}
-                        <span className="ml-1 text-xs font-semibold text-ink-muted">{b ? `/ ${thb(b)}` : `${Math.round(share)}%`}</span>
-                      </span>
-                    </div>
-                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-muted">
-                      <div
-                        className={`h-full rounded-full ${state === 'over' ? 'bg-loss' : state === 'near' ? 'bg-warn' : TONES[tone].bar}`}
-                        style={{ width: `${width}%` }}
+                    <button
+                      type="button"
+                      aria-expanded={isOpen}
+                      onClick={() => setOpenCat(isOpen ? null : { id: categoryId, period: periodKey })}
+                      className="block w-full rounded-xl text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      >
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="flex min-w-0 items-center gap-2 font-semibold text-ink">
+                          {Icon && (
+                            <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${TONES[tone].chip}`}>
+                              <Icon className="h-4 w-4" />
+                            </span>
+                          )}
+                          <span className="truncate">{cat?.label ?? 'Other'}</span>
+                        </span>
+                        <span className="shrink-0 tnum font-bold text-ink">
+                          {thb(used)}
+                          <span className="ml-1 text-xs font-semibold text-ink-muted">{b ? `/ ${thb(b)}` : `${Math.round(share)}%`}</span>
+                          <ChevronDownIcon className={`ml-1 inline h-3.5 w-3.5 align-[-2px] text-ink-faint transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                        </span>
+                      </div>
+                      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-muted">
+                        <div
+                          className={`h-full rounded-full ${state === 'over' ? 'bg-loss' : state === 'near' ? 'bg-warn' : TONES[tone].bar}`}
+                          style={{ width: `${width}%` }}
+                        />
+                      </div>
+                      {subs.length > 0 && (
+                        <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-muted">
+                          {subs.map((s) => (
+                            <span key={s.label} className="tnum">
+                              {s.label} <span className="font-semibold text-ink-soft">{thb(s.amount)}</span>
+                            </span>
+                          ))}
+                        </p>
+                      )}
+                      {b && (
+                        <p className={`mt-1 text-xs tnum ${state === 'over' ? 'font-semibold text-loss-ink' : state === 'near' ? 'font-semibold text-warn-ink' : 'text-ink-muted'}`}>
+                          {state === 'over' ? `Over by ${thb(used - b)}` : `${thb(b - used)} left`}
+                        </p>
+                      )}
+                      {outside > 0 && <p className="mt-1 text-xs text-ink-muted tnum">Plus {thb(outside)} kept outside the budget</p>}
+                    </button>
+                    {isOpen && (
+                      <TxnPeek
+                        caption={cat?.label ?? 'Other'}
+                        rows={inRange.filter((t) => spendOf(t) !== 0 && (t.categoryId ?? 'other') === categoryId)}
+                        methods={methods}
+                        seeAll={`/spend/txns?q=${encodeURIComponent((cat?.label ?? 'other').toLowerCase())}&from=${period.start}&to=${period.end}`}
                       />
-                    </div>
-                    {subs.length > 0 && (
-                      <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-muted">
-                        {subs.map((s) => (
-                          <span key={s.label} className="tnum">
-                            {s.label} <span className="font-semibold text-ink-soft">{thb(s.amount)}</span>
-                          </span>
-                        ))}
-                      </p>
                     )}
-                    {b && (
-                      <p className={`mt-1 text-xs tnum ${state === 'over' ? 'font-semibold text-loss-ink' : state === 'near' ? 'font-semibold text-warn-ink' : 'text-ink-muted'}`}>
-                        {state === 'over' ? `Over by ${thb(used - b)}` : `${thb(b - used)} left`}
-                      </p>
-                    )}
-                    {outside > 0 && <p className="mt-1 text-xs text-ink-muted tnum">Plus {thb(outside)} kept outside the budget</p>}
                   </li>
                 )
               })}
@@ -426,41 +491,6 @@ export function SpendAnalysis() {
         )}
       </Card>
     ),
-    // What the money went on across categories: "Snack" under Food, "Grab" under Transport
-    subcategories: subTotals.length > 0 ? (
-      <Card>
-        <h2 className="font-display text-lg font-extrabold text-ink">Top subcategories</h2>
-        <ul className="mt-3 divide-y divide-line">
-          {subTotals.map((s) => {
-            const cat = getCategory(s.categoryId)
-            const Icon = cat?.icon
-            const share = totals.expense > 0 ? Math.round((s.amount / totals.expense) * 100) : 0
-            return (
-              <li key={`${s.categoryId}-${s.subcategory}`}>
-                <Link
-                  to={`/spend/txns?q=${encodeURIComponent(s.subcategory.toLowerCase())}`}
-                  className="flex items-center gap-3 py-2.5 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                >
-                  <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${TONES[cat?.tone ?? 'slate'].chip}`}>
-                    {Icon && <Icon className="h-4 w-4" />}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-ink">{s.subcategory}</span>
-                    <span className="block truncate text-xs text-ink-muted tnum">
-                      {cat?.label ?? 'Other'} · {s.count}×
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-right">
-                    <span className="block text-sm font-bold text-ink tnum">{thb(s.amount)}</span>
-                    <span className="block text-xs text-ink-muted tnum">{share}%</span>
-                  </span>
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
-      </Card>
-    ) : null,
     // Things bought again and again, and what they come to over a year at this pace
     habits: habitRows.length > 0 ? (
       <Card>
@@ -550,7 +580,7 @@ export function SpendAnalysis() {
       {/* Cards in your order; on wide screens they flow down two columns */}
       <div className="flex flex-col gap-5 lg:block lg:columns-2 lg:gap-5">
         {order
-          .filter((id) => cards[id])
+          .filter((id) => cards[id] && !hidden.includes(id))
           .map((id) => (
             <div key={id} className="break-inside-avoid lg:mb-5">
               {cards[id]}
@@ -562,11 +592,13 @@ export function SpendAnalysis() {
         open={arrangeOpen}
         onClose={() => setArrangeOpen(false)}
         title="Arrange cards"
-        description="Choose the order of the cards on Analysis. On a wide screen they fill two columns, top to bottom."
+        description="Choose which cards show on Analysis and in what order. On a wide screen they fill two columns, top to bottom."
         items={order.map((id) => ({ id, label: ANALYSIS_CARDS.find((c) => c.id === id)?.label ?? id }))}
         onMove={(id, delta) => saveOrder(moveInOrder(order, id as AnalysisCardId, delta))}
-        canReset={!isDefaultOrder(ANALYSIS_CARD_IDS, order)}
-        onReset={() => saveOrder([...ANALYSIS_CARD_IDS])}
+        hidden={hidden}
+        onToggle={(id) => toggleHidden(id as AnalysisCardId)}
+        canReset={!isDefaultOrder(ANALYSIS_CARD_IDS, order) || hidden.length > 0}
+        onReset={() => updateSettings({ analysisOrder: undefined, analysisHidden: undefined })}
       />
     </div>
   )

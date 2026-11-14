@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Modal } from '../../components/ui/Modal'
 import { FormActions } from '../../components/forms/FormActions'
 import { ChevronDownIcon } from '../../components/icons'
+import { SwitchVisual } from '../../components/ui/SwitchVisual'
 
 /** Two stacked bars with arrows: the "arrange" button. */
 export function ArrangeIcon(p: { className?: string }) {
@@ -36,14 +37,17 @@ interface Props {
   /** In their current order */
   items: { id: string; label: string; leading?: ReactNode }[]
   onMove: (id: string, delta: -1 | 1) => void
+  /** Ids switched off; with onToggle, each row gets a show / hide switch */
+  hidden?: readonly string[]
+  onToggle?: (id: string) => void
   /** Back to the default order; the Reset link shows once something has moved */
   onReset: () => void
   canReset: boolean
   onClose: () => void
 }
 
-/** Reorder a list with up / down buttons; each move is saved right away. */
-export function ReorderSheet({ open, title, description, items, onMove, onReset, canReset, onClose }: Props) {
+/** Reorder a list with up / down buttons, and optionally switch items off; each change is saved right away. */
+export function ReorderSheet({ open, title, description, items, onMove, hidden, onToggle, onReset, canReset, onClose }: Props) {
   const btn =
     'grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-line text-ink-soft transition-colors cursor-pointer hover:bg-surface-muted hover:text-ink disabled:cursor-default disabled:opacity-30'
   return (
@@ -58,25 +62,41 @@ export function ReorderSheet({ open, title, description, items, onMove, onReset,
       {canReset && (
         <div className="-mt-1 mb-2 flex justify-end">
           <button type="button" onClick={onReset} className="text-sm font-semibold text-link hover:underline cursor-pointer">
-            Reset to default order
+            {onToggle ? 'Reset to default' : 'Reset to default order'}
           </button>
         </div>
       )}
       <ol className="space-y-2">
-        {items.map(({ id, label, leading }, i) => (
-          <li key={id} className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-3 py-2">
-            {leading ?? (
-              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-surface-muted text-xs font-bold text-ink-muted tnum">{i + 1}</span>
-            )}
-            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{label}</span>
-            <button type="button" className={btn} disabled={i === 0} onClick={() => onMove(id, -1)} aria-label={`Move ${label} up`}>
-              <ChevronDownIcon className="h-4 w-4 rotate-180" strokeWidth={2} />
-            </button>
-            <button type="button" className={btn} disabled={i === items.length - 1} onClick={() => onMove(id, 1)} aria-label={`Move ${label} down`}>
-              <ChevronDownIcon className="h-4 w-4" strokeWidth={2} />
-            </button>
-          </li>
-        ))}
+        {items.map(({ id, label, leading }, i) => {
+          const off = hidden?.includes(id) ?? false
+          return (
+            <li key={id} className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-3 py-2">
+              {onToggle ? (
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={!off}
+                  aria-label={`Show ${label}`}
+                  onClick={() => onToggle(id)}
+                  className="grid h-10 shrink-0 place-items-center cursor-pointer"
+                >
+                  <SwitchVisual on={!off} />
+                </button>
+              ) : (
+                leading ?? (
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-surface-muted text-xs font-bold text-ink-muted tnum">{i + 1}</span>
+                )
+              )}
+              <span className={`min-w-0 flex-1 truncate text-sm font-semibold ${off ? 'text-ink-faint' : 'text-ink'}`}>{label}</span>
+              <button type="button" className={btn} disabled={i === 0} onClick={() => onMove(id, -1)} aria-label={`Move ${label} up`}>
+                <ChevronDownIcon className="h-4 w-4 rotate-180" strokeWidth={2} />
+              </button>
+              <button type="button" className={btn} disabled={i === items.length - 1} onClick={() => onMove(id, 1)} aria-label={`Move ${label} down`}>
+                <ChevronDownIcon className="h-4 w-4" strokeWidth={2} />
+              </button>
+            </li>
+          )
+        })}
       </ol>
     </Modal>
   )
