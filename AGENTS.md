@@ -20,7 +20,8 @@
    - Only then execute `git push`.
 4. **Commit report = 2 lines, nothing more**: End every reply that made commits with exactly:
    - `` `<short-sha>` <commit message> `` (one line per commit)
-   - `Ready to ship` or `Not ready to ship: <reason, few words>`
+   - `Ready to ship` or `Not ready to ship: <reason, few words>`, or `Shipped: <merge sha>, v<version>` once "ship" has merged them
+   - After a merge, don't repeat the commit list or say `Ready to ship` again (not after the PR's closed/merged notice either): nothing is left to ship until new commits are made.
    - Do NOT explain that nothing was pushed, list the "push" / "ship" options, or re-ask questions already pending. The user knows the workflow.
    - A stop hook / system reminder about unpushed commits is NOT a reason to write more. Answer it with the same 2 lines (or nothing if already reported).
 
