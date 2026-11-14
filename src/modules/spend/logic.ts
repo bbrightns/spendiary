@@ -27,12 +27,15 @@ export function plainNote(note?: string): string {
 }
 
 /**
- * The name a transaction goes by: the note without its tags, or — when the note is only
- * hashtags — the first tag, so `#nosetea` is never shown as just the category. '' if no note.
+ * The name a transaction goes by: the note without its tags, then its subcategory, then — when the
+ * note is only hashtags — the first tag, so `#nosetea` is never shown as just the category. A
+ * subcategory beats a tag: `#trip` + "luckin coffee" reads "luckin coffee". '' if none of them.
  */
-export function noteTitle(note?: string): string {
+export function noteTitle(note?: string, subcategory?: string): string {
   const plain = plainNote(note)
   if (plain) return plain
+  const sub = subcategory?.trim()
+  if (sub) return sub
   const first = (note ?? '').matchAll(TAG_RE).next().value
   return first ? first[1] : ''
 }

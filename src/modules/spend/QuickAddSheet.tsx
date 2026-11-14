@@ -294,7 +294,7 @@ export function QuickAddSheet() {
     const total = Math.round(value * 100) / 100
     const today = localDateStr()
     const id = `lib-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-    const name = noteTitle(note) || subcategory || getCategory(categoryId)?.label || 'Installment'
+    const name = noteTitle(note, subcategory) || getCategory(categoryId)?.label || 'Installment'
     setLiabilities([
       ...(data.liabilities ?? []),
       {

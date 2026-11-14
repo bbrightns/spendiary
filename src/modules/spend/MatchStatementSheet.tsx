@@ -180,7 +180,7 @@ export function MatchStatementSheet() {
                           {on && <CheckIcon className="h-3.5 w-3.5" />}
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-semibold text-ink">{noteTitle(t.note) || t.subcategory || cat?.label}</span>
+                          <span className="block truncate text-sm font-semibold text-ink">{noteTitle(t.note, t.subcategory) || cat?.label}</span>
                           <span className="block text-xs text-ink-muted">{short(t.date)}</span>
                         </span>
                         <span className={`shrink-0 text-sm font-bold tnum ${t.type === 'income' ? 'text-gain-ink' : 'text-ink'}`}>
