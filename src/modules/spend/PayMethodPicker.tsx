@@ -1,6 +1,6 @@
 import { useId } from 'react'
 import { ChevronDownIcon, CreditCardIcon, WalletIcon } from '../../components/icons'
-import { thb, thbSigned } from '../../lib/format'
+import { money, thb, thbSigned } from '../../lib/format'
 import type { PayMethod } from './useSpend'
 
 export const NOT_TRACKED = ''
@@ -74,7 +74,7 @@ export function PayMethodPicker({ label, methods, value, onChange, favoriteIds, 
                     `${thb(m.available ?? Math.max(0, (m.creditLimit ?? 0) - m.balance), true)} left`
                   ) : (
                     // A wallet below zero stands out, so it's not picked by habit
-                    <span className={m.balance < 0 ? 'font-bold text-loss-ink' : undefined}>{thbSigned(m.balance, true)}</span>
+                    <span className={m.balance < 0 ? 'font-bold text-loss-ink' : undefined}>{m.currency === 'USD' ? money(m.balance, 'USD', true) : thbSigned(m.balance, true)}</span>
                   )}
                 </span>
               </span>
@@ -108,7 +108,7 @@ export function PayMethodPicker({ label, methods, value, onChange, favoriteIds, 
             <optgroup label="Wallets">
               {usable.filter((m) => m.kind === 'cash').map((m) => (
                 <option key={m.id} value={m.id}>
-                  {`${m.name} · ${m.kind === 'card' ? `${thbSigned(m.balance, true)} owed` : thbSigned(m.balance, true)}`}
+                  {`${m.name} · ${m.kind === 'card' ? `${thbSigned(m.balance, true)} owed` : m.currency === 'USD' ? money(m.balance, 'USD', true) : thbSigned(m.balance, true)}`}
                 </option>
               ))}
             </optgroup>

@@ -6,7 +6,7 @@ import { FormActions } from '../../components/forms/FormActions'
 import { TransactionDateField } from '../../components/forms/TransactionDateField'
 import { useToast } from '../../store/ToastContext'
 import { useData } from '../../store/DataContext'
-import { localDateStr, localTimeStr, thb, thbExact, thbSigned } from '../../lib/format'
+import { localDateStr, localTimeStr, money, thb, thbExact, thbSigned } from '../../lib/format'
 import type { SpendSettings, SpendTransaction, SpendTxnType } from '../../lib/types'
 import { categoriesFor, getCategory } from './categories'
 import { bigExpenseRule, doneWord, followingStatement, inPeriod, isBigExpense, isNearCutoff, noteTitle, periodFor, statementFor, walletOverdraw } from './logic'
@@ -20,6 +20,10 @@ import { paidDetail } from './billPaid'
 import { firstInstallmentDue, installmentAmount } from './loans'
 import { SHEET_EVENTS, type QuickAddDetail } from './sheetEvents'
 import { AlertIcon } from '../../components/icons'
+import { NumberField } from '../../components/ui/Field'
+import { isValidRate } from '../../lib/fx'
+import { resolveExchange } from '../../lib/fxExchange'
+import { fieldNumber } from '../../lib/usdTrade'
 import { OPERATORS, appendOperator, cleanAmountInput, evalAmount, hasOperator, settleAmount } from './amountExpr'
 
 const OPEN_EVENT = SHEET_EVENTS.quickAdd
@@ -78,7 +82,7 @@ function pickDefaults(type: SpendTxnType, txns: SpendTransaction[], methods: Pay
 
 export function QuickAddSheet() {
   const { transactions, methods, cards, settings, recurring, addTransaction, updateTransaction, removeTransaction } = useSpend()
-  const { data, setLiabilities, removeLiability } = useData()
+  const { data, usdThb, exchangeToUsd, setLiabilities, removeLiability } = useData()
   const { showToast } = useToast()
 
   const [open, setOpen] = useState(false)
@@ -106,6 +110,9 @@ export function QuickAddSheet() {
   const [hint, setHint] = useState<string | undefined>()
   // Editing a loan payment: its transfer goes to the loan, so there's no "to" wallet to pick
   const [loanPayment, setLoanPayment] = useState(false)
+  // A transfer into a USD account (an exchange): the dollars received or the rate, either one
+  const [usdIn, setUsdIn] = useState<number | string | ''>('')
+  const [fxRate, setFxRate] = useState<number | string | ''>('')
   const amountRef = useRef<HTMLInputElement>(null)
   // The amount or its operator buttons have focus: the buttons show
   const [amountActive, setAmountActive] = useState(false)
@@ -124,6 +131,8 @@ export function QuickAddSheet() {
       setFromRecurring(existing ? null : detail.recurring ?? null)
       setLoanPayment(!!existing?.liabilityId)
       setHint(existing ? undefined : detail.hint)
+      setUsdIn('')
+      setFxRate('')
 
       if (source) {
         setEditId(existing?.id ?? null)
@@ -184,10 +193,25 @@ export function QuickAddSheet() {
   const isSum = hasOperator(amount)
   const value = evalAmount(amount) ?? NaN
   const amountValid = Number.isFinite(value) && value > 0
+  // A new transfer can go into a USD account too: that's an exchange, saved with its rate (store/actions/fx.ts)
+  const usdAccounts = (data.cashAccounts ?? []).filter((a) => a.currency === 'USD' && !a.archived)
+  const toMethods: PayMethod[] = editId || loanPayment
+    ? methods
+    : [...methods, ...usdAccounts.map((a) => ({ id: a.id, kind: 'cash' as const, name: `${a.name} (USD)`, color: a.color, balance: a.balance, currency: 'USD' as const }))]
+  const toUsd = type === 'transfer' && !editId && usdAccounts.find((a) => a.id === toAccountId)
+  const liveFx = isValidRate(usdThb) ? usdThb : 0
+  const exchange = toUsd && amountValid
+    ? resolveExchange(value, fieldNumber(usdIn), fieldNumber(fxRate) > 0 ? fieldNumber(fxRate) : fieldNumber(usdIn) > 0 ? 0 : liveFx)
+    : null
+  // Baht only leave a wallet (not a card) for an exchange
+  const fromWallet = methods.find((m) => m.id === accountId)?.kind === 'cash'
   const transferValid =
-    type !== 'transfer' || (loanPayment ? accountId !== NO_WALLET : accountId !== NO_WALLET && toAccountId !== NO_WALLET && accountId !== toAccountId)
+    type !== 'transfer' ||
+    (loanPayment
+      ? accountId !== NO_WALLET
+      : accountId !== NO_WALLET && toAccountId !== NO_WALLET && accountId !== toAccountId && (!toUsd || (fromWallet && exchange !== null)))
   const canSave = amountValid && transferValid
-  const saveHint = !amountValid ? (isSum && Number.isFinite(value) ? 'The sum must be more than ฿0' : 'Enter an amount') : !transferValid ? (loanPayment ? 'Pick the account you pay from' : 'Pick two different accounts') : undefined
+  const saveHint = !amountValid ? (isSum && Number.isFinite(value) ? 'The sum must be more than ฿0' : 'Enter an amount') : !transferValid ? (loanPayment ? 'Pick the account you pay from' : toUsd && !fromWallet ? 'Exchange from a wallet, not a card' : toUsd ? 'Enter the dollars received or the rate' : 'Pick two different accounts') : undefined
   // Installments: a new card expense of ฿1,000 or more (not editing, not a recurring bill)
   const card = cards.find((c) => c.id === accountId)
   const canSplit = !editId && !fromRecurring && type === 'expense' && !!card && amountValid && value >= 1000
@@ -301,6 +325,14 @@ export function QuickAddSheet() {
   const save = () => {
     if (!canSave) return
     if (splitting) return saveInstallment()
+    if (toUsd && exchange) {
+      // Dollars already there with no known cost count at today's rate, so the new ones aren't lost in an unknown cost
+      const opening = toUsd.thbCost === undefined && toUsd.balance > 0 && liveFx > 0 ? Math.round(toUsd.balance * liveFx * 100) / 100 : undefined
+      exchangeToUsd({ fromAccountId: accountId, toAccountId: toUsd.id, thb: exchange.thb, usd: exchange.usd, date, openingThbCost: opening })
+      showToast(`${thbExact(exchange.thb)} → ${money(exchange.usd, 'USD', true)} · ${toUsd.name}`)
+      setOpen(false)
+      return
+    }
     const input = {
       type,
       amount: Math.round(value * 100) / 100,
@@ -532,6 +564,7 @@ export function QuickAddSheet() {
               ) : (
                 <PayMethodPicker
                   {...pickerProps}
+                  methods={toMethods}
                   label="To (a card here pays its bill)"
                   value={toAccountId}
                   onChange={setToAccountId}
@@ -547,6 +580,34 @@ export function QuickAddSheet() {
               onChange={setAccountId}
               allowNone
             />
+          )}
+
+          {toUsd && (
+            <div className="-mt-1 space-y-2">
+              <div className="grid grid-cols-2 items-end gap-3">
+                <NumberField
+                  label="Dollars received"
+                  prefix="$"
+                  value={usdIn}
+                  onChange={setUsdIn}
+                  placeholder={exchange && exchange.derived === 'usd' ? `≈ ${exchange.usd.toFixed(2)}` : '0.00'}
+                  step={0.01}
+                />
+                <NumberField
+                  label="Rate (THB per USD)"
+                  value={fxRate}
+                  onChange={setFxRate}
+                  placeholder={exchange && exchange.derived === 'rate' ? `≈ ${exchange.rate.toFixed(4)}` : liveFx > 0 ? liveFx.toFixed(2) : '0.00'}
+                  step={0.0001}
+                />
+              </div>
+              <p className="text-xs text-ink-muted">
+                {exchange
+                  ? <>Exchange <span className="font-semibold tnum text-ink">{thbExact(exchange.thb)} → {money(exchange.usd, 'USD', true)}</span>{` at ฿${exchange.rate.toFixed(2)}/USD`}{!(fieldNumber(usdIn) > 0) && !(fieldNumber(fxRate) > 0) ? " (today's rate)" : ''}. {toUsd.name} keeps what the dollars cost.</>
+                  : 'Enter the dollars received or the rate.'}
+                {!fromWallet && accountId !== NO_WALLET && ' Exchange from a wallet, not a card.'}
+              </p>
+            </div>
           )}
 
           {canSplit && (
@@ -618,7 +679,7 @@ export function QuickAddSheet() {
             </div>
           )}
 
-          {backdated && touchesBalance && (
+          {backdated && touchesBalance && !toUsd && (
             <button
               type="button"
               role="switch"

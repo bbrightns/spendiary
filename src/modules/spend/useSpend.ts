@@ -32,6 +32,8 @@ export interface PayMethod {
   locked?: boolean
   /** Wallet only: archived, so pickers leave it out (unless it is the one already picked) */
   archived?: boolean
+  /** A USD account: offered only as a new transfer's destination, which then saves as an exchange */
+  currency?: 'USD'
 }
 
 function markOccurrence(list: SpendRecurring[], id: string, date: string, key: 'doneDates' | 'skippedDates'): SpendRecurring[] {
