@@ -13,6 +13,7 @@ import { bigExpenseRule, doneWord, followingStatement, inPeriod, isBigExpense, i
 import { TYPE_ACTIVE } from './tones'
 import { useSpend, type PayMethod } from './useSpend'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
+import { TransferAccountsField } from './TransferAccountsField'
 import { SwitchVisual } from '../../components/ui/SwitchVisual'
 import { CategoryPicker } from './CategoryPicker'
 import { NoteField } from './NoteField'
@@ -557,21 +558,16 @@ export function QuickAddSheet() {
 
           {/* Pay with / into */}
           {type === 'transfer' ? (
-            <>
-              <PayMethodPicker {...pickerProps} label="From" value={accountId} onChange={setAccountId} />
-              {loanPayment ? (
-                <p className="-mt-2 text-xs text-ink-muted">Paid toward a loan. Change the loan itself in Loans & installments.</p>
-              ) : (
-                <PayMethodPicker
-                  {...pickerProps}
-                  methods={toMethods}
-                  label="To (a card here pays its bill)"
-                  value={toAccountId}
-                  onChange={setToAccountId}
-                  excludeId={accountId}
-                />
-              )}
-            </>
+            <TransferAccountsField
+              fromMethods={methods}
+              toMethods={toMethods}
+              from={accountId}
+              to={toAccountId}
+              onFromChange={setAccountId}
+              onToChange={setToAccountId}
+              amount={amountValid ? value : 0}
+              toLoan={loanPayment}
+            />
           ) : (
             <PayMethodPicker
               {...pickerProps}
