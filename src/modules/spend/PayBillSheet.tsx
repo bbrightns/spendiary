@@ -217,7 +217,7 @@ export function PayBillSheet() {
                     <li key={t.id} className="space-y-2 py-2.5">
                       <div className="flex items-center justify-between gap-3">
                         <span className="min-w-0">
-                          <span className="block truncate text-sm font-semibold text-ink">{noteTitle(t.note) || t.subcategory || cat?.label}</span>
+                          <span className="block truncate text-sm font-semibold text-ink">{noteTitle(t.note, t.subcategory) || cat?.label}</span>
                           <span className="block text-xs text-ink-muted">{short(t.date)}</span>
                         </span>
                         <span className={`shrink-0 text-sm font-bold tnum ${t.type === 'income' ? 'text-gain-ink' : 'text-ink'}`}>
@@ -226,7 +226,7 @@ export function PayBillSheet() {
                         </span>
                       </div>
                       <SegmentedControl
-                        ariaLabel={`Which bill ${noteTitle(t.note) || cat?.label || 'this charge'} is on`}
+                        ariaLabel={`Which bill ${noteTitle(t.note, t.subcategory) || cat?.label || 'this charge'} is on`}
                         size="xs"
                         shape="pill"
                         value={later ? 'next' : 'this'}
@@ -257,7 +257,7 @@ export function PayBillSheet() {
                         {Icon && <Icon className="h-4 w-4" />}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-ink">{noteTitle(t.note) || t.subcategory || cat?.label}</span>
+                        <span className="block truncate text-sm font-semibold text-ink">{noteTitle(t.note, t.subcategory) || cat?.label}</span>
                         <span className="block text-xs text-ink-muted">{short(t.date)}</span>
                       </span>
                       <span className={`shrink-0 text-sm font-bold tnum ${t.type === 'income' ? 'text-gain-ink' : 'text-ink'}`}>

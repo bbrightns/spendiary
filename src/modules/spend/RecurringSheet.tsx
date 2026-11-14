@@ -129,7 +129,7 @@ export function RecurringSheet({ open, rec, onClose }: { open: boolean; rec?: Sp
 
   const draft: Omit<SpendRecurring, 'id'> = {
     // The name is the note's title, like a transaction's; with no note, the category's (or where a transfer goes)
-    name: noteTitle(form.note) || (transfer ? transferName(wallets.find((m) => m.id === form.toAccountId)?.name) : categoryLabel),
+    name: noteTitle(form.note, transfer ? undefined : form.subcategory) || (transfer ? transferName(wallets.find((m) => m.id === form.toAccountId)?.name) : categoryLabel),
     type: form.type,
     amount: Math.round(amount * 100) / 100,
     categoryId: transfer ? '' : form.categoryId,

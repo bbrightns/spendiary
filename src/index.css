@@ -717,3 +717,13 @@ input[type="number"]::-webkit-outer-spin-button {
     text-overflow: ellipsis;
   }
 }
+/* A sideways chip row fades out on the side that has more to scroll to (set by useChipScroll) */
+.fade-x-end {
+  mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+}
+.fade-x-start {
+  mask-image: linear-gradient(to left, black calc(100% - 28px), transparent);
+}
+.fade-x-start.fade-x-end {
+  mask-image: linear-gradient(to right, transparent, black 28px, black calc(100% - 28px), transparent);
+}

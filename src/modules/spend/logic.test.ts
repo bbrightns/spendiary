@@ -791,6 +791,12 @@ describe('noteTitle', () => {
   it('uses the first tag when the note is only tags', () => {
     expect(noteTitle('#NoseTea #office')).toBe('NoseTea')
   })
+  it('puts the subcategory ahead of a tag, behind note text', () => {
+    expect(noteTitle('#กวางโจว', 'luckin coffee')).toBe('luckin coffee')
+    expect(noteTitle('Latte #office', 'luckin coffee')).toBe('Latte')
+    expect(noteTitle(undefined, 'Snack')).toBe('Snack')
+    expect(noteTitle('#trip', '  ')).toBe('trip')
+  })
   it('is empty without a note', () => {
     expect(noteTitle(undefined)).toBe('')
     expect(noteTitle('   ')).toBe('')

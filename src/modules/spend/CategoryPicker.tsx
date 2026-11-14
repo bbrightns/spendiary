@@ -1,9 +1,10 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronDownIcon } from '../../components/icons'
 import { categoriesFor, getCategory, type SpendCategory } from './categories'
 import { CategorySheet } from './CategorySheet'
-import { foldChips, moveId, sortSubsByUse } from './logic'
+import { useChipScroll } from './chipScroll'
+import { moveId, sortSubsByUse } from './logic'
 import { ReorderSheet } from './ReorderSheet'
 import { TONES } from './tones'
 import { KEEP_CATEGORY, useCategoryUsage, useRemoveCategory } from './useRemoveCategory'
@@ -15,10 +16,6 @@ export type CategoryLayout = 'chips' | 'tiles'
 
 /** Tiles shown before "more": one row, the user's first five (Edit → Arrange sets the order) */
 const COLLAPSED = 5
-/** Subcategory chips fold to one row (with Add); a pick from further down takes the last slot */
-const SUB_ROWS = 1
-/** Tailwind gap-1.5 between subcategory chips */
-const SUB_GAP = 6
 
 interface Props {
   type: 'expense' | 'income'
@@ -51,11 +48,8 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
   const [newSub, setNewSub] = useState('')
   const [renaming, setRenaming] = useState<string | null>(null)
   const [renameText, setRenameText] = useState('')
-  const [subExpanded, setSubExpanded] = useState(false)
-  // Chip widths from an invisible copy, so the fold can work out what fits in one row
-  const subBox = useRef<HTMLDivElement>(null)
-  const subMeasure = useRef<HTMLDivElement>(null)
-  const [subSizes, setSubSizes] = useState<{ width: number; chips: number[]; add: number } | null>(null)
+  // Subcategories sit in one row that scrolls sideways (all of them wrap while editing)
+  const subRow = useRef<HTMLDivElement>(null)
   const tiles = (layout ?? settings.categoryLayout ?? 'tiles') === 'tiles'
 
   // Offered subcategories for the chosen category, most used first, plus the one already picked if it was since removed
@@ -66,47 +60,11 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
 
   // By content: `subcategories` is a new function each render, so the list is a new array each time too
   const subKey = subChoices.join('\u0000')
-  useLayoutEffect(() => {
-    const box = subBox.current
-    const measure = subMeasure.current
-    if (!box || !measure) return setSubSizes(null)
-    const read = () => {
-      const widths = [...measure.children].map((el) => el.getBoundingClientRect().width)
-      const next = { width: box.clientWidth, chips: widths.slice(0, -1), add: widths[widths.length - 1] ?? 0 }
-      setSubSizes((prev) =>
-        prev && prev.width === next.width && prev.add === next.add && prev.chips.length === next.chips.length && prev.chips.every((w, i) => w === next.chips[i])
-          ? prev
-          : next,
-      )
-    }
-    read()
-    const ro = new ResizeObserver(read)
-    ro.observe(box)
-    // Its size changes too once a web font (Thai) loads
-    ro.observe(measure)
-    return () => ro.disconnect()
-  }, [subKey])
-
-  // Folded: the chips that fit in one row (Add always last); undefined when everything fits
-  const subFold =
-    subSizes && !editing && subSizes.chips.length === subChoices.length
-      ? foldChips({
-          widths: subSizes.chips,
-          width: subSizes.width,
-          gap: SUB_GAP,
-          rows: SUB_ROWS,
-          // The new-subcategory field is w-32
-          trailing: addingSub ? 128 : subSizes.add,
-          keep: subcategory ? subChoices.indexOf(subcategory) : undefined,
-        })
-      : undefined
-  const subShown = subFold && !subExpanded ? subFold.map((i) => subChoices[i]) : subChoices
+  // The picked one scrolls into view when the sheet opens (Edit transaction) and when the pick changes
+  const subFade = useChipScroll(subRow, `${value}\u0000${subcategory}\u0000${subKey}`, { active: !editing, reveal: true })
 
   const pick = (id: string) => {
-    if (id !== value) {
-      onSubcategoryChange('')
-      setSubExpanded(false)
-    }
+    if (id !== value) onSubcategoryChange('')
     onChange(id)
     // Fold the grid back so the subcategories sit right under it; the pick stays in view
     setExpanded(false)
@@ -306,71 +264,72 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
               {current.label} <span className="font-medium">· subcategory (optional)</span>
             </span>
           </p>
-          <div ref={subBox} className="relative flex flex-wrap items-center gap-1.5" role="group" aria-label="Subcategory">
-            {/* Invisible copy at full size (bold, like a picked chip) that the fold measures */}
-            <div ref={subMeasure} aria-hidden="true" className="pointer-events-none invisible absolute left-0 top-0 flex w-max gap-1.5">
-              {subChoices.map((s) => (
-                <span key={s} className="inline-flex h-8 items-center whitespace-nowrap rounded-full border px-3 text-xs font-bold">
-                  {s}
-                </span>
-              ))}
-              <span className="inline-flex h-8 items-center whitespace-nowrap rounded-full border px-3 text-xs font-semibold">+ Add</span>
-            </div>
-            {subShown.map((s) => {
-              const on = s === subcategory
-              if (renaming === s)
-                return (
-                  <input
-                    key={s}
-                    autoFocus
-                    value={renameText}
-                    onChange={(e) => setRenameText(e.target.value)}
-                    onFocus={(e) => e.target.select()}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        commitRename()
-                      } else if (e.key === 'Escape') {
-                        e.stopPropagation()
-                        setRenaming(null)
-                      }
-                    }}
-                    onBlur={commitRename}
-                    maxLength={30}
-                    aria-label={`Rename subcategory ${s}`}
-                    className="h-8 w-32 rounded-full border border-brand bg-surface px-3 text-xs font-semibold text-ink outline-none"
-                  />
-                )
-              return (
-                <span
-                  key={s}
-                  className={`inline-flex h-8 items-center rounded-full border text-xs font-semibold transition-colors ${
-                    // Picked: solid in the category's color; the rest are outlined in it
-                    on ? `border-transparent ${TONES[tone].bar} font-bold text-black/85` : TONES[tone].subChip
-                  } ${editing ? 'border-dashed' : ''}`}
-                >
-                  <button
-                    type="button"
-                    aria-pressed={editing ? undefined : on}
-                    aria-label={editing ? `Rename subcategory ${s}` : undefined}
-                    onClick={() => (editing ? startRename(s) : onSubcategoryChange(on ? '' : s))}
-                    className={`h-full rounded-full pl-3 cursor-pointer ${editing ? 'pr-1' : 'pr-3'}`}
-                  >
-                    {s}
-                  </button>
-                  {editing && (
-                    <button
-                      type="button"
-                      aria-label={`Remove subcategory ${s}`}
-                      onClick={() => removeSub(s)}
-                      className="mr-0.5 grid h-6 w-6 place-items-center rounded-full text-sm leading-none cursor-pointer hover:bg-loss/15 hover:text-loss-ink"
+          {/* One row: chips scroll sideways (most used first), Add stays pinned at the end so it's always in reach */}
+          <div className="flex items-start gap-1.5">
+            {subChoices.length > 0 && (
+              <div
+                ref={subRow}
+                role="group"
+                aria-label="Subcategory"
+                className={`no-scrollbar -my-0.5 flex min-w-0 flex-1 items-center gap-1.5 py-0.5 ${editing ? 'flex-wrap' : 'overflow-x-auto'} ${subFade}`}
+              >
+                {subChoices.map((s) => {
+                  const on = s === subcategory
+                  if (renaming === s)
+                    return (
+                      <input
+                        key={s}
+                        autoFocus
+                        value={renameText}
+                        onChange={(e) => setRenameText(e.target.value)}
+                        onFocus={(e) => e.target.select()}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            commitRename()
+                          } else if (e.key === 'Escape') {
+                            e.stopPropagation()
+                            setRenaming(null)
+                          }
+                        }}
+                        onBlur={commitRename}
+                        maxLength={30}
+                        aria-label={`Rename subcategory ${s}`}
+                        className="h-8 w-32 shrink-0 rounded-full border border-brand bg-surface px-3 text-xs font-semibold text-ink outline-none"
+                      />
+                    )
+                  return (
+                    <span
+                      key={s}
+                      className={`inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-full border text-xs font-semibold transition-colors ${
+                        // Picked: solid in the category's color; the rest are outlined in it
+                        on ? `border-transparent ${TONES[tone].bar} font-bold text-black/85` : TONES[tone].subChip
+                      } ${editing ? 'border-dashed' : ''}`}
                     >
-                      ×
-                    </button>
-                  )}
-                </span>
-              )
-            })}
+                      <button
+                        type="button"
+                        aria-pressed={editing ? undefined : on}
+                        aria-label={editing ? `Rename subcategory ${s}` : undefined}
+                        onClick={() => (editing ? startRename(s) : onSubcategoryChange(on ? '' : s))}
+                        className={`h-full rounded-full pl-3 cursor-pointer ${editing ? 'pr-1' : 'pr-3'}`}
+                      >
+                        {s}
+                      </button>
+                      {editing && (
+                        <button
+                          type="button"
+                          aria-label={`Remove subcategory ${s}`}
+                          onClick={() => removeSub(s)}
+                          className="mr-0.5 grid h-6 w-6 place-items-center rounded-full text-sm leading-none cursor-pointer hover:bg-loss/15 hover:text-loss-ink"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </span>
+                  )
+                })}
+              </div>
+            )}
             {addingSub ? (
               <input
                 autoFocus
@@ -390,29 +349,18 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
                 placeholder="Subcategory"
                 maxLength={30}
                 aria-label="New subcategory"
-                className="h-8 w-32 rounded-full border border-brand bg-surface px-3 text-xs font-semibold text-ink outline-none"
+                className="h-8 w-32 shrink-0 rounded-full border border-brand bg-surface px-3 text-xs font-semibold text-ink outline-none"
               />
             ) : (
               <button
                 type="button"
                 onClick={() => setAddingSub(true)}
-                className={`h-8 rounded-full border border-dashed border-current/50 px-3 text-xs font-semibold transition-colors cursor-pointer hover:bg-surface/60 ${TONES[tone].ink}`}
+                className={`h-8 shrink-0 whitespace-nowrap rounded-full border border-dashed border-current/50 px-3 text-xs font-semibold transition-colors cursor-pointer hover:bg-surface/60 ${TONES[tone].ink}`}
               >
                 {subChoices.length ? '+ Add' : '+ Add subcategory'}
               </button>
             )}
           </div>
-          {subFold && (
-            <button
-              type="button"
-              aria-expanded={subExpanded}
-              onClick={() => setSubExpanded((v) => !v)}
-              className={`mt-2 flex min-h-8 w-full items-center justify-center gap-1 rounded-xl border border-dashed border-current/40 text-xs font-semibold transition-colors cursor-pointer hover:bg-surface/60 ${TONES[tone].ink}`}
-            >
-              {subExpanded ? 'Show less' : `Show ${subChoices.length - subFold.length} more`}
-              <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform ${subExpanded ? 'rotate-180' : ''}`} strokeWidth={2} aria-hidden="true" />
-            </button>
-          )}
         </div>
       )}
 

@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
+import { useChipScroll } from './chipScroll'
 import { activeTagQuery, parseTags, suggestTags, toggleTag, topTags } from './logic'
 import { useSpend } from './useSpend'
 import { TAG_CHIP } from './tones'
@@ -24,6 +25,9 @@ export function NoteField({ value: note, onChange, placeholder = 'Brown sugar mi
   const suggestions = useMemo(() => (tagQuery === null ? [] : suggestTags(transactions, note, tagQuery)), [transactions, note, tagQuery])
   const quick = useMemo(() => topTags(transactions, QUICK_TAGS), [transactions])
   const inNote = new Set(parseTags(note))
+  // Fades the side with more tags to scroll to
+  const quickRow = useRef<HTMLDivElement>(null)
+  const quickFade = useChipScroll(quickRow, quick.join(' '), { active: suggestions.length === 0 && quick.length > 0 })
 
   /** Finish the `#ta…` being typed with a tag used before. */
   const completeTag = (tag: string) => onChange(note.replace(/#[^\s#]*$/u, `#${tag} `))
@@ -42,7 +46,7 @@ export function NoteField({ value: note, onChange, placeholder = 'Brown sugar mi
       </label>
       {suggestions.length === 0 && quick.length > 0 && (
         // One row; the rest scroll sideways rather than wrapping
-        <div className="no-scrollbar -mx-1 mt-2 flex gap-1.5 overflow-x-auto px-1 py-0.5" role="group" aria-label="Most used tags">
+        <div ref={quickRow} className={`no-scrollbar -mx-1 mt-2 flex gap-1.5 overflow-x-auto px-1 py-0.5 ${quickFade}`} role="group" aria-label="Most used tags">
           {quick.map((tag) => {
             const on = inNote.has(tag)
             return (

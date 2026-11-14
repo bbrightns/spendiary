@@ -37,9 +37,9 @@ export function TxnRow({ txn, methods, onTagClick, account }: Props) {
   // A deleted wallet or card keeps its name on past rows ("KBank (deleted)")
   const walletName = (id?: string) => accountLabel(id, methods.find((m) => m.id === id)?.name, removed)
   const from = walletName(txn.accountId)
-  // No note: the subcategory names it ("Snack"), then the category
-  const noteName = noteTitle(txn.note)
-  const title = noteName || (txn.type !== 'transfer' && txn.subcategory) || (txn.type === 'transfer' ? 'Transfer' : txn.paidBack ? 'Paid back' : cat?.label ?? 'Other')
+  // Note text first, then the subcategory ("luckin coffee") ahead of a lone #tag, then the category
+  const noteName = noteTitle(txn.note, txn.type === 'transfer' ? undefined : txn.subcategory)
+  const title = noteName || (txn.type === 'transfer' ? 'Transfer' : txn.paidBack ? 'Paid back' : cat?.label ?? 'Other')
   // Invest rows say where the money came from, or that no account was picked
   const paidFrom = from ? `from ${from}` : 'no account set'
   const meta = invested

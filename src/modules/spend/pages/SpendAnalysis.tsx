@@ -340,7 +340,7 @@ export function SpendAnalysis() {
         <Card compact>
           <p className="text-xs text-ink-muted">Biggest expense</p>
           <p className="mt-1 font-display text-lg font-extrabold tnum text-ink">{biggest ? thbCompact(biggest.amount) : '—'}</p>
-          {biggest && <p className="truncate text-xs text-ink-muted">{noteTitle(biggest.note) || biggest.subcategory || getCategory(biggest.categoryId)?.label}</p>}
+          {biggest && <p className="truncate text-xs text-ink-muted">{noteTitle(biggest.note, biggest.subcategory) || getCategory(biggest.categoryId)?.label}</p>}
         </Card>
         <Card compact>
           <p className="text-xs text-ink-muted">Saved of income</p>
