@@ -6,7 +6,7 @@ const base: UsdTradeInput = { currency: 'USD', shares: 0, priceUsd: 0, amountThb
 describe('resolveUsdTrade: USD', () => {
   it('takes USD from shares x price and THB at today\'s rate', () => {
     expect(resolveUsdTrade({ ...base, shares: 10, priceUsd: 100 })).toEqual({
-      shares: 10, priceUsd: 100, usd: 1_000, thb: 35_000, fx: 35, sharesEstimated: false, fxFromAmounts: false,
+      shares: 10, priceUsd: 100, grossUsd: 1_000, feeUsd: 0, usd: 1_000, thb: 35_000, fx: 35, sharesEstimated: false, fxFromAmounts: false,
     })
   })
 
@@ -25,18 +25,40 @@ describe('resolveUsdTrade: USD', () => {
   })
 })
 
+describe('resolveUsdTrade: fee', () => {
+  it('adds a buy fee to what leaves the account and to the cost', () => {
+    const t = resolveUsdTrade({ ...base, shares: 0.9917881, priceUsd: 151, feeUsd: 0.27 })!
+    expect(t.grossUsd).toBe(149.76)
+    expect(t.usd).toBe(150.03)
+    expect(t.thb).toBe(5_251.05)
+  })
+
+  it('takes a sale fee off the proceeds', () => {
+    const t = resolveUsdTrade({ ...base, side: 'sell', shares: 5, priceUsd: 120, feeUsd: 1.5 })!
+    expect([t.grossUsd, t.feeUsd, t.usd]).toEqual([600, 1.5, 598.5])
+  })
+
+  it('is null when a sale fee eats all the proceeds', () => {
+    expect(resolveUsdTrade({ ...base, side: 'sell', shares: 1, priceUsd: 1, feeUsd: 2 })).toBeNull()
+  })
+
+  it('ignores a fee on a THB trade, whose amount already includes it', () => {
+    expect(resolveUsdTrade({ ...base, currency: 'THB', amountThb: 3_500, shares: 1, priceUsd: 100, feeUsd: 5 })!.usd).toBe(100)
+  })
+})
+
 describe('resolveUsdTrade: THB', () => {
   const thb: UsdTradeInput = { ...base, currency: 'THB' }
 
   it('works the rate out of the baht amount when shares are typed', () => {
     expect(resolveUsdTrade({ ...thb, amountThb: 34_500, shares: 10, priceUsd: 100 })).toEqual({
-      shares: 10, priceUsd: 100, usd: 1_000, thb: 34_500, fx: 34.5, sharesEstimated: false, fxFromAmounts: true,
+      shares: 10, priceUsd: 100, grossUsd: 1_000, feeUsd: 0, usd: 1_000, thb: 34_500, fx: 34.5, sharesEstimated: false, fxFromAmounts: true,
     })
   })
 
   it('estimates shares at today\'s rate when they are left empty', () => {
     expect(resolveUsdTrade({ ...thb, amountThb: 3_500, priceUsd: 100 })).toEqual({
-      shares: 1, priceUsd: 100, usd: 100, thb: 3_500, fx: 35, sharesEstimated: true, fxFromAmounts: false,
+      shares: 1, priceUsd: 100, grossUsd: 100, feeUsd: 0, usd: 100, thb: 3_500, fx: 35, sharesEstimated: true, fxFromAmounts: false,
     })
   })
 

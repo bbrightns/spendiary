@@ -8,6 +8,7 @@ import { isInvested } from './invest'
 import { noteTitle, txnFlow } from './logic'
 import { openQuickAdd, openAdjustment } from './sheetEvents'
 import { TONES } from './tones'
+import { SPEND_CASH } from '../../lib/routes'
 import { useData } from '../../store/DataContext'
 import { accountLabel } from './accountRemoval'
 
@@ -74,8 +75,8 @@ export function TxnRow({ txn, methods, onTagClick, account }: Props) {
   const sign = flow !== undefined ? (flow > 0 ? '+' : flow < 0 ? '−' : '') : txn.type === 'income' ? '+' : txn.type === 'expense' ? '−' : ''
   const amountClass =
     flow !== undefined ? (flow > 0 ? 'text-gain-ink' : 'text-ink') : txn.type === 'income' ? 'text-gain-ink' : txn.type === 'transfer' ? 'text-ink-muted' : 'text-ink'
-  // Rows from Invest are edited where they came from: its history
-  const sourcePage = txn.source ? '/logs' : null
+  // Rows from Invest are edited where they came from: its history, or the USD account for an exchange
+  const sourcePage = txn.source === 'fx' ? SPEND_CASH : txn.source ? '/logs' : null
   // The quick-add form has no one-sided transfer: a typed-in balance opens its undo instead
   const adjustment = !sourcePage && !!txn.adjustment
 

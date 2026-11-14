@@ -5,6 +5,7 @@ import { newId } from '../migrate'
 import { upsert } from '../dataHelpers'
 import { roundMoney } from '../../lib/money'
 import { holdingDelta } from './undoDelta'
+import { moveUsd } from '../usdCost'
 
 /**
  * Holdings and their wallet / storage locations.
@@ -144,9 +145,10 @@ export function sellHolding(prev: SpendiaryData, ...[params]: Parameters<DataCon
 
   let updatedCashAccounts = prev.cashAccounts ? [...prev.cashAccounts] : []
   if (params.cashAccountId && params.cashDepositAmount && params.cashDepositAmount > 0) {
+    // A USD account gets the dollars at what they're worth in baht (the sale's proceeds), so its average rate moves
     updatedCashAccounts = updatedCashAccounts.map((c) =>
       c.id === params.cashAccountId
-        ? { ...c, balance: roundMoney(c.balance + params.cashDepositAmount!) }
+        ? moveUsd(c, params.cashDepositAmount!, params.proceeds > 0 ? params.proceeds : undefined)
         : c
     )
   }

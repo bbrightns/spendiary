@@ -22,7 +22,13 @@ interface Props {
   /** A rate typed by hand ('' = today's rate) */
   fx: Value
   onFxChange: (v: Value) => void
+  /** USD trades: the broker's fee in USD; the field shows when a setter is given */
+  feeUsd?: Value
+  onFeeUsdChange?: (v: Value) => void
+  /** The automatic rate: today's, or the paying USD wallet's average */
   liveFx: number
+  /** What the automatic rate is, for the labels: "today" (default) or e.g. "wallet avg" */
+  autoRateName?: string
   /** The trade these fields resolve to (resolveUsdTrade), null while incomplete */
   trade: UsdTrade | null
   showErrors?: boolean
@@ -52,7 +58,8 @@ export function UsdTradeFields(p: Props) {
   const rateTyped = fieldNumber(p.fx) > 0
   const showRateField = editRate || p.fx !== '' || (p.currency === 'USD' && p.liveFx <= 0)
   const t = p.trade
-  const rateSource = rateTyped ? 'your rate' : "today's rate"
+  const autoName = p.autoRateName ?? 'today'
+  const rateSource = rateTyped ? 'your rate' : autoName === 'today' ? "today's rate" : autoName
   // THB trade with both shares and a rate typed: the shares win, but say when the two disagree
   const sharesAtRate = p.currency === 'THB' && rateTyped && fieldNumber(p.shares) > 0 && fieldNumber(p.priceUsd) > 0 && fieldNumber(p.amountThb) > 0
     ? fieldNumber(p.amountThb) / fieldNumber(p.fx) / fieldNumber(p.priceUsd)
@@ -128,10 +135,22 @@ export function UsdTradeFields(p: Props) {
         {priceField}
       </div>
 
+      {p.currency === 'USD' && p.onFeeUsdChange && (
+        <NumberField
+          label="Fee (USD)"
+          hint={p.kind === 'sell' ? 'optional · comes off what you receive' : 'optional · paid on top'}
+          prefix="$"
+          value={p.feeUsd ?? ''}
+          onChange={p.onFeeUsdChange}
+          placeholder="0.00"
+          step={0.01}
+        />
+      )}
+
       {showRateField && (
         <NumberField
           label="FX rate (THB per USD)"
-          hint={p.currency === 'THB' ? 'works out the shares' : p.liveFx > 0 ? `auto: today ${p.liveFx.toFixed(2)}` : undefined}
+          hint={p.currency === 'THB' ? 'works out the shares' : p.liveFx > 0 ? `auto: ${autoName} ${p.liveFx.toFixed(2)}` : undefined}
           value={p.fx}
           onChange={p.onFxChange}
           error={p.showErrors && p.currency === 'USD' && p.liveFx <= 0 && !rateTyped ? 'Required: no USD/THB rate loaded yet' : undefined}
@@ -153,6 +172,11 @@ export function UsdTradeFields(p: Props) {
       {t ? (
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl bg-surface-muted px-3 py-2 text-xs text-ink-muted">
           <span>
+            {t.feeUsd > 0 && (
+              <span className="tnum">
+                {money(t.grossUsd, 'USD', true)} {p.kind === 'sell' ? '−' : '+'} {money(t.feeUsd, 'USD', true)} fee ={' '}
+              </span>
+            )}
             <span className="font-semibold tnum text-ink">{money(t.usd, 'USD', true)}</span>
             {' · '}
             <span className="tnum">{money(t.thb, 'THB', true)}</span>

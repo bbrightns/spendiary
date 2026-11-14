@@ -88,9 +88,13 @@ export function investTransactions(data: SpendiaryData, usdThb: number | null): 
       continue
     }
 
-    // Buy more on a holding (not cash accounts): what left the paying account, else what was invested
-    if (log.action !== 'buy_more' || log.assetClass === 'cash' || !log.holdingId || log.source === 'received') continue
-    const paid = log.cashAccountId
+    // Buy more on a holding (not cash accounts), or a new holding paid from an account: what left the
+    // paying account, else what was invested. Spend counts in baht, so a USD account's payment shows
+    // as what the holding cost in baht.
+    const paidAdd = log.action === 'add' && !!log.cashAccountId
+    if ((log.action !== 'buy_more' && !paidAdd) || log.assetClass === 'cash' || !log.holdingId || log.source === 'received') continue
+    const payingUsd = accounts.find((a) => a.id === log.cashAccountId)?.currency === 'USD'
+    const paid = log.cashAccountId && !payingUsd
       ? (balanceOf(cash.prev, log.cashAccountId) ?? 0) - (balanceOf(cash.curr, log.cashAccountId) ?? 0)
       : 0
     const amount = paid > 0 ? paid : invested
@@ -105,6 +109,23 @@ export function investTransactions(data: SpendiaryData, usdThb: number | null): 
       note: log.ticker && log.ticker !== log.holdingName ? `${log.holdingName} (${log.ticker})` : log.holdingName,
       createdAt: log.timestamp,
       source: 'buy',
+    })
+  }
+
+  // Baht exchanged into a USD account: a transfer out of the THB account that paid
+  for (const ex of data.fxExchanges ?? []) {
+    if (!ex.fromAccountId || !(ex.thb > 0)) continue
+    const to = accounts.find((a) => a.id === ex.toAccountId)
+    out.push({
+      id: `fx-${ex.id}`,
+      type: 'transfer',
+      amount: roundMoney(ex.thb),
+      accountId: ex.fromAccountId,
+      toAccountId: ex.toAccountId,
+      date: ex.date,
+      note: `THB → USD${to ? ` · ${to.name}` : ''} · $${ex.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      createdAt: ex.createdAt,
+      source: 'fx',
     })
   }
   return out

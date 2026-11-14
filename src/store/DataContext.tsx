@@ -14,6 +14,8 @@ import * as cashActions from './actions/cash'
 import * as liabilityActions from './actions/liabilities'
 import * as holdingActions from './actions/holdings'
 import * as holdingLogActions from './actions/holdingLogs'
+import * as fxActions from './actions/fx'
+import { syncUsdCosts } from './usdCost'
 import * as dcaActions from './actions/dca'
 import * as dividendActions from './actions/dividends'
 import * as planningActions from './actions/planning'
@@ -121,6 +123,9 @@ export interface DataContextValue {
   removeHoldingLog: (logId: string) => void
   removeHoldingLogs: (logIds: string[]) => void
   undoHoldingLog: (logId: string) => void
+  /** Baht exchanged into a USD account; `openingThbCost` = what the dollars already there cost, when not known yet */
+  exchangeToUsd: (params: { fromAccountId?: string; toAccountId: string; thb: number; usd: number; date: string; openingThbCost?: number }) => void
+  undoFxExchange: (id: string) => void
   updateHoldingLogTimestamp: (logId: string, timestamp: string) => void
   /** Edit a log's own record (date, note, how it was acquired) without touching holdings or cash */
   updateHoldingLog: (logId: string, patch: Partial<Pick<HoldingLog, 'timestamp' | 'note' | 'source' | 'receivedFrom'>>) => void
@@ -328,7 +333,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setDataState((prev) => {
       // Edits (not whole-data replacements) also keep recurring items and saved names in step with
       // wallets and cards being deleted or brought back by an undo
-      const resolved = typeof next === 'function' ? reconcileAccounts(prev, next(prev)) : next
+      // and USD accounts' baht cost in step with their balances (store/usdCost.ts)
+      const resolved = typeof next === 'function' ? reconcileAccounts(prev, syncUsdCosts(prev, next(prev))) : next
       return {
         ...resolved,
         lastUpdatedAt: Date.now(),
@@ -387,6 +393,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       buyMoreHolding: (params) => updateData((prev) => holdingActions.buyMoreHolding(prev, params)),
 
       addHoldingLog: (log) => updateData((prev) => holdingLogActions.addHoldingLog(prev, log)),
+      exchangeToUsd: (params) => updateData((prev) => fxActions.exchangeToUsd(prev, params)),
+      undoFxExchange: (id) => updateData((prev) => fxActions.undoFxExchange(prev, id)),
 
       removeHoldingLog: (logId) => updateData((prev) => holdingLogActions.removeHoldingLog(prev, logId)),
 

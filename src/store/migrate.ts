@@ -92,6 +92,8 @@ export function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
   // Stamped on save only; the data in memory doesn't carry it
   delete merged.dataSchema
   merged.liabilities = Array.isArray(merged.liabilities) ? merged.liabilities : []
+  // Optional: absent until the first THB → USD exchange; anything else is unreadable
+  if (merged.fxExchanges !== undefined && !Array.isArray(merged.fxExchanges)) delete merged.fxExchanges
   // Recurring items whose wallet or card was deleted before the app paused them on delete
   if (Array.isArray(merged.spendRecurring)) merged.spendRecurring = syncRecurringAccounts(merged.spendRecurring, liveAccountIds(merged))
   // Fixed costs moved to Spend (recurring bills); copy the old list over once

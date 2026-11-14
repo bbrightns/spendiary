@@ -7,6 +7,11 @@ import { CASH_CATEGORIES, getCashCategory, inferCashCategory } from '../../lib/c
 import { ListIcon } from '../icons'
 import { SwitchVisual } from '../ui/SwitchVisual'
 import { ColorPicker } from '../ui/ColorPicker'
+import { NumberField } from '../ui/Field'
+import { FxExchangeModal } from './FxExchangeModal'
+import { useData } from '../../store/DataContext'
+import { money } from '../../lib/format'
+import { fieldNumber } from '../../lib/usdTrade'
 
 const THAI_MONTHS_SHORT = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -58,6 +63,17 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
   const [name, setName] = useState(initialAccount.name)
   const [balance, setBalance] = useState(initialAccount.balance ? String(initialAccount.balance) : '')
   const [currency, setCurrency] = useState<'THB' | 'USD'>(initialAccount.currency ?? 'THB')
+  // USD accounts: what the balance cost in baht ('' = not known)
+  const [thbCost, setThbCost] = useState<number | string | ''>(initialAccount.thbCost !== undefined ? initialAccount.thbCost : '')
+  const [exchangeOpen, setExchangeOpen] = useState(false)
+  const { data, undoFxExchange } = useData()
+  // Exchanges need the account saved as USD; this form may hold unsaved changes
+  const stored = (data.cashAccounts ?? []).find((a) => a.id === initialAccount.id)
+  const canExchange = stored?.currency === 'USD' && currency === 'USD'
+  const exchanges = (data.fxExchanges ?? []).filter((e) => e.toAccountId === initialAccount.id).slice(0, 5)
+  const balanceNum = parseSigned(balance)
+  const costNum = fieldNumber(thbCost)
+  const avgRate = currency === 'USD' && thbCost !== '' && costNum > 0 && balanceNum > 0 ? costNum / balanceNum : null
   const [color, setColor] = useState<string | undefined>(initialAccount.color)
   const [category, setCategory] = useState<CashAccountCategory>(initialAccount.category ? getCashCategory(initialAccount) : 'spending')
   const [interestRate, setInterestRate] = useState(initialAccount.interestRate ? String(initialAccount.interestRate) : '')
@@ -104,6 +120,8 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
       name: name.trim(),
       balance: balNum,
       currency,
+      // Only a USD account has a baht cost; cleared = not known
+      thbCost: currency === 'USD' && thbCost !== '' ? Math.max(0, fieldNumber(thbCost)) : undefined,
       category,
       // Switched off = no interest at all, whatever was typed before
       interestRate: earnsInterest && rateNum && rateNum > 0 ? rateNum : undefined,
@@ -114,6 +132,7 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
   }
 
   return (
+    <>
     <Modal
       open={open}
       onClose={onClose}
@@ -192,6 +211,59 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
             </div>
           </div>
         </div>
+
+        {/* USD account: what its dollars cost in baht, so stocks bought from it use the rate really paid */}
+        {currency === 'USD' && (
+          <div className="space-y-3 rounded-2xl border border-line p-3.5">
+            <NumberField
+              label="What this balance cost"
+              hint="optional · in baht"
+              prefix="฿"
+              value={thbCost}
+              onChange={setThbCost}
+              placeholder="Not set"
+              step={0.01}
+            />
+            <p className="text-xs text-ink-muted">
+              {avgRate !== null
+                ? <>Average <span className="font-semibold tnum text-ink">฿{avgRate.toFixed(2)}/USD</span>. US stocks bought from here use this rate.</>
+                : "Not set: US stocks bought from here use today's rate."}
+            </p>
+            {canExchange && (
+              <button
+                type="button"
+                onClick={() => setExchangeOpen(true)}
+                className="flex w-full items-center justify-center rounded-xl border border-line px-3 py-2.5 text-sm font-semibold text-ink transition-colors cursor-pointer hover:bg-surface-muted/60"
+              >
+                Exchange THB → USD
+              </button>
+            )}
+            {exchanges.length > 0 && (
+              <ul className="divide-y divide-line text-xs">
+                {exchanges.map((e) => (
+                  <li key={e.id} className="flex items-center justify-between gap-2 py-2">
+                    <span className="min-w-0 text-ink-muted">
+                      {e.date} · <span className="tnum text-ink">{money(e.thb, 'THB', true)} → {money(e.usd, 'USD', true)}</span>
+                      {` @ ${(e.thb / e.usd).toFixed(2)}`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        undoFxExchange(e.id)
+                        // Follow the saved account so a later Save doesn't put the dollars back
+                        setBalance(String(Math.round((balanceNum - e.usd) * 100) / 100))
+                        if (thbCost !== '') setThbCost(Math.max(0, Math.round((costNum - e.thb) * 100) / 100))
+                      }}
+                      className="shrink-0 font-semibold text-link hover:underline cursor-pointer"
+                    >
+                      Undo
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         {/* Type */}
         <div>
@@ -348,5 +420,20 @@ export function EditAccountModal({ open, initialAccount, onClose, onSave, onDele
         </div>
       </form>
     </Modal>
+    {stored && canExchange && (
+      <FxExchangeModal
+        open={exchangeOpen}
+        account={stored}
+        // The cost as this form shows it, typed or not saved yet
+        openingThbCost={thbCost !== '' ? Math.max(0, costNum) : undefined}
+        onClose={() => setExchangeOpen(false)}
+        onDone={(change) => {
+          // Follow the saved account so a later Save doesn't undo the exchange
+          setBalance(String(Math.round((balanceNum + change.usd) * 100) / 100))
+          if (change.thbCost !== undefined) setThbCost(change.thbCost)
+        }}
+      />
+    )}
+    </>
   )
 }

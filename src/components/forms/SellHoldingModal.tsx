@@ -66,6 +66,8 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
   const [stockAmountThb, setStockAmountThb] = useState<number | string | ''>('')
   // No account picked: which currency the money arrived in
   const [receivedIn, setReceivedIn] = useState<TradeCurrency>('USD')
+  // USD sales: the broker's fee, taken off the proceeds
+  const [stockFeeUsd, setStockFeeUsd] = useState<number | string | ''>('')
 
   // BTC-specific State
   const [satoshi, setSatoshi] = useState<number | ''>('')
@@ -120,6 +122,7 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
         setStockFxRate('')
         setStockAmountThb('')
         setReceivedIn('USD')
+        setStockFeeUsd('')
       } else if (holding.assetClass === 'crypto') {
         setSatoshi('')
         setBtcThbProceeds('')
@@ -215,10 +218,12 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
         amountThb: fieldNumber(stockAmountThb),
         fx: fieldNumber(stockFxRate),
         liveFx: rate,
+        feeUsd: fieldNumber(stockFeeUsd),
+        side: 'sell',
       })
     : null
-  // A THB sale's amount is already what arrived, after fees: nothing to adjust
-  const canAdjust = !(isStock && stockCurrency === 'THB')
+  // A US stock has its own fee field (USD sale), or its amount is already what arrived (THB sale): nothing to adjust
+  const canAdjust = !isStock
   const adjusting = isCustomProceeds && canAdjust
 
   // Calculate sell outcomes per asset type
@@ -231,7 +236,8 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     // A sale always names its shares, so a THB sale gets its rate from the amount received
     const sShares = fieldNumber(stockShares)
     sellUnitsCount = sShares
-    grossProceedsThb = stockTrade?.thb ?? 0
+    // Before the fee, so the fee shows on its own and counts against the profit
+    grossProceedsThb = stockTrade ? Math.round(stockTrade.grossUsd * stockTrade.fx * 100) / 100 : 0
     // From a broker: its own average cost; otherwise the holding's
     const available = sellLoc ? sellLoc.qty : currentUnits
     costBasisSoldThb = takeSold(Math.min(sShares, available))?.costThb ?? sShares * avgCostPerUnitThb
@@ -285,10 +291,15 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
     isValid = isValid && totalProceedsThb > 0
   }
 
+  // US stock sold in USD with a fee: what arrives is the proceeds less the fee
+  if (isStock && stockTrade && stockTrade.feeUsd > 0) {
+    totalProceedsThb = stockTrade.thb
+    effectiveFee = Math.max(0, Math.round((grossProceedsThb - totalProceedsThb) * 100) / 100)
+  }
+
   // What the sale puts into the chosen account, in its own currency: a US stock pays out USD
   // (the net proceeds at the trade's own rate), anything else converts at today's rate for a USD account
-  const stockFx = stockTrade?.fx ?? 0
-  const depositTrade: TradeAmount = { thb: totalProceedsThb, ...(isStock && stockFx > 0 ? { usd: totalProceedsThb / stockFx } : {}) }
+  const depositTrade: TradeAmount = { thb: totalProceedsThb, ...(isStock && stockTrade ? { usd: stockTrade.usd } : {}) }
   const depositAmount = amountInAccountCurrency(depositTo, depositTrade, rate)
 
   const isCurrentLocLocked = !!sellLoc?.isLocked
@@ -549,6 +560,8 @@ export function SellHoldingModal({ open, holding, onClose, onSwitchToBuy, locked
               onAmountThbChange={setStockAmountThb}
               fx={stockFxRate}
               onFxChange={setStockFxRate}
+              feeUsd={stockFeeUsd}
+              onFeeUsdChange={setStockFeeUsd}
               liveFx={rate}
               trade={stockTrade}
               showErrors={showErrors}
