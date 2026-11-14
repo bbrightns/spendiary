@@ -18,7 +18,7 @@ import { SwitchVisual } from '../../components/ui/SwitchVisual'
 import { CategoryPicker } from './CategoryPicker'
 import { NoteField } from './NoteField'
 import { paidDetail } from './billPaid'
-import { firstInstallmentDue, installmentAmount } from './loans'
+import { firstInstallmentDue, installmentAmount, nextMonthDue } from './loans'
 import { SHEET_EVENTS, type QuickAddDetail } from './sheetEvents'
 import { AlertIcon } from '../../components/icons'
 import { afterTap } from '../../lib/afterTap'
@@ -324,8 +324,14 @@ export function QuickAddSheet() {
     }
     const message = `${thbExact(total)} split into ${months} × ${thb(perMonth, true)} on ${card.name}`
     if (editId) {
-      const original = convertToInstallment(editId, plan)
-      showToast(message, 'success', original ? { label: 'Undo', onClick: () => undoInstallment(original, id) } : undefined)
+      // Installment 1 replaces the charge now, so the plan starts one paid with the next due next month
+      const done = convertToInstallment(editId, {
+        ...plan,
+        balance: Math.round((total - perMonth) * 100) / 100,
+        paidInstallments: 1,
+        firstDueDate: nextMonthDue(card.dueDay),
+      })
+      showToast(message, 'success', done ? { label: 'Undo', onClick: () => undoInstallment(done.original, done.first, id) } : undefined)
     } else {
       setLiabilities([...(data.liabilities ?? []), plan])
       showToast(message, 'success', { label: 'Undo', onClick: () => removeLiability(id) })
@@ -662,10 +668,19 @@ export function QuickAddSheet() {
                     ))}
                   </div>
                   <p className="text-xs leading-relaxed text-ink-muted">
-                    First payment due <span className="font-semibold text-ink-soft">{shortDue(firstDue)}</span>. Each one counts as spending
-                    when you pay it.{' '}
-                    {editId ? `This charge comes off ${card!.name} and isn't counted as spent.` : 'Nothing is spent today.'} It's added to Loans
-                    &amp; installments.
+                    {editId ? (
+                      <>
+                        Payment 1 of <span className="font-semibold text-ink-soft">{thb(perMonth, true)}</span> replaces this charge now, the next
+                        is due <span className="font-semibold text-ink-soft">{shortDue(nextMonthDue(card!.dueDay))}</span>. Each one counts as
+                        spending.
+                      </>
+                    ) : (
+                      <>
+                        First payment due <span className="font-semibold text-ink-soft">{shortDue(firstDue)}</span>. Each one counts as spending
+                        when you pay it. Nothing is spent today.
+                      </>
+                    )}{' '}
+                    It's added to Loans &amp; installments.
                   </p>
                 </div>
               )}

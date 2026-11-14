@@ -79,30 +79,54 @@ function moveMoney(d: SpendiaryData, moves: [SpendTransaction, 1 | -1][]): Pick<
   return { ...balances, ...(removed !== before ? { spendSettings: { ...d.spendSettings, removedAccounts: removed } } : {}) }
 }
 
+/** Installment 1 of a converted charge: logged like a loan payment, in the charge's place on the same bill. */
+export function firstInstallmentTxn(old: SpendTransaction, plan: Liability, id: string, now: string): SpendTransaction {
+  const note = `${plan.name} payment 1/${plan.totalInstallments}`
+  return {
+    id,
+    type: 'expense',
+    amount: plan.monthlyPayment ?? 0,
+    categoryId: 'bills',
+    accountId: old.accountId,
+    date: old.date,
+    time: old.time,
+    statement: old.statement,
+    note,
+    tags: parseTags(note),
+    liabilityId: plan.id,
+    createdAt: now,
+  }
+}
+
 /**
  * A logged card charge turned into an installment plan, as the bank does: the charge comes off the
- * card in full (even one entered as already in the balance) and the plan bills it month by month.
+ * card in full (even one entered as already in the balance) and installment 1 takes its place.
+ * `plan` already counts installment 1 as paid.
  */
-export function convertToInstallmentData(d: SpendiaryData, txnId: string, plan: Liability): SpendiaryData {
+export function convertToInstallmentData(d: SpendiaryData, txnId: string, plan: Liability, first: SpendTransaction): SpendiaryData {
   const list = d.spendTransactions ?? []
   const old = list.find((t) => t.id === txnId)
   if (!old) return d
   return {
     ...d,
-    ...moveMoney(d, [[{ ...old, alreadyInBalance: false }, -1]]),
-    spendTransactions: list.filter((t) => t.id !== txnId),
+    ...moveMoney(d, [
+      [{ ...old, alreadyInBalance: false }, -1],
+      [first, 1],
+    ]),
+    spendTransactions: [...list.filter((t) => t.id !== txnId), first],
     liabilities: [...(d.liabilities ?? []), plan],
   }
 }
 
-/** Undo convertToInstallmentData: the charge is back on the card and the plan is gone. */
-export function undoInstallmentData(d: SpendiaryData, txn: SpendTransaction, planId: string): SpendiaryData {
+/** Undo convertToInstallmentData: the charge is back on the card, installment 1 and the plan are gone. */
+export function undoInstallmentData(d: SpendiaryData, txn: SpendTransaction, first: SpendTransaction, planId: string): SpendiaryData {
   const list = d.spendTransactions ?? []
   if (list.some((t) => t.id === txn.id)) return d
+  const firstLogged = list.some((t) => t.id === first.id)
   return {
     ...d,
-    ...moveMoney(d, [[{ ...txn, alreadyInBalance: false }, 1]]),
-    spendTransactions: [...list, txn],
+    ...moveMoney(d, [...(firstLogged ? [[first, -1] as [SpendTransaction, -1]] : []), [{ ...txn, alreadyInBalance: false }, 1]]),
+    spendTransactions: [...list.filter((t) => t.id !== first.id), txn],
     liabilities: (d.liabilities ?? []).filter((l) => l.id !== planId),
   }
 }
@@ -299,15 +323,17 @@ export function useSpend() {
     return count
   }
 
-  /** Turn a logged card charge into an installment plan; returns the charge, to undo with undoInstallment. */
-  function convertToInstallment(txnId: string, plan: Liability): SpendTransaction | undefined {
-    const old = (data.spendTransactions ?? []).find((t) => t.id === txnId)
-    if (old) setData((prev) => convertToInstallmentData(prev, txnId, plan))
-    return old
+  /** Turn a logged card charge into an installment plan, installment 1 in its place; returns what undoInstallment needs. */
+  function convertToInstallment(txnId: string, plan: Liability): { original: SpendTransaction; first: SpendTransaction } | undefined {
+    const original = (data.spendTransactions ?? []).find((t) => t.id === txnId)
+    if (!original) return undefined
+    const first = firstInstallmentTxn(original, plan, newId(), new Date().toISOString())
+    setData((prev) => convertToInstallmentData(prev, txnId, plan, first))
+    return { original, first }
   }
 
-  function undoInstallment(txn: SpendTransaction, planId: string) {
-    setData((prev) => undoInstallmentData(prev, txn, planId))
+  function undoInstallment(original: SpendTransaction, first: SpendTransaction, planId: string) {
+    setData((prev) => undoInstallmentData(prev, original, first, planId))
   }
 
   function removeTransaction(id: string) {
