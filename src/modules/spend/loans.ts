@@ -56,8 +56,11 @@ export function nextMonthDue(dueDay: number, today = localDateStr()): string {
   return localDateStr(new Date(y, m, Math.min(dueDay, new Date(y, m + 1, 0).getDate())))
 }
 
-/** One installment, rounded down to the satang; the last payment picks up the remainder. */
-export const installmentAmount = (total: number, months: number) => Math.floor((total / months) * 100) / 100
+/**
+ * One installment, rounded down to the satang; the last payment picks up the remainder.
+ * Divided in whole satang: 1009.8 / 10 in floating point is 100.9799…, which would floor a satang short.
+ */
+export const installmentAmount = (total: number, months: number) => Math.floor(Math.round(total * 100) / months) / 100
 
 /**
  * Credit a card's installment plans still hold: the bank blocks the whole remaining amount

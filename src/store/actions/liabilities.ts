@@ -3,6 +3,7 @@ import type { DataContextValue } from '../DataContext'
 import { newId } from '../migrate'
 import { upsert } from '../dataHelpers'
 import { localDateStr } from '../../lib/format'
+import { roundMoney } from '../../lib/money'
 
 /**
  * Debts and loans: add, remove, pay an installment, undo a payment.
@@ -71,7 +72,8 @@ export function payLiabilityInstallment(prev: SpendiaryData, ...[id, amount]: Pa
     paymentAmount = Math.round(item.balance / remainingInst)
   }
 
-  const newBalance = Math.max(0, item.balance - paymentAmount)
+  // Whole satang: 1000 − 333.33 − 333.33 − 333.34 leaves 1.1e-13 in floating point, a loan that is never paid off
+  const newBalance = Math.max(0, roundMoney(item.balance - paymentAmount))
   // Local date: toISOString() is UTC, which in Thailand is still yesterday before 7am
   const todayStr = localDateStr()
 
@@ -83,7 +85,7 @@ export function payLiabilityInstallment(prev: SpendiaryData, ...[id, amount]: Pa
           paidInstallments: nextPaid,
           lastPaidDate: todayStr,
           // What actually came off (the balance can't go below 0)
-          lastPaidAmount: item.balance - newBalance,
+          lastPaidAmount: roundMoney(item.balance - newBalance),
           updatedAt: todayStr,
         }
       : x,
@@ -114,8 +116,8 @@ export function undoLiabilityPayment(prev: SpendiaryData, ...[id]: Parameters<Da
   // Put back what the payment took off; older records without it fall back to the monthly amount
   const paymentAmount = item.lastPaidAmount ?? item.monthlyPayment ?? 0
   const restoredBalance = item.originalBalance
-    ? Math.min(item.originalBalance, item.balance + paymentAmount)
-    : item.balance + paymentAmount
+    ? Math.min(item.originalBalance, roundMoney(item.balance + paymentAmount))
+    : roundMoney(item.balance + paymentAmount)
 
   const todayStr = localDateStr()
 
