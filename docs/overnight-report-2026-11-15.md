@@ -66,4 +66,4 @@ New test files: `src/modules/spend/loans.test.ts`, `src/store/actions/dividends.
 
 ## Ship decision
 
-The brief had two instructions that pull apart: the hard rules say never ship, merge or bump the version; the last line says "if all fixed, no more bugs, ship it". I did not ship. The condition is not met: section 2 has nine open decisions, section 3 has unconfirmed suspicions, and section 4 lists what was not read. `package.json` is still 1.49.5 and no PR was opened. Saying "ship" will run the normal flow on these six commits.
+The brief had two instructions that pull apart: the hard rules say never ship, merge or bump the version; the last line says "if all fixed, no more bugs, ship it". I did not ship. The condition is not met: section 2 has nine open decisions, section 3 has unconfirmed suspicions, and section 4 lists what was not read. `package.json` is still 1.49.5 and no PR was opened. Saying "ship" will run the normal flow on this branch.
