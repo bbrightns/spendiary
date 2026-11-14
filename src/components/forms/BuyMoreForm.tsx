@@ -88,6 +88,8 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
   const [sharesBought, setSharesBought] = useState<number | string | ''>('')
   // Without a paying account (or a USD/THB one deciding it): which currency the money moved in
   const [paidIn, setPaidIn] = useState<TradeCurrency>('USD')
+  // USD buys: the broker's fee, paid on top of shares x price
+  const [feeUsd, setFeeUsd] = useState<number | string | ''>('')
 
   // Backdated transaction date
   const [txDate, setTxDate] = useState<string>(localDateStr())
@@ -126,6 +128,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
     setShowErrors(false)
     setCashAccountId('none')
     setPaidIn('USD')
+    setFeeUsd('')
     setSource('bought')
     setReceivedFrom('')
     setSatoshi('')
@@ -179,6 +182,8 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         amountThb: fieldNumber(amountSpentThb),
         fx: fieldNumber(fxRate),
         liveFx: rate,
+        feeUsd: isReceived ? 0 : fieldNumber(feeUsd),
+        side: 'buy',
       })
     : null
   const stockCurrentUnits = holding.units ?? holding.totalUnits ?? 0
@@ -568,7 +573,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         updatedHolding: updated,
         cashAccountId: payFromId,
         cashDeductAmount: payFromId ? pay ?? undefined : undefined,
-        note: `+${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${priceUsdNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/unit${brokerName ? ` · ${brokerName}` : ''}${noteSuffix}`,
+        note: `+${unitsBoughtNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares @ $${priceUsdNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/unit${t.feeUsd > 0 ? ` · Fee $${t.feeUsd.toFixed(2)}` : ''}${brokerName ? ` · ${brokerName}` : ''}${noteSuffix}`,
         timestamp: dateStrToTimestamp(txDate),
         ...sourceParams,
       })
@@ -682,6 +687,8 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
             onAmountThbChange={setAmountSpentThb}
             fx={fxRate}
             onFxChange={setFxRate}
+            feeUsd={feeUsd}
+            onFeeUsdChange={isReceived ? undefined : setFeeUsd}
             liveFx={rate}
             trade={stockTrade}
             showErrors={showErrors}

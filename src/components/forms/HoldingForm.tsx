@@ -131,6 +131,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
   const paidSuffix = payFrom ? ` · Paid from ${payFrom.name}` : ''
   // A new US stock: the paying account's currency decides the fields (no account: the toggle; a gift: USD)
   const [paidIn, setPaidIn] = useState<TradeCurrency>('USD')
+  // New US stock paid in USD: the broker's fee on top (it becomes part of the cost)
+  const [feeUsd, setFeeUsd] = useState<number | string | ''>('')
 
   const isBtc = form.assetClass === 'crypto' && (
     form.ticker.trim().toUpperCase() === 'BTC' ||
@@ -147,6 +149,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
         amountThb: fieldNumber(thbInvestedInput),
         fx: fieldNumber(fxRateInput),
         liveFx,
+        feeUsd: isReceived ? 0 : fieldNumber(feeUsd),
+        side: 'buy',
       })
     : null
   const isGold = form.assetClass === 'gold'
@@ -300,6 +304,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
     setShowErrors(false)
     setPayCashAccountId('none')
     setPaidIn('USD')
+    setFeeUsd('')
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fxRateInput left out so clearing the field does not refill it; liveFx follows usdThb, which is listed
   }, [open, editing, initialPlannedAsset, usdThb])
 
@@ -592,7 +597,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
     const cleanTag = form.tag.trim() || undefined
     const name = form.name.trim()
     const ticker = form.ticker.trim() || (isRealEstate ? 'PROPERTY' : name.slice(0, 4).toUpperCase())
-    const avgCostInput = t ? t.priceUsd : Number(form.avgCost)
+    // A fee is part of the cost, so the USD average includes it
+    const avgCostInput = t ? t.usd / t.shares : Number(form.avgCost)
 
     const targetId = editing?.id ?? newId()
     let updateObj: Holding = {
@@ -1306,6 +1312,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                     onAmountThbChange={setThbInvestedInput}
                     fx={fxRateInput}
                     onFxChange={setFxRateInput}
+                    feeUsd={feeUsd}
+                    onFeeUsdChange={isReceived ? undefined : setFeeUsd}
                     liveFx={liveFx}
                     trade={newStockTrade}
                     showErrors={showErrors}

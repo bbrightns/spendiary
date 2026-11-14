@@ -15,12 +15,20 @@ export interface UsdTradeInput {
   fx: number
   /** Today's real USD/THB rate, or 0 when none is known */
   liveFx: number
+  /** USD trades: the broker's fee, in USD. A buy pays it on top; a sale gets the proceeds less it */
+  feeUsd?: number
+  /** Which way the money moves; decides whether the fee adds to or comes off the USD amount */
+  side?: 'buy' | 'sell'
 }
 
 export interface UsdTrade {
   shares: number
   priceUsd: number
   /** shares × price */
+  grossUsd: number
+  /** USD fee (0 for THB trades, whose amount already includes any fee) */
+  feeUsd: number
+  /** The USD that actually moved: a buy's gross + fee, a sale's gross − fee */
   usd: number
   thb: number
   /** THB per USD this trade used */
@@ -47,8 +55,11 @@ export function resolveUsdTrade(i: UsdTradeInput): UsdTrade | null {
 
   if (i.currency === 'USD') {
     if (!pos(i.shares) || rate <= 0) return null
-    const usd = roundMoney(i.shares * i.priceUsd)
-    return { shares: i.shares, priceUsd: i.priceUsd, usd, thb: roundMoney(usd * rate), fx: rate, sharesEstimated: false, fxFromAmounts: false }
+    const grossUsd = roundMoney(i.shares * i.priceUsd)
+    const feeUsd = pos(i.feeUsd ?? 0) ? roundMoney(i.feeUsd!) : 0
+    const usd = roundMoney(i.side === 'sell' ? grossUsd - feeUsd : grossUsd + feeUsd)
+    if (usd <= 0) return null
+    return { shares: i.shares, priceUsd: i.priceUsd, grossUsd, feeUsd, usd, thb: roundMoney(usd * rate), fx: rate, sharesEstimated: false, fxFromAmounts: false }
   }
 
   if (!pos(i.amountThb)) return null
@@ -56,12 +67,13 @@ export function resolveUsdTrade(i: UsdTradeInput): UsdTrade | null {
   if (pos(i.shares)) {
     const usd = roundMoney(i.shares * i.priceUsd)
     if (usd <= 0) return null
-    return { shares: i.shares, priceUsd: i.priceUsd, usd, thb, fx: round4(thb / usd), sharesEstimated: false, fxFromAmounts: true }
+    return { shares: i.shares, priceUsd: i.priceUsd, grossUsd: usd, feeUsd: 0, usd, thb, fx: round4(thb / usd), sharesEstimated: false, fxFromAmounts: true }
   }
   if (rate <= 0) return null
   const shares = round4(thb / rate / i.priceUsd)
   if (shares <= 0) return null
-  return { shares, priceUsd: i.priceUsd, usd: roundMoney(thb / rate), thb, fx: rate, sharesEstimated: true, fxFromAmounts: false }
+  const usd = roundMoney(thb / rate)
+  return { shares, priceUsd: i.priceUsd, grossUsd: usd, feeUsd: 0, usd, thb, fx: rate, sharesEstimated: true, fxFromAmounts: false }
 }
 
 /** A rate more than `tolerance` away from today's: most likely a typo in the amount, shares or price */

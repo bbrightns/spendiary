@@ -22,6 +22,9 @@ interface Props {
   /** A rate typed by hand ('' = today's rate) */
   fx: Value
   onFxChange: (v: Value) => void
+  /** USD trades: the broker's fee in USD; the field shows when a setter is given */
+  feeUsd?: Value
+  onFeeUsdChange?: (v: Value) => void
   liveFx: number
   /** The trade these fields resolve to (resolveUsdTrade), null while incomplete */
   trade: UsdTrade | null
@@ -128,6 +131,18 @@ export function UsdTradeFields(p: Props) {
         {priceField}
       </div>
 
+      {p.currency === 'USD' && p.onFeeUsdChange && (
+        <NumberField
+          label="Fee (USD)"
+          hint={p.kind === 'sell' ? 'optional · comes off what you receive' : 'optional · paid on top'}
+          prefix="$"
+          value={p.feeUsd ?? ''}
+          onChange={p.onFeeUsdChange}
+          placeholder="0.00"
+          step={0.01}
+        />
+      )}
+
       {showRateField && (
         <NumberField
           label="FX rate (THB per USD)"
@@ -153,6 +168,11 @@ export function UsdTradeFields(p: Props) {
       {t ? (
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl bg-surface-muted px-3 py-2 text-xs text-ink-muted">
           <span>
+            {t.feeUsd > 0 && (
+              <span className="tnum">
+                {money(t.grossUsd, 'USD', true)} {p.kind === 'sell' ? '−' : '+'} {money(t.feeUsd, 'USD', true)} fee ={' '}
+              </span>
+            )}
             <span className="font-semibold tnum text-ink">{money(t.usd, 'USD', true)}</span>
             {' · '}
             <span className="tnum">{money(t.thb, 'THB', true)}</span>
