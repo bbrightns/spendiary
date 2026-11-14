@@ -2,6 +2,7 @@ import type { DcaPlan, SpendiaryData } from '../lib/types'
 import { importFixedCosts } from '../modules/spend/migrate'
 import { liveAccountIds, syncRecurringAccounts } from '../modules/spend/accountRemoval'
 import { newId } from '../lib/id'
+import { roundMoney } from '../lib/money'
 import { upgradeLocations } from './legacyLocations'
 
 export const emptyData: SpendiaryData = {
@@ -92,6 +93,15 @@ export function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
   // Stamped on save only; the data in memory doesn't carry it
   delete merged.dataSchema
   merged.liabilities = Array.isArray(merged.liabilities) ? merged.liabilities : []
+  // Payments used to subtract without rounding, leaving e.g. 1.1e-13 on a loan that was fully paid
+  const satang = (n: number | undefined) => (typeof n === 'number' && Number.isFinite(n) ? roundMoney(n) : n)
+  merged.liabilities = merged.liabilities.map((l) => {
+    if (!l || (satang(l.balance) === l.balance && satang(l.lastPaidAmount) === l.lastPaidAmount)) return l
+    return { ...l, balance: satang(l.balance) as number, ...(l.lastPaidAmount !== undefined ? { lastPaidAmount: satang(l.lastPaidAmount) } : {}) }
+  })
+  // Required lists saved as null would crash the pages that read them
+  if (!Array.isArray(merged.transfers)) merged.transfers = []
+  if (!Array.isArray(merged.dividendRecords)) merged.dividendRecords = []
   // Optional: absent until the first THB → USD exchange; anything else is unreadable
   if (merged.fxExchanges !== undefined && !Array.isArray(merged.fxExchanges)) delete merged.fxExchanges
   // Recurring items whose wallet or card was deleted before the app paused them on delete
