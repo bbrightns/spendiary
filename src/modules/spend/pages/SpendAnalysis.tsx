@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../../../components/layout/PageHeader'
 import { Card, CardHeader } from '../../../components/ui/Card'
+import { TextLink } from '../../../components/ui/TextLink'
 import { SegmentedControl } from '../../../components/ui/SegmentedControl'
 import { localDateStr, thb, thbCompact } from '../../../lib/format'
 import type { SpendTransaction } from '../../../lib/types'
@@ -14,6 +15,7 @@ import { cardOrder, isDefaultOrder, moveInOrder } from '../../../lib/cardOrder'
 import { SPENT_TONE, TAG_CHIP, TONES } from '../tones'
 import { useSpend } from '../useSpend'
 import { TrendsCard } from '../TrendsCard'
+import { TxnRow } from '../TxnRow'
 import { settingsPath } from '../../../lib/settingsSections'
 
 type Range = 'week' | 'month' | 'year'
@@ -89,13 +91,25 @@ function buckets(range: Range, p: Period, txns: SpendTransaction[], today: strin
   })
 }
 
-function Bars({ data, unit }: { data: Bucket[]; unit: string }) {
+/** The first and last day a bar covers: one day, or a whole month in the year view */
+const bucketSpan = (key: string): Period =>
+  key.length === 7 ? { start: `${key}-01`, end: localDateStr(new Date(parse(`${key}-01`).getFullYear(), parse(`${key}-01`).getMonth() + 1, 0)) } : { start: key, end: key }
+
+const bucketName = (key: string) =>
+  key.length === 7
+    ? parse(`${key}-01`).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+    : parse(key).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+
+/** Rows shown under the chart before "See all" */
+const BAR_TXN_LIMIT = 6
+
+function Bars({ data, unit, selected, onSelect }: { data: Bucket[]; unit: string; selected: string | null; onSelect: (key: string | null) => void }) {
   const [hover, setHover] = useState<string | null>(null)
   const past = data.filter((b) => !b.future)
   const max = Math.max(1, ...data.map((b) => b.spent))
   const avg = past.length ? past.reduce((s, b) => s + b.spent, 0) / past.length : 0
   const top = past.reduce<Bucket | null>((m, b) => (!m || b.spent > m.spent ? b : m), null)
-  const shown = data.find((b) => b.key === hover) ?? top
+  const shown = data.find((b) => b.key === (hover ?? selected)) ?? top
 
   return (
     <div>
@@ -103,12 +117,9 @@ function Bars({ data, unit }: { data: Bucket[]; unit: string }) {
         <span className="text-ink-muted">
           avg <b className="font-bold text-ink tnum">{thb(avg)}</b> / {unit}
         </span>
-        {shown && shown.spent > 0 && (
+        {shown && (shown.spent > 0 || shown.key === selected) && (
           <span className="text-ink-muted tnum">
-            {shown.key.length === 7
-              ? parse(`${shown.key}-01`).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
-              : parse(shown.key).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}{' '}
-            <b className="font-bold text-ink">{thb(shown.spent)}</b>
+            {bucketName(shown.key)} <b className="font-bold text-ink">{thb(shown.spent)}</b>
           </span>
         )}
       </div>
@@ -116,25 +127,32 @@ function Bars({ data, unit }: { data: Bucket[]; unit: string }) {
         <div className="pointer-events-none absolute inset-x-0 border-t border-dashed border-line-strong" style={{ bottom: `${(avg / max) * 100}%` }} />
         {data.map((b) => {
           const isTop = top?.key === b.key && b.spent > 0
+          const isSelected = selected === b.key
           return (
             <button
               key={b.key}
               type="button"
+              disabled={b.future}
               onMouseEnter={() => setHover(b.key)}
               onFocus={() => setHover(b.key)}
-              onClick={() => setHover(b.key)}
-              aria-label={`${b.key}: ${thb(b.spent)}`}
-              className="flex h-full flex-1 flex-col justify-end cursor-pointer"
+              onBlur={() => setHover(null)}
+              // A second tap on the same bar closes its list
+              onClick={() => onSelect(isSelected ? null : b.key)}
+              aria-label={`${bucketName(b.key)}: ${thb(b.spent)}, show transactions`}
+              aria-pressed={isSelected}
+              className="flex h-full flex-1 flex-col justify-end cursor-pointer disabled:cursor-default"
             >
               <span
                 className={`block w-full rounded-md transition-[height] duration-500 ${
                   b.future
                     ? 'bg-surface-muted/50'
-                    : isTop
-                      ? SPENT_TONE.bar
-                      : hover === b.key
-                        ? 'bg-brand/60'
-                        : TONES.slate.bar
+                    : isSelected
+                      ? 'bg-brand'
+                      : isTop
+                        ? SPENT_TONE.bar
+                        : hover === b.key
+                          ? 'bg-brand/60'
+                          : TONES.slate.bar
                 }`}
                 style={{ height: `${b.future ? 4 : Math.max(3, (b.spent / max) * 100)}%` }}
               />
@@ -144,11 +162,36 @@ function Bars({ data, unit }: { data: Bucket[]; unit: string }) {
       </div>
       <div className="mt-1 flex gap-[3px]">
         {data.map((b) => (
-          <span key={b.key} className="flex-1 text-center text-2xs text-ink-muted">
+          <span key={b.key} className={`flex-1 text-center text-2xs ${selected === b.key ? 'font-bold text-ink' : 'text-ink-muted'}`}>
             {b.label}
           </span>
         ))}
       </div>
+    </div>
+  )
+}
+
+/** What was bought in the tapped bar, biggest first, like a card statement */
+function BarTxns({ bucket, txns, methods }: { bucket: string; txns: SpendTransaction[]; methods: { id: string; name: string }[] }) {
+  const span = bucketSpan(bucket)
+  const rows = txns.filter((t) => spendOf(t) !== 0 && inPeriod(span, t.date)).sort((a, b) => spendOf(b) - spendOf(a))
+  return (
+    <div className="mt-4 border-t border-line pt-3">
+      <p className="text-xs font-semibold text-ink-muted tnum">
+        {bucketName(bucket)} · {rows.length === 0 ? 'nothing spent' : `${rows.length} ${rows.length === 1 ? 'expense' : 'expenses'}, biggest first`}
+      </p>
+      {rows.length > 0 && (
+        <div className="mt-1 divide-y divide-line">
+          {rows.slice(0, BAR_TXN_LIMIT).map((t) => (
+            <TxnRow key={t.id} txn={t} methods={methods} />
+          ))}
+        </div>
+      )}
+      {rows.length > BAR_TXN_LIMIT && (
+        <div className="mt-2 border-t border-line pt-3 text-center">
+          <TextLink to={`/spend/txns?from=${span.start}&to=${span.end}`}>See all {rows.length} in History →</TextLink>
+        </div>
+      )}
     </div>
   )
 }
@@ -194,13 +237,15 @@ function InsightLines({ insights, rangeName, current }: { insights: Insight[]; r
 }
 
 export function SpendAnalysis() {
-  const { transactions, settings, updateSettings } = useSpend()
+  const { transactions, methods, settings, updateSettings } = useSpend()
   const [arrangeOpen, setArrangeOpen] = useState(false)
   const order = cardOrder(ANALYSIS_CARD_IDS, settings.analysisOrder)
   const saveOrder = (next: AnalysisCardId[]) => updateSettings({ analysisOrder: isDefaultOrder(ANALYSIS_CARD_IDS, next) ? undefined : next })
   const today = localDateStr()
   const [range, setRange] = useState<Range>('month')
   const [anchor, setAnchor] = useState(today)
+  // The bar tapped in "Spent per day"; keyed by period so moving to another week or month clears it
+  const [picked, setPicked] = useState<{ key: string; period: string } | null>(null)
 
   const period: Period = useMemo(
     () => (range === 'week' ? weekOf(anchor) : range === 'year' ? yearOf(anchor) : periodFor(anchor, settings.cycle)),
@@ -209,6 +254,8 @@ export function SpendAnalysis() {
   const inRange = useMemo(() => transactions.filter((t) => inPeriod(period, t.date)), [transactions, period])
   const totals = useMemo(() => totalsFor(inRange), [inRange])
   const data = useMemo(() => buckets(range, period, transactions, today), [range, period, transactions, today])
+  const periodKey = `${range}:${period.start}`
+  const selectedBar = picked?.period === periodKey ? picked.key : null
 
   // Same point in the previous period: e.g. the first 12 days of last month vs the first 12 of this one
   const isCurrent = inPeriod(period, today)
@@ -319,7 +366,17 @@ export function SpendAnalysis() {
     perDay: (
       <Card>
         <h2 className="mb-3 font-display text-lg font-extrabold text-ink">Spent per {range === 'year' ? 'month' : 'day'}</h2>
-        <Bars data={data} unit={range === 'year' ? 'month' : 'day'} />
+        <Bars
+          data={data}
+          unit={range === 'year' ? 'month' : 'day'}
+          selected={selectedBar}
+          onSelect={(key) => setPicked(key ? { key, period: periodKey } : null)}
+        />
+        {selectedBar ? (
+          <BarTxns bucket={selectedBar} txns={inRange} methods={methods} />
+        ) : (
+          <p className="mt-3 text-xs text-ink-muted">Tap a bar to see what you bought.</p>
+        )}
       </Card>
     ),
     // Month on month only makes sense for a month
