@@ -19,6 +19,7 @@ import { AcquisitionSourceField } from './AcquisitionSourceField'
 import { CashAccountField } from './CashAccountField'
 import { UsdTradeFields } from './UsdTradeFields'
 import { fieldNumber, resolveUsdTrade, type TradeCurrency } from '../../lib/usdTrade'
+import { walletRate } from '../../store/usdCost'
 import { amountInAccountCurrency, type TradeAmount } from '../../lib/cashPayment'
 
 interface Props {
@@ -141,6 +142,9 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
   const isUsd = form.assetClass === 'stock'
   const isNewUsd = isUsd && !editing
   const addCurrency: TradeCurrency = isReceived ? 'USD' : payFrom ? (payFrom.currency ?? 'THB') : paidIn
+  // Paid from a USD wallet whose cost is known: its dollars cost their average rate, not today's
+  const walletFx = walletRate(payFrom)
+  const autoFx = walletFx ?? liveFx
   const newStockTrade = isNewUsd
     ? resolveUsdTrade({
         currency: addCurrency,
@@ -148,7 +152,7 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
         priceUsd: fieldNumber(form.avgCost),
         amountThb: fieldNumber(thbInvestedInput),
         fx: fieldNumber(fxRateInput),
-        liveFx,
+        liveFx: autoFx,
         feeUsd: isReceived ? 0 : fieldNumber(feeUsd),
         side: 'buy',
       })
@@ -1314,7 +1318,8 @@ export function HoldingForm({ open, editing, initialPlannedAsset, onClose }: Pro
                     onFxChange={setFxRateInput}
                     feeUsd={feeUsd}
                     onFeeUsdChange={isReceived ? undefined : setFeeUsd}
-                    liveFx={liveFx}
+                    liveFx={autoFx}
+                    autoRateName={walletFx !== null ? 'wallet avg' : undefined}
                     trade={newStockTrade}
                     showErrors={showErrors}
                     sharesLabel={isReceived ? 'Shares received' : undefined}

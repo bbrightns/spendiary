@@ -18,6 +18,7 @@ import { AcquisitionSourceField } from './AcquisitionSourceField'
 import { CashAccountField } from './CashAccountField'
 import { UsdTradeFields } from './UsdTradeFields'
 import { fieldNumber, resolveUsdTrade, type TradeCurrency } from '../../lib/usdTrade'
+import { walletRate } from '../../store/usdCost'
 import { amountInAccountCurrency, type TradeAmount } from '../../lib/cashPayment'
 
 interface Props {
@@ -174,6 +175,9 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
 
   // US stocks: the paying account's currency decides which numbers are asked for (a gift is valued in USD)
   const tradeCurrency: TradeCurrency = isReceived ? 'USD' : payFrom ? (payFrom.currency ?? 'THB') : paidIn
+  // Paid from a USD wallet whose cost is known: its dollars cost their average rate, not today's
+  const walletFx = !isReceived ? walletRate(payFrom) : null
+  const autoFx = walletFx ?? rate
   const stockTrade = isStock
     ? resolveUsdTrade({
         currency: tradeCurrency,
@@ -181,7 +185,7 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
         priceUsd: fieldNumber(priceUsd),
         amountThb: fieldNumber(amountSpentThb),
         fx: fieldNumber(fxRate),
-        liveFx: rate,
+        liveFx: autoFx,
         feeUsd: isReceived ? 0 : fieldNumber(feeUsd),
         side: 'buy',
       })
@@ -689,7 +693,8 @@ export function BuyMoreForm({ open, holding, onClose, onSwitchToSell, lockedLoca
             onFxChange={setFxRate}
             feeUsd={feeUsd}
             onFeeUsdChange={isReceived ? undefined : setFeeUsd}
-            liveFx={rate}
+            liveFx={autoFx}
+            autoRateName={walletFx !== null ? 'wallet avg' : undefined}
             trade={stockTrade}
             showErrors={showErrors}
             sharesLabel={isReceived ? 'Shares received' : undefined}
