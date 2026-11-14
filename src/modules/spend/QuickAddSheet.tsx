@@ -21,6 +21,7 @@ import { paidDetail } from './billPaid'
 import { firstInstallmentDue, installmentAmount } from './loans'
 import { SHEET_EVENTS, type QuickAddDetail } from './sheetEvents'
 import { AlertIcon } from '../../components/icons'
+import { afterTap } from '../../lib/afterTap'
 import { NumberField } from '../../components/ui/Field'
 import { isValidRate } from '../../lib/fx'
 import { resolveExchange } from '../../lib/fxExchange'
@@ -417,9 +418,15 @@ export function QuickAddSheet() {
           <div
             onFocus={() => setAmountActive(true)}
             onBlur={(e) => {
-              if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
-              setAmountActive(false)
-              setAmount(settleAmount)
+              const box = e.currentTarget
+              if (box.contains(e.relatedTarget as Node | null)) return
+              // Hiding the operator row (and the "= sum" line) moves everything below it up. Done mid-tap,
+              // the tap on a category or wallet lands on something else, so wait until it has landed
+              afterTap(() => {
+                if (box.contains(document.activeElement)) return
+                setAmountActive(false)
+                setAmount(settleAmount)
+              })
             }}
           >
             <label className="block text-center">
