@@ -960,6 +960,19 @@ export function accountTotals(txns: SpendTransaction[], id: string): AccountTota
   return out
 }
 
+/**
+ * The latest payment into a card: a transfer to it, newest by date then time. A typed-in balance
+ * (adjustment) isn't a payment. Undefined when the card has never been paid.
+ */
+export function lastCardPayment(txns: SpendTransaction[], cardId: string): SpendTransaction | undefined {
+  let last: SpendTransaction | undefined
+  for (const t of txns) {
+    if (t.type !== 'transfer' || t.toAccountId !== cardId || t.adjustment) continue
+    if (!last || t.date > last.date || (t.date === last.date && (t.time ?? '') > (last.time ?? ''))) last = t
+  }
+  return last
+}
+
 /** The History page filtered to one wallet or card, read as a statement. */
 export const accountTxnsPath = (id: string) => `/spend/txns?account=${encodeURIComponent(id)}`
 

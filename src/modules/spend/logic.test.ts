@@ -9,6 +9,7 @@ import {
   categoryUsage,
   sortByUse,
   accountTotals,
+  lastCardPayment,
   accountStatement,
   balanceAdjustment,
   balanceOn,
@@ -569,6 +570,27 @@ describe('what counts in the budget', () => {
     expect(withRepay(repaid({ outsideBudget: true }))).toBe(310)
     // Not marked (it repaid everyday spending): the 3,000 comes off what was spent, as before
     expect(withRepay(repaid({}))).toBe(610)
+  })
+})
+
+describe('lastCardPayment', () => {
+  it('picks the newest transfer into the card, by date then time', () => {
+    const p = lastCardPayment(
+      [
+        txn({ id: 'old', type: 'transfer', accountId: 'w1', toAccountId: 'c1', amount: 500, date: '2026-09-27' }),
+        txn({ id: 'am', type: 'transfer', accountId: 'w1', toAccountId: 'c1', amount: 100, date: '2026-10-27', time: '09:00' }),
+        txn({ id: 'pm', type: 'transfer', toAccountId: 'c1', amount: 200, date: '2026-10-27', time: '18:00' }),
+        txn({ id: 'spend', accountId: 'c1', amount: 50, date: '2026-11-01' }),
+        txn({ id: 'adj', type: 'transfer', toAccountId: 'c1', amount: 10, date: '2026-11-02', adjustment: true }),
+        txn({ id: 'other', type: 'transfer', accountId: 'w1', toAccountId: 'c2', amount: 70, date: '2026-11-03' }),
+      ],
+      'c1',
+    )
+    expect(p?.id).toBe('pm')
+  })
+
+  it('is undefined for a card never paid', () => {
+    expect(lastCardPayment([txn({ accountId: 'c1', amount: 50 })], 'c1')).toBeUndefined()
   })
 })
 
