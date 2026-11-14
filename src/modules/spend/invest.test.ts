@@ -64,6 +64,38 @@ describe('investTransactions', () => {
   })
 })
 
+describe('investTransactions: USD accounts and exchanges', () => {
+  const usd: CashAccount = { id: 'fcd', name: 'Dime FCD', balance: 849.97, currency: 'USD' }
+  const withAccounts = (d: SpendiaryData, accounts: CashAccount[]) => ({ ...d, cashAccounts: accounts }) as SpendiaryData
+
+  it('shows a buy paid from a USD account in baht, not the dollars that left', () => {
+    const delta = { units: 1, thb: 5_251.05, cash: [{ accountId: 'fcd', amount: -150.03 }] }
+    const [row] = investTransactions(withAccounts(data([log({ holdingId: 'h1', cashAccountId: 'fcd', delta })]), [usd]), 35)
+    expect(row).toMatchObject({ amount: 5_251.05, accountId: 'fcd', source: 'buy' })
+  })
+
+  it('shows a new holding paid from an account, but not one added without a payment', () => {
+    const delta = { units: 1, thb: 3_500, holdingCreated: true, cash: [{ accountId: 'kbank', amount: -3_500 }] }
+    const rows = investTransactions(
+      withAccounts(data([log({ id: 'paid', action: 'add', holdingId: 'h1', cashAccountId: 'kbank', delta }), log({ id: 'free', action: 'add', holdingId: 'h1', delta })]), [acct('kbank', 0)]),
+      35,
+    )
+    expect(rows.map((r) => r.id)).toEqual(['buy-paid'])
+  })
+
+  it('shows an exchange as a transfer out of the THB account that paid', () => {
+    const d = withAccounts(data([]), [acct('kbank', 66_000), usd])
+    d.fxExchanges = [
+      { id: 'x1', date: '2026-11-14', createdAt: '2026-11-14T10:00:00Z', fromAccountId: 'kbank', toAccountId: 'fcd', thb: 34_000, usd: 1_000 },
+      { id: 'x2', date: '2026-11-14', createdAt: '2026-11-14T10:00:00Z', toAccountId: 'fcd', thb: 3_400, usd: 100 },
+    ]
+    const rows = investTransactions(d, 35)
+    expect(rows).toEqual([expect.objectContaining({ id: 'fx-x1', type: 'transfer', amount: 34_000, accountId: 'kbank', toAccountId: 'fcd', source: 'fx' })])
+    expect(rows[0].note).toBe('THB → USD · Dime FCD · $1,000.00')
+    expect(isInvested(rows[0])).toBe(false)
+  })
+})
+
 describe('export → import with Invest rows on the account', () => {
   it('pairs exported transfers and expenses with their own entries, and a statement-only DCA line with the Invest row', () => {
     const own = [

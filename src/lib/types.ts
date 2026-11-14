@@ -150,6 +150,12 @@ export interface CashAccount {
   balance: number
   /** Currency of the account: THB or USD (defaults to THB if undefined) */
   currency?: 'THB' | 'USD'
+  /**
+   * USD accounts: what the current balance cost in baht, so its average rate is thbCost ÷ balance.
+   * Exchanges add what they cost, sales add the proceeds at the sale's rate, and any other change
+   * keeps the average rate (store/usdCost.ts). Unset = not known, and today's rate stands in.
+   */
+  thbCost?: number
   /** Purpose / Liquidity bucket */
   category?: CashAccountCategory
   /**
@@ -401,7 +407,7 @@ export interface SpendTransaction {
    * Set only on read-only rows derived from the Invest side (never stored):
    * dividends received, DCA buys and Buy more. Their cash moves are already applied there.
    */
-  source?: 'dividend' | 'dca' | 'buy'
+  source?: 'dividend' | 'dca' | 'buy' | 'fx'
   /** A loan / installment payment: the liability it paid toward */
   liabilityId?: string
   /**
@@ -597,6 +603,22 @@ export interface SpendCard {
   unbilled?: { amount: number; statement: string }
 }
 
+/** Baht exchanged into a USD account (e.g. THB savings to a Dime FCD wallet) */
+export interface FxExchange {
+  id: string
+  /** Day of the exchange, YYYY-MM-DD */
+  date: string
+  createdAt: string
+  /** The THB account the baht left; unset = not tracked in the app */
+  fromAccountId?: string
+  /** The USD account the dollars went into */
+  toAccountId: string
+  /** Baht paid */
+  thb: number
+  /** Dollars received */
+  usd: number
+}
+
 export interface SpendiaryData {
   /**
    * Shape of the saved data, stamped on every save (DATA_SCHEMA in store/migrate.ts). A device whose code
@@ -645,6 +667,8 @@ export interface SpendiaryData {
   spendRecurring?: SpendRecurring[]
   /** Spend module: savings goals */
   spendGoals?: SpendGoal[]
+  /** Baht exchanged into a USD account, newest first */
+  fxExchanges?: FxExchange[]
   /** Timestamp in ms when this data was last modified locally */
   lastUpdatedAt?: number
 }
