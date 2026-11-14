@@ -3,7 +3,7 @@ import { useData } from '../../store/DataContext'
 import { localDateStr, localTimeStr } from '../../lib/format'
 import { isSameBalanceEdit } from '../../store/actions/holdingLogs'
 import { newId } from '../../lib/id'
-import type { CashAccount, SpendCard, SpendCustomCategory, SpendGoal, SpendRecurring, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
+import type { CashAccount, Liability, SpendCard, SpendCustomCategory, SpendGoal, SpendRecurring, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
 import { SPEND_CATEGORIES } from './categories'
 import { investTransactions } from './invest'
 import { DEFAULT_BILL_REMINDER_DAYS, applyOrder, applyToBalances, balanceAdjustment, cardBill, dueRecurring, parseTags, recurringNote, renameInList, renameSubOn, sortTxns, spendWallets } from './logic'
@@ -77,6 +77,34 @@ function moveMoney(d: SpendiaryData, moves: [SpendTransaction, 1 | -1][]): Pick<
     removed = trackRemovedMoves(removed, txn, sign)
   }
   return { ...balances, ...(removed !== before ? { spendSettings: { ...d.spendSettings, removedAccounts: removed } } : {}) }
+}
+
+/**
+ * A logged card charge turned into an installment plan, as the bank does: the charge comes off the
+ * card in full (even one entered as already in the balance) and the plan bills it month by month.
+ */
+export function convertToInstallmentData(d: SpendiaryData, txnId: string, plan: Liability): SpendiaryData {
+  const list = d.spendTransactions ?? []
+  const old = list.find((t) => t.id === txnId)
+  if (!old) return d
+  return {
+    ...d,
+    ...moveMoney(d, [[{ ...old, alreadyInBalance: false }, -1]]),
+    spendTransactions: list.filter((t) => t.id !== txnId),
+    liabilities: [...(d.liabilities ?? []), plan],
+  }
+}
+
+/** Undo convertToInstallmentData: the charge is back on the card and the plan is gone. */
+export function undoInstallmentData(d: SpendiaryData, txn: SpendTransaction, planId: string): SpendiaryData {
+  const list = d.spendTransactions ?? []
+  if (list.some((t) => t.id === txn.id)) return d
+  return {
+    ...d,
+    ...moveMoney(d, [[{ ...txn, alreadyInBalance: false }, 1]]),
+    spendTransactions: [...list, txn],
+    liabilities: (d.liabilities ?? []).filter((l) => l.id !== planId),
+  }
 }
 
 /**
@@ -269,6 +297,17 @@ export function useSpend() {
       spendTransactions: [],
     }))
     return count
+  }
+
+  /** Turn a logged card charge into an installment plan; returns the charge, to undo with undoInstallment. */
+  function convertToInstallment(txnId: string, plan: Liability): SpendTransaction | undefined {
+    const old = (data.spendTransactions ?? []).find((t) => t.id === txnId)
+    if (old) setData((prev) => convertToInstallmentData(prev, txnId, plan))
+    return old
+  }
+
+  function undoInstallment(txn: SpendTransaction, planId: string) {
+    setData((prev) => undoInstallmentData(prev, txn, planId))
   }
 
   function removeTransaction(id: string) {
@@ -502,6 +541,8 @@ export function useSpend() {
     setWalletArchived,
     updateTransaction,
     removeTransaction,
+    convertToInstallment,
+    undoInstallment,
     patchTransactions,
     setBillStatement,
     clearTransactions,

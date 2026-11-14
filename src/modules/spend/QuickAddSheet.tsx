@@ -7,9 +7,9 @@ import { TransactionDateField } from '../../components/forms/TransactionDateFiel
 import { useToast } from '../../store/ToastContext'
 import { useData } from '../../store/DataContext'
 import { localDateStr, localTimeStr, money, thb, thbExact, thbSigned } from '../../lib/format'
-import type { SpendSettings, SpendTransaction, SpendTxnType } from '../../lib/types'
+import type { Liability, SpendSettings, SpendTransaction, SpendTxnType } from '../../lib/types'
 import { categoriesFor, getCategory } from './categories'
-import { bigExpenseRule, doneWord, followingStatement, inPeriod, isBigExpense, isNearCutoff, noteTitle, periodFor, statementFor, walletOverdraw } from './logic'
+import { bigExpenseRule, canConvertCharge, doneWord, followingStatement, inPeriod, isBigExpense, isNearCutoff, noteTitle, periodFor, statementFor, walletOverdraw } from './logic'
 import { TYPE_ACTIVE } from './tones'
 import { useSpend, type PayMethod } from './useSpend'
 import { NOT_TRACKED, PayMethodPicker } from './PayMethodPicker'
@@ -83,7 +83,8 @@ function pickDefaults(type: SpendTxnType, txns: SpendTransaction[], methods: Pay
 }
 
 export function QuickAddSheet() {
-  const { transactions, methods, cards, settings, recurring, addTransaction, updateTransaction, removeTransaction } = useSpend()
+  const { transactions, methods, cards, settings, recurring, addTransaction, updateTransaction, removeTransaction, convertToInstallment, undoInstallment } =
+    useSpend()
   const { data, usdThb, exchangeToUsd, setLiabilities, removeLiability } = useData()
   const { showToast } = useToast()
 
@@ -214,13 +215,17 @@ export function QuickAddSheet() {
       : accountId !== NO_WALLET && toAccountId !== NO_WALLET && accountId !== toAccountId && (!toUsd || (fromWallet && exchange !== null)))
   const canSave = amountValid && transferValid
   const saveHint = !amountValid ? (isSum && Number.isFinite(value) ? 'The sum must be more than ฿0' : 'Enter an amount') : !transferValid ? (loanPayment ? 'Pick the account you pay from' : toUsd && !fromWallet ? 'Exchange from a wallet, not a card' : toUsd ? 'Enter the dollars received or the rate' : 'Pick two different accounts') : undefined
-  // Installments: a new card expense of ฿1,000 or more (not editing, not a recurring bill)
+  // Installments: a card expense of ฿1,000 or more, new or already logged (not a recurring bill or a loan payment)
   const card = cards.find((c) => c.id === accountId)
-  const canSplit = !editId && !fromRecurring && type === 'expense' && !!card && amountValid && value >= 1000
-  const splitting = canSplit && split
+  const editing = editId ? transactions.find((t) => t.id === editId) : undefined
   // Which bill a card charge lands on: by its date, or the next one when made just before the cut-off
   const naturalStatement = card ? statementFor(card, date) : ''
   const laterStatement = card ? followingStatement(card, naturalStatement) : ''
+  const canSplit =
+    !fromRecurring && !loanPayment && !editing?.recurring && !editing?.source && type === 'expense' && !!card && amountValid && value >= 1000
+  // Banks convert a charge only until its bill is due
+  const splitBlocked = canSplit && !!editId && !canConvertCharge(card, statement ?? naturalStatement)
+  const splitting = canSplit && split && !splitBlocked
   const billsLater = !!card && statement === laterStatement
   const showBillsOn = !!card && type !== 'transfer' && !splitting && (isNearCutoff(card, date) || billsLater)
   const perMonth = splitting ? installmentAmount(value, months) : 0
@@ -289,38 +294,42 @@ export function QuickAddSheet() {
     }
   }
 
-  /** Bought on installment: nothing is spent today, so it becomes an installment plan paid each month from the card. */
+  /**
+   * Bought on installment: nothing is spent today, so it becomes an installment plan paid each month
+   * from the card. Editing a logged charge converts it: the charge comes off the card for the plan.
+   */
   const saveInstallment = () => {
     if (!card) return
     const total = Math.round(value * 100) / 100
     const today = localDateStr()
     const id = `lib-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
     const name = noteTitle(note, subcategory) || getCategory(categoryId)?.label || 'Installment'
-    setLiabilities([
-      ...(data.liabilities ?? []),
-      {
-        id,
-        name,
-        category: 'installment',
-        balance: total,
-        originalBalance: total,
-        monthlyPayment: perMonth,
-        isInstallment: true,
-        totalInstallments: months,
-        paidInstallments: 0,
-        dueDay: card.dueDay,
-        firstDueDate: firstDue,
-        payFromId: card.id,
-        lender: card.name,
-        note: note.trim() || undefined,
-        createdAt: today,
-        updatedAt: today,
-      },
-    ])
-    showToast(`${thbExact(total)} split into ${months} × ${thb(perMonth, true)} on ${card.name}`, 'success', {
-      label: 'Undo',
-      onClick: () => removeLiability(id),
-    })
+    const plan: Liability = {
+      id,
+      name,
+      category: 'installment',
+      balance: total,
+      originalBalance: total,
+      monthlyPayment: perMonth,
+      isInstallment: true,
+      totalInstallments: months,
+      paidInstallments: 0,
+      dueDay: card.dueDay,
+      firstDueDate: firstDue,
+      payFromId: card.id,
+      lender: card.name,
+      note: note.trim() || undefined,
+      createdAt: today,
+      updatedAt: today,
+    }
+    const message = `${thbExact(total)} split into ${months} × ${thb(perMonth, true)} on ${card.name}`
+    if (editId) {
+      const original = convertToInstallment(editId, plan)
+      showToast(message, 'success', original ? { label: 'Undo', onClick: () => undoInstallment(original, id) } : undefined)
+    } else {
+      setLiabilities([...(data.liabilities ?? []), plan])
+      showToast(message, 'success', { label: 'Undo', onClick: () => removeLiability(id) })
+    }
     setOpen(false)
   }
 
@@ -614,23 +623,28 @@ export function QuickAddSheet() {
           )}
 
           {canSplit && (
-            <div className={`-mt-2 rounded-2xl border transition-colors ${split ? 'border-brand/40 bg-brand-soft/40' : 'border-line'}`}>
+            <div className={`-mt-2 rounded-2xl border transition-colors ${splitting ? 'border-brand/40 bg-brand-soft/40' : 'border-line'}`}>
               <button
                 type="button"
                 role="switch"
-                aria-checked={split}
+                aria-checked={splitting}
+                disabled={splitBlocked}
                 onClick={() => setSplit((v) => !v)}
-                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left cursor-pointer"
+                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left cursor-pointer disabled:cursor-default disabled:opacity-60"
               >
                 <span>
-                  <span className="block text-sm font-bold text-ink">Pay in installments</span>
+                  <span className="block text-sm font-bold text-ink">{editId ? 'Convert to installments' : 'Pay in installments'}</span>
                   <span className="block text-xs text-ink-muted">
-                    {split ? `${thb(perMonth, true)} × ${months} months · 0%` : `Split this ${card!.name} purchase into monthly payments`}
+                    {splitBlocked
+                      ? "Its bill is already due, so the bank won't split it now"
+                      : splitting
+                        ? `${thb(perMonth, true)} × ${months} months · 0%`
+                        : `Split this ${card!.name} purchase into monthly payments`}
                   </span>
                 </span>
-                <SwitchVisual on={split} />
+                <SwitchVisual on={splitting} />
               </button>
-              {split && (
+              {splitting && (
                 <div className="space-y-2.5 border-t border-line/70 px-4 pb-3.5 pt-3">
                   <div className="grid grid-cols-5 gap-1.5" role="group" aria-label="Number of months">
                     {[3, 4, 6, 10, 12].map((n) => (
@@ -649,7 +663,9 @@ export function QuickAddSheet() {
                   </div>
                   <p className="text-xs leading-relaxed text-ink-muted">
                     First payment due <span className="font-semibold text-ink-soft">{shortDue(firstDue)}</span>. Each one counts as spending
-                    when you pay it. Nothing is spent today. It's added to Loans &amp; installments.
+                    when you pay it.{' '}
+                    {editId ? `This charge comes off ${card!.name} and isn't counted as spent.` : 'Nothing is spent today.'} It's added to Loans
+                    &amp; installments.
                   </p>
                 </div>
               )}
