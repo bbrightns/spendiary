@@ -1,6 +1,7 @@
 import type { DividendRecord, HoldingLog, SpendiaryData } from '../../lib/types'
 import type { DataContextValue } from '../DataContext'
 import { newId } from '../migrate'
+import { roundMoney } from '../../lib/money'
 
 /**
  * Dividend records: recording a payout and removing one.
@@ -16,7 +17,7 @@ export function removeDividendRecord(prev: SpendiaryData, ...[recordId]: Paramet
   const updatedCashAccounts = target.cashAccountId
     ? oldAccounts.map((a) =>
         a.id === target.cashAccountId
-          ? { ...a, balance: Math.max(0, a.balance - target.netAmount) }
+          ? { ...a, balance: Math.max(0, roundMoney(a.balance - target.netAmount)) }
           : a,
       )
     : oldAccounts
@@ -50,7 +51,7 @@ export function recordDividend(
   const updatedCashAccounts = cashAcc
     ? oldAccounts.map((a) =>
         a.id === cashAcc.id
-          ? { ...a, balance: a.balance + record.netAmount }
+          ? { ...a, balance: roundMoney(a.balance + record.netAmount) }
           : a,
       )
     : oldAccounts
