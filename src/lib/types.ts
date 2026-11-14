@@ -460,6 +460,8 @@ export interface SpendSettings {
   accountsOrder?: string[]
   /** Order of the cards on Analysis, by card id; unknown or missing ids fall back to the default order */
   analysisOrder?: string[]
+  /** Analysis cards switched off in Arrange cards, by card id */
+  analysisHidden?: string[]
   /** Order of credit cards on Accounts and in pickers, by card id; cards not listed follow in their saved order */
   cardOrder?: string[]
   /** Order of wallets on Accounts and in pickers, by account id; wallets not listed follow in their saved order */
