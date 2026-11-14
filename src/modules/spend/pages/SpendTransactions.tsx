@@ -13,7 +13,7 @@ import type { SpendTransaction, SpendTxnType } from '../../../lib/types'
 import { ListBulletIcon, categoriesFor, getCategory } from '../categories'
 import { ActiveSearch, HistoryRangeBar, HistorySearchSheet, type SearchContext } from '../history'
 import { EMPTY_TITLE, dayLabel, rangePeriod, type Range } from '../historyRange'
-import { accountStatement, balanceOn, inPeriod, lastCardPayment, shiftDate, spendOf, txnFlow, type AccountStatement, type Period } from '../logic'
+import { accountStatement, balanceOn, inPeriod, shiftDate, spendOf, txnFlow, type AccountStatement, type Period } from '../logic'
 import { openQuickAdd } from '../sheetEvents'
 import { TxnRow } from '../TxnRow'
 import { useSpend } from '../useSpend'
@@ -78,16 +78,6 @@ export function SpendTransactions() {
     const next = new URLSearchParams(params)
     for (const k of ['q', 'from', 'to']) next.delete(k)
     setParams(next, { replace: true })
-  }
-  // A card's statement always says when it was last paid, even when that's outside the days in view
-  const lastPaid = useMemo(() => (isCard && accountId ? lastCardPayment(transactions, accountId) : undefined), [transactions, isCard, accountId])
-  const showPayment = (date: string) => {
-    const next = new URLSearchParams(params)
-    for (const k of ['q', 'from', 'to']) next.delete(k)
-    setParams(next, { replace: true })
-    setType('all')
-    setRange('month')
-    setAnchor(date)
   }
   const clearAccount = () => {
     const next = new URLSearchParams(params)
@@ -201,14 +191,6 @@ export function SpendTransactions() {
           accountId={accountId}
           count={filtered.length}
           onClear={clearAccount}
-          lastPaid={
-            lastPaid && {
-              txn: lastPaid,
-              from: lastPaid.accountId ? accountName(lastPaid.accountId) : undefined,
-              inView: filtered.some((t) => t.id === lastPaid.id),
-              onShow: () => showPayment(lastPaid.date),
-            }
-          }
         />
       )}
 
@@ -295,7 +277,6 @@ function StatementCard({
   accountId,
   count,
   onClear,
-  lastPaid,
 }: {
   name: string
   card: boolean
@@ -308,8 +289,6 @@ function StatementCard({
   accountId: string
   count: number
   onClear: () => void
-  /** Cards only: the latest payment, with the wallet it came from and a jump to its month */
-  lastPaid?: { txn: SpendTransaction; from?: string; inView: boolean; onShow: () => void }
 }) {
   const range = statement && span ? (span === 'all' ? { start: statement.opening, end: balance ?? 0 } : { start: balanceOn(statement, shiftDate(span.start, -1)), end: balanceOn(statement, span.end) }) : null
   const moves = useMemo(() => {
@@ -362,32 +341,9 @@ function StatementCard({
           {what} now <b className="font-bold text-ink">{thbSigned(balance, true)}</b>
         </p>
       )}
-      {card && balance !== undefined && (
-        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-ink-muted tnum">
-          <p className="min-w-0">
-            {lastPaid ? (
-              <>
-                Last paid <b className="font-semibold text-ink">{paidDate(lastPaid.txn.date)}</b> ·{' '}
-                <b className="font-semibold text-gain-ink">{thb(lastPaid.txn.amount, true)}</b>
-                {lastPaid.from ? ` from ${lastPaid.from}` : ' outside the app'}
-              </>
-            ) : (
-              'No payment logged yet'
-            )}
-          </p>
-          {lastPaid && !lastPaid.inView && (
-            <button type="button" onClick={lastPaid.onShow} className="shrink-0 text-sm font-semibold text-link hover:underline cursor-pointer">
-              Show
-            </button>
-          )}
-        </div>
-      )}
     </Card>
   )
 }
-
-/** "27 Oct 2026" */
-const paidDate = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 
 /** Tags and categories to pick from while searching */
 function SearchSuggestions({ transactions, search }: { transactions: SpendTransaction[]; search: SearchContext }) {
