@@ -1133,37 +1133,6 @@ export function sortSubsByUse(labels: string[], categoryId: string, transactions
     .map((x) => x.label)
 }
 
-/** How many rows chips of these widths take when they wrap like `flex-wrap` in `width`, `gap` apart. */
-export function wrapRows(widths: number[], width: number, gap: number): number {
-  let rows = 0
-  let used = 0
-  for (const w of widths) {
-    if (rows && used + gap + w <= width) used += gap + w
-    else {
-      rows++
-      used = w
-    }
-  }
-  return rows
-}
-
-/**
- * Which chips stay in view when a wrapping row of them folds to `rows`: the first ones in order, then a
- * chip `trailing` px wide (e.g. Add) always last. `keep` (the picked chip) stays in view, taking the last
- * slot if it sits further down. Returns indexes into `widths`, or undefined when everything fits.
- */
-export function foldChips(o: { widths: number[]; width: number; gap: number; rows: number; trailing?: number; keep?: number }): number[] | undefined {
-  const { widths, width, gap, rows, trailing, keep } = o
-  const tail = trailing === undefined ? [] : [trailing]
-  if (wrapRows([...widths, ...tail], width, gap) <= rows) return undefined
-  for (let k = widths.length - 1; k > 0; k--) {
-    let shown = widths.slice(0, k).map((_, i) => i)
-    if (keep !== undefined && keep >= k) shown = [...shown.slice(0, -1), keep]
-    if (wrapRows([...shown.map((i) => widths[i]), ...tail], width, gap) <= rows) return shown
-  }
-  return keep === undefined ? [] : [keep]
-}
-
 /** "due in 3 days", "due today", "2 days overdue" */
 export function dueText(days: number): string {
   if (days < 0) return `${-days} ${days === -1 ? 'day' : 'days'} overdue`
