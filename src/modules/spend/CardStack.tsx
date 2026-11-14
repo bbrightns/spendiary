@@ -209,11 +209,14 @@ export function CardStack({ cards, bills, transactions, defaultId, favoriteIds, 
                 e.stopPropagation()
                 openPayBill(active.id)
               }}
-              className="mt-3 flex w-full items-center justify-between gap-3 rounded-xl border border-line px-3 py-2.5 text-sm font-semibold text-ink hover:bg-surface-muted/60 cursor-pointer"
+              // A bill to pay is the card's main action: a filled button. Paying early stays quiet
+              className={`mt-3 flex min-h-11 w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold cursor-pointer transition-colors ${
+                a.open ? 'bg-primary text-white hover:bg-primary-hover shadow-[var(--shadow-soft)]' : 'border border-line text-ink hover:bg-surface-muted/60'
+              }`}
             >
               <span className="min-w-0 truncate">
                 {a.open ? 'Pay bill' : 'Pay early'}{' '}
-                <span className="text-ink-muted">· {a.open ? dueText(a.open.daysToDue) : `closes ${shortDate(a.cyc.nextStatement)}`}</span>
+                <span className={a.open ? 'text-white/80' : 'text-ink-muted'}>· {a.open ? dueText(a.open.daysToDue) : `closes ${shortDate(a.cyc.nextStatement)}`}</span>
               </span>
               <span className="shrink-0 font-bold tnum">{thb(a.open ? a.open.amountDue : active.balance, true)} →</span>
             </button>
