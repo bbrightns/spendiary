@@ -4,7 +4,8 @@ import { Modal } from '../../components/ui/Modal'
 import { SegmentedControl } from '../../components/ui/SegmentedControl'
 import { CloseIcon, SearchIcon } from '../../components/icons'
 import type { PayCycle } from '../../lib/types'
-import type { Period } from './logic'
+import { shiftDate, type Period } from './logic'
+import { dateRangeLabel } from '../../lib/paletteSearch'
 import { RANGES, rangeLabel, stepRange, type Range } from './historyRange'
 import { MonthStepper } from './MonthStepper'
 
@@ -33,10 +34,13 @@ export function HistoryRangeBar({
   onAnchorChange,
   onSearch,
   searchLabel,
+  monthOf,
 }: {
   range: Range
   period: Period | null
   cycle?: PayCycle
+  /** Month view by another cycle than the pay cycle (a card's billing cycle): the one a date falls in */
+  monthOf?: (date: string) => Period
   onRangeChange: (r: Range) => void
   onAnchorChange: (date: string) => void
   onSearch: () => void
@@ -47,7 +51,13 @@ export function HistoryRangeBar({
       <SegmentedControl ariaLabel="Range" size="sm" shape="pill" fullWidth={false} value={range} onChange={onRangeChange} options={RANGES} />
       {period &&
         (range === 'month' ? (
-          <MonthStepper value={period} cycle={cycle} onChange={(p) => onAnchorChange(p.start)} />
+          <MonthStepper
+            value={period}
+            cycle={cycle}
+            step={monthOf && ((p, delta) => monthOf(shiftDate(delta > 0 ? p.end : p.start, delta)))}
+            label={monthOf && dateRangeLabel({ from: period.start, to: period.end })}
+            onChange={(p) => onAnchorChange(p.start)}
+          />
         ) : (
           <MonthStepper
             value={period}
