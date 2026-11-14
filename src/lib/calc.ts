@@ -553,7 +553,8 @@ export function isConfirmedForPeriod(plan: DcaPlan, now = new Date()): boolean {
     const weekStart = new Date(now)
     weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7))
     weekStart.setHours(0, 0, 0, 0)
-    return allDates.some((d) => new Date(d) >= weekStart)
+    // Compared as local days: new Date('YYYY-MM-DD') is midnight UTC, still Sunday west of Greenwich
+    return allDates.some((d) => localDay(d) >= localDateStr(weekStart))
   }
   // monthly
   const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
@@ -573,7 +574,7 @@ export function isSkippedForPeriod(plan: DcaPlan, now = new Date()): boolean {
     const weekStart = new Date(now)
     weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7))
     weekStart.setHours(0, 0, 0, 0)
-    return dates.some((d) => new Date(d) >= weekStart)
+    return dates.some((d) => localDay(d) >= localDateStr(weekStart))
   }
   const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   return dates.some((d) => localDay(d).startsWith(ym))
