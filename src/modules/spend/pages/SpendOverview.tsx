@@ -20,10 +20,10 @@ import { HOME_CARDS, homeOrder, isDefaultOrder, moveCard, type HomeCardId } from
 import { ArrangeButton, ReorderSheet } from '../ReorderSheet'
 import { STATUS_TONE } from '../tones'
 
-const STATUS: Record<DayStatus, { label: string; stroke: string; chip: string }> = {
-  ok: { label: 'On track', ...STATUS_TONE.ok },
-  careful: { label: 'Careful', ...STATUS_TONE.careful },
-  over: { label: 'Over today', ...STATUS_TONE.over },
+const STATUS: Record<DayStatus, { label: string; stroke: string }> = {
+  ok: { label: 'On track', stroke: STATUS_TONE.ok.stroke },
+  careful: { label: 'Careful', stroke: STATUS_TONE.careful.stroke },
+  over: { label: 'Over today', stroke: STATUS_TONE.over.stroke },
 }
 
 /** Home shows the newest few of a day; the rest are one tap away in Transactions */
@@ -94,7 +94,6 @@ export function SpendOverview() {
   const leftText = `${allowance.leftToday < 0 ? '−' : ''}${thb(Math.abs(allowance.leftToday))}`
   // Long amounts step down so they stay inside the gauge's arc
   const leftSize = leftText.length <= 6 ? 'text-4xl' : leftText.length <= 8 ? 'text-3xl' : 'text-2xl'
-  const untilEnd = settings.cycle?.mode === 'payday' ? 'payday' : 'the month ends'
 
   // The reorderable cards; Home shows them in the order saved in Spend settings
   const allowanceCard = (
@@ -109,21 +108,18 @@ export function SpendOverview() {
               <p className={`font-display font-extrabold tracking-tight tnum ${leftSize} ${allowance.leftToday < 0 ? 'text-loss-ink' : 'text-ink'}`}>
                 {leftText}
               </p>
+              <span className="sr-only">{st.label}</span>
+              {/* One line under the number; the gauge colour carries the status, the month card the details */}
               <p className="mt-0.5 text-sm text-ink-muted tnum">
                 {allowance.leftToday < 0 ? 'over' : 'left'} today of {thb(allowance.allowance)}
+                {allowance.soft && (
+                  <>
+                    {' · '}
+                    <span className="font-semibold text-loss-ink">month {thb(allowance.overBy)} over</span>
+                  </>
+                )}
               </p>
             </div>
-            <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${st.chip}`}>
-              <span className="h-1.5 w-1.5 rounded-full bg-current" />
-              {st.label}
-            </span>
-            {/* Budget used up: say so once, and give today a target instead of ฿0 until the period ends */}
-            {allowance.soft && (
-              <p className="mx-auto mt-3 max-w-xs text-xs leading-relaxed text-ink-muted tnum">
-                This month is <span className="font-semibold text-loss-ink">{thb(allowance.overBy)} over</span> the budget
-                {`, so until ${untilEnd} each day aims for ${thb(allowance.allowance)}, a usual day on your budget.`}
-              </p>
-            )}
             <button
               type="button"
               onClick={() => setBudgetOpen(true)}
