@@ -100,3 +100,21 @@ describe('upsertLiability / removeLiability / setLiabilities', () => {
     expect(setLiabilities(state(loan()), []).liabilities).toEqual([])
   })
 })
+
+describe('payments keep the balance in whole satang', () => {
+  const loan = (balance: number) => ({ liabilities: [{ id: 'l1', name: 'Car', category: 'auto_loan', balance }] }) as unknown as SpendiaryData
+
+  it('a loan paid off in parts ends at exactly 0', () => {
+    // 1000 − 333.33 − 333.33 − 333.34 leaves 1.1e-13 in floating point
+    let d = loan(1000)
+    for (const amount of [333.33, 333.33, 333.34]) d = payLiabilityInstallment(d, 'l1', amount)
+    expect(d.liabilities![0].balance).toBe(0)
+  })
+
+  it('records what the payment took off without float noise, and undo restores the balance exactly', () => {
+    const paid = payLiabilityInstallment(payLiabilityInstallment(loan(1000), 'l1', 333.33), 'l1', 333.33)
+    expect(paid.liabilities![0].balance).toBe(333.34)
+    expect(paid.liabilities![0].lastPaidAmount).toBe(333.33)
+    expect(undoLiabilityPayment(paid, 'l1').liabilities![0].balance).toBe(666.67)
+  })
+})

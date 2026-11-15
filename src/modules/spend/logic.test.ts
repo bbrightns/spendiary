@@ -1093,3 +1093,13 @@ describe('automatic category order', () => {
     syncCategories({})
   })
 })
+
+// Current behaviour, kept on purpose until it's decided (docs/overnight-report-2026-11-15.md, "Needs decision")
+describe('a card whose due day is right after its statement day', () => {
+  it('has February\'s bill due on the day it closes', () => {
+    // Statement day 28, due day 29: "same month" rule, and non-leap February has no 29th
+    const cyc = cardCycle({ statementDay: 28, dueDay: 29 }, new Date(2027, 2, 1))
+    expect(cyc).toMatchObject({ lastStatement: '2027-02-28', lastStatementDue: '2027-02-28' })
+  })
+})
+

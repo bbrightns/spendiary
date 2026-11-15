@@ -94,6 +94,33 @@ describe('migrate', () => {
     expect(migrate(legacy({ holdings: [noUsdCost] })).holdings[0].price).toBe(100)
   })
 
+  it('clears the float noise an older version left on loan balances', () => {
+    // Paying 1000 in three parts used to leave 1.1e-13, so the loan never counted as paid off
+    const out = migrate(
+      legacy({
+        liabilities: [
+          { id: 'l1', name: 'Phone', category: 'installment', balance: 1.1368683772161603e-13, lastPaidAmount: 333.3400000000001 },
+          { id: 'l2', name: 'Car', category: 'auto_loan', balance: 666.6700000000001 },
+          { id: 'l3', name: 'Home', category: 'mortgage', balance: 1_250_000.5 },
+        ],
+      }),
+    )
+    expect(out.liabilities?.map((l) => l.balance)).toEqual([0, 666.67, 1_250_000.5])
+    expect(out.liabilities?.[0].lastPaidAmount).toBe(333.34)
+    expect(migrate(out)).toEqual(out)
+  })
+
+  it('keeps a loan as it is when its numbers are already whole satang', () => {
+    const liabilities = [{ id: 'l1', name: 'Phone', category: 'installment', balance: 2000, monthlyPayment: 1000 }]
+    expect(migrate(legacy({ liabilities })).liabilities).toEqual(liabilities)
+  })
+
+  it('replaces a list that was saved as null with an empty one', () => {
+    const out = migrate(legacy({ transfers: null, dividendRecords: null }))
+    expect(out.transfers).toEqual([])
+    expect(out.dividendRecords).toEqual([])
+  })
+
   it('does not change the object it was given', () => {
     const raw = legacy({ cash: 500, holdings: [holding({})] })
     const before = JSON.stringify(raw)

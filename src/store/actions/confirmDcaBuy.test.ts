@@ -82,3 +82,14 @@ describe('confirmDcaBuy', () => {
     expect(out.holdingLogs?.[0].paidFromAccountId).toBeUndefined()
   })
 })
+
+describe('a savings DCA keeps the account balance in whole satang', () => {
+  it('deposits without float noise', () => {
+    const savings: CashAccount = { id: 'sav', name: 'Savings', balance: 0.1 }
+    const plan: DcaPlan = { id: 'p2', name: 'Savings', assetClass: 'cash', monthlyAmount: 0.2, dayOfMonth: 1, cashAccountId: 'sav' }
+    const out = confirm(state({ dcaPlans: [plan], cashAccounts: [savings] }), 'p2', 0, '2026-11-01')
+    // 0.1 + 0.2 is 0.30000000000000004 in floating point
+    expect(out.cashAccounts[0].balance).toBe(0.3)
+  })
+})
+

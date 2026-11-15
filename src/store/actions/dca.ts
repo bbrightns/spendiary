@@ -141,7 +141,7 @@ export function confirmDcaBuy(
     const updatedCashAccounts = payFromAccount(
       targetAcc
         ? oldAccounts.map((a) =>
-            a.id === targetAcc.id ? { ...a, balance: a.balance + depositAmount } : a,
+            a.id === targetAcc.id ? { ...a, balance: roundMoney(a.balance + depositAmount) } : a,
           )
         : oldAccounts,
       paid,

@@ -116,3 +116,24 @@ describe('a converted plan comes due next month, not this one', () => {
     expect(nextMonthDue(10, '2026-12-20')).toBe('2027-01-10')
   })
 })
+
+// Current behaviour, kept on purpose until it's decided (docs/overnight-report-2026-11-15.md, "Needs decision")
+describe('converting installment 1 of a converted charge again', () => {
+  it('makes a second plan next to the first; what is owed in total stays the same', () => {
+    const converted = { ...plan, totalInstallments: 3, monthlyPayment: 1_000, balance: 2_000, paidInstallments: 1 }
+    const old = charge()
+    const first = firstInstallmentTxn(old, converted, 'i1', '2026-11-14T00:00:00Z')
+    const once = convertToInstallmentData(data([old]), 't1', converted, first)
+
+    const again = { ...plan, id: 'p2', name: 'Phone payment 1/3', totalInstallments: 2, monthlyPayment: 500, balance: 500, paidInstallments: 1 }
+    const second = firstInstallmentTxn(first, again, 'i2', '2026-11-14T00:01:00Z')
+    const twice = convertToInstallmentData(once, 'i1', again, second)
+
+    expect(twice.liabilities?.map((l) => l.id)).toEqual(['p1', 'p2'])
+    expect(twice.spendTransactions?.map((t) => t.id)).toEqual(['i2'])
+    // Card 2,000 + 500, plans 2,000 + 500: still the 5,000 owed before any conversion
+    const owed = (twice.spendCards?.[0].balance ?? 0) + (twice.liabilities ?? []).reduce((s, l) => s + l.balance, 0)
+    expect(owed).toBe(5_000)
+  })
+})
+
