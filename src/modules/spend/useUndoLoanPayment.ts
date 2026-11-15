@@ -13,7 +13,8 @@ export function useUndoLoanPayment() {
     // and an older month's payment must stay
     const paidOn = (data.liabilities ?? []).find((l) => l.id === liabilityId)?.lastPaidDate
     const logged = paidOn ? transactions.find((t) => t.liabilityId === liabilityId && t.date === paidOn) : undefined
+    // Removing the payment's transaction takes the payment off the loan too
     if (logged) removeTransaction(logged.id)
-    undoLiabilityPayment(liabilityId)
+    else undoLiabilityPayment(liabilityId)
   }
 }
