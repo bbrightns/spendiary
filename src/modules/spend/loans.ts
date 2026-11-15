@@ -1,6 +1,6 @@
 import type { Liability, SpendCard } from '../../lib/types'
-import { localDateStr } from '../../lib/format'
 import { roundMoney } from '../../lib/money'
+import { cardCycle, followingStatement, statementFor } from './logic'
 
 /**
  * Whether a payment counts as spending by default: buying on installment (a 0% phone plan) is,
@@ -38,22 +38,21 @@ export function loanProgress(l: Liability): number {
  * (closing on the statement day, on or after the purchase) and is paid on the due day after it.
  */
 export function firstInstallmentDue(card: Pick<SpendCard, 'statementDay' | 'dueDay'>, purchaseDate: string): string {
-  const [y, m, d] = purchaseDate.split('-').map(Number)
-  const at = (year: number, month: number, day: number) => new Date(year, month, Math.min(day, new Date(year, month + 1, 0).getDate()))
-  const closeMonth = d <= card.statementDay ? m - 1 : m
-  const close = at(y, closeMonth, card.statementDay)
-  // A due day after the statement day falls in the same month; otherwise the month after
-  const due = at(close.getFullYear(), close.getMonth() + (card.dueDay > card.statementDay ? 0 : 1), card.dueDay)
-  return localDateStr(due)
+  return statementDue(card, statementFor(card, purchaseDate))
+}
+
+/** The due date of the statement closing on `statement` */
+function statementDue(card: Pick<SpendCard, 'statementDay' | 'dueDay'>, statement: string): string {
+  const [y, m, d] = statement.split('-').map(Number)
+  return cardCycle(card, new Date(y, m - 1, d)).lastStatementDue
 }
 
 /**
- * A converted charge posts installment 1 right away, so the plan's next payment is due on its due
- * day next month (YYYY-MM-DD), clamped to short months.
+ * A converted charge posts installment 1 on its own statement (`statement`, the one the charge billed on),
+ * so installment 2 bills on the statement after it and is due on that one's due date (YYYY-MM-DD).
  */
-export function nextMonthDue(dueDay: number, today = localDateStr()): string {
-  const [y, m] = today.split('-').map(Number)
-  return localDateStr(new Date(y, m, Math.min(dueDay, new Date(y, m + 1, 0).getDate())))
+export function nextInstallmentDue(card: Pick<SpendCard, 'statementDay' | 'dueDay'>, statement: string): string {
+  return statementDue(card, followingStatement(card, statement))
 }
 
 /**

@@ -81,12 +81,22 @@ describe('removeDividendRecord', () => {
     expect(out.holdingLogs?.map((l) => l.id)).toEqual(['l2'])
   })
 
-  it('never takes the balance below zero', () => {
+  it('takes the whole amount back, below zero once it was spent', () => {
     const poor = { ...state, cashAccounts: [{ id: 'bank', name: 'Bank', balance: 50 }] }
-    expect(removeDividendRecord(poor, 'r1').cashAccounts[0].balance).toBe(0)
+    expect(removeDividendRecord(poor, 'r1').cashAccounts[0].balance).toBe(-40)
   })
 
   it('changes nothing for an unknown record', () => {
     expect(removeDividendRecord(state, 'nope')).toBe(state)
   })
 })
+
+describe('a negative net worth', () => {
+  it('is recorded, so the chart doesn\'t stop when debts outgrow assets', () => {
+    expect(recordNetWorthSnapshot(emptyData, -12_500).netWorthHistory?.map((x) => x.value)).toEqual([-12_500])
+  })
+  it('still skips 0 and anything not a number', () => {
+    expect(recordNetWorthSnapshot(emptyData, Number.NaN)).toBe(emptyData)
+  })
+})
+

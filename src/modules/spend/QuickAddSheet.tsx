@@ -18,7 +18,7 @@ import { SwitchVisual } from '../../components/ui/SwitchVisual'
 import { CategoryPicker } from './CategoryPicker'
 import { NoteField } from './NoteField'
 import { paidDetail } from './billPaid'
-import { firstInstallmentDue, installmentAmount, nextMonthDue } from './loans'
+import { firstInstallmentDue, installmentAmount, nextInstallmentDue } from './loans'
 import { SHEET_EVENTS, type QuickAddDetail } from './sheetEvents'
 import { AlertIcon } from '../../components/icons'
 import { afterTap } from '../../lib/afterTap'
@@ -222,7 +222,7 @@ export function QuickAddSheet() {
   const naturalStatement = card ? statementFor(card, date) : ''
   const laterStatement = card ? followingStatement(card, naturalStatement) : ''
   const canSplit =
-    !fromRecurring && !loanPayment && !editing?.recurring && !editing?.source && type === 'expense' && !!card && amountValid && value >= 1000
+    !fromRecurring && !loanPayment && !editing?.recurring && !editing?.source && !editing?.liabilityId && type === 'expense' && !!card && amountValid && value >= 1000
   // Banks convert a charge only until its bill is due
   const splitBlocked = canSplit && !!editId && !canConvertCharge(card, statement ?? naturalStatement)
   const splitting = canSplit && split && !splitBlocked
@@ -230,6 +230,10 @@ export function QuickAddSheet() {
   const showBillsOn = !!card && type !== 'transfer' && !splitting && (isNearCutoff(card, date) || billsLater)
   const perMonth = splitting ? installmentAmount(value, months) : 0
   const firstDue = splitting && card ? firstInstallmentDue(card, date) : ''
+  // Converting: installment 1 takes the charge's place on its bill (by its own date, or the later statement it was moved to on
+  // the same card), so installment 2 is due with the bill after that one
+  const convertedOn = splitting && card && editing ? (editing.accountId === card.id && editing.statement) || statementFor(card, editing.date) : ''
+  const nextDue = convertedOn && card ? nextInstallmentDue(card, convertedOn) : ''
   // A past date may already be in the balance the wallet / card shows today
   const backdated = date < localDateStr()
   const touchesBalance = accountId !== NO_WALLET || (type === 'transfer' && toAccountId !== NO_WALLET)
@@ -329,7 +333,7 @@ export function QuickAddSheet() {
         ...plan,
         balance: Math.round((total - perMonth) * 100) / 100,
         paidInstallments: 1,
-        firstDueDate: nextMonthDue(card.dueDay),
+        firstDueDate: nextDue,
       })
       showToast(message, 'success', done ? { label: 'Undo', onClick: () => undoInstallment(done.original, done.first, id) } : undefined)
     } else {
@@ -671,7 +675,7 @@ export function QuickAddSheet() {
                     {editId ? (
                       <>
                         Payment 1 of <span className="font-semibold text-ink-soft">{thb(perMonth, true)}</span> replaces this charge now, the next
-                        is due <span className="font-semibold text-ink-soft">{shortDue(nextMonthDue(card!.dueDay))}</span>. Each one counts as
+                        is due <span className="font-semibold text-ink-soft">{shortDue(nextDue)}</span>. Each one counts as
                         spending.
                       </>
                     ) : (

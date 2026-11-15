@@ -12,12 +12,12 @@ export function removeDividendRecord(prev: SpendiaryData, ...[recordId]: Paramet
   const target = records.find((r) => r.id === recordId)
   if (!target) return prev
 
-  // Revert cash balance if deposited
+  // Revert cash balance if deposited; already spent, the account goes below zero like any other wallet
   const oldAccounts = prev.cashAccounts ?? []
   const updatedCashAccounts = target.cashAccountId
     ? oldAccounts.map((a) =>
         a.id === target.cashAccountId
-          ? { ...a, balance: Math.max(0, roundMoney(a.balance - target.netAmount)) }
+          ? { ...a, balance: roundMoney(a.balance - target.netAmount) }
           : a,
       )
     : oldAccounts

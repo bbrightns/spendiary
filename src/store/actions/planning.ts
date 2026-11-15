@@ -45,7 +45,8 @@ export function removePlannedAsset(prev: SpendiaryData, ...[id]: Parameters<Data
 }
 
 export function recordNetWorthSnapshot(prev: SpendiaryData, ...[value]: Parameters<DataContextValue['recordNetWorthSnapshot']>): SpendiaryData {
-  if (value <= 0) return prev
+  // More owed than owned is still a net worth to chart; exactly 0 is data that hasn't loaded
+  if (!Number.isFinite(value) || value === 0) return prev
   const today = localDateStr()
   const existing = prev.netWorthHistory ?? []
   // Replace today's entry (prices may have updated) and keep last 365

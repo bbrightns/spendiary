@@ -92,8 +92,9 @@ export function PayLoanSheet() {
       {
         label: 'Undo',
         onClick: () => {
+          // Removing the payment's transaction takes the payment off the loan too
           if (txn) removeTransaction(txn.id)
-          undoLiabilityPayment(id)
+          else undoLiabilityPayment(id)
         },
       },
       // Confetti only for the last payment

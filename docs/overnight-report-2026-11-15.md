@@ -17,19 +17,19 @@ Five bugs fixed, each with a test that failed first. All checks pass. Nine behav
 
 `ead2499` adds only tests (section 2).
 
-## 2. Needs decision
+## 2. Needs decision (all nine decided and fixed on 2026-11-15, after v1.49.6)
 
-Not changed. Recommendation first, then why it is ambiguous.
-
-1. **Installment 1 of a converted charge can be converted again.** *Recommend: block it* (exclude entries with `liabilityId` from `canSplit` in `QuickAddSheet.tsx`). Banks do not re-split an installment. Money stays consistent today (total owed is conserved, pinned by a test in `installmentConvert.test.ts`), which is why this is a decision and not a fix.
-2. **Deleting a loan-payment transaction in History does not put the loan back.** *Recommend: route it through the same undo as the toast* (`useUndoLoanPayment`), or warn. Today the card/wallet gets the money back but the loan still counts the installment as paid, so total debt drops by that payment. Same for deleting installment 1 of a converted charge. It may be intended ("I logged it twice"), so left alone.
-3. **Removing a dividend record clamps the account at ฿0.** *Recommend: let it go negative*, like every other wallet move. Receive ฿100, spend ฿80, remove the record: balance becomes ฿0, not −฿80, so ฿80 appears from nowhere. Pinned by a test in `dividends.test.ts`.
-4. **Changing the card while converting a charge.** *Recommend: post installment 1 on the plan's card.* Edit a charge, pick another card, turn on Split: the plan lands on the new card, but installment 1 is posted on the old one (`firstInstallmentTxn` uses `old.accountId`). The amount is right; the card it sits on is arguably wrong. Fixing it properly also means recomputing `statement` for the new card, hence not a one-line fix.
-5. **A card whose due day is the day after its statement day** (e.g. 28 / 29). *Recommend: nothing, or reject it in the card form.* In non-leap February the bill is due the day it closes. No real card works like this. Pinned by a test in `logic.test.ts`.
-6. **"Delete all transactions" leaves recurring bills marked paid and loans paid.** *Recommend: also clear `doneDates`.* Deleting one transaction un-marks its bill; clearing all does not, so the last 45 days of bills stay "paid" with no transaction behind them.
-7. **Net worth snapshots skip values ≤ 0.** *Recommend: record negatives.* With more debt than assets the history chart simply stops. An existing test asserts the skip, so it looks deliberate.
-8. **"Spent per day" bars floor a negative day at 0.** *Recommend: leave.* A day with more paid back than spent draws as 0, so the bars can add up to more than the period total. The drill-down caption also counts a pay-back row as an "expense".
-9. **Next due date after converting a charge on the open cycle.** *Recommend: leave, but check against a real statement.* `nextMonthDue` says installment 2 is due on the due day next month. With statement day 25 / due day 10 and a charge converted on 14 Nov, the bank bills installment 1 on the 25 Nov statement (due 10 Dec) and installment 2 on 25 Dec (due 10 Jan). The app says 10 Dec. An existing test asserts the current rule.
+| # | Was | Now | Commit |
+|---|-----|-----|--------|
+| 1 | Installment 1 of a converted charge could be converted again | Refused in the data layer and hidden in Quick add | `431ede8` |
+| 2 | Deleting a loan payment in History gave the money back but left the loan counted as paid | Deleting a loan's latest payment (or installment 1 of a converted charge) takes it off the loan too. Pay-loan Undo and Home's Undo no longer undo the loan a second time | `431ede8` |
+| 3 | Removing a dividend record stopped the account at ฿0 | Takes the whole amount back, below zero if it was spent | `e96fea9` |
+| 4 | Converting onto another card left installment 1 on the old card | Installment 1 goes on the plan's card; the old card's moved-to statement is dropped | `431ede8` |
+| 5 | Statement day 28 / due day 29 was due the day it closed in February | Due the day after closing when a short month clamps the due day onto it | `a64e800` |
+| 6 | Delete all transactions left bills marked paid and loans paid | Runs exactly as deleting each one, newest first | `431ede8` |
+| 7 | Net worth snapshots skipped values below 0 | Negative net worth is recorded (0 and NaN still skipped) | `e96fea9` |
+| 8 | Spent-per-day average used bars floored at 0; caption called pay-backs "expenses" | Average nets out pay-backs (matches the period total); caption says "entries" when pay-backs are listed. Bars still stop at 0 | `f88be68` |
+| 9 | A converted plan's next payment was the due day next month (the bill that already holds installment 1) | Due with the bill after installment 1's: a charge billed 25 Nov is next due 10 Jan, not 10 Dec. New installment purchases now read their first due date from the same card-cycle logic | `431ede8` |
 
 ## 3. Suspicious but unconfirmed
 
@@ -66,4 +66,4 @@ New test files: `src/modules/spend/loans.test.ts`, `src/store/actions/dividends.
 
 ## Ship decision
 
-The brief had two instructions that pull apart: the hard rules say never ship, merge or bump the version; the last line says "if all fixed, no more bugs, ship it". I did not ship. The condition is not met: section 2 has nine open decisions, section 3 has unconfirmed suspicions, and section 4 lists what was not read. `package.json` is still 1.49.5 and no PR was opened. Saying "ship" will run the normal flow on this branch.
+The first five fixes shipped as v1.49.6 (PR #122, merge `cd9d45b`). The nine decisions above are on the working branch, not shipped yet.

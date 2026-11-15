@@ -60,7 +60,10 @@ function yearOf(date: string): Period {
 interface Bucket {
   key: string
   label: string
+  /** What the bar draws: never below zero */
   spent: number
+  /** Spent less paid back, which can be below zero; the average adds these up so it matches the period's total */
+  net: number
   future: boolean
 }
 
@@ -70,14 +73,14 @@ function buckets(range: Range, p: Period, txns: SpendTransaction[], today: strin
     const k = range === 'year' ? t.date.slice(0, 7) : t.date
     spentOn.set(k, (spentOn.get(k) ?? 0) + spendOf(t))
   }
-  // A pay-back on a day with less spending would draw a bar below zero
-  for (const [k, v] of spentOn) if (v < 0) spentOn.set(k, 0)
+  // A pay-back on a day with less spending would draw a bar below zero: the bar stops at 0, `net` keeps it
+  const bar = (k: string) => Math.max(0, spentOn.get(k) ?? 0)
   if (range === 'year') {
     const s = parse(p.start)
     return Array.from({ length: 12 }, (_, i) => {
       const d = new Date(s.getFullYear(), s.getMonth() + i, 1)
       const key = localDateStr(d).slice(0, 7)
-      return { key, label: String(d.getMonth() + 1), spent: spentOn.get(key) ?? 0, future: key > today.slice(0, 7) }
+      return { key, label: String(d.getMonth() + 1), spent: bar(key), net: spentOn.get(key) ?? 0, future: key > today.slice(0, 7) }
     })
   }
   const n = daysBetween(p.start, p.end) + 1
@@ -85,7 +88,7 @@ function buckets(range: Range, p: Period, txns: SpendTransaction[], today: strin
     const key = shiftDate(p.start, i)
     const d = parse(key)
     const label = range === 'week' ? d.toLocaleDateString('en-GB', { weekday: 'short' }) : i % 5 === 0 ? String(d.getDate()) : ''
-    return { key, label, spent: spentOn.get(key) ?? 0, future: key > today }
+    return { key, label, spent: bar(key), net: spentOn.get(key) ?? 0, future: key > today }
   })
 }
 
@@ -102,7 +105,7 @@ function Bars({ data, unit, selected, onSelect }: { data: Bucket[]; unit: string
   const [hover, setHover] = useState<string | null>(null)
   const past = data.filter((b) => !b.future)
   const max = Math.max(1, ...data.map((b) => b.spent))
-  const avg = past.length ? past.reduce((s, b) => s + b.spent, 0) / past.length : 0
+  const avg = past.length ? Math.max(0, past.reduce((s, b) => s + b.net, 0) / past.length) : 0
   const top = past.reduce<Bucket | null>((m, b) => (!m || b.spent > m.spent ? b : m), null)
   const shown = data.find((b) => b.key === (hover ?? selected)) ?? top
 
@@ -172,10 +175,13 @@ const PEEK_LIMIT = 6
 /** Expenses in a slice of the period, biggest first, like a card statement; past the limit, History takes over */
 function TxnPeek({ caption, rows, methods, seeAll }: { caption: string; rows: SpendTransaction[]; methods: { id: string; name: string }[]; seeAll: string }) {
   const sorted = [...rows].sort((a, b) => spendOf(b) - spendOf(a))
+  // Money paid back is listed too, so it isn't counted as an expense
+  const allExpenses = sorted.every((t) => t.type === 'expense')
+  const noun = allExpenses ? (sorted.length === 1 ? 'expense' : 'expenses') : sorted.length === 1 ? 'entry' : 'entries'
   return (
     <div className="mt-3 border-t border-line pt-3">
       <p className="text-xs font-semibold text-ink-muted tnum">
-        {caption} · {sorted.length === 0 ? 'nothing spent' : `${sorted.length} ${sorted.length === 1 ? 'expense' : 'expenses'}, biggest first`}
+        {caption} · {sorted.length === 0 ? 'nothing spent' : `${sorted.length} ${noun}, biggest first`}
       </p>
       {sorted.length > 0 && (
         <div className="mt-1 divide-y divide-line">

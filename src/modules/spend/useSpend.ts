@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { useData } from '../../store/DataContext'
 import { localDateStr, localTimeStr } from '../../lib/format'
 import { isSameBalanceEdit } from '../../store/actions/holdingLogs'
+import { undoLiabilityPayment } from '../../store/actions/liabilities'
 import { newId } from '../../lib/id'
 import type { CashAccount, Liability, SpendCard, SpendCustomCategory, SpendGoal, SpendRecurring, SpendSettings, SpendTransaction, SpendiaryData } from '../../lib/types'
 import { SPEND_CATEGORIES } from './categories'
@@ -79,18 +80,22 @@ function moveMoney(d: SpendiaryData, moves: [SpendTransaction, 1 | -1][]): Pick<
   return { ...balances, ...(removed !== before ? { spendSettings: { ...d.spendSettings, removedAccounts: removed } } : {}) }
 }
 
-/** Installment 1 of a converted charge: logged like a loan payment, in the charge's place on the same bill. */
+/**
+ * Installment 1 of a converted charge: logged like a loan payment, in the charge's place. It goes on the
+ * plan's card (the one picked when converting); a statement the charge was moved to belongs to its old card.
+ */
 export function firstInstallmentTxn(old: SpendTransaction, plan: Liability, id: string, now: string): SpendTransaction {
   const note = `${plan.name} payment 1/${plan.totalInstallments}`
+  const accountId = plan.payFromId ?? old.accountId
   return {
     id,
     type: 'expense',
     amount: plan.monthlyPayment ?? 0,
     categoryId: 'bills',
-    accountId: old.accountId,
+    accountId,
     date: old.date,
     time: old.time,
-    statement: old.statement,
+    statement: accountId === old.accountId ? old.statement : undefined,
     note,
     tags: parseTags(note),
     liabilityId: plan.id,
@@ -106,7 +111,8 @@ export function firstInstallmentTxn(old: SpendTransaction, plan: Liability, id: 
 export function convertToInstallmentData(d: SpendiaryData, txnId: string, plan: Liability, first: SpendTransaction): SpendiaryData {
   const list = d.spendTransactions ?? []
   const old = list.find((t) => t.id === txnId)
-  if (!old) return d
+  // An installment (or any loan payment) is already part of a plan: banks don't split it again
+  if (!old || old.liabilityId) return d
   return {
     ...d,
     ...moveMoney(d, [
@@ -129,6 +135,47 @@ export function undoInstallmentData(d: SpendiaryData, txn: SpendTransaction, fir
     spendTransactions: [...list.filter((t) => t.id !== first.id), txn],
     liabilities: (d.liabilities ?? []).filter((l) => l.id !== planId),
   }
+}
+
+/**
+ * The loan a transaction paid toward, when it is that loan's latest payment: paid on the day the loan
+ * last recorded a payment, or installment 1 of a converted charge (which records no payment day).
+ * Deleting such a transaction takes the payment back off the loan too.
+ */
+export function loanPaymentOf(d: SpendiaryData, txn: SpendTransaction): Liability | undefined {
+  if (!txn.liabilityId) return undefined
+  const loan = (d.liabilities ?? []).find((l) => l.id === txn.liabilityId)
+  if (!loan || (loan.paidInstallments ?? 0) <= 0) return undefined
+  return !loan.lastPaidDate || loan.lastPaidDate === txn.date ? loan : undefined
+}
+
+/**
+ * Delete one Spend transaction: its money goes back, a bill it paid is due again, a typed-in balance's
+ * Trades entry goes with it, and a loan's latest payment is taken back off the loan.
+ */
+export function removeTransactionData(prev: SpendiaryData, id: string): SpendiaryData {
+  const list = prev.spendTransactions ?? []
+  const old = list.find((t) => t.id === id)
+  if (!old) return prev
+  const next: SpendiaryData = {
+    ...prev,
+    ...moveMoney(prev, [[old, -1]]),
+    spendTransactions: list.filter((t) => t.id !== id),
+    // Undoing a typed-in balance also clears its entry in Trades, which could undo it a second time
+    ...(old.adjustment ? { holdingLogs: (prev.holdingLogs ?? []).filter((l) => !isSameBalanceEdit(l, old)) } : {}),
+    // A bill marked paid comes back as due once its transaction is gone
+    ...(old.recurring ? { spendRecurring: unmarkOccurrence(prev.spendRecurring ?? [], old.recurring.id, old.recurring.date, 'doneDates') } : {}),
+  }
+  const loan = loanPaymentOf(prev, old)
+  if (!loan) return next
+  // A payment recorded without what it took off (installment 1 of a converted charge) puts back the transaction's amount
+  const withAmount = { ...next, liabilities: (next.liabilities ?? []).map((l) => (l.id === loan.id ? { ...l, lastPaidAmount: l.lastPaidAmount ?? old.amount } : l)) }
+  return undoLiabilityPayment(withAmount, loan.id)
+}
+
+/** Delete every Spend transaction, newest first, exactly as if each had been deleted one by one. */
+export function clearTransactionsData(prev: SpendiaryData): SpendiaryData {
+  return sortTxns(prev.spendTransactions ?? []).reduce((d, t) => removeTransactionData(d, t.id), prev)
 }
 
 /**
@@ -312,14 +359,10 @@ export function useSpend() {
     }))
   }
 
-  /** Delete every Spend transaction, putting wallet and card balances back as if each had been deleted one by one. */
+  /** Delete every Spend transaction, as if each had been deleted one by one (balances, bills and loans go back). */
   function clearTransactions(): number {
     const count = (data.spendTransactions ?? []).length
-    setData((prev) => ({
-      ...prev,
-      ...moveMoney(prev, (prev.spendTransactions ?? []).map((t) => [t, -1])),
-      spendTransactions: [],
-    }))
+    setData(clearTransactionsData)
     return count
   }
 
@@ -337,20 +380,7 @@ export function useSpend() {
   }
 
   function removeTransaction(id: string) {
-    setData((prev) => {
-      const list = prev.spendTransactions ?? []
-      const old = list.find((t) => t.id === id)
-      if (!old) return prev
-      return {
-        ...prev,
-        ...moveMoney(prev, [[old, -1]]),
-        spendTransactions: list.filter((t) => t.id !== id),
-        // Undoing a typed-in balance also clears its entry in Trades, which could undo it a second time
-        ...(old.adjustment ? { holdingLogs: (prev.holdingLogs ?? []).filter((l) => !isSameBalanceEdit(l, old)) } : {}),
-        // A bill marked paid comes back as due once its transaction is gone
-        ...(old.recurring ? { spendRecurring: unmarkOccurrence(prev.spendRecurring ?? [], old.recurring.id, old.recurring.date, 'doneDates') } : {}),
-      }
-    })
+    setData((prev) => removeTransactionData(prev, id))
   }
 
   function upsertCard(card: Omit<SpendCard, 'id'> & { id?: string }): string {
