@@ -222,7 +222,7 @@ export function SpendTransactions() {
       )}
 
       {groups.length === 0 ? (
-        <Card>
+        <Card className="card-bleed-mobile">
           <EmptyState
             icon={<ListBulletIcon className="h-7 w-7" />}
             title={searching ? 'No matches' : EMPTY_TITLE[range]}
@@ -236,7 +236,7 @@ export function SpendTransactions() {
             const dayNet = txns.reduce((s, t) => s + (t.type === 'income' ? t.amount : t.type === 'expense' ? -t.amount : 0), 0)
             const dayEnd = statement?.dayEnd.get(date)
             return (
-              <Card key={date} list className="pt-3 pb-1">
+              <Card key={date} list className="card-bleed-mobile pt-3 pb-1">
                 <div className="flex items-center justify-between border-b border-line pb-2 text-xs font-semibold text-ink-muted">
                   <span>{dayLabel(date, showYear)}</span>
                   {dayEnd !== undefined ? (
@@ -313,7 +313,7 @@ function StatementCard({
   }, [txns, span, accountId])
   const what = card ? 'Owed' : 'Balance'
   return (
-    <Card>
+    <Card className="card-bleed-mobile">
       <CardHeader
         title={name}
         description={`${count} ${count === 1 ? 'entry' : 'entries'} · ${card ? 'what you owed' : 'the balance'} after each one`}
