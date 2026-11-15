@@ -108,17 +108,11 @@ export function SpendOverview() {
               <p className={`font-display font-extrabold tracking-tight tnum ${leftSize} ${allowance.leftToday < 0 ? 'text-loss-ink' : 'text-ink'}`}>
                 {leftText}
               </p>
-              <span className="sr-only">{st.label}</span>
-              {/* One line under the number; the gauge colour carries the status, the month card the details */}
-              <p className="mt-0.5 text-sm text-ink-muted tnum">
-                {allowance.leftToday < 0 ? 'over' : 'left'} today of {thb(allowance.allowance)}
-                {allowance.soft && (
-                  <>
-                    {' · '}
-                    <span className="font-semibold text-loss-ink">month {thb(allowance.overBy)} over</span>
-                  </>
-                )}
-              </p>
+              {/* Just the gauge and the number; the gauge colour carries the status, the month card the details */}
+              <span className="sr-only">
+                {allowance.leftToday < 0 ? 'over' : 'left'} today of {thb(allowance.allowance)}, {st.label}
+                {allowance.soft && `, month ${thb(allowance.overBy)} over`}
+              </span>
             </div>
             <button
               type="button"
