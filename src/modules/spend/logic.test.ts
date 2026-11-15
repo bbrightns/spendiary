@@ -1094,12 +1094,14 @@ describe('automatic category order', () => {
   })
 })
 
-// Current behaviour, kept on purpose until it's decided (docs/overnight-report-2026-11-15.md, "Needs decision")
 describe('a card whose due day is right after its statement day', () => {
-  it('has February\'s bill due on the day it closes', () => {
-    // Statement day 28, due day 29: "same month" rule, and non-leap February has no 29th
-    const cyc = cardCycle({ statementDay: 28, dueDay: 29 }, new Date(2027, 2, 1))
-    expect(cyc).toMatchObject({ lastStatement: '2027-02-28', lastStatementDue: '2027-02-28' })
+  it('is due the day after closing when a short month clamps the due day onto it', () => {
+    // Statement day 28, due day 29: non-leap February has no 29th
+    expect(cardCycle({ statementDay: 28, dueDay: 29 }, new Date(2027, 2, 1))).toMatchObject({ lastStatement: '2027-02-28', lastStatementDue: '2027-03-01' })
+    expect(cardCycle({ statementDay: 30, dueDay: 31 }, new Date(2027, 1, 28))).toMatchObject({ lastStatement: '2027-02-28', lastStatementDue: '2027-03-01' })
+  })
+  it('keeps the same month when the month has the due day', () => {
+    expect(cardCycle({ statementDay: 28, dueDay: 29 }, new Date(2028, 2, 1))).toMatchObject({ lastStatement: '2028-02-28', lastStatementDue: '2028-02-29' })
+    expect(cardCycle({ statementDay: 30, dueDay: 31 }, new Date(2027, 1, 1))).toMatchObject({ lastStatement: '2027-01-30', lastStatementDue: '2027-01-31' })
   })
 })
-

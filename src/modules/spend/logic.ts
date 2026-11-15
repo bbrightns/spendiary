@@ -213,8 +213,13 @@ export function cardCycle(card: Pick<SpendCard, 'statementDay' | 'dueDay'>, toda
   let last = dayInMonth(t, card.statementDay)
   if (last > t) last = dayInMonth(t, card.statementDay, -1)
   const next = dayInMonth(last, card.statementDay, 1)
-  // Due date belongs to a statement: same month if the due day comes later, else the month after
-  const dueFor = (stmt: Date) => dayInMonth(stmt, card.dueDay, card.dueDay > card.statementDay ? 0 : 1)
+  // Due date belongs to a statement: same month if the due day comes later, else the month after.
+  // A short month can clamp a later due day onto the closing day (28 / 29 in February): then the day after.
+  const dueFor = (stmt: Date) => {
+    if (card.dueDay <= card.statementDay) return dayInMonth(stmt, card.dueDay, 1)
+    const due = dayInMonth(stmt, card.dueDay)
+    return due > stmt ? due : new Date(stmt.getFullYear(), stmt.getMonth(), stmt.getDate() + 1)
+  }
   return {
     lastStatement: localDateStr(last),
     nextStatement: localDateStr(next),
