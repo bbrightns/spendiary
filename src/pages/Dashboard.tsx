@@ -124,7 +124,7 @@ export function Dashboard() {
 
   // Record today's net worth snapshot whenever nw updates
   useEffect(() => {
-    if (nw > 0) recordNetWorthSnapshot(nw)
+    if (nw !== 0) recordNetWorthSnapshot(nw)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nw])
 
