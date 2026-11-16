@@ -28,6 +28,13 @@ describe('resolveRemoteLoad', () => {
     expect(resolveRemoteLoad({ error: null, row: { updated_at }, asUser: true })).toEqual({ kind: 'empty' })
   })
 
+  it('never reads a payload that is not an object as data, or as "no data yet"', () => {
+    // e.g. the whole JSON saved as text: real data this code cannot read, so saving must stay off
+    for (const odd of [JSON.stringify(payload), [payload], 42, true]) {
+      expect(resolveRemoteLoad({ error: null, row: { payload: odd, updated_at }, asUser: true }), JSON.stringify(odd)).toEqual({ kind: 'failed' })
+    }
+  })
+
   it('fails when the query errors', () => {
     expect(resolveRemoteLoad({ error: networkError, row: null, asUser: true })).toEqual({ kind: 'failed' })
     expect(resolveRemoteLoad({ error: networkError, row: { payload, updated_at }, asUser: true })).toEqual({ kind: 'failed' })

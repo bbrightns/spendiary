@@ -27,16 +27,21 @@ export interface ClientLoad {
   asUser: boolean
 }
 
-function loadedFrom(row: unknown): RemoteLoadResult | null {
+/** `unreadable`: a row is there, but what it holds is not app data */
+function loadedFrom(row: unknown): RemoteLoadResult | 'unreadable' | null {
   if (!row || typeof row !== 'object') return null
   const { payload, updated_at } = row as RemoteRow
-  if (!payload) return null
+  if (payload === null || payload === undefined) return null
+  // Something is saved, but not as an object (e.g. the JSON saved as text). Reading it as empty data
+  // would let the next save replace it.
+  if (typeof payload !== 'object' || Array.isArray(payload)) return 'unreadable'
   return { kind: 'loaded', payload, updatedAt: typeof updated_at === 'string' ? updated_at : null }
 }
 
 export function resolveRemoteLoad(client: ClientLoad): RemoteLoadResult {
   if (client.error) return { kind: 'failed' }
   const loaded = loadedFrom(client.row)
+  if (loaded === 'unreadable') return { kind: 'failed' }
   if (loaded) return loaded
   // No row: a new user, but only if the database was asked as that user
   return client.asUser ? { kind: 'empty' } : { kind: 'failed' }
