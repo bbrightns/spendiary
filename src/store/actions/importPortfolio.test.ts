@@ -145,7 +145,9 @@ describe('applyImport', () => {
 
   it('never imports a balance that is not a real number, and rounds to the satang', () => {
     // JSON.parse reads 1e999 as Infinity, which would be saved as null
-    const p2 = prepared({ cashAccounts: [{ name: 'A', balance: 1e999 }, { name: 'B', balance: 'Infinity' }, { name: 'C', balance: 100.10000000000001 }], liabilities: [{ name: 'L', balance: -1e999 }, { name: 'M', balance: 0.30000000000000004 }] })
+    const pasted = JSON.parse('{"cashAccounts":[{"name":"A","balance":1e999},{"name":"B","balance":"Infinity"},{"name":"C","balance":100.10000000000001}],"liabilities":[{"name":"L","balance":-1e999},{"name":"M","balance":0.30000000000000004}]}')
+    expect(pasted.cashAccounts[0].balance).toBe(Number.POSITIVE_INFINITY)
+    const p2 = prepared(pasted)
     expect(p2.sanitizedCash.map((c) => c.balance)).toEqual([0, 0, 100.1])
     expect(p2.sanitizedLiabilities.map((l) => l.balance)).toEqual([0, 0.3])
   })
