@@ -7,6 +7,10 @@ was touched. Supabase was only ever simulated (Playwright `route()` and unit tes
 This run covers what the 2026-11-15 run did not read: migration hardening, cloud sync, security, and the remaining
 money math. Decisions taken without asking are marked **(decided)** and listed again at the end of section 3.
 
+> **Shipping split.** The sync fixes (#3 to #7, commit `6e70f52`, with `scripts/sim/`) are **not shipped**: they were
+> reverted on this branch (revert commit below) and wait for the next round. To bring them back, revert that revert.
+> The 8 other fixes (#1, #2, #8 to #13) shipped together. Sections 1 and 2 still describe the sync work in full.
+
 All five phases were reached. Thirteen bugs fixed, each with a test that failed first; no Critical or High security
 finding; sixteen behaviours left alone and listed under Needs decision; the refactor plan is in
 `docs/refactor-plan.md`.

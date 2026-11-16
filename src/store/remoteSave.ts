@@ -48,33 +48,3 @@ export function interpretSave(mode: SaveMode, res: { error: unknown; data?: unkn
   const stamp = (rows[0] as { updated_at?: unknown } | undefined)?.updated_at
   return { kind: 'saved', updatedAt: typeof stamp === 'string' ? stamp : null }
 }
-
-const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
-
-/**
- * True when two payloads are the same saved data. The database keeps the payload as jsonb, which
- * reorders keys, so text can't be compared; and JSON drops keys set to undefined.
- * Used to recognise our own save in the cloud after its answer was lost on the way back.
- */
-export function sameSavedData(a: unknown, b: unknown): boolean {
-  if (!isObject(a) || !isObject(b)) return false
-  return sameJson(a, b)
-}
-
-function sameJson(a: unknown, b: unknown): boolean {
-  if (a === b) return true
-  if (!isObject(a) || !isObject(b)) return false
-  if (Array.isArray(a) || Array.isArray(b)) {
-    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false
-    return a.every((entry, i) => sameJson(entry ?? null, b[i] ?? null))
-  }
-  const keys = (o: Record<string, unknown>) => Object.keys(o).filter((k) => o[k] !== undefined)
-  const aKeys = keys(a)
-  if (aKeys.length !== keys(b).length) return false
-  return aKeys.every((k) => b[k] !== undefined && sameJson(a[k], b[k]))
-}
-
-/** How long to wait before trying a failed save again: 5 s, doubling, at most a minute */
-export function retryDelayMs(failures: number): number {
-  return Math.min(60_000, 5_000 * 2 ** Math.max(0, Math.min(failures, 10) - 1))
-}
