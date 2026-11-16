@@ -268,7 +268,11 @@ export interface HoldingDelta {
   /** This entry sold the whole holding, so it was removed */
   holdingRemoved?: boolean
   /** Cash that moved with it: + into an account, − out of it (in the account's currency) */
-  cash?: { accountId: string; amount: number; name?: string; currency?: 'THB' | 'USD'; balanceAfter?: number }[]
+  /**
+   * `thbCost`: USD accounts whose cost is known, money going out only: the baht cost that left with the
+   * dollars (negative), so undo puts back exactly that instead of working it out from the rate at the time.
+   */
+  cash?: { accountId: string; amount: number; name?: string; currency?: 'THB' | 'USD'; balanceAfter?: number; thbCost?: number }[]
 }
 
 /** The few numbers of a holding the trade history shows */

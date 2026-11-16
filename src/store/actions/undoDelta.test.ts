@@ -5,6 +5,7 @@ import { emptyData } from '../migrate'
 import { addHoldingLog, undoHoldingLog, undoHoldingLogChecked } from './holdingLogs'
 import { buyMoreHolding, removeLocation, sellHolding, upsertHolding } from './holdings'
 import { confirmDcaBuy } from './dca'
+import { syncUsdCosts } from '../usdCost'
 
 const fund = (over: Partial<Holding> = {}): Holding =>
   ({ id: 'f1', name: 'S&P 500', ticker: 'SPX', assetClass: 'fund', units: 100, totalUnits: 100, avgCost: 10, avgCostThb: 10, price: 12, totalThbInvested: 1000, ...over }) as Holding
@@ -175,5 +176,81 @@ describe('an add paid from a cash account', () => {
     expect(out.cashAccounts).toEqual([bank])
     expect(logOf(out, 'add').delta!.cash).toBeUndefined()
     expect(logOf(out, 'add').cashAccountId).toBeUndefined()
+  })
+})
+
+describe('undo and the baht cost of a USD wallet', () => {
+  // DataContext runs every action through syncUsdCosts, which is what moves a USD wallet's cost
+  const run = (s: SpendiaryData, action: (s: SpendiaryData) => SpendiaryData) => syncUsdCosts(s, action(s))
+  const usd: CashAccount = { id: 'usd', name: 'Dime FCD', balance: 1_000, currency: 'USD', thbCost: 36_500 }
+  const stock = (over: Partial<Holding> = {}): Holding =>
+    ({ id: 's1', name: 'Apple', ticker: 'AAPL', assetClass: 'stock', units: 10, totalUnits: 10, avgCost: 6_000, avgCostThb: 6_000, avgCostUsd: 180, price: 6_500, totalThbInvested: 60_000, totalUsdInvested: 1_800, ...over }) as Holding
+  const start = () => state({ holdings: [stock()], cashAccounts: [bank, usd] })
+  const buyUsd = (s: SpendiaryData, dollars: number) => {
+    const h = s.holdings.find((x) => x.id === 's1')!
+    return buyMoreHolding(s, { updatedHolding: buyInto(h, undefined, 1, dollars * 36.5, dollars).holding, note: 'buy', cashAccountId: 'usd', cashDeductAmount: dollars })
+  }
+  const wallet = (s: SpendiaryData) => s.cashAccounts.find((a) => a.id === 'usd')!
+
+  it('gives the cost back when the buy that emptied the wallet is undone', () => {
+    const bought = run(start(), (s) => buyUsd(s, 1_000))
+    expect(wallet(bought)).toMatchObject({ balance: 0, thbCost: 0 })
+    const back = run(bought, (s) => undoHoldingLog(s, logOf(s, 'buy_more').id))
+    // Without the cost, the wallet has no rate and the next buy is costed at today's rate instead
+    expect(wallet(back)).toMatchObject({ balance: 1_000, thbCost: 36_500 })
+  })
+
+  it('gives back exactly what a partial buy took', () => {
+    const bought = run(start(), (s) => buyUsd(s, 150.03))
+    expect(wallet(bought)).toMatchObject({ balance: 849.97, thbCost: 31_023.91 })
+    const back = run(bought, (s) => undoHoldingLog(s, logOf(s, 'buy_more').id))
+    expect(wallet(back)).toMatchObject({ balance: 1_000, thbCost: 36_500 })
+  })
+
+  it('gives the cost back when an add paid with the whole wallet is undone', () => {
+    const h = stock({ id: 's2', ticker: 'MSFT', name: 'Microsoft' })
+    const added = run(start(), (s) =>
+      addHoldingLog(upsertHolding(s, h), { action: 'add', holdingId: h.id, holdingName: h.name, ticker: h.ticker, assetClass: h.assetClass, note: 'Added', afterHoldingState: h, payment: { accountId: 'usd', amount: 1_000 } }),
+    )
+    expect(wallet(added)).toMatchObject({ balance: 0, thbCost: 0 })
+    const back = run(added, (s) => undoHoldingLog(s, logOf(s, 'add').id))
+    expect(wallet(back)).toMatchObject({ balance: 1_000, thbCost: 36_500 })
+  })
+
+  it('still undoes an older buy that saved no cost, at the wallet\'s rate', () => {
+    const bought = run(start(), (s) => buyUsd(s, 400))
+    const old = { ...bought, holdingLogs: bought.holdingLogs!.map((l) => ({ ...l, delta: { ...l.delta!, cash: l.delta!.cash!.map(({ thbCost: _, ...c }) => c) } })) }
+    const back = run(old, (s) => undoHoldingLog(s, logOf(s, 'buy_more').id))
+    expect(wallet(back)).toMatchObject({ balance: 1_000, thbCost: 36_500 })
+  })
+
+  it('leaves a wallet whose cost is not known alone', () => {
+    const s0 = state({ holdings: [stock()], cashAccounts: [bank, { ...usd, thbCost: undefined }] })
+    const bought = run(s0, (s) => buyUsd(s, 1_000))
+    expect(logOf(bought, 'buy_more').delta!.cash![0]).not.toHaveProperty('thbCost')
+    const back = run(bought, (s) => undoHoldingLog(s, logOf(s, 'buy_more').id))
+    expect(wallet(back)).toMatchObject({ balance: 1_000 })
+    expect(wallet(back).thbCost).toBeUndefined()
+  })
+
+  it('saves no cost for a baht account', () => {
+    const out = buy(state(), 'f1', 10, 120, true)
+    expect(logOf(out, 'buy_more').delta!.cash![0]).not.toHaveProperty('thbCost')
+  })
+
+  // Pinned, not judged: see "Needs decision" in docs/overnight-report-2026-11-17.md
+  it('undoing a sale into a USD wallet keeps the wallet\'s new average rate (current behaviour)', () => {
+    const s0 = state({ holdings: [stock()], cashAccounts: [bank, { ...usd, balance: 100, thbCost: 3_000 }] })
+    const h = s0.holdings[0]
+    const sold = run(s0, (s) =>
+      sellHolding(s, {
+        holdingId: 's1', soldUnits: 5, soldPrice: 700, proceeds: 3_500, realizedPnL: 0, realizedPnLPercent: 0, note: 'sold',
+        remainingHolding: { ...h, units: 5, totalUnits: 5, totalThbInvested: 30_000, totalUsdInvested: 900 }, cashAccountId: 'usd', cashDepositAmount: 100,
+      }),
+    )
+    expect(wallet(sold)).toMatchObject({ balance: 200, thbCost: 6_500 })
+    const back = run(sold, (s) => undoHoldingLog(s, logOf(s, 'sell').id))
+    // The wallet was 100 USD at 30; after sale + undo it is 100 USD at 32.5
+    expect(wallet(back)).toMatchObject({ balance: 100, thbCost: 3_250 })
   })
 })

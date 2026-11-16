@@ -44,6 +44,7 @@ export function addHoldingLog(prev: SpendiaryData, ...[params]: Parameters<DataC
         log.afterHoldingState,
         paid ? [{ accountId: paid.accountId, amount: -paid.amount }] : undefined,
         cashAccounts,
+        prev.cashAccounts,
       )
     : undefined
 

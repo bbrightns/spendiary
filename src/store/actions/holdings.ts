@@ -224,6 +224,7 @@ export function buyMoreHolding(prev: SpendiaryData, ...[params]: Parameters<Data
         ? [{ accountId: params.cashAccountId, amount: -params.cashDeductAmount }]
         : undefined,
       updatedCashAccounts,
+      prev.cashAccounts,
     ),
     cashAccountId: params.cashAccountId,
     source: params.source,
