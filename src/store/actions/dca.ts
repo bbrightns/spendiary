@@ -175,7 +175,7 @@ export function confirmDcaBuy(
         cash: withAccountDetails([
           ...(targetAcc ? [{ accountId: targetAcc.id, amount: depositAmount }] : []),
           ...paidCash,
-        ], updatedCashAccounts),
+        ], updatedCashAccounts, prev.cashAccounts),
       },
     }
 
@@ -241,7 +241,7 @@ export function confirmDcaBuy(
       dcaPlanId: plan.id,
       dcaDate: date,
       ...paidLog,
-      delta: { units: 0, thb: 0, ...(paid ? { cash: withAccountDetails(paidCash, payFromAccount(prev.cashAccounts ?? [], paid)) } : {}) },
+      delta: { units: 0, thb: 0, ...(paid ? { cash: withAccountDetails(paidCash, payFromAccount(prev.cashAccounts ?? [], paid), prev.cashAccounts) } : {}) },
     }
     return {
       ...prev,
@@ -436,6 +436,7 @@ export function confirmDcaBuy(
       resultingHolding,
       paidCash,
       paid ? payFromAccount(prev.cashAccounts ?? [], paid) : undefined,
+      prev.cashAccounts,
     ),
   }
 

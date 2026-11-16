@@ -7,7 +7,7 @@ import { resolveRemoteLoad } from './remoteLoad'
 import { interpretSave, lockHeaders, type SaveMode, type SaveOutcome } from './remoteSave'
 import { DATA_SCHEMA, emptyData, isFromNewerApp, justImportedFixedCosts, migrate } from './migrate'
 import { withLegacyLocations } from './legacyLocations'
-import { STORAGE_KEYS } from '../lib/storageKeys'
+import { STORAGE_KEYS, clearPersonalTraces } from '../lib/storageKeys'
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
 
@@ -150,6 +150,8 @@ export function useCloudSync(
       if (isSwitch) {
         setDataState(emptyData)
         lastSynced.current = ''
+        // The last account's recent searches are not this one's to see
+        clearPersonalTraces(localStorage)
       }
 
       localStorage.setItem(STORAGE_KEYS.lastUserId, user.id)

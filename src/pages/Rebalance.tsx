@@ -17,6 +17,7 @@ import { thb, thbCompact } from '../lib/format'
 import type { Holding, InvestAssetClass, PlannedAsset, RebalanceMode } from '../lib/types'
 import { CheckIcon, CopyIcon, PlusIcon, TrashIcon, LockClosedIcon } from '../components/icons'
 import { STORAGE_KEYS } from '../lib/storageKeys'
+import { roundPct, targetsTotal } from './rebalanceTargets'
 
 
 const REBALANCE_ASSETS: InvestAssetClass[] = ['fund', 'stock', 'gold', 'crypto', 'real_estate']
@@ -117,12 +118,12 @@ export function Rebalance() {
     real_estate: activeHoldings.filter((h) => h.assetClass === 'real_estate').reduce((s, h) => s + h.units * h.price, 0),
   }
 
-  const classTargetsSum = Object.values(localClassTargets).reduce((s, x) => s + x, 0)
+  const classTargetsSum = targetsTotal(localClassTargets)
 
   const handleClassTargetChange = (key: InvestAssetClass, val: number) => {
     const updated = { ...localClassTargets, [key]: val }
     setLocalClassTargets(updated)
-    const sum = Object.values(updated).reduce((s, x) => s + x, 0)
+    const sum = targetsTotal(updated)
     if (sum === 100) {
       setRebalanceTargets(updated)
     }
@@ -204,13 +205,13 @@ export function Rebalance() {
   const handleHoldingTargetChange = (id: string, val: number) => {
     const updated = { ...localHoldingTargets, [id]: val }
     setLocalHoldingTargets(updated)
-    const sum = Object.values(updated).reduce((s, x) => s + x, 0)
+    const sum = targetsTotal(updated)
     if (sum === 100) {
       setRebalanceHoldingTargets(updated)
     }
   }
 
-  const holdingTargetsSum = Object.values(localHoldingTargets).reduce((s, x) => s + x, 0)
+  const holdingTargetsSum = targetsTotal(localHoldingTargets)
 
   // Combined holding rows (actual holdings + planned assets)
   type HoldingRowItem = {
@@ -336,16 +337,16 @@ export function Rebalance() {
 
   const autoBalanceRemaining = () => {
     if (mode === 'class') {
-      const remaining = 100 - classTargetsSum
+      const remaining = roundPct(100 - classTargetsSum)
       if (remaining > 0) {
         const firstKey = REBALANCE_ASSETS[0]
-        handleClassTargetChange(firstKey, (localClassTargets[firstKey] ?? 0) + remaining)
+        handleClassTargetChange(firstKey, roundPct((localClassTargets[firstKey] ?? 0) + remaining))
       }
     } else {
-      const remaining = 100 - holdingTargetsSum
+      const remaining = roundPct(100 - holdingTargetsSum)
       if (remaining > 0 && holdingRows.length > 0) {
         const firstId = holdingRows[0].id
-        handleHoldingTargetChange(firstId, (localHoldingTargets[firstId] ?? 0) + remaining)
+        handleHoldingTargetChange(firstId, roundPct((localHoldingTargets[firstId] ?? 0) + remaining))
       }
     }
   }
@@ -611,7 +612,7 @@ export function Rebalance() {
                       onClick={autoBalanceRemaining}
                       className="shrink-0 underline text-xs hover:text-ink font-bold cursor-pointer"
                     >
-                      Fill +{100 - currentTargetsSum}%
+                      Fill +{roundPct(100 - currentTargetsSum)}%
                     </button>
                   )}
                 </div>

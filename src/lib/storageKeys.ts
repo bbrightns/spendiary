@@ -33,3 +33,25 @@ export const STORAGE_KEYS = {
   // One-time hints
   todayDcaHintSeen: 'spendiary.hint_today_dca_seen',
 } as const
+
+/** Kept on the device but written from one person's data: what they searched for and which items they opened */
+const PERSONAL_KEYS = [
+  STORAGE_KEYS.spendRecentSearches,
+  STORAGE_KEYS.tradesRecentSearches,
+  STORAGE_KEYS.paletteRecent,
+  STORAGE_KEYS.paletteUsage,
+]
+
+/**
+ * Called when someone signs out, clears their data, or another account signs in on this browser,
+ * so the next person doesn't see the last one's searches. Preferences and price caches stay.
+ */
+export function clearPersonalTraces(storage: Pick<Storage, 'removeItem'>) {
+  for (const key of PERSONAL_KEYS) {
+    try {
+      storage.removeItem(key)
+    } catch {
+      // storage unavailable: nothing was kept either
+    }
+  }
+}

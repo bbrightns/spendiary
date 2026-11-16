@@ -20,6 +20,13 @@ export interface PreparedImport {
   sanitizedHoldings: Holding[]
   sanitizedCash: CashAccount[]
   sanitizedLiabilities: Liability[]
+  /**
+   * What each cash / debt row actually stated, in the same order as the lists above. Merging onto an
+   * existing account or debt takes only this: the defaults filled in for a new one (THB, a guessed
+   * category, no rate) must not overwrite what is already saved.
+   */
+  cashStated: Partial<CashAccount>[]
+  liabilitiesStated: Partial<Liability>[]
   logEntry: HoldingLog
 }
 
@@ -135,13 +142,14 @@ export function prepareImport(
   }
 
   const sanitizedCash: CashAccount[] = []
+  const cashStated: Partial<CashAccount>[] = []
   for (const item of rawCash) {
     if (typeof item !== 'object' || item === null) continue
     const r = item as Record<string, unknown>
     const rawName = typeof r.name === 'string' ? r.name.trim() : ''
     if (!rawName) continue
 
-    const balance = parseCleanNumber(r.balance, 0)
+    const balance = roundMoney(parseCleanNumber(r.balance, 0))
     const rawCurr = typeof r.currency === 'string' ? r.currency.toUpperCase().trim() : 'THB'
     const currency: 'THB' | 'USD' = rawCurr === 'USD' ? 'USD' : 'THB'
     const preset = detectBankPreset(rawName)
@@ -160,17 +168,24 @@ export function prepareImport(
       bankPreset: preset?.id,
       category,
     })
+    cashStated.push({
+      name: rawName,
+      balance,
+      ...(typeof r.currency === 'string' && (rawCurr === 'USD' || rawCurr === 'THB') ? { currency } : {}),
+      ...(rawCat === 'locked' || rawCat === 'spending' ? { category } : {}),
+    })
   }
 
   const rawLiabilities = Array.isArray(payload.liabilities) ? payload.liabilities : []
   const sanitizedLiabilities: Liability[] = []
+  const liabilitiesStated: Partial<Liability>[] = []
   for (const item of rawLiabilities) {
     if (typeof item !== 'object' || item === null) continue
     const r = item as Record<string, unknown>
     const rawName = typeof r.name === 'string' ? r.name.trim() : ''
     if (!rawName) continue
 
-    const balance = parseCleanNumber(r.balance, 0)
+    const balance = roundMoney(parseCleanNumber(r.balance, 0))
     const rawCat = typeof r.category === 'string' ? r.category.toLowerCase().trim() : 'other'
     const validCategories: DebtCategory[] = ['installment', 'credit_card', 'mortgage', 'auto_loan', 'personal_loan', 'student_loan', 'other']
     const category: DebtCategory = validCategories.includes(rawCat as DebtCategory) ? (rawCat as DebtCategory) : 'other'
@@ -191,6 +206,16 @@ export function prepareImport(
       createdAt: today,
       updatedAt: today,
     })
+    const stated: Partial<Liability> = { name: rawName, balance, updatedAt: today }
+    if (typeof r.category === 'string' && validCategories.includes(rawCat as DebtCategory)) stated.category = category
+    if (typeof r.isInstallment === 'boolean') stated.isInstallment = r.isInstallment
+    for (const key of ['interestRate', 'monthlyPayment', 'dueDay', 'totalInstallments', 'paidInstallments'] as const) {
+      if (typeof r[key] === 'number') stated[key] = r[key]
+    }
+    for (const key of ['lender', 'note'] as const) {
+      if (typeof r[key] === 'string') stated[key] = r[key]
+    }
+    liabilitiesStated.push(stated)
   }
 
   if (sanitizedHoldings.length === 0 && sanitizedCash.length === 0 && sanitizedLiabilities.length === 0) {
@@ -213,13 +238,13 @@ export function prepareImport(
     note: `Imported via AI/JSON Assistant (${mode === 'replace' ? 'Replaced' : 'Merged'})`,
   }
 
-  return { ok: true, prepared: { sanitizedHoldings, sanitizedCash, sanitizedLiabilities, logEntry } }
+  return { ok: true, prepared: { sanitizedHoldings, sanitizedCash, sanitizedLiabilities, cashStated, liabilitiesStated, logEntry } }
 }
 
 /** Merge the cleaned-up items into the data (matching by ticker / name), or replace them. */
 export function applyImport(
   prev: SpendiaryData,
-  { sanitizedHoldings, sanitizedCash, sanitizedLiabilities, logEntry }: PreparedImport,
+  { sanitizedHoldings, sanitizedCash, sanitizedLiabilities, cashStated, liabilitiesStated, logEntry }: PreparedImport,
   mode: ImportArgs[1],
 ): SpendiaryData {
   let nextHoldings: Holding[] = []
@@ -250,10 +275,11 @@ export function applyImport(
     nextCash = sanitizedCash
   } else {
     const existing = [...prev.cashAccounts]
-    for (const c of sanitizedCash) {
+    for (const [i, c] of sanitizedCash.entries()) {
       const idx = existing.findIndex((e) => e.name.toLowerCase() === c.name.toLowerCase())
       if (idx >= 0) {
-        existing[idx] = { ...existing[idx], ...c, id: existing[idx].id }
+        // Only what the row stated: a row without a currency must not turn a USD account into baht
+        existing[idx] = { ...existing[idx], ...cashStated[i], bankPreset: existing[idx].bankPreset ?? c.bankPreset, id: existing[idx].id }
       } else {
         existing.push(c)
       }
@@ -266,10 +292,11 @@ export function applyImport(
     nextLiabilities = sanitizedLiabilities
   } else {
     const existing = [...(prev.liabilities ?? [])]
-    for (const l of sanitizedLiabilities) {
+    for (const [i, l] of sanitizedLiabilities.entries()) {
       const idx = existing.findIndex((e) => e.name.toLowerCase() === l.name.toLowerCase())
       if (idx >= 0) {
-        existing[idx] = { ...existing[idx], ...l, id: existing[idx].id }
+        // Only what the row stated: a new balance must not wipe the rate, due day or installment count
+        existing[idx] = { ...existing[idx], ...liabilitiesStated[i], id: existing[idx].id }
       } else {
         existing.push(l)
       }

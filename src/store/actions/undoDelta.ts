@@ -1,6 +1,7 @@
 import type { CashAccount, Holding, HoldingDelta, HoldingFigures, HoldingLocation, HoldingLog, SpendiaryData } from '../../lib/types'
 import { qtyEpsilon, roundQty } from '../../lib/locations'
 import { roundMoney } from '../../lib/money'
+import { moveUsd } from '../usdCost'
 
 /**
  * Undo by reversing exactly what a buy, sale or add did (its delta), instead of guessing from
@@ -19,6 +20,8 @@ export function holdingDelta(
   cash?: HoldingDelta['cash'],
   /** Cash accounts after the change: names and balances for the trade history */
   accountsAfter?: CashAccount[],
+  /** Cash accounts before the change: what the dollars leaving a USD account cost */
+  accountsBefore?: CashAccount[],
 ): HoldingDelta {
   const ac = (after ?? before)?.assetClass
   const usdBefore = before?.totalUsdInvested
@@ -54,7 +57,7 @@ export function holdingDelta(
       ...(!a ? { created: true } : {}),
     }
   }
-  const moved = withAccountDetails((cash ?? []).filter((c) => c.amount !== 0), accountsAfter)
+  const moved = withAccountDetails((cash ?? []).filter((c) => c.amount !== 0), accountsAfter, accountsBefore)
   if (moved.length > 0) out.cash = moved
   return out
 }
@@ -69,11 +72,22 @@ function figures(h: Holding): HoldingFigures {
   }
 }
 
-/** Cash moves with each account's name, currency and balance afterwards, for the trade history */
-export function withAccountDetails(cash: NonNullable<HoldingDelta['cash']>, accountsAfter?: CashAccount[]): NonNullable<HoldingDelta['cash']> {
+/**
+ * Cash moves with each account's name, currency and balance afterwards, for the trade history.
+ * With `accountsBefore`, money leaving a USD account also keeps the baht cost that left with it: once the
+ * wallet is empty its rate is gone, and undo could not work the cost out again.
+ */
+export function withAccountDetails(cash: NonNullable<HoldingDelta['cash']>, accountsAfter?: CashAccount[], accountsBefore?: CashAccount[]): NonNullable<HoldingDelta['cash']> {
   return cash.map((c) => {
     const acc = accountsAfter?.find((a) => a.id === c.accountId)
-    return acc ? { ...c, name: acc.name, currency: acc.currency ?? 'THB', balanceAfter: acc.balance } : c
+    const was = accountsBefore?.find((a) => a.id === c.accountId)
+    const leaving = was && c.amount < 0 && was.currency === 'USD' && was.thbCost !== undefined
+    const thbCost = leaving ? roundMoney((moveUsd(was, c.amount).thbCost ?? 0) - (was.thbCost ?? 0)) : undefined
+    return {
+      ...c,
+      ...(acc ? { name: acc.name, currency: acc.currency ?? 'THB', balanceAfter: acc.balance } : {}),
+      ...(thbCost !== undefined ? { thbCost } : {}),
+    }
   })
 }
 
@@ -128,8 +142,15 @@ function reverseHolding(h: Holding, d: HoldingDelta): Holding | null {
 function reverseCash(accounts: CashAccount[], d: HoldingDelta): CashAccount[] {
   if (!d.cash?.length) return accounts
   return accounts.map((a) => {
-    const back = d.cash!.filter((c) => c.accountId === a.id).reduce((s, c) => s + c.amount, 0)
-    return back === 0 ? a : { ...a, balance: roundMoney(a.balance - back) }
+    const moves = d.cash!.filter((c) => c.accountId === a.id)
+    const back = moves.reduce((s, c) => s + c.amount, 0)
+    if (back === 0) return a
+    const balance = roundMoney(a.balance - back)
+    // Dollars go back with the baht cost they left with; entries saved before that was kept leave the
+    // cost to syncUsdCosts, which brings them in at the wallet's rate
+    const cost = moves.reduce((s, c) => s + (c.thbCost ?? 0), 0)
+    const withCost = a.currency === 'USD' && a.thbCost !== undefined && moves.every((c) => c.thbCost !== undefined) && balance > 0
+    return withCost ? { ...a, balance, thbCost: Math.max(0, roundMoney(a.thbCost! - cost)) } : { ...a, balance }
   })
 }
 

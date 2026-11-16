@@ -1,11 +1,12 @@
 import type { SpendiaryData } from '../lib/types'
 
 export function parseCleanNumber(val: unknown, fallback = 0): number {
-  if (typeof val === 'number' && !Number.isNaN(val)) return val
+  // Finite only: JSON.parse reads 1e999 as Infinity, and Infinity is saved as null
+  if (typeof val === 'number' && Number.isFinite(val)) return val
   if (typeof val === 'string') {
     const cleaned = val.replace(/,/g, '').trim()
     const n = parseFloat(cleaned)
-    if (!Number.isNaN(n)) return n
+    if (Number.isFinite(n)) return n
   }
   return fallback
 }

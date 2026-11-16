@@ -99,4 +99,56 @@ describe('applyImport', () => {
     expect(out.holdings[0].id).not.toBe('keep')
     expect(out.liabilities).toEqual([])
   })
+
+  describe('merging onto what is already there', () => {
+    const mine: SpendiaryData = {
+      ...emptyData,
+      cashAccounts: [
+        { id: 'usd', name: 'Dime FCD', balance: 1_000, currency: 'USD', thbCost: 36_500, category: 'locked', bankPreset: 'dime' },
+        { id: 'ef', name: 'Emergency fund', balance: 50_000, category: 'locked', bankPreset: 'scb', archived: true },
+      ],
+      liabilities: [
+        { id: 'car', name: 'Car', category: 'auto_loan', balance: 300_000, interestRate: 2.79, monthlyPayment: 8_500, lender: 'Toyota Leasing', dueDay: 5, note: 'ends 2029', isInstallment: true, totalInstallments: 60, paidInstallments: 24, createdAt: '2024-11-05', updatedAt: '2026-10-05' },
+      ],
+    }
+
+    it('updates a balance without wiping what the row did not mention', () => {
+      const out = applyImport(mine, prepared({ cashAccounts: [{ name: 'dime fcd', balance: 1_200 }, { name: 'Emergency Fund', balance: 60_000 }], liabilities: [{ name: 'car', balance: 291_500 }] }), 'merge')
+      // Still dollars: a row without a currency must not turn 1,200 USD into 1,200 baht
+      expect(out.cashAccounts[0]).toMatchObject({ id: 'usd', balance: 1_200, currency: 'USD', thbCost: 36_500, category: 'locked', bankPreset: 'dime' })
+      expect(out.cashAccounts[1]).toMatchObject({ id: 'ef', balance: 60_000, category: 'locked', bankPreset: 'scb', archived: true })
+      expect(out.liabilities?.[0]).toMatchObject({
+        id: 'car', balance: 291_500, category: 'auto_loan', interestRate: 2.79, monthlyPayment: 8_500, lender: 'Toyota Leasing', dueDay: 5, note: 'ends 2029',
+        isInstallment: true, totalInstallments: 60, paidInstallments: 24, createdAt: '2024-11-05',
+      })
+    })
+
+    it('takes over what the row does state', () => {
+      const out = applyImport(
+        mine,
+        prepared({
+          cashAccounts: [{ name: 'Dime FCD', balance: 5, currency: 'THB', category: 'spending' }],
+          liabilities: [{ name: 'Car', balance: 1, category: 'personal_loan', interestRate: 3, dueDay: 9, paidInstallments: 25, isInstallment: false }],
+        }),
+        'merge',
+      )
+      expect(out.cashAccounts[0]).toMatchObject({ balance: 5, currency: 'THB', category: 'spending' })
+      expect(out.liabilities?.[0]).toMatchObject({ balance: 1, category: 'personal_loan', interestRate: 3, dueDay: 9, paidInstallments: 25, isInstallment: false, lender: 'Toyota Leasing' })
+    })
+
+    it('still fills in the defaults for an account or debt that is new', () => {
+      const out = applyImport(mine, prepared({ cashAccounts: [{ name: 'KBank', balance: 10 }], liabilities: [{ name: 'Phone', balance: 9_000, category: 'installment' }] }), 'merge')
+      expect(out.cashAccounts[2]).toMatchObject({ name: 'KBank', balance: 10, currency: 'THB', category: 'spending', bankPreset: 'kbank' })
+      expect(out.liabilities?.[1]).toMatchObject({ name: 'Phone', balance: 9_000, category: 'installment', isInstallment: true })
+    })
+  })
+
+  it('never imports a balance that is not a real number, and rounds to the satang', () => {
+    // JSON.parse reads 1e999 as Infinity, which would be saved as null
+    const pasted = JSON.parse('{"cashAccounts":[{"name":"A","balance":1e999},{"name":"B","balance":"Infinity"},{"name":"C","balance":100.10000000000001}],"liabilities":[{"name":"L","balance":-1e999},{"name":"M","balance":0.30000000000000004}]}')
+    expect(pasted.cashAccounts[0].balance).toBe(Number.POSITIVE_INFINITY)
+    const p2 = prepared(pasted)
+    expect(p2.sanitizedCash.map((c) => c.balance)).toEqual([0, 0, 100.1])
+    expect(p2.sanitizedLiabilities.map((l) => l.balance)).toEqual([0, 0.3])
+  })
 })

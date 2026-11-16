@@ -4,6 +4,7 @@ import { liveAccountIds, syncRecurringAccounts } from '../modules/spend/accountR
 import { newId } from '../lib/id'
 import { roundMoney } from '../lib/money'
 import { upgradeLocations } from './legacyLocations'
+import { dropInvalidEntries } from './sanitize'
 
 export const emptyData: SpendiaryData = {
   cashAccounts: [],
@@ -32,7 +33,10 @@ export function isFromNewerApp(payload: { dataSchema?: unknown } | null | undefi
 type LegacyPlan = DcaPlan & { monthlyTarget?: number; contributed?: number }
 
 /** Migrate older saved shapes into the current model. */
-export function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
+export function migrate(input: SpendiaryData & { cash?: number }): SpendiaryData {
+  // A null inside a list would throw below and lock the user out: drop what can't be read, keep the rest
+  const { data: raw, dropped } = dropInvalidEntries(input)
+  if (dropped.length > 0) console.warn(`Spendiary: dropped unreadable entries from the saved data (${dropped.join(', ')})`)
   // Old BTC / gold location fields → `locations` first, so everything below reads the new shape
   const merged = upgradeLocations({ ...emptyData, ...raw } as SpendiaryData) as SpendiaryData & { cash?: number }
   if (typeof merged.monthlyIncome !== 'number') merged.monthlyIncome = 0
@@ -93,12 +97,17 @@ export function migrate(raw: SpendiaryData & { cash?: number }): SpendiaryData {
   // Stamped on save only; the data in memory doesn't carry it
   delete merged.dataSchema
   merged.liabilities = Array.isArray(merged.liabilities) ? merged.liabilities : []
-  // Payments used to subtract without rounding, leaving e.g. 1.1e-13 on a loan that was fully paid
-  const satang = (n: number | undefined) => (typeof n === 'number' && Number.isFinite(n) ? roundMoney(n) : n)
+  // Money used to be added and subtracted without rounding, leaving e.g. 1.1e-13 on a loan that was fully
+  // paid, or -1e-13 on a wallet (shown as overdrawn, and never "exactly zero" for the hide-zero filter).
+  // `+ 0` turns the -0 that rounding -1e-13 gives into 0.
+  const satang = <T,>(n: T): T => (typeof n === 'number' && Number.isFinite(n) ? ((roundMoney(n) + 0) as T) : n)
   merged.liabilities = merged.liabilities.map((l) => {
-    if (!l || (satang(l.balance) === l.balance && satang(l.lastPaidAmount) === l.lastPaidAmount)) return l
-    return { ...l, balance: satang(l.balance) as number, ...(l.lastPaidAmount !== undefined ? { lastPaidAmount: satang(l.lastPaidAmount) } : {}) }
+    if (!l || (Object.is(satang(l.balance), l.balance) && Object.is(satang(l.lastPaidAmount), l.lastPaidAmount))) return l
+    return { ...l, balance: satang(l.balance), ...(l.lastPaidAmount !== undefined ? { lastPaidAmount: satang(l.lastPaidAmount) } : {}) }
   })
+  const roundBalance = <T extends { balance: number }>(entry: T): T => (Object.is(satang(entry.balance), entry.balance) ? entry : { ...entry, balance: satang(entry.balance) })
+  merged.cashAccounts = merged.cashAccounts.map(roundBalance)
+  if (Array.isArray(merged.spendCards)) merged.spendCards = merged.spendCards.map(roundBalance)
   // Required lists saved as null would crash the pages that read them
   if (!Array.isArray(merged.transfers)) merged.transfers = []
   if (!Array.isArray(merged.dividendRecords)) merged.dividendRecords = []

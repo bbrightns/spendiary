@@ -21,7 +21,7 @@ import * as dividendActions from './actions/dividends'
 import * as planningActions from './actions/planning'
 import { applyImport, prepareImport } from './actions/importPortfolio'
 import { applyPreferences, downloadBackup, makeBackup, parseBackup, readPreferences } from './backup'
-import { STORAGE_KEYS } from '../lib/storageKeys'
+import { STORAGE_KEYS, clearPersonalTraces } from '../lib/storageKeys'
 import { reconcileAccounts } from '../modules/spend/accountRemoval'
 
 /** Result returned by importData — UI can react to success/error */
@@ -269,6 +269,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
     localStorage.removeItem(STORAGE_KEYS.lastUserId)
     localStorage.removeItem(STORAGE_KEYS.lastSyncedTime)
+    clearPersonalTraces(localStorage)
     setUser(null)
     setDataState(emptyData)
     updateLastSynced(null)
@@ -314,6 +315,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     localStorage.removeItem(STORAGE_KEYS.lastUserId)
     localStorage.removeItem(STORAGE_KEYS.lastSyncedTime)
+    clearPersonalTraces(localStorage)
 
     lastSynced.current = ''
     setDataState(emptyData)

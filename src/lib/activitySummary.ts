@@ -2,6 +2,7 @@ import { logCashStates, logHoldingStates } from './logStates'
 import { GRAMS_PER_BAHT_GOLD, SATS_PER_BTC } from './calc'
 import { localDateStr } from './format'
 import { rateOrZero } from './fx'
+import { roundMoney } from './money'
 import type { AssetClass, HoldingLog, NetWorthSnapshot } from './types'
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -604,6 +605,20 @@ export function resolveDividend(log: HoldingLog): { gross: number; tax: number; 
   return { gross: grossValue, tax: taxValue, net: netValue }
 }
 
+/**
+ * A dividend's amounts in baht. They are saved in the receiving account's currency, or the holding's
+ * when no account was picked (US stocks pay in dollars; same rule as Spend, modules/spend/invest.ts).
+ * Dollars are converted at today's rate, and left out (0) while no rate has loaded, like dollar buys.
+ */
+export function resolveDividendThb(log: HoldingLog, usdThb?: number | null): { gross: number; tax: number; net: number } {
+  const d = resolveDividend(log)
+  const account = log.cashAccountId ? logCashStates(log).curr.find((a) => a.id === log.cashAccountId) : undefined
+  const currency = account ? account.currency ?? 'THB' : log.assetClass === 'stock' ? 'USD' : 'THB'
+  if (currency !== 'USD') return d
+  const fx = rateOrZero(usdThb)
+  return { gross: roundMoney(d.gross * fx), tax: roundMoney(d.tax * fx), net: roundMoney(d.net * fx) }
+}
+
 export interface AssetPnlRow {
   key: string
   name: string
@@ -762,7 +777,7 @@ export function summarizeActivity(
       }
     } else if (log.action === 'dividend') {
       dividendCount += 1
-      const dividend = resolveDividend(log)
+      const dividend = resolveDividendThb(log, usdThb)
       dividendsGross += dividend.gross
       withholdingTax += dividend.tax
       dividendsNet += dividend.net
