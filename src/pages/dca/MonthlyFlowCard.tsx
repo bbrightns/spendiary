@@ -15,7 +15,7 @@ interface Part {
   color: string
 }
 
-/** Salary vs. outflows on one bar: fixed, living and invest stacked from the left, a line where the salary ends. */
+/** Salary vs. outflows on one bar: the set amounts (fixed, invest) first, living last since it moves during the month; a line where the salary ends. */
 function FlowBar({ parts, salary }: { parts: Part[]; salary: number }) {
   const out = parts.reduce((s, p) => s + p.amount, 0)
   const scale = Math.max(salary, out)
@@ -132,8 +132,8 @@ export function MonthlyFlowCard({ flow, verdict, salaryAmount, salaryNote, onAdd
   const { salary, fixed, living, invest, net } = flow
   const parts: Part[] = [
     { label: 'Fixed bills', note: 'Recurring bills in Spend', amount: fixed, color: 'var(--color-loss)' },
-    { label: 'Living', note: livingNote, amount: living, color: 'var(--color-warn)' },
     { label: 'Invest', note: 'Your DCA plans', amount: invest, color: 'var(--color-invest)' },
+    { label: 'Living', note: livingNote, amount: living, color: 'var(--color-warn)' },
   ]
   const livingPct = living > 0 && livingThisMonth !== null ? Math.min(100, (livingThisMonth / living) * 100) : 0
 
