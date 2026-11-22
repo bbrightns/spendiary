@@ -4,9 +4,8 @@ import { Card, CardHeader } from '../../components/ui/Card'
 import type { FlowVerdict, MonthlyFlow } from '../../modules/spend/monthlyFlow'
 import { thb } from '../../lib/format'
 
-/** Segment fill past the salary line (that part is paid from cash) */
-const stripes = (color: string) =>
-  `repeating-linear-gradient(-45deg, ${color} 0px, ${color} 5px, color-mix(in srgb, ${color} 30%, transparent) 5px, color-mix(in srgb, ${color} 30%, transparent) 10px)`
+/** Cash taken from savings: a neutral grey, so it reads as "not income" next to the green salary */
+const CASH = 'color-mix(in srgb, var(--color-ink-muted) 55%, transparent)'
 
 interface Part {
   label: string
@@ -15,31 +14,20 @@ interface Part {
   color: string
 }
 
-/** Salary vs. outflows on one bar: the set amounts (fixed, invest) first, living last since it moves during the month; a line where the salary ends. */
-function FlowBar({ parts, salary }: { parts: Part[]; salary: number }) {
-  const out = parts.reduce((s, p) => s + p.amount, 0)
-  const scale = Math.max(salary, out)
-  const pct = (v: number) => (scale > 0 ? (v / scale) * 100 : 0)
-  let from = 0
+/** One labelled bar; In and Out share `scale`, so their lengths compare directly */
+function StackBar({ label, parts, scale }: { label: string; parts: Part[]; scale: number }) {
   return (
-    <div className="relative mt-3 h-3 rounded-full bg-surface-muted" aria-hidden="true">
-      <div className="absolute inset-0 flex overflow-hidden rounded-full">
-        {parts.map((p) => {
-          const start = from
-          from += p.amount
-          const solid = Math.max(0, Math.min(from, salary) - start)
-          if (p.amount <= 0) return null
-          return (
-            <div key={p.label} className="flex h-full transition-all duration-500" style={{ width: `${pct(p.amount)}%` }}>
-              {solid > 0 && <div className="h-full" style={{ width: `${(solid / p.amount) * 100}%`, background: p.color }} />}
-              {p.amount - solid > 0 && <div className="h-full flex-1" style={{ background: stripes(p.color) }} />}
-            </div>
-          )
-        })}
+    <div className="flex items-center gap-2">
+      <span className="w-7 shrink-0 text-xs font-semibold text-ink-muted">{label}</span>
+      <div className="flex h-3 flex-1 gap-0.5 overflow-hidden rounded-full bg-surface-muted" aria-hidden="true">
+        {parts.filter((p) => p.amount > 0).map((p) => (
+          <div
+            key={p.label}
+            className="h-full transition-all duration-500"
+            style={{ width: `${scale > 0 ? (p.amount / scale) * 100 : 0}%`, background: p.color }}
+          />
+        ))}
       </div>
-      {out > salary && (
-        <div className="absolute -inset-y-1 w-0.5 rounded-full bg-ink" style={{ left: `calc(${pct(salary)}% - 1px)` }} />
-      )}
     </div>
   )
 }
@@ -116,7 +104,7 @@ function Verdict({ verdict, cash }: { verdict: FlowVerdict; cash: number }) {
   )
 }
 
-/** The verdict, then salary vs. outflows on one stacked bar, with the numbers listed underneath. */
+/** The verdict, then money in (salary + cash) vs. money out on two bars of the same scale, with the numbers listed underneath. */
 export function MonthlyFlowCard({ flow, verdict, salaryAmount, salaryNote, onAddSalary, livingNote, cash, livingThisMonth, periodName }: {
   flow: MonthlyFlow
   verdict: FlowVerdict
@@ -129,7 +117,13 @@ export function MonthlyFlowCard({ flow, verdict, salaryAmount, salaryNote, onAdd
   livingThisMonth: number | null
   periodName: string
 }) {
-  const { salary, fixed, living, invest, net } = flow
+  const { salary, fixed, living, invest, out, net } = flow
+  const scale = Math.max(salary, out)
+  const inParts: Part[] = [
+    { label: 'Salary', note: salaryNote, amount: salary, color: 'var(--color-gain)' },
+    ...(net < 0 ? [{ label: 'From cash', note: 'Spendable cash covers the rest', amount: -net, color: CASH }] : []),
+  ]
+  /** Set amounts first; Living last, as it is the one that moves during the month */
   const parts: Part[] = [
     { label: 'Fixed bills', note: 'Recurring bills in Spend', amount: fixed, color: 'var(--color-loss)' },
     { label: 'Invest', note: 'Your DCA plans', amount: invest, color: 'var(--color-invest)' },
@@ -154,18 +148,23 @@ export function MonthlyFlowCard({ flow, verdict, salaryAmount, salaryNote, onAdd
         <>
           <Verdict verdict={verdict} cash={cash} />
 
-          <p className="mt-5 border-t border-line pt-4 text-xs font-semibold text-ink-muted">Where your salary goes</p>
-          <FlowBar parts={parts} salary={salary} />
-          {net < 0 && (
-            <p className="mt-2 text-xs text-ink-muted">The line is your salary. Striped = paid from cash.</p>
-          )}
-          <ul className="mt-2">
-            <Row
-              dot={<span className="h-3.5 w-0.5 rounded-full bg-ink" />}
-              label="Salary"
-              note={salaryNote}
-              amount={salaryAmount}
-            />
+          <p className="mt-5 border-t border-line pt-4 text-xs font-semibold text-ink-muted">Money in and out</p>
+          <div className="mt-3 space-y-2">
+            <StackBar label="In" parts={inParts} scale={scale} />
+            <StackBar label="Out" parts={parts} scale={scale} />
+          </div>
+          <ul className="mt-3">
+            {inParts.map((p) => (
+              <Row
+                key={p.label}
+                dot={<span className="h-2.5 w-2.5 rounded-full" style={{ background: p.color }} />}
+                label={p.label}
+                note={p.note}
+                amount={p.label === 'Salary' ? salaryAmount : money(thb(p.amount))}
+              />
+            ))}
+          </ul>
+          <ul className="mt-1 border-t border-line pt-1">
             {parts.map((p) => (
               <Row
                 key={p.label}
@@ -176,10 +175,12 @@ export function MonthlyFlowCard({ flow, verdict, salaryAmount, salaryNote, onAdd
               />
             ))}
           </ul>
-          <div className="mt-1 flex items-baseline justify-between gap-3 border-t border-line pt-2.5">
-            <span className="text-sm font-semibold text-ink">{net < 0 ? 'From cash' : 'Left over'}</span>
-            <span className={`font-display text-sm font-extrabold tnum ${net < 0 ? 'text-ink' : 'text-gain-ink'}`}>{thb(Math.abs(net))}</span>
-          </div>
+          {net > 0 && (
+            <div className="mt-1 flex items-baseline justify-between gap-3 border-t border-line pt-2.5">
+              <span className="text-sm font-semibold text-ink">Left over</span>
+              <span className="font-display text-sm font-extrabold tnum text-gain-ink">{thb(net)}</span>
+            </div>
+          )}
 
           {livingThisMonth !== null && living > 0 && (
             <Link to="/spend/analysis" className="mt-3 block rounded-2xl border border-line p-3 transition-colors hover:bg-surface-muted/60">
