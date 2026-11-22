@@ -2,6 +2,8 @@
 
 ## Reply Language
 - Reply in the language the user wrote in (Thai message ➜ Thai reply), even though the code, UI copy, docs and commit messages are in English. Code, commit messages, UI text and the 2-line commit report stay in English.
+- Quoted text: translate or grammar-correct it only when the message is nothing but the quote, or the user asks for it ("แปลหน่อย", "check grammar"). A quote followed by the user's own question or comment is a reference: answer the question, don't translate the quote.
+- Asked for an opinion ("ควร...ไหม", "แนะนำว่าไง", "should X?"): give a recommendation and wait. Don't change code until the user agrees.
 
 ## Git Workflow Rules
 1. **Commit after every file modification**: Every time you modify, add, or delete files in this project, you MUST perform a `git commit` with a clear commit message detailing the changes.
