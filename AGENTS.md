@@ -1,5 +1,8 @@
 # Project Rules & Guidelines for AI Agents
 
+## Reply Language
+- Reply in the language the user wrote in (Thai message ➜ Thai reply), even though the code, UI copy, docs and commit messages are in English. Code, commit messages, UI text and the 2-line commit report stay in English.
+
 ## Git Workflow Rules
 1. **Commit after every file modification**: Every time you modify, add, or delete files in this project, you MUST perform a `git commit` with a clear commit message detailing the changes.
 2. **NEVER PUSH WITHOUT EXPLICIT COMMAND**: Do **NOT** execute `git push` under any circumstances unless the user explicitly requests/commands it.
