@@ -59,7 +59,7 @@ describe('a US dividend paid into a baht account', () => {
   })
 
   it('writes the note with baht for the amount and dollars for the dividend per share', () => {
-    const note = recordDividend(state(0), usInBaht, 'd1').holdingLogs[0].note
+    const note = recordDividend(state(0), usInBaht, 'd1').holdingLogs?.[0]?.note
     expect(note).toContain('Received dividend ฿286.65')
     expect(note).toContain('DPS: $0.26')
   })
