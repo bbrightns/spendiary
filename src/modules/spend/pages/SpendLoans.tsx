@@ -4,7 +4,8 @@ import { PageHeader } from '../../../components/layout/PageHeader'
 import { Card } from '../../../components/ui/Card'
 import { AddButton } from '../../../components/ui/AddButton'
 import { EmptyState } from '../../../components/ui/EmptyState'
-import { ChevronDownIcon, DebtIcon } from '../../../components/icons'
+import { CheckIcon, ChevronDownIcon, DebtIcon } from '../../../components/icons'
+import { Button } from '../../../components/ui/Button'
 import { DEBT_CATEGORIES, getLiabilityDueStatus, isLiabilityActionableThisMonth } from '../../../lib/calc'
 import { thb } from '../../../lib/format'
 import type { Liability } from '../../../lib/types'
@@ -93,13 +94,10 @@ export function SpendLoansPage() {
           </span>
         </button>
         {canPay && (
-          <button
-            type="button"
-            onClick={() => openPayLoan(l.id)}
-            className="shrink-0 rounded-full bg-brand px-3.5 py-2 text-xs font-bold text-white shadow-xs transition-transform cursor-pointer active:scale-95"
-          >
+          <Button size="sm" onClick={() => openPayLoan(l.id)} aria-label={`Pay ${l.name}`} className="shrink-0 gap-1">
+            <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.6} />
             Pay
-          </button>
+          </Button>
         )}
       </li>
     )

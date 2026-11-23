@@ -411,15 +411,10 @@ export function Dashboard() {
                                   </button>
                                 </span>
                               ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => openPayLoan(l.id)}
-                                  aria-label={`Pay ${l.name}`}
-                                  className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-primary-hover cursor-pointer"
-                                >
+                                <Button size="sm" onClick={() => openPayLoan(l.id)} aria-label={`Pay ${l.name}`} className="gap-1">
                                   <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.6} />
                                   Pay
-                                </button>
+                                </Button>
                               )}
                             </div>
                           )}
