@@ -114,7 +114,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
 
     if (tickerChanged || nameChanged) {
       return {
-        label: tickerChanged ? 'Ticker Updated' : 'Renamed',
+        label: tickerChanged ? 'Ticker updated' : 'Renamed',
         style: tintBadge('amber'),
         icon: TagIcon,
         isPriceUpdate: false,
@@ -124,7 +124,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
     if (priceChanged && !unitsChanged && !costChanged) {
       const isFund = log.assetClass === 'fund'
       return {
-        label: isFund ? 'NAV Updated' : 'Price Updated',
+        label: isFund ? 'NAV updated' : 'Price updated',
         style: tintBadge('sky'),
         icon: TagIcon,
         isPriceUpdate: true,
@@ -143,7 +143,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
 
   if (log.note && (log.note.toLowerCase().includes('price') || log.note.toLowerCase().includes('nav')) && !log.note.includes('+') && !log.note.includes('shares @') && !log.note.includes('units @')) {
     return {
-      label: log.assetClass === 'fund' ? 'NAV Updated' : 'Price Updated',
+      label: log.assetClass === 'fund' ? 'NAV updated' : 'Price updated',
       style: tintBadge('sky'),
       icon: TagIcon,
       isPriceUpdate: true,
