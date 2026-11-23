@@ -351,6 +351,9 @@ export function Rebalance() {
     }
   }
 
+  // Rows for assets not bought yet (planned), so the tab counts what you own the way Portfolio does
+  const plannedCount = holdingRows.filter((r) => r.isPlanned).length
+
   // Filtered holding rows for display
   const searchLower = search.toLowerCase()
   const displayHoldingRows = holdingRows.filter(
@@ -533,7 +536,7 @@ export function Rebalance() {
                   onChange={(v) => setRebalanceMode(v as RebalanceMode)}
                   options={[
                     { value: 'class', label: 'Asset types' },
-                    { value: 'holding', label: `Holdings (${holdingRows.length})` },
+                    { value: 'holding', label: plannedCount > 0 ? `Holdings (${holdingRows.length - plannedCount}) · ${plannedCount} planned` : `Holdings (${holdingRows.length})` },
                   ]}
                 />
               </div>
