@@ -6,6 +6,7 @@ import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { FilterChip } from '../components/ui/FilterChip'
 import { PnLText } from '../components/ui/PnL'
+import { AssetLogo } from '../components/ui/AssetLogo'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { ASSET_META } from '../lib/calc'
@@ -330,16 +331,7 @@ export function ActivitySummary() {
                       <tr key={row.key} className="hover:bg-surface-muted/40 transition-colors">
                         <td className="py-3 px-4 sm:px-5">
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <span
-                              className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-xs font-bold"
-                              style={{
-                                color: meta?.color ?? 'var(--color-brand)',
-                                background: `color-mix(in srgb, ${meta?.color ?? '#6366f1'} 14%, transparent)`,
-                              }}
-                              aria-hidden
-                            >
-                              {(row.ticker || row.name).slice(0, 2).toUpperCase()}
-                            </span>
+                            <AssetLogo ticker={row.ticker} name={row.name} assetClass={row.assetClass} size="sm" />
                             {/* Constrained on narrow screens so the money columns stay on screen */}
                             <span className="min-w-0 max-w-[170px] sm:max-w-none">
                               <span className="block truncate font-semibold text-ink leading-tight">

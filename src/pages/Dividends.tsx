@@ -319,7 +319,7 @@ export function Dividends() {
                           <div className="flex items-start justify-between gap-3 min-w-0">
                             {/* Left: logo + name + yield | edit button */}
                             <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <AssetLogo name={h.name} assetClass={h.assetClass} size="md" />
+                              <AssetLogo ticker={h.ticker} name={h.name} assetClass={h.assetClass} size="md" />
                               <div className="min-w-0 flex-1">
                                 {/* Line 1.1: ticker + full name */}
                                 <div className="flex items-center gap-1.5 min-w-0">
@@ -464,7 +464,7 @@ export function Dividends() {
                       onClick={() => setSetupHolding(h)}
                       className="flex w-full items-center gap-3 p-3.5 sm:px-5 text-left hover:bg-surface-muted/50 transition-colors cursor-pointer"
                     >
-                      <AssetLogo name={h.name} assetClass={h.assetClass} size="md" />
+                      <AssetLogo ticker={h.ticker} name={h.name} assetClass={h.assetClass} size="md" />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-ink">
                           {h.ticker} <span className="font-normal text-ink-muted">{h.name}</span>
@@ -586,7 +586,7 @@ export function Dividends() {
                       </td>
                       <td className="px-5 py-3.5 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <AssetLogo name={r.holdingName} assetClass={r.assetClass} size="sm" />
+                          <AssetLogo ticker={r.ticker} name={r.holdingName} assetClass={r.assetClass} size="sm" />
                           <div>
                             <span className="font-bold text-ink">{r.ticker}</span>
                             <span className="block text-xs text-ink-muted truncate max-w-[140px] sm:max-w-none">

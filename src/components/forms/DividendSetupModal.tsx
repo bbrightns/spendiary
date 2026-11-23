@@ -92,7 +92,7 @@ export function DividendSetupModal({ open, holding, onClose }: Props) {
         <div className="space-y-4">
           {holding ? (
             <div className="flex items-center gap-3 rounded-2xl bg-surface-muted p-3">
-              <AssetLogo name={holding.name} assetClass={holding.assetClass} size="md" />
+              <AssetLogo ticker={holding.ticker} name={holding.name} assetClass={holding.assetClass} size="md" />
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-ink">{holding.ticker}</p>
                 <p className="truncate text-xs text-ink-muted">{holding.name}</p>

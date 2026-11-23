@@ -411,6 +411,7 @@ export function DcaPlanner() {
                               className="flex cursor-pointer items-center gap-3 px-5 py-3 transition-colors hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:gap-3.5 sm:py-4"
                             >
                               <AssetLogo
+                                ticker={p.ticker}
                                 name={p.name}
                                 assetClass={p.assetClass}
                                 size="md"
@@ -564,7 +565,7 @@ export function DcaPlanner() {
                         <li key={h.id} className="p-4 sm:p-5 hover:bg-surface-muted/30 transition-colors">
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-3 min-w-0">
-                              <AssetLogo name={h.name} assetClass={h.assetClass} size="md" />
+                              <AssetLogo ticker={h.ticker} name={h.name} assetClass={h.assetClass} size="md" />
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
                                   <span className="font-display font-bold text-base text-ink">{h.ticker}</span>
