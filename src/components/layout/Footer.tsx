@@ -33,7 +33,7 @@ export function Footer({ className = '' }: FooterProps) {
           )}
         </button>
         <span>© 2026 Spendiary. Every choice shapes your wealth.</span>
-        <span aria-hidden="true" className="text-ink-muted/40">·</span>
+        <span aria-hidden="true" className="hidden text-ink-muted/40 sm:inline">·</span>
         <span className="font-medium">Designed & Built by bbrightns</span>
       </div>
     </footer>

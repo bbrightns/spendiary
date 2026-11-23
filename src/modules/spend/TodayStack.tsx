@@ -347,8 +347,9 @@ function mergeInvest(groups: Group[]): Group[] {
   const merged: Group = {
     ...dca,
     id: 'invest',
-    title: () => `${dca.title(dca.items.length)} · ${div.title(div.items.length)}`,
-    summary: () => `${dca.summary(dca.items)} · ${div.summary(div.items)}`,
+    // Short enough for a phone: "3 DCA buys · 1 dividend", with "to log" leading the line under it
+    title: () => `${dca.title(dca.items.length).replace(/ to log$/, '')} · ${div.title(div.items.length).replace(/ to log$/, '')}`,
+    summary: () => `To log · ${dca.summary(dca.items)}`,
     items: [...dca.items, ...div.items],
     source: { ...dca.source!, linkText: 'Plans and dividends live in Invest' },
   }
