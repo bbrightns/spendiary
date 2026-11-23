@@ -14,8 +14,7 @@ import { ConfirmDividendModal } from '../components/forms/ConfirmDividendModal'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { useLivePrices } from '../hooks/useLivePrices'
-import { isValidPrice } from '../lib/priceCache'
-import { BuyTrendIcon, CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, PencilIcon, PlusIcon } from '../components/icons'
+import { BuyTrendIcon, CheckCircleIcon, CheckIcon, DcaIcon, PencilIcon, PlusIcon } from '../components/icons'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { fixedCostRecurring, inPeriod, perMonth, periodFor, periodLabel } from '../modules/spend/logic'
 import { flowVerdict, livingAverage, livingPace, livingSpend, monthlyFlow } from '../modules/spend/monthlyFlow'
@@ -26,9 +25,8 @@ import { ArrangeButton, ReorderSheet } from '../modules/spend/ReorderSheet'
 import { useSpend } from '../modules/spend/useSpend'
 import {
   ASSET_META, buyDateThisPeriod, totalCash, dcaThisMonth, getHoldingDpsForMonth, isBuyDayOverdue, isBuyDayToday, isConfirmedForPeriod, isDividendReceivedThisMonth, isSkippedForPeriod,
-  hasRealPrice, nextBuyDate, shouldConfirmBuy, sortDcaPlans,
+  nextBuyDate, shouldConfirmBuy, sortDcaPlans,
 } from '../lib/calc'
-import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
 import type { DcaPlan, Holding } from '../lib/types'
 import { daysUntil, localDateStr, money, ordinal, thb } from '../lib/format'
 import { dividendInUsd, dividendThb } from '../lib/dividendSchedule'
@@ -232,9 +230,7 @@ export function DcaPlanner() {
     setEditingSalary(false)
   }
 
-  const { usdThb, goldThbPerGram } = useLivePrices()
-  const goldHolding = data.holdings?.find((h) => h.assetClass === 'gold' && isValidPrice(h.price) && hasRealPrice(h))
-  const effectiveGoldThbPerGram = goldThbPerGram ?? goldHolding?.price ?? null
+  const { usdThb } = useLivePrices()
   const effectiveUsdThb = usdThb && usdThb > 0 ? usdThb : null
 
   // Expected dividends for the current month, in baht: US stocks pay in USD, counted only at a real rate
@@ -253,32 +249,6 @@ export function DcaPlanner() {
   const cash = totalCash({ ...data, cashAccounts: data.cashAccounts.filter((a) => a.category !== 'locked') }, effectiveUsdThb)
   const flow = monthlyFlow({ salary, fixed: fixedTotal, living, invest: savingsTotal, cash })
   const verdict = flowVerdict(flow, cash)
-  const [copied, setCopied] = useState(false)
-
-  const handleCopyMarkdown = async () => {
-    try {
-      const md = generatePortfolioMarkdown(data, effectiveUsdThb ?? usdThb, effectiveGoldThbPerGram)
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(md)
-      } else {
-        const textarea = document.createElement('textarea')
-        textarea.value = md
-        textarea.style.position = 'fixed'
-        textarea.style.left = '-9999px'
-        textarea.style.top = '-9999px'
-        document.body.appendChild(textarea)
-        textarea.focus()
-        textarea.select()
-        document.execCommand('copy')
-        document.body.removeChild(textarea)
-      }
-      setCopied(true)
-      showToast('Portfolio copied as Markdown', 'success')
-      setTimeout(() => setCopied(false), 2500)
-    } catch {
-      showToast('Could not copy Markdown', 'error')
-    }
-  }
 
   const openAdd = () => { setEditing(null); setFormOpen(true) }
   const openEdit = (p: DcaPlan) => { setEditing(p); setFormOpen(true) }
@@ -626,29 +596,7 @@ export function DcaPlanner() {
         subtitle="Monthly salary allocation & recurring investments."
         onStartGuide={startTour}
         action={
-          <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleCopyMarkdown}
-            aria-label="Copy portfolio markdown"
-            title="Copy portfolio as Markdown"
-            className="cursor-pointer shrink-0 h-9 text-xs sm:text-sm whitespace-nowrap"
-          >
-            {copied ? (
-              <>
-                <CheckIcon className="h-4 w-4 text-gain-ink shrink-0" strokeWidth={2.2} />
-                <span className="text-gain-ink">Copied MD!</span>
-              </>
-            ) : (
-              <>
-                <CopyIcon className="h-4 w-4 text-ink-muted shrink-0" />
-                <span>Copy portfolio MD</span>
-              </>
-            )}
-          </Button>
           <ArrangeButton label="Arrange cards" onClick={() => setArrangeOpen(true)} />
-          </div>
         }
       />
 
