@@ -119,7 +119,7 @@ Light and dark follow your GitHub theme.
 </tr>
 </table>
 
-<sub>Screens are from <b>Explore Demo</b> mode, so all numbers are sample data.</sub>
+<sub>Screens are from <b>Try the demo</b> mode, so all numbers are sample data.</sub>
 
 ## Quick start
 
@@ -130,7 +130,7 @@ npm run dev            # http://localhost:3000
 ```
 
 > [!TIP]
-> No Supabase project? Skip the `.env` and pick **Explore Demo / Offline Mode** on the sign-in screen. It runs on in-memory sample data and saves nothing.
+> No Supabase project? Skip the `.env` and pick **Try the demo** on the sign-in screen. It runs on in-memory sample data and saves nothing.
 
 | Command | What it does |
 | --- | --- |

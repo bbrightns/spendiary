@@ -13,7 +13,7 @@ await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 3, isMobile
 await page.goto(BASE, { waitUntil: 'networkidle0' })
 await page.evaluate(() => localStorage.setItem('spendiary.theme', 'light'))
 await page.reload({ waitUntil: 'networkidle0' })
-await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.includes('Explore Demo'))?.click())
+await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.includes('Try the demo'))?.click())
 await sleep(1500)
 
 // Hide the test-mode banner (and the room kept for it) and toasts: noise in a promo

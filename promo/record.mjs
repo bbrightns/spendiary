@@ -32,7 +32,7 @@ const cdp = await page.createCDPSession()
 await page.goto(BASE, { waitUntil: 'networkidle0' })
 await page.evaluate(() => localStorage.setItem('spendiary.theme', 'light'))
 await page.reload({ waitUntil: 'networkidle0' })
-await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.includes('Explore Demo'))?.click())
+await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.includes('Try the demo'))?.click())
 await sleep(1500)
 await page.addStyleTag({
   content: `aside[aria-label="Test Mode Environment Warning"] { display: none !important; }
