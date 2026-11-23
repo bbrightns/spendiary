@@ -29,7 +29,7 @@ import {
   hasRealPrice, nextBuyDate, shouldConfirmBuy, sortDcaPlans,
 } from '../lib/calc'
 import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
-import type { DcaPlan, Holding, SpendRecurring } from '../lib/types'
+import type { DcaPlan, Holding } from '../lib/types'
 import { daysUntil, localDateStr, money, ordinal, thb } from '../lib/format'
 import { dividendInUsd, dividendThb } from '../lib/dividendSchedule'
 import { TextLink } from '../components/ui/TextLink'
@@ -89,29 +89,6 @@ function SalaryAmount({ value, editing, draft, inputRef, onOpen, onDraftChange, 
 }
 
 
-// ─── Fixed cost item row ──────────────────────────────────────────────────────
-
-/** Read-only: fixed costs are edited as recurring bills in Spend. */
-function FixedCostRow({ item }: { item: SpendRecurring }) {
-  const monthly = perMonth(item)
-  return (
-    <Link
-      to="/spend/recurring"
-      className="flex items-center gap-3 py-2 -mx-2 px-2 rounded-lg hover:bg-surface-muted/60 transition-colors"
-    >
-      <div className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-ink">{item.name}</span>
-        {item.frequency !== 'monthly' && (
-          <span className="block text-xs text-ink-muted tnum">
-            {thb(item.amount)} {item.frequency === 'yearly' ? 'a year' : 'a week'}
-          </span>
-        )}
-      </div>
-      <span className="font-display text-sm font-bold tnum text-ink">{thb(monthly)}</span>
-    </Link>
-  )
-}
-
 // ─── Section header with toggle ───────────────────────────────────────────────
 
 function SectionHeader({ label, total, open, onToggle, action }: {
@@ -163,7 +140,6 @@ export function DcaPlanner() {
   const salaryRef = useRef<HTMLInputElement>(null)
 
   // Section expand state — default collapsed
-  const [fixedOpen, setFixedOpen] = useState(false)
   const [savingsOpen, setSavingsOpen] = useState(true)
 
   // DCA form
@@ -197,8 +173,7 @@ export function DcaPlanner() {
   const [arrangeOpen, setArrangeOpen] = useState(false)
 
   // Fixed costs live in Spend as recurring bills; weekly / yearly ones count at their monthly rate
-  const fixedItems = fixedCostRecurring(data.spendRecurring ?? []).sort((a, b) => perMonth(b) - perMonth(a))
-  const fixedTotal = fixedItems.reduce((s, x) => s + perMonth(x), 0)
+  const fixedTotal = fixedCostRecurring(data.spendRecurring ?? []).reduce((s, x) => s + perMonth(x), 0)
   const dcaMonth   = dcaThisMonth(data.dcaPlans)
   // Salary comes from Spend's recurring income in the Salary category when there is one;
   // the number typed here is the fallback
@@ -340,58 +315,6 @@ export function DcaPlanner() {
               }
             />
           </div>
-      </>
-    ),
-    fixed: (
-      <>
-          {/* ── Fixed Costs ── */}
-          <div id="guide-dca-transfers">
-            <Card className="card-bleed-mobile animate-rise">
-            <SectionHeader
-              label="Fixed costs"
-              total={fixedTotal}
-              open={fixedOpen}
-              onToggle={() => setFixedOpen((v) => !v)}
-              action={
-                fixedOpen ? (
-                  <Link
-                    to="/spend/recurring"
-                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 text-xs font-semibold text-ink shadow-2xs hover:bg-surface-muted transition-colors active:scale-95"
-                  >
-                    Manage in Spend
-                  </Link>
-                ) : null
-              }
-            />
-
-            {fixedOpen && (
-              <div className="mt-4">
-                {fixedItems.length === 0 ? (
-                  <p className="text-sm text-ink-muted">
-                    No fixed costs yet. Add rent, bills or family support as{' '}
-                    <Link to="/spend/recurring" className="font-semibold text-link hover:underline">
-                      recurring bills in Spend
-                    </Link>
-                    .
-                  </p>
-                ) : (
-                  <div className="divide-y divide-line">
-                    {fixedItems.map((item) => (
-                      <FixedCostRow key={item.id} item={item} />
-                    ))}
-                  </div>
-                )}
-
-                {fixedItems.length > 0 && (
-                  <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
-                    <span className="text-xs font-semibold text-ink-muted">Total fixed</span>
-                    <span className="font-display text-base font-extrabold tnum text-ink">{thb(fixedTotal)}</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </Card>
-        </div>
       </>
     ),
     plans: (
@@ -782,7 +705,6 @@ export function DcaPlanner() {
 /** Cards on DCA plans that can be reordered, in their default order */
 const DCA_CARDS = [
   { id: 'flow', label: 'This month' },
-  { id: 'fixed', label: 'Fixed costs' },
   { id: 'plans', label: 'Savings & Invest' },
   { id: 'dividends', label: 'Dividend income' },
 ] as const

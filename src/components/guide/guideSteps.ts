@@ -121,14 +121,6 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         position: 'bottom',
       },
       {
-        targetId: 'guide-dca-transfers',
-        badge: 'Fixed costs',
-        title: 'Regular expenses',
-        description:
-          'Add monthly costs like rent and bills, or money you set aside, to see what is left over to invest.',
-        position: 'top',
-      },
-      {
         targetId: 'guide-dca-plans',
         badge: 'Monthly plan',
         title: 'Your DCA plans',
