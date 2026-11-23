@@ -331,7 +331,7 @@ export function ActivitySummary() {
                       <tr key={row.key} className="hover:bg-surface-muted/40 transition-colors">
                         <td className="py-3 px-4 sm:px-5">
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <AssetLogo ticker={row.ticker} name={row.name} assetClass={row.assetClass} size="sm" />
+                            <AssetLogo ticker={row.ticker} name={row.name} assetClass={row.assetClass} size="md" />
                             {/* Constrained on narrow screens so the money columns stay on screen */}
                             <span className="min-w-0 max-w-[170px] sm:max-w-none">
                               <span className="block truncate font-semibold text-ink leading-tight">

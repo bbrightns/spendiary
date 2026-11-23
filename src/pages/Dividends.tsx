@@ -587,7 +587,7 @@ export function Dividends() {
                       </td>
                       <td className="px-5 py-3.5 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <AssetLogo ticker={r.ticker} name={r.holdingName} assetClass={r.assetClass} size="sm" />
+                          <AssetLogo ticker={r.ticker} name={r.holdingName} assetClass={r.assetClass} size="md" />
                           <div>
                             <span className="font-bold text-ink">{r.ticker}</span>
                             <span className="block text-xs text-ink-muted truncate max-w-[140px] sm:max-w-none">
