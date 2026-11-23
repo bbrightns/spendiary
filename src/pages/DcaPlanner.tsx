@@ -30,7 +30,8 @@ import {
 } from '../lib/calc'
 import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
 import type { DcaPlan, Holding, SpendRecurring } from '../lib/types'
-import { daysUntil, localDateStr, ordinal, thb } from '../lib/format'
+import { daysUntil, localDateStr, money, ordinal, thb } from '../lib/format'
+import { dividendInUsd, dividendThb } from '../lib/dividendSchedule'
 import { TextLink } from '../components/ui/TextLink'
 
 // ─── Chevron icon ─────────────────────────────────────────────────────────────
@@ -240,17 +241,6 @@ export function DcaPlanner() {
   // The plan list is already in buy order (sortDcaPlans), so each group is one run of rows
   const hasGroups = new Set(plans.map(whenGroup)).size > 1
 
-  // Expected dividends for the current month
-  const currentMonth = new Date().getMonth() + 1
-  const scheduledDividends = (data.holdings ?? []).filter(
-    (h) => h.paysDividend && (h.dividendMonths ?? []).includes(currentMonth),
-  )
-  const totalEstDividendNet = scheduledDividends.reduce((sum, h) => {
-    const units = h.units ?? h.totalUnits ?? 0
-    const dps = getHoldingDpsForMonth(h, currentMonth)
-    return sum + (units * dps * 0.90)
-  }, 0)
-
   // ── Salary handlers ──
   function openSalaryEdit() {
     if (salaryFromSpend) {
@@ -271,6 +261,19 @@ export function DcaPlanner() {
   const goldHolding = data.holdings?.find((h) => h.assetClass === 'gold' && isValidPrice(h.price) && hasRealPrice(h))
   const effectiveGoldThbPerGram = goldThbPerGram ?? goldHolding?.price ?? null
   const effectiveUsdThb = usdThb && usdThb > 0 ? usdThb : null
+
+  // Expected dividends for the current month, in baht: US stocks pay in USD, counted only at a real rate
+  const currentMonth = new Date().getMonth() + 1
+  const scheduledDividends = (data.holdings ?? []).filter(
+    (h) => h.paysDividend && (h.dividendMonths ?? []).includes(currentMonth),
+  )
+  const estDividendNet = (h: Holding) => (h.units ?? h.totalUnits ?? 0) * getHoldingDpsForMonth(h, currentMonth) * 0.90
+  const totalEstDividendNet = scheduledDividends.reduce((sum, h) => sum + (dividendThb(h, estDividendNet(h), effectiveUsdThb) ?? 0), 0)
+  /** A holding's dividend in baht when it can be, else in its dollars */
+  const dividendShown = (h: Holding, amount: number) => {
+    const inThb = dividendThb(h, amount, effectiveUsdThb)
+    return inThb === null ? money(amount, 'USD', true) : thb(inThb)
+  }
   // Only money you can top up from: accounts marked locked (a provident fund) don't count
   const cash = totalCash({ ...data, cashAccounts: data.cashAccounts.filter((a) => a.category !== 'locked') }, effectiveUsdThb)
   const flow = monthlyFlow({ salary, fixed: fixedTotal, living, invest: savingsTotal, cash })
@@ -630,9 +633,9 @@ export function DcaPlanner() {
                     {scheduledDividends.map((h) => {
                       const units = h.units ?? h.totalUnits ?? 0
                       const dps = getHoldingDpsForMonth(h, currentMonth)
-                      const estNet = units * dps * 0.90
+                      const estNet = estDividendNet(h)
                       const isReceived = isDividendReceivedThisMonth(h.id, data.dividendRecords)
-                      const sym = h.assetClass === 'stock' ? '$' : '฿'
+                      const sym = dividendInUsd(h) ? '$' : '฿'
 
                       return (
                         <li key={h.id} className="p-4 sm:p-5 hover:bg-surface-muted/30 transition-colors">
@@ -654,7 +657,7 @@ export function DcaPlanner() {
                               {estNet > 0 && (
                                 <div className="text-right hidden sm:block">
                                   <span className="font-display text-sm font-bold text-gain-ink tnum">
-                                    ~{thb(estNet)}
+                                    ~{dividendShown(h, estNet)}
                                   </span>
                                   <p className="text-xs text-ink-muted">Est. Net</p>
                                 </div>

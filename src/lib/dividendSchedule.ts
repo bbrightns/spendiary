@@ -45,3 +45,17 @@ export function dividendFields(months: number[], dpsMap: DpsMap, defaultCashAcco
     defaultCashAccountId: defaultCashAccountId || undefined,
   }
 }
+
+/** US stocks pay in dollars: their dividend per share is entered and stored in USD. Funds pay in baht. */
+export function dividendInUsd(h: Pick<Holding, 'assetClass'>): boolean {
+  return h.assetClass === 'stock'
+}
+
+/**
+ * A dividend amount in the holding's own currency, as baht. A USD amount needs a real USD/THB rate;
+ * without one it is null, so callers leave it out of baht totals instead of counting dollars as baht.
+ */
+export function dividendThb(h: Pick<Holding, 'assetClass'>, amount: number, usdThb: number | null | undefined): number | null {
+  if (!dividendInUsd(h)) return amount
+  return typeof usdThb === 'number' && Number.isFinite(usdThb) && usdThb > 0 ? amount * usdThb : null
+}

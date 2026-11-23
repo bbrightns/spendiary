@@ -14,6 +14,7 @@ import {
   shouldConfirmBuy,
 } from '../../lib/calc'
 import { localDateStr, thb } from '../../lib/format'
+import { dividendInUsd } from '../../lib/dividendSchedule'
 import { STORAGE_KEYS } from '../../lib/storageKeys'
 import type { DcaPlan, Holding } from '../../lib/types'
 import { useData } from '../../store/DataContext'
@@ -184,7 +185,7 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
       return {
         id: h.id,
         title: `Dividend from ${h.name}`,
-        detail: `Expected in ${monthName}${dps > 0 ? ` · ${dps} per share` : ''} · log it when it arrives`,
+        detail: `Expected in ${monthName}${dps > 0 ? ` · ${dividendInUsd(h) ? '$' : '฿'}${dps.toLocaleString()} per share` : ''} · log it when it arrives`,
         tone: 'gain',
         amount: 0,
         color: ASSET_META[h.assetClass as keyof typeof ASSET_META]?.color,
