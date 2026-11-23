@@ -357,7 +357,7 @@ export function Dividends() {
                             <div className="text-xs text-ink-muted min-w-0 truncate">
                               <span>{units.toLocaleString()} {units === 1 ? 'share' : 'shares'}</span>
                               <span className="mx-1.5">·</span>
-                              <span>Dividend: <strong className="text-ink font-semibold">{dps > 0 ? `${sym}${dps}` : 'N/A'}</strong> / share</span>
+                              <span>Dividend: <strong className="text-ink font-semibold">{dps > 0 ? `${sym}${dps.toLocaleString()}` : 'N/A'}</strong> / share</span>
                               {annualGross > 0 && (
                                 <span className="hidden sm:inline text-ink-muted">
                                   {' '}(~{thb(annualGross)} per year)

@@ -645,7 +645,7 @@ export function DcaPlanner() {
                                   <span className="text-xs text-ink-muted truncate max-w-[140px] sm:max-w-xs">{h.name}</span>
                                 </div>
                                 <p className="text-xs text-ink-muted mt-0.5">
-                                  {units.toLocaleString()} shares · Est. DPS: {dps > 0 ? `${sym}${dps}` : '-'}
+                                  {units.toLocaleString()} shares · Est. DPS: {dps > 0 ? `${sym}${dps.toLocaleString()}` : '-'}
                                 </p>
                               </div>
                             </div>
