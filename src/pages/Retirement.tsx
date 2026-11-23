@@ -409,7 +409,7 @@ export function Retirement() {
     {
       id: 'lean_fi',
       name: 'Lean retirement',
-      desc: 'You have saved 75% of your retirement goal',
+      desc: 'Savings reach 75% of your retirement goal',
       valueLabel: thbCompact(corpusNeeded * 0.75),
       completed: corpusNeeded > 0 && currentNetWorth >= (corpusNeeded * 0.75),
       progress: corpusNeeded > 0 ? (currentNetWorth / (corpusNeeded * 0.75)) * 100 : 0,
@@ -417,7 +417,7 @@ export function Retirement() {
     {
       id: 'fi',
       name: 'Financial freedom',
-      desc: 'You have saved 100% of your retirement goal',
+      desc: 'Savings reach your full retirement goal',
       valueLabel: thbCompact(corpusNeeded),
       completed: corpusNeeded > 0 && currentNetWorth >= corpusNeeded,
       progress: corpusNeeded > 0 ? (currentNetWorth / corpusNeeded) * 100 : 0,
@@ -458,7 +458,7 @@ export function Retirement() {
   // ── SVG chart ──
   const maxY  = Math.max(corpusNeeded * 1.1, projectedInvestment * 1.05, projectedSavings * 1.05, 1)
   const chartH = 220, chartW = 560
-  const padL = 60, padR = 16, padT = 16, padB = 36
+  const padL = 76, padR = 16, padT = 16, padB = 36
   const innerW = chartW - padL - padR
   const innerH = chartH - padT - padB
 
