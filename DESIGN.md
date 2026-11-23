@@ -218,7 +218,7 @@ There is one card: `Card` (`src/components/ui/Card.tsx`, along with `CardHeader`
 
 No per-page padding overrides. A card whose inside is a full-bleed chart or table uses `padded={false}` and pads its own sections.
 
-**Edge to edge on phones (Invest):** every full-width card on an Invest page carries `card-bleed-mobile` (`src/index.css`). Below `sm` it cancels the page gutter and drops the side border, radius and shadow, so the card reaches the screen edges and cards read as sections; from `sm` up it is a normal card. Stat tiles (`Card compact` in a grid) never bleed. Spend keeps inset cards, except Transactions (History), whose day lists bleed the same way so more fits on a line.
+**Edge to edge on phones (Invest):** every full-width card on an Invest page carries `card-bleed-mobile` (`src/index.css`). Below `sm` it cancels the page gutter and drops the side border, radius and shadow, so the card reaches the screen edges and cards read as sections; from `sm` up it is a normal card. Stat tiles (`Card compact` in a grid) never bleed. Spend keeps inset cards, except Transactions (History), whose list card bleeds the same way so more fits on a line.
 
 **Interactive cards:** if the whole card is a link or button, add `hover:shadow-[var(--shadow-lift)] transition-shadow`. Otherwise it never lifts.
 
@@ -233,7 +233,9 @@ No per-page padding overrides. A card whose inside is a full-bleed chart or tabl
 **Attention cards** (Spend Home's "3 payments due"): `TodayStack` is the only pattern for "something needs you". It is a tinted `rounded-2xl` row with an icon tile, a title, a meta line and a `Review` pill. Invest uses the same component.
 
 ### 6.3 List rows
-This is the Spend row, drawn by `EntryRow` (`src/components/ui/EntryRow.tsx`) for `TxnRow` and Trades' `TradeRow`, and by `RecurringDue`. History pages share the rest through `src/modules/spend/history.tsx`: the range bar, day labels and search sheet.
+This is the Spend row, drawn by `EntryRow` (`src/components/ui/EntryRow.tsx`) for `TxnRow` and Trades' `TradeRow`, and by `RecurringDue`. History pages share the rest through `src/modules/spend/history.tsx`: the range bar, the day sections and search sheet.
+
+**History lists (Transactions, Trades)** are one `Card list` for everything in range, not a card per day. Each day is a `DaySection`: a `text-xs font-semibold text-ink-muted` header (the day, and on Transactions the day's total or the statement balance on the right) over its divided rows. The header stays pinned under the app's top bar while that day's rows scroll past; its offset comes from `--top-bar` and `--test-banner` in `src/index.css`, so a new sticky element uses the same two variables.
 
 - **Left:** a 40px icon tile (`h-10 w-10 rounded-xl`), tinted with the category tone or the asset accent at about 11%.
 - **Middle:** the title (row title style, truncates) over a meta line (`text-xs text-ink-muted`; warn or loss colour only for a due state).

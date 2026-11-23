@@ -25,7 +25,7 @@ import { ClockIcon, DotsHorizontalIcon, DownloadIcon, LockClosedIcon, SearchIcon
 import { TransactionDateField } from '../components/forms/TransactionDateField'
 import { STORAGE_KEYS } from '../lib/storageKeys'
 import { buildCsv, downloadCsv } from '../lib/csv'
-import { ActiveSearch, HistoryRangeBar, HistorySearchSheet, type SearchContext } from '../modules/spend/history'
+import { ActiveSearch, DaySection, HistoryRangeBar, HistorySearchSheet, type SearchContext } from '../modules/spend/history'
 import { EMPTY_TITLE, dayLabel, rangePeriod, type Range } from '../modules/spend/historyRange'
 import { inPeriod } from '../modules/spend/logic'
 import { getLogActionMeta, getDisplayNote, getDestinationLocation, ASSET_FILTERS, ACTION_FILTERS, isAcquisitionLog } from './holdingLogs/logMeta'
@@ -432,12 +432,9 @@ export function HoldingLogs() {
             />
           </Card>
         ) : (
-          <div className="space-y-4">
+          <Card list className="card-bleed-mobile pb-1">
             {groups.map(([date, entries]) => (
-              <Card key={date} list className="card-bleed-mobile pt-3 pb-1">
-                {/* The count of entries is already the rows below; the page total sits above the list */}
-                <div className="border-b border-line pb-2 text-xs font-semibold text-ink-muted">{dayLabel(date, showYear)}</div>
-                <div className="divide-y divide-line">
+              <DaySection key={date} label={dayLabel(date, showYear)}>
                   {entries.map((log) => (
                     <TradeRow
                       key={log.id}
@@ -450,10 +447,9 @@ export function HoldingLogs() {
                       onToggleSelected={() => toggleLogSelection(log.id)}
                     />
                   ))}
-                </div>
-              </Card>
+              </DaySection>
             ))}
-          </div>
+          </Card>
         )}
       </div>
 

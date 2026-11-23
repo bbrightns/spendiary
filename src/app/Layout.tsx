@@ -32,7 +32,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const side = SIDE_ACTIVE[isSpend ? 'spend' : 'invest']
 
   return (
-    <div className={`min-h-dvh bg-transparent lg:dark:bg-canvas relative flex flex-col ${isTestMode ? 'pt-9' : ''}`}>
+    <div className={`min-h-dvh bg-transparent lg:dark:bg-canvas relative flex flex-col ${isTestMode ? 'is-test-mode pt-9' : ''}`}>
       {/* Global Command Palette */}
       <CommandPalette />
 
