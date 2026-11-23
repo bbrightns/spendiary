@@ -1,5 +1,5 @@
 /** What a Trades row shows for each kind of entry, plus the page's search and totals. */
-import { getCashDiffItems, getLogTransactionDetails } from '../../lib/activitySummary'
+import { getCashDiffItems, getLogTransactionDetails, resolveDividendThb } from '../../lib/activitySummary'
 import { thb } from '../../lib/format'
 import type { HoldingLog } from '../../lib/types'
 import { canUndoLog } from '../../store/actions/holdingLogs'
@@ -70,8 +70,7 @@ export function getTradeRow(log: HoldingLog, usdThb: number | null): TradeRowVie
   }
 
   if (log.action === 'dividend') {
-    const tx = getLogTransactionDetails(log, usdThb)
-    const net = log.netDividend ?? tx.amountThbValue
+    const net = log.netDividend !== undefined ? resolveDividendThb(log, usdThb).net : getLogTransactionDetails(log, usdThb).amountThbValue
     return {
       title: log.holdingName,
       meta: line([ticker, time, note]),
@@ -125,7 +124,7 @@ export function matchesTrade(log: HoldingLog, terms: string[]): boolean {
 export function tradeTotals(logs: HoldingLog[], usdThb: number | null): { bought: number; sold: number; dividends: number } {
   const totals = { bought: 0, sold: 0, dividends: 0 }
   for (const log of logs) {
-    if (log.action === 'dividend') totals.dividends += log.netDividend ?? getLogTransactionDetails(log, usdThb).amountThbValue ?? 0
+    if (log.action === 'dividend') totals.dividends += log.netDividend !== undefined ? resolveDividendThb(log, usdThb).net : getLogTransactionDetails(log, usdThb).amountThbValue ?? 0
     else if (log.action === 'sell' && canUndoLog(log)) totals.sold += getLogTransactionDetails(log, usdThb).amountThbValue ?? 0
     else if (isAcquisitionLog(log) && log.source !== 'received') totals.bought += getLogTransactionDetails(log, usdThb).amountThbValue ?? 0
   }

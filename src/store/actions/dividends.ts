@@ -64,7 +64,9 @@ export function recordDividend(
     createdAt: now,
   }
 
-  // 3. Create Activity HoldingLog
+  // 3. Create Activity HoldingLog. Amounts are in the record's currency; the dividend per share in the holding's
+  const sym = record.currency === 'USD' ? '$' : '฿'
+  const two = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const logEntry: HoldingLog = {
     id: newId(),
     timestamp: now,
@@ -73,7 +75,7 @@ export function recordDividend(
     holdingName: record.holdingName,
     ticker: record.ticker,
     assetClass: record.assetClass,
-    note: `Received dividend ฿${record.netAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (DPS: ฿${record.dps.toLocaleString()}, Tax 10%: -฿${record.taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) into ${cashAcc ? cashAcc.name : 'Cash'}`,
+    note: `Received dividend ${sym}${two(record.netAmount)} (DPS: ${record.assetClass === 'stock' ? '$' : '฿'}${record.dps.toLocaleString()}, Tax: -${sym}${two(record.taxAmount)}) into ${cashAcc ? cashAcc.name : 'Cash'}`,
     previousCashAccountsState: oldAccounts,
     afterCashAccountsState: updatedCashAccounts,
     cashAccountId: record.cashAccountId,

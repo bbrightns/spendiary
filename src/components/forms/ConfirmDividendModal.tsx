@@ -7,7 +7,8 @@ import { useData } from '../../store/DataContext'
 import { useToast } from '../../store/ToastContext'
 import { ASSET_META, getHoldingDpsForMonth, nextPayoutMonth } from '../../lib/calc'
 import type { Holding } from '../../lib/types'
-import { localDateStr, thb } from '../../lib/format'
+import { localDateStr, money, thb } from '../../lib/format'
+import { convertMoney, dividendInUsd } from '../../lib/dividendSchedule'
 
 interface Props {
   open: boolean
@@ -17,7 +18,7 @@ interface Props {
 }
 
 export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Props) {
-  const { data, recordDividend, removeDividendRecord } = useData()
+  const { data, recordDividend, removeDividendRecord, usdThb } = useData()
   const { showToast } = useToast()
 
   const [selectedHoldingId, setSelectedHoldingId] = useState<string>('')
@@ -83,7 +84,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
     }
   }
 
-  const isUsd = targetHolding?.assetClass === 'stock'
+  const isUsd = !!targetHolding && dividendInUsd(targetHolding)
   const currencyPrefix = isUsd ? '$' : '฿'
   const formatCur = (val: number) =>
     isUsd
@@ -97,7 +98,21 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
   const taxAmount = parseFloat((grossAmount * effectiveTaxRate).toFixed(2))
   const netAmount = parseFloat((grossAmount - taxAmount).toFixed(2))
 
-  const isValid = targetHolding !== null && numDps > 0 && numShares > 0 && Boolean(paymentDate)
+  // What lands in the chosen account, in its currency: a US dividend paid into a baht account is
+  // converted at the real USD/THB rate, and can't be saved while no rate is known
+  const holdingCurrency = isUsd ? 'USD' : 'THB'
+  const selectedAccount = data.cashAccounts.find((c) => c.id === cashAccountId)
+  const accountCurrency = selectedAccount ? selectedAccount.currency ?? 'THB' : holdingCurrency
+  const converts = accountCurrency !== holdingCurrency
+  const toAccount = (v: number) => {
+    const c = convertMoney(v, holdingCurrency, accountCurrency, usdThb)
+    return c === null ? null : parseFloat(c.toFixed(2))
+  }
+  const landed = toAccount(netAmount)
+  const needsRate = converts && landed === null
+  const formatAccount = (v: number) => money(v, accountCurrency, true)
+
+  const isValid = targetHolding !== null && numDps > 0 && numShares > 0 && Boolean(paymentDate) && !needsRate
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -120,10 +135,11 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
       paymentDate,
       dps: numDps,
       shares: numShares,
-      grossAmount,
+      grossAmount: toAccount(grossAmount) ?? grossAmount,
       taxRate: effectiveTaxRate,
-      taxAmount,
-      netAmount,
+      taxAmount: toAccount(taxAmount) ?? taxAmount,
+      netAmount: landed ?? netAmount,
+      currency: accountCurrency,
       cashAccountId: selectedCashAcc ? selectedCashAcc.id : undefined,
       cashAccountName: selectedCashAcc ? selectedCashAcc.name : undefined,
       note: note.trim() || undefined,
@@ -131,7 +147,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
 
     const next = nextPayoutMonth(targetHolding.dividendMonths ?? [], paymentDate)
     showToast(
-      `${formatCur(netAmount)} from ${targetHolding.ticker} has been recorded.`,
+      `${formatAccount(landed ?? netAmount)} from ${targetHolding.ticker} has been recorded.`,
       'success',
       { label: 'Undo', onClick: () => removeDividendRecord(recordId) },
       {
@@ -139,7 +155,7 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
         title: 'Received',
         // The amount that landed, then whose dividend it was, the tax and where it went
         detail: {
-          amount: formatCur(netAmount),
+          amount: formatAccount(landed ?? netAmount),
           name: targetHolding.name,
           meta: [effectiveTaxRate > 0 ? `After ${+(effectiveTaxRate * 100).toFixed(2)}% tax` : undefined, selectedCashAcc?.name].filter(Boolean).join(' · ') || undefined,
           footnote: next ? `Next payout in ${next}` : undefined,
@@ -175,9 +191,10 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
       footer={
         <FormActions
           editing={false}
-          canSave
+          canSave={!needsRate}
+          hint={needsRate ? `No USD/THB rate yet, so this can't be counted in ${selectedAccount?.name ?? 'a baht account'}. Pick a dollar account, or try again once online.` : undefined}
           onSave={submit}
-          submitLabel={netAmount > 0 ? `Record ${formatCur(netAmount)}` : 'Record dividend'}
+          submitLabel={netAmount > 0 && landed !== null ? `Record ${formatAccount(landed)}` : 'Record dividend'}
         />
       }
     >
@@ -289,6 +306,11 @@ export function ConfirmDividendModal({ open, holding, initialDps, onClose }: Pro
               <span className="font-display text-xl font-extrabold text-gain-ink tnum">
                 {netAmount > 0 ? formatCur(netAmount) : `${currencyPrefix}0.00`}
               </span>
+              {converts && netAmount > 0 && landed !== null && (
+                <p className="text-xs text-ink-muted tnum">
+                  {formatAccount(landed)} at {thb(usdThb ?? 0, true)} per $
+                </p>
+              )}
             </div>
           </div>
         </div>

@@ -39,3 +39,28 @@ describe('removing a dividend whose money was already spent', () => {
     expect(removeDividendRecord(spent, 'd1').cashAccounts[0].balance).toBe(-80)
   })
 })
+
+describe('a US dividend paid into a baht account', () => {
+  // The dialog converts $8.19 at ฿35 before saving, so the record and the credit are both in baht
+  const usInBaht = {
+    ...record(286.65),
+    holdingName: 'Apple Inc.',
+    ticker: 'AAPL',
+    assetClass: 'stock' as const,
+    dps: 0.26,
+    shares: 35,
+    currency: 'THB' as const,
+  }
+
+  it('adds the baht amount to the account and takes the same back when removed', () => {
+    const paid = recordDividend(state(1000), usInBaht, 'd1')
+    expect(paid.cashAccounts[0].balance).toBe(1286.65)
+    expect(removeDividendRecord(paid, 'd1').cashAccounts[0].balance).toBe(1000)
+  })
+
+  it('writes the note with baht for the amount and dollars for the dividend per share', () => {
+    const note = recordDividend(state(0), usInBaht, 'd1').holdingLogs[0].note
+    expect(note).toContain('Received dividend ฿286.65')
+    expect(note).toContain('DPS: $0.26')
+  })
+})

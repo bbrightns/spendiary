@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canPayDividend, dividendFields, dividendInUsd, dividendThb, dpsMapFromHolding } from './dividendSchedule'
+import { canPayDividend, convertMoney, dividendFields, dividendInUsd, dividendRecordCurrency, dividendThb, dpsMapFromHolding } from './dividendSchedule'
 import type { Holding } from './types'
 
 const h = (over: Partial<Holding> = {}): Holding =>
@@ -57,5 +57,36 @@ describe('dividendThb', () => {
   it('marks only stocks as paying in USD', () => {
     expect(dividendInUsd({ assetClass: 'stock' })).toBe(true)
     expect(dividendInUsd({ assetClass: 'fund' })).toBe(false)
+  })
+})
+
+describe('convertMoney', () => {
+  it('converts both ways at a real rate and needs none for the same currency', () => {
+    expect(convertMoney(10, 'USD', 'THB', 35)).toBe(350)
+    expect(convertMoney(350, 'THB', 'USD', 35)).toBe(10)
+    expect(convertMoney(10, 'USD', 'USD', null)).toBe(10)
+  })
+
+  it('gives null across currencies without a rate', () => {
+    expect(convertMoney(10, 'USD', 'THB', null)).toBeNull()
+    expect(convertMoney(10, 'THB', 'USD', 0)).toBeNull()
+  })
+})
+
+describe('dividendRecordCurrency', () => {
+  const accounts = [{ id: 'kbank' }, { id: 'fcd', currency: 'USD' as const }]
+
+  it('uses the currency saved with the record first', () => {
+    expect(dividendRecordCurrency({ assetClass: 'stock', currency: 'THB', cashAccountId: 'fcd' }, accounts)).toBe('THB')
+  })
+
+  it('else the receiving account, so a US dividend paid into a baht account is in baht', () => {
+    expect(dividendRecordCurrency({ assetClass: 'stock', cashAccountId: 'kbank' }, accounts)).toBe('THB')
+    expect(dividendRecordCurrency({ assetClass: 'fund', cashAccountId: 'fcd' }, accounts)).toBe('USD')
+  })
+
+  it('else the holding: US stocks in dollars, funds in baht', () => {
+    expect(dividendRecordCurrency({ assetClass: 'stock' }, accounts)).toBe('USD')
+    expect(dividendRecordCurrency({ assetClass: 'fund', cashAccountId: 'gone' }, accounts)).toBe('THB')
   })
 })

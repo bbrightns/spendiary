@@ -59,3 +59,26 @@ export function dividendThb(h: Pick<Holding, 'assetClass'>, amount: number, usdT
   if (!dividendInUsd(h)) return amount
   return typeof usdThb === 'number' && Number.isFinite(usdThb) && usdThb > 0 ? amount * usdThb : null
 }
+
+type Currency = 'THB' | 'USD'
+
+/** Move an amount between baht and dollars at a real USD/THB rate; null when one is needed and none is known. */
+export function convertMoney(amount: number, from: Currency, to: Currency, usdThb: number | null | undefined): number | null {
+  if (from === to) return amount
+  if (!(typeof usdThb === 'number' && Number.isFinite(usdThb) && usdThb > 0)) return null
+  return from === 'USD' ? amount * usdThb : amount / usdThb
+}
+
+/**
+ * The currency a recorded dividend's amounts are in: the one saved with it, else the receiving
+ * account's, else the holding's (US stocks pay in dollars). Spend, Dividends and P&L all read it this way.
+ */
+export function dividendRecordCurrency(
+  r: Pick<Holding, 'assetClass'> & { currency?: Currency; cashAccountId?: string },
+  accounts: readonly { id: string; currency?: Currency }[],
+): Currency {
+  if (r.currency) return r.currency
+  const account = r.cashAccountId ? accounts.find((a) => a.id === r.cashAccountId) : undefined
+  if (account) return account.currency ?? 'THB'
+  return dividendInUsd(r) ? 'USD' : 'THB'
+}

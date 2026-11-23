@@ -11,7 +11,7 @@ import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
 import { money, thb } from '../lib/format'
-import { dividendInUsd, dividendThb } from '../lib/dividendSchedule'
+import { convertMoney, dividendInUsd, dividendRecordCurrency, dividendThb } from '../lib/dividendSchedule'
 import { dayLabel } from '../modules/spend/historyRange'
 import { THAI_MONTHS_SHORT, getHoldingAnnualDividend, getHoldingDpsForMonth, isDividendReceivedThisMonth } from '../lib/calc'
 import { CalendarIcon, CheckCircleIcon, ChevronDownIcon, ChevronRightIcon, CoinsIcon, PlusIcon, TrashIcon } from '../components/icons'
@@ -75,21 +75,22 @@ export function Dividends() {
     })
   }, [records, currentYear])
 
-  // Records hold dps × shares in the holding's currency; USD is counted in baht only at a real rate
+  // Records hold their amounts in the receiving account's currency; dollars count in baht only at a real rate
   const receivedThisYear = useMemo(() => {
     const out = { net: 0, gross: 0, tax: 0, usdLeftOut: 0 }
     for (const r of thisYearRecords) {
-      const net = dividendThb(r, r.netAmount, usdThb)
+      const currency = dividendRecordCurrency(r, data.cashAccounts)
+      const net = convertMoney(r.netAmount, currency, 'THB', usdThb)
       if (net === null) {
         out.usdLeftOut += r.netAmount
         continue
       }
       out.net += net
-      out.gross += dividendThb(r, r.grossAmount, usdThb) ?? 0
-      out.tax += dividendThb(r, r.taxAmount, usdThb) ?? 0
+      out.gross += convertMoney(r.grossAmount, currency, 'THB', usdThb) ?? 0
+      out.tax += convertMoney(r.taxAmount, currency, 'THB', usdThb) ?? 0
     }
     return out
-  }, [thisYearRecords, usdThb])
+  }, [thisYearRecords, data.cashAccounts, usdThb])
 
   // Holdings that pay dividends
   const dividendHoldings = useMemo(() => {
@@ -135,8 +136,9 @@ export function Dividends() {
     const inThb = dividendThb(h, amount, usdThb)
     return inThb === null ? money(amount, 'USD', true) : thb(inThb)
   }
-  /** An amount in the holding's own currency (history table: what was actually paid) */
-  const own = (h: Pick<Holding, 'assetClass'>, amount: number) => (dividendInUsd(h) ? money(amount, 'USD', true) : thb(amount))
+  /** A recorded amount in the currency it landed in (history table) */
+  const own = (r: DividendRecord, amount: number) =>
+    dividendRecordCurrency(r, data.cashAccounts) === 'USD' ? money(amount, 'USD', true) : thb(amount)
 
 
   // Unique years in records for filter
