@@ -484,7 +484,7 @@ export function Rebalance() {
                   onChange={(v) => setRebalanceMode(v as RebalanceMode)}
                   options={[
                     { value: 'class', label: 'Asset types' },
-                    { value: 'holding', label: plannedCount > 0 ? `Holdings (${holdingRows.length - plannedCount}) · ${plannedCount} planned` : `Holdings (${holdingRows.length})` },
+                    { value: 'holding', label: `Holdings (${holdingRows.length - plannedCount})` },
                   ]}
                 />
               </div>
@@ -618,7 +618,7 @@ export function Rebalance() {
                   <p className="text-xs text-ink-muted">
                     {mode === 'class'
                       ? 'Adjust target percentages per asset class'
-                      : `${displayHoldingRows.length} positions and planned assets`}
+                      : `${holdingRows.length - plannedCount} positions${plannedCount > 0 ? ` · ${plannedCount} planned` : ''}`}
                     {' · '}
                     <span className={`font-semibold ${currentTargetsSum === 100 ? 'text-gain-ink' : 'text-warn-ink'}`}>
                       Targets add up to {currentTargetsSum}%
