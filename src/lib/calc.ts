@@ -1,4 +1,4 @@
-import type { AssetClass, CashAccount, CashAccountCategory, DcaPlan, DebtCategory, DividendRecord, Holding, InvestAssetClass, Liability, SpendiaryData, Transfer } from './types'
+import type { AssetClass, CashAccount, CashAccountCategory, DcaPlan, DebtCategory, DividendRecord, Holding, InvestAssetClass, Liability, SpendiaryData } from './types'
 import { daysUntil, localDateStr, localDay } from './format'
 import { rateOrZero } from './fx'
 import { newId } from './id'
@@ -405,27 +405,6 @@ export const TROY_OUNCE_GRAMS = 31.1035
 /** ความบริสุทธิ์ทองคำมาตรฐานไทย (96.5%) */
 export const THAI_GOLD_PURITY = 0.965
 
-export function gramsToBahtGold(grams: number): number {
-  return grams / GRAMS_PER_BAHT_GOLD
-}
-
-export function bahtGoldToGrams(baht: number): number {
-  return baht * GRAMS_PER_BAHT_GOLD
-}
-
-export function goldCostPerBaht(thbSpent: number, grams: number): number {
-  if (grams <= 0) return 0
-  return (thbSpent / grams) * GRAMS_PER_BAHT_GOLD
-}
-
-export function goldPricePerGramFromBaht(pricePerBaht: number): number {
-  return pricePerBaht / GRAMS_PER_BAHT_GOLD
-}
-
-export function goldPricePerBahtFromGram(pricePerGram: number): number {
-  return pricePerGram * GRAMS_PER_BAHT_GOLD
-}
-
 /**
  * แปลงต้นทุนหรือราคาทองคำไทย 96.5% (THB/g) เป็นราคาทองคำโลก Spot XAU/USD ($/oz 99.99%)
  */
@@ -444,32 +423,9 @@ export function goldThbPerBahtToXauUsd(thbPerBaht: number, usdThbRate: number): 
   return goldThbPerGramToXauUsd(thbPerBaht / GRAMS_PER_BAHT_GOLD, usdThbRate)
 }
 
-/**
- * แปลงราคาทองคำโลก Spot XAU/USD ($/oz) เป็นราคาทองคำไทย 96.5% (THB/บาททองคำ)
- */
-export function xauUsdToThaiGoldPricePerBaht(xauUsd: number, usdThbRate: number): number {
-  if (xauUsd <= 0 || usdThbRate <= 0) return 0
-  const pricePerGramPureThb = (xauUsd * usdThbRate) / TROY_OUNCE_GRAMS
-  const pricePerGram965Thb = pricePerGramPureThb * THAI_GOLD_PURITY
-  return pricePerGram965Thb * GRAMS_PER_BAHT_GOLD
-}
-
 /* ----------------------------- Bitcoin Calculations ----------------------------- */
 
 export const SATS_PER_BTC = 100_000_000
-
-export function satsToBtc(sats: number): number {
-  return sats / SATS_PER_BTC
-}
-
-export function btcToSats(btc: number): number {
-  return Math.round(btc * SATS_PER_BTC)
-}
-
-export function btcCostPerCoin(thbSpent: number, satoshi: number): number {
-  if (satoshi <= 0) return 0
-  return (thbSpent / satoshi) * SATS_PER_BTC
-}
 
 /* ----------------------------- DCA ----------------------------- */
 
@@ -656,11 +612,6 @@ export function shouldConfirmBuy(plan: DcaPlan, now = new Date()): boolean {
   return buyDayPassedThisPeriod(plan, now) && !isConfirmedForPeriod(plan, now)
 }
 
-/** @deprecated use planExecutionsThisMonth — kept for compatibility */
-export function planBoughtThisMonth(plan: DcaPlan, now = new Date()): boolean {
-  return planExecutionsThisMonth(plan, now) > 0
-}
-
 /** Next date this plan will execute. */
 export function nextBuyDate(plan: DcaPlan, now = new Date()): Date {
   const freq = plan.frequency ?? 'monthly'
@@ -768,21 +719,6 @@ export function sortDcaPlans(plans: DcaPlan[], now = new Date()): DcaPlan[] {
 }
 
 /* --------------------------- Transfers -------------------------- */
-
-export function remainingTransfers(t: Transfer): number {
-  return Math.max(t.total - t.completed, 0)
-}
-
-export function transferProgress(t: Transfer): number {
-  return t.total > 0 ? (t.completed / t.total) * 100 : 0
-}
-
-export const FREQUENCY_LABEL: Record<Transfer['frequency'], string> = {
-  weekly: 'Weekly',
-  biweekly: 'Every 2 weeks',
-  monthly: 'Monthly',
-  quarterly: 'Quarterly',
-}
 
 /* ----------------------------- Cash ---------------------------- */
 
@@ -1000,27 +936,6 @@ export function calculateMonthlyCashInterest(
   }
 
   return { totalAnnual, totalCompounded, byMonth }
-}
-
-export function getCashLiquidityBreakdown(
-  accounts: CashAccount[],
-  usdThb?: number | null,
-): {
-  spending: number
-  locked: number
-  total: number
-} {
-  const rate = rateOrZero(usdThb)
-  const res = { spending: 0, locked: 0, total: 0 }
-
-  for (const a of accounts) {
-    const thbVal = a.currency === 'USD' ? a.balance * rate : a.balance
-    const cat = getCashCategory(a)
-    res[cat] = (res[cat] ?? 0) + thbVal
-    res.total += thbVal
-  }
-
-  return res
 }
 
 /* --------------------------- Liabilities ------------------------- */

@@ -26,8 +26,6 @@ export interface NavSubItem {
   exact?: boolean
 }
 
-export type StrategySubItem = NavSubItem
-
 export interface NavItem {
   to?: string
   label: string

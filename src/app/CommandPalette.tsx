@@ -217,11 +217,6 @@ export function CommandPalette() {
       setIsOpen(true)
     }
 
-    function handleShortcutsEvent() {
-      setShowShortcuts(true)
-      setIsOpen(true)
-    }
-
     function handleKeyDown(e: KeyboardEvent) {
       const activeEl = document.activeElement
       const isInput =
@@ -263,12 +258,10 @@ export function CommandPalette() {
     }
 
     window.addEventListener('spendiary:open-command-palette', handleOpenEvent)
-    window.addEventListener('spendiary:open-shortcuts-guide', handleShortcutsEvent)
     window.addEventListener('keydown', handleKeyDown)
 
     return () => {
       window.removeEventListener('spendiary:open-command-palette', handleOpenEvent)
-      window.removeEventListener('spendiary:open-shortcuts-guide', handleShortcutsEvent)
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [isOpen, reset])

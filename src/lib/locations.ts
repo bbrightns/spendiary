@@ -167,13 +167,6 @@ export function fromInputQty(assetClass: AssetClass | undefined, n: number): num
   return assetClass === 'crypto' ? n / SATS_PER_BTC : roundQty(assetClass, n)
 }
 
-/** Unit word for a location quantity */
-export function qtyUnit(assetClass: AssetClass | undefined): string {
-  if (assetClass === 'crypto') return 'sats'
-  if (assetClass === 'gold') return 'g'
-  return 'shares'
-}
-
 /** "32,000,000 sats", "15.2440 g", "12.5 shares" */
 export function formatLocationQty(assetClass: AssetClass | undefined, qty: number): string {
   if (assetClass === 'crypto') return `${toInputQty(assetClass, qty).toLocaleString()} sats`

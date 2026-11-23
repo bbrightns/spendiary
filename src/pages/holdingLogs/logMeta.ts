@@ -331,11 +331,6 @@ export const ASSET_FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'cash', label: 'Cash' },
 ]
 
-export function getLogAssetLabel(log: HoldingLog): string {
-  if (log.ticker === 'FIXED') return 'expense'
-  return ASSET_FILTERS.find((filter) => filter.key === log.assetClass)?.label ?? log.assetClass
-}
-
 export const ACTION_FILTERS = [
   { key: 'all', label: 'All' },
   { key: 'buy', label: 'Buy / add' },
