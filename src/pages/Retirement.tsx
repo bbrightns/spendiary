@@ -6,6 +6,7 @@ import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { NumberField, TextField } from '../components/ui/Field'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
+import { useIsPhone } from '../hooks/useIsPhone'
 import { CheckIcon, HourglassIcon } from '../components/icons'
 import { dcaPerMonth, portfolioSummary, totalCash } from '../lib/calc'
 import { thb, thbCompact } from '../lib/format'
@@ -457,7 +458,9 @@ export function Retirement() {
 
   // ── SVG chart ──
   const maxY  = Math.max(corpusNeeded * 1.1, projectedInvestment * 1.05, projectedSavings * 1.05, 1)
-  const chartH = 220, chartW = 560
+  // Phones draw on a narrower canvas so the labels stay near their real size instead of shrinking with the SVG
+  const isPhone = useIsPhone()
+  const chartH = 220, chartW = isPhone ? 380 : 560
   const padL = 76, padR = 16, padT = 16, padB = 36
   const innerW = chartW - padL - padR
   const innerH = chartH - padT - padB

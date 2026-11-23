@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefO
 import { createPortal } from 'react-dom'
 import { CheckIcon } from '../icons'
 import { Modal } from './Modal'
+import { useIsPhone } from '../../hooks/useIsPhone'
 
 interface PopoverProps {
   open: boolean
@@ -15,7 +16,6 @@ interface PopoverProps {
   children: ReactNode
 }
 
-const MOBILE_QUERY = '(max-width: 639px)'
 const GAP = 6
 const EDGE = 12
 
@@ -25,21 +25,12 @@ const EDGE = 12
  */
 export function Popover({ open, onClose, anchorRef, title, align = 'left', children }: PopoverProps) {
   const panelRef = useRef<HTMLDivElement>(null)
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== 'undefined' && window.matchMedia(MOBILE_QUERY).matches,
-  )
+  const isMobile = useIsPhone()
   const [pos, setPos] = useState<{ top?: number; bottom?: number; left?: number; right?: number } | null>(null)
   const onCloseRef = useRef(onClose)
   useEffect(() => {
     onCloseRef.current = onClose
   }, [onClose])
-
-  useEffect(() => {
-    const mq = window.matchMedia(MOBILE_QUERY)
-    const update = () => setIsMobile(mq.matches)
-    mq.addEventListener('change', update)
-    return () => mq.removeEventListener('change', update)
-  }, [])
 
   // Place the desktop dropdown under its button, or above it when it wouldn't fit below
   useLayoutEffect(() => {
