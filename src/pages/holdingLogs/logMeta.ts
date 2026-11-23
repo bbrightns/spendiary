@@ -87,7 +87,8 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
 
   if (log.action === 'buy_more') {
     return {
-      label: log.dcaPlanId ? 'DCA buy' : 'Bought more',
+      // Money put into a cash account is a deposit, not a purchase
+      label: log.dcaPlanId ? 'DCA buy' : log.assetClass === 'cash' ? 'Deposit' : 'Bought more',
       style: 'bg-brand/10 text-link',
       icon: ArrowUpIcon,
       isPriceUpdate: false,
