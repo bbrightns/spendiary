@@ -5,7 +5,6 @@ import { Button } from '../components/ui/Button'
 import { SegmentedControl } from '../components/ui/SegmentedControl'
 import { NumberField } from '../components/ui/Field'
 import { AssetLogo } from '../components/ui/AssetLogo'
-import { DonutChart } from '../components/charts/DonutChart'
 import { HoldingForm } from '../components/forms/HoldingForm'
 import { BuyMoreForm } from '../components/forms/BuyMoreForm'
 import { PlannedAssetModal } from '../components/forms/PlannedAssetModal'
@@ -13,7 +12,7 @@ import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { useData } from '../store/DataContext'
 import { ASSET_META, totalCash } from '../lib/calc'
-import { thb, thbCompact } from '../lib/format'
+import { thb } from '../lib/format'
 import type { Holding, InvestAssetClass, PlannedAsset, RebalanceMode } from '../lib/types'
 import { CheckIcon, CopyIcon, PlusIcon, TrashIcon, LockClosedIcon } from '../components/icons'
 import { STORAGE_KEYS } from '../lib/storageKeys'
@@ -360,25 +359,6 @@ export function Rebalance() {
     (h) => !search || h.name.toLowerCase().includes(searchLower) || (h.ticker ?? '').toLowerCase().includes(searchLower),
   )
 
-  // ── Donut Chart Data ──
-  // Current Actual Donut
-  const actualSegments = REBALANCE_ASSETS.map((key) => ({
-    label: ASSET_META[key].plural,
-    value: actualClassVals[key],
-    color: ASSET_META[key].color,
-  }))
-
-  // Target Donut
-  const targetSegments = REBALANCE_ASSETS.map((key) => {
-    const pct = mode === 'class'
-      ? (localClassTargets[key] ?? 0)
-      : holdingRows.filter((h) => h.assetClass === key).reduce((s, h) => s + (localHoldingTargets[h.id] ?? 0), 0)
-    return {
-      label: ASSET_META[key].plural,
-      value: (pct / 100) * targetTotalValue,
-      color: ASSET_META[key].color,
-    }
-  })
 
   // ── Copy Markdown Plan ──
   const handleCopyPlan = () => {
@@ -454,8 +434,8 @@ export function Rebalance() {
         }
       />
 
-      {/* ── KPI Stat Cards (2x2 on Mobile, 4x1 on Desktop - Dividends Style) ── */}
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4 mb-6">
+      {/* ── What you have, and the cash you could add ── */}
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 mb-6">
         <Card compact className="animate-rise flex flex-col justify-between">
           <div>
             <p className="text-xs font-medium text-ink-muted">Current value</p>
@@ -464,7 +444,9 @@ export function Rebalance() {
             </p>
           </div>
           <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            {data.holdings.length} active {data.holdings.length === 1 ? 'position' : 'positions'}
+            {cashToDeploy > 0
+              ? `${thb(targetTotalValue)} with the new cash`
+              : `${data.holdings.length} active ${data.holdings.length === 1 ? 'position' : 'positions'}`}
           </p>
         </Card>
 
@@ -480,40 +462,6 @@ export function Rebalance() {
           </p>
         </Card>
 
-        <Card compact className="animate-rise flex flex-col justify-between">
-          <div>
-            <p className="text-xs font-medium text-ink-muted">Cash to deploy</p>
-            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-brand-ink tnum truncate">
-              +{thb(cashToDeploy)}
-            </p>
-          </div>
-          <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-            {cashToDeploy > 0 ? 'Allocated to rebalance' : 'Optional cash injection'}
-          </p>
-        </Card>
-
-        <Card compact className="animate-rise flex flex-col justify-between">
-          <div>
-            <p className="text-xs font-medium text-ink-muted">Projected total</p>
-            <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-ink tnum truncate">
-              {thb(targetTotalValue)}
-            </p>
-          </div>
-          <div className="mt-1 sm:mt-1.5 flex items-center gap-1.5 min-w-0">
-            <span
-              className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full shrink-0 ${
-                currentTargetsSum === 100 ? 'bg-gain' : 'bg-warn animate-pulse'
-              }`}
-            />
-            <span
-              className={`text-xs font-semibold truncate ${
-                currentTargetsSum === 100 ? 'text-gain-ink' : 'text-warn-ink'
-              }`}
-            >
-              {currentTargetsSum === 100 ? 'Targets add up to 100%' : `Targets add up to ${currentTargetsSum}%`}
-            </span>
-          </div>
-        </Card>
       </div>
 
       {/* Main 2-Column Workspace Grid */}
@@ -626,36 +574,10 @@ export function Rebalance() {
           {/* Side-by-Side Allocation Visualizer */}
           <Card className="card-bleed-mobile animate-rise">
             <h2 className="font-display text-lg font-extrabold text-ink">Allocation comparison</h2>
-            <p className="text-xs text-ink-muted mb-4">Current vs target distribution</p>
+            <p className="text-xs text-ink-muted mb-4">The bar is where you are now; the mark is your target</p>
 
-            <div className="grid grid-cols-2 gap-4 items-center justify-items-center pt-2">
-              <div className="flex flex-col items-center">
-                <span className="text-xs font-bold text-ink-muted mb-2">Current</span>
-                <DonutChart
-                  segments={actualSegments}
-                  size={120}
-                  thickness={14}
-                  ariaLabel="Current portfolio allocation"
-                  centerLabel="Total"
-                  centerValue={thbCompact(portVal)}
-                />
-              </div>
-
-              <div className="flex flex-col items-center">
-                <span className="text-xs font-bold text-link mb-2">Target</span>
-                <DonutChart
-                  segments={targetSegments}
-                  size={120}
-                  thickness={14}
-                  ariaLabel="Target portfolio allocation"
-                  centerLabel="Projected"
-                  centerValue={thbCompact(targetTotalValue)}
-                />
-              </div>
-            </div>
-
-            {/* Legend */}
-            <div className="mt-4 pt-3 border-t border-line space-y-1.5">
+            {/* Each type: the bar is where you are, the mark is the target */}
+            <div className="space-y-3">
               {REBALANCE_ASSETS.map((key) => {
                 const actualPct = portVal > 0 ? (actualClassVals[key] / portVal) * 100 : 0
                 const targetPct = mode === 'class'
@@ -663,14 +585,20 @@ export function Rebalance() {
                   : holdingRows.filter((h) => h.assetClass === key).reduce((s, h) => s + (localHoldingTargets[h.id] ?? 0), 0)
 
                 return (
-                  <div key={key} className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-2 font-medium text-ink">
-                      <span className="h-2 w-2 rounded-full shrink-0" style={{ background: ASSET_META[key].color }} />
-                      {ASSET_META[key].plural}
-                    </span>
-                    <span className="font-semibold tnum text-ink">
-                      {actualPct.toFixed(0)}% <span className="text-ink-muted font-normal">→</span> <span className="text-link font-bold">{targetPct}%</span>
-                    </span>
+                  <div key={key}>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-2 font-medium text-ink">
+                        <span className="h-2 w-2 rounded-full shrink-0" style={{ background: ASSET_META[key].color }} />
+                        {ASSET_META[key].plural}
+                      </span>
+                      <span className="font-semibold tnum text-ink">
+                        {actualPct.toFixed(0)}% <span className="text-ink-muted font-normal">→</span> <span className="text-link font-bold">{targetPct}%</span>
+                      </span>
+                    </div>
+                    <div className="relative mt-1.5 h-2 rounded-full bg-surface-muted" aria-hidden="true">
+                      <div className="h-full rounded-full" style={{ width: `${Math.min(100, actualPct)}%`, background: ASSET_META[key].color }} />
+                      <div className="absolute -top-1 -bottom-1 w-0.5 rounded-full bg-ink" style={{ left: `calc(${Math.min(100, targetPct)}% - 1px)` }} />
+                    </div>
                   </div>
                 )
               })}
@@ -691,6 +619,10 @@ export function Rebalance() {
                     {mode === 'class'
                       ? 'Adjust target percentages per asset class'
                       : `${displayHoldingRows.length} positions and planned assets`}
+                    {' · '}
+                    <span className={`font-semibold ${currentTargetsSum === 100 ? 'text-gain-ink' : 'text-warn-ink'}`}>
+                      Targets add up to {currentTargetsSum}%
+                    </span>
                   </p>
                 </div>
 
