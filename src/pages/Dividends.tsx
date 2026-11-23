@@ -12,6 +12,7 @@ import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
 import { money, thb } from '../lib/format'
 import { dividendInUsd, dividendThb } from '../lib/dividendSchedule'
+import { dayLabel } from '../modules/spend/historyRange'
 import { THAI_MONTHS_SHORT, getHoldingAnnualDividend, getHoldingDpsForMonth, isDividendReceivedThisMonth } from '../lib/calc'
 import { CalendarIcon, CheckCircleIcon, ChevronDownIcon, ChevronRightIcon, CoinsIcon, PlusIcon, TrashIcon } from '../components/icons'
 import type { DividendRecord, Holding } from '../lib/types'
@@ -581,8 +582,8 @@ export function Dividends() {
                 <tbody className="divide-y divide-line">
                   {filteredRecords.map((r) => (
                     <tr key={r.id} className="hover:bg-surface-muted/40 transition-colors">
-                      <td className="px-5 py-3.5 text-ink font-medium whitespace-nowrap">
-                        {r.paymentDate}
+                      <td className="px-5 py-3.5 text-ink font-medium tnum whitespace-nowrap">
+                        {dayLabel(r.paymentDate, !r.paymentDate.startsWith(String(currentYear)))}
                       </td>
                       <td className="px-5 py-3.5 whitespace-nowrap">
                         <div className="flex items-center gap-2">
