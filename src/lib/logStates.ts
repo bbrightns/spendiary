@@ -49,6 +49,3 @@ export function logCashStates(log: HoldingLog): { prev: CashAccount[]; curr: Cas
     curr: moves.map((c) => acc(c, c.balanceAfter!)),
   }
 }
-
-/** Balance of one account in a list, if it's there */
-export const balanceIn = (list: CashAccount[], id?: string) => list.find((a) => a.id === id)?.balance

@@ -2,6 +2,7 @@ import { logCashStates, logHoldingStates } from '../../lib/logStates'
 import type { CashAccount, SpendTransaction, SpendiaryData } from '../../lib/types'
 import { localDateStr } from '../../lib/format'
 import { roundMoney } from '../../lib/money'
+import { convertMoney, dividendRecordCurrency } from '../../lib/dividendSchedule'
 
 /** Money put into an investment (a DCA or Buy more row), not a savings DCA into your own account. */
 export const isInvested = (t: Pick<SpendTransaction, 'source' | 'toAccountId'>) => (t.source === 'dca' || t.source === 'buy') && !t.toAccountId
@@ -20,13 +21,8 @@ export function investTransactions(data: SpendiaryData, usdThb: number | null): 
   const accounts = data.cashAccounts ?? []
 
   for (const r of data.dividendRecords ?? []) {
-    const acct = accounts.find((a) => a.id === r.cashAccountId)
-    // netAmount is in the receiving account's currency; with no account, in the holding's
-    // (US stocks pay in USD)
-    const holding = (data.holdings ?? []).find((h) => h.id === r.holdingId)
-    const usdHolding = !!holding && ((holding.totalUsdInvested ?? 0) > 0 || (holding.avgCostUsd ?? 0) > 0)
-    const currency = acct ? acct.currency ?? 'THB' : usdHolding ? 'USD' : 'THB'
-    const amount = currency === 'USD' ? (usdThb ? r.netAmount * usdThb : 0) : r.netAmount
+    // netAmount is in the record's currency (the receiving account's); the same rule as Dividends and P&L
+    const amount = convertMoney(r.netAmount, dividendRecordCurrency(r, accounts), 'THB', usdThb) ?? 0
     if (!(amount > 0)) continue
     out.push({
       id: `div-${r.id}`,

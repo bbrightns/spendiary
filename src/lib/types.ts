@@ -197,6 +197,12 @@ export interface DividendRecord {
   taxAmount: number
   /** Net cash received (grossAmount - taxAmount) */
   netAmount: number
+  /**
+   * The currency grossAmount, taxAmount and netAmount are in: the receiving account's (a US dividend
+   * paid into a baht account is converted when recorded). Older records leave it out; see
+   * dividendRecordCurrency for how they are read.
+   */
+  currency?: 'THB' | 'USD'
   /** Destination cash account id */
   cashAccountId?: string
   /** Destination cash account name snapshot */

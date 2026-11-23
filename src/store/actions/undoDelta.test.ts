@@ -238,7 +238,7 @@ describe('undo and the baht cost of a USD wallet', () => {
     expect(logOf(out, 'buy_more').delta!.cash![0]).not.toHaveProperty('thbCost')
   })
 
-  // Pinned, not judged: see "Needs decision" in docs/overnight-report-2026-11-17.md
+  // Pinned, not judged: see "Needs decision" in docs/overnight-report-2026-11-17.md (removed; in git at f943ae2)
   it('undoing a sale into a USD wallet keeps the wallet\'s new average rate (current behaviour)', () => {
     const s0 = state({ holdings: [stock()], cashAccounts: [bank, { ...usd, balance: 100, thbCost: 3_000 }] })
     const h = s0.holdings[0]

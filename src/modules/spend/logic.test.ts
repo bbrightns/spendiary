@@ -50,8 +50,6 @@ import {
   periodFor,
   shiftPeriod,
   sortTxns,
-  totalsBySubcategory,
-  topSubcategories,
   analysisInsights,
   habits,
   categoryBreakdown,
@@ -147,42 +145,6 @@ describe('analysisInsights', () => {
   it('reports a category spent less as a negative move', () => {
     const out = analysisInsights({ ...base, current: false, inRange: [txn({ categoryId: 'food', amount: 100 })], prevSoFar: [txn({ categoryId: 'shopping', amount: 2000 })] })
     expect(out).toEqual([{ kind: 'mover', categoryId: 'shopping', diff: -2000 }])
-  })
-})
-
-describe('topSubcategories', () => {
-  it('ranks subcategories across categories, keeping same labels apart', () => {
-    const rows = topSubcategories([
-      txn({ categoryId: 'food', subcategory: 'Snack', amount: 60 }),
-      txn({ categoryId: 'food', subcategory: 'Snack', amount: 40 }),
-      txn({ categoryId: 'food', subcategory: 'Sushi', amount: 500 }),
-      txn({ categoryId: 'shopping', subcategory: 'Snack', amount: 30 }),
-      txn({ categoryId: 'food', amount: 999 }),
-      txn({ type: 'income', categoryId: 'food', subcategory: 'Sushi', amount: 200, paidBack: true }),
-    ])
-    expect(rows).toEqual([
-      { categoryId: 'food', subcategory: 'Sushi', amount: 300, count: 1 },
-      { categoryId: 'food', subcategory: 'Snack', amount: 100, count: 2 },
-      { categoryId: 'shopping', subcategory: 'Snack', amount: 30, count: 1 },
-    ])
-    expect(topSubcategories([txn({ categoryId: 'food', subcategory: 'A', amount: 1 }), txn({ categoryId: 'food', subcategory: 'B', amount: 2 })], 1)).toHaveLength(1)
-  })
-})
-
-describe('totalsBySubcategory', () => {
-  it('sums expenses per subcategory within one category, biggest first', () => {
-    const rows = [
-      txn({ categoryId: 'food', subcategory: 'Dessert', amount: 45 }),
-      txn({ categoryId: 'food', subcategory: 'Regular', amount: 50 }),
-      txn({ categoryId: 'food', subcategory: 'Regular', amount: 60 }),
-      txn({ categoryId: 'food', amount: 999 }),
-      txn({ categoryId: 'transport', subcategory: 'Yaris', amount: 1370 }),
-      txn({ type: 'income', categoryId: 'food', subcategory: 'Regular', amount: 5 }),
-    ]
-    expect(totalsBySubcategory(rows, 'food')).toEqual([
-      { subcategory: 'Regular', amount: 110 },
-      { subcategory: 'Dessert', amount: 45 },
-    ])
   })
 })
 

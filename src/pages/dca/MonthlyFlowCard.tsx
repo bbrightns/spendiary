@@ -125,11 +125,21 @@ export function MonthlyFlowCard({ flow, verdict, salaryAmount, salaryNote, onAdd
   ]
   /** Set amounts first; Living last, as it is the one that moves during the month */
   const parts: Part[] = [
-    { label: 'Fixed bills', note: 'Recurring bills in Spend', amount: fixed, color: 'var(--color-loss)' },
+    { label: 'Fixed bills', note: <Link to="/spend/recurring" className="font-semibold text-link hover:underline">Recurring bills in Spend</Link>, amount: fixed, color: 'var(--color-loss)' },
     { label: 'Invest', note: 'Your DCA plans', amount: invest, color: 'var(--color-invest)' },
-    { label: 'Living', note: livingNote, amount: living, color: 'var(--color-warn)' },
+    {
+      label: 'Living',
+      note: livingThisMonth !== null && living > 0 ? (
+        <>
+          <span className="tnum">{thb(livingThisMonth)}</span> spent so far in {periodName}
+          <br />
+          {livingNote}
+        </>
+      ) : livingNote,
+      amount: living,
+      color: livingThisMonth !== null && livingThisMonth > living ? 'var(--color-loss)' : 'var(--color-warn)',
+    },
   ]
-  const livingPct = living > 0 && livingThisMonth !== null ? Math.min(100, (livingThisMonth / living) * 100) : 0
 
   return (
     <Card className="card-bleed-mobile animate-rise">
@@ -182,24 +192,6 @@ export function MonthlyFlowCard({ flow, verdict, salaryAmount, salaryNote, onAdd
             </div>
           )}
 
-          {livingThisMonth !== null && living > 0 && (
-            <Link to="/spend/analysis" className="mt-3 block rounded-2xl border border-line p-3 transition-colors hover:bg-surface-muted/60">
-              <span className="flex items-baseline justify-between gap-3">
-                <span className="min-w-0 truncate text-xs text-ink-muted">Living · {periodName}</span>
-                <span className="shrink-0 text-sm font-semibold text-link">Spend →</span>
-              </span>
-              <span className="mt-1 block text-sm text-ink tnum">
-                <span className="font-display font-extrabold">{thb(livingThisMonth)}</span>
-                <span className="text-ink-muted"> of {thb(living)}</span>
-              </span>
-              <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-surface-muted" aria-hidden="true">
-                <span
-                  className="block h-full rounded-full transition-all duration-500"
-                  style={{ width: `${livingPct}%`, background: livingThisMonth > living ? 'var(--color-loss)' : 'var(--color-warn)' }}
-                />
-              </span>
-            </Link>
-          )}
         </>
       )}
     </Card>

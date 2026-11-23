@@ -10,7 +10,9 @@ import { DividendSetupModal } from '../components/forms/DividendSetupModal'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/ToastContext'
-import { thb } from '../lib/format'
+import { money, thb } from '../lib/format'
+import { convertMoney, dividendInUsd, dividendRecordCurrency, dividendThb } from '../lib/dividendSchedule'
+import { dayLabel } from '../modules/spend/historyRange'
 import { THAI_MONTHS_SHORT, getHoldingAnnualDividend, getHoldingDpsForMonth, isDividendReceivedThisMonth } from '../lib/calc'
 import { CalendarIcon, CheckCircleIcon, ChevronDownIcon, ChevronRightIcon, CoinsIcon, PlusIcon, TrashIcon } from '../components/icons'
 import type { DividendRecord, Holding } from '../lib/types'
@@ -20,8 +22,14 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December'
 ]
 
+/** What a holding is worth in baht (prices are kept in baht), or what was paid for it when it has no price */
+function holdingValueThb(h: Holding): number {
+  const units = h.units ?? h.totalUnits ?? 0
+  return h.price > 0 ? units * h.price : (h.totalThbInvested ?? (units * (h.avgCostThb ?? h.avgCost ?? 0)))
+}
+
 export function Dividends() {
-  const { data, removeDividendRecord } = useData()
+  const { data, removeDividendRecord, usdThb } = useData()
   const { showToast } = useToast()
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -67,46 +75,46 @@ export function Dividends() {
     })
   }, [records, currentYear])
 
-  const totalNetThisYear = useMemo(() => {
-    return thisYearRecords.reduce((sum, r) => sum + r.netAmount, 0)
-  }, [thisYearRecords])
-
-  const totalGrossThisYear = useMemo(() => {
-    return thisYearRecords.reduce((sum, r) => sum + r.grossAmount, 0)
-  }, [thisYearRecords])
-
-  const totalTaxThisYear = useMemo(() => {
-    return thisYearRecords.reduce((sum, r) => sum + r.taxAmount, 0)
-  }, [thisYearRecords])
+  // Records hold their amounts in the receiving account's currency; dollars count in baht only at a real rate
+  const receivedThisYear = useMemo(() => {
+    const out = { net: 0, gross: 0, tax: 0, usdLeftOut: 0 }
+    for (const r of thisYearRecords) {
+      const currency = dividendRecordCurrency(r, data.cashAccounts)
+      const net = convertMoney(r.netAmount, currency, 'THB', usdThb)
+      if (net === null) {
+        out.usdLeftOut += r.netAmount
+        continue
+      }
+      out.net += net
+      out.gross += convertMoney(r.grossAmount, currency, 'THB', usdThb) ?? 0
+      out.tax += convertMoney(r.taxAmount, currency, 'THB', usdThb) ?? 0
+    }
+    return out
+  }, [thisYearRecords, data.cashAccounts, usdThb])
 
   // Holdings that pay dividends
   const dividendHoldings = useMemo(() => {
     return (data.holdings ?? []).filter((h) => h.paysDividend)
   }, [data.holdings])
 
-  // Estimated annual dividend across all dividend holdings
-  const totalAnnualDividendGross = useMemo(() => {
-    return dividendHoldings.reduce((sum, h) => sum + getHoldingAnnualDividend(h), 0)
-  }, [dividendHoldings])
-
-  const totalAnnualDividendNet = useMemo(() => {
-    return totalAnnualDividendGross * 0.90 // estimate after 10% withholding tax
-  }, [totalAnnualDividendGross])
-
-  // Total investment basis for dividend-paying holdings
-  const totalDividendPortfolioValue = useMemo(() => {
-    return dividendHoldings.reduce((sum, h) => {
-      const units = h.units ?? h.totalUnits ?? 0
-      const value = h.price > 0 ? units * h.price : (h.totalThbInvested ?? (units * (h.avgCostThb ?? h.avgCost ?? 0)))
-      return sum + value
-    }, 0)
-  }, [dividendHoldings])
-
-  // Annual return rate (% ต่อปี)เทียบเหมือนดอกเบี้ยเงินฝาก
-  const annualDividendYieldPct = useMemo(() => {
-    if (totalDividendPortfolioValue <= 0) return 0
-    return (totalAnnualDividendGross / totalDividendPortfolioValue) * 100
-  }, [totalAnnualDividendGross, totalDividendPortfolioValue])
+  // Estimated annual dividend across all dividend holdings, in baht, and the yield on what those holdings are worth
+  const expectedThisYear = useMemo(() => {
+    let gross = 0
+    let value = 0
+    let usdLeftOut = 0
+    for (const h of dividendHoldings) {
+      const annual = getHoldingAnnualDividend(h)
+      const annualThb = dividendThb(h, annual, usdThb)
+      if (annualThb === null) {
+        usdLeftOut += annual * 0.90
+        continue
+      }
+      gross += annualThb
+      value += holdingValueThb(h)
+    }
+    return { net: gross * 0.90, yieldPct: value > 0 ? (gross / value) * 100 : 0, usdLeftOut } // 10% withholding tax
+  }, [dividendHoldings, usdThb])
+  const annualDividendYieldPct = expectedThisYear.yieldPct
 
   // Upcoming dividends for this month
   const upcomingHoldings = useMemo(() => {
@@ -115,16 +123,22 @@ export function Dividends() {
 
   const upcomingOpen = isUpcomingOpen ?? (upcomingHoldings.length > 0)
 
-  // Estimated this month
+  // Estimated this month, in baht (10% tax estimate); USD left out until a rate is known
   const estimatedThisMonth = useMemo(() => {
     return upcomingHoldings.reduce((sum, h) => {
       const units = h.units ?? h.totalUnits ?? 0
-      const dps = getHoldingDpsForMonth(h, currentMonth)
-      const gross = units * dps
-      const net = gross * 0.90 // 10% tax estimate
-      return sum + net
+      return sum + (dividendThb(h, units * getHoldingDpsForMonth(h, currentMonth) * 0.90, usdThb) ?? 0)
     }, 0)
-  }, [upcomingHoldings, currentMonth])
+  }, [upcomingHoldings, currentMonth, usdThb])
+
+  /** An amount in the holding's currency, shown in baht when it can be, else in dollars */
+  const shown = (h: Pick<Holding, 'assetClass'>, amount: number) => {
+    const inThb = dividendThb(h, amount, usdThb)
+    return inThb === null ? money(amount, 'USD', true) : thb(inThb)
+  }
+  /** A recorded amount in the currency it landed in (history table) */
+  const own = (r: DividendRecord, amount: number) =>
+    dividendRecordCurrency(r, data.cashAccounts) === 'USD' ? money(amount, 'USD', true) : thb(amount)
 
 
   // Unique years in records for filter
@@ -181,13 +195,15 @@ export function Dividends() {
                 )}
               </div>
               <p className="mt-1 font-display text-xl sm:text-2xl font-extrabold text-gain-ink tnum truncate">
-                ~{thb(totalAnnualDividendNet)}
+                ~{thb(expectedThisYear.net)}
               </p>
             </div>
             <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-              {annualDividendYieldPct > 0
-                ? `About ${annualDividendYieldPct.toFixed(1)}% per year, like interest on a deposit`
-                : 'Set up dividends on your stocks to see this'}
+              {expectedThisYear.usdLeftOut > 0
+                ? `Leaves out ${money(expectedThisYear.usdLeftOut, 'USD')} until a USD/THB rate loads`
+                : annualDividendYieldPct > 0
+                  ? `About ${annualDividendYieldPct.toFixed(1)}% per year, like interest on a deposit`
+                  : 'Set up dividends on your stocks to see this'}
             </p>
           </Card>
 
@@ -196,11 +212,13 @@ export function Dividends() {
             <div>
               <p className="text-xs font-medium text-ink-muted">Received ({currentYear})</p>
               <p className="mt-1 font-display text-lg sm:text-2xl font-extrabold text-ink tnum truncate">
-                {thb(totalNetThisYear)}
+                {thb(receivedThisYear.net)}
               </p>
             </div>
             <p className="mt-1 sm:mt-1.5 text-xs text-ink-muted truncate">
-              Before tax {thb(totalGrossThisYear)} · tax -{thb(totalTaxThisYear)}
+              {receivedThisYear.usdLeftOut > 0
+                ? `Leaves out ${money(receivedThisYear.usdLeftOut, 'USD', true)} until a USD/THB rate loads`
+                : `Before tax ${thb(receivedThisYear.gross)} · tax -${thb(receivedThisYear.tax)}`}
             </p>
           </Card>
 
@@ -286,15 +304,15 @@ export function Dividends() {
                   {upcomingHoldings.map((h) => {
                     const units = h.units ?? h.totalUnits ?? 0
                     const dps = getHoldingDpsForMonth(h, currentMonth)
-                    const estGross = units * dps
-                    const estNet = estGross * 0.90
+                    const estNet = units * dps * 0.90
                     const isReceived = isDividendReceivedThisMonth(h.id, data.dividendRecords)
                     const sym = h.assetClass === 'stock' ? '$' : '฿'
 
                     // Asset level annual yield (% ต่อปี)
                     const annualGross = getHoldingAnnualDividend(h)
-                    const assetVal = h.price > 0 ? units * h.price : (h.totalThbInvested ?? (units * (h.avgCostThb ?? h.avgCost ?? 0)))
-                    const assetYieldPct = assetVal > 0 ? (annualGross / assetVal) * 100 : 0
+                    const annualThb = dividendThb(h, annualGross, usdThb)
+                    const assetVal = holdingValueThb(h)
+                    const assetYieldPct = annualThb !== null && assetVal > 0 ? (annualThb / assetVal) * 100 : 0
 
                     return (
                       <li key={h.id} className="p-3.5 sm:px-5 sm:py-4 hover:bg-surface-muted/50 transition-colors">
@@ -304,7 +322,7 @@ export function Dividends() {
                           <div className="flex items-start justify-between gap-3 min-w-0">
                             {/* Left: logo + name + yield | edit button */}
                             <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <AssetLogo name={h.name} assetClass={h.assetClass} size="md" />
+                              <AssetLogo ticker={h.ticker} name={h.name} assetClass={h.assetClass} size="md" />
                               <div className="min-w-0 flex-1">
                                 {/* Line 1.1: ticker + full name */}
                                 <div className="flex items-center gap-1.5 min-w-0">
@@ -341,7 +359,7 @@ export function Dividends() {
                             {estNet > 0 && (
                               <div className="text-right shrink-0">
                                 <span className="font-display text-base sm:text-lg font-extrabold text-gain-ink tnum">
-                                  ~{thb(estNet)}
+                                  ~{shown(h, estNet)}
                                 </span>
                                 <p className="text-xs text-ink-muted">About (after tax)</p>
                               </div>
@@ -357,10 +375,10 @@ export function Dividends() {
                             <div className="text-xs text-ink-muted min-w-0 truncate">
                               <span>{units.toLocaleString()} {units === 1 ? 'share' : 'shares'}</span>
                               <span className="mx-1.5">·</span>
-                              <span>Dividend: <strong className="text-ink font-semibold">{dps > 0 ? `${sym}${dps}` : 'N/A'}</strong> / share</span>
+                              <span>Dividend: <strong className="text-ink font-semibold">{dps > 0 ? `${sym}${dps.toLocaleString()}` : 'N/A'}</strong> / share</span>
                               {annualGross > 0 && (
                                 <span className="hidden sm:inline text-ink-muted">
-                                  {' '}(~{thb(annualGross)} per year)
+                                  {' '}(~{shown(h, annualGross)} per year)
                                 </span>
                               )}
                             </div>
@@ -449,7 +467,7 @@ export function Dividends() {
                       onClick={() => setSetupHolding(h)}
                       className="flex w-full items-center gap-3 p-3.5 sm:px-5 text-left hover:bg-surface-muted/50 transition-colors cursor-pointer"
                     >
-                      <AssetLogo name={h.name} assetClass={h.assetClass} size="md" />
+                      <AssetLogo ticker={h.ticker} name={h.name} assetClass={h.assetClass} size="md" />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-ink">
                           {h.ticker} <span className="font-normal text-ink-muted">{h.name}</span>
@@ -460,7 +478,7 @@ export function Dividends() {
                       </div>
                       {annualNet > 0 && (
                         <div className="text-right shrink-0">
-                          <p className="text-sm font-semibold text-gain-ink tnum">~{thb(annualNet)}</p>
+                          <p className="text-sm font-semibold text-gain-ink tnum">~{shown(h, annualNet)}</p>
                           <p className="text-xs text-ink-muted">per year</p>
                         </div>
                       )}
@@ -566,12 +584,12 @@ export function Dividends() {
                 <tbody className="divide-y divide-line">
                   {filteredRecords.map((r) => (
                     <tr key={r.id} className="hover:bg-surface-muted/40 transition-colors">
-                      <td className="px-5 py-3.5 text-ink font-medium whitespace-nowrap">
-                        {r.paymentDate}
+                      <td className="px-5 py-3.5 text-ink font-medium tnum whitespace-nowrap">
+                        {dayLabel(r.paymentDate, !r.paymentDate.startsWith(String(currentYear)))}
                       </td>
                       <td className="px-5 py-3.5 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <AssetLogo name={r.holdingName} assetClass={r.assetClass} size="sm" />
+                          <AssetLogo ticker={r.ticker} name={r.holdingName} assetClass={r.assetClass} size="md" />
                           <div>
                             <span className="font-bold text-ink">{r.ticker}</span>
                             <span className="block text-xs text-ink-muted truncate max-w-[140px] sm:max-w-none">
@@ -581,23 +599,23 @@ export function Dividends() {
                         </div>
                       </td>
                       <td className="px-5 py-3.5 text-right font-medium text-ink-soft tnum whitespace-nowrap">
-                        ฿{r.dps.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                        {dividendInUsd(r) ? '$' : '฿'}{r.dps.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
                       </td>
                       <td className="px-5 py-3.5 text-right font-medium text-ink-soft tnum whitespace-nowrap">
                         {r.shares.toLocaleString()}
                       </td>
                       <td className="px-5 py-3.5 text-right font-medium text-ink tnum whitespace-nowrap">
-                        {thb(r.grossAmount)}
+                        {own(r, r.grossAmount)}
                       </td>
-                      <td className="px-5 py-3.5 text-right font-medium text-loss-ink tnum whitespace-nowrap">
-                        {r.taxAmount > 0 ? `-฿${r.taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '฿0.00'}
+                      <td className={`px-5 py-3.5 text-right font-medium tnum whitespace-nowrap ${r.taxAmount > 0 ? 'text-loss-ink' : 'text-ink-muted'}`}>
+                        {r.taxAmount > 0 ? `-${own(r, r.taxAmount)}` : '–'}
                       </td>
                       <td className="px-5 py-3.5 text-right font-display font-extrabold text-gain-ink tnum whitespace-nowrap">
-                        {thb(r.netAmount)}
+                        {own(r, r.netAmount)}
                       </td>
                       <td className="px-5 py-3.5 whitespace-nowrap text-ink-muted text-xs">
                         {r.cashAccountName ? (
-                          <span className="inline-flex items-center rounded-md bg-surface-muted px-2 py-0.5 font-medium text-ink">
+                          <span title={r.cashAccountName} className="inline-block max-w-40 truncate align-middle rounded-md bg-surface-muted px-2 py-0.5 font-medium text-ink">
                             {r.cashAccountName}
                           </span>
                         ) : (
@@ -650,7 +668,7 @@ export function Dividends() {
         title="Remove this dividend?"
         description={
           deletingRecord
-            ? `Are you sure you want to remove this ฿${deletingRecord.netAmount.toLocaleString()} dividend for ${deletingRecord.ticker}? If this was deposited to ${deletingRecord.cashAccountName || 'a cash account'}, the cash balance will be reduced.`
+            ? `Are you sure you want to remove this ${own(deletingRecord, deletingRecord.netAmount)} dividend for ${deletingRecord.ticker}? If this was deposited to ${deletingRecord.cashAccountName || 'a cash account'}, the cash balance will be reduced.`
             : ''
         }
         confirmText="Remove dividend"

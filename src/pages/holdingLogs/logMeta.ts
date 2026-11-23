@@ -87,7 +87,8 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
 
   if (log.action === 'buy_more') {
     return {
-      label: log.dcaPlanId ? 'DCA buy' : 'Bought more',
+      // Money put into a cash account is a deposit, not a purchase
+      label: log.dcaPlanId ? 'DCA buy' : log.assetClass === 'cash' ? 'Deposit' : 'Bought more',
       style: 'bg-brand/10 text-link',
       icon: ArrowUpIcon,
       isPriceUpdate: false,
@@ -114,7 +115,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
 
     if (tickerChanged || nameChanged) {
       return {
-        label: tickerChanged ? 'Ticker Updated' : 'Renamed',
+        label: tickerChanged ? 'Ticker updated' : 'Renamed',
         style: tintBadge('amber'),
         icon: TagIcon,
         isPriceUpdate: false,
@@ -124,7 +125,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
     if (priceChanged && !unitsChanged && !costChanged) {
       const isFund = log.assetClass === 'fund'
       return {
-        label: isFund ? 'NAV Updated' : 'Price Updated',
+        label: isFund ? 'NAV updated' : 'Price updated',
         style: tintBadge('sky'),
         icon: TagIcon,
         isPriceUpdate: true,
@@ -143,7 +144,7 @@ export function getLogActionMeta(log: HoldingLog): ActionMeta {
 
   if (log.note && (log.note.toLowerCase().includes('price') || log.note.toLowerCase().includes('nav')) && !log.note.includes('+') && !log.note.includes('shares @') && !log.note.includes('units @')) {
     return {
-      label: log.assetClass === 'fund' ? 'NAV Updated' : 'Price Updated',
+      label: log.assetClass === 'fund' ? 'NAV updated' : 'Price updated',
       style: tintBadge('sky'),
       icon: TagIcon,
       isPriceUpdate: true,
@@ -330,11 +331,6 @@ export const ASSET_FILTERS: { key: AssetClass | 'all'; label: string }[] = [
   { key: 'real_estate', label: 'Real estate' },
   { key: 'cash', label: 'Cash' },
 ]
-
-export function getLogAssetLabel(log: HoldingLog): string {
-  if (log.ticker === 'FIXED') return 'expense'
-  return ASSET_FILTERS.find((filter) => filter.key === log.assetClass)?.label ?? log.assetClass
-}
 
 export const ACTION_FILTERS = [
   { key: 'all', label: 'All' },

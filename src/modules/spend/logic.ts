@@ -560,27 +560,6 @@ export function totalsFor(txns: SpendTransaction[]): MonthTotals {
   return { income, expense, net: income - expense, byCategory }
 }
 
-/**
- * Spend per subcategory across every category, biggest first, at most `limit`. The same label under two
- * categories ("Other" under Food and Shopping) stays two rows. Money paid back comes off its subcategory.
- */
-export function topSubcategories(txns: SpendTransaction[], limit = 5): { categoryId: string; subcategory: string; amount: number; count: number }[] {
-  const rows = new Map<string, { categoryId: string; subcategory: string; amount: number; count: number }>()
-  for (const t of txns) {
-    if (!spendOf(t) || !t.subcategory) continue
-    const categoryId = t.categoryId ?? 'other'
-    const key = `${categoryId}\u0000${t.subcategory}`
-    const row = rows.get(key) ?? { categoryId, subcategory: t.subcategory, amount: 0, count: 0 }
-    row.amount += spendOf(t)
-    if (t.type === 'expense') row.count += 1
-    rows.set(key, row)
-  }
-  return [...rows.values()]
-    .filter((r) => r.amount > 0)
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, limit)
-}
-
 export interface Habit {
   categoryId: string
   subcategory: string
@@ -686,19 +665,6 @@ export function analysisInsights(o: {
   return out
 }
 
-/** Spend per subcategory label inside one category, biggest first; untagged expenses are left out. */
-export function totalsBySubcategory(txns: SpendTransaction[], categoryId: string): { subcategory: string; amount: number }[] {
-  const sub = new Map<string, number>()
-  for (const t of txns) {
-    if (!spendOf(t) || (t.categoryId ?? 'other') !== categoryId || !t.subcategory) continue
-    sub.set(t.subcategory, (sub.get(t.subcategory) ?? 0) + spendOf(t))
-  }
-  return [...sub.entries()]
-    .map(([subcategory, amount]) => ({ subcategory, amount }))
-    .filter((r) => r.amount > 0)
-    .sort((a, b) => b.amount - a.amount)
-}
-
 /**
  * What a category's spending went on: each entry counts under its subcategory, else its note's title, so
  * untagged spending still shows. Biggest first, at most `limit` rows; the rest (and entries with neither) fold
@@ -747,19 +713,6 @@ export function sortTxns(txns: SpendTransaction[]): SpendTransaction[] {
   return [...txns].sort(
     (a, b) => b.date.localeCompare(a.date) || (b.time ?? '').localeCompare(a.time ?? '') || b.createdAt.localeCompare(a.createdAt),
   )
-}
-
-/** Tags by when they were last typed (created or edited), most recent first. */
-export function recentTags(txns: SpendTransaction[], limit = 3): string[] {
-  const seen: string[] = []
-  const byRecency = [...txns].sort((a, b) => (b.updatedAt ?? b.createdAt).localeCompare(a.updatedAt ?? a.createdAt))
-  for (const t of byRecency) {
-    for (const tag of t.tags ?? []) {
-      if (!seen.includes(tag)) seen.push(tag)
-      if (seen.length === limit) return seen
-    }
-  }
-  return seen
 }
 
 /** Most-used tags across all transactions, most frequent first. */

@@ -220,7 +220,8 @@ export function getLogTransactionDetails(log: HoldingLog, usdThb?: number | null
   const { prev, curr } = logHoldingStates(log)
   // Real rate or 0: without one, USD amounts are left out of THB totals and prices stay in THB
   const fx = rateOrZero(usdThb)
-  const priceInUsdOrThb = (thbValue: number) => (fx > 0 ? `$${(thbValue / fx).toFixed(2)}` : `฿${thbValue.toFixed(2)}`)
+  const two = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const priceInUsdOrThb = (thbValue: number) => (fx > 0 ? `$${two(thbValue / fx)}` : `฿${two(thbValue)}`)
 
   // Check if it is a cash log
   if (log.assetClass === 'cash' || log.ticker === 'CASH' || log.holdingName === 'Cash Accounts') {

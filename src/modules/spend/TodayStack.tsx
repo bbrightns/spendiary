@@ -14,6 +14,7 @@ import {
   shouldConfirmBuy,
 } from '../../lib/calc'
 import { localDateStr, thb } from '../../lib/format'
+import { dividendInUsd } from '../../lib/dividendSchedule'
 import { STORAGE_KEYS } from '../../lib/storageKeys'
 import type { DcaPlan, Holding } from '../../lib/types'
 import { useData } from '../../store/DataContext'
@@ -58,6 +59,8 @@ interface Item {
   onAction: () => void
   /** A quieter second button, e.g. Skip */
   secondary?: { label: string; onClick: () => void }
+  /** A DCA buy, so a folded card can show the one-time DCA tip */
+  kind?: 'dca'
 }
 
 interface Group {
@@ -157,6 +160,7 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
       const into = p.assetClass === 'cash' ? account(p.cashAccountId) : undefined
       return {
         id: p.id,
+        kind: 'dca',
         ...planTitle(p),
         // When first, so a narrow phone cuts the frequency rather than the date
         detail: `${today ? 'Due today' : `Missed ${shortDate(buyDateThisPeriod(p, now))}`} · ${thb(p.monthlyAmount)} ${FREQ[p.frequency ?? 'monthly']}${into ? ` · into ${into}` : ''}`,
@@ -184,7 +188,7 @@ function useTodayGroups(onConfirmDca: (p: DcaPlan) => void, onLogDividend: (h: H
       return {
         id: h.id,
         title: `Dividend from ${h.name}`,
-        detail: `Expected in ${monthName}${dps > 0 ? ` · ${dps} per share` : ''} · log it when it arrives`,
+        detail: `Expected in ${monthName}${dps > 0 ? ` · ${dividendInUsd(h) ? '$' : '฿'}${dps.toLocaleString()} per share` : ''} · log it when it arrives`,
         tone: 'gain',
         amount: 0,
         color: ASSET_META[h.assetClass as keyof typeof ASSET_META]?.color,
@@ -300,6 +304,7 @@ function GroupCard({ group }: { group: Group }) {
       </button>
       {open && (
         <ul className="divide-y divide-line/60 border-t border-line/60 bg-surface/60">
+          {group.items.some((i) => i.kind === 'dca') && <DcaHint inList />}
           {group.items.map((i) => (
             <li key={i.id} className="flex items-center gap-3 px-4 py-2.5">
               <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: i.color ?? 'var(--color-ink-faint)' }} />
@@ -332,13 +337,33 @@ function GroupCard({ group }: { group: Group }) {
 }
 
 /**
+ * DCA buys and dividends both come from Invest, so on Spend Home they share one card
+ * ("3 DCA buys · 1 dividend to log") instead of two. Each item keeps its own button inside.
+ */
+function mergeInvest(groups: Group[]): Group[] {
+  const dca = groups.find((g) => g.id === 'dca')
+  const div = groups.find((g) => g.id === 'dividends')
+  if (!dca || !div) return groups
+  const merged: Group = {
+    ...dca,
+    id: 'invest',
+    // Short enough for a phone: "3 DCA buys · 1 dividend", with "to log" leading the line under it
+    title: () => `${dca.title(dca.items.length).replace(/ to log$/, '')} · ${div.title(div.items.length).replace(/ to log$/, '')}`,
+    summary: () => `To log · ${dca.summary(dca.items)}`,
+    items: [...dca.items, ...div.items],
+    source: { ...dca.source!, linkText: 'Plans and dividends live in Invest' },
+  }
+  return groups.filter((g) => g !== div).map((g) => (g === dca ? merged : g))
+}
+
+/**
  * Spend Home's "Today" stack for both sides. A kind with one item shows it as its own card;
  * several fold into one card so they don't push the rest of Home down.
  */
 export function TodayStack() {
   const [confirmingPlan, setConfirmingPlan] = useState<DcaPlan | null>(null)
   const [dividendFor, setDividendFor] = useState<{ holding: Holding; dps: number } | null>(null)
-  const groups = useTodayGroups(setConfirmingPlan, (holding, dps) => setDividendFor({ holding, dps }))
+  const groups = mergeInvest(useTodayGroups(setConfirmingPlan, (holding, dps) => setDividendFor({ holding, dps })))
 
   return (
     <>
@@ -347,7 +372,7 @@ export function TodayStack() {
           {groups.map((g) => (
             <Fragment key={g.id}>
               {g.items.length === 1 ? <ItemCard item={g.items[0]} icon={g.icon} badge={g.badge} source={g.source} /> : <GroupCard group={g} />}
-              {g.id === 'dca' && <DcaHint />}
+              {g.id === 'dca' && g.items.length === 1 && <DcaHint />}
             </Fragment>
           ))}
         </div>
@@ -367,7 +392,7 @@ function readHintSeen(): boolean {
 }
 
 /** Shown once, the first time a DCA buy lands in the Today stack: what it is and that the app doesn't trade */
-function DcaHint() {
+function DcaHint({ inList = false }: { inList?: boolean }) {
   const [seen, setSeen] = useState(readHintSeen)
   if (seen) return null
   const dismiss = () => {
@@ -378,8 +403,11 @@ function DcaHint() {
       // Private mode: the hint just shows again next time
     }
   }
+  const Box = inList ? 'li' : 'div'
   return (
-    <div className="flex items-start gap-3 rounded-2xl border border-dashed border-line-strong px-4 py-3 text-xs leading-relaxed text-ink-muted animate-rise">
+    <Box
+      className={`flex items-start gap-3 px-4 py-3 text-xs leading-relaxed text-ink-muted ${inList ? '' : 'rounded-2xl border border-dashed border-line-strong animate-rise'}`}
+    >
       <HelpCircleIcon className="mt-0.5 h-4 w-4 shrink-0 text-link" />
       <p className="min-w-0 flex-1">
         <span className="font-semibold text-ink">Your DCA buys show up here on their buy day.</span> Spendiary doesn't buy for you: after you buy at
@@ -388,7 +416,7 @@ function DcaHint() {
       <button type="button" onClick={dismiss} className="shrink-0 rounded-full px-2 py-1 font-semibold text-link hover:underline cursor-pointer min-h-8">
         Got it
       </button>
-    </div>
+    </Box>
   )
 }
 

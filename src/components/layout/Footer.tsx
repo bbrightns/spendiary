@@ -13,52 +13,28 @@ export function Footer({ className = '' }: FooterProps) {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const buttonClass =
-    'border-line/80 bg-surface/80 dark:bg-surface-muted/60 backdrop-blur-md text-ink-muted hover:border-line hover:bg-surface-muted hover:text-ink'
-  const textClass = 'text-ink-muted'
-  const buildTextClass = 'text-ink-muted'
-  const dotClass = 'text-ink-muted/40'
-
   return (
-    <footer className={`w-full mt-10 pt-8 pb-10 border-t border-line/60 select-none ${className}`}>
-      <div className="flex flex-col items-start gap-3.5">
-        {/* Version Control Capsule */}
+    <footer className={`w-full mt-8 pt-5 pb-8 border-t border-line/60 select-none ${className}`}>
+      {/* One row on wide screens; wraps on phones */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-ink-muted">
         <button
           type="button"
           onClick={handleCopyBuild}
           title={`Built on ${new Date(__BUILD_TIME__).toLocaleString()} • Click to copy build info`}
-          className={`group inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs transition-all duration-150 active:scale-95 cursor-pointer shadow-xs ${buttonClass}`}
+          className="inline-flex items-center gap-2 rounded-full border border-line/80 bg-surface/80 px-3 py-1 text-xs text-ink-muted shadow-xs backdrop-blur-md transition-all duration-150 hover:border-line hover:bg-surface-muted hover:text-ink active:scale-95 cursor-pointer dark:bg-surface-muted/60"
         >
-          <span
-            className={`h-1.5 w-1.5 rounded-full transition-colors shrink-0 ${
-              copied ? 'bg-gain animate-pulse' : 'bg-gain'
-            }`}
-          />
-          <span className="font-medium">
-            {copied ? 'Copied to clipboard!' : `Version ${__APP_VERSION__}`}
-          </span>
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gain" />
+          <span className="font-medium">{copied ? 'Copied to clipboard!' : `Version ${__APP_VERSION__}`}</span>
           {!copied && (
             <>
-              <span className={dotClass}>•</span>
-              <span className={`font-mono text-xs ${buildTextClass}`}>
-                build {__COMMIT_HASH__}
-              </span>
+              <span className="text-ink-muted/40">•</span>
+              <span className="font-mono">build {__COMMIT_HASH__}</span>
             </>
           )}
         </button>
-
-        {/* Copyright */}
-        <p className={`text-xs font-normal antialiased ${textClass}`}>
-          © 2026 Spendiary. Every choice shapes your wealth.
-        </p>
-
-        {/* Brand Accent Bar + Tag */}
-        <div className="flex items-center gap-2.5 pt-0.5">
-          <span className="w-7 h-[2px] rounded-full shrink-0 bg-brand/80 dark:bg-brand" />
-          <span className={`text-xs font-medium ${textClass}`}>
-            Designed & Built by bbrightns
-          </span>
-        </div>
+        <span>© 2026 Spendiary. Every choice shapes your wealth.</span>
+        <span aria-hidden="true" className="hidden text-ink-muted/40 sm:inline">·</span>
+        <span className="font-medium">Designed & Built by bbrightns</span>
       </div>
     </footer>
   )

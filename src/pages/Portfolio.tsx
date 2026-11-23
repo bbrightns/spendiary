@@ -902,30 +902,10 @@ export function Portfolio() {
                 ariaLabel={`Holdings ${donutMode === 'holding' ? 'per position' : 'group'} allocation, total value ${thb(summary.value)}`}
               />
 
+              {/* Per holding, the donut labels each slice and the Holdings list sits beside it; groups get their totals here */}
+              {donutMode === 'group' && (
               <div className="w-full space-y-2 pt-2 border-t border-line">
-                {donutMode === 'holding' ? (
-                  holdingAlloc.map((h) => (
-                    <div key={h.id} className="flex items-center justify-between text-xs">
-                      <span className="flex min-w-0 items-center gap-2 font-medium text-ink mr-2">
-                        <span
-                          className="h-2.5 w-2.5 rounded-full shrink-0"
-                          style={{ background: h.color }}
-                        />
-                        <span className="shrink-0 font-bold">{h.label}</span>
-                        {h.name !== h.label && (
-                          <span className="truncate text-ink-muted" title={h.name}>{h.name}</span>
-                        )}
-                      </span>
-                      <span className="font-bold tnum text-ink shrink-0">
-                        {thb(h.value)}{' '}
-                        <span className="font-normal text-ink-muted text-xs">
-                          ({h.pct.toFixed(1)}%)
-                        </span>
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  groupAlloc.map((g) => {
+                {groupAlloc.map((g) => {
                     return (
                       <div key={g.id} className="flex items-center justify-between text-xs">
                         <span className="flex items-center gap-2 font-medium text-ink truncate mr-2">
@@ -948,13 +928,12 @@ export function Portfolio() {
                         </span>
                       </div>
                     )
-                  })
-                )}
+                })}
               </div>
+              )}
             </div>
 
-            <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-xs">
-              <span className="text-ink-muted">{data.holdings.length} holding positions</span>
+            <div className="mt-4 pt-3 border-t border-line flex justify-end text-xs">
               <TextLink to="/rebalance">Rebalance →</TextLink>
             </div>
           </Card>

@@ -23,7 +23,12 @@ const daysFrom = (today: string, iso: string) => {
 }
 
 /** Recurring items waiting for a confirm, plus what's coming in the next week. */
-export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
+/**
+ * Bills due now and the week ahead. On the Bills page (`onBillsPage`) only what is due shows: the page's
+ * full list already gives every next date, and the page title already says "Bills & recurring".
+ */
+export function RecurringDue({ onBillsPage = false }: { onBillsPage?: boolean }) {
+  const showManage = !onBillsPage
   const { recurring, accountName, dueRecurring, confirmRecurring, skipRecurring, unskipRecurring, removeTransaction } = useSpend()
   const { showToast } = useToast()
   const today = localDateStr()
@@ -75,9 +80,11 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
     )
   }
 
+  if (onBillsPage && dueRecurring.length === 0) return null
+
   return (
     <Card>
-      <CardHeader title="Bills and recurring" action={showManage && <TextLink to="/spend/recurring">Manage</TextLink>} />
+      <CardHeader title={onBillsPage ? 'Due now' : 'Bills and recurring'} action={showManage && <TextLink to="/spend/recurring">Manage</TextLink>} />
 
       {dueRecurring.length === 0 && upcoming.length === 0 && (
         <p className="mt-2 text-sm text-ink-muted">Nothing due this week.</p>
@@ -159,7 +166,7 @@ export function RecurringDue({ showManage = true }: { showManage?: boolean }) {
         </ul>
       )}
 
-      {upcoming.length > 0 && (
+      {!onBillsPage && upcoming.length > 0 && (
         <div className={dueRecurring.length > 0 ? 'mt-2 border-t border-line pt-3' : 'mt-3'}>
           <p className="mb-2 text-xs font-semibold text-ink-muted">Coming up</p>
           {/* One block per day, headed by the date and that day's total, like the day list on Home */}

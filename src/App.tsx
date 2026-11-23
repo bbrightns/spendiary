@@ -10,11 +10,26 @@ import { PageErrorBoundary } from './app/PageErrorBoundary'
 import { lazyPage } from './lib/lazyPage'
 import { Landing } from './app/Landing'
 import { Privacy } from './app/Privacy'
-import { Dashboard } from './pages/Dashboard'
-import { Portfolio } from './pages/Portfolio'
-import { DcaPlanner } from './pages/DcaPlanner'
 // Spend Home is where the app opens, so it loads with the app instead of lazily (no skeleton flash)
 import { SpendOverview } from './modules/spend/pages/SpendOverview'
+
+// Invest's main pages load in their own files, warmed up in the background once the app is open
+// (warmInvestPages), so the Spend/Invest switch rarely waits and the first load stays small
+const loadDashboard = () => import('./pages/Dashboard').then(m => m.Dashboard)
+const loadPortfolio = () => import('./pages/Portfolio').then(m => m.Portfolio)
+const loadDcaPlanner = () => import('./pages/DcaPlanner').then(m => m.DcaPlanner)
+const Dashboard = lazyPage(loadDashboard)
+const Portfolio = lazyPage(loadPortfolio)
+const DcaPlanner = lazyPage(loadDcaPlanner)
+
+/** Fetch Invest's main pages when the browser is idle. A failure is left to the page's own load to report. */
+function warmInvestPages() {
+  const warm = () => {
+    for (const load of [loadDashboard, loadPortfolio, loadDcaPlanner]) load().catch(() => {})
+  }
+  if ('requestIdleCallback' in window) window.requestIdleCallback(warm, { timeout: 4000 })
+  else setTimeout(warm, 1500)
+}
 
 const Retirement = lazyPage(() => import('./pages/Retirement').then(m => m.Retirement))
 const Settings = lazyPage(() => import('./pages/Settings').then(m => m.Settings))
@@ -106,7 +121,7 @@ function SpendSettingsRedirect() {
   return <Navigate to={settingsPath(hash || 'spend')} replace />
 }
 
-// 1. สร้าง Component ย่อยด้านในเพื่อแยกเช็คสิทธิ์ผู้ใช้
+// Signed in or not: the landing page, or the app and its pages
 function AppContent() {
   const { user, dataReady, loadError, syncConflict, needsRefresh, retryLoad } = useData()
   const { pathname } = useLocation()
@@ -126,11 +141,15 @@ function AppContent() {
     retryLoad()
   }
 
+  useEffect(() => {
+    if (dataReady) warmInvestPages()
+  }, [dataReady])
+
   // Readable before signing in (linked from the landing page), and stays its own page after
   if (pathname === '/privacy') return <Privacy />
   if (!user) return <Landing />
 
-  // ถ้าล็อกอินผ่านแล้ว ให้แสดงผลหน้าตาแอปและ Router ปกติ
+  // Signed in: the app shell and its routes
   return (
     <Layout>
       <ScrollToTop />
@@ -184,7 +203,7 @@ function AppContent() {
   )
 }
 
-// 2. Component หลัก ทำหน้าที่หุ้มตัวแอปด้วย DataProvider
+// The app root: data and toasts around everything
 export default function App() {
   useTheme() // initializes + syncs theme to <html> class
 

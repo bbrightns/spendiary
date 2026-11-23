@@ -41,7 +41,7 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         badge: 'Spread your risk',
         title: 'Asset allocation',
         description:
-          'A chart of how your money is split across stocks, funds, crypto and gold, so you can see if it is balanced.',
+          'This bar shows how your money is split across stocks, funds, crypto, gold and cash, so you can see if it is balanced.',
         position: 'top',
       },
       {
@@ -119,14 +119,6 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         description:
           'The answer first: how much to top up from cash this month, and whether DCA has to come down. Below it, salary flows into fixed bills, living costs from Spend and your DCA plans.',
         position: 'bottom',
-      },
-      {
-        targetId: 'guide-dca-transfers',
-        badge: 'Fixed costs',
-        title: 'Regular expenses',
-        description:
-          'Add monthly costs like rent and bills, or money you set aside, to see what is left over to invest.',
-        position: 'top',
       },
       {
         targetId: 'guide-dca-plans',

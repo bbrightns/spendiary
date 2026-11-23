@@ -435,12 +435,8 @@ export function HoldingLogs() {
           <div className="space-y-4">
             {groups.map(([date, entries]) => (
               <Card key={date} list className="card-bleed-mobile pt-3 pb-1">
-                <div className="flex items-center justify-between border-b border-line pb-2 text-xs font-semibold text-ink-muted">
-                  <span>{dayLabel(date, showYear)}</span>
-                  <span className="tnum">
-                    {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
-                  </span>
-                </div>
+                {/* The count of entries is already the rows below; the page total sits above the list */}
+                <div className="border-b border-line pb-2 text-xs font-semibold text-ink-muted">{dayLabel(date, showYear)}</div>
                 <div className="divide-y divide-line">
                   {entries.map((log) => (
                     <TradeRow

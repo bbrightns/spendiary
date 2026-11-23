@@ -99,7 +99,7 @@ export function SpendRecurringPage() {
             </Card>
           </div>
 
-          <RecurringDue showManage={false} />
+          <RecurringDue onBillsPage />
 
           <Card padded={false} className="divide-y divide-line">
             {sorted.map((r) => {

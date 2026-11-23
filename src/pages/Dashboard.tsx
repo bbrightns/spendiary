@@ -8,9 +8,8 @@ import { Card, CardHeader, Inset } from '../components/ui/Card'
 import { TextLink } from '../components/ui/TextLink'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
-import { DonutChart } from '../components/charts/DonutChart'
 import { InteractiveNetWorthChart } from '../components/charts/InteractiveNetWorthChart'
-import { PnLPill, PnLText, UnpricedNote } from '../components/ui/PnL'
+import { PnLPill, UnpricedNote } from '../components/ui/PnL'
 import { LoanSheet } from '../modules/spend/LoanSheet'
 import { SpendSnapshotCard } from '../modules/spend/SpendSnapshotCard'
 import { AiImportModal } from '../components/forms/AiImportModal'
@@ -83,15 +82,6 @@ export function Dashboard() {
 
   const portfolio = useMemo(() => portfolioSummary(data.holdings), [data.holdings])
   const alloc = useMemo(() => allocations(data.holdings), [data.holdings])
-  const allocSegments = useMemo(
-    () =>
-      alloc.map((a) => ({
-        label: ASSET_META[a.assetClass].plural,
-        value: a.value,
-        color: ASSET_META[a.assetClass].color,
-      })),
-    [alloc],
-  )
   // Each helper gets only the fields its memo lists: the Pick<> in calc.ts makes a helper that starts
   // reading another field fail to compile here, instead of leaving the number stale
   const cash = useMemo(() => totalCash({ cashAccounts: data.cashAccounts }, usdThb), [data.cashAccounts, usdThb])
@@ -173,11 +163,6 @@ export function Dashboard() {
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <PnLPill value={portfolio.pnl} size="md" />
                 <span className="text-xs text-ink-muted">unrealised</span>
-                {debts > 0 && (
-                  <Link to="/spend/loans" className={CHIP} aria-label="Manage debts">
-                    Debt ratio <span className="tnum">{debtRatio.toFixed(1)}%</span>
-                  </Link>
-                )}
                 {data.retirement?.monthlySpend && data.retirement.monthlySpend > 0 ? (
                   <Link to="/retirement" className={CHIP} aria-label="View runway on the retirement page">
                     <ClockIcon className="h-3.5 w-3.5" />
@@ -190,6 +175,7 @@ export function Dashboard() {
                   </Link>
                 )}
               </div>
+              <UnpricedNote count={portfolio.unpricedCount} className="mt-2" />
             </div>
 
             {/* What the net worth is made of */}
@@ -215,7 +201,7 @@ export function Dashboard() {
 
           {/* Asset mix bar and legend */}
           {grossAssets > 0 && (
-            <div className="space-y-2.5 border-t border-line px-5 pb-5 pt-4 sm:px-6">
+            <div id="guide-dashboard-alloc" className="space-y-2.5 border-t border-line px-5 pb-5 pt-4 sm:px-6">
               <div className="flex h-2 overflow-hidden rounded-full bg-surface-muted">
                 {alloc.map((a) => (
                   <div
@@ -239,6 +225,7 @@ export function Dashboard() {
                     Cash <span className="tnum">{Math.round((cash / grossAssets) * 100)}%</span>
                   </span>
                 )}
+                <TextLink to="/portfolio" className="ml-auto text-xs">Portfolio →</TextLink>
               </div>
             </div>
           )}
@@ -248,67 +235,10 @@ export function Dashboard() {
       {/* ── Spend cash flow (this spending month) ── */}
       <SpendSnapshotCard className="card-bleed-mobile" />
 
-      {/* ── Allocation, cash and debts ── */}
-      <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-12">
-        {/* Allocation */}
-        <div id="guide-dashboard-alloc" className="lg:col-span-5 xl:col-span-4">
-          <Card className="card-bleed-mobile h-full animate-rise">
-            <CardHeader title="Allocation" action={<TextLink to="/portfolio">Portfolio →</TextLink>} />
-
-            <Inset id="guide-portfolio-summary" className="@container mt-3">
-              {/* Stacks when the card is narrow, sits side by side once there is room */}
-              <div className="flex flex-col gap-3 @min-[17rem]:flex-row @min-[17rem]:items-start @min-[17rem]:justify-between">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-ink-muted">Portfolio value</p>
-                  <p title={thb(portfolio.value)} className="mt-1 font-display text-2xl font-extrabold tracking-tight tnum text-ink">
-                    {thbCompact(portfolio.value)}
-                  </p>
-                  <p className="text-xs text-ink-muted" title={thb(portfolio.cost)}>
-                    Cost <span className="font-semibold tnum text-ink-soft">{thbCompact(portfolio.cost)}</span>
-                  </p>
-                </div>
-                <div className="min-w-0 @min-[17rem]:text-right">
-                  <p className="text-xs font-semibold text-ink-muted">All-time profit</p>
-                  <PnLText value={portfolio.pnl} compact className="mt-1 block font-display text-2xl !font-extrabold tracking-tight" />
-                  <div className="mt-0.5 flex items-center gap-1.5 @min-[17rem]:justify-end">
-                    <PnLPill value={portfolio.pnlPct} asPct size="sm" />
-                  </div>
-                  <UnpricedNote count={portfolio.unpricedCount} />
-                </div>
-              </div>
-            </Inset>
-
-            <div className="mt-4 flex flex-col items-center gap-4">
-              <DonutChart
-                segments={allocSegments}
-                size={155}
-                thickness={17}
-                ariaLabel={`Holdings asset allocation, total value ${thb(portfolio.value)}`}
-                centerLabel="Total"
-                centerValue={thbCompact(portfolio.value)}
-              />
-              <div className="w-full divide-y divide-line border-t border-line">
-                {alloc.map((a) => {
-                  const pctVal = portfolio.value > 0 ? (a.value / portfolio.value) * 100 : 0
-                  return (
-                    <div key={a.assetClass} className="flex items-center justify-between gap-3 py-2 text-sm">
-                      <span className="flex min-w-0 items-center gap-2 text-ink">
-                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: ASSET_META[a.assetClass].color }} />
-                        <span className="truncate">{ASSET_META[a.assetClass].plural}</span>
-                      </span>
-                      <span className="shrink-0 font-semibold tnum text-ink">
-                        {thb(a.value)} <span className="text-xs font-normal text-ink-muted">{pctVal.toFixed(1)}%</span>
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </Card>
-        </div>
-
+      {/* ── Cash and debts ── */}
+      <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-2">
         {/* Cash */}
-        <div id="guide-dashboard-cash" className="lg:col-span-7 xl:col-span-4">
+        <div id="guide-dashboard-cash">
           <Card className="card-bleed-mobile h-full animate-rise">
             <CardHeader title="Cash" action={<TextLink to={SPEND_CASH}>Manage</TextLink>} />
 
@@ -381,7 +311,7 @@ export function Dashboard() {
         </div>
 
         {/* Debts */}
-        <div id="guide-dashboard-debts" className="lg:col-span-12 xl:col-span-4">
+        <div id="guide-dashboard-debts">
           <Card className="card-bleed-mobile h-full animate-rise">
             <CardHeader title="Debts" action={<TextLink to="/spend/loans">Manage</TextLink>} />
 
@@ -392,7 +322,7 @@ export function Dashboard() {
                   <p title={debts > 0 ? `-${thb(debts)}` : '฿0'} className="mt-1 truncate font-display text-2xl font-extrabold tracking-tight tnum text-ink">
                     {debts > 0 ? `-${thbCompact(debts)}` : '฿0'}
                   </p>
-                  <p className="text-xs text-ink-muted tnum">{debts > 0 ? `${debtRatio.toFixed(1)}% of assets` : 'Debt free'}</p>
+                  {debts === 0 && <p className="text-xs text-ink-muted">Debt free</p>}
                 </div>
                 <div className="min-w-0 text-right">
                   <p className="text-xs font-semibold text-ink-muted">Paid a month</p>
@@ -481,15 +411,10 @@ export function Dashboard() {
                                   </button>
                                 </span>
                               ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => openPayLoan(l.id)}
-                                  aria-label={`Pay ${l.name}`}
-                                  className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-primary-hover cursor-pointer"
-                                >
+                                <Button size="sm" onClick={() => openPayLoan(l.id)} aria-label={`Pay ${l.name}`} className="gap-1">
                                   <CheckIcon className="h-3.5 w-3.5" strokeWidth={2.6} />
                                   Pay
-                                </button>
+                                </Button>
                               )}
                             </div>
                           )}

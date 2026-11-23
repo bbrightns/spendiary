@@ -2,20 +2,14 @@ import { describe, expect, it } from 'vitest'
 import {
   allocations,
   applyBuy,
-  bahtGoldToGrams,
-  btcCostPerCoin,
-  btcToSats,
   buyDayPassedThisPeriod,
   calculateAnnualCashInterest,
   calculateMonthlyCashInterest,
   dcaThisMonth,
   findMatchingHolding,
-  getCashLiquidityBreakdown,
   getEffectiveDayOfMonth,
   getLiabilityDueStatus,
-  goldCostPerBaht,
   goldThbPerBahtToXauUsd,
-  gramsToBahtGold,
   holdingAllocations,
   holdingMetrics,
   isBuyDayOverdue,
@@ -28,13 +22,11 @@ import {
   planTotalExecutionsInMonth,
   portfolioCost,
   portfolioValue,
-  satsToBtc,
   shouldConfirmBuy,
   sortDcaPlans,
   totalLiabilities,
   totalMonthlyDebtPayment,
   upsert,
-  xauUsdToThaiGoldPricePerBaht,
 } from './calc'
 import type { CashAccount, DcaPlan, Holding, Liability, SpendiaryData } from './types'
 
@@ -198,28 +190,11 @@ describe('upsert', () => {
 
 /* ----------------------------- Gold / BTC ----------------------------- */
 
-describe('gold and bitcoin units', () => {
-  it('converts grams and baht-weight both ways', () => {
-    expect(gramsToBahtGold(15.244)).toBeCloseTo(1)
-    expect(bahtGoldToGrams(2)).toBeCloseTo(30.488)
-  })
-
-  it('works out the cost per baht-weight, and 0 for no grams', () => {
-    expect(goldCostPerBaht(42_000, 15.244)).toBeCloseTo(42_000)
-    expect(goldCostPerBaht(1000, 0)).toBe(0)
-  })
-
-  it('round-trips the Thai gold price through XAU/USD', () => {
-    const xau = goldThbPerBahtToXauUsd(45_000, 33)
-    expect(xauUsdToThaiGoldPricePerBaht(xau, 33)).toBeCloseTo(45_000)
+describe('gold price conversion', () => {
+  it('turns the Thai gold price (96.5%, per baht-weight) into XAU/USD, and 0 without a rate', () => {
+    // 45,000 THB per 15.244 g of 96.5% gold -> per troy ounce of pure gold, in USD at 33
+    expect(goldThbPerBahtToXauUsd(45_000, 33)).toBeCloseTo((45_000 / 15.244 / 0.965) * 31.1035 / 33)
     expect(goldThbPerBahtToXauUsd(45_000, 0)).toBe(0)
-  })
-
-  it('converts sats and the cost per coin', () => {
-    expect(btcToSats(0.1)).toBe(10_000_000)
-    expect(satsToBtc(50_000_000)).toBe(0.5)
-    expect(btcCostPerCoin(1_000_000, 1_000_000)).toBe(100_000_000)
-    expect(btcCostPerCoin(1000, 0)).toBe(0)
   })
 })
 
@@ -386,11 +361,6 @@ describe('cash interest and breakdown', () => {
     expect(r.byMonth[1]).toBeCloseTo(2000 / 12)
     expect(r.byMonth[6]).toBeCloseTo(2000 / 12 + 700)
     expect(r.totalCompounded).toBeCloseTo(100_000 * (Math.pow(1 + 2 / 1200, 12) - 1) + 700)
-  })
-
-  it('splits cash into everyday and locked', () => {
-    expect(getCashLiquidityBreakdown(accounts, 35)).toEqual({ spending: 105_000, locked: 35_000, total: 140_000 })
-    expect(getCashLiquidityBreakdown(accounts, null)).toEqual({ spending: 105_000, locked: 0, total: 105_000 })
   })
 })
 

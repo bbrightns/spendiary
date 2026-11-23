@@ -14,8 +14,7 @@ import { ConfirmDividendModal } from '../components/forms/ConfirmDividendModal'
 import { GuideTour } from '../components/guide/GuideTour'
 import { usePageGuide } from '../hooks/usePageGuide'
 import { useLivePrices } from '../hooks/useLivePrices'
-import { isValidPrice } from '../lib/priceCache'
-import { BuyTrendIcon, CheckCircleIcon, CheckIcon, CopyIcon, DcaIcon, PencilIcon, PlusIcon } from '../components/icons'
+import { BuyTrendIcon, CheckCircleIcon, CheckIcon, DcaIcon, PencilIcon, PlusIcon } from '../components/icons'
 import { AssetLogo } from '../components/ui/AssetLogo'
 import { fixedCostRecurring, inPeriod, perMonth, periodFor, periodLabel } from '../modules/spend/logic'
 import { flowVerdict, livingAverage, livingPace, livingSpend, monthlyFlow } from '../modules/spend/monthlyFlow'
@@ -26,11 +25,11 @@ import { ArrangeButton, ReorderSheet } from '../modules/spend/ReorderSheet'
 import { useSpend } from '../modules/spend/useSpend'
 import {
   ASSET_META, buyDateThisPeriod, totalCash, dcaThisMonth, getHoldingDpsForMonth, isBuyDayOverdue, isBuyDayToday, isConfirmedForPeriod, isDividendReceivedThisMonth, isSkippedForPeriod,
-  hasRealPrice, nextBuyDate, shouldConfirmBuy, sortDcaPlans,
+  nextBuyDate, shouldConfirmBuy, sortDcaPlans,
 } from '../lib/calc'
-import { generatePortfolioMarkdown } from '../lib/portfolioMarkdown'
-import type { DcaPlan, Holding, SpendRecurring } from '../lib/types'
-import { daysUntil, localDateStr, ordinal, thb } from '../lib/format'
+import type { DcaPlan, Holding } from '../lib/types'
+import { daysUntil, localDateStr, money, ordinal, thb } from '../lib/format'
+import { dividendInUsd, dividendThb } from '../lib/dividendSchedule'
 import { TextLink } from '../components/ui/TextLink'
 
 // ─── Chevron icon ─────────────────────────────────────────────────────────────
@@ -88,29 +87,6 @@ function SalaryAmount({ value, editing, draft, inputRef, onOpen, onDraftChange, 
 }
 
 
-// ─── Fixed cost item row ──────────────────────────────────────────────────────
-
-/** Read-only: fixed costs are edited as recurring bills in Spend. */
-function FixedCostRow({ item }: { item: SpendRecurring }) {
-  const monthly = perMonth(item)
-  return (
-    <Link
-      to="/spend/recurring"
-      className="flex items-center gap-3 py-2 -mx-2 px-2 rounded-lg hover:bg-surface-muted/60 transition-colors"
-    >
-      <div className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-ink">{item.name}</span>
-        {item.frequency !== 'monthly' && (
-          <span className="block text-xs text-ink-muted tnum">
-            {thb(item.amount)} {item.frequency === 'yearly' ? 'a year' : 'a week'}
-          </span>
-        )}
-      </div>
-      <span className="font-display text-sm font-bold tnum text-ink">{thb(monthly)}</span>
-    </Link>
-  )
-}
-
 // ─── Section header with toggle ───────────────────────────────────────────────
 
 function SectionHeader({ label, total, open, onToggle, action }: {
@@ -162,7 +138,6 @@ export function DcaPlanner() {
   const salaryRef = useRef<HTMLInputElement>(null)
 
   // Section expand state — default collapsed
-  const [fixedOpen, setFixedOpen] = useState(false)
   const [savingsOpen, setSavingsOpen] = useState(true)
 
   // DCA form
@@ -196,8 +171,7 @@ export function DcaPlanner() {
   const [arrangeOpen, setArrangeOpen] = useState(false)
 
   // Fixed costs live in Spend as recurring bills; weekly / yearly ones count at their monthly rate
-  const fixedItems = fixedCostRecurring(data.spendRecurring ?? []).sort((a, b) => perMonth(b) - perMonth(a))
-  const fixedTotal = fixedItems.reduce((s, x) => s + perMonth(x), 0)
+  const fixedTotal = fixedCostRecurring(data.spendRecurring ?? []).reduce((s, x) => s + perMonth(x), 0)
   const dcaMonth   = dcaThisMonth(data.dcaPlans)
   // Salary comes from Spend's recurring income in the Salary category when there is one;
   // the number typed here is the fallback
@@ -240,17 +214,6 @@ export function DcaPlanner() {
   // The plan list is already in buy order (sortDcaPlans), so each group is one run of rows
   const hasGroups = new Set(plans.map(whenGroup)).size > 1
 
-  // Expected dividends for the current month
-  const currentMonth = new Date().getMonth() + 1
-  const scheduledDividends = (data.holdings ?? []).filter(
-    (h) => h.paysDividend && (h.dividendMonths ?? []).includes(currentMonth),
-  )
-  const totalEstDividendNet = scheduledDividends.reduce((sum, h) => {
-    const units = h.units ?? h.totalUnits ?? 0
-    const dps = getHoldingDpsForMonth(h, currentMonth)
-    return sum + (units * dps * 0.90)
-  }, 0)
-
   // ── Salary handlers ──
   function openSalaryEdit() {
     if (salaryFromSpend) {
@@ -267,40 +230,25 @@ export function DcaPlanner() {
     setEditingSalary(false)
   }
 
-  const { usdThb, goldThbPerGram } = useLivePrices()
-  const goldHolding = data.holdings?.find((h) => h.assetClass === 'gold' && isValidPrice(h.price) && hasRealPrice(h))
-  const effectiveGoldThbPerGram = goldThbPerGram ?? goldHolding?.price ?? null
+  const { usdThb } = useLivePrices()
   const effectiveUsdThb = usdThb && usdThb > 0 ? usdThb : null
+
+  // Expected dividends for the current month, in baht: US stocks pay in USD, counted only at a real rate
+  const currentMonth = new Date().getMonth() + 1
+  const scheduledDividends = (data.holdings ?? []).filter(
+    (h) => h.paysDividend && (h.dividendMonths ?? []).includes(currentMonth),
+  )
+  const estDividendNet = (h: Holding) => (h.units ?? h.totalUnits ?? 0) * getHoldingDpsForMonth(h, currentMonth) * 0.90
+  const totalEstDividendNet = scheduledDividends.reduce((sum, h) => sum + (dividendThb(h, estDividendNet(h), effectiveUsdThb) ?? 0), 0)
+  /** A holding's dividend in baht when it can be, else in its dollars */
+  const dividendShown = (h: Holding, amount: number) => {
+    const inThb = dividendThb(h, amount, effectiveUsdThb)
+    return inThb === null ? money(amount, 'USD', true) : thb(inThb)
+  }
   // Only money you can top up from: accounts marked locked (a provident fund) don't count
   const cash = totalCash({ ...data, cashAccounts: data.cashAccounts.filter((a) => a.category !== 'locked') }, effectiveUsdThb)
   const flow = monthlyFlow({ salary, fixed: fixedTotal, living, invest: savingsTotal, cash })
   const verdict = flowVerdict(flow, cash)
-  const [copied, setCopied] = useState(false)
-
-  const handleCopyMarkdown = async () => {
-    try {
-      const md = generatePortfolioMarkdown(data, effectiveUsdThb ?? usdThb, effectiveGoldThbPerGram)
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(md)
-      } else {
-        const textarea = document.createElement('textarea')
-        textarea.value = md
-        textarea.style.position = 'fixed'
-        textarea.style.left = '-9999px'
-        textarea.style.top = '-9999px'
-        document.body.appendChild(textarea)
-        textarea.focus()
-        textarea.select()
-        document.execCommand('copy')
-        document.body.removeChild(textarea)
-      }
-      setCopied(true)
-      showToast('Portfolio copied as Markdown', 'success')
-      setTimeout(() => setCopied(false), 2500)
-    } catch {
-      showToast('Could not copy Markdown', 'error')
-    }
-  }
 
   const openAdd = () => { setEditing(null); setFormOpen(true) }
   const openEdit = (p: DcaPlan) => { setEditing(p); setFormOpen(true) }
@@ -337,58 +285,6 @@ export function DcaPlanner() {
               }
             />
           </div>
-      </>
-    ),
-    fixed: (
-      <>
-          {/* ── Fixed Costs ── */}
-          <div id="guide-dca-transfers">
-            <Card className="card-bleed-mobile animate-rise">
-            <SectionHeader
-              label="Fixed costs"
-              total={fixedTotal}
-              open={fixedOpen}
-              onToggle={() => setFixedOpen((v) => !v)}
-              action={
-                fixedOpen ? (
-                  <Link
-                    to="/spend/recurring"
-                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 text-xs font-semibold text-ink shadow-2xs hover:bg-surface-muted transition-colors active:scale-95"
-                  >
-                    Manage in Spend
-                  </Link>
-                ) : null
-              }
-            />
-
-            {fixedOpen && (
-              <div className="mt-4">
-                {fixedItems.length === 0 ? (
-                  <p className="text-sm text-ink-muted">
-                    No fixed costs yet. Add rent, bills or family support as{' '}
-                    <Link to="/spend/recurring" className="font-semibold text-link hover:underline">
-                      recurring bills in Spend
-                    </Link>
-                    .
-                  </p>
-                ) : (
-                  <div className="divide-y divide-line">
-                    {fixedItems.map((item) => (
-                      <FixedCostRow key={item.id} item={item} />
-                    ))}
-                  </div>
-                )}
-
-                {fixedItems.length > 0 && (
-                  <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
-                    <span className="text-xs font-semibold text-ink-muted">Total fixed</span>
-                    <span className="font-display text-base font-extrabold tnum text-ink">{thb(fixedTotal)}</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </Card>
-        </div>
       </>
     ),
     plans: (
@@ -485,6 +381,7 @@ export function DcaPlanner() {
                               className="flex cursor-pointer items-center gap-3 px-5 py-3 transition-colors hover:bg-surface-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:gap-3.5 sm:py-4"
                             >
                               <AssetLogo
+                                ticker={p.ticker}
                                 name={p.name}
                                 assetClass={p.assetClass}
                                 size="md"
@@ -630,22 +527,22 @@ export function DcaPlanner() {
                     {scheduledDividends.map((h) => {
                       const units = h.units ?? h.totalUnits ?? 0
                       const dps = getHoldingDpsForMonth(h, currentMonth)
-                      const estNet = units * dps * 0.90
+                      const estNet = estDividendNet(h)
                       const isReceived = isDividendReceivedThisMonth(h.id, data.dividendRecords)
-                      const sym = h.assetClass === 'stock' ? '$' : '฿'
+                      const sym = dividendInUsd(h) ? '$' : '฿'
 
                       return (
                         <li key={h.id} className="p-4 sm:p-5 hover:bg-surface-muted/30 transition-colors">
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-3 min-w-0">
-                              <AssetLogo name={h.name} assetClass={h.assetClass} size="md" />
+                              <AssetLogo ticker={h.ticker} name={h.name} assetClass={h.assetClass} size="md" />
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
                                   <span className="font-display font-bold text-base text-ink">{h.ticker}</span>
                                   <span className="text-xs text-ink-muted truncate max-w-[140px] sm:max-w-xs">{h.name}</span>
                                 </div>
                                 <p className="text-xs text-ink-muted mt-0.5">
-                                  {units.toLocaleString()} shares · Est. DPS: {dps > 0 ? `${sym}${dps}` : '-'}
+                                  {units.toLocaleString()} shares · Est. DPS: {dps > 0 ? `${sym}${dps.toLocaleString()}` : '-'}
                                 </p>
                               </div>
                             </div>
@@ -654,7 +551,7 @@ export function DcaPlanner() {
                               {estNet > 0 && (
                                 <div className="text-right hidden sm:block">
                                   <span className="font-display text-sm font-bold text-gain-ink tnum">
-                                    ~{thb(estNet)}
+                                    ~{dividendShown(h, estNet)}
                                   </span>
                                   <p className="text-xs text-ink-muted">Est. Net</p>
                                 </div>
@@ -699,29 +596,7 @@ export function DcaPlanner() {
         subtitle="Monthly salary allocation & recurring investments."
         onStartGuide={startTour}
         action={
-          <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleCopyMarkdown}
-            aria-label="Copy portfolio markdown"
-            title="Copy portfolio as Markdown"
-            className="cursor-pointer shrink-0 h-9 text-xs sm:text-sm whitespace-nowrap"
-          >
-            {copied ? (
-              <>
-                <CheckIcon className="h-4 w-4 text-gain-ink shrink-0" strokeWidth={2.2} />
-                <span className="text-gain-ink">Copied MD!</span>
-              </>
-            ) : (
-              <>
-                <CopyIcon className="h-4 w-4 text-ink-muted shrink-0" />
-                <span>Copy portfolio MD</span>
-              </>
-            )}
-          </Button>
           <ArrangeButton label="Arrange cards" onClick={() => setArrangeOpen(true)} />
-          </div>
         }
       />
 
@@ -779,7 +654,6 @@ export function DcaPlanner() {
 /** Cards on DCA plans that can be reordered, in their default order */
 const DCA_CARDS = [
   { id: 'flow', label: 'This month' },
-  { id: 'fixed', label: 'Fixed costs' },
   { id: 'plans', label: 'Savings & Invest' },
   { id: 'dividends', label: 'Dividend income' },
 ] as const
