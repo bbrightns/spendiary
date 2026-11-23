@@ -41,7 +41,7 @@ export const PAGE_GUIDES: Record<PageGuideKey, { title: string; steps: TourStep[
         badge: 'Spread your risk',
         title: 'Asset allocation',
         description:
-          'A chart of how your money is split across stocks, funds, crypto and gold, so you can see if it is balanced.',
+          'This bar shows how your money is split across stocks, funds, crypto, gold and cash, so you can see if it is balanced.',
         position: 'top',
       },
       {
