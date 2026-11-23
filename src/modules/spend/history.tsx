@@ -14,6 +14,22 @@ import { MonthStepper } from './MonthStepper'
  * search sheet. Spend's Transactions set the pattern; Invest's Trades reuse it.
  */
 
+/**
+ * One day inside a history list. The whole list is one card; each day's header stays pinned under the
+ * app's top bar while that day's rows scroll past, then the next day's header takes its place.
+ */
+export function DaySection({ label, aside, children }: { label: ReactNode; aside?: ReactNode; children: ReactNode }) {
+  return (
+    <section>
+      <div className="sticky top-[calc(var(--top-bar)+var(--test-banner))] z-10 flex items-center justify-between gap-3 border-b border-line bg-surface pt-3 pb-2 text-xs font-semibold text-ink-muted">
+        <span>{label}</span>
+        {aside !== undefined && <span className="tnum">{aside}</span>}
+      </div>
+      <div className="divide-y divide-line">{children}</div>
+    </section>
+  )
+}
+
 /** Magnifier with filter lines, so it reads differently from the header's command search */
 function SearchFilterIcon(p: { className?: string }) {
   return (

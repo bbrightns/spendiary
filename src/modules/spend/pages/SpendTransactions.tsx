@@ -11,7 +11,7 @@ import { localDateStr, thb, thbSigned } from '../../../lib/format'
 import { dateRangeLabel } from '../../../lib/paletteSearch'
 import type { SpendTransaction, SpendTxnType } from '../../../lib/types'
 import { ListBulletIcon, categoriesFor, getCategory } from '../categories'
-import { ActiveSearch, HistoryRangeBar, HistorySearchSheet, type SearchContext } from '../history'
+import { ActiveSearch, DaySection, HistoryRangeBar, HistorySearchSheet, type SearchContext } from '../history'
 import { EMPTY_TITLE, dayLabel, rangePeriod, type Range } from '../historyRange'
 import { accountStatement, balanceOn, cardStatementPeriod, inPeriod, shiftDate, spendOf, txnFlow, type AccountStatement, type Period } from '../logic'
 import { openQuickAdd } from '../sheetEvents'
@@ -231,27 +231,28 @@ export function SpendTransactions() {
           />
         </Card>
       ) : (
-        <div className="space-y-4">
+        <Card list className="card-bleed-mobile pb-1">
           {groups.map(([date, txns]) => {
             const dayNet = txns.reduce((s, t) => s + (t.type === 'income' ? t.amount : t.type === 'expense' ? -t.amount : 0), 0)
             const dayEnd = statement?.dayEnd.get(date)
             return (
-              <Card key={date} list className="card-bleed-mobile pt-3 pb-1">
-                <div className="flex items-center justify-between border-b border-line pb-2 text-xs font-semibold text-ink-muted">
-                  <span>{dayLabel(date, showYear)}</span>
-                  {dayEnd !== undefined ? (
+              <DaySection
+                key={date}
+                label={dayLabel(date, showYear)}
+                aside={
+                  dayEnd !== undefined ? (
                     // A statement closes each day on the balance, like a bank's
-                    <span className="tnum">
+                    <>
                       {isCard ? 'Owed' : 'Balance'} <span className="text-ink">{thbSigned(dayEnd, true)}</span>
-                    </span>
+                    </>
                   ) : (
-                    <span className="tnum">
+                    <>
                       {dayNet > 0 ? '+' : dayNet < 0 ? '−' : ''}
                       {thb(Math.abs(dayNet), true)}
-                    </span>
-                  )}
-                </div>
-                <div className="divide-y divide-line">
+                    </>
+                  )
+                }
+              >
                   {txns.map((t) => (
                     <TxnRow
                       key={t.id}
@@ -261,11 +262,10 @@ export function SpendTransactions() {
                       account={accountId ? { id: accountId, card: isCard, after: statement?.after.get(t.id) } : undefined}
                     />
                   ))}
-                </div>
-              </Card>
+              </DaySection>
             )
           })}
-        </div>
+        </Card>
       )}
     </div>
   )
