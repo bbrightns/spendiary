@@ -1,9 +1,9 @@
 import { useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ChevronDownIcon } from '../../components/icons'
+import { ChevronDownIcon, PlusIcon } from '../../components/icons'
 import { categoriesFor, getCategory, type SpendCategory } from './categories'
 import { CategorySheet } from './CategorySheet'
-import { useChipScroll } from './chipScroll'
+import { useChipScroll, useOverflowsOneRow } from './chipScroll'
 import { moveId, sortSubsByUse } from './logic'
 import { ReorderSheet } from './ReorderSheet'
 import { TONES } from './tones'
@@ -48,7 +48,7 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
   const [newSub, setNewSub] = useState('')
   const [renaming, setRenaming] = useState<string | null>(null)
   const [renameText, setRenameText] = useState('')
-  // Subcategories sit in one row that scrolls sideways (all of them wrap while editing)
+  // Subcategories sit in one row that scrolls sideways, two once they don't fit (all of them wrap while editing)
   const subRow = useRef<HTMLDivElement>(null)
   const tiles = (layout ?? settings.categoryLayout ?? 'tiles') === 'tiles'
 
@@ -61,7 +61,66 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
   // By content: `subcategories` is a new function each render, so the list is a new array each time too
   const subKey = subChoices.join('\u0000')
   // The picked one scrolls into view when the sheet opens (Edit transaction) and when the pick changes
-  const subFade = useChipScroll(subRow, `${value}\u0000${subcategory}\u0000${subKey}`, { active: !editing, reveal: true })
+  const twoRows = useOverflowsOneRow(subRow, subKey, !editing)
+  const subFade = useChipScroll(subRow, `${value}\u0000${subcategory}\u0000${subKey}\u0000${twoRows}`, { active: !editing, reveal: true })
+
+  const subChip = (s: string) => {
+    const on = s === subcategory
+    if (renaming === s)
+      return (
+        <input
+          key={s}
+          data-chip
+          autoFocus
+          value={renameText}
+          onChange={(e) => setRenameText(e.target.value)}
+          onFocus={(e) => e.target.select()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              commitRename()
+            } else if (e.key === 'Escape') {
+              e.stopPropagation()
+              setRenaming(null)
+            }
+          }}
+          onBlur={commitRename}
+          maxLength={30}
+          aria-label={`Rename subcategory ${s}`}
+          className="h-8 w-32 shrink-0 rounded-full border border-brand bg-surface px-3 text-xs font-semibold text-ink outline-none"
+        />
+      )
+    return (
+      <span
+        key={s}
+        data-chip
+        className={`inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-full border text-xs font-semibold transition-colors ${
+          // Picked: solid in the category's color; the rest are outlined in it
+          on ? `border-transparent ${TONES[tone].bar} font-bold text-black/85` : TONES[tone].subChip
+        } ${editing ? 'border-dashed' : ''}`}
+      >
+        <button
+          type="button"
+          aria-pressed={editing ? undefined : on}
+          aria-label={editing ? `Rename subcategory ${s}` : undefined}
+          onClick={() => (editing ? startRename(s) : onSubcategoryChange(on ? '' : s))}
+          className={`h-full rounded-full pl-3 cursor-pointer ${editing ? 'pr-1' : 'pr-3'}`}
+        >
+          {s}
+        </button>
+        {editing && (
+          <button
+            type="button"
+            aria-label={`Remove subcategory ${s}`}
+            onClick={() => removeSub(s)}
+            className="mr-0.5 grid h-6 w-6 place-items-center rounded-full text-sm leading-none cursor-pointer hover:bg-loss/15 hover:text-loss-ink"
+          >
+            ×
+          </button>
+        )}
+      </span>
+    )
+  }
 
   const pick = (id: string) => {
     if (id !== value) onSubcategoryChange('')
@@ -264,70 +323,26 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
               {current.label} <span className="font-medium">· subcategory (optional)</span>
             </span>
           </p>
-          {/* One row: chips scroll sideways (most used first), Add stays pinned at the end so it's always in reach */}
+          {/* Chips scroll sideways (most used first); + stays pinned at the end, as tall as the rows, so it's always in reach */}
           <div className="flex items-start gap-1.5">
             {subChoices.length > 0 && (
               <div
                 ref={subRow}
                 role="group"
                 aria-label="Subcategory"
-                className={`no-scrollbar -my-0.5 flex min-w-0 flex-1 items-center gap-1.5 py-0.5 ${editing ? 'flex-wrap' : 'overflow-x-auto'} ${subFade}`}
+                className={`no-scrollbar -my-0.5 min-w-0 flex-1 py-0.5 ${editing ? 'flex flex-wrap items-center gap-1.5' : 'overflow-x-auto'} ${subFade}`}
               >
-                {subChoices.map((s) => {
-                  const on = s === subcategory
-                  if (renaming === s)
-                    return (
-                      <input
-                        key={s}
-                        autoFocus
-                        value={renameText}
-                        onChange={(e) => setRenameText(e.target.value)}
-                        onFocus={(e) => e.target.select()}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault()
-                            commitRename()
-                          } else if (e.key === 'Escape') {
-                            e.stopPropagation()
-                            setRenaming(null)
-                          }
-                        }}
-                        onBlur={commitRename}
-                        maxLength={30}
-                        aria-label={`Rename subcategory ${s}`}
-                        className="h-8 w-32 shrink-0 rounded-full border border-brand bg-surface px-3 text-xs font-semibold text-ink outline-none"
-                      />
-                    )
-                  return (
-                    <span
-                      key={s}
-                      className={`inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-full border text-xs font-semibold transition-colors ${
-                        // Picked: solid in the category's color; the rest are outlined in it
-                        on ? `border-transparent ${TONES[tone].bar} font-bold text-black/85` : TONES[tone].subChip
-                      } ${editing ? 'border-dashed' : ''}`}
-                    >
-                      <button
-                        type="button"
-                        aria-pressed={editing ? undefined : on}
-                        aria-label={editing ? `Rename subcategory ${s}` : undefined}
-                        onClick={() => (editing ? startRename(s) : onSubcategoryChange(on ? '' : s))}
-                        className={`h-full rounded-full pl-3 cursor-pointer ${editing ? 'pr-1' : 'pr-3'}`}
-                      >
-                        {s}
-                      </button>
-                      {editing && (
-                        <button
-                          type="button"
-                          aria-label={`Remove subcategory ${s}`}
-                          onClick={() => removeSub(s)}
-                          className="mr-0.5 grid h-6 w-6 place-items-center rounded-full text-sm leading-none cursor-pointer hover:bg-loss/15 hover:text-loss-ink"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </span>
-                  )
-                })}
+                {editing ? (
+                  subChoices.map(subChip)
+                ) : twoRows ? (
+                  // Most used first, taking turns between the rows so both start with the favourites
+                  <div className="flex w-max flex-col gap-1.5">
+                    <div className="flex gap-1.5">{subChoices.filter((_, i) => i % 2 === 0).map(subChip)}</div>
+                    <div className="flex gap-1.5">{subChoices.filter((_, i) => i % 2 === 1).map(subChip)}</div>
+                  </div>
+                ) : (
+                  <div className="flex w-max gap-1.5">{subChoices.map(subChip)}</div>
+                )}
               </div>
             )}
             {addingSub ? (
@@ -355,9 +370,12 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
               <button
                 type="button"
                 onClick={() => setAddingSub(true)}
-                className={`h-8 shrink-0 whitespace-nowrap rounded-full border border-dashed border-current/50 px-3 text-xs font-semibold transition-colors cursor-pointer hover:bg-surface/60 ${TONES[tone].ink}`}
+                aria-label={subChoices.length ? 'Add subcategory' : undefined}
+                className={`shrink-0 whitespace-nowrap border border-dashed border-current/50 text-xs font-semibold transition-colors cursor-pointer hover:bg-surface/60 ${TONES[tone].ink} ${
+                  !subChoices.length ? 'h-8 rounded-full px-3' : twoRows ? 'grid w-9 self-stretch place-items-center rounded-2xl' : 'grid h-8 w-9 place-items-center rounded-full'
+                }`}
               >
-                {subChoices.length ? '+ Add' : '+ Add subcategory'}
+                {subChoices.length ? <PlusIcon aria-hidden className="h-4 w-4" /> : '+ Add subcategory'}
               </button>
             )}
           </div>
