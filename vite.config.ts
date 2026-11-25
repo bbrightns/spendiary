@@ -2,7 +2,7 @@ import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { execSync } from 'node:child_process'
-import pkg from './package.json'
+import pkg from './package.json' with { type: 'json' }
 
 const commitHash = (() => {
   try {
