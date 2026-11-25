@@ -9,7 +9,7 @@ interface Props {
   onDelete?: () => void
   /** What the button does ("Pay ฿1,200", "Log buy"); defaults to "Save changes" / "Add" */
   submitLabel?: string
-  /** Why the button is disabled, shown above it while canSave is false */
+  /** Why the button is disabled, shown as its label while canSave is false */
   hint?: ReactNode
 }
 
@@ -54,11 +54,10 @@ export function FormActions({ editing, canSave, onSave, onDelete, submitLabel, h
 
   return (
     <div className="w-full">
-      {!canSave && hint && (
-        <p role="status" className="mb-2.5 text-center text-xs font-medium text-ink-muted">
-          {hint}
-        </p>
-      )}
+      {/* The disabled button says why in its own label, so the footer stays one row high */}
+      <p role="status" className="sr-only">
+        {!canSave && hint ? hint : ''}
+      </p>
       <div className="flex items-center gap-3 w-full">
         {editing && onDelete && (
           <button
@@ -80,7 +79,7 @@ export function FormActions({ editing, canSave, onSave, onDelete, submitLabel, h
           </button>
         )}
         <Button data-modal-submit onClick={handleSave} disabled={!canSave} loading={saving} className="flex-1">
-          {saving ? 'Saving…' : (submitLabel ?? (editing ? 'Save changes' : 'Add'))}
+          {saving ? 'Saving…' : !canSave && hint ? <span className="truncate">{hint}</span> : (submitLabel ?? (editing ? 'Save changes' : 'Add'))}
         </Button>
       </div>
     </div>

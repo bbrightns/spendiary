@@ -20,7 +20,8 @@ import { NoteField } from './NoteField'
 import { paidDetail } from './billPaid'
 import { firstInstallmentDue, installmentAmount, nextInstallmentDue } from './loans'
 import { SHEET_EVENTS, type QuickAddDetail } from './sheetEvents'
-import { AlertIcon } from '../../components/icons'
+import { AlertIcon, CalculatorIcon } from '../../components/icons'
+import { IconButton } from '../../components/ui/IconButton'
 import { afterTap } from '../../lib/afterTap'
 import { NumberField } from '../../components/ui/Field'
 import { isValidRate } from '../../lib/fx'
@@ -117,8 +118,8 @@ export function QuickAddSheet() {
   const [usdIn, setUsdIn] = useState<number | string | ''>('')
   const [fxRate, setFxRate] = useState<number | string | ''>('')
   const amountRef = useRef<HTMLInputElement>(null)
-  // The amount or its operator buttons have focus: the buttons show
-  const [amountActive, setAmountActive] = useState(false)
+  // The + − × ÷ = row: hidden until the calculator button opens it (sums are rare)
+  const [calcOpen, setCalcOpen] = useState(false)
 
   // Latest values for the event listener without re-subscribing on every keystroke
   const stateRef = useRef({ transactions, methods, settings })
@@ -177,8 +178,8 @@ export function QuickAddSheet() {
         setSplit(false)
         setMonths(10)
       }
-      // Closing doesn't blur the amount, so the operator buttons start hidden again
-      setAmountActive(false)
+      // Each opening starts with the operator buttons hidden
+      setCalcOpen(false)
       setOpen(true)
     }
     window.addEventListener(OPEN_EVENT, onOpen)
@@ -194,6 +195,7 @@ export function QuickAddSheet() {
 
   // The amount can be a sum ("120+45"); everything below works with its result
   const isSum = hasOperator(amount)
+  const showCalc = calcOpen || isSum
   const value = evalAmount(amount) ?? NaN
   const amountValid = Number.isFinite(value) && value > 0
   // A new transfer can go into a USD account too: that's an exchange, saved with its rate (store/actions/fx.ts)
@@ -435,7 +437,7 @@ export function QuickAddSheet() {
 
           {/* Amount: a plain number or a short sum, worked out when you leave the field */}
           <div
-            onFocus={() => setAmountActive(true)}
+            className="relative"
             onBlur={(e) => {
               const box = e.currentTarget
               if (box.contains(e.relatedTarget as Node | null)) return
@@ -443,14 +445,14 @@ export function QuickAddSheet() {
               // the tap on a category or wallet lands on something else, so wait until it has landed
               afterTap(() => {
                 if (box.contains(document.activeElement)) return
-                setAmountActive(false)
                 setAmount(settleAmount)
               })
             }}
           >
             <label className="block text-center">
               <span className="sr-only">Amount in baht</span>
-              <div className="flex min-w-0 items-baseline justify-center gap-1.5">
+              {/* Side room so a long amount never runs under the calculator button */}
+              <div className="flex min-w-0 items-baseline justify-center gap-1.5 px-10">
                 <span className={`shrink-0 font-display text-3xl font-extrabold ${amount ? 'text-ink-muted' : 'text-ink-faint'}`}>฿</span>
                 <input
                   ref={amountRef}
@@ -465,13 +467,31 @@ export function QuickAddSheet() {
                 />
               </div>
             </label>
+            <div className="absolute right-0 top-2">
+              <IconButton
+              icon={<CalculatorIcon className="h-5 w-5" />}
+              label={showCalc ? 'Hide calculator' : 'Calculator'}
+              aria-expanded={showCalc}
+              aria-controls="quick-add-calc"
+              className={showCalc ? 'bg-surface-muted text-ink' : ''}
+              onPointerDown={keepFocus}
+              onMouseDown={keepFocus}
+              onClick={() => {
+                // Closing works out a sum left half done, so the amount is a plain number again
+                if (showCalc) setAmount(settleAmount)
+                setCalcOpen(!showCalc)
+                amountRef.current?.focus()
+              }}
+              />
+            </div>
             {isSum && (
               <p id="quick-add-sum" aria-live="polite" className="mt-1 text-center text-sm font-semibold text-ink-muted tnum">
                 {Number.isNaN(value) ? 'Check the sum' : `= ${thbSigned(value, !Number.isInteger(value))}`}
               </p>
             )}
-            {amountActive && (
-              <div role="group" aria-label="Add a sum" className="mt-3 flex justify-center gap-2">
+            {/* Also open while the amount holds a sum, typed with + on a keyboard */}
+            {showCalc && (
+              <div id="quick-add-calc" role="group" aria-label="Add a sum" className="mt-3 flex justify-center gap-2">
                 {OPERATORS.map((op) => (
                   <Button
                     key={op}

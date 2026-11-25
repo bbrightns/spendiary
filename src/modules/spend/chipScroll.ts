@@ -57,3 +57,32 @@ export function useChipScroll(ref: RefObject<HTMLElement | null>, key: string, {
 
   return `${edges.start ? 'fade-x-start' : ''} ${edges.end ? 'fade-x-end' : ''}`
 }
+
+/** Gap between chips in a row (`gap-1.5`) */
+const CHIP_GAP = 6
+
+/**
+ * Whether the chips (`[data-chip]`) inside `ref` are too wide for one row of it. Chip widths don't
+ * depend on how the row is laid out, so the answer stays the same once two rows are drawn.
+ */
+export function useOverflowsOneRow(ref: RefObject<HTMLElement | null>, key: string, active = true): boolean {
+  const [over, setOver] = useState(false)
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el || !active) return setOver(false)
+    const read = () => {
+      const chips = Array.from(el.querySelectorAll<HTMLElement>('[data-chip]'))
+      const total = chips.reduce((sum, c) => sum + c.offsetWidth, 0) + CHIP_GAP * Math.max(0, chips.length - 1)
+      setOver(total > el.clientWidth + 1)
+    }
+    read()
+    const ro = new ResizeObserver(read)
+    ro.observe(el)
+    // Chips change width once a web font (Thai) loads
+    for (const chip of el.querySelectorAll('[data-chip]')) ro.observe(chip)
+    return () => ro.disconnect()
+  }, [ref, key, active])
+
+  return over
+}

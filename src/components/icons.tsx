@@ -3,7 +3,7 @@
  * weight; the names below stay the same, so screens import them as before.
  */
 import {
-  ArrowDownRight as LArrowDownRight, ArrowLeftRight, ArrowUpRight as LArrowUpRight, Bell, Calendar, CalendarSync, Car,
+  ArrowDownRight as LArrowDownRight, ArrowLeftRight, Calculator, ArrowUpRight as LArrowUpRight, Bell, Calendar, CalendarSync, Car,
   ChartLine, ChartPie, Check, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, CircleHelp, Clock, Coins, Command, Copy,
   CreditCard, Database, Download, Ellipsis, FlaskConical, HandCoins, House, Info, Keyboard, Layers, LayoutGrid, List,
   Lock, LockOpen, LogOut, Minus, RotateCw, Pencil, Plus, Receipt, ReceiptText, Scale, Search, Settings, ShoppingBag, Sparkle,
@@ -35,6 +35,7 @@ export const ArrowUpRightIcon = appIcon(LArrowUpRight, 'ArrowUpRightIcon')
 // Actions
 export const PlusIcon = appIcon(Plus, 'PlusIcon')
 export const MinusIcon = appIcon(Minus, 'MinusIcon')
+export const CalculatorIcon = appIcon(Calculator, 'CalculatorIcon')
 export const CheckIcon = appIcon(Check, 'CheckIcon')
 export const CheckCircleIcon = appIcon(CircleCheck, 'CheckCircleIcon')
 export const PencilIcon = appIcon(Pencil, 'PencilIcon')
