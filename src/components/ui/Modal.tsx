@@ -167,8 +167,8 @@ export function Modal({ open, onClose, title, description, children, footer, siz
         {footer && (
           <div
             ref={footerRef}
-            className="shrink-0 border-t border-line bg-surface px-6 pt-3.5"
-            style={{ paddingBottom: 'max(1.5rem, calc(0.75rem + env(safe-area-inset-bottom, 0px)))' }}
+            className="shrink-0 border-t border-line bg-surface px-6 pt-3"
+            style={{ paddingBottom: 'max(1rem, calc(0.75rem + env(safe-area-inset-bottom, 0px)))' }}
           >
             {footer}
           </div>
