@@ -62,19 +62,39 @@ export function useChipScroll(ref: RefObject<HTMLElement | null>, key: string, {
 const CHIP_GAP = 6
 
 /**
- * Whether the chips (`[data-chip]`) inside `ref` are too wide for one row of it. Chip widths don't
- * depend on how the row is laid out, so the answer stays the same once two rows are drawn.
+ * Where chips `widths` wide (in order) break into a second row of a `view` px wide strip; undefined
+ * when they all fit in one. The top row fills in reading order up to the strip's width, or up to
+ * half of all the chips once that is more, so two long rows scroll side by side about evenly.
  */
-export function useOverflowsOneRow(ref: RefObject<HTMLElement | null>, key: string, active = true): boolean {
-  const [over, setOver] = useState(false)
+export function rowSplit(widths: number[], view: number, gap = CHIP_GAP): number | undefined {
+  const total = widths.reduce((sum, w) => sum + w, 0) + gap * Math.max(0, widths.length - 1)
+  if (widths.length < 2 || total <= view + 1) return undefined
+  const limit = Math.max(view, total / 2)
+  let run = 0
+  let split = 0
+  for (const w of widths) {
+    const next = run + (split ? gap : 0) + w
+    if (next > limit + 1) break
+    run = next
+    split++
+  }
+  return Math.min(Math.max(split, 1), widths.length - 1)
+}
+
+/**
+ * The index where the chips (`[data-chip]`, in order) inside `ref` start a second row, or undefined
+ * while one row holds them. Chip widths don't depend on the rows they sit in, so measuring the two
+ * rows gives the same answer as measuring one.
+ */
+export function useRowSplit(ref: RefObject<HTMLElement | null>, key: string, active = true): number | undefined {
+  const [split, setSplit] = useState<number | undefined>()
 
   useLayoutEffect(() => {
     const el = ref.current
-    if (!el || !active) return setOver(false)
+    if (!el || !active) return setSplit(undefined)
     const read = () => {
-      const chips = Array.from(el.querySelectorAll<HTMLElement>('[data-chip]'))
-      const total = chips.reduce((sum, c) => sum + c.offsetWidth, 0) + CHIP_GAP * Math.max(0, chips.length - 1)
-      setOver(total > el.clientWidth + 1)
+      const widths = Array.from(el.querySelectorAll<HTMLElement>('[data-chip]'), (c) => c.offsetWidth)
+      setSplit(rowSplit(widths, el.clientWidth))
     }
     read()
     const ro = new ResizeObserver(read)
@@ -82,7 +102,8 @@ export function useOverflowsOneRow(ref: RefObject<HTMLElement | null>, key: stri
     // Chips change width once a web font (Thai) loads
     for (const chip of el.querySelectorAll('[data-chip]')) ro.observe(chip)
     return () => ro.disconnect()
-  }, [ref, key, active])
+    // `split` too: moving chips between rows draws them anew, so watch the new ones
+  }, [ref, key, active, split])
 
-  return over
+  return split
 }

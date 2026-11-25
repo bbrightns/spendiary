@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { ChevronDownIcon, PlusIcon } from '../../components/icons'
 import { categoriesFor, getCategory, type SpendCategory } from './categories'
 import { CategorySheet } from './CategorySheet'
-import { useChipScroll, useOverflowsOneRow } from './chipScroll'
+import { useChipScroll, useRowSplit } from './chipScroll'
 import { moveId, sortSubsByUse } from './logic'
 import { ReorderSheet } from './ReorderSheet'
 import { TONES } from './tones'
@@ -61,8 +61,9 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
   // By content: `subcategories` is a new function each render, so the list is a new array each time too
   const subKey = subChoices.join('\u0000')
   // The picked one scrolls into view when the sheet opens (Edit transaction) and when the pick changes
-  const twoRows = useOverflowsOneRow(subRow, subKey, !editing)
-  const subFade = useChipScroll(subRow, `${value}\u0000${subcategory}\u0000${subKey}\u0000${twoRows}`, { active: !editing, reveal: true })
+  const split = useRowSplit(subRow, subKey, !editing)
+  const twoRows = split !== undefined
+  const subFade = useChipScroll(subRow, `${value}\u0000${subcategory}\u0000${subKey}\u0000${split}`, { active: !editing, reveal: true })
 
   const subChip = (s: string) => {
     const on = s === subcategory
@@ -104,7 +105,7 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
           aria-pressed={editing ? undefined : on}
           aria-label={editing ? `Rename subcategory ${s}` : undefined}
           onClick={() => (editing ? startRename(s) : onSubcategoryChange(on ? '' : s))}
-          className={`h-full rounded-full pl-3 cursor-pointer ${editing ? 'pr-1' : 'pr-3'}`}
+          className={`h-full rounded-full pl-2.5 cursor-pointer ${editing ? 'pr-1' : 'pr-2.5'}`}
         >
           {s}
         </button>
@@ -335,10 +336,10 @@ export function CategoryPicker({ type, value, onChange, subcategory, onSubcatego
                 {editing ? (
                   subChoices.map(subChip)
                 ) : twoRows ? (
-                  // Most used first, taking turns between the rows so both start with the favourites
+                  // Most used first, read left to right: the top row fills up, the rest go below
                   <div className="flex w-max flex-col gap-1.5">
-                    <div className="flex gap-1.5">{subChoices.filter((_, i) => i % 2 === 0).map(subChip)}</div>
-                    <div className="flex gap-1.5">{subChoices.filter((_, i) => i % 2 === 1).map(subChip)}</div>
+                    <div className="flex gap-1.5">{subChoices.slice(0, split).map(subChip)}</div>
+                    <div className="flex gap-1.5">{subChoices.slice(split).map(subChip)}</div>
                   </div>
                 ) : (
                   <div className="flex w-max gap-1.5">{subChoices.map(subChip)}</div>
